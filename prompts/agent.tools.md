@@ -64,6 +64,8 @@ This tool can be used to achieve any task that requires computation, communicati
 Place your command or code into the tag body. No escaping is wanted, maintain proper indentation.
 Select the corresponding runtime with "runtime" argument. Possible values are "terminal", "python" and "nodejs".
 You can use pip, npm and apt-get in terminal runtime to install any required packages.
+If you want to get output of your code, you have to to use print() or console.log() to output selected variables.
+Do not use return or leave standalone variable at the end, print instead.
 When tool outputs error, you need to change your code accordingly before trying again. Online knowledge tool can help analyze errors.
 Do not wrap code in any markdown or other formatting. Only provide raw code.
 Keep in mind that current working directory CWD automatically resets with every tool call.

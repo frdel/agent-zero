@@ -4,7 +4,7 @@ from tools.helpers import files
 import os, json
 
 db: VectorDB
-result_count = 3
+result_count = 3 #TODO parametrize better
 
 def initialize(embeddings_model,messages_returned=3, subdir=""):
     global db, result_count
