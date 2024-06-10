@@ -7,9 +7,9 @@
 # Ignore all contents of the directory "work_dir"
 work_dir/*
 # But do not ignore the directory itself
-!work_dir
+!work_dir/.gitkeep
 
 # Ignore all contents of the directory "memory"
 memory/*
 # But do not ignore the directory itself
-!memory
+!memory/.gitkeep
