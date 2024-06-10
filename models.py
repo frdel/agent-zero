@@ -73,4 +73,4 @@ def get_embedding_hf(model_name="sentence-transformers/all-MiniLM-L6-v2"):
 
 def get_embedding_openai(api_key=None):
     api_key = api_key or get_api_key("openai")
-    return OpenAIEmbeddings(api_key=api_key)
+    return OpenAIEmbeddings(api_key=api_key) #type: ignore

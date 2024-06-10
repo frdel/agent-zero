@@ -1,4 +1,4 @@
 # Agent Zero
- Agent Zero AI framework
+ Personal and organic AI framework
 
-![Agent Zero](docs/splash.webp)
+![Agent Zero](docs/splash_wide.png)
