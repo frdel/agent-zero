@@ -70,6 +70,7 @@ def capture_keys():
         while True:
             if intervent: intervention()
             intervent = False
+            time.sleep(0.1)
             
             if Agent.streaming_agent:
                 # with raw_input, application_keypad, mouse_input:
