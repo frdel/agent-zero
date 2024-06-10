@@ -59,16 +59,17 @@ return os.getcwd()
 
 
 ### code_execution_tool:
-Execute provided python code.
+Execute provided terminal commands, python code or nodejs code.
 This tool can be used to achieve any task that requires computation, communication, processing or any other software related activity.
-Place your python code into the tag body. No escaping is wanted, maintain proper indentation.
-Using subprocess, you can install python packages and use any external library required.
-If you need to return output from this tool, you must use the "return" keyword in the code along with the output variable name. Otherwise nothing is returned.
-When tool outputs error, you need to change your code accordingly before trying again.
-Do not wrap code in any markdown or other formatting. Only provide plain python code.
-IMPORTANT!: Always check your code if it contains placeholders or demo data that need to be replaced with your real variables. Do not simply reuse code snippets from tutorials.
+Place your command or code into the tag body. No escaping is wanted, maintain proper indentation.
+Select the corresponding runtime with "runtime" argument. Possible values are "terminal", "python" and "nodejs".
+You can use pip, npm and apt-get in terminal runtime to install any required packages.
+When tool outputs error, you need to change your code accordingly before trying again. Online knowledge tool can help analyze errors.
+Do not wrap code in any markdown or other formatting. Only provide raw code.
+Keep in mind that current working directory CWD automatically resets with every tool call.
+IMPORTANT!: Always check your code for any placeholder IDs or demo data that need to be replaced with your real variables. Do not simply reuse code snippets from tutorials.
 **Example usage**:
-<tool$ name="code_execution_tool">
+<tool$ name="code_execution_tool" runtime="python">
 import os
 return os.getcwd()
 </tool$>
