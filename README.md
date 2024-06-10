@@ -57,9 +57,9 @@ Agent Zero is made to be used in an isolated virtual machine (for safety) with s
 If you cannot provide all the necessary conditions or API keys, just change the system prompt and tell your agent what operating system and tools are at its disposal. Nothing is hard-coded; if you do not tell your agent about a certain tool, it will not know about it and will not try to use it.
 
 ## Ideal environment
-- **Linux VM**: The perfect environment to run Agent Zero is a Debian-based Linux virtual machine with enhanced privileges or root access (to install packages and run terminal commands).
+- **Linux VM / docker container**: The perfect environment to run Agent Zero is a Debian-based Linux virtual machine or docker container with enhanced privileges or root access (to install packages and run terminal commands).
 - **Python**: Python has to be installed on the system to run the framework and let the agent execute created Python scripts.
-- **NodeJS** (not yet): NodeJS will be required in the future to allow the agent to run JS scripts as well.
+- **NodeJS**: NodeJS is required to allow the agent to run JS scripts as well.
 - **Internet access**: The agent will need internet access to use its online knowledge tool and execute commands and scripts requiring a connection. If you do not need your agent to be online, you can alter its prompts in the **prompts/** folder and make it fully local.
 
 ## Setup
