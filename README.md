@@ -41,6 +41,8 @@
 - No coding is required, only prompting and communication skills.
 - With a solid system prompt, the framework is reliable even with small models, including precise tool usage.
 
+![Joke example](docs/joke.png)
+
 ## Keep in mind
 1. **Agent Zero can be dangerous!**
 With proper instruction, Agent Zero is capable of many things, even potentially dangerous to your computer, data, or accounts. Always run Agent Zero in an isolated environment, preferably in a Linux virtual machine with backup.
