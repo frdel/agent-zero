@@ -8,7 +8,7 @@ from langchain_core.messages import HumanMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 
 
-rate_limit = rate_limiter.rate_limiter(30,80000)
+rate_limit = rate_limiter.rate_limiter(30,80000) #TODO! move to main.py
 
 class Agent:
 
