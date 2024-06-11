@@ -11,8 +11,8 @@ def chat():
 
     # chat model used for agents
     # chat_llm = models.get_groq_llama70b(temperature=0.2)
-    chat_llm = models.get_openai_gpt35(temperature=0)
-    # chat_llm = models.get_openai_gpt4o()
+    # chat_llm = models.get_openai_gpt35(temperature=0)
+    chat_llm = models.get_openai_gpt4o()
     # chat_llm = models.get_anthropic_sonnet(temperature=0)
     # chat_llm = models.get_anthropic_haiku()
     # chat_llm = models.get_ollama_dolphin()
@@ -45,7 +45,7 @@ def chat():
         if user_input.lower() == 'exit': break
 
         # send message to agent0, 
-        assistant_response = agent0.process_message(user_input)
+        assistant_response = agent0.message_loop(user_input)
         
         # print agent0 response
         PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{agent0.name}: reponse:")        
