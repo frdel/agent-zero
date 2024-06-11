@@ -13,3 +13,8 @@ work_dir/*
 memory/*
 # But do not ignore the directory itself
 !memory/.gitkeep
+
+# Ignore all contents of the directory "logs"
+logs/*
+# But do not ignore the directory itself
+!logs/.gitkeep
