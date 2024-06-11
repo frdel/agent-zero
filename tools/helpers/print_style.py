@@ -77,10 +77,6 @@ class PrintStyle:
             if not self.log_only:
                 print()  # Print an empty line for padding
             self._log_html("<br>")
-            if not PrintStyle.last_endline:
-                if not self.log_only:
-                    print()  # Add one more if last print was streamed
-                self._log_html("<br>")
             self.padding_added = True
 
     def _log_html(self, html):
@@ -99,6 +95,9 @@ class PrintStyle:
         
     def print(self, *args, sep=' ', **kwargs):
         self._add_padding_if_needed()
+        if not PrintStyle.last_endline: 
+            print()
+            self._log_html("<br>")
         plain_text, styled_text, html_text = self.get(*args, sep=sep, **kwargs)
         if not self.log_only:
             print(styled_text, end='\n', flush=True)

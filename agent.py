@@ -103,7 +103,10 @@ class Agent:
                     self.append_message(msg_response, human=True)
                     PrintStyle(font_color="red", padding=True).print(msg_response)
                 finally:
-                    user_message = files.read_file("./prompts/fw.msg_continue.md")
+                    if self.get_last_message().type=="ai": #type: ignore
+                        user_message = files.read_file("./prompts/fw.msg_continue.md")
+                        PrintStyle(font_color="yellow", padding=False).print(user_message)
+                    
         finally:
             Agent.streaming_agent = None # unset current streamer
         
@@ -117,6 +120,10 @@ class Agent:
             self.cleanup_history(5, 10)
         if message_type=="ai":
             self.last_message = msg
+
+    def get_last_message(self):
+        if self.history:
+            return self.history[-1]
 
     def cleanup_history(self,x, y):
         if len(self.history) <= x + y:
