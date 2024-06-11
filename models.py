@@ -4,7 +4,7 @@ from langchain_community.llms import Ollama
 from langchain_openai import ChatOpenAI, OpenAI, OpenAIEmbeddings
 from langchain_anthropic import ChatAnthropic
 from langchain_groq import ChatGroq
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 
 # Load environment variables
