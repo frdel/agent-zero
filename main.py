@@ -18,7 +18,8 @@ def chat():
     # chat_llm = models.get_ollama_dolphin()
 
     # embedding model used for memory
-    embedding_llm = models.get_embedding_openai()
+    # embedding_llm = models.get_embedding_openai()
+    embedding_llm = models.get_embedding_hf()
 
     # initial configuration
     Agent.configure(
@@ -35,7 +36,6 @@ def chat():
     while True:
         # ask user for message
         PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ('exit' to leave):")        
-        # while input_lock: time.sleep(0.1)
         with input_lock:
             user_input = input("> ").strip()
         PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
