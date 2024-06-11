@@ -1,4 +1,28 @@
-import re
+import re, os
+from .  import files
+
+def extract_tool_requests2(response):
+    # Regex to match the tags ending with $, allowing for varying whitespace
+    pattern = r'<(\w+)\$[\s]*(.*?)>([\s\S]*?)(?=<\w+\$|<\/\1\$|$)'
+    matches = re.findall(pattern, response, re.DOTALL)
+    
+    tool_usages = []
+    
+    for match in matches:
+        tag_name, attributes, body = match
+        tool_dict = {}
+        tool_dict['name'] = tag_name
+        tool_dict['args'] = {}
+        
+        # Parse attributes
+        for attr in re.findall(r'(\w+)\s*=\s*"([^"]+)"', attributes):
+            tool_dict['args'][attr[0]] = attr[1]
+        
+        # Add body content
+        tool_dict["body"] = body.strip()
+        tool_usages.append(tool_dict)
+    
+    return tool_usages
 
 def extract_tool_requests(response):
     # Regex to match the tool blocks, allowing for varying whitespace
@@ -18,6 +42,41 @@ def extract_tool_requests(response):
         tool_usages.append(tool_dict)
     
     return tool_usages
+
+def extract_specified_tags(response):
+
+    allowed_tags = list_python_files("tools")
+    
+    # Create a regex pattern to match specified tags and their attributes
+    pattern = r'<({})([\s\S]*?)>'.format('|'.join(allowed_tags))
+    matches = re.findall(pattern, response, re.DOTALL)
+    
+    extracted_tags = []
+    
+    for match in matches:
+        tag_name, attributes = match
+        tag_dict = {}
+        tag_dict['name'] = tag_name
+        
+        # Parse attributes
+        for attr in re.findall(r'(\w+)\s*=\s*"([^"]+)"', attributes):
+            tag_dict[attr[0]] = attr[1]
+        
+        # Extract the body text (everything after the tag until the next tag or end of string)
+        body_pattern = r'<{0}[\s\S]*?>([\s\S]*?)(?=<|$)'.format(tag_name)
+        body_match = re.search(body_pattern, response, re.DOTALL)
+        tag_dict['body'] = body_match.group(1).strip() if body_match else ''
+        
+        extracted_tags.append(tag_dict)
+    
+    return extracted_tags
+
+def list_python_files(directory):
+    # List all files in the given directory
+    list = os.listdir(files.get_abs_path(directory))
+    # Filter for Python files and remove the extension
+    python_files = [os.path.splitext(file)[0] for file in list if file.endswith('.py')]
+    return python_files
 
 # import re
 # from xml.etree import ElementTree as ET

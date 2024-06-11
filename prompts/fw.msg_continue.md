@@ -1,1 +1,1 @@
-Continue. If you are done, use the speak_to_user tool.
+Continue with your thoughts and use tool or message when ready.

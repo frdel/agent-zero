@@ -19,6 +19,11 @@ def read_file(relative_path, **kwargs):
 def get_abs_path(*relative_paths):
     return os.path.join(get_base_dir(), *relative_paths)
 
+def exists(*relative_paths):
+    path = get_abs_path(*relative_paths)
+    return os.path.exists(path)
+
+
 def get_base_dir():
     # Get the base directory from the current file path
     base_dir = os.path.dirname(os.path.abspath(os.path.join(__file__,"../../")))

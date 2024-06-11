@@ -43,18 +43,21 @@ class Agent:
         self.subordinate: Optional['Agent'] = None
         self.history = []
         self.last_message = ""
-        self.message_for_superior = ""
         self.intervention_message = ""
         self.intervention_status = False
+        self.stop_loop = False
+        self.loop_result = ""
                 
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", self.system_prompt + "\n\n" + self.tools_prompt),
             MessagesPlaceholder(variable_name="messages") ])
 
-    def process_message(self, msg: str):
+    def message_loop(self, msg: str):
         try:
             printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)    
             user_message = msg
+            self.stop_loop = False
+            self.loop_result = ""
             
             while True: # let the agent iterate on his thoughts until he stops by using a tool
                 Agent.streaming_agent = self #mark self as current streamer
@@ -90,12 +93,11 @@ class Agent:
                         self.append_message(agent_response) # Append the assistant's response to the history
 
                         self.process_tools(agent_response)
-                        
-                        #break the execution if there is a message for superior agent
-                        if self.message_for_superior and not self.intervention_status:
-                            msg = self.message_for_superior
-                            self.message_for_superior = ""
-                            return msg            
+
+                        #break the execution if the task is done
+                        if self.stop_loop:
+                            return self.loop_result
+                                 
                     
                 # Forward errors to the LLM, maybe he can fix them
                 except Exception as e:
@@ -149,7 +151,7 @@ class Agent:
 
     def process_tools(self, msg: str):
         # search for tool usage requests in agent message
-        tool_requests = extract_tools.extract_tool_requests(msg)
+        tool_requests = extract_tools.extract_tool_requests2(msg)
         
         for tool_request in tool_requests:
 
@@ -157,14 +159,18 @@ class Agent:
             
             tool_name = tool_request["name"]
             tool_function = self.get_tool(tool_name)
+            tool_args = tool_request["args"] or {}
             
             if callable(tool_function):
-                short_params = {k: v for k, v in tool_request.items() if k != "name" and k != "body"} # only extra parameters to output to console
 
                 PrintStyle(font_color="#1B4F72", padding=True, background_color="white", bold=True).print(f"{self.name}: Using tool {tool_name}:")
-                PrintStyle(font_color="#85C1E9").print(short_params, tool_request["body"], sep="\n") if short_params else PrintStyle(font_color="#85C1E9").print(tool_request["body"])
+                PrintStyle(font_color="#85C1E9").print(tool_args, tool_request["body"], sep="\n") if tool_args else PrintStyle(font_color="#85C1E9").print(tool_request["body"])
 
-                tool_response = tool_function(self, tool_request["body"], **tool_request) or "" # call tool function with all parameters, body parameter separated for convenience
+                tool_args["_name"] = tool_name
+                tool_args["_message"] = msg
+                tool_args["_tools"] = tool_requests
+                
+                tool_response = tool_function(self, tool_request["body"], **tool_args) or "" # call tool function with all parameters, body parameter separated for convenience
                 Agent.streaming_agent = self # mark self as current streamer again, it may have changed during tool use
                 
                 if self.handle_intervention(): break # wait if paused and handle intervention message if needed
@@ -176,13 +182,15 @@ class Agent:
                 PrintStyle(font_color="#85C1E9").print(tool_response)
             else:
                 if self.handle_intervention(): break # wait if paused and handle intervention message if needed
-                msg_response = files.read_file("./prompts/fw.tool_not_found.md", tool_name=tool_name, tools_prompt=self.tools_prompt)
-                self.append_message(msg_response,True)
-                PrintStyle(font_color="orange", padding=True).print(msg_response)
+                if tool_name != "thought": #TODO skip thought tools now, implement proper tool classes later
+                    msg_response = files.read_file("./prompts/fw.tool_not_found.md", tool_name=tool_name, tools_prompt=self.tools_prompt)
+                    self.append_message(msg_response,True)
+                    PrintStyle(font_color="orange", padding=True).print(msg_response)
 
-            break #TODO: allow multiple tool requests? anthropic has issues with ending message on tool use...
+
 
     def get_tool(self, name: str):
+        if not files.exists("tools",f"{name}.py"): return # file has to exist in tools
         module = importlib.import_module("tools." + name)  # Import the module
         functions_list = {name: func for name, func in inspect.getmembers(module, inspect.isfunction)}  # Get all functions in the module
 
