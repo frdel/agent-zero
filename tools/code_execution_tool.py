@@ -17,7 +17,9 @@ def execute(agent:Agent , code_text:str, runtime:str, **kwargs):
     else:
         return files.read_file("./prompts/fw.code_runtime_wrong.md", runtime=runtime)
 
-    return messages.truncate_text(response, 2000) # TODO parameterize
+    response = messages.truncate_text(response.strip(), 2000) # TODO parameterize
+    if not response: response = files.read_file("./prompts/fw.code_no_output.md")
+    return response
 
 def execute_python_code(code, input_data="y\n"):
     result = subprocess.run(['python', '-c', code], capture_output=True, text=True, input=input_data)

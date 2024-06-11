@@ -8,7 +8,7 @@ from langchain_core.messages import HumanMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 
 
-rate_limit = rate_limiter.rate_limiter(30,80000) #TODO! move to main.py
+rate_limit = rate_limiter.rate_limiter(30,160000) #TODO! move to main.py
 
 class Agent:
 
@@ -53,16 +53,17 @@ class Agent:
 
     def process_message(self, msg: str):
         try:
-            self.append_message(msg, human=True) # Append the user's input to the history
             printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)    
+            user_message = msg
             
             while True: # let the agent iterate on his thoughts until he stops by using a tool
                 Agent.streaming_agent = self #mark self as current streamer
                 agent_response = ""
                 self.intervention_status = False # reset interventon status
                 try:
-                        
-                    inputs = {"input": msg,"messages": self.history}
+
+                    self.append_message(user_message, human=True) # Append the user's input to the history                        
+                    inputs = {"input": user_message,"messages": self.history}
                     chain = self.prompt | Agent.model_chat
                     formatted_inputs = self.prompt.format(**inputs)
                 
@@ -101,6 +102,8 @@ class Agent:
                     msg_response = files.read_file("./prompts/fw.error.md", error=str(e)) # error message template
                     self.append_message(msg_response, human=True)
                     PrintStyle(font_color="red", padding=True).print(msg_response)
+                finally:
+                    user_message = files.read_file("./prompts/fw.msg_continue.md")
         finally:
             Agent.streaming_agent = None # unset current streamer
         
@@ -169,6 +172,8 @@ class Agent:
                 msg_response = files.read_file("./prompts/fw.tool_not_found.md", tool_name=tool_name, tools_prompt=self.tools_prompt)
                 self.append_message(msg_response,True)
                 PrintStyle(font_color="orange", padding=True).print(msg_response)
+
+            break #TODO: allow multiple tool requests? anthropic has issues with ending message on tool use...
 
     def get_tool(self, name: str):
         module = importlib.import_module("tools." + name)  # Import the module

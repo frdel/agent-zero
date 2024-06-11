@@ -1,4 +1,4 @@
-import threading, sys, time, readline, models
+import threading, sys, time, readline, models, os
 from ansio import application_keypad, mouse_input, raw_input
 from ansio.input import InputEvent, get_input_event
 from agent import Agent
@@ -11,9 +11,9 @@ def chat():
 
     # chat model used for agents
     # chat_llm = models.get_groq_llama70b(temperature=0.2)
-    chat_llm = models.get_openai_gpt35()
+    chat_llm = models.get_openai_gpt35(temperature=0)
     # chat_llm = models.get_openai_gpt4o()
-    # chat_llm = models.get_anthropic_sonnet()
+    # chat_llm = models.get_anthropic_sonnet(temperature=0)
     # chat_llm = models.get_anthropic_haiku()
     # chat_llm = models.get_ollama_dolphin()
 
@@ -38,7 +38,9 @@ def chat():
         # while input_lock: time.sleep(0.1)
         with input_lock:
             user_input = input("> ").strip()
+        PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
 
+        
         # exit the conversation when the user types 'exit'
         if user_input.lower() == 'exit': break
 
@@ -58,7 +60,9 @@ def intervention():
 
         import readline
         user_input = input("> ").strip()
-        if user_input.lower() == 'exit': sys.exit() # exit the conversation when the user types 'exit'
+        PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
+        
+        if user_input.lower() == 'exit': os._exit(0) # exit the conversation when the user types 'exit'
         if user_input: Agent.streaming_agent.intervention_message = user_input # set intervention message if non-empty
         Agent.paused = False # continue agent streaming 
     
