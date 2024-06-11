@@ -37,6 +37,7 @@
 
 ## Nice features to have
 - Output is very clean, colorful, and readable; nothing is hidden.
+- The same colorful output you see in the terminal is automatically saved to HTML file in **logs/** folder for every session.
 - Agent output is streamed in real-time, allowing the user to read along and intervene at any time.
 - No coding is required, only prompting and communication skills.
 - With a solid system prompt, the framework is reliable even with small models, including precise tool usage.
@@ -55,6 +56,11 @@ If your agent fails to communicate properly, use tools, reason, use memory, find
 3. **If you cannot provide the ideal environment, let your agent know.**
 Agent Zero is made to be used in an isolated virtual machine (for safety) with some tools preinstalled and configured.
 If you cannot provide all the necessary conditions or API keys, just change the system prompt and tell your agent what operating system and tools are at its disposal. Nothing is hard-coded; if you do not tell your agent about a certain tool, it will not know about it and will not try to use it.
+
+## Known problems
+1. The system prompt sucks. You can do better. If you do, help me please :)
+2. Input freeze on some Linux terminals - for some reason, sometimes the input field freezes on some terminal apps on linux when the window loses focus. Right now I have no clue why...
+3. Claude models like to hallucinate when using tools. This can probebly be fixed in prompt, but for some reason, Claude models like to use multiple tools in a single message and not wait for output, they just make up their outputs right away. For now I have limited the tool usage to 1 tool per message, this helps a little.
 
 ## Ideal environment
 - **Linux VM / docker container**: The perfect environment to run Agent Zero is a Debian-based Linux virtual machine or docker container with enhanced privileges or root access (to install packages and run terminal commands).
