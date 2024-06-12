@@ -7,7 +7,6 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 
-
 rate_limit = rate_limiter.rate_limiter(30,160000) #TODO! move to main.py
 
 class Agent:
@@ -28,7 +27,7 @@ class Agent:
             messages_returned=memory_results, 
             subdir=memory_subdir )
     
-    def __init__(self, system_prompt:Optional[str]=None, tools_prompt:Optional[str]=None, superior:Optional['Agent']=None, number=0):
+    def __init__(self, system_prompt:Optional[str]=None, tools_prompt:Optional[str]=None, number=0):
   
         self.number = number
         self.name = f"Agent {self.number}"
@@ -38,15 +37,14 @@ class Agent:
         self.system_prompt = system_prompt.replace("{", "{{").replace("}", "}}")
         self.tools_prompt = tools_prompt.replace("{", "{{").replace("}", "}}")
 
-        self.superior: Optional['Agent'] = superior
-        
-        self.subordinate: Optional['Agent'] = None
         self.history = []
         self.last_message = ""
         self.intervention_message = ""
         self.intervention_status = False
         self.stop_loop = False
         self.loop_result = ""
+
+        self.data = {} # free data object all the tools can use
                 
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", self.system_prompt + "\n\n" + self.tools_prompt),
@@ -111,6 +109,12 @@ class Agent:
                     
         finally:
             Agent.streaming_agent = None # unset current streamer
+
+    def get_data(self, field:str):
+        return self.data.get(field, None)
+
+    def set_data(self, field:str, value):
+        self.data[field] = value
         
     def append_message(self, msg: str, human: bool = False):
         message_type = "human" if human else "ai"
