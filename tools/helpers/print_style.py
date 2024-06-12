@@ -22,7 +22,7 @@ class PrintStyle:
             log_filename = datetime.now().strftime("log_%Y%m%d_%H%M%S.html")
             PrintStyle.log_file_path = os.path.join(logs_dir, log_filename)
             with open(PrintStyle.log_file_path, "w") as f:
-                f.write("<html><body style='background-color:black;font-family: Arial, Helvetica, sans-serif;'>\n")
+                f.write("<html><body style='background-color:black;font-family: Arial, Helvetica, sans-serif;'><pre>\n")
 
     def _get_rgb_color_code(self, color, is_background=False):
         try:
@@ -87,7 +87,7 @@ class PrintStyle:
     def _close_html_log():
         if PrintStyle.log_file_path:
             with open(PrintStyle.log_file_path, "a") as f:
-                f.write("</body></html>")            
+                f.write("</pre></body></html>")            
 
     def get(self, *args, sep=' ', **kwargs):
         text = sep.join(map(str, args))
