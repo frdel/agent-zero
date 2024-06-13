@@ -7,9 +7,13 @@ def extract_tool_requests2(response):
     matches = re.findall(pattern, response, re.DOTALL)
     
     tool_usages = []
+    allowed_tags = list_python_files("tools")
     
     for match in matches:
         tag_name, attributes, body = match
+
+        if tag_name not in allowed_tags: continue
+        
         tool_dict = {}
         tool_dict['name'] = tag_name
         tool_dict['args'] = {}
@@ -75,7 +79,7 @@ def list_python_files(directory):
     # List all files in the given directory
     list = os.listdir(files.get_abs_path(directory))
     # Filter for Python files and remove the extension
-    python_files = [os.path.splitext(file)[0] for file in list if file.endswith('.py')]
+    python_files = { os.path.splitext(file)[0] for file in list if file.endswith('.py') }
     return python_files
 
 # import re

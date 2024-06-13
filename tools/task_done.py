@@ -1,7 +1,7 @@
 from agent import Agent
 from tools.helpers import files
-from . import message_for_user
+from tools.helpers.print_style import PrintStyle
 
-def execute(agent:Agent, message: str, **kwargs):
-    # forward to message_for_user with no-timeout flag
-    return message_for_user.execute(agent, message, response_required="true", timeout=0, **kwargs)
+def execute(agent:Agent, result: str, **kwargs):
+    agent.set_data("timeout",0) # wait for user, no timeout
+    agent.add_result(result) # add result data

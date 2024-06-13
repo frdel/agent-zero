@@ -42,7 +42,7 @@ class Agent:
         self.intervention_message = ""
         self.intervention_status = False
         self.stop_loop = False
-        self.loop_result = ""
+        self.loop_result = []
 
         self.data = {} # free data object all the tools can use
                 
@@ -55,7 +55,7 @@ class Agent:
             printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)    
             user_message = msg
             self.stop_loop = False
-            self.loop_result = ""
+            self.loop_result = []
             
             while True: # let the agent iterate on his thoughts until he stops by using a tool
                 Agent.streaming_agent = self #mark self as current streamer
@@ -94,7 +94,7 @@ class Agent:
 
                         #break the execution if the task is done
                         if self.stop_loop:
-                            return self.loop_result
+                            return "\n\n".join(self.loop_result)
                                  
                     
                 # Forward errors to the LLM, maybe he can fix them
@@ -115,7 +115,15 @@ class Agent:
 
     def set_data(self, field:str, value):
         self.data[field] = value
-        
+
+    def set_result(self, result:str):
+        self.stop_loop = True
+        self.loop_results = [result]
+
+    def add_result(self, result:str):
+        self.stop_loop = True
+        self.loop_result.append(result)
+
     def append_message(self, msg: str, human: bool = False):
         message_type = "human" if human else "ai"
         if self.history and self.history[-1].type == message_type:
@@ -156,8 +164,10 @@ class Agent:
     def process_tools(self, msg: str):
         # search for tool usage requests in agent message
         tool_requests = extract_tools.extract_tool_requests2(msg)
+        tool_index = 0
         
         for tool_request in tool_requests:
+            tool_index += 1
 
             if self.handle_intervention(): break # wait if paused and handle intervention message if needed
             
@@ -173,6 +183,7 @@ class Agent:
                 tool_args["_name"] = tool_name
                 tool_args["_message"] = msg
                 tool_args["_tools"] = tool_requests
+                tool_args["_tool_index"] = tool_index
                 
                 tool_response = tool_function(self, tool_request["body"], **tool_args) or "" # call tool function with all parameters, body parameter separated for convenience
                 Agent.streaming_agent = self # mark self as current streamer again, it may have changed during tool use
@@ -186,10 +197,9 @@ class Agent:
                 PrintStyle(font_color="#85C1E9").print(tool_response)
             else:
                 if self.handle_intervention(): break # wait if paused and handle intervention message if needed
-                if tool_name != "thought": #TODO skip thought tools now, implement proper tool classes later
-                    msg_response = files.read_file("./prompts/fw.tool_not_found.md", tool_name=tool_name, tools_prompt=self.tools_prompt)
-                    self.append_message(msg_response,True)
-                    PrintStyle(font_color="orange", padding=True).print(msg_response)
+                msg_response = files.read_file("./prompts/fw.tool_not_found.md", tool_name=tool_name, tools_prompt=self.tools_prompt)
+                self.append_message(msg_response,True)
+                PrintStyle(font_color="orange", padding=True).print(msg_response)
 
 
 
