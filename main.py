@@ -5,19 +5,23 @@ from agent import Agent
 from tools.helpers.print_style import PrintStyle
 from tools.helpers.files import read_file
 from pytimedinput import timedInput as timed_input
+from tools.helpers import files
 
 
 input_lock = threading.Lock()
+
+os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
 
 # Main conversation loop
 def chat():
 
     # chat model used for agents
     # chat_llm = models.get_groq_llama70b(temperature=0.2)
-    # chat_llm = models.get_openai_gpt35(temperature=0)
-    chat_llm = models.get_openai_gpt4o(temperature=0)
+    chat_llm = models.get_openai_gpt35(temperature=0)
+    # chat_llm = models.get_openai_gpt4o(temperature=0)
+    # chat_llm = models.get_anthropic_opus(temperature=0)
     # chat_llm = models.get_anthropic_sonnet(temperature=0)
-    # chat_llm = models.get_anthropic_haiku()
+    # chat_llm = models.get_anthropic_haiku(temperature=0)
     # chat_llm = models.get_ollama_dolphin()
 
     # embedding model used for memory
@@ -46,15 +50,16 @@ def chat():
                 PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}") 
                 
             else: # otherwise wait for user input with a timeout
-                PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ({timeout}s timeout, 'exit' to leave):")        
+                PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ({timeout}s timeout, 'wait' to wait, 'exit' to leave):")        
                 user_input = timed_input("> ", timeout=timeout)
-                        
-            
+                                    
                 if user_input[1]:
                     user_input = read_file("prompts/fw.msg_timeout.md")
                     PrintStyle(font_color="white", padding=False).stream(f"{user_input}")        
                 else:
                     user_input = user_input[0].strip()
+                    if user_input.lower()=="wait": # the user needs more time
+                        user_input = input("> ").strip()
                     PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
                     
                     

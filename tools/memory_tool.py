@@ -26,7 +26,7 @@ def execute(agent:Agent, message: str, action: str = "load", **kwargs):
         docs = db.search_max_rel(message,result_count)
         if len(docs)==0: return files.read_file("./prompts/fw.memories_not_found.md", query=message)
         for doc in docs:
-            results.append({ "meta": doc.metadata, "content": doc.page_content })
-        return json.dumps(results)
+            results.append(doc.page_content)
+        return "\n\n".join(results)
             
 

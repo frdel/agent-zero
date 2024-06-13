@@ -1,13 +1,15 @@
 ## Tools available:
 
-### online_knowledge_tool:
-Provide question and get online response.
+### knowledge_tool:
+Provide question and get both online and memory response.
 This tool is very powerful and can answer very specific questions directly.
 First always try to ask for result rather that guidance.
+Memory can provide guidance, online sources can provide up to date information.
+Alway verify memory by online.
 **Example usage**:
-<online_knowledge_tool$>
-What is the user handle of John Doe on twitter?
-</online_knowledge_tool$>
+<knowledge_tool$>
+What is the user id of John Doe on twitter?
+</knowledge_tool$>
 
 ### memory_tool:
 Access your persistent memory to load or save memories.
@@ -39,7 +41,8 @@ Place your command or code between tags. No escaping, no formatting, no wrappers
 Select the corresponding runtime with "runtime" argument. Possible values are "terminal", "python" and "nodejs".
 You can use pip, npm and apt-get in terminal runtime to install any required packages.
 IMPORTANT: Never use implicit print or implicit output, it does not work! If you need output of your code, you MUST use print() or console.log() to output selected variables. 
-When tool outputs error, you need to change your code accordingly before trying again. online_knowledge_tool can help analyze errors.
+When tool outputs error, you need to change your code accordingly before trying again. knowledge_tool can help analyze errors.
+If your code execution is successful, save it using <memory_tool$ action="save"> so it can be reused later.
 Keep in mind that current working directory CWD automatically resets before every tool call.
 IMPORTANT!: Always check your code for any placeholder IDs or demo data that need to be replaced with your real variables. Do not simply reuse code snippets from tutorials.
 **Example usage**:
