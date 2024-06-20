@@ -10,7 +10,7 @@ def extract_tool_requests2(response):
     allowed_tags = list_python_files("tools")
     
     for match in matches:
-        tag_name, attributes, body = match
+        tag_name, attributes, content = match
 
         if tag_name not in allowed_tags: continue
         
@@ -23,7 +23,8 @@ def extract_tool_requests2(response):
             tool_dict['args'][attr[0]] = attr[1]
         
         # Add body content
-        tool_dict["body"] = body.strip()
+        tool_dict["content"] = content.strip()
+        tool_dict["index"] = len(tool_usages)
         tool_usages.append(tool_dict)
     
     return tool_usages

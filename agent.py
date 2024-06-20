@@ -7,7 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 
-rate_limit = rate_limiter.rate_limiter(30,160000) #TODO! move to main.py
+rate_limit = rate_limiter.rate_limiter(30,160000) #TODO! implement properly
 
 class Agent:
 
@@ -41,8 +41,6 @@ class Agent:
         self.last_message = ""
         self.intervention_message = ""
         self.intervention_status = False
-        self.stop_loop = False
-        self.loop_result = []
 
         self.data = {} # free data object all the tools can use
                 
@@ -90,13 +88,9 @@ class Agent:
                         
                         self.append_message(agent_response) # Append the assistant's response to the history
 
-                        self.process_tools(agent_response)
+                        tools_result = self.process_tools(agent_response) # process tools requested in agent message
+                        if tools_result: return tools_result #break the execution if the task is done
 
-                        #break the execution if the task is done
-                        if self.stop_loop:
-                            return "\n\n".join(self.loop_result)
-                                 
-                    
                 # Forward errors to the LLM, maybe he can fix them
                 except Exception as e:
                     msg_response = files.read_file("./prompts/fw.error.md", error=str(e)) # error message template
@@ -115,14 +109,6 @@ class Agent:
 
     def set_data(self, field:str, value):
         self.data[field] = value
-
-    def set_result(self, result:str):
-        self.stop_loop = True
-        self.loop_results = [result]
-
-    def add_result(self, result:str):
-        self.stop_loop = True
-        self.loop_result.append(result)
 
     def append_message(self, msg: str, human: bool = False):
         message_type = "human" if human else "ai"
@@ -164,50 +150,41 @@ class Agent:
     def process_tools(self, msg: str):
         # search for tool usage requests in agent message
         tool_requests = extract_tools.extract_tool_requests2(msg)
-        tool_index = 0
-        
-        for tool_request in tool_requests:
-            tool_index += 1
 
+        #build tools
+        tools = []
+        for tool_request in tool_requests:
+            tools.append(
+                self.get_tool(
+                    tool_request["name"],
+                    tool_request["content"],
+                    tool_request["args"],
+                    len(tools),
+                    msg,
+                    tools))
+            
+        for tool in tools:
             if self.handle_intervention(): break # wait if paused and handle intervention message if needed
             
-            tool_name = tool_request["name"]
-            tool_function = self.get_tool(tool_name)
-            tool_args = tool_request["args"] or {}
-            
-            if callable(tool_function):
-
-                PrintStyle(font_color="#1B4F72", padding=True, background_color="white", bold=True).print(f"{self.name}: Using tool {tool_name}:")
-                PrintStyle(font_color="#85C1E9").print(tool_args, tool_request["body"], sep="\n") if tool_args else PrintStyle(font_color="#85C1E9").print(tool_request["body"])
-
-                tool_args["_name"] = tool_name
-                tool_args["_message"] = msg
-                tool_args["_tools"] = tool_requests
-                tool_args["_tool_index"] = tool_index
-                
-                tool_response = tool_function(self, tool_request["body"], **tool_args) or "" # call tool function with all parameters, body parameter separated for convenience
-                Agent.streaming_agent = self # mark self as current streamer again, it may have changed during tool use
-                
-                if self.handle_intervention(): break # wait if paused and handle intervention message if needed
-            
-                msg_response = files.read_file("./prompts/fw.tool_response.md", tool_name=tool_name, tool_response=tool_response)
-                self.append_message(msg_response, human=True)
-                
-                PrintStyle(font_color="#1B4F72", background_color="white", padding=True, bold=True).print(f"{self.name}: Response from {tool_name}:")
-                PrintStyle(font_color="#85C1E9").print(tool_response)
-            else:
-                if self.handle_intervention(): break # wait if paused and handle intervention message if needed
-                msg_response = files.read_file("./prompts/fw.tool_not_found.md", tool_name=tool_name, tools_prompt=self.tools_prompt)
-                self.append_message(msg_response,True)
-                PrintStyle(font_color="orange", padding=True).print(msg_response)
+            tool.before_execution()
+            response = tool.execute()
+            tool.after_execution(response)
+            if response.break_loop: return response.message
+            if response.stop_tool_processing: break
 
 
+    def get_tool(self, name: str, content: str, args: dict, index: int, message: str, tools: list, **kwargs):
+        from tools.unknown import Unknown 
+        from tools.helpers.tool import Tool
+        
+        tool_class = Unknown
+        if files.exists("tools",f"{name}.py"): 
+            module = importlib.import_module("tools." + name)  # Import the module
+            class_list = inspect.getmembers(module, inspect.isclass)  # Get all functions in the module
 
-    def get_tool(self, name: str):
-        if not files.exists("tools",f"{name}.py"): return # file has to exist in tools
-        module = importlib.import_module("tools." + name)  # Import the module
-        functions_list = {name: func for name, func in inspect.getmembers(module, inspect.isfunction)}  # Get all functions in the module
+            for cls in class_list:
+                if cls[1] is not Tool and issubclass(cls[1], Tool):
+                    tool_class = cls[1]
+                    break
 
-        if "execute" in functions_list: return functions_list["execute"] # Check if the module contains a function named "execute"
-        if functions_list: return next(iter(functions_list.values())) # Return the first function if no "execute" function is found
-        return None  # Return None if no functions are found
+        return tool_class(agent=self, name=name, content=content, index=index, args=args, message=message, tools=tools, **kwargs)

@@ -16,7 +16,8 @@ os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
 def chat():
 
     # chat model used for agents
-    # chat_llm = models.get_groq_llama70b(temperature=0.2)
+    # chat_llm = models.get_groq_llama70b_json(temperature=0.2)
+    # chat_llm = models.get_groq_llama8b(temperature=0.2)
     chat_llm = models.get_openai_gpt35(temperature=0)
     # chat_llm = models.get_openai_gpt4o(temperature=0)
     # chat_llm = models.get_anthropic_opus(temperature=0)

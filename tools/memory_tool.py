@@ -2,9 +2,18 @@ from agent import Agent
 from tools.helpers.vector_db import VectorDB, Document
 from tools.helpers import files
 import os, json
+from tools.helpers.tool import Tool, Response
+from tools.helpers.print_style import PrintStyle
 
 db: VectorDB
 result_count = 3 #TODO parametrize better
+
+
+class Memory(Tool):
+    def execute(self):
+        result = process_query(self.agent, self.content,self.args["action"])
+        return Response(message=result, stop_tool_processing=True, break_loop=False)
+            
 
 def initialize(embeddings_model,messages_returned=3, subdir=""):
     global db, result_count
@@ -12,7 +21,8 @@ def initialize(embeddings_model,messages_returned=3, subdir=""):
     db = VectorDB(embeddings_model=embeddings_model, in_memory=False, cache_dir=dir)
     result_count = messages_returned
 
-def execute(agent:Agent, message: str, action: str = "load", **kwargs):
+
+def process_query(agent:Agent, message: str, action: str = "load", **kwargs):
     if action.strip().lower() == "save":
         id = db.insert_document(message)
         return files.read_file("./prompts/fw.memory_saved.md")

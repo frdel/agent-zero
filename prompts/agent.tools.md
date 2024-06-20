@@ -5,7 +5,8 @@ Provide question and get both online and memory response.
 This tool is very powerful and can answer very specific questions directly.
 First always try to ask for result rather that guidance.
 Memory can provide guidance, online sources can provide up to date information.
-Alway verify memory by online.
+Always verify memory by online.
+Do not use in combination with other tools except for thoughts. Wait for response before using other tools.
 **Example usage**:
 <knowledge_tool$>
 What is the user id of John Doe on twitter?
@@ -21,6 +22,7 @@ When loading memories using action "load", provide keywords or question relevant
 When saving memories using action "save", provide a title, short summary and and all the necessary information to help you later solve similiar tasks including details like code executed, libraries used etc.
 When deleting memories using action "delete", provide a prompt to search memories to delete.
 Be specific with your question, do not input vague queries.
+Do not use in combination with other tools except for thoughts. Wait for response before using other tools.
 **Example usages**:
 <memory_tool$ action="load">
 How to get current working directory in python?
@@ -45,6 +47,7 @@ When tool outputs error, you need to change your code accordingly before trying 
 If your code execution is successful, save it using <memory_tool$ action="save"> so it can be reused later.
 Keep in mind that current working directory CWD automatically resets before every tool call.
 IMPORTANT!: Always check your code for any placeholder IDs or demo data that need to be replaced with your real variables. Do not simply reuse code snippets from tutorials.
+Do not use in combination with other tools except for thoughts. Wait for response before using other tools.
 **Example usage**:
 <code_execution_tool$ runtime="python">
 import os
