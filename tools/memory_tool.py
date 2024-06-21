@@ -11,8 +11,8 @@ result_count = 3 #TODO parametrize better
 
 class Memory(Tool):
     def execute(self):
-        result = process_query(self.agent, self.content,self.args["action"])
-        return Response(message=result, stop_tool_processing=True, break_loop=False)
+        result = process_query(self.agent, self.args["memory"],self.args["action"])
+        return Response(message=result, break_loop=False)
             
 
 def initialize(embeddings_model,messages_returned=3, subdir=""):
@@ -24,7 +24,7 @@ def initialize(embeddings_model,messages_returned=3, subdir=""):
 
 def process_query(agent:Agent, message: str, action: str = "load", **kwargs):
     if action.strip().lower() == "save":
-        id = db.insert_document(message)
+        id = db.insert_document(str(message))
         return files.read_file("./prompts/fw.memory_saved.md")
 
     elif action.strip().lower() == "delete":

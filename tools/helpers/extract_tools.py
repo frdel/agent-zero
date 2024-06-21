@@ -1,87 +1,120 @@
 import re, os
+from typing import Any
 from .  import files
+import dirtyjson
+import regex
 
-def extract_tool_requests2(response):
-    # Regex to match the tags ending with $, allowing for varying whitespace
-    pattern = r'<(\w+)\$[\s]*(.*?)>([\s\S]*?)(?=<\w+\$|<\/\1\$|$)'
-    matches = re.findall(pattern, response, re.DOTALL)
-    
-    tool_usages = []
-    allowed_tags = list_python_files("tools")
-    
-    for match in matches:
-        tag_name, attributes, content = match
 
-        if tag_name not in allowed_tags: continue
-        
-        tool_dict = {}
-        tool_dict['name'] = tag_name
-        tool_dict['args'] = {}
-        
-        # Parse attributes
-        for attr in re.findall(r'(\w+)\s*=\s*"([^"]+)"', attributes):
-            tool_dict['args'][attr[0]] = attr[1]
-        
-        # Add body content
-        tool_dict["content"] = content.strip()
-        tool_dict["index"] = len(tool_usages)
-        tool_usages.append(tool_dict)
-    
-    return tool_usages
+def json_parse_dirty(json:str) -> Any:
+    ext_json = extract_json_string(json)
+    ext_json = fix_json_string(ext_json)
+    data = dirtyjson.loads(ext_json)
+    return data
 
-def extract_tool_requests(response):
-    # Regex to match the tool blocks, allowing for varying whitespace
-    pattern = r'<tool\$[\s]*(.*?)>(.*?)<\/tool\$\s*>'
-    matches = re.findall(pattern, response, re.DOTALL)
+def extract_json_string(content):
+    # Regular expression pattern to match a JSON object
+    pattern = r'\{(?:[^{}]|(?R))*\}|\[(?:[^\[\]]|(?R))*\]|"(?:\\.|[^"\\])*"|true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?'
     
-    tool_usages = []
+    # Search for the pattern in the content
+    match = regex.search(pattern, content)
     
-    for match in matches:
-        attributes, body = match
-        tool_dict = {}
-        # Parse attributes
-        for attr in re.findall(r'(\w+)\s*=\s*"([^"]+)"', attributes):
-            tool_dict[attr[0]] = attr[1]
-        # Add body content
-        tool_dict["body"] = body.strip()
-        tool_usages.append(tool_dict)
-    
-    return tool_usages
+    if match:
+        # Return the matched JSON string
+        return match.group(0)
+    else:
+        print("No JSON content found.")
+        return ""
 
-def extract_specified_tags(response):
+def fix_json_string(json_string):
+    # Function to replace unescaped line breaks within JSON string values
+    def replace_unescaped_newlines(match):
+        return match.group(0).replace('\n', '\\n')
 
-    allowed_tags = list_python_files("tools")
-    
-    # Create a regex pattern to match specified tags and their attributes
-    pattern = r'<({})([\s\S]*?)>'.format('|'.join(allowed_tags))
-    matches = re.findall(pattern, response, re.DOTALL)
-    
-    extracted_tags = []
-    
-    for match in matches:
-        tag_name, attributes = match
-        tag_dict = {}
-        tag_dict['name'] = tag_name
-        
-        # Parse attributes
-        for attr in re.findall(r'(\w+)\s*=\s*"([^"]+)"', attributes):
-            tag_dict[attr[0]] = attr[1]
-        
-        # Extract the body text (everything after the tag until the next tag or end of string)
-        body_pattern = r'<{0}[\s\S]*?>([\s\S]*?)(?=<|$)'.format(tag_name)
-        body_match = re.search(body_pattern, response, re.DOTALL)
-        tag_dict['body'] = body_match.group(1).strip() if body_match else ''
-        
-        extracted_tags.append(tag_dict)
-    
-    return extracted_tags
+    # Use regex to find string values and apply the replacement function
+    fixed_string = re.sub(r'(?<=: ")(.*?)(?=")', replace_unescaped_newlines, json_string, flags=re.DOTALL)
+    return fixed_string
 
-def list_python_files(directory):
-    # List all files in the given directory
-    list = os.listdir(files.get_abs_path(directory))
-    # Filter for Python files and remove the extension
-    python_files = { os.path.splitext(file)[0] for file in list if file.endswith('.py') }
-    return python_files
+# def extract_tool_requests2(response):
+#     # Regex to match the tags ending with $, allowing for varying whitespace
+#     pattern = r'<(\w+)\$[\s]*(.*?)>([\s\S]*?)(?=<\w+\$|<\/\1\$|$)'
+#     matches = re.findall(pattern, response, re.DOTALL)
+    
+#     tool_usages = []
+#     allowed_tags = list_python_files("tools")
+    
+#     for match in matches:
+#         tag_name, attributes, content = match
+
+#         if tag_name not in allowed_tags: continue
+        
+#         tool_dict = {}
+#         tool_dict['name'] = tag_name
+#         tool_dict['args'] = {}
+        
+#         # Parse attributes
+#         for attr in re.findall(r'(\w+)\s*=\s*"([^"]+)"', attributes):
+#             tool_dict['args'][attr[0]] = attr[1]
+        
+#         # Add body content
+#         tool_dict["content"] = content.strip()
+#         tool_dict["index"] = len(tool_usages)
+#         tool_usages.append(tool_dict)
+    
+#     return tool_usages
+
+# def extract_tool_requests(response):
+#     # Regex to match the tool blocks, allowing for varying whitespace
+#     pattern = r'<tool\$[\s]*(.*?)>(.*?)<\/tool\$\s*>'
+#     matches = re.findall(pattern, response, re.DOTALL)
+    
+#     tool_usages = []
+    
+#     for match in matches:
+#         attributes, body = match
+#         tool_dict = {}
+#         # Parse attributes
+#         for attr in re.findall(r'(\w+)\s*=\s*"([^"]+)"', attributes):
+#             tool_dict[attr[0]] = attr[1]
+#         # Add body content
+#         tool_dict["body"] = body.strip()
+#         tool_usages.append(tool_dict)
+    
+#     return tool_usages
+
+# def extract_specified_tags(response):
+
+#     allowed_tags = list_python_files("tools")
+    
+#     # Create a regex pattern to match specified tags and their attributes
+#     pattern = r'<({})([\s\S]*?)>'.format('|'.join(allowed_tags))
+#     matches = re.findall(pattern, response, re.DOTALL)
+    
+#     extracted_tags = []
+    
+#     for match in matches:
+#         tag_name, attributes = match
+#         tag_dict = {}
+#         tag_dict['name'] = tag_name
+        
+#         # Parse attributes
+#         for attr in re.findall(r'(\w+)\s*=\s*"([^"]+)"', attributes):
+#             tag_dict[attr[0]] = attr[1]
+        
+#         # Extract the body text (everything after the tag until the next tag or end of string)
+#         body_pattern = r'<{0}[\s\S]*?>([\s\S]*?)(?=<|$)'.format(tag_name)
+#         body_match = re.search(body_pattern, response, re.DOTALL)
+#         tag_dict['body'] = body_match.group(1).strip() if body_match else ''
+        
+#         extracted_tags.append(tag_dict)
+    
+#     return extracted_tags
+
+# def list_python_files(directory):
+#     # List all files in the given directory
+#     list = os.listdir(files.get_abs_path(directory))
+#     # Filter for Python files and remove the extension
+#     python_files = { os.path.splitext(file)[0] for file in list if file.endswith('.py') }
+#     return python_files
 
 # import re
 # from xml.etree import ElementTree as ET

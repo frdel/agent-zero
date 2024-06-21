@@ -7,12 +7,12 @@ from tools.helpers.tool import Tool, Response
 from tools.helpers import files
 from tools.helpers.print_style import PrintStyle
 
-class Unknown(Tool):
+class ResponseTool(Tool):
 
     def execute(self):
         # superior = self.agent.get_data("superior")
         # if superior:
-        return Response(message=self.content, stop_tool_processing=True, break_loop=True)
+        return Response(message=self.args["text"], break_loop=True)
         # else:
 
     

@@ -1,2 +1,6 @@
-Response from {{tool_name}} tool:
-{{tool_response}}
+~~~json
+{
+    "response_from_tool": "{{tool_name}}",
+    "data": {{tool_response}}
+}
+~~~
