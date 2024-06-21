@@ -51,7 +51,9 @@ class Agent:
     def message_loop(self, msg: str):
         try:
             printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)    
-            user_message = msg
+            user_message = files.read_file("./prompts/fw.user_message.md", message=msg)
+            self.append_message(user_message, human=True) # Append the user's input to the history                        
+    
             self.stop_loop = False
             self.loop_result = []
             
@@ -61,8 +63,7 @@ class Agent:
                 self.intervention_status = False # reset interventon status
                 try:
 
-                    self.append_message(user_message, human=True) # Append the user's input to the history                        
-                    inputs = {"input": user_message,"messages": self.history}
+                    inputs = {"messages": self.history}
                     chain = self.prompt | Agent.model_chat
                     formatted_inputs = self.prompt.format(**inputs)
                 
@@ -149,31 +150,22 @@ class Agent:
 
     def process_tools(self, msg: str):
         # search for tool usage requests in agent message
-        tool_requests = extract_tools.extract_tool_requests2(msg)
+        tool_request = extract_tools.json_parse_dirty(msg)
 
-        #build tools
-        tools = []
-        for tool_request in tool_requests:
-            tools.append(
-                self.get_tool(
-                    tool_request["name"],
-                    tool_request["content"],
-                    tool_request["args"],
-                    len(tools),
-                    msg,
-                    tools))
+        tool = self.get_tool(
+                    tool_request["tool_name"],
+                    tool_request["tool_args"],
+                    msg)
             
-        for tool in tools:
-            if self.handle_intervention(): break # wait if paused and handle intervention message if needed
-            
-            tool.before_execution()
-            response = tool.execute()
-            tool.after_execution(response)
-            if response.break_loop: return response.message
-            if response.stop_tool_processing: break
+        if self.handle_intervention(): return # wait if paused and handle intervention message if needed
+        
+        tool.before_execution()
+        response = tool.execute()
+        tool.after_execution(response)
+        if response.break_loop: return response.message
 
 
-    def get_tool(self, name: str, content: str, args: dict, index: int, message: str, tools: list, **kwargs):
+    def get_tool(self, name: str, args: dict, message: str, **kwargs):
         from tools.unknown import Unknown 
         from tools.helpers.tool import Tool
         
@@ -187,4 +179,4 @@ class Agent:
                     tool_class = cls[1]
                     break
 
-        return tool_class(agent=self, name=name, content=content, index=index, args=args, message=message, tools=tools, **kwargs)
+        return tool_class(agent=self, name=name, args=args, message=message, **kwargs)

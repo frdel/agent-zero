@@ -12,12 +12,12 @@ class Knowledge(Tool):
     def execute(self):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             # Schedule the two functions to be run in parallel
-            future_online = executor.submit(online_knowledge_tool.process_question, self.content)
-            future_memory = executor.submit(memory_tool.process_query, self.agent, self.content)
+            future_online = executor.submit(online_knowledge_tool.process_question, self.args["question"])
+            future_memory = executor.submit(memory_tool.process_query, self.agent, self.args["question"])
 
             # Wait for both functions to complete
             online_result = future_online.result()
             memory_result = future_memory.result()
 
         result = f"# Online sources:\n{online_result}\n\n# Memory:\n{memory_result}"
-        return Response(message=result, stop_tool_processing=True, break_loop=False)
+        return Response(message=result, break_loop=False)
