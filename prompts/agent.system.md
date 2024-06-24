@@ -9,6 +9,7 @@
         - Tools help you gather knowledge and execute actions
     3. **tool_args**: Object of arguments that are passed to the tool
         - Each tool has specific arguments listed in Available tools section
+- No text before or after the JSON object. End message there.
 
 ## Response example that must be used every time
 ~~~json

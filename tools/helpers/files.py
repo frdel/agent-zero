@@ -14,7 +14,7 @@ def read_file(relative_path, **kwargs):
         # content = re.sub(re.escape(placeholder), strval, content)
         content = content.replace(placeholder, strval)
 
-    return content 
+    return content
 
 def remove_code_fences(text):
     return re.sub(r'~~~\w*\n|~~~', '', text)

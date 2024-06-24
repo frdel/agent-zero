@@ -1,1 +1,0 @@
-Message sent, wait for response.

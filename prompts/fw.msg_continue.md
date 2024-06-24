@@ -1,1 +1,0 @@
-Continue with your thoughts and use tool or message when ready.

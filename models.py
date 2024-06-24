@@ -22,6 +22,11 @@ def get_anthropic_haiku(api_key=None, temperature=DEFAULT_TEMPERATURE):
     api_key = api_key or get_api_key("anthropic")
     return ChatAnthropic(model_name="claude-3-haiku-20240307", temperature=temperature, api_key=api_key) # type: ignore
 
+def get_anthropic_sonnet_35(api_key=None, temperature=DEFAULT_TEMPERATURE):
+    api_key = api_key or get_api_key("anthropic")
+    return ChatAnthropic(model_name="claude-3-5-sonnet-20240620", temperature=temperature, api_key=api_key) # type: ignore
+
+
 def get_anthropic_sonnet(api_key=None, temperature=DEFAULT_TEMPERATURE):
     api_key = api_key or get_api_key("anthropic")
     return ChatAnthropic(model_name="claude-3-sonnet-20240229", temperature=temperature, api_key=api_key) # type: ignore
@@ -68,10 +73,10 @@ def get_groq_gemma(api_key=None, temperature=DEFAULT_TEMPERATURE):
     return ChatGroq(model_name="gemma-7b-it", temperature=temperature, api_key=api_key) # type: ignore
 
 def get_ollama_dolphin(api_key=None, temperature=DEFAULT_TEMPERATURE):
-    return Ollama(model="dolphin-llama3:8b-256k-v2.9-fp16")
+    return Ollama(model="dolphin-llama3:8b-256k-v2.9-fp16", temperature=temperature)
 
 def get_ollama_phi(api_key=None, temperature=DEFAULT_TEMPERATURE):
-    return Ollama(model="phi3:3.8b-mini-instruct-4k-fp16")
+    return Ollama(model="phi3:3.8b-mini-instruct-4k-fp16",temperature=temperature)
 
 def get_embedding_hf(model_name="sentence-transformers/all-MiniLM-L6-v2"):
     return HuggingFaceEmbeddings(model_name=model_name)

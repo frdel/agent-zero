@@ -15,6 +15,9 @@ class ResponseTool(Tool):
         return Response(message=self.args["text"], break_loop=True)
         # else:
 
+    def after_execution(self, response):
+        pass # do add anything to the history or output
+
     
 # def execute(agent:Agent, message: str, _tools, _tool_index, timeout=15, **kwargs):
 

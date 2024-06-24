@@ -1,1 +1,5 @@
-I tried the same response twice. I have to do something else.
+~~~json
+{
+    "system_warning": "You have sent the same message again. You have to do something else!"
+}
+~~~
