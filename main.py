@@ -23,23 +23,18 @@ def chat():
     # chat_llm = models.get_openai_gpt4o(temperature=0)
     # chat_llm = models.get_anthropic_opus(temperature=0)
     # chat_llm = models.get_anthropic_sonnet(temperature=0)
-    chat_llm = models.get_anthropic_haiku(temperature=0)
+    chat_llm = models.get_anthropic_sonnet_35(temperature=0)
+    # chat_llm = models.get_anthropic_haiku(temperature=0)
     # chat_llm = models.get_ollama_dolphin()
 
     # embedding model used for memory
     # embedding_llm = models.get_embedding_openai()
     embedding_llm = models.get_embedding_hf()
-
-    # initial configuration
-    Agent.configure(
-            model_chat = chat_llm, 
-            model_embedding = embedding_llm,
-            #memory_subdir=""
-            #memory_results=3
-            )
     
     # create the first agent
-    agent0 = Agent()
+    agent0 = Agent(agent_number=0,
+                   chat_llm=chat_llm,
+                   embeddings_model=embedding_llm)
 
     # start the conversation loop  
     while True:
@@ -73,7 +68,7 @@ def chat():
         assistant_response = agent0.message_loop(user_input)
         
         # print agent0 response
-        PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{agent0.name}: reponse:")        
+        PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{agent0.agent_name}: reponse:")        
         PrintStyle(font_color="white").print(f"{assistant_response}")        
                         
 

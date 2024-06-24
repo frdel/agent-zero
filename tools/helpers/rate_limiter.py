@@ -1,36 +1,48 @@
 import time
 from collections import deque
-from .print_style import PrintStyle
+from dataclasses import dataclass
+from typing import List, Tuple
 
-def rate_limiter(max_requests_per_minute, max_tokens_per_minute):
-    execution_times = deque()
-    token_counts = deque()
+@dataclass
+class CallRecord:
+    timestamp: float
+    input_tokens: int
+    output_tokens: int
 
-    def limit(tokens):
-        if tokens > max_tokens_per_minute:
-            raise ValueError("Number of tokens exceeds the maximum allowed per minute.")
+class RateLimiter:
+    def __init__(self, max_calls: int, max_input_tokens: int, max_output_tokens: int, window_seconds: int = 60):
+        self.max_calls = max_calls
+        self.max_input_tokens = max_input_tokens
+        self.max_output_tokens = max_output_tokens
+        self.window_seconds = window_seconds
+        self.call_records: deque = deque()
 
-        current_time = time.time()
-        
-        # Cleanup old execution times and token counts
-        while execution_times and current_time - execution_times[0] > 60:
-            execution_times.popleft()
-            token_counts.popleft()
+    def _clean_old_records(self, current_time: float):
+        while self.call_records and current_time - self.call_records[0].timestamp > self.window_seconds:
+            self.call_records.popleft()
 
-        total_tokens = sum(token_counts)
-        
-        if len(execution_times) < max_requests_per_minute and total_tokens + tokens <= max_tokens_per_minute:
-            execution_times.append(current_time)
-            token_counts.append(tokens)
-        else:
-            sleep_time = max(
-                60 - (current_time - execution_times[0]),
-                60 - (current_time - execution_times[0]) if total_tokens + tokens > max_tokens_per_minute else 0
-            )
-            PrintStyle(font_color="yellow", padding=True).print(f"Rate limiter: sleeping for {sleep_time} seconds...")
-            time.sleep(sleep_time)
+    def _get_counts(self) -> Tuple[int, int, int]:
+        calls = len(self.call_records)
+        input_tokens = sum(record.input_tokens for record in self.call_records)
+        output_tokens = sum(record.output_tokens for record in self.call_records)
+        return calls, input_tokens, output_tokens
+
+    def _wait_if_needed(self, current_time: float):
+        while True:
+            self._clean_old_records(current_time)
+            calls, input_tokens, output_tokens = self._get_counts()
+            
+            if calls < self.max_calls and input_tokens < self.max_input_tokens and output_tokens < self.max_output_tokens:
+                break
+            
+            oldest_record = self.call_records[0]
+            wait_time = oldest_record.timestamp + self.window_seconds - current_time
+            if wait_time > 0:
+                time.sleep(wait_time)
             current_time = time.time()
-            execution_times.append(current_time)
-            token_counts.append(tokens)
 
-    return limit
+    def limit(self, input_token_count: int, output_token_count: int):
+        current_time = time.time()
+        self._wait_if_needed(current_time)
+        self.call_records.append(CallRecord(current_time, input_token_count, output_token_count))
+

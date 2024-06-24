@@ -41,28 +41,21 @@ Always verify memory by online.
 }
 ~~~
 
-### memory_tool:
-Access your persistent memory to load or save memories.
-Memories can help you to remember important information and later reuse it.
-With this you are able to learn and improve.
-Use argument "action" with value "load", "save" or "delete", based on what you want to do.
-Use argument "memory" for content to load or save.
-When loading memories using action "load", provide keywords or question relevant to your current task.
-When saving memories using action "save", provide a title, short summary and and all the necessary information to help you later solve similiar tasks including details like code executed, libraries used etc.
-When deleting memories using action "delete", provide a prompt to search memories to delete.
-Be specific with your question, do not input vague queries.
+### memorize:
+Save information to persistent memory.
+Memories can help you remember important details and later reuse them.
+Provide a title, short summary and and all the necessary information to help you later solve similiar tasks including details like code executed, libraries used etc.
 **Example usages**:
 ~~~json
 {
     "thoughts": [
-        "I need to do...",
-        "Maybe I have done it in the past...",
-        "Let me check the memory...",
+        "I have finished my...",
+        "Details of this process will be valuable...",
+        "Let's save tools and code used...",
     ],
-    "tool_name": "memory_tool",
+    "tool_name": "memorize",
     "tool_args": {
-        "action": "load",
-        "question": "How to...",
+        "memory": "# How to...",
     }
 }
 ~~~

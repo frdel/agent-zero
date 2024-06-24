@@ -1,15 +1,32 @@
 import re, os
 from typing import Any
 from .  import files
-import dirtyjson
+# import dirtyjson
+from .dirty_json import DirtyJson
 import regex
 
 
-def json_parse_dirty(json:str) -> Any:
-    ext_json = extract_json_string(json)
-    ext_json = fix_json_string(ext_json)
-    data = dirtyjson.loads(ext_json)
-    return data
+def json_parse_dirty(json:str) -> dict[str,Any]:
+    ext_json = extract_json_object_string(json)
+    # ext_json = fix_json_string(ext_json)
+    data = DirtyJson.parse_string(ext_json)
+    if isinstance(data,dict): return data
+    return {}
+
+def extract_json_object_string(content):
+    start = content.find('{')
+    if start == -1:
+        print("No JSON content found.")
+        return ""
+
+    # Find the first '{'
+    end = content.rfind('}')
+    if end == -1:
+        # If there's no closing '}', return from start to the end
+        return content[start:]
+    else:
+        # If there's a closing '}', return the substring from start to end
+        return content[start:end+1]
 
 def extract_json_string(content):
     # Regular expression pattern to match a JSON object
