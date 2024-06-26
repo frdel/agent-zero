@@ -8,7 +8,7 @@ from tools.helpers.print_style import PrintStyle
 db: VectorDB | None = None
 
 class Memory(Tool):
-    def execute(self):
+    def execute(self,**kwargs):
         #TODO separate param for memory tool result count
         result = process_query(self.agent, self.args["memory"],self.args["action"], result_count=self.agent.auto_memory_count)
         return Response(message="\n\n".join(result), break_loop=False)

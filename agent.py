@@ -1,5 +1,4 @@
-import json
-import time, importlib, inspect
+import time, importlib, inspect, os, json
 import traceback
 from typing import Optional, Dict, TypedDict
 from tools.helpers import extract_tools, rate_limiter, files, errors
@@ -9,6 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.embeddings import Embeddings
+from tools.helpers.rate_limiter import RateLimiter
 
 # rate_limit = rate_limiter.rate_limiter(30,160000) #TODO! implement properly
 
@@ -20,32 +20,36 @@ class Agent:
     
     def __init__(self,
                 agent_number: int,
-                chat_llm:BaseChatModel,
+                chat_model:BaseChatModel,
                 embeddings_model:Embeddings,
                 memory_subdir: str = "",
                 auto_memory_count: int = 3,
                 auto_memory_skip: int = 2,
                 rate_limit_seconds: int = 60,
+                rate_limit_requests: int = 30,
                 rate_limit_input_tokens: int = 0,
                 rate_limit_output_tokens: int = 0,
-                msgs_keep_max: int =25,
-                msgs_keep_start: int =5,
-                msgs_keep_end: int =10,
+                msgs_keep_max: int = 25,
+                msgs_keep_start: int = 5,
+                msgs_keep_end: int = 10,
+                max_tool_response_length: int = 3000,
                 **kwargs):
 
         # agent config
         self.agent_number = agent_number
-        self.chat_model = chat_llm
+        self.chat_model = chat_model
         self.embeddings_model = embeddings_model
         self.memory_subdir = memory_subdir
         self.auto_memory_count = auto_memory_count
         self.auto_memory_skip = auto_memory_skip
         self.rate_limit_seconds = rate_limit_seconds
+        self.rate_limit_requests = rate_limit_requests
         self.rate_limit_input_tokens = rate_limit_input_tokens
         self.rate_limit_output_tokens = rate_limit_output_tokens
         self.msgs_keep_max = msgs_keep_max
         self.msgs_keep_start = msgs_keep_start
         self.msgs_keep_end = msgs_keep_end
+        self.max_tool_response_length = max_tool_response_length
 
         # non-config vars
         self.agent_name = f"Agent {self.agent_number}"
@@ -57,8 +61,11 @@ class Agent:
         self.last_message = ""
         self.intervention_message = ""
         self.intervention_status = False
-
+        self.rate_limiter = RateLimiter(max_calls=rate_limit_requests,max_input_tokens=rate_limit_input_tokens,max_output_tokens=rate_limit_output_tokens,window_seconds=rate_limit_seconds)
         self.data = {} # free data object all the tools can use
+
+        os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
+        
 
     def message_loop(self, msg: str):
         try:
@@ -84,10 +91,11 @@ class Agent:
                     
                     inputs = {"messages": self.history}
                     chain = prompt | self.chat_model
-                    formatted_inputs = prompt.format(messages=self.history)
-                
-                    # rate_limit(len(formatted_inputs)/4) #wait for rate limiter - A helpful rule of thumb is that one token generally corresponds to ~4 characters of text for common English text. This translates to roughly ¾ of a word (so 100 tokens ~= 75 words).
 
+                    formatted_inputs = prompt.format(messages=self.history)
+                    tokens = int(len(formatted_inputs)/4)     
+                    self.rate_limiter.limit_call_and_input(tokens)
+                    
                     # output that the agent is starting
                     PrintStyle(bold=True, font_color="green", padding=True, background_color="white").print(f"{self.agent_name}: Starting a message:")
                                             
@@ -101,7 +109,9 @@ class Agent:
                         if content:
                             printer.stream(content) # output the agent response stream                
                             agent_response += content # concatenate stream into the response
-            
+
+                    self.rate_limiter.set_output_tokens(int(len(agent_response)/4))
+                    
                     if not self.handle_intervention(agent_response):
                         if self.last_message == agent_response: #if assistant_response is the same as last message in history, let him know
                             self.append_message(agent_response) # Append the assistant's response to the history
@@ -156,9 +166,13 @@ class Agent:
         if output_label:
             PrintStyle(bold=True, font_color="orange", padding=True, background_color="white").print(f"{self.agent_name}: {output_label}:")
             printer = PrintStyle(italic=True, font_color="orange", padding=False)                
-            
+
+        formatted_inputs = prompt.format()
+        tokens = int(len(formatted_inputs)/4)     
+        self.rate_limiter.limit_call_and_input(tokens)
+    
         for chunk in chain.stream({}):
-            if self.handle_intervention(response): break # wait for intervention and handle it, if paused
+            if self.handle_intervention(): break # wait for intervention and handle it, if paused
 
             if isinstance(chunk, str): content = chunk
             elif hasattr(chunk, "content"): content = str(chunk.content)
@@ -166,6 +180,8 @@ class Agent:
 
             if printer: printer.stream(content)
             response+=content
+
+        self.rate_limiter.set_output_tokens(int(len(response)/4))
 
         return response
             
@@ -205,7 +221,6 @@ class Agent:
 
         return self.history
 
-
     def handle_intervention(self, progress:str="") -> bool:
         while self.paused: time.sleep(0.1) # wait if paused
         if self.intervention_message and not self.intervention_status: # if there is an intervention message, but not yet processed
@@ -229,8 +244,8 @@ class Agent:
             
         if self.handle_intervention(): return # wait if paused and handle intervention message if needed
         
-        tool.before_execution()
-        response = tool.execute()
+        tool.before_execution(**tool_args)
+        response = tool.execute(**tool_args)
         tool.after_execution(response)
         if response.break_loop: return response.message
 
@@ -267,5 +282,5 @@ class Agent:
                 "raw_memories": memories
             }
             cleanup_prompt = files.read_file("./prompts/msg.memory_cleanup.md").replace("{", "{{")       
-            clean_memories = self.send_adhoc_message(cleanup_prompt,json.dumps(input), output_label="Memory cleanup summary")
+            clean_memories = self.send_adhoc_message(cleanup_prompt,json.dumps(input), output_label="Memory injection")
             return clean_memories

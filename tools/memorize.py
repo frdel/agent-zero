@@ -4,7 +4,7 @@ from tools.helpers.tool import Tool, Response
 from tools import memory_tool
 
 class Memorize(Tool):
-    def execute(self):
+    def execute(self,**kwargs):
 
         memory_tool.process_query(self.agent, str(self.args), "save")
         

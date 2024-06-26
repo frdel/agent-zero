@@ -2,7 +2,7 @@ from tools.helpers.tool import Tool, Response
 from tools.helpers import files
 
 class Unknown(Tool):
-    def execute(self):
+    def execute(self, **kwargs):
         return Response(
                 message=files.read_file("prompts/fw.tool_not_found.md",
                                         tool_name=self.name,

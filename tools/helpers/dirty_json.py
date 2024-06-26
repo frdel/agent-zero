@@ -84,7 +84,7 @@ class DirtyJson:
             return self._parse_object()
         elif self.current_char == '[':
             return self._parse_array()
-        elif self.current_char in ['"', "'"]:
+        elif self.current_char in ['"', "'", "`"]:
             if self._peek(2) == self.current_char * 2: # type: ignore
                 return self._parse_multiline_string()
             return self._parse_string()
@@ -122,6 +122,7 @@ class DirtyJson:
                 self.stack.pop()
                 return
             if self.current_char is None:
+                self.stack.pop()
                 return  # End of input reached while parsing object
             
             key = self._parse_key()
@@ -144,6 +145,7 @@ class DirtyJson:
                 continue
             elif self.current_char != '}':
                 if self.current_char is None:
+                    self.stack.pop()
                     return  # End of input reached after value
                 # Allow missing comma between key-value pairs
                 continue
@@ -262,6 +264,7 @@ class DirtyJson:
         while self.current_char is not None and self.current_char not in [':', ',', '}', ']']:
             result += self.current_char
             self._advance()
+        self._advance()
         return result.strip()
 
     def _peek(self, n):

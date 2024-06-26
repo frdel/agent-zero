@@ -9,11 +9,11 @@ from tools.helpers.tool import Tool, Response
 from tools.helpers import files
 
 class Knowledge(Tool):
-    def execute(self):
+    def execute(self, question="", **kwargs):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             # Schedule the two functions to be run in parallel
-            future_online = executor.submit(online_knowledge_tool.process_question, self.args["question"])
-            future_memory = executor.submit(memory_tool.process_query, self.agent, self.args["question"])
+            future_online = executor.submit(online_knowledge_tool.process_question, question)
+            future_memory = executor.submit(memory_tool.process_query, self.agent, question)
 
             # Wait for both functions to complete
             online_result = future_online.result()
