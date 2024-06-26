@@ -3,7 +3,7 @@ from tools.helpers import perplexity_search
 from tools.helpers.tool import Tool, Response
 
 class OnlineKnowledge(Tool):
-    def execute(self):
+    def execute(self,**kwargs):
         return Response(
             message=process_question(self.args["question"]),
             break_loop=False,

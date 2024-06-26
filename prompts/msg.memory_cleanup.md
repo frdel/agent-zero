@@ -8,6 +8,19 @@
 
 # Expected output format
 - Return filtered list of bullet points of key elements in the memories
-- Include every important detail relevant to conversation
-- Include code snippets if relevant
-- Omit any unrelevant information
+- Do not include memory contents, only their summaries to inform the user that he has memories of the topic.
+- If there are relevant memories, instruct user to use "knowledge_tool" to get more details.
+
+# Example output 1 (relevant memories):
+~~~md
+1. Guide how to create a web app including code.
+2. Javascript snippets from snake game development.
+3. SVG image generation for game sprites with examples.
+
+Check your knowledge_tool for more details.
+~~~
+
+# Example output 2 (no relevant memories):
+~~~text
+No relevant memories on the topic found.
+~~~

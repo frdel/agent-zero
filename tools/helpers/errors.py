@@ -1,6 +1,8 @@
+import re
+import traceback
 
 def format_error(e: Exception, max_entries=2):
-    traceback_text = str(e.with_traceback(None))
+    traceback_text = traceback.format_exc()
     # Split the traceback into lines
     lines = traceback_text.split('\n')
     

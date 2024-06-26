@@ -32,9 +32,21 @@ def chat():
     embedding_llm = models.get_embedding_hf()
     
     # create the first agent
-    agent0 = Agent(agent_number=0,
-                   chat_llm=chat_llm,
-                   embeddings_model=embedding_llm)
+    agent0 = Agent( agent_number=0,
+                    chat_model=chat_llm,
+                    embeddings_model=embedding_llm,
+                    # memory_subdir = "",
+                    # auto_memory_count = 3,
+                    # auto_memory_skip = 2,
+                    # rate_limit_seconds = 60,
+                    rate_limit_requests = 30,
+                    rate_limit_input_tokens = 160000,
+                    rate_limit_output_tokens = 8000,
+                    # msgs_keep_max = 25,
+                    # msgs_keep_start = 5,
+                    # msgs_keep_end = 10,
+                    # max_tool_response_length = 3000,
+                   )
 
     # start the conversation loop  
     while True:

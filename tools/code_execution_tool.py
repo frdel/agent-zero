@@ -8,9 +8,10 @@ from tools.helpers.print_style import PrintStyle
 
 class CodeExecution(Tool):
 
-    def execute(self):
+    def execute(self,**kwargs):
 
-        os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
+        # os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
+        
         runtime = self.args["runtime"].lower().strip()
         if runtime == "python":
             response = self.execute_python_code(self.args["code"])
@@ -21,7 +22,6 @@ class CodeExecution(Tool):
         else:
             response = files.read_file("./prompts/fw.code_runtime_wrong.md", runtime=runtime)
 
-        response = messages.truncate_text(response.strip(), 2000) # TODO parameterize
         if not response: response = files.read_file("./prompts/fw.code_no_output.md")
         return Response(message=response, break_loop=False)
 
