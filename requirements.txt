@@ -9,3 +9,5 @@ langchain-chroma==0.1.1
 webcolors==24.6.0
 sentence-transformers==3.0.1
 pytimedinput==2.0.1
+docker==7.1.0
+paramiko==3.4.0

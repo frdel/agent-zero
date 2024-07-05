@@ -1,7 +1,7 @@
 from agent import Agent
-from tools.helpers import files
-from tools.helpers.tool import Tool, Response
-from tools import memory_tool
+from python.helpers import files
+from python.helpers.tool import Tool, Response
+import memory_tool
 
 class Memorize(Tool):
     def execute(self,**kwargs):

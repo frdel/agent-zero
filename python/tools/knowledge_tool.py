@@ -5,8 +5,8 @@ import concurrent.futures
 
 
 
-from tools.helpers.tool import Tool, Response
-from tools.helpers import files
+from python.helpers.tool import Tool, Response
+from python.helpers import files
 
 class Knowledge(Tool):
     def execute(self, question="", **kwargs):

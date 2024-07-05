@@ -1,8 +1,8 @@
 from abc import abstractmethod
 from typing import TypedDict
 from agent import Agent
-from tools.helpers.print_style import PrintStyle
-from tools.helpers import files, messages
+from python.helpers.print_style import PrintStyle
+from python.helpers import files, messages
 
 class Response:
     def __init__(self, message: str, break_loop: bool) -> None:
@@ -30,7 +30,7 @@ class Tool:
                 PrintStyle().print()
                     
     def after_execution(self, response: Response, **kwargs):
-        text = messages.truncate_text(response.message.strip(), self.agent.max_tool_response_length)
+        text = messages.truncate_text(response.message.strip(), self.agent.config.max_tool_response_length)
         msg_response = files.read_file("./prompts/fw.tool_response.md", tool_name=self.name, tool_response=text)
         self.agent.append_message(msg_response, human=True)
         PrintStyle(font_color="#1B4F72", background_color="white", padding=True, bold=True).print(f"{self.agent.agent_name}: Response from tool '{self.name}':")

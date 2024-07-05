@@ -1,6 +1,6 @@
 from agent import Agent
-from tools.helpers import perplexity_search
-from tools.helpers.tool import Tool, Response
+from python.helpers import perplexity_search
+from python.helpers.tool import Tool, Response
 
 class OnlineKnowledge(Tool):
     def execute(self,**kwargs):

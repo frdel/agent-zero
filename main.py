@@ -1,21 +1,20 @@
-import threading, sys, time, readline, models, os
+import threading, time, models, os
 from ansio import application_keypad, mouse_input, raw_input
 from ansio.input import InputEvent, get_input_event
-from agent import Agent
-from tools.helpers.print_style import PrintStyle
-from tools.helpers.files import read_file
+from agent import Agent, AgentConfig
+from python.helpers.print_style import PrintStyle
+from python.helpers.files import read_file
 from pytimedinput import timedInput as timed_input
-from tools.helpers import files
+from python.helpers import files
 
 
 input_lock = threading.Lock()
 
 os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
 
-# Main conversation loop
-def chat():
 
-    # chat model used for agents
+def initialize():
+        # chat model used by agents
     # chat_llm = models.get_groq_llama70b(temperature=0.2)
     # chat_llm = models.get_groq_llama70b_json(temperature=0.2)
     # chat_llm = models.get_groq_llama8b(temperature=0.2)
@@ -30,29 +29,51 @@ def chat():
     # embedding model used for memory
     # embedding_llm = models.get_embedding_openai()
     embedding_llm = models.get_embedding_hf()
+
+    # agent configuration
+    config = AgentConfig(
+        agent_number = 0,
+        chat_model = chat_llm,
+        embeddings_model = embedding_llm,
+        # memory_subdir = "",
+        auto_memory_count = 0,
+        # auto_memory_skip = 2,
+        # rate_limit_seconds = 60,
+        # rate_limit_requests = 30,
+        # rate_limit_input_tokens = 0,
+        # rate_limit_output_tokens = 0,
+        # msgs_keep_max = 25,
+        # msgs_keep_start = 5,
+        # msgs_keep_end = 10,
+        # max_tool_response_length = 3000,
+        code_exec_docker_enabled = True,
+        # code_exec_docker_name = "agent-zero-exe",
+        # code_exec_docker_image = "frdel/agent-zero-exe:latest",
+        # code_exec_docker_ports = { "22/tcp": 50022 }
+        # code_exec_docker_volumes = { files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"} }
+        code_exec_ssh_enabled = True,
+        # code_exec_ssh_addr = "localhost",
+        # code_exec_ssh_port = 50022,
+        # code_exec_ssh_user = "root",
+        # code_exec_ssh_pass = "toor",
+        # additional = {},
+    )
     
     # create the first agent
-    agent0 = Agent( agent_number=0,
-                    chat_model=chat_llm,
-                    embeddings_model=embedding_llm,
-                    # memory_subdir = "",
-                    # auto_memory_count = 3,
-                    # auto_memory_skip = 2,
-                    # rate_limit_seconds = 60,
-                    rate_limit_requests = 30,
-                    rate_limit_input_tokens = 160000,
-                    rate_limit_output_tokens = 8000,
-                    # msgs_keep_max = 25,
-                    # msgs_keep_start = 5,
-                    # msgs_keep_end = 10,
-                    # max_tool_response_length = 3000,
-                   )
+    agent0 = Agent( number = 0, config = config )
 
+    # start the chat loop
+    chat(agent0)
+
+
+# Main conversation loop
+def chat(agent:Agent):
+    
     # start the conversation loop  
     while True:
         # ask user for message
         with input_lock:
-            timeout = agent0.get_data("timeout") # how long the agent is willing to wait
+            timeout = agent.get_data("timeout") # how long the agent is willing to wait
             if not timeout: # if agent wants to wait for user input forever
                 PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ('exit' to leave):")        
                 user_input = input("> ")
@@ -77,10 +98,10 @@ def chat():
         if user_input.lower() == 'exit': break
 
         # send message to agent0, 
-        assistant_response = agent0.message_loop(user_input)
+        assistant_response = agent.message_loop(user_input)
         
         # print agent0 response
-        PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{agent0.agent_name}: reponse:")        
+        PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{agent.agent_name}: reponse:")        
         PrintStyle(font_color="white").print(f"{assistant_response}")        
                         
 
@@ -123,4 +144,4 @@ if __name__ == "__main__":
     threading.Thread(target=capture_keys, daemon=True).start()
 
     # Start the chat
-    chat()
+    initialize()
