@@ -1,18 +1,18 @@
 from agent import Agent
-from tools.helpers import files
-from tools.helpers.print_style import PrintStyle
+from python.helpers import files
+from python.helpers.print_style import PrintStyle
 
 from agent import Agent
-from tools.helpers.tool import Tool, Response
-from tools.helpers import files
-from tools.helpers.print_style import PrintStyle
+from python.helpers.tool import Tool, Response
+from python.helpers import files
+from python.helpers.print_style import PrintStyle
 
-class TaskDone(Tool):
+class ResponseTool(Tool):
 
     def execute(self,**kwargs):
         # superior = self.agent.get_data("superior")
         # if superior:
-        self.agent.set_data("timeout", 0)
+        self.agent.set_data("timeout", 60)
         return Response(message=self.args["text"], break_loop=True)
         # else:
 

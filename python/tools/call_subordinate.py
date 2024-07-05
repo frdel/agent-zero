@@ -1,7 +1,7 @@
 from agent import Agent
-from tools.helpers.tool import Tool, Response
-from tools.helpers import files
-from tools.helpers.print_style import PrintStyle
+from python.helpers.tool import Tool, Response
+from python.helpers import files
+from python.helpers.print_style import PrintStyle
 
 class Delegation(Tool):
 
@@ -10,7 +10,7 @@ class Delegation(Tool):
         if self.agent.get_data("subordinate") is None or str(reset).lower().strip() == "true":
             # subordinate = Agent(system_prompt=self.agent.system_prompt, tools_prompt=self.agent.tools_prompt, number=self.agent.number+1)
             config = self.agent.__dict__.copy()
-            config["agent_number"] = self.agent.agent_number+1
+            config["agent_number"] = self.agent.number+1
             subordinate = Agent(**config)
             subordinate.set_data("superior", self.agent)
             self.agent.set_data("subordinate", subordinate) 

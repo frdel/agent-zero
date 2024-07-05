@@ -1,58 +1,60 @@
+from dataclasses import dataclass, field
 import time, importlib, inspect, os, json
 import traceback
-from typing import Optional, Dict, TypedDict
-from tools.helpers import extract_tools, rate_limiter, files, errors
-from tools.helpers.print_style import PrintStyle
+from typing import Any, Optional, Dict, TypedDict
+from python.helpers import extract_tools, rate_limiter, files, errors
+from python.helpers.print_style import PrintStyle
 from langchain.schema import AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.embeddings import Embeddings
-from tools.helpers.rate_limiter import RateLimiter
+from python.helpers.rate_limiter import RateLimiter
 
 # rate_limit = rate_limiter.rate_limiter(30,160000) #TODO! implement properly
 
+@dataclass
+class AgentConfig: 
+    agent_number: int
+    chat_model:BaseChatModel
+    embeddings_model:Embeddings
+    memory_subdir: str = ""
+    auto_memory_count: int = 3
+    auto_memory_skip: int = 2
+    rate_limit_seconds: int = 60
+    rate_limit_requests: int = 30
+    rate_limit_input_tokens: int = 0
+    rate_limit_output_tokens: int = 0
+    msgs_keep_max: int = 25
+    msgs_keep_start: int = 5
+    msgs_keep_end: int = 10
+    max_tool_response_length: int = 3000
+    code_exec_docker_enabled: bool = True
+    code_exec_docker_name: str = "agent-zero-exe"
+    code_exec_docker_image: str = "frdel/agent-zero-exe:latest"
+    code_exec_docker_ports: dict[str,int] = field(default_factory=lambda: {"22/tcp": 50022})
+    code_exec_docker_volumes: dict[str, dict[str, str]] = field(default_factory=lambda: {files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"}})
+    code_exec_ssh_enabled: bool = True
+    code_exec_ssh_addr: str = "localhost"
+    code_exec_ssh_port: int = 50022
+    code_exec_ssh_user: str = "root"
+    code_exec_ssh_pass: str = "toor"
+    additional: Dict[str, Any] = field(default_factory=dict)
+    
 
 class Agent:
 
     paused=False
     streaming_agent=None
     
-    def __init__(self,
-                agent_number: int,
-                chat_model:BaseChatModel,
-                embeddings_model:Embeddings,
-                memory_subdir: str = "",
-                auto_memory_count: int = 3,
-                auto_memory_skip: int = 2,
-                rate_limit_seconds: int = 60,
-                rate_limit_requests: int = 30,
-                rate_limit_input_tokens: int = 0,
-                rate_limit_output_tokens: int = 0,
-                msgs_keep_max: int = 25,
-                msgs_keep_start: int = 5,
-                msgs_keep_end: int = 10,
-                max_tool_response_length: int = 3000,
-                **kwargs):
+    def __init__(self, number:int, config: AgentConfig):
 
-        # agent config
-        self.agent_number = agent_number
-        self.chat_model = chat_model
-        self.embeddings_model = embeddings_model
-        self.memory_subdir = memory_subdir
-        self.auto_memory_count = auto_memory_count
-        self.auto_memory_skip = auto_memory_skip
-        self.rate_limit_seconds = rate_limit_seconds
-        self.rate_limit_requests = rate_limit_requests
-        self.rate_limit_input_tokens = rate_limit_input_tokens
-        self.rate_limit_output_tokens = rate_limit_output_tokens
-        self.msgs_keep_max = msgs_keep_max
-        self.msgs_keep_start = msgs_keep_start
-        self.msgs_keep_end = msgs_keep_end
-        self.max_tool_response_length = max_tool_response_length
+        # agent config  
+        self.config = config       
 
         # non-config vars
-        self.agent_name = f"Agent {self.agent_number}"
+        self.number = number
+        self.agent_name = f"Agent {self.config.agent_number}"
 
         self.system_prompt = files.read_file("./prompts/agent.system.md").replace("{", "{{").replace("}", "}}")
         self.tools_prompt = files.read_file("./prompts/agent.tools.md").replace("{", "{{").replace("}", "}}")
@@ -61,7 +63,7 @@ class Agent:
         self.last_message = ""
         self.intervention_message = ""
         self.intervention_status = False
-        self.rate_limiter = RateLimiter(max_calls=rate_limit_requests,max_input_tokens=rate_limit_input_tokens,max_output_tokens=rate_limit_output_tokens,window_seconds=rate_limit_seconds)
+        self.rate_limiter = RateLimiter(max_calls=self.config.rate_limit_requests,max_input_tokens=self.config.rate_limit_input_tokens,max_output_tokens=self.config.rate_limit_output_tokens,window_seconds=self.config.rate_limit_seconds)
         self.data = {} # free data object all the tools can use
 
         os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
@@ -90,7 +92,7 @@ class Agent:
                         MessagesPlaceholder(variable_name="messages") ])
                     
                     inputs = {"messages": self.history}
-                    chain = prompt | self.chat_model
+                    chain = prompt | self.config.chat_model
 
                     formatted_inputs = prompt.format(messages=self.history)
                     tokens = int(len(formatted_inputs)/4)     
@@ -147,7 +149,7 @@ class Agent:
         else:
             new_message = HumanMessage(content=msg) if human else AIMessage(content=msg)
             self.history.append(new_message)
-            self.cleanup_history(self.msgs_keep_max, self.msgs_keep_start, self.msgs_keep_end)
+            self.cleanup_history(self.config.msgs_keep_max, self.config.msgs_keep_start, self.config.msgs_keep_end)
         if message_type=="ai":
             self.last_message = msg
 
@@ -159,7 +161,7 @@ class Agent:
             SystemMessage(content=system),
             HumanMessage(content=msg)])
 
-        chain = prompt | self.chat_model
+        chain = prompt | self.config.chat_model
         response = ""
         printer = None
 
@@ -251,12 +253,12 @@ class Agent:
 
 
     def get_tool(self, name: str, args: dict, message: str, **kwargs):
-        from tools.unknown import Unknown 
-        from tools.helpers.tool import Tool
+        from python.tools.unknown import Unknown 
+        from python.helpers.tool import Tool
         
         tool_class = Unknown
-        if files.exists("tools",f"{name}.py"): 
-            module = importlib.import_module("tools." + name)  # Import the module
+        if files.exists("python/tools",f"{name}.py"): 
+            module = importlib.import_module("python.tools." + name)  # Import the module
             class_list = inspect.getmembers(module, inspect.isclass)  # Get all functions in the module
 
             for cls in class_list:
@@ -267,14 +269,15 @@ class Agent:
         return tool_class(agent=self, name=name, args=args, message=message, **kwargs)
 
     def fetch_memories(self,reset_skip=False):
+        if self.config.auto_memory_count<=0: return ""
         if reset_skip: self.memory_skip_counter = 0
 
         if self.memory_skip_counter > 0:
             self.memory_skip_counter-=1
             return ""
         else:
-            self.memory_skip_counter = self.auto_memory_skip
-            from tools import memory_tool
+            self.memory_skip_counter = self.config.auto_memory_skip
+            from python.tools import memory_tool
             messages = self.concat_messages(self.history)
             memories = memory_tool.process_query(self,messages,"load")
             input = {
@@ -284,3 +287,6 @@ class Agent:
             cleanup_prompt = files.read_file("./prompts/msg.memory_cleanup.md").replace("{", "{{")       
             clean_memories = self.send_adhoc_message(cleanup_prompt,json.dumps(input), output_label="Memory injection")
             return clean_memories
+
+    def call_extension(self, name: str, **kwargs) -> Any:
+        pass

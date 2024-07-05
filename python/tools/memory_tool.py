@@ -1,16 +1,15 @@
 from agent import Agent
-from tools.helpers.vector_db import VectorDB, Document
-from tools.helpers import files
+from python.helpers.vector_db import VectorDB, Document
+from python.helpers import files
 import os, json
-from tools.helpers.tool import Tool, Response
-from tools.helpers.print_style import PrintStyle
+from python.helpers.tool import Tool, Response
+from python.helpers.print_style import PrintStyle
 
 db: VectorDB | None = None
 
 class Memory(Tool):
     def execute(self,**kwargs):
-        #TODO separate param for memory tool result count
-        result = process_query(self.agent, self.args["memory"],self.args["action"], result_count=self.agent.auto_memory_count)
+        result = process_query(self.agent, self.args["memory"],self.args["action"], result_count=self.agent.config.auto_memory_count)
         return Response(message="\n\n".join(result), break_loop=False)
             
 
@@ -21,7 +20,7 @@ def initialize(embeddings_model, subdir=""):
 
 
 def process_query(agent:Agent, message: str, action: str = "load", result_count: int = 3, **kwargs):
-    if not db: initialize(agent.embeddings_model, subdir=agent.memory_subdir)
+    if not db: initialize(agent.config.embeddings_model, subdir=agent.config.memory_subdir)
     
     if action.strip().lower() == "save":
         id = db.insert_document(str(message)) # type: ignore

@@ -1,4 +1,5 @@
 import os, webcolors, html
+import sys
 from datetime import datetime
 from . import files
 
@@ -111,6 +112,10 @@ class PrintStyle:
             print(styled_text, end='', flush=True)
         self._log_html(html_text)
         PrintStyle.last_endline = False
+
+    def is_last_line_empty(self):
+        lines = sys.stdin.readlines()
+        return bool(lines) and not lines[-1].strip()
 
 # Ensure HTML file is closed properly when the program exits
 import atexit
