@@ -4,6 +4,11 @@ import re
 from typing import Optional, Tuple
 
 class SSHInteractiveSession:
+
+    end_comment = "# @@==>> SSHInteractiveSession End-of-Command  <<==@@"
+
+    ps1_label = "SSHInteractiveSession CLI>"
+    
     def __init__(self, hostname: str, port: int, username: str, password: str):
         self.hostname = hostname
         self.port = port
@@ -20,11 +25,13 @@ class SSHInteractiveSession:
         while True:
             try:
                 self.client.connect(self.hostname, self.port, self.username, self.password)
-                self.shell = self.client.invoke_shell()
-                while True: # wait for end of initial output
-                    full, part = self.read_output()
-                    if full and not part: return
-                    time.sleep(0.1)
+                self.shell = self.client.invoke_shell(width=160,height=48)
+                # self.shell.send(f'PS1="{SSHInteractiveSession.ps1_label}"'.encode())
+                return
+                # while True: # wait for end of initial output
+                #     full, part = self.read_output()
+                #     if full and not part: return
+                #     time.sleep(0.1)
             except Exception as e:
                 errors += 1
                 if errors < 3:
@@ -43,7 +50,7 @@ class SSHInteractiveSession:
         if not self.shell:
             raise Exception("Shell not connected")
         self.full_output = ""
-        self.shell.send((command + '\n').encode())
+        self.shell.send((command + " \\\n" +SSHInteractiveSession.end_comment + "\n").encode())
 
     def read_output(self) -> Tuple[str, str]:
         if not self.shell:
@@ -58,6 +65,12 @@ class SSHInteractiveSession:
             time.sleep(0.1)  # Prevent busy waiting
 
         self.full_output = self.clean_string(self.full_output)
+
+        # split output at end_comment
+        if SSHInteractiveSession.end_comment in self.full_output:
+            self.full_output = self.full_output.split(SSHInteractiveSession.end_comment)[-1].lstrip("\r\n")
+            partial_output = partial_output.split(SSHInteractiveSession.end_comment)[-1].lstrip("\r\n")
+        
         return self.full_output, partial_output
 
     def clean_string(self, input_string):

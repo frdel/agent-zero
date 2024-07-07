@@ -18,11 +18,11 @@ def initialize():
     # chat_llm = models.get_groq_llama70b(temperature=0.2)
     # chat_llm = models.get_groq_llama70b_json(temperature=0.2)
     # chat_llm = models.get_groq_llama8b(temperature=0.2)
-    # chat_llm = models.get_openai_gpt35(temperature=0)
+    chat_llm = models.get_openai_gpt35(temperature=0)
     # chat_llm = models.get_openai_gpt4o(temperature=0)
     # chat_llm = models.get_anthropic_opus(temperature=0)
     # chat_llm = models.get_anthropic_sonnet(temperature=0)
-    chat_llm = models.get_anthropic_sonnet_35(temperature=0)
+    # chat_llm = models.get_anthropic_sonnet_35(temperature=0)
     # chat_llm = models.get_anthropic_haiku(temperature=0)
     # chat_llm = models.get_ollama_dolphin()
 
