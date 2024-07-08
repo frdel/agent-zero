@@ -9,7 +9,6 @@ from python.helpers import files
 
 
 input_lock = threading.Lock()
-
 os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
 
 
@@ -25,6 +24,10 @@ def initialize():
     # chat_llm = models.get_anthropic_sonnet_35(temperature=0)
     # chat_llm = models.get_anthropic_haiku(temperature=0)
     # chat_llm = models.get_ollama_dolphin()
+    # chat_llm = models.get_ollama(model_name="gemma2:27b")
+    # chat_llm = models.get_ollama(model_name="llama3:8b-text-fp16")
+    # chat_llm = models.get_ollama(model_name="gemma2:latest")
+    # chat_llm = models.get_ollama(model_name="qwen:14b")
 
     # embedding model used for memory
     # embedding_llm = models.get_embedding_openai()
@@ -32,7 +35,6 @@ def initialize():
 
     # agent configuration
     config = AgentConfig(
-        agent_number = 0,
         chat_model = chat_llm,
         embeddings_model = embedding_llm,
         # memory_subdir = "",

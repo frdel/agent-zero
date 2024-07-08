@@ -68,6 +68,9 @@ def get_groq_llama8b(api_key=None, temperature=DEFAULT_TEMPERATURE):
     api_key = api_key or get_api_key("groq")
     return ChatGroq(model_name="Llama3-8b-8192", temperature=temperature, api_key=api_key) # type: ignore
 
+def get_ollama(model_name, temperature=DEFAULT_TEMPERATURE):
+    return Ollama(model=model_name,temperature=temperature)
+
 def get_groq_gemma(api_key=None, temperature=DEFAULT_TEMPERATURE):
     api_key = api_key or get_api_key("groq")
     return ChatGroq(model_name="gemma-7b-it", temperature=temperature, api_key=api_key) # type: ignore

@@ -6,17 +6,17 @@ from .dirty_json import DirtyJson
 import regex
 
 
-def json_parse_dirty(json:str) -> dict[str,Any]:
+def json_parse_dirty(json:str) -> dict[str,Any] | None:
     ext_json = extract_json_object_string(json)
-    # ext_json = fix_json_string(ext_json)
-    data = DirtyJson.parse_string(ext_json)
-    if isinstance(data,dict): return data
-    return {}
+    if ext_json:
+        # ext_json = fix_json_string(ext_json)
+        data = DirtyJson.parse_string(ext_json)
+        if isinstance(data,dict): return data
+    return None
 
 def extract_json_object_string(content):
     start = content.find('{')
     if start == -1:
-        print("No JSON content found.")
         return ""
 
     # Find the first '{'
