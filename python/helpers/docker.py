@@ -5,15 +5,13 @@ from typing import Dict, Optional
 from python.helpers.files import get_abs_path
 
 class DockerContainerManager:
-    def __init__(self, image:str, name:str, ports: Optional[Dict[str, int]] = None, volumes: Optional[Dict[str, Dict[str, str]]] = None):
+    def __init__(self, image: str, name: str, ports: Optional[Dict[str, int]] = None, volumes: Optional[Dict[str, Dict[str, str]]] = None):
         self.client = docker.from_env()
         self.image = image
         self.name = name
         self.ports = ports
         self.volumes = volumes
         self.container = None
-
-            
 
     def cleanup_container(self) -> None:
         if self.container:
@@ -26,14 +24,19 @@ class DockerContainerManager:
 
     def start_container(self) -> None:
         existing_container = None
-        for container in self.client.containers.list():
+        for container in self.client.containers.list(all=True):
             if container.name == self.name:
                 existing_container = container
                 break
 
         if existing_container:
-            #print(f"Container with name '{self.name}' is already running with ID: {existing_container.id}")
-            pass
+            if existing_container.status != 'running':
+                print(f"Starting existing container: {self.name} for safe code execution...")
+                existing_container.start()
+                self.container = existing_container
+            else:
+                self.container = existing_container
+                # print(f"Container with name '{self.name}' is already running with ID: {existing_container.id}")
         else:
             print(f"Initializing docker container {self.name} for safe code execution...")
             self.container = self.client.containers.run(
@@ -46,4 +49,3 @@ class DockerContainerManager:
             atexit.register(self.cleanup_container)
             print(f"Started container with ID: {self.container.id}")
             time.sleep(1) # this helps to get SSH ready
-
