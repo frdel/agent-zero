@@ -15,7 +15,6 @@ from python.helpers.rate_limiter import RateLimiter
 
 @dataclass
 class AgentConfig: 
-    agent_number: int
     chat_model:BaseChatModel
     embeddings_model:Embeddings
     memory_subdir: str = ""
@@ -54,7 +53,7 @@ class Agent:
 
         # non-config vars
         self.number = number
-        self.agent_name = f"Agent {self.config.agent_number}"
+        self.agent_name = f"Agent {self.number}"
 
         self.system_prompt = files.read_file("./prompts/agent.system.md").replace("{", "{{").replace("}", "}}")
         self.tools_prompt = files.read_file("./prompts/agent.tools.md").replace("{", "{{").replace("}", "}}")
@@ -236,20 +235,26 @@ class Agent:
     def process_tools(self, msg: str):
         # search for tool usage requests in agent message
         tool_request = extract_tools.json_parse_dirty(msg)
-        tool_name = tool_request.get("tool_name", "")
-        tool_args = tool_request.get("tool_args", {})
 
-        tool = self.get_tool(
-                    tool_name,
-                    tool_args,
-                    msg)
+        if tool_request is not None:
+            tool_name = tool_request.get("tool_name", "")
+            tool_args = tool_request.get("tool_args", {})
+
+            tool = self.get_tool(
+                        tool_name,
+                        tool_args,
+                        msg)
+                
+            if self.handle_intervention(): return # wait if paused and handle intervention message if needed
             
-        if self.handle_intervention(): return # wait if paused and handle intervention message if needed
-        
-        tool.before_execution(**tool_args)
-        response = tool.execute(**tool_args)
-        tool.after_execution(response)
-        if response.break_loop: return response.message
+            tool.before_execution(**tool_args)
+            response = tool.execute(**tool_args)
+            tool.after_execution(response)
+            if response.break_loop: return response.message
+        else:
+            msg = files.read_file("prompts/fw.msg_misformat.md")
+            self.append_message(msg, human=True)
+            PrintStyle(font_color="red", padding=True).print(msg)
 
 
     def get_tool(self, name: str, args: dict, message: str, **kwargs):

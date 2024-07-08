@@ -86,6 +86,7 @@ Execute provided terminal commands, python code or nodejs code.
 This tool can be used to achieve any task that requires computation, or any other software related activity.
 Place your code escaped and properly indented in the "code" argument.
 Select the corresponding runtime with "runtime" argument. Possible values are "terminal", "python" and "nodejs".
+Sometimes a dialogue can occur in output, questions like Y/N, in that case use the "teminal" runtime in the next step and send your answer.
 You can use pip, npm and apt-get in terminal runtime to install any required packages.
 IMPORTANT: Never use implicit print or implicit output, it does not work! If you need output of your code, you MUST use print() or console.log() to output selected variables. 
 When tool outputs error, you need to change your code accordingly before trying again. knowledge_tool can help analyze errors.

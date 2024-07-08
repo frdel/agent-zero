@@ -35,7 +35,7 @@ class DockerContainerManager:
             #print(f"Container with name '{self.name}' is already running with ID: {existing_container.id}")
             pass
         else:
-            print(f"Initializing docker container {self.name}...")
+            print(f"Initializing docker container {self.name} for safe code execution...")
             self.container = self.client.containers.run(
                 self.image,
                 detach=True,
