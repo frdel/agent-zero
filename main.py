@@ -1,10 +1,13 @@
+import signal
+import sys
+import termios
 import threading, time, models, os
+import tty
 from ansio import application_keypad, mouse_input, raw_input
 from ansio.input import InputEvent, get_input_event
 from agent import Agent, AgentConfig
 from python.helpers.print_style import PrintStyle
 from python.helpers.files import read_file
-from pytimedinput import timedInput as timed_input
 from python.helpers import files
 
 
@@ -17,7 +20,7 @@ def initialize():
     # chat_llm = models.get_groq_llama70b(temperature=0.2)
     # chat_llm = models.get_groq_llama70b_json(temperature=0.2)
     # chat_llm = models.get_groq_llama8b(temperature=0.2)
-    chat_llm = models.get_openai_gpt35(temperature=0)
+    # chat_llm = models.get_openai_gpt35(temperature=0)
     # chat_llm = models.get_openai_gpt4o(temperature=0)
     # chat_llm = models.get_anthropic_opus(temperature=0)
     # chat_llm = models.get_anthropic_sonnet(temperature=0)
@@ -28,6 +31,7 @@ def initialize():
     # chat_llm = models.get_ollama(model_name="llama3:8b-text-fp16")
     # chat_llm = models.get_ollama(model_name="gemma2:latest")
     # chat_llm = models.get_ollama(model_name="qwen:14b")
+    chat_llm = models.get_google_chat()
 
     # embedding model used for memory
     # embedding_llm = models.get_embedding_openai()
@@ -78,18 +82,21 @@ def chat(agent:Agent):
             timeout = agent.get_data("timeout") # how long the agent is willing to wait
             if not timeout: # if agent wants to wait for user input forever
                 PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ('exit' to leave):")        
+                import readline # this fixes arrow keys in terminal
                 user_input = input("> ")
                 PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}") 
                 
             else: # otherwise wait for user input with a timeout
                 PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ({timeout}s timeout, 'wait' to wait, 'exit' to leave):")        
-                user_input = timed_input("> ", timeout=timeout)
+                import readline # this fixes arrow keys in terminal
+                # user_input = timed_input("> ", timeout=timeout)
+                user_input = timeout_input("> ", timeout=timeout)
                                     
-                if user_input[1]:
+                if not user_input:
                     user_input = read_file("prompts/fw.msg_timeout.md")
                     PrintStyle(font_color="white", padding=False).stream(f"{user_input}")        
                 else:
-                    user_input = user_input[0].strip()
+                    user_input = user_input.strip()
                     if user_input.lower()=="wait": # the user needs more time
                         user_input = input("> ").strip()
                     PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
@@ -113,7 +120,7 @@ def intervention():
         Agent.paused = True # stop agent streaming
         PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User intervention ('exit' to leave, empty to continue):")        
 
-        import readline
+        import readline # this fixes arrow keys in terminal
         user_input = input("> ").strip()
         PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
         
@@ -138,6 +145,21 @@ def capture_keys():
                     if event and (event.shortcut.isalpha() or event.shortcut.isspace()):
                         intervent=True
                         continue
+
+# User input with timeout
+def timeout_input(prompt, timeout=10):
+    def alarm_handler(signum, frame):
+        raise TimeoutError()
+    
+    signal.signal(signal.SIGALRM, alarm_handler)
+    signal.alarm(timeout)
+    
+    try:
+        return input(prompt)
+    except TimeoutError:
+        return ""
+    finally:
+        signal.alarm(0)  # Cancel the alarm
 
 if __name__ == "__main__":
     print("Initializing framework...")
