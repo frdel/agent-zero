@@ -1,4 +1,3 @@
-import signal
 import threading, time, models, os
 from ansio import application_keypad, mouse_input, raw_input
 from ansio.input import InputEvent, get_input_event
@@ -13,7 +12,9 @@ os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
 
 
 def initialize():
-        # chat model used by agents
+    
+    # main chat model used by agents (smarter, more accurate)
+
     # chat_llm = models.get_groq_llama70b(temperature=0.2)
     # chat_llm = models.get_groq_llama70b_json(temperature=0.2)
     # chat_llm = models.get_groq_llama8b(temperature=0.2)
@@ -30,12 +31,13 @@ def initialize():
     # chat_llm = models.get_ollama(model_name="qwen:14b")
     chat_llm = models.get_google_chat()
 
+
+    # utility model used for helper functions (cheaper, faster)
     utility_llm = models.get_anthropic_haiku(temperature=0)
 
-
     # embedding model used for memory
-    # embedding_llm = models.get_embedding_openai()
-    embedding_llm = models.get_embedding_hf()
+    embedding_llm = models.get_embedding_openai()
+    # embedding_llm = models.get_embedding_hf()
 
     # agent configuration
     config = AgentConfig(
@@ -149,18 +151,19 @@ def capture_keys():
 
 # User input with timeout
 def timeout_input(prompt, timeout=10):
-    def alarm_handler(signum, frame):
-        raise TimeoutError()
+    result = []
     
-    signal.signal(signal.SIGALRM, alarm_handler)
-    signal.alarm(timeout)
+    def get_input():
+        result[0] = input(prompt)
     
-    try:
-        return input(prompt)
-    except TimeoutError:
+    input_thread = threading.Thread(target=get_input)
+    input_thread.start()
+    input_thread.join(timeout)
+    
+    if input_thread.is_alive():
         return ""
-    finally:
-        signal.alarm(0)  # Cancel the alarm
+    else:
+        return result[0]
 
 if __name__ == "__main__":
     print("Initializing framework...")
