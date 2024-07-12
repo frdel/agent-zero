@@ -1,8 +1,5 @@
 import signal
-import sys
-import termios
 import threading, time, models, os
-import tty
 from ansio import application_keypad, mouse_input, raw_input
 from ansio.input import InputEvent, get_input_event
 from agent import Agent, AgentConfig
@@ -33,6 +30,9 @@ def initialize():
     # chat_llm = models.get_ollama(model_name="qwen:14b")
     chat_llm = models.get_google_chat()
 
+    utility_llm = models.get_anthropic_haiku(temperature=0)
+
+
     # embedding model used for memory
     # embedding_llm = models.get_embedding_openai()
     embedding_llm = models.get_embedding_hf()
@@ -40,6 +40,7 @@ def initialize():
     # agent configuration
     config = AgentConfig(
         chat_model = chat_llm,
+        utility_model = utility_llm,
         embeddings_model = embedding_llm,
         # memory_subdir = "",
         auto_memory_count = 0,
@@ -81,13 +82,13 @@ def chat(agent:Agent):
         with input_lock:
             timeout = agent.get_data("timeout") # how long the agent is willing to wait
             if not timeout: # if agent wants to wait for user input forever
-                PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ('exit' to leave):")        
+                PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ('e' to leave):")        
                 import readline # this fixes arrow keys in terminal
                 user_input = input("> ")
                 PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}") 
                 
             else: # otherwise wait for user input with a timeout
-                PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ({timeout}s timeout, 'wait' to wait, 'exit' to leave):")        
+                PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ({timeout}s timeout, 'w' to wait, 'e' to leave):")        
                 import readline # this fixes arrow keys in terminal
                 # user_input = timed_input("> ", timeout=timeout)
                 user_input = timeout_input("> ", timeout=timeout)
@@ -97,14 +98,14 @@ def chat(agent:Agent):
                     PrintStyle(font_color="white", padding=False).stream(f"{user_input}")        
                 else:
                     user_input = user_input.strip()
-                    if user_input.lower()=="wait": # the user needs more time
+                    if user_input.lower()=="w": # the user needs more time
                         user_input = input("> ").strip()
                     PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
                     
                     
 
         # exit the conversation when the user types 'exit'
-        if user_input.lower() == 'exit': break
+        if user_input.lower() == 'e': break
 
         # send message to agent0, 
         assistant_response = agent.message_loop(user_input)
@@ -118,13 +119,13 @@ def chat(agent:Agent):
 def intervention():
     if Agent.streaming_agent and not Agent.paused:
         Agent.paused = True # stop agent streaming
-        PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User intervention ('exit' to leave, empty to continue):")        
+        PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User intervention ('e' to leave, empty to continue):")        
 
         import readline # this fixes arrow keys in terminal
         user_input = input("> ").strip()
         PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
         
-        if user_input.lower() == 'exit': os._exit(0) # exit the conversation when the user types 'exit'
+        if user_input.lower() == 'e': os._exit(0) # exit the conversation when the user types 'exit'
         if user_input: Agent.streaming_agent.intervention_message = user_input # set intervention message if non-empty
         Agent.paused = False # continue agent streaming 
     

@@ -5,7 +5,7 @@ from langchain_openai import ChatOpenAI, OpenAI, OpenAIEmbeddings
 from langchain_anthropic import ChatAnthropic
 from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI, HarmBlockThreshold, HarmCategory
 
 
 # Load environment variables
@@ -76,15 +76,16 @@ def get_groq_gemma(api_key=None, temperature=DEFAULT_TEMPERATURE):
     api_key = api_key or get_api_key("groq")
     return ChatGroq(model_name="gemma-7b-it", temperature=temperature, api_key=api_key) # type: ignore
 
-def get_ollama_dolphin(api_key=None, temperature=DEFAULT_TEMPERATURE):
+def get_ollama_dolphin(temperature=DEFAULT_TEMPERATURE):
     return Ollama(model="dolphin-llama3:8b-256k-v2.9-fp16", temperature=temperature)
 
-def get_ollama_phi(api_key=None, temperature=DEFAULT_TEMPERATURE):
+def get_ollama_phi(temperature=DEFAULT_TEMPERATURE):
     return Ollama(model="phi3:3.8b-mini-instruct-4k-fp16",temperature=temperature)
 
 def get_google_chat(model_name="gemini-1.5-flash-latest", api_key=None, temperature=DEFAULT_TEMPERATURE):
     api_key = api_key or get_api_key("google")
-    return ChatGoogleGenerativeAI(model=model_name, temperature=temperature, google_api_key=api_key) # type: ignore
+    return ChatGoogleGenerativeAI(model=model_name, temperature=temperature, google_api_key=api_key, 
+                                  safety_settings={HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE }) # type: ignore
 
 def get_embedding_hf(model_name="sentence-transformers/all-MiniLM-L6-v2"):
     return HuggingFaceEmbeddings(model_name=model_name)

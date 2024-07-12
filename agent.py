@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 import time, importlib, inspect, os, json
-import traceback
-from typing import Any, Optional, Dict, TypedDict
+from typing import Any, Optional, Dict
 from python.helpers import extract_tools, rate_limiter, files, errors
 from python.helpers.print_style import PrintStyle
 from langchain.schema import AIMessage
@@ -9,20 +8,20 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.embeddings import Embeddings
-from python.helpers.rate_limiter import RateLimiter
 
 # rate_limit = rate_limiter.rate_limiter(30,160000) #TODO! implement properly
 
 @dataclass
 class AgentConfig: 
     chat_model:BaseChatModel
+    utility_model: BaseChatModel
     embeddings_model:Embeddings
     memory_subdir: str = ""
     auto_memory_count: int = 3
     auto_memory_skip: int = 2
     rate_limit_seconds: int = 60
-    rate_limit_requests: int = 30
-    rate_limit_input_tokens: int = 0
+    rate_limit_requests: int = 15
+    rate_limit_input_tokens: int = 1000000
     rate_limit_output_tokens: int = 0
     msgs_keep_max: int = 25
     msgs_keep_start: int = 5
@@ -62,7 +61,7 @@ class Agent:
         self.last_message = ""
         self.intervention_message = ""
         self.intervention_status = False
-        self.rate_limiter = RateLimiter(max_calls=self.config.rate_limit_requests,max_input_tokens=self.config.rate_limit_input_tokens,max_output_tokens=self.config.rate_limit_output_tokens,window_seconds=self.config.rate_limit_seconds)
+        self.rate_limiter = rate_limiter.RateLimiter(max_calls=self.config.rate_limit_requests,max_input_tokens=self.config.rate_limit_input_tokens,max_output_tokens=self.config.rate_limit_output_tokens,window_seconds=self.config.rate_limit_seconds)
         self.data = {} # free data object all the tools can use
 
         os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
@@ -160,7 +159,7 @@ class Agent:
             SystemMessage(content=system),
             HumanMessage(content=msg)])
 
-        chain = prompt | self.config.chat_model
+        chain = prompt | self.config.utility_model
         response = ""
         printer = None
 
