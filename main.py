@@ -151,7 +151,7 @@ def capture_keys():
 
 # User input with timeout
 def timeout_input(prompt, timeout=10):
-    result = []
+    result = [""]
     
     def get_input():
         result[0] = input(prompt)
