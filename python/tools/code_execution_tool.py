@@ -32,6 +32,8 @@ class CodeExecution(Tool):
             response = self.execute_nodejs_code(self.args["code"])
         elif runtime == "terminal":
             response = self.execute_terminal_command(self.args["code"])
+        elif runtime == "output":
+            response = self.get_terminal_output()
         else:
             response = files.read_file("./prompts/fw.code_runtime_wrong.md", runtime=runtime)
 
@@ -78,7 +80,9 @@ class CodeExecution(Tool):
         self.state.shell.send_command(command)
 
         PrintStyle(background_color="white",font_color="#85C1E9",bold=True).print(f"{self.agent.agent_name} code execution output:")
+        return self.get_terminal_output()
 
+    def get_terminal_output(self):
         idle=0
         while True:
             time.sleep(0.1)  # Wait for some output to be generated
