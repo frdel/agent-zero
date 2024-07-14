@@ -12,3 +12,4 @@ sentence-transformers==3.0.1
 pytimedinput==2.0.1
 docker==7.1.0
 paramiko==3.4.0
+duckduckgo_search==6.1.12

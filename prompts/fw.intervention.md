@@ -1,1 +1,5 @@
-INTERVENTION: {{user_message}}
+~~~json
+{
+    "user_intervention": "{{user_message}}"
+}
+~~~

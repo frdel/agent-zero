@@ -28,6 +28,7 @@ class VectorDB:
             self.store, 
             namespace=getattr(embeddings_model, 'model', getattr(embeddings_model, 'model_name', "default")) )
 
+
         self.db = Chroma(embedding_function=self.embedder,persist_directory=db_cache)
         
         
@@ -35,7 +36,7 @@ class VectorDB:
         return self.db.similarity_search(query,results)
     
     def search_similarity_threshold(self, query, results=3, threshold=0.5):
-        return self.db.search(query,search_type="similarity_score_threshold",score_threshold=threshold)
+        return self.db.search(query, search_type="similarity_score_threshold", k=results, score_threshold=threshold)
 
     def search_max_rel(self, query, results=3):
         return self.db.max_marginal_relevance_search(query,results)
