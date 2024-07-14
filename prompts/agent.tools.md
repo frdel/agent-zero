@@ -62,9 +62,19 @@ Always verify memory by online.
 }
 ~~~
 
+<<<<<<< Updated upstream
 ### memorize:
 Save information to persistent memory.
 Memories can help you remember important details and later reuse them.
+=======
+### memory_tool:
+Manage long term memories. Allowed arguments are "query", "memorize", "forget" and "delete".
+Memories can help you remember important details and later reuse them.
+When querying, provide a "query" argument to search for. You will retrieve IDs and contents of relevant memories. Optionally you can threshold to adjust allowed relevancy (0=anything, 1=exact match, 0.1 is default).
+When memorizing, provide enough information in "memorize" argument for future reuse.
+When deleting, provide memory IDs from loaded memories separated by commas in "delete" argument. 
+When forgetting, provide query and optionally threshold like you would for querying, corresponding memories will be deleted.
+>>>>>>> Stashed changes
 Provide a title, short summary and and all the necessary information to help you later solve similiar tasks including details like code executed, libraries used etc.
 **Example usages**:
 ~~~json
@@ -76,7 +86,35 @@ Provide a title, short summary and and all the necessary information to help you
     ],
     "tool_name": "memorize",
     "tool_args": {
+<<<<<<< Updated upstream
         "memory": "# How to...",
+=======
+        "memorize": "# How to...",
+    }
+}
+~~~
+3. delete:
+~~~json
+{
+    "thoughts": [
+        "User asked to delete specific memories...",
+    ],
+    "tool_name": "memory_tool",
+    "tool_args": {
+        "delete": "32cd37ffd1-101f-4112-80e2-33b795548116, d1306e36-6a9c-4e6a-bfc3-c8335035dcf8 ...",
+    }
+}
+~~~
+4. forget:
+~~~json
+{
+    "thoughts": [
+        "User asked to delete information from memory...",
+    ],
+    "tool_name": "memory_tool",
+    "tool_args": {
+        "forget": "User's contact information",
+>>>>>>> Stashed changes
     }
 }
 ~~~

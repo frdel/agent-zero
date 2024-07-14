@@ -12,6 +12,38 @@ from tools.helpers.rate_limiter import RateLimiter
 
 # rate_limit = rate_limiter.rate_limiter(30,160000) #TODO! implement properly
 
+<<<<<<< Updated upstream
+=======
+@dataclass
+class AgentConfig: 
+    chat_model:BaseChatModel
+    utility_model: BaseChatModel
+    embeddings_model:Embeddings
+    memory_subdir: str = ""
+    auto_memory_count: int = 3
+    auto_memory_skip: int = 2
+    rate_limit_seconds: int = 60
+    rate_limit_requests: int = 15
+    rate_limit_input_tokens: int = 1000000
+    rate_limit_output_tokens: int = 0
+    msgs_keep_max: int = 25
+    msgs_keep_start: int = 5
+    msgs_keep_end: int = 10
+    response_timeout_seconds: int = 60
+    max_tool_response_length: int = 3000
+    code_exec_docker_enabled: bool = True
+    code_exec_docker_name: str = "agent-zero-exe"
+    code_exec_docker_image: str = "frdel/agent-zero-exe:latest"
+    code_exec_docker_ports: dict[str,int] = field(default_factory=lambda: {"22/tcp": 50022})
+    code_exec_docker_volumes: dict[str, dict[str, str]] = field(default_factory=lambda: {files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"}})
+    code_exec_ssh_enabled: bool = True
+    code_exec_ssh_addr: str = "localhost"
+    code_exec_ssh_port: int = 50022
+    code_exec_ssh_user: str = "root"
+    code_exec_ssh_pass: str = "toor"
+    additional: Dict[str, Any] = field(default_factory=dict)
+    
+>>>>>>> Stashed changes
 
 class Agent:
 
@@ -276,7 +308,7 @@ class Agent:
             self.memory_skip_counter = self.auto_memory_skip
             from tools import memory_tool
             messages = self.concat_messages(self.history)
-            memories = memory_tool.process_query(self,messages,"load")
+            memories = memory_tool.search(messages)
             input = {
                 "conversation_history" : messages,
                 "raw_memories": memories

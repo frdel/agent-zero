@@ -13,7 +13,7 @@ class Knowledge(Tool):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             # Schedule the two functions to be run in parallel
             future_online = executor.submit(online_knowledge_tool.process_question, question)
-            future_memory = executor.submit(memory_tool.process_query, self.agent, question)
+            future_memory = executor.submit(memory_tool.search, self.agent, question)
 
             # Wait for both functions to complete
             online_result = future_online.result()
