@@ -28,8 +28,43 @@ def chat():
     # chat_llm = models.get_ollama_dolphin()
 
     # embedding model used for memory
+<<<<<<< Updated upstream
     # embedding_llm = models.get_embedding_openai()
     embedding_llm = models.get_embedding_hf()
+=======
+    embedding_llm = models.get_embedding_openai()
+    # embedding_llm = models.get_embedding_hf()
+
+    # agent configuration
+    config = AgentConfig(
+        chat_model = chat_llm,
+        utility_model = utility_llm,
+        embeddings_model = embedding_llm,
+        # memory_subdir = "",
+        auto_memory_count = 0,
+        # auto_memory_skip = 2,
+        # rate_limit_seconds = 60,
+        # rate_limit_requests = 30,
+        # rate_limit_input_tokens = 0,
+        # rate_limit_output_tokens = 0,
+        # msgs_keep_max = 25,
+        # msgs_keep_start = 5,
+        # msgs_keep_end = 10,
+        # response_timeout_seconds = 60,
+        # max_tool_response_length = 3000,
+        code_exec_docker_enabled = True,
+        # code_exec_docker_name = "agent-zero-exe",
+        # code_exec_docker_image = "frdel/agent-zero-exe:latest",
+        # code_exec_docker_ports = { "22/tcp": 50022 }
+        # code_exec_docker_volumes = { files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"} }
+        code_exec_ssh_enabled = True,
+        # code_exec_ssh_addr = "localhost",
+        # code_exec_ssh_port = 50022,
+        # code_exec_ssh_user = "root",
+        # code_exec_ssh_pass = "toor",
+        # additional = {},
+    )
+>>>>>>> Stashed changes
     
     # create the first agent
     agent0 = Agent( agent_number=0,

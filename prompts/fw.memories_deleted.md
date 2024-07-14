@@ -1,1 +1,1 @@
-Memories deleted: {{memories}}
+Memories deleted: {{memory_count}}

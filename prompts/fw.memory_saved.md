@@ -1,1 +1,1 @@
-Memory has been saved.
+Memory has been saved with id {{memory_id}}.
