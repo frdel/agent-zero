@@ -10,11 +10,8 @@ from python.helpers.print_style import PrintStyle
 class ResponseTool(Tool):
 
     def execute(self,**kwargs):
-        # superior = self.agent.get_data("superior")
-        # if superior:
-        self.agent.set_data("timeout", 60)
+        self.agent.set_data("timeout", self.agent.config.response_timeout_seconds)
         return Response(message=self.args["text"], break_loop=True)
-        # else:
 
     def after_execution(self, response, **kwargs):
         pass # do add anything to the history or output
