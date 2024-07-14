@@ -1,6 +1,7 @@
 # Provide a JSON summary of given messages
 - From the messages you are given, write a summary of key points in the conversation.
 - Include important aspects and remove unnecessary details.
+- Keep necessary information like file names, URLs, keys etc.
 
 # Expected output format
 ~~~json

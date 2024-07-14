@@ -1,1 +1,5 @@
-Memories deleted: {{memory_count}}
+~~~json
+{
+    "memories_deleted": "{{memory_count}}"
+}
+~~~

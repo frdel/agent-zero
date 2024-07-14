@@ -1,2 +1,5 @@
-An error has occured due to your last message:
-{{error}}
+~~~json
+{
+    "system_error": "{{error}}"
+}
+~~~
