@@ -62,28 +62,21 @@ Always verify memory by online.
 }
 ~~~
 
+<<<<<<< Updated upstream
+### memorize:
+Save information to persistent memory.
+Memories can help you remember important details and later reuse them.
+=======
 ### memory_tool:
-Manage long term memories. Allowed arguments are "query", "memorize" and "forget".
+Manage long term memories. Allowed arguments are "query", "memorize", "forget" and "delete".
 Memories can help you remember important details and later reuse them.
 When querying, provide a "query" argument to search for. You will retrieve IDs and contents of relevant memories. Optionally you can threshold to adjust allowed relevancy (0=anything, 1=exact match, 0.1 is default).
 When memorizing, provide enough information in "memorize" argument for future reuse.
-When forgetting, provide memory IDs from loaded memories separated by commas in "forget" argument. 
+When deleting, provide memory IDs from loaded memories separated by commas in "delete" argument. 
+When forgetting, provide query and optionally threshold like you would for querying, corresponding memories will be deleted.
+>>>>>>> Stashed changes
 Provide a title, short summary and and all the necessary information to help you later solve similiar tasks including details like code executed, libraries used etc.
 **Example usages**:
-1. load:
-~~~json
-{
-    "thoughts": [
-        "Let's search my memory for...",
-    ],
-    "tool_name": "memory_tool",
-    "tool_args": {
-        "query": "File compression library for...",
-        "threshold": 0.1
-    }
-}
-~~~
-2. save:
 ~~~json
 {
     "thoughts": [
@@ -91,8 +84,11 @@ Provide a title, short summary and and all the necessary information to help you
         "Details of this process will be valuable...",
         "Let's save tools and code used...",
     ],
-    "tool_name": "memory_tool",
+    "tool_name": "memorize",
     "tool_args": {
+<<<<<<< Updated upstream
+        "memory": "# How to...",
+=======
         "memorize": "# How to...",
     }
 }
@@ -101,11 +97,24 @@ Provide a title, short summary and and all the necessary information to help you
 ~~~json
 {
     "thoughts": [
-        "User asked to delete memories...",
+        "User asked to delete specific memories...",
     ],
     "tool_name": "memory_tool",
     "tool_args": {
-        "forget": "32cd37ffd1-101f-4112-80e2-33b795548116, d1306e36-6a9c-4e6a-bfc3-c8335035dcf8 ...",
+        "delete": "32cd37ffd1-101f-4112-80e2-33b795548116, d1306e36-6a9c-4e6a-bfc3-c8335035dcf8 ...",
+    }
+}
+~~~
+4. forget:
+~~~json
+{
+    "thoughts": [
+        "User asked to delete information from memory...",
+    ],
+    "tool_name": "memory_tool",
+    "tool_args": {
+        "forget": "User's contact information",
+>>>>>>> Stashed changes
     }
 }
 ~~~
@@ -115,15 +124,13 @@ Execute provided terminal commands, python code or nodejs code.
 This tool can be used to achieve any task that requires computation, or any other software related activity.
 Place your code escaped and properly indented in the "code" argument.
 Select the corresponding runtime with "runtime" argument. Possible values are "terminal", "python" and "nodejs".
-Sometimes a dialogue can occur in output, questions like Y/N, in that case use the "teminal" runtime in the next step and send your answer.
 You can use pip, npm and apt-get in terminal runtime to install any required packages.
 IMPORTANT: Never use implicit print or implicit output, it does not work! If you need output of your code, you MUST use print() or console.log() to output selected variables. 
 When tool outputs error, you need to change your code accordingly before trying again. knowledge_tool can help analyze errors.
 Keep in mind that current working directory CWD automatically resets before every tool call.
 IMPORTANT!: Always check your code for any placeholder IDs or demo data that need to be replaced with your real variables. Do not simply reuse code snippets from tutorials.
 Do not use in combination with other tools except for thoughts. Wait for response before using other tools.
-**Example usages:**
-1. Execute python code
+**Example usage**:
 ~~~json
 {
     "thoughts": [
@@ -131,52 +138,10 @@ Do not use in combination with other tools except for thoughts. Wait for respons
         "I can use library...",
         "Then I can...",
     ],
-    "tool_name": "code_execution_tool",
+    "tool_name": "memory_tool",
     "tool_args": {
         "runtime": "python",
         "code": "import os\nreturn os.getcwd()",
-    }
-}
-~~~
-
-2. Execute terminal command
-~~~json
-{
-    "thoughts": [
-        "I need to do...",
-        "I need to install...",
-    ],
-    "tool_name": "code_execution_tool",
-    "tool_args": {
-        "runtime": "terminal",
-        "code": "apt-get install zip",
-    }
-}
-~~~
-
-2. 1. Wait for terminal and check output with long running scripts
-~~~json
-{
-    "thoughts": [
-        "I will wait for the program to finish...",
-    ],
-    "tool_name": "code_execution_tool",
-    "tool_args": {
-        "runtime": "output",
-    }
-}
-~~~
-
-2. 2. Answer terminal dialog
-~~~json
-{
-    "thoughts": [
-        "Program needs confirmation...",
-    ],
-    "tool_name": "code_execution_tool",
-    "tool_args": {
-        "runtime": "terminal",
-        "code": "Y",
     }
 }
 ~~~

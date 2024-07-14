@@ -1,5 +1,5 @@
 # Use the latest slim version of Debian
-FROM --platform=$TARGETPLATFORM debian:bookworm-slim
+FROM --platform=$TARGETPLATFORM debian:testing-slim
 
 # Set ARG for platform-specific commands
 ARG TARGETPLATFORM
