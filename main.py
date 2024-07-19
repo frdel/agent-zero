@@ -20,6 +20,7 @@ def initialize():
     # chat_llm = models.get_groq_llama8b(temperature=0.2)
     # chat_llm = models.get_openai_gpt35(temperature=0)
     # chat_llm = models.get_openai_gpt4o(temperature=0)
+    chat_llm = models.get_openai_chat(temperature=0)
     # chat_llm = models.get_anthropic_opus(temperature=0)
     # chat_llm = models.get_anthropic_sonnet(temperature=0)
     # chat_llm = models.get_anthropic_sonnet_35(temperature=0)
@@ -29,12 +30,12 @@ def initialize():
     # chat_llm = models.get_ollama(model_name="llama3:8b-text-fp16")
     # chat_llm = models.get_ollama(model_name="gemma2:latest")
     # chat_llm = models.get_ollama(model_name="qwen:14b")
-    chat_llm = models.get_google_chat()
+    # chat_llm = models.get_google_chat()
 
 
     # utility model used for helper functions (cheaper, faster)
-    utility_llm = models.get_anthropic_haiku(temperature=0)
-
+    utility_llm = models.get_openai_chat(temperature=0)
+    
     # embedding model used for memory
     embedding_llm = models.get_embedding_openai()
     # embedding_llm = models.get_embedding_hf()
