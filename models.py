@@ -40,6 +40,11 @@ def get_openai_gpt35(api_key=None, temperature=DEFAULT_TEMPERATURE):
     api_key = api_key or get_api_key("openai")
     return ChatOpenAI(model_name="gpt-3.5-turbo", temperature=temperature, api_key=api_key) # type: ignore
 
+def get_openai_chat(api_key=None, model="gpt-4o-mini", temperature=DEFAULT_TEMPERATURE):
+    api_key = api_key or get_api_key("openai")
+    return ChatOpenAI(model_name=model, temperature=temperature, api_key=api_key) # type: ignore
+
+
 def get_openai_gpt35_instruct(api_key=None, temperature=DEFAULT_TEMPERATURE):
     api_key = api_key or get_api_key("openai")
     return OpenAI(model_name="gpt-3.5-turbo-instruct", temperature=temperature, api_key=api_key) # type: ignore

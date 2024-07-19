@@ -46,7 +46,7 @@
 
 ## Keep in mind
 1. **Agent Zero can be dangerous!**
-With proper instruction, Agent Zero is capable of many things, even potentially dangerous to your computer, data, or accounts. Always run Agent Zero in an isolated environment, preferably in a Linux virtual machine with backup.
+With proper instruction, Agent Zero is capable of many things, even potentially dangerous to your computer, data, or accounts. Always run Agent Zero in an isolated environment, preferably in the built-in automated Docker solution.
 
 2. **Agent Zero is not pre-programmed; it is prompt-based.**
 The whole framework contains only a minimal amount of code and does not guide the agent in any way.
@@ -54,23 +54,22 @@ Everything lies in the system prompt in the **prompts/** folder. Here you can re
 If your agent fails to communicate properly, use tools, reason, use memory, find answers - just instruct it better.
 
 3. **If you cannot provide the ideal environment, let your agent know.**
-Agent Zero is made to be used in an isolated virtual machine (for safety) with some tools preinstalled and configured.
+Agent Zero is made to be used in an isolated virtual environment (for safety) with some tools preinstalled and configured.
 If you cannot provide all the necessary conditions or API keys, just change the system prompt and tell your agent what operating system and tools are at its disposal. Nothing is hard-coded; if you do not tell your agent about a certain tool, it will not know about it and will not try to use it.
 
 ## Known problems
 1. The system prompt sucks. You can do better. If you do, help me please :)
-2. Input freeze on some Linux terminals - for some reason, sometimes the input field freezes on some terminal apps on linux when the window loses focus. Right now I have no clue why...
-3. Claude models like to hallucinate when using tools. This can probebly be fixed in prompt, but for some reason, Claude models like to use multiple tools in a single message and not wait for output, they just make up their outputs right away. For now I have limited the tool usage to 1 tool per message, this helps a little.
+2. Claude models like to hallucinate when using tools. This can probebly be fixed in prompt, but for some reason, Claude models like to use multiple tools in a single message and not wait for output, they just make up their outputs right away. For now I have limited the tool usage to 1 tool per message, this helps a little.
 
 ## Ideal environment
-- **Linux VM / docker container**: The perfect environment to run Agent Zero is a Debian-based Linux virtual machine or docker container with enhanced privileges or root access (to install packages and run terminal commands).
+- **Linux VM / docker container**: The perfect environment to run Agent Zero is a Debian-based Linux virtual machine or (event better) the built-in docker container with enhanced privileges or root access (to install packages and run terminal commands).
 - **Python**: Python has to be installed on the system to run the framework and let the agent execute created Python scripts.
 - **NodeJS**: NodeJS is required to allow the agent to run JS scripts as well.
 - **Internet access**: The agent will need internet access to use its online knowledge tool and execute commands and scripts requiring a connection. If you do not need your agent to be online, you can alter its prompts in the **prompts/** folder and make it fully local.
 
 ## Setup
 1. **Required API keys:**
-- At the moment, the only required API key is for https://www.perplexity.ai/ API. Perplexity is used as a convenient web search tool and has not yet been replaced by an open-source alternative.
+- At the moment, the only recommended API key is for https://www.perplexity.ai/ API. Perplexity is used as a convenient web search tool and has not yet been replaced by an open-source alternative.
 - Chat models and embedding models can be executed locally via Ollama and HuggingFace or via API as well.
 
 2. **Enter your API keys:**
@@ -86,7 +85,7 @@ export API_KEY_OPENAI="your-api-key-here"
 pip install -r requirements.txt
 ~~~
 
-3. **Choose your chat and embeddings model:**
+3. **Choose your chat, utility and embeddings model:**
 - In the **main.py** file, right at the start of the **chat()** function, you can see how the chat model and embedding model are set.
 - You can choose between online models (OpenAI, Anthropic, Groq) or offline (Ollama, HuggingFace) for both.
 
