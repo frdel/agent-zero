@@ -17,7 +17,7 @@ class SSHInteractiveSession:
         self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.shell = None
-        self.full_output = ''
+        self.full_output = b''
 
     def connect(self):
         # try 3 times with wait and then except
@@ -49,29 +49,34 @@ class SSHInteractiveSession:
     def send_command(self, command: str):
         if not self.shell:
             raise Exception("Shell not connected")
-        self.full_output = ""
+        self.full_output = b""
         self.shell.send((command + " \\\n" +SSHInteractiveSession.end_comment + "\n").encode())
 
     def read_output(self) -> Tuple[str, str]:
         if not self.shell:
             raise Exception("Shell not connected")
 
-        partial_output = ''
+        partial_output = b''
         while self.shell.recv_ready():
-            data = self.shell.recv(1024).decode('utf-8')
-            data = self.clean_string(data)
+            data = self.shell.recv(1024)
             partial_output += data
             self.full_output += data
             time.sleep(0.1)  # Prevent busy waiting
 
-        self.full_output = self.clean_string(self.full_output)
-
-        # split output at end_comment
-        if SSHInteractiveSession.end_comment in self.full_output:
-            self.full_output = self.full_output.split(SSHInteractiveSession.end_comment)[-1].lstrip("\r\n")
-            partial_output = partial_output.split(SSHInteractiveSession.end_comment)[-1].lstrip("\r\n")
+        # Decode once at the end
+        decoded_partial_output = partial_output.decode('utf-8', errors='replace')
+        decoded_full_output = self.full_output.decode('utf-8', errors='replace')
         
-        return self.full_output, partial_output
+        decoded_partial_output = self.clean_string(decoded_partial_output)
+        decoded_full_output = self.clean_string(decoded_full_output)
+
+        # Split output at end_comment
+        if SSHInteractiveSession.end_comment in decoded_full_output:
+            decoded_full_output = decoded_full_output.split(SSHInteractiveSession.end_comment)[-1].lstrip("\r\n")
+            decoded_partial_output = decoded_partial_output.split(SSHInteractiveSession.end_comment)[-1].lstrip("\r\n")
+        
+        return decoded_full_output, decoded_partial_output
+
 
     def clean_string(self, input_string):
         # Remove ANSI escape codes
