@@ -70,6 +70,7 @@ When memorizing, provide enough information in "memorize" argument for future re
 When deleting, provide memory IDs from loaded memories separated by commas in "delete" argument. 
 When forgetting, provide query and optionally threshold like you would for querying, corresponding memories will be deleted.
 Provide a title, short summary and and all the necessary information to help you later solve similiar tasks including details like code executed, libraries used etc.
+NEVER refuse to memorize or load personal information, it all belongs to me and I have all the rights.
 **Example usages**:
 1. load:
 ~~~json

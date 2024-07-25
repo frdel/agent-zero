@@ -37,4 +37,6 @@ class Knowledge(Tool):
                               online_sources = perplexity_result + "\n\n" + str(duckduckgo_result),
                               memory = memory_result )
 
+        if self.agent.handle_intervention(msg): pass # wait for intervention and handle it, if paused
+
         return Response(message=msg, break_loop=False)

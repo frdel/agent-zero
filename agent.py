@@ -244,10 +244,12 @@ class Agent:
                         msg)
                 
             if self.handle_intervention(): return # wait if paused and handle intervention message if needed
-            
             tool.before_execution(**tool_args)
+            if self.handle_intervention(): return # wait if paused and handle intervention message if needed
             response = tool.execute(**tool_args)
+            if self.handle_intervention(): return # wait if paused and handle intervention message if needed
             tool.after_execution(response)
+            if self.handle_intervention(): return # wait if paused and handle intervention message if needed
             if response.break_loop: return response.message
         else:
             msg = files.read_file("prompts/fw.msg_misformat.md")
