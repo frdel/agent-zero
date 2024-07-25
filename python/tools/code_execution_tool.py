@@ -79,7 +79,7 @@ class CodeExecution(Tool):
     def terminal_session(self, command):
         self.state.shell.send_command(command)
 
-        PrintStyle(background_color="white",font_color="#85C1E9",bold=True).print(f"{self.agent.agent_name} code execution output:")
+        PrintStyle(background_color="white",font_color="#1B4F72",bold=True).print(f"{self.agent.agent_name} code execution output:")
         return self.get_terminal_output()
 
     def get_terminal_output(self):

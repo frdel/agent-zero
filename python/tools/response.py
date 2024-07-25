@@ -13,5 +13,8 @@ class ResponseTool(Tool):
         self.agent.set_data("timeout", self.agent.config.response_timeout_seconds)
         return Response(message=self.args["text"], break_loop=True)
 
+    def before_execution(self, **kwargs):
+        pass # do not add anything to the history or output
+    
     def after_execution(self, response, **kwargs):
-        pass # do add anything to the history or output
+        pass # do not add anything to the history or output

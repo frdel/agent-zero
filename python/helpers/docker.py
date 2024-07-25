@@ -34,6 +34,8 @@ class DockerContainerManager:
                 print(f"Starting existing container: {self.name} for safe code execution...")
                 existing_container.start()
                 self.container = existing_container
+                time.sleep(2) # this helps to get SSH ready
+                
             else:
                 self.container = existing_container
                 # print(f"Container with name '{self.name}' is already running with ID: {existing_container.id}")
@@ -48,4 +50,4 @@ class DockerContainerManager:
             )
             atexit.register(self.cleanup_container)
             print(f"Started container with ID: {self.container.id}")
-            time.sleep(1) # this helps to get SSH ready
+            time.sleep(2) # this helps to get SSH ready
