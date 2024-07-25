@@ -5,6 +5,7 @@ from agent import Agent, AgentConfig
 from python.helpers.print_style import PrintStyle
 from python.helpers.files import read_file
 from python.helpers import files
+import python.helpers.timed_input as timed_input
 
 
 input_lock = threading.Lock()
@@ -153,19 +154,7 @@ def capture_keys():
 
 # User input with timeout
 def timeout_input(prompt, timeout=10):
-    result = [""]
-    
-    def get_input():
-        result[0] = input(prompt)
-    
-    input_thread = threading.Thread(target=get_input)
-    input_thread.start()
-    input_thread.join(timeout)
-    
-    if input_thread.is_alive():
-        return ""
-    else:
-        return result[0]
+    return timed_input.timeout_input(prompt=prompt, timeout=timeout)
 
 if __name__ == "__main__":
     print("Initializing framework...")

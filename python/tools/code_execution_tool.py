@@ -21,6 +21,9 @@ class State:
 class CodeExecution(Tool):
 
     def execute(self,**kwargs):
+
+        if self.agent.handle_intervention(): return Response(message="", break_loop=False)  # wait for intervention and handle it, if paused
+        
         self.prepare_state()
 
         # os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
@@ -77,6 +80,9 @@ class CodeExecution(Tool):
         return self.terminal_session(command)
 
     def terminal_session(self, command):
+
+        if self.agent.handle_intervention(): return ""  # wait for intervention and handle it, if paused
+       
         self.state.shell.send_command(command)
 
         PrintStyle(background_color="white",font_color="#1B4F72",bold=True).print(f"{self.agent.agent_name} code execution output:")
@@ -84,9 +90,11 @@ class CodeExecution(Tool):
 
     def get_terminal_output(self):
         idle=0
-        while True:
+        while True:       
             time.sleep(0.1)  # Wait for some output to be generated
             full_output, partial_output = self.state.shell.read_output()
+
+            if self.agent.handle_intervention(): return full_output  # wait for intervention and handle it, if paused
         
             if partial_output:
                 PrintStyle(font_color="#85C1E9").stream(partial_output)

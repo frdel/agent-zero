@@ -1,25 +1,3 @@
-
-# work in progress, but quite good already
-# able to parse json like this, even when cut in half:
-
-# {
-#     name: John Doe,
-#     'age': 30,
-#     'some': undefined,
-#     other: tRue,
-#     city: "New York",
-#     "hobbies": ["reading", 'cycling'],
-#     married: false,
-#     children: null,
-#     "bio": """A multi-line
-#     biography that
-#     spans several lines""",
-#     'quote': """Another
-#     multi-line quote
-#     using single quotes"""
-# }
-
-
 class DirtyJson:
     def __init__(self):
         self._reset()
@@ -50,7 +28,7 @@ class DirtyJson:
         self._parse()
         return self.result
 
-    def _advance(self,count=1):
+    def _advance(self, count=1):
         self.index += count
         if self.index < len(self.json_string):
             self.current_char = self.json_string[self.index]
@@ -81,11 +59,13 @@ class DirtyJson:
     def _parse_value(self):
         self._skip_whitespace()
         if self.current_char == '{':
+            if self._peek(1) == '{':  # Handle {{
+                self._advance(2)
             return self._parse_object()
         elif self.current_char == '[':
             return self._parse_array()
         elif self.current_char in ['"', "'", "`"]:
-            if self._peek(2) == self.current_char * 2: # type: ignore
+            if self._peek(2) == self.current_char * 2:  # type: ignore
                 return self._parse_multiline_string()
             return self._parse_string()
         elif self.current_char and (self.current_char.isdigit() or self.current_char in ['-', '+']):
@@ -100,7 +80,7 @@ class DirtyJson:
             return self._parse_unquoted_string()
         return None
 
-    def _match(self, text:str) -> bool:
+    def _match(self, text: str) -> bool:
         cnt = len(text)
         if self._peek(cnt).lower() == text.lower():
             self._advance(cnt)
@@ -118,7 +98,10 @@ class DirtyJson:
         while self.current_char is not None:
             self._skip_whitespace()
             if self.current_char == '}':
-                self._advance()
+                if self._peek(1) == '}':  # Handle }}
+                    self._advance(2)
+                else:
+                    self._advance()
                 self.stack.pop()
                 return
             if self.current_char is None:
@@ -147,7 +130,6 @@ class DirtyJson:
                 if self.current_char is None:
                     self.stack.pop()
                     return  # End of input reached after value
-                # Allow missing comma between key-value pairs
                 continue
 
     def _parse_key(self):
@@ -260,7 +242,6 @@ class DirtyJson:
 
     def _parse_unquoted_string(self):
         result = ""
-        # while self.current_char is not None and not self.current_char.isspace() and self.current_char not in [':', ',', '}', ']']:
         while self.current_char is not None and self.current_char not in [':', ',', '}', ']']:
             result += self.current_char
             self._advance()
