@@ -12,5 +12,7 @@ if [ ! -f /root/.profile ]; then
     chmod 444 /root/.profile
 fi
 
+apt-get update
+
 # Start SSH service
 exec /usr/sbin/sshd -D

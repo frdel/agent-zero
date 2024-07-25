@@ -2,13 +2,12 @@
 
 [![Join our Discord](https://img.shields.io/badge/Discord-Join%20our%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/B8KZKNsPpj)
 
+[![Intro Video](/docs/intro_vid.jpg)](https://www.youtube.com/watch?v=C9n8zFpaV3I)
 
 **Personal and organic AI framework**
 - Agent Zero is not a predefined agentic framework. It is designed to be dynamic, organically growing, and learning as you use it.
 - Agent Zero is fully transparent, readable, comprehensible, and interactive.
 - Agent Zero uses the computer as a tool to accomplish its tasks.
-
-![Agent Zero](docs/splash_wide.png)
 
 ## Key concepts
 1. **General-purpose assistant**
@@ -38,6 +37,8 @@
 - Agents can communicate with their superiors and subordinates, asking questions, giving instructions, and providing guidance. Instruct your agents in the system prompt on how to communicate effectively.
 - The terminal interface is real-time streamed and interactive. You can stop and intervene at any point. If you see your agent heading in the wrong direction, just stop and tell it right away.
 - There is a lot of freedom in this framework. You can instruct your agents to regularly report back to superiors asking for permission to continue. You can instruct them to use point-scoring systems when deciding when to delegate subtasks. Superiors can double-check subordinates' results and dispute. The possibilities are endless.
+
+![Agent Zero](docs/splash_wide.png)
 
 ## Nice features to have
 - Output is very clean, colorful, and readable; nothing is hidden.

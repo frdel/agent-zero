@@ -134,6 +134,7 @@ IMPORTANT: Never use implicit print or implicit output, it does not work! If you
 When tool outputs error, you need to change your code accordingly before trying again. knowledge_tool can help analyze errors.
 IMPORTANT!: Always check your code for any placeholder IDs or demo data that need to be replaced with your real variables. Do not simply reuse code snippets from tutorials.
 Do not use in combination with other tools except for thoughts. Wait for response before using other tools.
+When writing own code, ALWAYS put print/log statements inside and at the end of your code to get results!
 **Example usages:**
 1. Execute python code
 ~~~json
@@ -146,7 +147,7 @@ Do not use in combination with other tools except for thoughts. Wait for respons
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "python",
-        "code": "import os\nreturn os.getcwd()",
+        "code": "import os\nprint(os.getcwd())",
     }
 }
 ~~~
