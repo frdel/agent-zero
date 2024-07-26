@@ -6,12 +6,12 @@
 
 **Personal and organic AI framework**
 - Agent Zero is not a predefined agentic framework. It is designed to be dynamic, organically growing, and learning as you use it.
-- Agent Zero is fully transparent, readable, comprehensible, and interactive.
-- Agent Zero uses the computer as a tool to accomplish its tasks.
+- Agent Zero is fully transparent, readable, comprehensible, customizable and interactive.
+- Agent Zero uses the computer as a tool to accomplish its (your) tasks.
 
 ## Key concepts
 1. **General-purpose assistant**
-- Agent Zero is not pre-programmed for specific tasks (but can be). It is meant to be a general-purpose personal assistant. Give it a task, and it will gather information, execute commands and code, cooperate with other instances, and do its best to accomplish it.
+- Agent Zero is not pre-programmed for specific tasks (but can be). It is meant to be a general-purpose personal assistant. Give it a task, and it will gather information, execute commands and code, cooperate with other agent instances, and do its best to accomplish it.
 - It has a persistent memory, allowing it to memorize previous solutions, code, facts, instructions, etc., to solve tasks faster and more reliably in the future.
 
 2. **Computer as a tool**
@@ -29,7 +29,7 @@
 - The whole behavior is defined by a system prompt in the **prompts/agent.system.md** file. Change this prompt and change the framework dramatically.
 - The framework does not guide or limit the agent in any way. There are no hard-coded rails that agents have to follow.
 - Every prompt, every small message template sent to the agent in its communication loop, can be found in the **prompts/** folder and changed.
-- Every default tool can be found in the **tools/** folder and changed or copied to create new predefined tools.
+- Every default tool can be found in the **python/tools/** folder and changed or copied to create new predefined tools.
 - Of course, it is open-source (except for some tools like Perplexity, but that will be replaced with an open-source alternative as well in the future).
 
 5. **Communication is key**
@@ -41,17 +41,17 @@
 ![Agent Zero](docs/splash_wide.png)
 
 ## Nice features to have
-- Output is very clean, colorful, and readable; nothing is hidden.
+- Output is very clean, colorful, readable and interactive; nothing is hidden.
 - The same colorful output you see in the terminal is automatically saved to HTML file in **logs/** folder for every session.
 - Agent output is streamed in real-time, allowing the user to read along and intervene at any time.
 - No coding is required, only prompting and communication skills.
 - With a solid system prompt, the framework is reliable even with small models, including precise tool usage.
 
-![Joke example](docs/joke.png)
+![Time example](docs/time_example.jpg)
 
 ## Keep in mind
 1. **Agent Zero can be dangerous!**
-With proper instruction, Agent Zero is capable of many things, even potentially dangerous to your computer, data, or accounts. Always run Agent Zero in an isolated environment, preferably in the built-in automated Docker solution.
+With proper instruction, Agent Zero is capable of many things, even potentially dangerous to your computer, data, or accounts. Always run Agent Zero in an isolated environment (like the built in docker container) and be careful what you wish for.
 
 2. **Agent Zero is not pre-programmed; it is prompt-based.**
 The whole framework contains only a minimal amount of code and does not guide the agent in any way.
@@ -64,17 +64,17 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 
 ## Known problems
 1. The system prompt sucks. You can do better. If you do, help me please :)
-2. Claude models like to hallucinate when using tools. This can probebly be fixed in prompt, but for some reason, Claude models like to use multiple tools in a single message and not wait for output, they just make up their outputs right away. For now I have limited the tool usage to 1 tool per message, this helps a little.
+2. The communication between agent and terminal in docker container via SSH can sometimes break and stop producing outputs. Sometimes it is because the agent runs something like "server.serve_forever()" which causes the terminal to hang, sometimes a random error can occur. Restarting the agent and/or the docker container helps.
+3. The agent can break his operating system. Sometimes the agent can deactivate virtual environment, uninstall packages, change config etc. Again, removing the docker container and cleaning up the **work_dir/** is enough to fix that.
 
 ## Ideal environment
-- **Linux VM / docker container**: The perfect environment to run Agent Zero is a Debian-based Linux virtual machine or (event better) the built-in docker container with enhanced privileges or root access (to install packages and run terminal commands).
-- **Python**: Python has to be installed on the system to run the framework and let the agent execute created Python scripts.
-- **NodeJS**: NodeJS is required to allow the agent to run JS scripts as well.
+- **Docker container**: The perfect environment to run Agent Zero is the built-in docker container. The agent can download the image **frdel/agent-zero-exe** on its own and start the container, you only need to have docker running (like the Docker Desktop application).
+- **Python**: Python has to be installed on the system to run the framework.
 - **Internet access**: The agent will need internet access to use its online knowledge tool and execute commands and scripts requiring a connection. If you do not need your agent to be online, you can alter its prompts in the **prompts/** folder and make it fully local.
 
 ## Setup
 1. **Required API keys:**
-- At the moment, the only recommended API key is for https://www.perplexity.ai/ API. Perplexity is used as a convenient web search tool and has not yet been replaced by an open-source alternative.
+- At the moment, the only recommended API key is for https://www.perplexity.ai/ API. Perplexity is used as a convenient web search tool and has not yet been replaced by an open-source alternative. If you do not have an API key for Perplexity, leave it empty in the .env file and Perplexity will not be used.
 - Chat models and embedding models can be executed locally via Ollama and HuggingFace or via API as well.
 
 2. **Enter your API keys:**
@@ -94,10 +94,12 @@ pip install -r requirements.txt
 - In the **main.py** file, right at the start of the **chat()** function, you can see how the chat model and embedding model are set.
 - You can choose between online models (OpenAI, Anthropic, Groq) or offline (Ollama, HuggingFace) for both.
 
+4. **run Docker:**
+- Easiest way is to install Docker Desktop application and just run it. The rest will be handled by the framework itself.
+
 ## Run the program
 - Just run the **main.py** file in Python:
 ~~~bash
 python main.py
 ~~~
-
-- Right now, only the interactive terminal interface is available; in the future, a web interface will probably be implemented.
+- Or run it in debug mode in VS Code using the **debug** button in the top right corner of the editor. I have provided config files for VS Code for this purpose.
