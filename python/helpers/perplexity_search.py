@@ -94,7 +94,8 @@ def PerplexitySearchLLM(api_key,model_name="sonar-medium-online",base_url="https
     return call_model
 
 
-call_llm = PerplexitySearchLLM(api_key=api_key_from_env,model_name="llama-3-sonar-large-32k-online")
+if api_key_from_env: 
+    call_llm = PerplexitySearchLLM(api_key=api_key_from_env,model_name="llama-3-sonar-large-32k-online")
 
 def perplexity_search(search_query: str):
     return call_llm(search_query)
