@@ -40,6 +40,7 @@ def initialize():
     # embedding model used for memory
     embedding_llm = models.get_embedding_openai()
     # embedding_llm = models.get_embedding_hf()
+    # embedding_llm = models.get_embedding_ollama()
 
     # agent configuration
     config = AgentConfig(
