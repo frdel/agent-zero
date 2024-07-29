@@ -54,6 +54,15 @@ class Agent:
         self.agent_name = f"Agent {self.number}"
 
         self.system_prompt = files.read_file("./prompts/agent.system.md").replace("{", "{{").replace("}", "}}")
+        """
+        I'm adding this extra initialization prompt for the user.
+        The IRL user can add additional universal information that the agents
+        can always refer back to for operational instructions, but still remains 
+        outside the main system prompt. In my case, I want the agent to be able to
+        follow a guide I have in the work_dir, and I'll instruct the agent in this new md file
+        """
+        
+        self.user_initialization_prompt = files.read_file("./prompts/agent.user_initialization.md").replace("{", "{{").replace("}", "}}")
         self.tools_prompt = files.read_file("./prompts/agent.tools.md").replace("{", "{{").replace("}", "}}")
 
         self.history = []
@@ -295,3 +304,7 @@ class Agent:
 
     def call_extension(self, name: str, **kwargs) -> Any:
         pass
+    
+    def get_special_user_init_message(self) -> str:
+        
+        return ""
