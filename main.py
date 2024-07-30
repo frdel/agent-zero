@@ -155,7 +155,7 @@ def capture_keys():
                         continue
 
 # User input with timeout
-def timeout_input(prompt, timeout=10):
+def timeout_input(prompt, timeout=120):
     return timed_input.timeout_input(prompt=prompt, timeout=timeout)
 
 if __name__ == "__main__":
