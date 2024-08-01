@@ -28,10 +28,10 @@ ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN python3 -m venv $VIRTUAL_ENV
 
-# Upgrade pip and install numpy first, then other packages
-RUN pip install --upgrade pip && \
-    pip install numpy && \
-    pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu110
+# Upgrade pip and install packages within the virtual environment #not working currently
+# RUN $VIRTUAL_ENV/bin/pip install --upgrade pip && \
+    # $VIRTUAL_ENV/bin/pip install numpy && \
+    # $VIRTUAL_ENV/bin/pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu110
 
 # Copy initial .bashrc with virtual environment activation to a temporary location
 COPY .bashrc /etc/skel/.bashrc
