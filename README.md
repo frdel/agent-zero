@@ -73,6 +73,7 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 - **Docker container**: The perfect environment to run Agent Zero is the built-in docker container. The agent can download the image **frdel/agent-zero-exe** on its own and start the container, you only need to have docker running (like the Docker Desktop application).
 - **Python**: Python has to be installed on the system to run the framework.
 - **Internet access**: The agent will need internet access to use its online knowledge tool and execute commands and scripts requiring a connection. If you do not need your agent to be online, you can alter its prompts in the **prompts/** folder and make it fully local.
+- **Git**: Git is required for version control and to manage updates to the agent's codebase and dependencies as well as to pull down the project to your computer easily.  You can download a release zip, but this is the easiest way.
 
 ## Setup
 1. **Required API keys:**
