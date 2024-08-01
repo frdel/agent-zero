@@ -81,7 +81,7 @@ class PrintStyle:
             self.padding_added = True
 
     def _log_html(self, html):
-        with open(PrintStyle.log_file_path, "a") as f: # type: ignore
+        with open(PrintStyle.log_file_path, "a", encoding="utf-8") as f:
             f.write(html)
 
     @staticmethod

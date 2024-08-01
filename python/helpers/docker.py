@@ -67,7 +67,7 @@ class DockerContainerManager:
             )
             atexit.register(self.cleanup_container)
             print(f"Started container with ID: {self.container.id}")
-            time.sleep(10)  # This helps to get SSH ready
+            time.sleep(5)  # This helps to get SSH ready
             self.start_health_check_thread()
 
     def health_check(self):
