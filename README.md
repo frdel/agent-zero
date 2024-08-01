@@ -105,3 +105,73 @@ pip install -r requirements.txt
 python main.py
 ~~~
 - Or run it in debug mode in VS Code using the **debug** button in the top right corner of the editor. I have provided config files for VS Code for this purpose.
+
+# NVIDIA Docker Setup on Ubuntu WSL2
+
+This guide provides instructions for setting up NVIDIA Docker on Ubuntu within WSL2 (Windows Subsystem for Linux 2). It covers installation steps and troubleshooting tips.
+
+## Prerequisites
+
+- **Windows 11** with WSL2 enabled.
+- **NVIDIA GPU** with the latest drivers installed on Windows.
+- **Docker Desktop** installed on Windows and configured to use WSL2 backend.
+
+## Installation Steps
+
+### 1. Install Ubuntu on WSL2
+Ensure you have an Ubuntu distribution installed and running on WSL2.
+
+### 2. Install NVIDIA Docker Toolkit
+
+#### Add NVIDIA Package Repository
+
+1. **Add the NVIDIA Docker repository signing key:**
+   ```sh
+   curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | gpg --dearmor | sudo tee /usr/share/keyrings/nvidia-archive-keyring.gpg > /dev/null
+   ```
+
+2. **Set up the CUDA repository:**
+   ```sh
+   export distribution=$(. /etc/os-release; echo $ID$VERSION_ID)
+   export ARCH=$(dpkg --print-architecture)
+   sudo tee /etc/apt/sources.list.d/nvidia-docker.list > /dev/null <<EOF
+   deb [signed-by=/usr/share/keyrings/nvidia-archive-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/ubuntu${distribution}/${ARCH} /
+   deb [signed-by=/usr/share/keyrings/nvidia-archive-keyring.gpg] https://nvidia.github.io/nvidia-container-runtime/stable/ubuntu${distribution}/${ARCH} /
+   deb [signed-by=/usr/share/keyrings/nvidia-archive-keyring.gpg] https://nvidia.github.io/nvidia-docker/ubuntu${distribution}/${ARCH} /
+   EOF
+   ```
+
+3. **Update the package list and install NVIDIA Docker:**
+   ```sh
+   sudo apt-get update
+   sudo apt-get install -y nvidia-docker2
+   ```
+
+### 3. Restart Docker Daemon
+```sh
+sudo systemctl restart docker
+```
+
+### 4. Test NVIDIA Docker Installation
+Run a test container to verify that NVIDIA Docker is correctly set up:
+```sh
+sudo docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi
+```
+You should see the output showing your NVIDIA GPU and driver information.
+
+## Troubleshooting Tips
+
+1. **Repository Not Found (404 Error)**:
+   - Ensure the correct distribution (`distribution`) and architecture (`ARCH`) are set. If using Ubuntu 22.04 (`jammy`), verify the NVIDIA repository URLs.
+
+2. **Manifest Unknown Error**:
+   - The specific Docker image tag may not exist. Verify the image and tag from the [NVIDIA Docker Hub](https://hub.docker.com/r/nvidia/cuda/tags).
+
+3. **Docker Not Starting or GPU Not Detected**:
+   - Make sure Docker Desktop is set to use WSL2 and that GPU resources are shared with WSL. Check Docker Desktop settings to ensure WSL integration is enabled for your distribution.
+
+4. **Check System Compatibility**:
+   - Ensure your Windows installation, WSL2 setup, and GPU drivers are up to date.
+
+5. **Further Assistance**:
+   - Refer to the [official NVIDIA Docker documentation](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) for additional support and information.
