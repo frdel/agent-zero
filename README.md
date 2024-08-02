@@ -78,6 +78,7 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 1. **Required API keys:**
 - At the moment, the only recommended API key is for https://www.perplexity.ai/ API. Perplexity is used as a convenient web search tool and has not yet been replaced by an open-source alternative. If you do not have an API key for Perplexity, leave it empty in the .env file and Perplexity will not be used.
 - Chat models and embedding models can be executed locally via Ollama and HuggingFace or via API as well.
+- Azure OpenAI is now supported as an additional option for chat and embedding models.
 
 2. **Enter your API keys:**
 - You can enter your API keys into the **.env** file, which you can copy from **example.env**
@@ -85,6 +86,9 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 ~~~bash
 export API_KEY_PERPLEXITY="your-api-key-here"
 export API_KEY_OPENAI="your-api-key-here"
+export API_KEY_AZURE="your-azure-api-key-here"
+export AZURE_ENDPOINT="your-azure-endpoint-here"
+export OPENAI_API_VERSION="your-azure-openai-api-verison-here"
 ~~~
 
 3. **Install dependencies with the following terminal command:**
@@ -94,7 +98,8 @@ pip install -r requirements.txt
 
 3. **Choose your chat, utility and embeddings model:**
 - In the **main.py** file, right at the start of the **chat()** function, you can see how the chat model and embedding model are set.
-- You can choose between online models (OpenAI, Anthropic, Groq) or offline (Ollama, HuggingFace) for both.
+- You can choose between online models (OpenAI, Anthropic, Groq, Azure OpenAI) or offline (Ollama, HuggingFace) for both.
+- For Azure OpenAI, you can use functions like `get_azure_openai_gpt35()`, `get_azure_openai_gpt4()`, or `get_azure_openai_gpt4o()` for chat models, and `get_azure_openai_embedding()` for embeddings.
 
 4. **run Docker:**
 - Easiest way is to install Docker Desktop application and just run it. The rest will be handled by the framework itself.

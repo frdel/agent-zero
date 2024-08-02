@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from langchain_community.llms import Ollama
 from langchain_openai import ChatOpenAI, OpenAI, OpenAIEmbeddings
+from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
 from langchain_anthropic import ChatAnthropic
 from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -57,6 +58,21 @@ def get_openai_gpt4o(api_key=None, temperature=DEFAULT_TEMPERATURE):
     api_key = api_key or get_api_key("openai")
     return ChatOpenAI(model_name="gpt-4o", temperature=temperature, api_key=api_key) # type: ignore
 
+def get_azure_openai_gpt35(api_key=None, temperature=DEFAULT_TEMPERATURE, deployment_name="gpt-35-turbo", azure_endpoint=None):
+    api_key = api_key or get_api_key("azure")
+    azure_endpoint = azure_endpoint or os.getenv("AZURE_ENDPOINT")
+    return AzureChatOpenAI(deployment_name=deployment_name, temperature=temperature, api_key=api_key, azure_endpoint=azure_endpoint) # type: ignore
+
+def get_azure_openai_gpt4(api_key=None, temperature=DEFAULT_TEMPERATURE, deployment_name="gpt-4", azure_endpoint=None):
+    api_key = api_key or get_api_key("azure")
+    azure_endpoint = azure_endpoint or os.getenv("AZURE_ENDPOINT")
+    return AzureChatOpenAI(deployment_name=deployment_name, temperature=temperature, api_key=api_key, azure_endpoint=azure_endpoint) # type: ignore
+
+def get_azure_openai_gpt4o(api_key=None, temperature=DEFAULT_TEMPERATURE, deployment_name="gpt-4o", azure_endpoint=None):
+    api_key = api_key or get_api_key("azure")
+    azure_endpoint = azure_endpoint or os.getenv("AZURE_ENDPOINT")
+    return AzureChatOpenAI(deployment_name=deployment_name, temperature=temperature, api_key=api_key, azure_endpoint=azure_endpoint) # type: ignore
+
 def get_groq_mixtral7b(api_key=None, temperature=DEFAULT_TEMPERATURE):
     api_key = api_key or get_api_key("groq")
     return ChatGroq(model_name="mixtral-8x7b-32768", temperature=temperature, api_key=api_key) # type: ignore
@@ -98,3 +114,8 @@ def get_embedding_hf(model_name="sentence-transformers/all-MiniLM-L6-v2"):
 def get_embedding_openai(api_key=None):
     api_key = api_key or get_api_key("openai")
     return OpenAIEmbeddings(api_key=api_key) #type: ignore
+
+def get_azure_openai_embedding(api_key=None, deployment_name="text-embedding-3-large", azure_endpoint=None):
+    api_key = api_key or get_api_key("azure")
+    azure_endpoint = azure_endpoint or os.getenv("AZURE_ENDPOINT")
+    return AzureOpenAIEmbeddings(deployment_name=deployment_name, api_key=api_key, azure_endpoint=azure_endpoint) # type: ignore
