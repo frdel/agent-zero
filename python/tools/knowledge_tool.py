@@ -7,10 +7,9 @@ from python.helpers import duckduckgo_search
 from . import memory_tool
 import concurrent.futures
 
-
-
 from python.helpers.tool import Tool, Response
 from python.helpers import files
+from python.helpers.print_style import PrintStyle
 
 class Knowledge(Tool):
     def execute(self, question="", **kwargs):
@@ -20,7 +19,10 @@ class Knowledge(Tool):
             # perplexity search, if API provided
             if os.getenv("API_KEY_PERPLEXITY"):
                 perplexity = executor.submit(perplexity_search.perplexity_search, question)
-            else: perplexity = None
+            else: 
+                PrintStyle.hint("No API key provided for Perplexity. Skipping Perplexity search.")
+                perplexity = None
+                
 
             # duckduckgo search
             duckduckgo = executor.submit(duckduckgo_search.search, question)
