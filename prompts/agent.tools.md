@@ -10,7 +10,7 @@ Always verify memory by online.
 ~~~json
 {
     "thoughts": [
-        "The has greeted me...",
+        "The user has greeted me...",
         "I will...",
     ],
     "tool_name": "response",

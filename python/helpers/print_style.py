@@ -117,6 +117,14 @@ class PrintStyle:
         lines = sys.stdin.readlines()
         return bool(lines) and not lines[-1].strip()
 
+    @staticmethod
+    def hint(text:str):
+        PrintStyle(font_color="#6C3483", padding=True).print("Hint: "+text)
+
+    @staticmethod
+    def error(text:str):
+        PrintStyle(font_color="red", padding=True).print("Error: "+text)
+
 # Ensure HTML file is closed properly when the program exits
 import atexit
 atexit.register(PrintStyle._close_html_log)

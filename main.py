@@ -15,32 +15,22 @@ os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
 def initialize():
     
     # main chat model used by agents (smarter, more accurate)
-
-    # chat_llm = models.get_groq_llama70b(temperature=0.2)
-    # chat_llm = models.get_groq_llama70b_json(temperature=0.2)
-    # chat_llm = models.get_groq_llama8b(temperature=0.2)
-    # chat_llm = models.get_openai_gpt35(temperature=0)
-    # chat_llm = models.get_openai_gpt4o(temperature=0)
-    chat_llm = models.get_openai_chat(temperature=0)
-    # chat_llm = models.get_anthropic_opus(temperature=0)
-    # chat_llm = models.get_anthropic_sonnet(temperature=0)
-    # chat_llm = models.get_anthropic_sonnet_35(temperature=0)
-    # chat_llm = models.get_anthropic_haiku(temperature=0)
-    # chat_llm = models.get_ollama_dolphin()
-    # chat_llm = models.get_ollama(model_name="gemma2:27b")
-    # chat_llm = models.get_ollama(model_name="llama3:8b-text-fp16")
-    # chat_llm = models.get_ollama(model_name="gemma2:latest")
-    # chat_llm = models.get_ollama(model_name="qwen:14b")
+    chat_llm = models.get_openai_chat(model_name="gpt-4o-mini", temperature=0)
+    # chat_llm = models.get_ollama_chat(model_name="gemma2:latest", temperature=0)
+    # chat_llm = models.get_lmstudio_chat(model_name="TheBloke/Mistral-7B-Instruct-v0.2-GGUF", temperature=0)
     # chat_llm = models.get_openrouter(model_name="meta-llama/llama-3-8b-instruct:free")
-    # chat_llm = models.get_google_chat()
-
-
-    # utility model used for helper functions (cheaper, faster)
-    utility_llm = models.get_openai_chat(temperature=0)
+    # chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o-mini", temperature=0)
+    # chat_llm = models.get_anthropic_chat(model_name="claude-3-5-sonnet-20240620", temperature=0)
+    # chat_llm = models.get_google_chat(model_name="gemini-1.5-flash", temperature=0)
+    # chat_llm = models.get_groq_chat(model_name="llama-3.1-70b-versatile", temperature=0)
     
+    # utility model used for helper functions (cheaper, faster)
+    utility_llm = chat_llm # change if you want to use a different utility model
+
     # embedding model used for memory
-    embedding_llm = models.get_embedding_openai()
-    # embedding_llm = models.get_embedding_hf()
+    embedding_llm = models.get_openai_embedding(model_name="text-embedding-3-small")
+    # embedding_llm = models.get_ollama_embedding(model_name="nomic-embed-text")
+    # embedding_llm = models.get_huggingface_embedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
     # agent configuration
     config = AgentConfig(
