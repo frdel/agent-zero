@@ -4,6 +4,9 @@
 
 
 
+# Ignore all contents of the virtual environment directory
+.venv/*
+
 # Ignore all contents of the directory "work_dir"
 work_dir/*
 # But do not ignore the directory itself
