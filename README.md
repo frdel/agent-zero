@@ -120,74 +120,264 @@ Before you start, make sure you have the following:
 
 ## Installation Steps
 
-1. **Install Ubuntu on WSL2**  
-   First, make sure you have an Ubuntu system installed and running on WSL2. You can install Ubuntu from the Microsoft Store.
+### 1. Install Ubuntu on WSL2
 
-2. **Install NVIDIA Docker Toolkit**  
-   The following steps should be entered into your Ubuntu terminal:
+First, make sure you have an Ubuntu system installed and running on WSL2. You can install Ubuntu from the Microsoft Store.
 
-   - **Add NVIDIA Docker Repository Key**  
-     This command adds a key that allows your system to trust the NVIDIA software. Enter this in the Ubuntu terminal:  
-     '''sh
-     curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | gpg --dearmor | sudo tee /usr/share/keyrings/nvidia-archive-keyring.gpg > /dev/null
-     '''
+### 2. Install NVIDIA Docker Toolkit
 
-   - **Set Up the CUDA Repository**  
-     These commands set up the source from where you will download NVIDIA software. Enter them one by one in the Ubuntu terminal:  
-     '''sh
-     export distribution=$(. /etc/os-release; echo $ID$VERSION_ID)
-     export ARCH=$(dpkg --print-architecture)
-     sudo tee /etc/apt/sources.list.d/nvidia-docker.list > /dev/null <<EOF
-     deb [signed-by=/usr/share/keyrings/nvidia-archive-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/ubuntu${distribution}/${ARCH} /
-     deb [signed-by=/usr/share/keyrings/nvidia-archive-keyring.gpg] https://nvidia.github.io/nvidia-container-runtime/stable/ubuntu${distribution}/${ARCH} /
-     deb [signed-by=/usr/share/keyrings/nvidia-archive-keyring.gpg] https://nvidia.github.io/nvidia-docker/ubuntu${distribution}/${ARCH} /
-     EOF
-     '''
+#### Add NVIDIA Docker Repository Key
 
-   - **Update and Install NVIDIA Docker**  
-     This installs the NVIDIA Docker software. Enter these commands in the Ubuntu terminal:  
-     '''sh
-     sudo apt-get update
-     sudo apt-get install -y nvidia-docker2
-     '''
+Add a key that allows your system to trust the NVIDIA software:
 
-3. **Restart Docker Daemon**  
-   After installation, restart Docker to apply changes. Enter this in the Ubuntu terminal:  
-   '''sh
-   sudo systemctl restart docker
-   '''
+~~~bash
+sudo curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+~~~
 
-4. **Add User to Docker Group**  
-   This step allows you to use Docker without typing `sudo` each time. Enter this command in the Ubuntu terminal:  
-   '''sh
-   sudo usermod -aG docker $USER
-   '''  
-   After running the command, log out of your Ubuntu session and log back in for this change to take effect.
+#### Set Up the CUDA Repository
 
-5. **Test NVIDIA Docker Installation**  
-   To verify that NVIDIA Docker is set up correctly, run the following command in the Ubuntu terminal:  
-   '''sh
-   docker run --rm --gpus all nvidia/cuda:11.0.3-base-ubuntu20.04 nvidia-smi
-   '''  
-   If successful, you should see information about your NVIDIA GPU.
+Set up the source from where you will download NVIDIA software. Due to a current issue with the 22.04 repository, use the 18.04 repository instead:
+
+~~~bash
+echo "deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/ubuntu18.04/amd64 /" | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+~~~
+
+**Note**: The 22.04 repository is currently not working, which may result in a 404 error. Therefore, the 18.04 repository is being used as a workaround.
+
+#### Update and Install NVIDIA Docker
+
+Install the NVIDIA Docker software:
+
+~~~bash
+sudo apt-get update
+sudo apt-get install -y nvidia-docker2
+~~~
+
+#### Restart Docker Daemon
+
+After installation, restart Docker to apply changes:
+
+~~~bash
+sudo systemctl restart docker
+~~~
+
+#### Add User to Docker Group
+
+This step allows you to use Docker without typing sudo each time:
+
+~~~bash
+sudo usermod -aG docker $USER
+~~~
+
+Log out of your Ubuntu session and log back in for this change to take effect.
+
+### 3. Configure Docker for NVIDIA Runtime
+
+#### Edit daemon.json File
+
+Ensure Docker uses the NVIDIA runtime by default:
+
+~~~bash
+sudo nano /etc/docker/daemon.json
+~~~
+
+Add the following configuration:
+
+~~~json
+{
+  "default-runtime": "nvidia",
+  "runtimes": {
+    "nvidia": {
+      "path": "nvidia-container-runtime",
+      "runtimeArgs": []
+    }
+  }
+}
+~~~
+
+Save and exit the file. Then, restart Docker:
+
+~~~bash
+sudo systemctl restart docker
+~~~
+
+### 4. Docker Compose Setup
+
+Create a docker-compose.yml file for your projects with GPU support:
+
+~~~yaml
+services:
+  agent-zero-exe:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: docker-agent-zero-exe:latest
+    volumes:
+      - ../work_dir:/workspace
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    ports:
+      - "50022:22"
+~~~
+
+This configuration ensures the service utilizes the GPU and sets the environment variables appropriately.
+
+### 5. Test NVIDIA Docker Installation
+
+To verify that NVIDIA Docker is set up correctly, run:
+
+~~~bash
+docker run --rm --gpus all nvidia/cuda:11.0.3-base-ubuntu20.04 nvidia-smi
+~~~
+
+If successful, you should see information about your NVIDIA GPU.
+
+### 6. Enable Docker to Start on Boot
+
+Ensure Docker starts automatically on boot:
+
+~~~bash
+sudo systemctl enable docker
+~~~
+
+### 7. Set Up Systemd Service for Docker Compose
+
+To automatically start your Docker Compose application at boot, create a systemd service file:
+
+~~~bash
+sudo nano /etc/systemd/system/docker-compose-app.service
+~~~
+
+Add the following content:
+
+~~~ini
+[Unit]
+Description=Docker Compose Application Service
+Requires=docker.service
+After=docker.service
+
+[Service]
+WorkingDirectory=/mnt/c/Users/path/to/yourProjects/docker
+ExecStart=/usr/local/bin/docker-compose up --build
+ExecStop=/usr/local/bin/docker-compose down
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+~~~
+
+Enable and start the service:
+
+~~~bash
+sudo systemctl enable docker-compose-app.service
+sudo systemctl start docker-compose-app.service
+~~~
+
+This setup ensures that the Docker Compose application is managed by systemd and starts automatically on system boot.
 
 ## Troubleshooting Tips
 
-1. **Permission Denied Errors**:  
-   If you get a "permission denied" error, make sure you've logged out and back in after adding yourself to the Docker group.
+- **Permission Denied Errors**: Ensure you've logged out and back in after adding yourself to the Docker group.
+- **Repository Not Found (404 Error)**: Ensure you are using the Ubuntu 18.04 repository for NVIDIA Docker components, as the 22.04 repository may not be available.
+- **Manifest Unknown Error**: Verify the Docker image tag exists on the NVIDIA Docker Hub.
+- **Docker Not Starting or GPU Not Detected**: Ensure Docker Desktop is configured to use WSL2 and that GPU sharing is enabled in the Docker Desktop settings.
 
-2. **Repository Not Found (404 Error)**:  
-   Double-check the commands you used to set up the CUDA repository. If you're using a specific version of Ubuntu, like 22.04 (`jammy`), ensure you're using the correct URLs.
+## Troubleshooting Steps for NVIDIA Docker Setup
 
-3. **Manifest Unknown Error**:  
-   This means the Docker image tag you tried to use doesn't exist. Check the available tags on the [NVIDIA Docker Hub](https://hub.docker.com/r/nvidia/cuda/tags).
+If you encounter issues during setup or operation, follow these steps:
 
-4. **Docker Not Starting or GPU Not Detected**:  
-   Make sure Docker Desktop is configured to use WSL2 and that GPU sharing is enabled. You can check Docker Desktop settings on your Windows machine.
+### 1. **Check Current Docker Runtime Settings**
 
-5. **Check System Compatibility**:  
-   Ensure your Windows system, WSL2 setup, and NVIDIA GPU drivers are all up to date.
+Ensure the current runtime settings are correctly configured:
 
-6. **Further Assistance**:  
-   For more help, refer to the [official NVIDIA Docker documentation](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html).
+~~~bash
+docker info | grep -i runtime
+~~~
 
+If the output does not show `nvidia` as a runtime, further actions are required.
+
+### 2. **Install or Reinstall NVIDIA Docker 2**
+
+To ensure all components are correctly installed, remove existing Docker and NVIDIA Docker components, and then reinstall them:
+
+~~~bash
+# Remove Docker and NVIDIA Docker components
+sudo apt-get remove --purge docker-ce docker-ce-cli containerd.io nvidia-docker2
+
+# Update package list
+sudo apt-get update
+
+# Reinstall Docker and NVIDIA Docker components
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io nvidia-docker2
+~~~
+
+### 3. **Edit Docker Daemon Configuration**
+
+Ensure the Docker daemon is configured to use the `nvidia` runtime by default:
+
+~~~bash
+# Edit daemon.json file
+sudo nano /etc/docker/daemon.json
+~~~
+
+Add or update the following configuration:
+
+~~~json
+{
+  "default-runtime": "nvidia",
+  "runtimes": {
+    "nvidia": {
+      "path": "nvidia-container-runtime",
+      "runtimeArgs": []
+    }
+  }
+}
+~~~
+
+Save and exit the editor.
+
+### 4. **Restart Docker Service**
+
+After updating the configuration, restart the Docker service to apply the changes:
+
+~~~bash
+sudo systemctl restart docker
+~~~
+
+### 5. **Verify Docker Runtime Settings**
+
+Check again to confirm that `nvidia` is now listed as a runtime and set as the default:
+
+~~~bash
+docker info | grep -i runtime
+~~~
+
+The expected output should list `nvidia` as a runtime and as the default runtime.
+
+### 6. **Test GPU Access in Docker Container**
+
+Run a test Docker container to ensure that the GPU is accessible:
+
+~~~bash
+docker run --rm --gpus all nvidia/cuda:11.0.3-base-ubuntu20.04 nvidia-smi
+~~~
+
+This command should output details about the NVIDIA GPU(s) available on the system, confirming that GPU access is configured correctly.
+
+### 7. **Dealing with SSH Key Issues**
+
+If you encounter an SSH key mismatch error when connecting to the container, update your `known_hosts` file:
+
+~~~bash
+ssh-keygen -f "/home/your_user/.ssh/known_hosts" -R "[localhost]:50022"
+~~~
+
+---
+
+For more help, refer to the official [NVIDIA Docker documentation](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/overview.html) and [Docker documentation](https://docs.docker.com/).

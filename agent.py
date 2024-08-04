@@ -25,10 +25,10 @@ class AgentConfig:
     msgs_keep_start: int = 5
     msgs_keep_end: int = 10
     response_timeout_seconds: int = 60
-    max_tool_response_length: int = 10000
+    max_tool_response_length: int = 100000
     code_exec_docker_enabled: bool = True
-    code_exec_docker_name: str = "agent-zero-exe"
-    code_exec_docker_image: str = "frdel/agent-zero-exe:latest"
+    code_exec_docker_name: str = "docker-agent-zero-exe"
+    code_exec_docker_image: str = "docker-agent-zero-exe:latest"
     code_exec_docker_ports: dict[str,int] = field(default_factory=lambda: {"22/tcp": 50022})
     code_exec_docker_volumes: dict[str, dict[str, str]] = field(default_factory=lambda: {files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"}})
     code_exec_ssh_enabled: bool = True
