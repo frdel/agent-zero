@@ -6,6 +6,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI, HarmBlockThreshold, HarmCategory
+from pydantic.v1.types import SecretStr
 
 
 # Load environment variables
@@ -92,6 +93,13 @@ def get_google_chat(model_name="gemini-1.5-flash-latest", api_key=None, temperat
     return ChatGoogleGenerativeAI(model=model_name, temperature=temperature, google_api_key=api_key, 
                                   safety_settings={HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE }) # type: ignore
 
+def get_openrouter(model_name: str="meta-llama/llama-3.1-8b-instruct:free"):
+        open_router_api_key = os.getenv('API_KEY_OPENROUTER')
+        open_router_api_key = SecretStr(open_router_api_key) if open_router_api_key else None
+        return ChatOpenAI(api_key=open_router_api_key,
+                          base_url="https://openrouter.ai/api/v1",
+                         model=model_name)
+        
 def get_embedding_hf(model_name="sentence-transformers/all-MiniLM-L6-v2"):
     return HuggingFaceEmbeddings(model_name=model_name)
 
