@@ -10,6 +10,7 @@ import os
 
 
 api_key_from_env = os.getenv("API_KEY_PERPLEXITY")
+DEFAULT_RESPONSE = " Can not search internet, as there is no OpenAI key configured."
 
 class PerplexityCrewLLM(BaseLLM):
     api_key: str
@@ -63,7 +64,8 @@ class PerplexityCrewLLM(BaseLLM):
     
 
 def PerplexitySearchLLM(api_key,model_name="sonar-medium-online",base_url="https://api.perplexity.ai"):    
-    client = OpenAI(api_key=api_key_from_env, base_url=base_url)
+    client = OpenAI(api_key=api_key_from_env, base_url=base_url) if api_key_from_env else None
+
         
     def call_model(query:str):
         messages = [
@@ -84,11 +86,13 @@ def PerplexitySearchLLM(api_key,model_name="sonar-medium-online",base_url="https
         },
         ]
         
-        response = client.chat.completions.create(
-            model=model_name,
-            messages=messages, # type: ignore
-        )
-        result = response.choices[0].message.content #only the text is returned
+        result = DEFAULT_RESPONSE
+        if client:
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=messages, # type: ignore
+            )
+            result = response.choices[0].message.content #only the text is returned
         return result
     
     return call_model
