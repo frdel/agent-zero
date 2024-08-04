@@ -31,6 +31,7 @@ def initialize():
     # chat_llm = models.get_ollama(model_name="llama3:8b-text-fp16")
     # chat_llm = models.get_ollama(model_name="gemma2:latest")
     # chat_llm = models.get_ollama(model_name="qwen:14b")
+    # chat_llm = models.get_openrouter(model_name="meta-llama/llama-3-8b-instruct:free")
     # chat_llm = models.get_google_chat()
 
 
