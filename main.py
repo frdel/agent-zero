@@ -21,7 +21,7 @@ def initialize():
     # chat_llm = models.get_groq_llama8b(temperature=0.2)
     # chat_llm = models.get_openai_gpt35(temperature=0)
     # chat_llm = models.get_openai_gpt4o(temperature=0)
-    chat_llm = models.get_openai_chat(temperature=0)
+    # chat_llm = models.get_openai_chat(temperature=0)
     # chat_llm = models.get_anthropic_opus(temperature=0)
     # chat_llm = models.get_anthropic_sonnet(temperature=0)
     # chat_llm = models.get_anthropic_sonnet_35(temperature=0)
@@ -31,22 +31,22 @@ def initialize():
     # chat_llm = models.get_ollama(model_name="llama3:8b-text-fp16")
     # chat_llm = models.get_ollama(model_name="gemma2:latest")
     # chat_llm = models.get_ollama(model_name="qwen:14b")
-    # chat_llm = models.get_google_chat()
+        chat_llm = models.get_google_chat(model_name="gemini-1.5-pro-latest")
 
 
     # utility model used for helper functions (cheaper, faster)
-    utility_llm = models.get_openai_chat(temperature=0)
+        utility_llm = models.get_google_chat(temperature=0)
     
     # embedding model used for memory
-    embedding_llm = models.get_embedding_openai()
-    # embedding_llm = models.get_embedding_hf()
+    # embedding_llm = models.get_embedding_openai()
+        embedding_llm = models.get_embedding_hf()
 
     # agent configuration
-    config = AgentConfig(
+        config = AgentConfig(
         chat_model = chat_llm,
         utility_model = utility_llm,
         embeddings_model = embedding_llm,
-        # memory_subdir = "",
+        memory_subdir = "/workspaces/agent-zero/memory",
         auto_memory_count = 0,
         # auto_memory_skip = 2,
         # rate_limit_seconds = 60,
