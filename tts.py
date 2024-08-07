@@ -8,12 +8,15 @@ lang = "en-US-AndrewMultilingualNeural"
 
 class TTS:
     def __init__(self, lang):
-        if (lang.lower() == 'fr'):
-            lang == "fr-FR-RemyMultilingualNeural"
-        elif (lang.lower() == 'es'):
-            lang == "es-ES-AlvaroNeural"
-        elif (lang.lower() == 'de'):
-            lang == "de-DE-FlorianMultilingualNeural"
+        if (lang):
+            if (lang.lower() == 'fr'):
+                lang == "fr-FR-RemyMultilingualNeural"
+            elif (lang.lower() == 'es'):
+                lang == "es-ES-AlvaroNeural"
+            elif (lang.lower() == 'de'):
+                lang == "de-DE-FlorianMultilingualNeural"
+            else:
+                lang == "en-US-AndrewMultilingualNeural"
         else:
             lang == "en-US-AndrewMultilingualNeural"
 
