@@ -1,4 +1,4 @@
-import threading, time, models, os
+import threading, time, models, os, sys, argparse, asyncio
 from ansio import application_keypad, mouse_input, raw_input
 from ansio.input import InputEvent, get_input_event
 from agent import Agent, AgentConfig
@@ -6,11 +6,18 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.files import read_file
 from python.helpers import files
 import python.helpers.timed_input as timed_input
-
+from tts import TTS
 
 input_lock = threading.Lock()
 os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
 
+# args parser
+parser = argparse.ArgumentParser()
+parser.add_argument('-v', '--voice')
+args = parser.parse_args()
+
+# init tts (text to speech)
+tts = TTS(args.voice)
 
 def initialize():
     
@@ -108,8 +115,8 @@ def chat(agent:Agent):
         
         # print agent0 response
         PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{agent.agent_name}: reponse:")        
-        PrintStyle(font_color="white").print(f"{assistant_response}")        
-                        
+        PrintStyle(font_color="white").print(f"{assistant_response}")
+        tts.speech(assistant_response)
 
 # User intervention during agent streaming
 def intervention():
