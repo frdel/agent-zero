@@ -381,3 +381,31 @@ ssh-keygen -f "/home/your_user/.ssh/known_hosts" -R "[localhost]:50022"
 ---
 
 For more help, refer to the official [NVIDIA Docker documentation](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/overview.html) and [Docker documentation](https://docs.docker.com/).
+
+#Troubleshooting DockerDesktop/Ubuntu Docker connectivity/sync -
+
+
+If Docker Desktop is not syncing properly with your Ubuntu WSL2 distribution, try the following steps to troubleshoot and potentially resolve the issue:
+
+Verify WSL2 Settings:
+
+Ensure that WSL2 integration is correctly enabled in Docker Desktop settings.
+Go to Docker Desktop settings, navigate to the "Resources" section, then "WSL Integration," and make sure your Ubuntu distribution is toggled on.
+Restart Docker Desktop and WSL2:
+
+Restart Docker Desktop and your WSL2 distributions to refresh the integration. You can restart WSL2 by closing all WSL2 terminals and running wsl --shutdown from a Windows command prompt or PowerShell.
+Check WSL2 and Docker Sync Settings:
+
+Verify if your Docker Desktop is correctly set up to use the WSL2 backend. This can usually be done in the Docker Desktop settings under "General" by ensuring the "Use the WSL 2 based engine" option is checked.
+Disable Local Distribution:
+
+If there is a local Docker distribution running alongside the WSL2 version, try turning it off and leaving only the Ubuntu WSL2 distribution enabled. Conflicts between local and WSL2 Docker instances can sometimes cause issues.
+File Sharing Settings:
+
+Ensure that the file sharing permissions are correctly set for the directories you are trying to access from WSL2.
+Reinstall Docker Desktop:
+
+If the above steps do not resolve the issue, consider reinstalling Docker Desktop. This can help reset any misconfigurations.
+To turn off the local distribution and leave only the Ubuntu WSL2 enabled, go to Docker Desktop settings, and under "General," make sure that only the WSL2 based engine option is enabled, with the Ubuntu distribution selected under WSL integration settings.
+
+After making these changes, try restarting both Docker Desktop and your Ubuntu WSL2 instance, then verify if the synchronization issue is resolved. If problems persist, it may be beneficial to consult the Docker and WSL documentation for additional troubleshooting steps.
