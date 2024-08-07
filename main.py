@@ -7,6 +7,7 @@ from python.helpers.files import read_file
 from python.helpers import files
 import python.helpers.timed_input as timed_input
 from tts import TTS
+from pynput import keyboard
 
 input_lock = threading.Lock()
 os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
@@ -87,22 +88,29 @@ def chat(agent:Agent):
             if not timeout: # if agent wants to wait for user input forever
                 PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ('e' to leave):")        
                 import readline # this fixes arrow keys in terminal
+                listener = keyboard.Listener(on_press=on_press)
+                listener.start()
                 user_input = input("> ")
+                listener.stop()
                 PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}") 
                 
             else: # otherwise wait for user input with a timeout
                 PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ({timeout}s timeout, 'w' to wait, 'e' to leave):")        
                 import readline # this fixes arrow keys in terminal
-                # user_input = timed_input("> ", timeout=timeout)
+                listener = keyboard.Listener(on_press=on_press)
+                listener.start()
                 user_input = timeout_input("> ", timeout=timeout)
-                                    
+                listener.stop()                    
                 if not user_input:
                     user_input = read_file("prompts/fw.msg_timeout.md")
                     PrintStyle(font_color="white", padding=False).stream(f"{user_input}")        
                 else:
                     user_input = user_input.strip()
                     if user_input.lower()=="w": # the user needs more time
-                        user_input = input("> ").strip()
+                        listener = keyboard.Listener(on_press=on_press)
+                        listener.start()
+                        user_input = input("> ")
+                        listener.stop()
                     PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
                     
                     
@@ -132,6 +140,10 @@ def intervention():
         if user_input: Agent.streaming_agent.intervention_message = user_input # set intervention message if non-empty
         Agent.paused = False # continue agent streaming 
     
+def on_press(key):
+    if key == keyboard.Key.alt_r:
+        # Lancer le speech to text
+        stt.record()
 
 # Capture keyboard input to trigger user intervention
 def capture_keys():
