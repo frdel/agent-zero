@@ -3,6 +3,7 @@ import concurrent.futures
 from python.helpers.tool import Tool, Response
 from python.helpers import files
 from python.helpers import perplexity_search, duckduckgo_search
+from python.helpers.print_style import PrintStyle  # Retain new import from main branch
 from . import memory_tool
 
 class Knowledge(Tool):
@@ -12,6 +13,7 @@ class Knowledge(Tool):
             if os.getenv("API_KEY_PERPLEXITY"):
                 perplexity_future = executor.submit(perplexity_search.perplexity_search, question)
             else:
+                PrintStyle.hint("No API key provided for Perplexity. Skipping Perplexity search.")
                 perplexity_future = None
 
             duckduckgo_future = executor.submit(duckduckgo_search.search, question)
@@ -24,9 +26,11 @@ class Knowledge(Tool):
             memory_result = memory_future.result()
             wikipedia_result = wikipedia_future.result()
 
-        msg = files.read_file("prompts/tool.knowledge.response.md",
-                              online_sources=perplexity_result + "\n\n" + str(duckduckgo_result) + "\n\n" + wikipedia_result,
-                              memory=memory_result)
+        msg = files.read_file(
+            "prompts/tool.knowledge.response.md",
+            online_sources=perplexity_result + "\n\n" + str(duckduckgo_result) + "\n\n" + wikipedia_result,
+            memory=memory_result
+        )
 
         if self.agent.handle_intervention(msg):  # wait for intervention and handle it, if paused
             pass
@@ -49,4 +53,3 @@ def fetch_wikipedia_content(query):
         return "Page not found."
     except Exception as e:
         return f"An error occurred: {str(e)}"
-

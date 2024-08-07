@@ -49,8 +49,6 @@
 - No coding is required, only prompting and communication skills.
 - With a solid system prompt, the framework is reliable even with small models, including precise tool usage.
 
-![Time example](docs/time_example.jpg)
-
 ## Keep in mind
 1. **Agent Zero can be dangerous!**
 With proper instruction, Agent Zero is capable of many things, even potentially dangerous to your computer, data, or accounts. Always run Agent Zero in an isolated environment (like the built in docker container) and be careful what you wish for.
@@ -64,6 +62,8 @@ If your agent fails to communicate properly, use tools, reason, use memory, find
 Agent Zero is made to be used in an isolated virtual environment (for safety) with some tools preinstalled and configured.
 If you cannot provide all the necessary conditions or API keys, just change the system prompt and tell your agent what operating system and tools are at its disposal. Nothing is hard-coded; if you do not tell your agent about a certain tool, it will not know about it and will not try to use it.
 
+[![David Ondrej video](/docs/david_vid.jpg)](https://www.youtube.com/watch?v=_Pionjv4hGc)
+
 ## Known problems
 1. The system prompt sucks. You can do better. If you do, help me please :)
 2. The communication between agent and terminal in docker container via SSH can sometimes break and stop producing outputs. Sometimes it is because the agent runs something like "server.serve_forever()" which causes the terminal to hang, sometimes a random error can occur. Restarting the agent and/or the docker container helps.
@@ -74,7 +74,12 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 - **Python**: Python has to be installed on the system to run the framework.
 - **Internet access**: The agent will need internet access to use its online knowledge tool and execute commands and scripts requiring a connection. If you do not need your agent to be online, you can alter its prompts in the **prompts/** folder and make it fully local.
 
+![Time example](docs/time_example.jpg)
+
 ## Setup
+
+Update: [Guide by CheezChat for Windows](./docs/win_installation_guide.txt)
+
 1. **Required API keys:**
 - At the moment, the only recommended API key is for https://www.perplexity.ai/ API. Perplexity is used as a convenient web search tool and has not yet been replaced by an open-source alternative. If you do not have an API key for Perplexity, leave it empty in the .env file and Perplexity will not be used.
 - Chat models and embedding models can be executed locally via Ollama and HuggingFace or via API as well.

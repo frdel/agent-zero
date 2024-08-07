@@ -5,6 +5,7 @@ from python.helpers import files
 import os, json
 from python.helpers.tool import Tool, Response
 from python.helpers.print_style import PrintStyle
+from chromadb.errors import InvalidDimensionException
 
 # TODO multiple DBs at once
 db: VectorDB | None= None
@@ -13,19 +14,22 @@ class Memory(Tool):
     def execute(self,**kwargs):
         result=""
         
-        if "query" in kwargs:
-            if "threshold" in kwargs: threshold = float(kwargs["threshold"]) 
-            else: threshold = 0.1
-            if "count" in kwargs: count = int(kwargs["count"]) 
-            else: count = 5
-            result = search(self.agent, kwargs["query"], count, threshold)
-        elif "memorize" in kwargs:
-            result = save(self.agent, kwargs["memorize"])
-        elif "forget" in kwargs:
-            result = forget(self.agent, kwargs["forget"])
-        elif "delete" in kwargs:
-            result = delete(self.agent, kwargs["delete"])
-                        
+        try:
+            if "query" in kwargs:
+                threshold = float(kwargs.get("threshold", 0.1))
+                count = int(kwargs.get("count", 5))
+                result = search(self.agent, kwargs["query"], count, threshold)
+            elif "memorize" in kwargs:
+                result = save(self.agent, kwargs["memorize"])
+            elif "forget" in kwargs:
+                result = forget(self.agent, kwargs["forget"])
+            elif "delete" in kwargs:
+                result = delete(self.agent, kwargs["delete"])
+        except InvalidDimensionException as e:
+            # hint about embedding change with existing database
+            PrintStyle.hint("If you changed your embedding model, you will need to remove contents of /memory directory.")
+            raise   
+        
         # result = process_query(self.agent, self.args["memory"],self.args["action"], result_count=self.agent.config.auto_memory_count)
         return Response(message=result, break_loop=False)
             

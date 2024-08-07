@@ -7,12 +7,13 @@ from langchain.schema import AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.llms import BaseLLM
 from langchain_core.embeddings import Embeddings
 
 @dataclass
 class AgentConfig: 
-    chat_model:BaseChatModel
-    utility_model: BaseChatModel
+    chat_model: BaseChatModel | BaseLLM
+    utility_model: BaseChatModel | BaseLLM
     embeddings_model:Embeddings
     memory_subdir: str = ""
     auto_memory_count: int = 3
@@ -53,8 +54,8 @@ class Agent:
         self.number = number
         self.agent_name = f"Agent {self.number}"
 
-        self.system_prompt = files.read_file("./prompts/agent.system.md").replace("{", "{{").replace("}", "}}")
-        self.tools_prompt = files.read_file("./prompts/agent.tools.md").replace("{", "{{").replace("}", "}}")
+        self.system_prompt = files.read_file("./prompts/agent.system.md", agent_name=self.agent_name)
+        self.tools_prompt = files.read_file("./prompts/agent.tools.md")
 
         self.history = []
         self.last_message = ""
