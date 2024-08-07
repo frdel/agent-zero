@@ -1,4 +1,4 @@
-import threading, time, models, os
+import threading, time, models, stt, os, sys, argparse, asyncio
 from ansio import application_keypad, mouse_input, raw_input
 from ansio.input import InputEvent, get_input_event
 from agent import Agent, AgentConfig
@@ -98,10 +98,12 @@ def chat(agent:Agent):
                         user_input = input("> ").strip()
                     PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
                     
-                    
-
         # exit the conversation when the user types 'exit'
         if user_input.lower() == 'e': break
+
+        # activate speech to text (stt) when the user types 'm'
+        if user_input.lower() == 'm':
+            stt.record()
 
         # send message to agent0, 
         assistant_response = agent.message_loop(user_input)
