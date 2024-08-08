@@ -1,10 +1,13 @@
-import os
+import os, sys
 from dotenv import load_dotenv
 from groq import Groq
 import pyaudio
 import wave
+from pynput.keyboard import Key, Controller
+import numpy as np
+from python.helpers.print_style import PrintStyle
 
-load_dotenv()  # take environment variables from .env.
+load_dotenv()  # take environment variables from.env.
 
 # Utility function to get API keys from environment variables
 def get_api_key(service):
@@ -19,8 +22,7 @@ def record():
     FORMAT = pyaudio.paInt16
     CHANNELS = 2
     RATE = 44100
-    RECORD_SECONDS = 10
-    WAVE_OUTPUT_FILENAME = "output.wav"
+    WAVE_OUTPUT_FILENAME = "tmp_stt.wav"
 
     p = pyaudio.PyAudio()
 
@@ -30,28 +32,41 @@ def record():
                     input=True,
                     frames_per_buffer=CHUNK)
 
-    print("* recording")
+    PrintStyle(background_color="red", font_color="white", bold=True, padding=True).print("Recording")
 
     frames = []
+    silence_duration = 0
+    silence_threshold = 0.5  # seuil de silence (en secondes)
+    max_silence_duration = 3  # durée maximale de silence (en secondes)
 
-    for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+    while True:
         data = stream.read(CHUNK)
         frames.append(data)
 
-    print("* done recording")
+        # Analyse du signal audio pour détecter le silence
+        audio_data = np.frombuffer(data, dtype=np.int16)
+        audio_level = np.mean(np.abs(audio_data))
+        if audio_level < 100:  # seuil de détection de silence (à ajuster)
+            silence_duration += CHUNK / RATE
+            if silence_duration > max_silence_duration:
+                break
+        else:
+            silence_duration = 0
+
+    PrintStyle(background_color="Yellow", font_color="black", bold=True, padding=True).print("Translation")
 
     stream.stop_stream()
     stream.close()
     p.terminate()
 
-    wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+    filename = os.path.dirname(__file__) + "/tmp/" + WAVE_OUTPUT_FILENAME
+
+    wf = wave.open(filename, 'wb')
     wf.setnchannels(CHANNELS)
     wf.setsampwidth(p.get_sample_size(FORMAT))
     wf.setframerate(RATE)
     wf.writeframes(b''.join(frames))
     wf.close()
-
-    filename = os.path.dirname(__file__) + "" + WAVE_OUTPUT_FILENAME
 
     with open(filename, "rb") as file:
         transcription = client.audio.transcriptions.create(
@@ -59,7 +74,10 @@ def record():
             model="whisper-large-v3",
             prompt="Human talking to personnal ia agent",  # Optional
             response_format="json",  # Optional
-            language="en",  # Optional
+            language="fr",  # Optional
             temperature=0.0  # Optional
         )
-        print(transcription.text)
+        keyboard = Controller()
+        PrintStyle(background_color="green", font_color="white", bold=True, padding=True).print("Done")
+        keyboard.type(transcription.text)
+        keyboard.press(Key.enter)
