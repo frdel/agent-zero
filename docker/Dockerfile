@@ -31,8 +31,9 @@ RUN python3 -m venv $VIRTUAL_ENV
 COPY .bashrc /etc/skel/.bashrc
 
 # Copy the script to ensure .bashrc is in the root directory
-COPY initialize.sh /usr/local/bin/initialize.sh
-RUN chmod +x /usr/local/bin/initialize.sh
+COPY ./initialize.sh /usr/local/bin/initialize.sh
+RUN chmod +x /usr/local/bin/initialize.sh && \
+    cat /usr/local/bin/initialize.sh
 
 # Ensure the virtual environment and pip setup
 RUN $VIRTUAL_ENV/bin/pip install --upgrade pip
@@ -41,4 +42,4 @@ RUN $VIRTUAL_ENV/bin/pip install --upgrade pip
 EXPOSE 22
 
 # Init .bashrc
-CMD ["/usr/local/bin/initialize.sh"]
+CMD ["/bin/bash", "/usr/local/bin/initialize.sh"]
