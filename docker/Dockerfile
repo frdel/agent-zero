@@ -9,10 +9,13 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-venv \
-    nodejs \
-    npm \
     openssh-server \
     sudo \
+    && if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
+        apt-get install -y nodejs npm; \
+    elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+        echo "Installing ARM64-specific packages"; \
+    fi \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up SSH
@@ -39,5 +42,3 @@ EXPOSE 22
 
 # Init .bashrc
 CMD ["/usr/local/bin/initialize.sh"]
-
-
