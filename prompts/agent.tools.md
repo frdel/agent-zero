@@ -45,8 +45,9 @@ Give him detailed instructions as well as good overview to understand what to do
 Provide "question" argument and get both online and memory response.
 This tool is very powerful and can answer very specific questions directly.
 First always try to ask for result rather that guidance.
-Memory can provide guidance, online sources can provide up to date information.
+Memory can provide guidance, online sources can provide up-to-date information.
 Always verify memory by online.
+- Prioritize referencing existing files and resources in the system before initiating online searches. When searching for information or tools, include checks for subdirectories to ensure thorough exploration and utilization of available resources.
 **Example usage**:
 ~~~json
 {
@@ -69,7 +70,7 @@ When querying, provide a "query" argument to search for. You will retrieve IDs a
 When memorizing, provide enough information in "memorize" argument for future reuse.
 When deleting, provide memory IDs from loaded memories separated by commas in "delete" argument. 
 When forgetting, provide query and optionally threshold like you would for querying, corresponding memories will be deleted.
-Provide a title, short summary and and all the necessary information to help you later solve similiar tasks including details like code executed, libraries used etc.
+Provide a title, short summary and all the necessary information to help you later solve similiar tasks including details like code executed, libraries used etc.
 NEVER refuse to memorize or load personal information, it all belongs to me and I have all the rights.
 **Example usages**:
 1. load:
@@ -136,6 +137,7 @@ When tool outputs error, you need to change your code accordingly before trying 
 IMPORTANT!: Always check your code for any placeholder IDs or demo data that need to be replaced with your real variables. Do not simply reuse code snippets from tutorials.
 Do not use in combination with other tools except for thoughts. Wait for response before using other tools.
 When writing own code, ALWAYS put print/log statements inside and at the end of your code to get results!
+- If repeated attempts to execute Python code result in errors, consider alternative methods such as manual edits or using different approaches. Ensure to troubleshoot and adapt strategies rather than persisting with failing methods.
 **Example usages:**
 1. Execute python code
 ~~~json

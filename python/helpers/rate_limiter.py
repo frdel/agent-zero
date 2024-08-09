@@ -32,7 +32,7 @@ class RateLimiter:
         while True:
             self._clean_old_records(current_time)
             calls, input_tokens, output_tokens = self._get_counts()
-            
+
             wait_reasons = []
             if self.max_calls > 0 and calls >= self.max_calls:
                 wait_reasons.append("max calls")
@@ -40,16 +40,20 @@ class RateLimiter:
                 wait_reasons.append("max input tokens")
             if self.max_output_tokens > 0 and output_tokens >= self.max_output_tokens:
                 wait_reasons.append("max output tokens")
-            
+
             if not wait_reasons:
                 break
-            
-            oldest_record = self.call_records[0]
-            wait_time = oldest_record.timestamp + self.window_seconds - current_time
-            if wait_time > 0:
-                PrintStyle(font_color="yellow", padding=True).print(f"Rate limit exceeded. Waiting for {wait_time:.2f} seconds due to: {', '.join(wait_reasons)}")
-                time.sleep(wait_time)
-            current_time = time.time()
+
+            if self.call_records:  # Check if call_records is not empty
+                oldest_record = self.call_records[0]
+                wait_time = oldest_record.timestamp + self.window_seconds - current_time
+                if wait_time > 0:
+                    PrintStyle(font_color="yellow", padding=True).print(
+                        f"Rate limit exceeded. Waiting for {wait_time:.2f} seconds due to: {', '.join(wait_reasons)}")
+                    time.sleep(wait_time)
+                current_time = time.time()
+            else:
+                break
 
     def limit_call_and_input(self, input_token_count: int) -> CallRecord:
         current_time = time.time()
