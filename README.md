@@ -110,3 +110,307 @@ pip install -r requirements.txt
 python main.py
 ~~~
 - Or run it in debug mode in VS Code using the **debug** button in the top right corner of the editor. I have provided config files for VS Code for this purpose.
+
+# NVIDIA Docker Setup on Ubuntu WSL2
+
+This guide provides simple instructions for setting up NVIDIA Docker on Ubuntu within WSL2 (Windows Subsystem for Linux 2). It is written for beginners who may not be familiar with technical terms or complex setups.
+
+## Prerequisites
+
+Before you start, make sure you have the following:
+
+- **Windows 11**: The latest version of Windows, with WSL2 enabled. WSL2 allows you to run a Linux system on your Windows computer.
+- **NVIDIA GPU**: A graphics card from NVIDIA with the latest drivers installed on Windows. This lets you use your GPU for faster computing.
+- **Docker Desktop**: A program that allows you to run applications in containers. Make sure it's set to use WSL2.
+
+## Installation Steps
+
+### 1. Install Ubuntu on WSL2
+
+First, make sure you have an Ubuntu system installed and running on WSL2. You can install Ubuntu from the Microsoft Store.
+
+### 2. Install NVIDIA Docker Toolkit
+
+#### Add NVIDIA Docker Repository Key
+
+Add a key that allows your system to trust the NVIDIA software:
+
+~~~bash
+sudo curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+~~~
+
+#### Set Up the CUDA Repository
+
+Set up the source from where you will download NVIDIA software. Due to a current issue with the 22.04 repository, use the 18.04 repository instead:
+
+~~~bash
+echo "deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/ubuntu18.04/amd64 /" | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+~~~
+
+**Note**: The 22.04 repository is currently not working, which may result in a 404 error. Therefore, the 18.04 repository is being used as a workaround.
+
+#### Update and Install NVIDIA Docker
+
+Install the NVIDIA Docker software:
+
+~~~bash
+sudo apt-get update
+sudo apt-get install -y nvidia-docker2
+~~~
+
+#### Restart Docker Daemon
+
+After installation, restart Docker to apply changes:
+
+~~~bash
+sudo systemctl restart docker
+~~~
+
+#### Add User to Docker Group
+
+This step allows you to use Docker without typing sudo each time:
+
+~~~bash
+sudo usermod -aG docker $USER
+~~~
+
+Log out of your Ubuntu session and log back in for this change to take effect.
+
+### 3. Configure Docker for NVIDIA Runtime
+
+#### Edit daemon.json File
+
+Ensure Docker uses the NVIDIA runtime by default:
+
+~~~bash
+sudo nano /etc/docker/daemon.json
+~~~
+
+Add the following configuration:
+
+~~~json
+{
+  "default-runtime": "nvidia",
+  "runtimes": {
+    "nvidia": {
+      "path": "nvidia-container-runtime",
+      "runtimeArgs": []
+    }
+  }
+}
+~~~
+
+Save and exit the file. Then, restart Docker:
+
+~~~bash
+sudo systemctl restart docker
+~~~
+
+### 4. Docker Compose Setup
+
+Create a docker-compose.yml file for your projects with GPU support:
+
+~~~yaml
+services:
+  agent-zero-exe:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: docker-agent-zero-exe:latest
+    volumes:
+      - ../work_dir:/workspace
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    ports:
+      - "50022:22"
+~~~
+
+This configuration ensures the service utilizes the GPU and sets the environment variables appropriately.
+
+### 5. Test NVIDIA Docker Installation
+
+To verify that NVIDIA Docker is set up correctly, run:
+
+~~~bash
+docker run --rm --gpus all nvidia/cuda:11.0.3-base-ubuntu20.04 nvidia-smi
+~~~
+
+If successful, you should see information about your NVIDIA GPU.
+
+### 6. Enable Docker to Start on Boot
+
+Ensure Docker starts automatically on boot:
+
+~~~bash
+sudo systemctl enable docker
+~~~
+
+### 7. Set Up Systemd Service for Docker Compose
+
+To automatically start your Docker Compose application at boot, create a systemd service file:
+
+~~~bash
+sudo nano /etc/systemd/system/docker-compose-app.service
+~~~
+
+Add the following content:
+
+~~~ini
+[Unit]
+Description=Docker Compose Application Service
+Requires=docker.service
+After=docker.service
+
+[Service]
+WorkingDirectory=/mnt/c/Users/path/to/yourProjects/docker
+ExecStart=/usr/local/bin/docker-compose up --build
+ExecStop=/usr/local/bin/docker-compose down
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+~~~
+
+Enable and start the service:
+
+~~~bash
+sudo systemctl enable docker-compose-app.service
+sudo systemctl start docker-compose-app.service
+~~~
+
+This setup ensures that the Docker Compose application is managed by systemd and starts automatically on system boot.
+
+## Troubleshooting Tips
+
+- **Permission Denied Errors**: Ensure you've logged out and back in after adding yourself to the Docker group.
+- **Repository Not Found (404 Error)**: Ensure you are using the Ubuntu 18.04 repository for NVIDIA Docker components, as the 22.04 repository may not be available.
+- **Manifest Unknown Error**: Verify the Docker image tag exists on the NVIDIA Docker Hub.
+- **Docker Not Starting or GPU Not Detected**: Ensure Docker Desktop is configured to use WSL2 and that GPU sharing is enabled in the Docker Desktop settings.
+
+## Troubleshooting Steps for NVIDIA Docker Setup
+
+If you encounter issues during setup or operation, follow these steps:
+
+### 1. **Check Current Docker Runtime Settings**
+
+Ensure the current runtime settings are correctly configured:
+
+~~~bash
+docker info | grep -i runtime
+~~~
+
+If the output does not show `nvidia` as a runtime, further actions are required.
+
+### 2. **Install or Reinstall NVIDIA Docker 2**
+
+To ensure all components are correctly installed, remove existing Docker and NVIDIA Docker components, and then reinstall them:
+
+~~~bash
+# Remove Docker and NVIDIA Docker components
+sudo apt-get remove --purge docker-ce docker-ce-cli containerd.io nvidia-docker2
+
+# Update package list
+sudo apt-get update
+
+# Reinstall Docker and NVIDIA Docker components
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io nvidia-docker2
+~~~
+
+### 3. **Edit Docker Daemon Configuration**
+
+Ensure the Docker daemon is configured to use the `nvidia` runtime by default:
+
+~~~bash
+# Edit daemon.json file
+sudo nano /etc/docker/daemon.json
+~~~
+
+Add or update the following configuration:
+
+~~~json
+{
+  "default-runtime": "nvidia",
+  "runtimes": {
+    "nvidia": {
+      "path": "nvidia-container-runtime",
+      "runtimeArgs": []
+    }
+  }
+}
+~~~
+
+Save and exit the editor.
+
+### 4. **Restart Docker Service**
+
+After updating the configuration, restart the Docker service to apply the changes:
+
+~~~bash
+sudo systemctl restart docker
+~~~
+
+### 5. **Verify Docker Runtime Settings**
+
+Check again to confirm that `nvidia` is now listed as a runtime and set as the default:
+
+~~~bash
+docker info | grep -i runtime
+~~~
+
+The expected output should list `nvidia` as a runtime and as the default runtime.
+
+### 6. **Test GPU Access in Docker Container**
+
+Run a test Docker container to ensure that the GPU is accessible:
+
+~~~bash
+docker run --rm --gpus all nvidia/cuda:11.0.3-base-ubuntu20.04 nvidia-smi
+~~~
+
+This command should output details about the NVIDIA GPU(s) available on the system, confirming that GPU access is configured correctly.
+
+### 7. **Dealing with SSH Key Issues**
+
+If you encounter an SSH key mismatch error when connecting to the container, update your `known_hosts` file:
+
+~~~bash
+ssh-keygen -f "/home/your_user/.ssh/known_hosts" -R "[localhost]:50022"
+~~~
+
+---
+
+For more help, refer to the official [NVIDIA Docker documentation](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/overview.html) and [Docker documentation](https://docs.docker.com/).
+
+#Troubleshooting DockerDesktop/Ubuntu Docker connectivity/sync -
+
+
+If Docker Desktop is not syncing properly with your Ubuntu WSL2 distribution, try the following steps to troubleshoot and potentially resolve the issue:
+
+Verify WSL2 Settings:
+
+Ensure that WSL2 integration is correctly enabled in Docker Desktop settings.
+Go to Docker Desktop settings, navigate to the "Resources" section, then "WSL Integration," and make sure your Ubuntu distribution is toggled on.
+Restart Docker Desktop and WSL2:
+
+Restart Docker Desktop and your WSL2 distributions to refresh the integration. You can restart WSL2 by closing all WSL2 terminals and running wsl --shutdown from a Windows command prompt or PowerShell.
+Check WSL2 and Docker Sync Settings:
+
+Verify if your Docker Desktop is correctly set up to use the WSL2 backend. This can usually be done in the Docker Desktop settings under "General" by ensuring the "Use the WSL 2 based engine" option is checked.
+Disable Local Distribution:
+
+If there is a local Docker distribution running alongside the WSL2 version, try turning it off and leaving only the Ubuntu WSL2 distribution enabled. Conflicts between local and WSL2 Docker instances can sometimes cause issues.
+File Sharing Settings:
+
+Ensure that the file sharing permissions are correctly set for the directories you are trying to access from WSL2.
+Reinstall Docker Desktop:
+
+If the above steps do not resolve the issue, consider reinstalling Docker Desktop. This can help reset any misconfigurations.
+To turn off the local distribution and leave only the Ubuntu WSL2 enabled, go to Docker Desktop settings, and under "General," make sure that only the WSL2 based engine option is enabled, with the Ubuntu distribution selected under WSL integration settings.
+
+After making these changes, try restarting both Docker Desktop and your Ubuntu WSL2 instance, then verify if the synchronization issue is resolved. If problems persist, it may be beneficial to consult the Docker and WSL documentation for additional troubleshooting steps.

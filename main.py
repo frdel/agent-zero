@@ -1,4 +1,4 @@
-import threading, time, models, os
+import threading, time, models, os, sys
 from ansio import application_keypad, mouse_input, raw_input
 from ansio.input import InputEvent, get_input_event
 from agent import Agent, AgentConfig
@@ -51,7 +51,7 @@ def initialize():
         # response_timeout_seconds = 60,
         code_exec_docker_enabled = True,
         # code_exec_docker_name = "agent-zero-exe",
-        # code_exec_docker_image = "frdel/agent-zero-exe:latest",
+        # code_exec_docker_image = "docker-agent-zero-exe:latest",
         # code_exec_docker_ports = { "22/tcp": 50022 }
         # code_exec_docker_volumes = { files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"} }
         code_exec_ssh_enabled = True,
@@ -125,6 +125,8 @@ def intervention():
         if user_input: Agent.streaming_agent.intervention_message = user_input # set intervention message if non-empty
         Agent.paused = False # continue agent streaming 
     
+def is_running_in_terminal():
+    return sys.stdin.isatty() and sys.stdout.isatty()
 
 # Capture keyboard input to trigger user intervention
 def capture_keys():
@@ -135,7 +137,7 @@ def capture_keys():
             intervent = False
             time.sleep(0.1)
             
-            if Agent.streaming_agent:
+            if Agent.streaming_agent and is_running_in_terminal():
                 # with raw_input, application_keypad, mouse_input:
                 with input_lock, raw_input, application_keypad:
                     event: InputEvent | None = get_input_event(timeout=0.1)
@@ -144,7 +146,7 @@ def capture_keys():
                         continue
 
 # User input with timeout
-def timeout_input(prompt, timeout=10):
+def timeout_input(prompt, timeout=120):
     return timed_input.timeout_input(prompt=prompt, timeout=timeout)
 
 if __name__ == "__main__":

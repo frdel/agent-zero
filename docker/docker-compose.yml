@@ -1,0 +1,18 @@
+services:
+  agent-zero-exe:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: docker-agent-zero-exe:latest
+    volumes:
+      - ../work_dir:/workspace
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    ports:
+      - "50022:22"
