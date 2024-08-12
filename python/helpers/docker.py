@@ -1,13 +1,13 @@
 import time
 import docker
 import atexit
-from typing import Dict, Optional
+from typing import Optional
 from python.helpers.files import get_abs_path
 from python.helpers.errors import format_error
 from python.helpers.print_style import PrintStyle
 
 class DockerContainerManager:
-    def __init__(self, image: str, name: str, ports: Optional[Dict[str, int]] = None, volumes: Optional[Dict[str, Dict[str, str]]] = None):
+    def __init__(self, image: str, name: str, ports: Optional[dict[str, int]] = None, volumes: Optional[dict[str, dict[str, str]]] = None):
         self.image = image
         self.name = name
         self.ports = ports

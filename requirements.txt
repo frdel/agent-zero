@@ -13,5 +13,7 @@ docker==7.1.0
 paramiko==3.4.0
 duckduckgo_search==6.1.12
 inputimeout==1.0.4
-newspaper==0.1.0.7
-beautifulsoup4=4.12.3
+newspaper3k==0.2.8
+beautifulsoup4==4.12.3
+lxml_html_clean==0.2.0
+
