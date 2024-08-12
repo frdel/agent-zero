@@ -16,7 +16,7 @@ class Knowledge(Tool):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             # Schedule the two functions to be run in parallel
 
-            # perplexity search, if API provided
+            # perplexity search, if API key provided
             if os.getenv("API_KEY_PERPLEXITY"):
                 perplexity = executor.submit(perplexity_search.perplexity_search, question)
             else: 
@@ -31,12 +31,12 @@ class Knowledge(Tool):
             future_memory = executor.submit(memory_tool.search, self.agent, question)
 
             # Wait for both functions to complete
-            perplexity_result = (perplexity.result() if perplexity else "") or ""
+            perplexity_result = (perplexity.result() if perplexity else "")
             duckduckgo_result = duckduckgo.result()
             memory_result = future_memory.result()
 
         msg = files.read_file("prompts/tool.knowledge.response.md", 
-                              online_sources = perplexity_result + "\n\n" + str(duckduckgo_result),
+                              online_sources = ((perplexity_result + "\n\n") if perplexity else "") + str(duckduckgo_result),
                               memory = memory_result )
 
         if self.agent.handle_intervention(msg): pass # wait for intervention and handle it, if paused
