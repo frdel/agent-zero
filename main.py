@@ -70,6 +70,7 @@ def initialize():
 
 
 # Main conversation loop
+time_out_enabled = False
 def chat(agent:Agent):
     
     # start the conversation loop  
@@ -83,13 +84,13 @@ def chat(agent:Agent):
                 user_input = input("> ")
                 PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}") 
                 
-            else: # otherwise wait for user input with a timeout
+            elif time_out_enabled: # otherwise wait for user input with a timeout
                 PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ({timeout}s timeout, 'w' to wait, 'e' to leave):")        
                 import readline # this fixes arrow keys in terminal
                 # user_input = timed_input("> ", timeout=timeout)
                 user_input = timeout_input("> ", timeout=timeout)
                                     
-                if not user_input:
+                if not user_input and time_out_enabled:
                     user_input = read_file("prompts/fw.msg_timeout.md")
                     PrintStyle(font_color="white", padding=False).stream(f"{user_input}")        
                 else:
@@ -97,6 +98,12 @@ def chat(agent:Agent):
                     if user_input.lower()=="w": # the user needs more time
                         user_input = input("> ").strip()
                     PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
+            else:
+                PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ('e' to leave):")        
+                import readline # this fixes arrow keys in terminal
+                user_input = input("> ")
+                PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}") 
+                timeout = False
                     
                     
 
@@ -104,11 +111,11 @@ def chat(agent:Agent):
         if user_input.lower() == 'e': break
 
         # send message to agent0, 
-        assistant_response = agent.message_loop(user_input)
-        
-        # print agent0 response
-        PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{agent.agent_name}: reponse:")        
-        PrintStyle(font_color="white").print(f"{assistant_response}")        
+        if not timeout:
+            assistant_response = agent.message_loop(user_input)
+            # print agent0 response
+            PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{agent.agent_name}: reponse:")        
+            PrintStyle(font_color="white").print(f"{assistant_response}")        
                         
 
 # User intervention during agent streaming
