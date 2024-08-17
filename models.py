@@ -86,8 +86,8 @@ def get_groq_chat(model_name:str, api_key=None, temperature=DEFAULT_TEMPERATURE)
 # OpenRouter models
 def get_openrouter(model_name: str="meta-llama/llama-3.1-8b-instruct:free", api_key=None, temperature=DEFAULT_TEMPERATURE):
     api_key = api_key or get_api_key("openrouter")
-    return ChatOpenAI(api_key=api_key, base_url="https://openrouter.ai/api/v1", model=model_name, temperature=temperature) # type: ignore
-        
+    return ChatOpenAI(api_key=api_key, base_url=os.getenv("OPEN_ROUTER_BASE_URL"), model=model_name, temperature=temperature) # type: ignore
+      
 def get_embedding_hf(model_name="sentence-transformers/all-MiniLM-L6-v2"):
     return HuggingFaceEmbeddings(model_name=model_name)
 
