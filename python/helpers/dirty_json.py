@@ -250,7 +250,7 @@ class DirtyJson:
         return result.strip()
 
     def _peek(self, n):
-        peek_index = self.index
+        peek_index = self.index + 1
         result = ''
         for _ in range(n):
             if peek_index < len(self.json_string):
