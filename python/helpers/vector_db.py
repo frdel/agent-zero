@@ -22,7 +22,7 @@ class VectorDB:
             self.store = LocalFileStore(em_cache)
 
 
-        #here we setup the embeddings model with the chosen cache storage
+        # Set up the embeddings model with the chosen cache storage
         self.embedder = CacheBackedEmbeddings.from_bytes_store(
             embeddings_model, 
             self.store, 
