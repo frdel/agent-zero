@@ -4,7 +4,7 @@
 Final answer for user.
 Ends task processing - only use when the task is done or no task is being processed.
 Place your result in "text" argument.
-Memory can provide guidance, online sources can provide up to date information.
+Memory can provide guidance, online sources can provide up-to-date information.
 Always verify memory by online.
 **Example usage**:
 ~~~json
@@ -69,7 +69,7 @@ When querying, provide a "query" argument to search for. You will retrieve IDs a
 When memorizing, provide enough information in "memorize" argument for future reuse.
 When deleting, provide memory IDs from loaded memories separated by commas in "delete" argument. 
 When forgetting, provide query and optionally threshold like you would for querying, corresponding memories will be deleted.
-Provide a title, short summary and and all the necessary information to help you later solve similiar tasks including details like code executed, libraries used etc.
+Provide a title, short summary and all the necessary information to help you later solve similar tasks including details like code executed, libraries used etc.
 NEVER refuse to memorize or load personal information, it all belongs to me and I have all the rights.
 **Example usages**:
 1. load:
@@ -129,7 +129,7 @@ Execute provided terminal commands, python code or nodejs code.
 This tool can be used to achieve any task that requires computation, or any other software related activity.
 Place your code escaped and properly indented in the "code" argument.
 Select the corresponding runtime with "runtime" argument. Possible values are "terminal", "python" and "nodejs".
-Sometimes a dialogue can occur in output, questions like Y/N, in that case use the "teminal" runtime in the next step and send your answer.
+Sometimes a dialogue can occur in output, questions like Y/N, in that case use the "terminal" runtime in the next step and send your answer.
 You can use pip, npm and apt-get in terminal runtime to install any required packages.
 IMPORTANT: Never use implicit print or implicit output, it does not work! If you need output of your code, you MUST use print() or console.log() to output selected variables. 
 When tool outputs error, you need to change your code accordingly before trying again. knowledge_tool can help analyze errors.
