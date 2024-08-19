@@ -129,10 +129,10 @@ def intervention():
 # Capture keyboard input to trigger user intervention
 def capture_keys():
         global input_lock
-        intervent=False            
+        intervene=False
         while True:
-            if intervent: intervention()
-            intervent = False
+            if intervene: intervention()
+            intervene = False
             time.sleep(0.1)
             
             if Agent.streaming_agent:
@@ -140,7 +140,7 @@ def capture_keys():
                 with input_lock, raw_input, application_keypad:
                     event: InputEvent | None = get_input_event(timeout=0.1)
                     if event and (event.shortcut.isalpha() or event.shortcut.isspace()):
-                        intervent=True
+                        intervene=True
                         continue
 
 # User input with timeout
