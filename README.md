@@ -51,7 +51,7 @@
 
 ## Keep in mind
 1. **Agent Zero can be dangerous!**
-With proper instruction, Agent Zero is capable of many things, even potentially dangerous to your computer, data, or accounts. Always run Agent Zero in an isolated environment (like the built in docker container) and be careful what you wish for.
+With proper instruction, Agent Zero is capable of many things, even potentially dangerous to your computer, data, or accounts. Always run Agent Zero in an isolated environment (like the built-in docker container) and be careful what you wish for.
 
 2. **Agent Zero is not pre-programmed; it is prompt-based.**
 The whole framework contains only a minimal amount of code and does not guide the agent in any way.

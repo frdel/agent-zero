@@ -23,7 +23,7 @@ Always verify memory by online.
 ### call_subordinate:
 Use subordinate agents to solve subtasks.
 Use "message" argument to send message. Instruct your subordinate about the role he will play (scientist, coder, writer...) and his task in detail.
-Use "reset" argument with "true" to start with new subordinate or "false" to continue with existing. For brand new tasks use "true", for followup conversation use "false". 
+Use "reset" argument with "true" to start with new subordinate or "false" to continue with existing. For brand-new tasks use "true", for followup conversation use "false". 
 Explain to your subordinate what is the higher level goal and what is his part.
 Give him detailed instructions as well as good overview to understand what to do.
 **Example usage**:
@@ -45,7 +45,7 @@ Give him detailed instructions as well as good overview to understand what to do
 Provide "question" argument and get both online and memory response.
 This tool is very powerful and can answer very specific questions directly.
 First always try to ask for result rather that guidance.
-Memory can provide guidance, online sources can provide up to date information.
+Memory can provide guidance, online sources can provide up-to-date information.
 Always verify memory by online.
 **Example usage**:
 ~~~json
@@ -65,7 +65,7 @@ Always verify memory by online.
 ### memory_tool:
 Manage long term memories. Allowed arguments are "query", "memorize", "forget" and "delete".
 Memories can help you remember important details and later reuse them.
-When querying, provide a "query" argument to search for. You will retrieve IDs and contents of relevant memories. Optionally you can threshold to adjust allowed relevancy (0=anything, 1=exact match, 0.1 is default).
+When querying, provide a "query" argument to search for. You will retrieve IDs and contents of relevant memories. Optionally you can set a threshold to adjust allowed relevancy (0=anything, 1=exact match, 0.1 is default).
 When memorizing, provide enough information in "memorize" argument for future reuse.
 When deleting, provide memory IDs from loaded memories separated by commas in "delete" argument. 
 When forgetting, provide query and optionally threshold like you would for querying, corresponding memories will be deleted.
@@ -168,7 +168,7 @@ When writing own code, ALWAYS put print/log statements inside and at the end of 
 }
 ~~~
 
-2. 1. Wait for terminal and check output with long running scripts
+2. 1. Wait for terminal and check output with long-running scripts
 ~~~json
 {
     "thoughts": [

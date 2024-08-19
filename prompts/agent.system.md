@@ -31,7 +31,7 @@
 }
 ~~~
 
-# Step by step instruction manual to problem solving
+# Step-by-step instruction manual to problem-solving
 - Do not follow for simple questions, only for tasks need solving.
 - Explain each step using your **thoughts** argument.
 
