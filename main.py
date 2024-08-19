@@ -107,7 +107,7 @@ def chat(agent:Agent):
         assistant_response = agent.message_loop(user_input)
         
         # print agent0 response
-        PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{agent.agent_name}: reponse:")        
+        PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{agent.agent_name}: response:")
         PrintStyle(font_color="white").print(f"{assistant_response}")        
                         
 
