@@ -57,7 +57,7 @@ class CodeExecution(Tool):
                 docker.start_container()
             else: docker = None
 
-            #initialize local or remote interactive shell insterface
+            #initialize local or remote interactive shell interface
             if self.agent.config.code_exec_ssh_enabled:
                 shell = SSHInteractiveSession(self.agent.config.code_exec_ssh_addr,self.agent.config.code_exec_ssh_port,self.agent.config.code_exec_ssh_user,self.agent.config.code_exec_ssh_pass)
             else: shell = LocalInteractiveSession()
