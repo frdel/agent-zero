@@ -13,7 +13,7 @@ def perplexity_search(query:str, model_name="llama-3.1-sonar-large-128k-online",
     # {
     #     "role": "system",
     #     "content": (
-    #         "You are an artificial intelligence assistant and you need to "
+    #         "You are an artificial intelligence assistant, and you need to "
     #         "engage in a helpful, detailed, polite conversation with a user."
     #     ),
     # },

@@ -107,7 +107,7 @@ def chat(agent:Agent):
         assistant_response = agent.message_loop(user_input)
         
         # print agent0 response
-        PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{agent.agent_name}: reponse:")        
+        PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{agent.agent_name}: response:")
         PrintStyle(font_color="white").print(f"{assistant_response}")        
                         
 
@@ -129,10 +129,10 @@ def intervention():
 # Capture keyboard input to trigger user intervention
 def capture_keys():
         global input_lock
-        intervent=False            
+        intervene=False
         while True:
-            if intervent: intervention()
-            intervent = False
+            if intervene: intervention()
+            intervene = False
             time.sleep(0.1)
             
             if Agent.streaming_agent:
@@ -140,7 +140,7 @@ def capture_keys():
                 with input_lock, raw_input, application_keypad:
                     event: InputEvent | None = get_input_event(timeout=0.1)
                     if event and (event.shortcut.isalpha() or event.shortcut.isspace()):
-                        intervent=True
+                        intervene=True
                         continue
 
 # User input with timeout

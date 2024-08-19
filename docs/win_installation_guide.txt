@@ -3,7 +3,7 @@
 
 ### General Installation Information
 
-   Start here if you are experienced using Python, Docker, Environments, installing requirements, and working with a Github project.
+   Start here if you are experienced using Python, Docker, Environments, installing requirements, and working with a GitHub project.
 
 1. **Required API keys:**
 
@@ -84,7 +84,7 @@ Start here for a step-by-step with explanations.
     * Click the green circle with the white triangle inside of it and select **Open Terminal**
     * A system terminal window should open and you should see something like this:
 ```(Agent-Zero) C:\Users\yourUserName>```
-    * The (Agent-Zero) at the beginning of the prompt tells you that you are running inside of the Agent-Zero environment that you created
+    * The (Agent-Zero) at the beginning of the prompt tells you that you are running inside the Agent-Zero environment that you created
 
    * confirm that python is functioning properly by typing:
 ```
@@ -97,7 +97,7 @@ If your terminal window replies with the Python version number as shown above, y
 
 If you have already downloaded the zip file archive of the Agent-Zero project, skip ahead.
 
-* Click the green button labeled **<> Code** at the top of the agent-zero github page
+* Click the green button labeled **<> Code** at the top of the agent-zero GitHub page
 * Click **Download Zip**
 * **Unzip** the entire contents of the file to a **folder on your computer**
 
@@ -114,7 +114,7 @@ Agent-Zero uses Docker to run programs because it can do so safely. If there are
 
 5. **Configure Agent-Zero**
 
-* Right Click on the file **example.env** in the Agent-Zero root folder
+* Right-Click on the file **example.env** in the Agent-Zero root folder
 * Select **Open With**
 * Select **Notepad** or your preferred text editor
 * You should see a small text file that resembles this:
@@ -140,7 +140,7 @@ PYDEVD_DISABLE_FILE_VALIDATION=1
 6. Configure API Preferences
 
 If you entered an openAI API key earlier, you may skip this step. If you entered an alternative key, 
-* Right Click on the file **main.py** in the Agent-Zero root folder
+* Right-Click on the file **main.py** in the Agent-Zero root folder
 * Select **Open With**
 * Select **Notepad** or your preferred text editor
 * Scroll about 20 lines down from the top until you see lines that look like this: *chat_llm = models.get_*
@@ -176,10 +176,10 @@ If you entered an openAI API key earlier, you may skip this step. If you entered
 * It will take a while. Be patient.
 * pip is finished when you see your command prompt again at the bottom of the screen
  
-If all of the requirements installed succesfully, you can proceed to run the program.
+If all the requirements installed successfully, you can run the program.
 
 * Open Anaconda Navigator
-* Activate the Agent-Zero environment by double clicking on its name
+* Activate the Agent-Zero environment by double-clicking on its name
 * click Open Terminal
 * Navigate to the agent-zero folder
 * Type **python main.py** and press enter
