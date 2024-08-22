@@ -13,15 +13,10 @@ os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
 
 
 def initialize():
-    
-    # main chat model used by agents (smarter, more accurate)
-    chat_llm = models.get_openai_chat(model_name="gpt-4o-mini", temperature=0)
-    # chat_llm = models.get_ollama_chat(model_name="gemma2:latest", temperature=0)
-    # chat_llm = models.get_lmstudio_chat(model_name="TheBloke/Mistral-7B-Instruct-v0.2-GGUF", temperature=0)
-    # chat_llm = models.get_openrouter(model_name="meta-llama/llama-3-8b-instruct:free")
-    # chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o-mini", temperature=0)
-    # chat_llm = models.get_anthropic_chat(model_name="claude-3-5-sonnet-20240620", temperature=0)
-    # chat_llm = models.get_google_chat(model_name="gemini-1.5-flash", temperature=0)
+
+    # chat models (Save the Init to Environment Variables)
+    # chat_llm = models.get_ollama_chat(model_name="gemma2:latest", temperature=0))
+    chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o", temperature=0.2)
     # chat_llm = models.get_groq_chat(model_name="llama-3.1-70b-versatile", temperature=0)
     
     # utility model used for helper functions (cheaper, faster)
@@ -30,9 +25,8 @@ def initialize():
     # embedding model used for memory
     embedding_llm = models.get_openai_embedding(model_name="text-embedding-3-small")
     # embedding_llm = models.get_ollama_embedding(model_name="nomic-embed-text")
-    # embedding_llm = models.get_huggingface_embedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
-
-    # agent configuration
+   
+    # agent configuration ( to-doSet -configs via YAML/Envs)
     config = AgentConfig(
         chat_model = chat_llm,
         utility_model = utility_llm,
@@ -50,16 +44,11 @@ def initialize():
         # max_tool_response_length = 3000,
         # response_timeout_seconds = 60,
         code_exec_docker_enabled = True,
-        # code_exec_docker_name = "agent-zero-exe",
-        # code_exec_docker_image = "frdel/agent-zero-exe:latest",
-        # code_exec_docker_ports = { "22/tcp": 50022 }
-        # code_exec_docker_volumes = { files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"} }
-        code_exec_ssh_enabled = True,
-        # code_exec_ssh_addr = "localhost",
-        # code_exec_ssh_port = 50022,
-        # code_exec_ssh_user = "root",
-        # code_exec_ssh_pass = "toor",
-        # additional = {},
+        code_exec_docker_name = "agent-zero-exe",
+        code_exec_docker_image = "frdel/agent-zero-exe:latest",
+        code_exec_docker_ports = { "22/tcp": 50022 },
+        code_exec_docker_volumes = { files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"} }
+        
     )
     
     # create the first agent

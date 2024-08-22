@@ -5,6 +5,9 @@ from langchain_core.embeddings import Embeddings
 from langchain_chroma import Chroma
 import chromadb
 from chromadb.config import Settings
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 from . import files
 from langchain_core.documents import Document
