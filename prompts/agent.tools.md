@@ -214,3 +214,47 @@ When writing own code, ALWAYS put print/log statements inside and at the end of 
     }
 }
 ~~~
+
+### image_processing_tool:
+
+Process images to get insights from them.
+Provide the "image_paths" list[strings] argument with the paths to the image files. Image paths can be local or remote (remote image paths start with 'http').
+Provide also a "query" argument to describe what to analyze or compare.
+The tool will return text data summarizing the image(s) or extracted data from the image(s) depending on the query.
+Use this tool for tasks like OCR (Optical Character Recognition) or image analysis or web page screenshot style analysis or image comparison.
+
+**Example usage**:
+
+~~~json
+{
+  "thoughts": [
+    "The user provided an image...",
+    "I will use the image_processing_tool to analyze the image..."
+  ],
+  "tool_name": "image_processing_tool",
+  "tool_args": {
+    "query": "Please analyze the following image and provide feedback.",
+    "image_paths": ["path/to/image.jpg"]
+  }
+}
+~~~
+
+2. Compare images
+
+~~~json
+{
+  "thoughts": [
+    "The user provided an image...",
+    "I will use the image_processing_tool to compare images..."
+  ],
+  "tool_name": "image_processing_tool",
+  "tool_args": {
+    "query": "Please analyze the following images. Which one is ...?",
+    "image_paths": [
+      "path/to/image.jpg",
+      "path/to/different/picture.png",
+      "https://example.com/image.jpg"
+    ]
+  }
+}
+~~~
