@@ -1,0 +1,16 @@
+services:
+  app:
+    container_name: agent-zero
+    build:
+      context: ./docker
+      dockerfile: agent-zero.dockerfile
+    env_file: .env
+    volumes:
+      - .:/app
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    command: sleep infinity
+
+networks:
+  default:
+    name: agent-zero

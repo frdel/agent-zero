@@ -1,1 +1,1 @@
-docker buildx build --platform linux/amd64,linux/arm64 -t frdel/agent-zero-exe:latest --push .
+docker buildx build --platform linux/amd64,linux/arm64 -f agent-x.dockerfile -t frdel/agent-zero-exe:latest --push .

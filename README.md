@@ -110,3 +110,31 @@ pip install -r requirements.txt
 python main.py
 ~~~
 - Or run it in debug mode in VS Code using the **debug** button in the top right corner of the editor. I have provided config files for VS Code for this purpose.
+
+## Setup with docker
+
+- With a 1-liner...
+```bash
+make build up install start
+```
+- ... or, separately
+```bash
+make build
+```
+```bash
+make up
+```
+```bash
+make install
+```
+```bash
+make start
+```
+- You can use the makefile to manage :
+  - docker: `build`,`up`,`down`,`shell`,`shell-root`,`logs`
+  - the app: `install`,`start` (and generic `python` or `pip`)
+- The user inside docker is the same as on the host, to avoid permissions problems.
+- NOTE: add a `--` to pass additionals dashed arguments to a makefile command. ex:
+  - `make python --help` will display `make` help
+  - `make python -- --help` will display `python` help
+- NOTE for Ollama users: Local ollama server is available inside the docker container with a specific host `host.docker.internal` instead of `localhost` (eg: `http://host.docker.internal:11434`)
