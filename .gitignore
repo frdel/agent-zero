@@ -1,7 +1,8 @@
 **/.DS_Store
 **/.env
+**/.venv
 **/__pycache__/
-
+/myenv/
 
 
 # Ignore all contents of the virtual environment directory
