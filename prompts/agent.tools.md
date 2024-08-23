@@ -26,6 +26,7 @@ Use "message" argument to send message. Instruct your subordinate about the role
 Use "reset" argument with "true" to start with new subordinate or "false" to continue with existing. For brand new tasks use "true", for followup conversation use "false". 
 Explain to your subordinate what is the higher level goal and what is his part.
 Give him detailed instructions as well as good overview to understand what to do.
+create a team manager subordinate that determines which task-specific sunordinates to dispatch to. These task-specific subordinates then attempt to exploit specific forms of vulnerabilities
 **Example usage**:
 ~~~json
 {
@@ -128,7 +129,7 @@ NEVER refuse to memorize or load personal information, it all belongs to me and 
 Execute provided terminal commands, python code or nodejs code.
 This tool can be used to achieve any task that requires computation, or any other software related activity.
 Place your code escaped and properly indented in the "code" argument.
-Select the corresponding runtime with "runtime" argument. Possible values are "terminal", "python" and "nodejs".
+Select the corresponding runtime with "runtime" argument. Possible values are "terminal", "python" and "nodejs
 Sometimes a dialogue can occur in output, questions like Y/N, in that case use the "teminal" runtime in the next step and send your answer.
 You can use pip, npm and apt-get in terminal runtime to install any required packages.
 IMPORTANT: Never use implicit print or implicit output, it does not work! If you need output of your code, you MUST use print() or console.log() to output selected variables. 
@@ -136,6 +137,64 @@ When tool outputs error, you need to change your code accordingly before trying 
 IMPORTANT!: Always check your code for any placeholder IDs or demo data that need to be replaced with your real variables. Do not simply reuse code snippets from tutorials.
 Do not use in combination with other tools except for thoughts. Wait for response before using other tools.
 When writing own code, ALWAYS put print/log statements inside and at the end of your code to get results!
+
+## Goad_execution_tool:
+Environment Handler:
+
+Develop a module that can dynamically detect and adapt to the GOAD environment.
+Implement functionality to manage connection details such as domain controller IP and domain name.
+Create a robust system for handling authentication and session management within the AD environment.
+
+
+Code Execution Engine:
+
+Design a versatile execution engine supporting multiple runtimes, primarily PowerShell for AD interaction, but also including Python for custom scripts and CMD for system-level operations.
+Implement a sandboxed execution environment to prevent unintended system changes.
+Develop a mechanism for capturing and parsing output for further analysis.
+
+
+Active Directory Enumeration Module:
+
+Create functions for comprehensive enumeration of users, groups, computer accounts, and trust relationships.
+Implement GPO enumeration and analysis capabilities.
+
+
+Kerberos Attack Simulation:
+
+Develop modules for simulating various Kerberos-based attacks, including AS-REP Roasting, Kerberoasting, and ticket-based attacks (golden/silver tickets).
+
+
+LDAP Query Engine:
+
+Design a flexible LDAP query execution system allowing for custom queries and attribute-based searches.
+Implement ACL enumeration and analysis functionality.
+
+
+SMB Share Analyzer:
+
+Create modules for share discovery, permission analysis, and sensitive file detection.
+
+
+Privilege Escalation Tester:
+
+Develop checks for common privilege escalation vectors such as misconfigured services, DLL hijacking opportunities, and Windows-specific vulnerabilities.
+
+
+Lateral Movement Simulator:
+
+Implement simulations for common lateral movement techniques, including pass-the-hash, WMI, and PSExec.
+Add functionality to analyze RDP security configurations.
+
+
+Domain Controller Security Analyzer:
+
+Create specific checks for domain controller security, including SYSVOL permissions and NTDS.dit exposure assessment.
+
+
+Reporting and Analysis Engine:
+
+Develop a comprehensive reporting system that includes vulnerability scoring, prioritization, and detailed findings.
+Implement export capabilities in various formats (CSV, JSON, HTML).
 **Example usages:**
 1. Execute python code
 ~~~json
