@@ -125,6 +125,14 @@ class PrintStyle:
     def error(text:str):
         PrintStyle(font_color="red", padding=True).print("Error: "+text)
 
+    @staticmethod
+    def warning(text: str):
+        PrintStyle(font_color="yellow", padding=True).print("Warning: " + text)
+
+    @staticmethod
+    def info(text: str):
+        PrintStyle(font_color="blue", padding=True).print("Info: " + text)
+
 # Ensure HTML file is closed properly when the program exits
 import atexit
 atexit.register(PrintStyle._close_html_log)
