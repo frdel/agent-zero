@@ -80,12 +80,6 @@ class DockerContainerManager:
         if self.client is None:
             self.client = self.init_docker()
 
-        # Convert volumes to the expected format
-        if self.volumes:
-            formatted_volumes = {host_path: config['bind'] for host_path, config in self.volumes.items()}
-        else:
-            formatted_volumes = None
-        
         formatted_ports = self.format_ports(self.ports)
 
         self.container = self.client.containers.run(
@@ -93,7 +87,7 @@ class DockerContainerManager:
             detach=True,
             ports=formatted_ports,
             name=self.name,
-            volumes=formatted_volumes,
+            volumes=self.volumes, # type: ignore
         )
         atexit.register(self.cleanup_container)
         print(f"Started container with ID: {self.container.id}")
