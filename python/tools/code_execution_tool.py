@@ -1,10 +1,7 @@
 from dataclasses import dataclass
-import os, json, contextlib, subprocess, ast, shlex
-from io import StringIO
+import shlex
 import time
-from typing import Literal
-from python.helpers import files, messages
-from agent import Agent
+from python.helpers import files
 from python.helpers.tool import Tool, Response
 from python.helpers import files
 from python.helpers.print_style import PrintStyle
@@ -54,6 +51,7 @@ class CodeExecution(Tool):
             #initialize docker container if execution in docker is configured
             if self.agent.config.code_exec_docker_enabled:
                 docker = DockerContainerManager(name=self.agent.config.code_exec_docker_name, image=self.agent.config.code_exec_docker_image, ports=self.agent.config.code_exec_docker_ports, volumes=self.agent.config.code_exec_docker_volumes)
+                print(f"Starting docker container: {docker.name} for safe code execution... \n in volume: {self.agent.config.code_exec_docker_volumes}")
                 docker.start_container()
             else: docker = None
 
