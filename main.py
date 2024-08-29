@@ -6,6 +6,7 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.files import read_file
 from python.helpers import files
 import python.helpers.timed_input as timed_input
+import dotenv
 
 
 input_lock = threading.Lock()
