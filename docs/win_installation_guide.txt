@@ -49,7 +49,7 @@ pip install -r requirements.txt
 ## Run the program
 - Just run the **main.py** file in Python:
 ~~~bash
-python main.py
+python run_ui.py
 ~~~
 - Or run it in debug mode in VS Code using the **debug** button in the top right corner of the editor. I have provided config files for VS Code for this purpose.
 
@@ -140,7 +140,7 @@ PYDEVD_DISABLE_FILE_VALIDATION=1
 6. Configure API Preferences
 
 If you entered an openAI API key earlier, you may skip this step. If you entered an alternative key, 
-* Right Click on the file **main.py** in the Agent-Zero root folder
+* Right Click on the file **initialize.py** in the Agent-Zero root folder
 * Select **Open With**
 * Select **Notepad** or your preferred text editor
 * Scroll about 20 lines down from the top until you see lines that look like this: *chat_llm = models.get_*
@@ -182,11 +182,11 @@ If all of the requirements installed succesfully, you can proceed to run the pro
 * Activate the Agent-Zero environment by double clicking on its name
 * click Open Terminal
 * Navigate to the agent-zero folder
-* Type **python main.py** and press enter
+* Type **python run_ui.py** and press enter
 
 ```
 (Agent-Zero) C:\Users\yourUserName>cd c:\projects\agent-zero
-(Agent-Zero) C:\projects\agent-zero\python main.py
+(Agent-Zero) C:\projects\agent-zero\python run_ui.py
 Initializing framework...
 
 User message ('e' to leave):

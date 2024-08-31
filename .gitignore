@@ -21,3 +21,13 @@ memory/*
 logs/*
 # But do not ignore the directory itself
 !logs/.gitkeep
+
+# Ignore all contents of the directory "tmp"
+tmp/*
+# But do not ignore the directory itself
+!tmp/.gitkeep
+
+# Ignore all contents of the directory "knowledge"
+knowledge/*
+# But do not ignore the directory itself
+!knowledge/.gitkeep

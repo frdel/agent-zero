@@ -2,10 +2,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug main.py",
+            "name": "Debug run_ui.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "./main.py",
+            "program": "./run_ui.py",
+            "console": "integratedTerminal",
+            "args": ["-Xfrozen_modules=off"]
+        },
+        {
+            "name": "Debug run_cli.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./run_cli.py",
             "console": "integratedTerminal",
             "args": ["-Xfrozen_modules=off"]
         },

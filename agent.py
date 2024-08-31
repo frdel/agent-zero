@@ -9,18 +9,24 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.embeddings import Embeddings
+from concurrent.futures import Future
+from python.helpers.log import Log
+from python.helpers.dirty_json import DirtyJson
+
 
 @dataclass
 class AgentConfig: 
     chat_model: BaseChatModel | BaseLLM
     utility_model: BaseChatModel | BaseLLM
     embeddings_model:Embeddings
+    prompts_subdir: str = ""
     memory_subdir: str = ""
+    knowledge_subdir: str = ""
     auto_memory_count: int = 3
     auto_memory_skip: int = 2
     rate_limit_seconds: int = 60
     rate_limit_requests: int = 15
-    rate_limit_input_tokens: int = 1000000
+    rate_limit_input_tokens: int = 0
     rate_limit_output_tokens: int = 0
     msgs_keep_max: int = 25
     msgs_keep_start: int = 5
@@ -54,23 +60,35 @@ class Agent:
         self.number = number
         self.agent_name = f"Agent {self.number}"
 
-        self.system_prompt = files.read_file("./prompts/agent.system.md", agent_name=self.agent_name)
-        self.tools_prompt = files.read_file("./prompts/agent.tools.md")
-
         self.history = []
         self.last_message = ""
         self.intervention_message = ""
         self.intervention_status = False
         self.rate_limiter = rate_limiter.RateLimiter(max_calls=self.config.rate_limit_requests,max_input_tokens=self.config.rate_limit_input_tokens,max_output_tokens=self.config.rate_limit_output_tokens,window_seconds=self.config.rate_limit_seconds)
         self.data = {} # free data object all the tools can use
+        self.future: Future|None = None
+
 
         os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
+
+    def communicate(self, msg: str):
+        Agent.paused=False #unpause if paused
         
+        if not self.future or self.future.done():
+            return self.message_loop(msg)
+        else:
+            if Agent.streaming_agent: current_agent = Agent.streaming_agent
+            else:                     current_agent = self
+                
+            current_agent.intervention_message = msg #intervene current agent
+            if self.future: return self.future.result() #wait for original agent
+            else: return ""
 
     def message_loop(self, msg: str):
         try:
+            self.future = Future()
             printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)    
-            user_message = files.read_file("./prompts/fw.user_message.md", message=msg)
+            user_message = self.read_prompt("fw.user_message.md", message=msg)
             self.append_message(user_message, human=True) # Append the user's input to the history                        
             memories = self.fetch_memories(True)
                 
@@ -81,7 +99,7 @@ class Agent:
 
                 try:
 
-                    system = self.system_prompt + "\n\n" + self.tools_prompt
+                    system = self.read_prompt("agent.system.md", agent_name=self.agent_name) + "\n\n" + self.read_prompt("agent.tools.md")
                     memories = self.fetch_memories()
                     if memories: system+= "\n\n"+memories
 
@@ -97,8 +115,9 @@ class Agent:
                     self.rate_limiter.limit_call_and_input(tokens)
                     
                     # output that the agent is starting
-                    PrintStyle(bold=True, font_color="green", padding=True, background_color="white").print(f"{self.agent_name}: Starting a message:")
-                                            
+                    PrintStyle(bold=True, font_color="green", padding=True, background_color="white").print(f"{self.agent_name}: Generating:")
+                    log = Log(type="agent", heading=f"{self.agent_name}: Generating:")
+                              
                     for chunk in chain.stream(inputs):
                         if self.handle_intervention(agent_response): break # wait for intervention and handle it, if paused
 
@@ -107,32 +126,49 @@ class Agent:
                         else: content = str(chunk)
                         
                         if content:
-                            printer.stream(content) # output the agent response stream                
+                            printer.stream(content) # output the agent response stream
                             agent_response += content # concatenate stream into the response
+                            self.log_from_stream(agent_response, log)
 
                     self.rate_limiter.set_output_tokens(int(len(agent_response)/4))
                     
                     if not self.handle_intervention(agent_response):
                         if self.last_message == agent_response: #if assistant_response is the same as last message in history, let him know
                             self.append_message(agent_response) # Append the assistant's response to the history
-                            warning_msg = files.read_file("./prompts/fw.msg_repeat.md")
+                            warning_msg = self.read_prompt("fw.msg_repeat.md")
                             self.append_message(warning_msg, human=True) # Append warning message to the history
                             PrintStyle(font_color="orange", padding=True).print(warning_msg)
+                            Log.log(type="warning", content=warning_msg)
 
                         else: #otherwise proceed with tool
                             self.append_message(agent_response) # Append the assistant's response to the history
                             tools_result = self.process_tools(agent_response) # process tools requested in agent message
-                            if tools_result: return tools_result #break the execution if the task is done
+                            if tools_result: #final response of message loop available
+                                self.future.set_result(tools_result) #set result to future
+                                return tools_result #break the execution if the task is done
 
-                # Forward errors to the LLM, maybe he can fix them
+                # Forward errors to the LLM, maybe it can fix them
                 except Exception as e:
                     error_message = errors.format_error(e)
-                    msg_response = files.read_file("./prompts/fw.error.md", error=error_message) # error message template
+                    msg_response = self.read_prompt("fw.error.md", error=error_message) # error message template
                     self.append_message(msg_response, human=True)
                     PrintStyle(font_color="red", padding=True).print(msg_response)
+                    Log.log(type="error", content=msg_response)
+                    self.future.set_exception(e) #set result to future
                     
         finally:
             Agent.streaming_agent = None # unset current streamer
+
+    def read_prompt(self, file:str, **kwargs):
+        content = ""
+        if self.config.prompts_subdir:
+            try:
+                content = files.read_file(files.get_abs_path(f"./prompts/{self.config.prompts_subdir}/{file}"), **kwargs)
+            except Exception as e:
+                pass
+        if not content:
+            content = files.read_file(files.get_abs_path(f"./prompts/default/{file}"), **kwargs)
+        return content
 
     def get_data(self, field:str):
         return self.data.get(field, None)
@@ -162,10 +198,12 @@ class Agent:
         chain = prompt | self.config.utility_model
         response = ""
         printer = None
+        logger = None
 
         if output_label:
             PrintStyle(bold=True, font_color="orange", padding=True, background_color="white").print(f"{self.agent_name}: {output_label}:")
-            printer = PrintStyle(italic=True, font_color="orange", padding=False)                
+            printer = PrintStyle(italic=True, font_color="orange", padding=False)
+            logger = Log(type="adhoc", heading=f"{self.agent_name}: {output_label}:")       
 
         formatted_inputs = prompt.format()
         tokens = int(len(formatted_inputs)/4)     
@@ -180,6 +218,7 @@ class Agent:
 
             if printer: printer.stream(content)
             response+=content
+            if logger: logger.update(content=response)
 
         self.rate_limiter.set_output_tokens(int(len(response)/4))
 
@@ -190,7 +229,7 @@ class Agent:
             return self.history[-1]
 
     def replace_middle_messages(self,middle_messages):
-        cleanup_prompt = files.read_file("./prompts/fw.msg_cleanup.md")
+        cleanup_prompt = self.read_prompt("fw.msg_cleanup.md")
         summary = self.send_adhoc_message(system=cleanup_prompt,msg=self.concat_messages(middle_messages), output_label="Mid messages cleanup summary")
         new_human_message = HumanMessage(content=summary)
         return [new_human_message]
@@ -225,7 +264,7 @@ class Agent:
         while self.paused: time.sleep(0.1) # wait if paused
         if self.intervention_message and not self.intervention_status: # if there is an intervention message, but not yet processed
             if progress.strip(): self.append_message(progress) # append the response generated so far
-            user_msg = files.read_file("./prompts/fw.intervention.md", user_message=self.intervention_message) # format the user intervention template
+            user_msg = self.read_prompt("fw.intervention.md", user_message=self.intervention_message) # format the user intervention template
             self.append_message(user_msg,human=True) # append the intervention message
             self.intervention_message = "" # reset the intervention message
             self.intervention_status = True
@@ -253,9 +292,10 @@ class Agent:
             if self.handle_intervention(): return # wait if paused and handle intervention message if needed
             if response.break_loop: return response.message
         else:
-            msg = files.read_file("prompts/fw.msg_misformat.md")
+            msg = self.read_prompt("fw.msg_misformat.md")
             self.append_message(msg, human=True)
             PrintStyle(font_color="red", padding=True).print(msg)
+            Log.log(type="error", content=f"{self.agent_name}: Message misformat:")
 
 
     def get_tool(self, name: str, args: dict, message: str, **kwargs):
@@ -290,9 +330,17 @@ class Agent:
                 "conversation_history" : messages,
                 "raw_memories": memories
             }
-            cleanup_prompt = files.read_file("./prompts/msg.memory_cleanup.md").replace("{", "{{")       
+            cleanup_prompt = self.read_prompt("msg.memory_cleanup.md").replace("{", "{{")       
             clean_memories = self.send_adhoc_message(cleanup_prompt,json.dumps(input), output_label="Memory injection")
             return clean_memories
+
+    def log_from_stream(self, stream: str, log: Log):
+        try:
+            if len(stream) < 25: return # no reason to try
+            response = DirtyJson.parse_string(stream)
+            if isinstance(response, dict): log.update(content=stream, kvps=response) #log if result is a dictionary already
+        except Exception as e:
+            pass
 
     def call_extension(self, name: str, **kwargs) -> Any:
         pass

@@ -11,6 +11,7 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
 from python.helpers.docker import DockerContainerManager
+from python.helpers.log import Log
 
 @dataclass
 class State:
@@ -38,13 +39,23 @@ class CodeExecution(Tool):
         elif runtime == "output":
             response = self.get_terminal_output()
         else:
-            response = files.read_file("./prompts/fw.code_runtime_wrong.md", runtime=runtime)
+            response = self.agent.read_prompt("fw.code_runtime_wrong.md", runtime=runtime)
 
-        if not response: response = files.read_file("./prompts/fw.code_no_output.md")
+        if not response: response = self.agent.read_prompt("fw.code_no_output.md")
         return Response(message=response, break_loop=False)
 
+    def before_execution(self, **kwargs):
+        if self.agent.handle_intervention(): return # wait for intervention and handle it, if paused
+        PrintStyle(font_color="#1B4F72", padding=True, background_color="white", bold=True).print(f"{self.agent.agent_name}: Using tool '{self.name}':")
+        self.log = Log(type="code_exe", heading=f"{self.agent.agent_name}: Using tool '{self.name}':", content="", kvps=self.args)
+        if self.args and isinstance(self.args, dict):
+            for key, value in self.args.items():
+                PrintStyle(font_color="#85C1E9", bold=True).stream(self.nice_key(key)+": ")
+                PrintStyle(font_color="#85C1E9", padding=isinstance(value,str) and "\n" in value).stream(value)
+                PrintStyle().print()
+
     def after_execution(self, response, **kwargs):
-        msg_response = files.read_file("./prompts/fw.tool_response.md", tool_name=self.name, tool_response=response.message)
+        msg_response = self.agent.read_prompt("fw.tool_response.md", tool_name=self.name, tool_response=response.message)
         self.agent.append_message(msg_response, human=True)
 
     def prepare_state(self):
@@ -98,6 +109,7 @@ class CodeExecution(Tool):
         
             if partial_output:
                 PrintStyle(font_color="#85C1E9").stream(partial_output)
+                self.log.update(content=full_output)
                 idle=0    
             else:
                 idle+=1

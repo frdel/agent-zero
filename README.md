@@ -1,6 +1,6 @@
 # Agent Zero
 
-[![Join our Discord](https://img.shields.io/badge/Discord-Join%20our%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/B8KZKNsPpj) [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@AgentZeroFW) [![Connect on LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/jan-tomasek/) [![Follow on X.com](https://img.shields.io/badge/X.com-Follow-1DA1F2?style=for-the-badge&logo=x&logoColor=white)](https://x.com/JanTomasekDev)
+[![Join our Skool Community](https://img.shields.io/badge/Skool-Join%20our%20Community-4A90E2?style=for-the-badge&logo=skool&logoColor=white)](https://www.skool.com/agent-zero) [![Join our Discord](https://img.shields.io/badge/Discord-Join%20our%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/B8KZKNsPpj) [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@AgentZeroFW) [![Connect on LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/jan-tomasek/) [![Follow on X.com](https://img.shields.io/badge/X.com-Follow-1DA1F2?style=for-the-badge&logo=x&logoColor=white)](https://x.com/JanTomasekDev)
 
 
 
@@ -23,12 +23,12 @@
 
 3. **Multi-agent cooperation**
 - Every agent has a superior agent giving it tasks and instructions. Every agent then reports back to its superior.
-- In the case of the first agent, the superior is the human user; the agent sees no difference.
+- In the case of the first agent in the chain (Agent 0), the superior is the human user; the agent sees no difference.
 - Every agent can create its subordinate agent to help break down and solve subtasks. This helps all agents keep their context clean and focused.
 
 4. **Completely customizable and extensible**
 - Almost nothing in this framework is hard-coded. Nothing is hidden. Everything can be extended or changed by the user.
-- The whole behavior is defined by a system prompt in the **prompts/agent.system.md** file. Change this prompt and change the framework dramatically.
+- The whole behavior is defined by a system prompt in the **prompts/default/agent.system.md** file. Change this prompt and change the framework dramatically.
 - The framework does not guide or limit the agent in any way. There are no hard-coded rails that agents have to follow.
 - Every prompt, every small message template sent to the agent in its communication loop, can be found in the **prompts/** folder and changed.
 - Every default tool can be found in the **python/tools/** folder and changed or copied to create new predefined tools.
@@ -81,10 +81,10 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 Update: [Guide by CheezChat for Windows](./docs/win_installation_guide.txt)
 
 1. **Required API keys:**
-- At the moment, the only recommended API key is for https://www.perplexity.ai/ API. Perplexity is used as a convenient web search tool and has not yet been replaced by an open-source alternative. If you do not have an API key for Perplexity, leave it empty in the .env file and Perplexity will not be used.
-- Chat models and embedding models can be executed locally via Ollama and HuggingFace or via API as well.
+- No API keys are required. Models can run locally. The only recommended API key is for https://www.perplexity.ai/ API. Perplexity is used as a convenient web search tool and has not yet been replaced by an open-source alternative in Agent Zero. If you do not have an API key for Perplexity, leave it empty in the .env file and Perplexity will not be used.
+- Chat models and embedding models can be executed locally via Ollama, LMStudio and HuggingFace or via API as well.
 
-2. **Enter your API keys:**
+2. **Enter your API keys if needed:**
 - You can enter your API keys into the **.env** file, which you can copy from **example.env**
 - Or you can export your API keys in the terminal session:
 ~~~bash
@@ -97,9 +97,9 @@ export API_KEY_OPENAI="your-api-key-here"
 pip install -r requirements.txt
 ~~~
 
-3. **Choose your chat, utility and embeddings model:**
-- In the **main.py** file, right at the start of the **chat()** function, you can see how the chat model and embedding model are set.
-- You can choose between online models (OpenAI, Anthropic, Groq) or offline (Ollama, HuggingFace) for both.
+3. **Choose your chat, utility and embeddings model and check other configuration options:**
+- In the **initialize.py** file, you can see how the chat model and embedding model are set.
+- You can choose between online models (OpenAI, Anthropic, Groq) or offline (Ollama, LMStudio, HuggingFace) for both.
 
 4. **run Docker:**
 - Easiest way is to install Docker Desktop application and just run it. The rest will be handled by the framework itself.

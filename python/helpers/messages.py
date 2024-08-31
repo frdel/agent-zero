@@ -1,12 +1,12 @@
-from . import files
+# from . import files
 
-
-def truncate_text(output, threshold=1000):
+def truncate_text(agent, output, threshold=1000):
     if len(output) <= threshold:
         return output
 
     # Adjust the file path as needed
-    placeholder = files.read_file("./prompts/fw.msg_truncated.md", removed_chars=(len(output) - threshold))
+    placeholder = agent.read_prompt("fw.msg_truncated.md", removed_chars=(len(output) - threshold))
+    # placeholder = files.read_file("./prompts/default/fw.msg_truncated.md", removed_chars=(len(output) - threshold))
 
     start_len = (threshold - len(placeholder)) // 2
     end_len = threshold - len(placeholder) - start_len

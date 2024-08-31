@@ -1,6 +1,5 @@
 import os
 from agent import Agent
-from . import online_knowledge_tool
 from python.helpers import perplexity_search
 from python.helpers import duckduckgo_search
 
@@ -10,6 +9,7 @@ import concurrent.futures
 from python.helpers.tool import Tool, Response
 from python.helpers import files
 from python.helpers.print_style import PrintStyle
+from python.helpers.log import Log
 
 class Knowledge(Tool):
     def execute(self, question="", **kwargs):
@@ -21,6 +21,7 @@ class Knowledge(Tool):
                 perplexity = executor.submit(perplexity_search.perplexity_search, question)
             else: 
                 PrintStyle.hint("No API key provided for Perplexity. Skipping Perplexity search.")
+                Log(type="hint", content="No API key provided for Perplexity. Skipping Perplexity search.")
                 perplexity = None
                 
 
@@ -46,7 +47,7 @@ class Knowledge(Tool):
             except Exception as e:
                 memory_result = "Memory search failed: " + str(e)
 
-        msg = files.read_file("prompts/tool.knowledge.response.md", 
+        msg = self.agent.read_prompt("tool.knowledge.response.md", 
                               online_sources = ((perplexity_result + "\n\n") if perplexity else "") + str(duckduckgo_result),
                               memory = memory_result )
 

@@ -39,7 +39,6 @@ def extract_json_string(content):
         # Return the matched JSON string
         return match.group(0)
     else:
-        print("No JSON content found.")
         return ""
 
 def fix_json_string(json_string):

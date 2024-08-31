@@ -5,7 +5,6 @@ langchain-huggingface==0.0.3
 langchain-openai==0.1.15
 langchain-community==0.2.7
 langchain-anthropic==0.1.19
-langchain-chroma==0.1.2
 langchain-google-genai==1.0.7
 webcolors==24.6.0
 sentence-transformers==3.0.1
@@ -17,3 +16,7 @@ newspaper3k==0.2.8
 beautifulsoup4==4.12.3
 lxml_html_clean==0.2.0
 pynput==1.7.7
+pypdf==4.3.1
+Flask[async]==3.0.3
+Flask-BasicAuth==0.2.0
+faiss-cpu==1.8.0.post1
