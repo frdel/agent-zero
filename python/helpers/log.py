@@ -35,8 +35,8 @@ class Log:
     def log(type: str, heading: str|None = None, content: str|None = None, kvps: dict|None = None):
         item = LogItem(len(Log.logs), type, heading or "", content or "", kvps)
         Log.logs.append(item)
-        Log.version += 1
         Log.last_updated = item.no
+        Log.version += 1
         return item
     
     @staticmethod
@@ -52,7 +52,7 @@ class Log:
             if kvps is not None:
                 item.kvps = kvps
 
-            Log.version += 1
             Log.last_updated = no
+            Log.version += 1
         else:
             raise IndexError("Log item number out of range")

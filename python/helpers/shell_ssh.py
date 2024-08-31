@@ -77,7 +77,9 @@ class SSHInteractiveSession:
             if self.last_command and len(self.last_command) > self.trimmed_command_length:
                 command_to_trim = self.last_command[self.trimmed_command_length:]
 
-                trim_com, trim_out = calculate_valid_match_lengths(command_to_trim, data, deviation_threshold=8, deviation_reset=2, ignore_patterns=[rb'\x1b\[\?\d{4}[a-zA-Z]',rb'\r',rb'>'])
+                trim_com, trim_out = calculate_valid_match_lengths(
+                    command_to_trim, data, deviation_threshold=8, deviation_reset=2, 
+                    ignore_patterns=[rb'\x1b\[\?\d{4}[a-zA-Z](?:> )?', rb'\r', rb'>'])
                 if(trim_com > 0 and trim_out > 0):
                     data = data[trim_out:]
                     self.trimmed_command_length += trim_com

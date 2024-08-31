@@ -11,6 +11,9 @@
 - Agent Zero is fully transparent, readable, comprehensible, customizable and interactive.
 - Agent Zero uses the computer as a tool to accomplish its (your) tasks.
 
+## Now with UI:
+![UI prototype](docs/ui_screen1.png)
+
 ## Key concepts
 1. **General-purpose assistant**
 - Agent Zero is not pre-programmed for specific tasks (but can be). It is meant to be a general-purpose personal assistant. Give it a task, and it will gather information, execute commands and code, cooperate with other agent instances, and do its best to accomplish it.
@@ -62,6 +65,7 @@ If your agent fails to communicate properly, use tools, reason, use memory, find
 Agent Zero is made to be used in an isolated virtual environment (for safety) with some tools preinstalled and configured.
 If you cannot provide all the necessary conditions or API keys, just change the system prompt and tell your agent what operating system and tools are at its disposal. Nothing is hard-coded; if you do not tell your agent about a certain tool, it will not know about it and will not try to use it.
 
+
 [![David Ondrej video](/docs/david_vid.jpg)](https://www.youtube.com/watch?v=_Pionjv4hGc)
 
 ## Known problems
@@ -77,6 +81,10 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 ![Time example](docs/time_example.jpg)
 
 ## Setup
+
+> ⚠️ **Changes to launch files since v0.6:**  
+> main.py file has been replaced with run_ui.py (webui) and run_cli.py (terminal) launch files.
+> configuration has been moved to initialize.py for both webui and terminal launch files.
 
 Update: [Guide by CheezChat for Windows](./docs/win_installation_guide.txt)
 
@@ -102,11 +110,17 @@ pip install -r requirements.txt
 - You can choose between online models (OpenAI, Anthropic, Groq) or offline (Ollama, LMStudio, HuggingFace) for both.
 
 4. **run Docker:**
-- Easiest way is to install Docker Desktop application and just run it. The rest will be handled by the framework itself.
+- Easiest way is to install Docker Desktop application ([Download](https://www.docker.com/products/docker-desktop/)) and just leave it running in the background.
+- You don't need to download and build any images, it will be done automatically by the framework at runtime.
 
 ## Run the program
-- Just run the **main.py** file in Python:
+- Just run the **run_ui.py** file in Python:
 ~~~bash
-python main.py
+python run_ui.py
 ~~~
+- And open the URL shown in the terminal:
+
+![Flask link](docs/flask_link.png)
+
 - Or run it in debug mode in VS Code using the **debug** button in the top right corner of the editor. I have provided config files for VS Code for this purpose.
+- For the original command line interface you can run run_cli.py instead of run_ui.py

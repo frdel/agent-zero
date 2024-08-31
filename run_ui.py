@@ -58,7 +58,7 @@ async def health_check():
 # async def secret_page():
 #     return Path("./secret_page.html").read_text()
 
-# send message to agent
+# send message to agent (async UI)
 @app.route('/msg', methods=['POST'])
 async def handle_message():
     try:
@@ -82,6 +82,41 @@ async def handle_message():
         response = {
             "ok": True,
             "message": "Message received.",
+        }
+
+    except Exception as e:
+        response = {
+            "ok": False,
+            "message": str(e),
+        }
+
+    #respond with json
+    return jsonify(response)
+
+# send message to agent (synchronous API)
+@app.route('/msg_sync', methods=['POST'])
+async def handle_msg_sync():
+    try:
+        
+        #agent instance
+        agent = get_agent()
+
+        #data sent to the server
+        input = request.get_json()
+        text = input.get("text", "")
+
+        # print to console and log
+        PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message:")        
+        PrintStyle(font_color="white", padding=False).print(f"> {text}")
+        Log.log(type="user", heading="User message", content=text)
+        
+        #pass the message to the agent
+        response = agent.communicate(text)
+        
+        #data from this server    
+        response = {
+            "ok": True,
+            "message": response,
         }
 
     except Exception as e:

@@ -5,7 +5,6 @@ from python.helpers import files
 import os, json
 from python.helpers.tool import Tool, Response
 from python.helpers.print_style import PrintStyle
-from chromadb.errors import InvalidDimensionException
 from python.helpers.log import Log
 
 # databases based on subdirectories from agent config
@@ -26,7 +25,7 @@ class Memory(Tool):
                 result = forget(self.agent, kwargs["forget"])
             elif "delete" in kwargs:
                 result = delete(self.agent, kwargs["delete"])
-        except InvalidDimensionException as e:
+        except Exception as e:
             # hint about embedding change with existing database
             PrintStyle.hint("If you changed your embedding model, you will need to remove contents of /memory directory.")
             Log(type="hint", content="If you changed your embedding model, you will need to remove contents of /memory directory.")

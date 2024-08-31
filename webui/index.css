@@ -74,7 +74,7 @@ h4 {
 .user-container {
   align-self: flex-end;
   margin-top: 2em;
-  margin-bottom: 1.5em;
+  margin-bottom: 1em;
 }
 
 .ai-container {
@@ -184,7 +184,7 @@ h4 {
   max-height: 9.375em; /* 150px */
   padding: 0.625em 0.9375em; /* 10px 15px */
   border: none;
-  border-radius: 1.5625em; /* 25px */
+  border-radius: 1em; /* 25px */
   background-color: #3d3d3d;
   color: #e0e0e0;
   font-size: 1em; /* 16px */
@@ -196,6 +196,7 @@ h4 {
 }
 .chat-button {
   color: #1e1e1e;
+  font-size: 1em;
   border: none;
   border-radius: 50%;
   width: 3.125em; /* 50px */

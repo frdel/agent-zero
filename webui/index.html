@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agent Zero</title>
     <link rel="stylesheet" href="index.css">
+
     <script>
         window.safeCall = function(name,...args){
             if (window[name]) window[name](...args)
@@ -23,8 +24,8 @@
             
             <div class="config-section" id="status-section" x-data="{ connected: true }">
                 <h3>Status</h3>
-                <h4 class="connected" x-show="connected">✔ Connected</h4>
-                <h4 class="disconnected" x-show="!connected">✖ Disconnected</h4>
+                <h4 class="connected" x-show="connected">&#10004; Connected</h4>
+                <h4 class="disconnected" x-show="!connected">&#10008; Disconnected</h4>
             </div>
 
             <div class="config-section" x-data="{ showQuickActions: true }">
@@ -88,9 +89,9 @@
             </div>
             <div id="input-section" x-data="{ paused: false }">
                 <textarea id="chat-input" placeholder="Type your message here..." rows="1"></textarea>
-                <button class="chat-button" id="send-button">➤</button>
-                <button class="chat-button pause-button" id="pause-button" @click="pauseAgent(true)" x-show="!paused">⏸</button>
-                <button class="chat-button pause-button" id="unpause-button" @click="pauseAgent(false)" x-show="paused">▶</button>
+                <button class="chat-button" id="send-button">&#10148;</button>
+                <button class="chat-button pause-button" id="pause-button" @click="pauseAgent(true)" x-show="!paused">&#10074;&#10074;</button>
+                <button class="chat-button pause-button" id="unpause-button" @click="pauseAgent(false)" x-show="paused">&#9654;</button>
             </div>
         </div>
     </div>
