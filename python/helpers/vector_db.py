@@ -42,7 +42,7 @@ class VectorDB:
 
         
         # if db folder exists and is not empty:
-        if os.path.exists(self.db_dir) and len(os.listdir(self.db_dir)) > 0:
+        if os.path.exists(self.db_dir) and files.exists(self.db_dir,"index.faiss"):
             self.db = FAISS.load_local(
                 folder_path=self.db_dir,
                 embeddings=self.embedder,
