@@ -1,15 +1,12 @@
 ansio==0.0.1
 python-dotenv==1.0.1
 langchain-groq==0.1.6
-langchain-huggingface==0.0.3
 langchain-openai==0.1.15
 langchain-community==0.2.7
-langchain-anthropic==0.1.19
 langchain-chroma==0.1.2
-langchain-google-genai==1.0.7
 webcolors==24.6.0
 sentence-transformers==3.0.1
 docker==7.1.0
-paramiko==3.4.0
 duckduckgo_search==6.1.12
 inputimeout==1.0.4
+promptflow-python-bundle==0.3.0
