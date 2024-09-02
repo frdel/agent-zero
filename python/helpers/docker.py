@@ -12,50 +12,31 @@ class DockerContainerManager:
         self.name = name
         self.ports = ports
         self.volumes = volumes
-        self.init_docker()
-                
+        self.client = self.init_docker()
+        self.container = None
+
     def init_docker(self):
-        self.client = None
-        while not self.client:
+        while True:
             try:
-                self.client = docker.from_env()
-                self.container = None
+                return docker.from_env()
             except Exception as e:
                 err = format_error(e)
-                if ("ConnectionRefusedError(61," in err or "Error while fetching server API version" in err):
-                    PrintStyle.hint("Connection to Docker failed. Is docker or Docker Desktop running?") # hint for user
+                if "ConnectionRefusedError(61," in err or "Error while fetching server API version" in err:
+                    PrintStyle.hint("Connection to Docker failed. Is Docker running?")
                     PrintStyle.error(err)
-                    time.sleep(5) # try again in 5 seconds
-                else: raise
-        return self.client
-                            
-    def cleanup_container(self) -> None:
-        if self.container:
-            try:
-                self.container.stop()
-                self.container.remove()
-                print(f"Stopped and removed the container: {self.container.id}")
-            except Exception as e:
-                print(f"Failed to stop and remove the container: {e}")
+                    time.sleep(5)
+                else:
+                    raise
 
     def start_container(self) -> None:
-        if not self.client: self.client = self.init_docker()
-        existing_container = None
-        for container in self.client.containers.list(all=True):
-            if container.name == self.name:
-                existing_container = container
-                break
-
+        existing_container = self.client.containers.list(filters={"name": self.name}, all=True)
+        
         if existing_container:
-            if existing_container.status != 'running':
+            self.container = existing_container[0]
+            if self.container.status != 'running':
                 print(f"Starting existing container: {self.name} for safe code execution...")
-                existing_container.start()
-                self.container = existing_container
-                time.sleep(2) # this helps to get SSH ready
-                
-            else:
-                self.container = existing_container
-                # print(f"Container with name '{self.name}' is already running with ID: {existing_container.id}")
+                self.container.start()
+            time.sleep(2)
         else:
             print(f"Initializing docker container {self.name} for safe code execution...")
             self.container = self.client.containers.run(
@@ -67,4 +48,28 @@ class DockerContainerManager:
             )
             atexit.register(self.cleanup_container)
             print(f"Started container with ID: {self.container.id}")
-            time.sleep(5) # this helps to get SSH ready
+            time.sleep(5)
+
+    def execute_command(self, command: str) -> str:
+        if not self.container:
+            raise Exception("Docker container is not initialized or started")
+
+        exec_result = self.container.exec_run(command, demux=True)
+        exit_code, output = exec_result.exit_code, exec_result.output
+
+        if exit_code == 0:
+            stdout, stderr = output
+            return stdout.decode('utf-8') if stdout else stderr.decode('utf-8') if stderr else "Command executed successfully, but produced no output."
+        else:
+            stdout, stderr = output
+            error_message = stderr.decode('utf-8') if stderr else stdout.decode('utf-8') if stdout else "Unknown error occurred"
+            return f"Error (exit code {exit_code}): {error_message}"
+
+    def cleanup_container(self) -> None:
+        if self.container:
+            try:
+                self.container.stop()
+                self.container.remove()
+                print(f"Stopped and removed the container: {self.container.id}")
+            except Exception as e:
+                print(f"Failed to stop and remove the container: {e}")

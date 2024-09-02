@@ -24,8 +24,9 @@ def initialize():
     utility_llm = chat_llm # change if you want to use a different utility model
 
     # embedding model used for memory
-    embedding_llm = models.get_openai_embedding(model_name="text-embedding-3-small")
+    embedding_llm = models.get_azure_openai_embedding(deployment_name="text-embedding-3-small")
     # embedding_llm = models.get_ollama_embedding(model_name="nomic-embed-text")
+     
 
     # agent configuration
     config = AgentConfig(
@@ -45,16 +46,11 @@ def initialize():
         # max_tool_response_length = 3000,
         # response_timeout_seconds = 60,
         code_exec_docker_enabled = True,
-        # code_exec_docker_name = "agent-zero-exe",
-        # code_exec_docker_image = "frdel/agent-zero-exe:latest",
-        # code_exec_docker_ports = { "22/tcp": 50022 }
-        # code_exec_docker_volumes = { files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"} }
-        code_exec_ssh_enabled = True,
-        # code_exec_ssh_addr = "localhost",
-        # code_exec_ssh_port = 50022,
-        # code_exec_ssh_user = "root",
-        # code_exec_ssh_pass = "toor",
-        # additional = {},
+        code_exec_docker_name = "agent-zero-exe",
+        code_exec_docker_image = "frdel/agent-zero-exe:latest",
+        code_exec_docker_ports = { "22/tcp": 50023 },
+        code_exec_docker_volumes = { files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"} },
+
     )
     
     # create the first agent
