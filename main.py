@@ -46,9 +46,9 @@ def initialize():
         # max_tool_response_length = 3000,
         # response_timeout_seconds = 60,
         code_exec_docker_enabled = True,
-        code_exec_docker_name = "agent-zero-exe",
-        code_exec_docker_image = "frdel/agent-zero-exe:latest",
-        code_exec_docker_ports = { "22/tcp": 50023 },
+        code_exec_docker_name = "Herbie-exe",
+        code_exec_docker_image = " parrotsec/security",
+        code_exec_docker_ports = { "8022/tcp": 8022 },
         code_exec_docker_volumes = { files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"} },
 
     )
