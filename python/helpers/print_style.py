@@ -2,12 +2,13 @@ import os, webcolors, html
 import sys
 from datetime import datetime
 from . import files
+import streamlit as st
 
 class PrintStyle:
     last_endline = True
     log_file_path = None
 
-    def __init__(self, bold=False, italic=False, underline=False, font_color="default", background_color="default", padding=False, log_only=False):
+    def __init__(self,  bold=False, italic=False, underline=False, font_color="default", background_color="default", padding=False, log_only=False):
         self.bold = bold
         self.italic = italic
         self.underline = underline
@@ -16,6 +17,7 @@ class PrintStyle:
         self.padding = padding
         self.padding_added = False  # Flag to track if padding was added
         self.log_only = log_only
+        #self.kwargs = kwargs (Streamlit)
 
         if PrintStyle.log_file_path is None:
             logs_dir = files.get_abs_path("logs")
@@ -104,6 +106,7 @@ class PrintStyle:
             print(styled_text, end='\n', flush=True)
         self._log_html(html_text+"<br>\n")
         PrintStyle.last_endline = True
+        #st.session_state.logs.append(text) (Streamlit)
 
     def stream(self, *args, sep=' ', **kwargs):
         self._add_padding_if_needed()
@@ -112,6 +115,7 @@ class PrintStyle:
             print(styled_text, end='', flush=True)
         self._log_html(html_text)
         PrintStyle.last_endline = False
+        #st.session_state.logs.append(text) (Streamlit)
 
     def is_last_line_empty(self):
         lines = sys.stdin.readlines()

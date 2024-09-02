@@ -9,6 +9,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.embeddings import Embeddings
+import streamlit as st
 
 @dataclass
 class AgentConfig: 
@@ -28,9 +29,9 @@ class AgentConfig:
     response_timeout_seconds: int = 60
     max_tool_response_length: int = 3000
     code_exec_docker_enabled: bool = True
-    code_exec_docker_name: str = "agent-zero-exe"
-    code_exec_docker_image: str = "frdel/agent-zero-exe:latest"
-    code_exec_docker_ports: dict[str,int] = field(default_factory=lambda: {"22/tcp": 50023})
+    code_exec_docker_name: str = "Herbie-exe"
+    code_exec_docker_image: str = " parrotsec/security"
+    code_exec_docker_ports: dict[str,int] = field(default_factory=lambda: {"8022/tcp": 8022})
     code_exec_docker_volumes: dict[str, dict[str, str]] = field(default_factory=lambda: {files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"}})
     additional: Dict[str, Any] = field(default_factory=dict)
     
@@ -66,23 +67,24 @@ class Agent:
         try:
             printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)    
             user_message = files.read_file("./prompts/fw.user_message.md", message=msg)
-            self.append_message(user_message, human=True) # Append the user's input to the history                        
+            self.append_message(user_message, human=True)
             memories = self.fetch_memories(True)
-                
-            while True: # let the agent iterate on his thoughts until he stops by using a tool
-                Agent.streaming_agent = self #mark self as current streamer
+            
+            response = ""
+            while True:
+                Agent.streaming_agent = self
                 agent_response = ""
-                self.intervention_status = False # reset interventon status
+                self.intervention_status = False
 
                 try:
-
                     system = self.system_prompt + "\n\n" + self.tools_prompt
                     memories = self.fetch_memories()
-                    if memories: system+= "\n\n"+memories
+                    if memories: system += "\n\n" + memories
 
                     prompt = ChatPromptTemplate.from_messages([
                         SystemMessage(content=system),
-                        MessagesPlaceholder(variable_name="messages") ])
+                        MessagesPlaceholder(variable_name="messages")
+                    ])
                     
                     inputs = {"messages": self.history}
                     chain = prompt | self.config.chat_model
@@ -91,43 +93,42 @@ class Agent:
                     tokens = int(len(formatted_inputs)/4)     
                     self.rate_limiter.limit_call_and_input(tokens)
                     
-                    # output that the agent is starting
-                    PrintStyle(bold=True, font_color="green", padding=True, background_color="white").print(f"{self.agent_name}: Starting a message:")
-                                            
+                    st.session_state.logs.append(f"{self.agent_name}: Starting a message:")
+                    
                     for chunk in chain.stream(inputs):
-                        if self.handle_intervention(agent_response): break # wait for intervention and handle it, if paused
-
                         if isinstance(chunk, str): content = chunk
                         elif hasattr(chunk, "content"): content = str(chunk.content)
                         else: content = str(chunk)
                         
                         if content:
-                            printer.stream(content) # output the agent response stream                
-                            agent_response += content # concatenate stream into the response
+                            agent_response += content
+                            st.session_state.logs.append(content)
 
                     self.rate_limiter.set_output_tokens(int(len(agent_response)/4))
                     
-                    if not self.handle_intervention(agent_response):
-                        if self.last_message == agent_response: #if assistant_response is the same as last message in history, let him know
-                            self.append_message(agent_response) # Append the assistant's response to the history
+                    if not self.intervention_status:
+                        if self.last_message == agent_response:
+                            self.append_message(agent_response)
                             warning_msg = files.read_file("./prompts/fw.msg_repeat.md")
-                            self.append_message(warning_msg, human=True) # Append warning message to the history
-                            PrintStyle(font_color="orange", padding=True).print(warning_msg)
+                            self.append_message(warning_msg, human=True)
+                            st.session_state.logs.append(warning_msg)
+                        else:
+                            self.append_message(agent_response)
+                            tools_result = self.process_tools(agent_response)
+                            if tools_result:
+                                response = tools_result
+                                break
 
-                        else: #otherwise proceed with tool
-                            self.append_message(agent_response) # Append the assistant's response to the history
-                            tools_result = self.process_tools(agent_response) # process tools requested in agent message
-                            if tools_result: return tools_result #break the execution if the task is done
-
-                # Forward errors to the LLM, maybe he can fix them
                 except Exception as e:
                     error_message = errors.format_error(e)
-                    msg_response = files.read_file("./prompts/fw.error.md", error=error_message) # error message template
+                    msg_response = files.read_file("./prompts/fw.error.md", error=error_message)
                     self.append_message(msg_response, human=True)
-                    PrintStyle(font_color="red", padding=True).print(msg_response)
+                    st.session_state.logs.append(msg_response)
                     
+            return response
+
         finally:
-            Agent.streaming_agent = None # unset current streamer
+            Agent.streaming_agent = None
 
     def get_data(self, field:str):
         return self.data.get(field, None)
