@@ -6,6 +6,7 @@
 
 # Ignore all contents of the virtual environment directory
 .venv/*
+.myenv/*
 
 # Ignore all contents of the directory "work_dir"
 work_dir/*
