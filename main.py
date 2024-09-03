@@ -6,7 +6,7 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.files import read_file
 from python.helpers import files
 import python.helpers.timed_input as timed_input
-from promptflow.tracing import start_trace
+# from promptflow.tracing import start_trace
 
 
 input_lock = threading.Lock()

@@ -9,4 +9,4 @@ sentence-transformers==3.0.1
 docker==7.1.0
 duckduckgo_search==6.1.12
 inputimeout==1.0.4
-promptflow-python-bundle==0.3.0
+promptflow

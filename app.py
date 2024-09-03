@@ -1,11 +1,11 @@
 import streamlit as st
-import threading
 import time
 from agent import Agent, AgentConfig
 import models
 from python.helpers import files
 from python.helpers.print_style import PrintStyle
 from promptflow.tracing import start_trace
+from python.helpers.template_manager import load_templates, save_templates, templates_page, Template
 
 # Initialize session state
 if 'agent' not in st.session_state:
@@ -14,6 +14,8 @@ if 'messages' not in st.session_state:
     st.session_state.messages = []
 if 'logs' not in st.session_state:
     st.session_state.logs = []
+if 'templates' not in st.session_state:
+    st.session_state.templates = []
 
 def initialize_agent():
     chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o", temperature=0)
@@ -35,6 +37,57 @@ def initialize_agent():
     return Agent(number=0, config=config)
 
 def main():
+    st.set_page_config(layout="wide", page_title="AI Agent Interaction")
+    
+    # Load templates
+    if 'templates' not in st.session_state:
+        st.session_state.templates = load_templates()
+
+    # Sidebar
+    st.sidebar.title("Navigation")
+    page = st.sidebar.radio("Go to", ["Create", "Templates", "Chat History"])
+
+    if page == "Create":
+        create_page()
+    elif page == "Templates":
+        templates_page()
+    elif page == "Chat History":
+        chat_history_page()
+
+    # Check if a template was selected to be used
+    if 'use_template' in st.session_state:
+        template = st.session_state.use_template
+        del st.session_state.use_template  # Clear the flag
+        process_user_input(f"Execute template: {template.name}", template)
+
+def process_user_input(user_input, template=None):
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    
+    with st.spinner("Agent is processing..."):
+        if template:
+            # Use template information to guide the agent
+            prompt = f"URL: {template.url}\nNavigation Goal: {template.navigation_goal}\nData Extraction Goal: {template.data_extraction_goal}\nUser Input: {user_input}"
+        else:
+            prompt = user_input
+
+        # Process the input and capture the response and thoughts
+        response, thoughts = st.session_state.agent.message_loop(prompt)
+        
+    # Add the response and thoughts to the message history
+    st.session_state.messages.append({
+        "role": "assistant", 
+        "content": response,
+        "thoughts": thoughts
+    })
+
+    # Display the response immediately
+    with st.chat_message("assistant"):
+        st.write(response)
+    with st.expander("Agent's Thoughts"):
+        for thought in thoughts:
+            st.markdown(f"**{thought['type']}**: {thought['content']}")
+
+def create_page():
     st.title("AI Agent Interaction")
 
     # Initialize agent if not already done
@@ -43,40 +96,46 @@ def main():
             st.session_state.agent = initialize_agent()
         st.success("Agent initialized successfully!")
 
-    # Display chat messages
+    # "Try a prompt" section
+    st.subheader("Try a prompt")
+    user_input = st.text_input("Enter your prompt...")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("What is the top post on Hacker News?"):
+            user_input = "What is the top post on Hacker News?"
+    with col2:
+        if st.button("Search for AAPL stock price"):
+            user_input = "Search for AAPL stock price"
+
+    if user_input:
+        process_user_input(user_input)
+
+    # Display chat messages with thoughts
+    st.subheader("Chat History")
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.write(message["content"])
+        if "thoughts" in message:
+            with st.expander("Agent's Thoughts"):
+                for thought in message["thoughts"]:
+                    st.markdown(f"**{thought['type']}**: {thought['content']}")
 
-    # User input
-    user_input = st.chat_input("Type your message here...")
+def use_template(template):
+    st.session_state.messages.append({"role": "user", "content": f"Using template: {template.name}"})
+    process_user_input(f"Execute template: {template.name}", template)
+    st.success("Template executed successfully!")
 
-    if user_input:
-        # Add user message to chat history
-        st.session_state.messages.append({"role": "user", "content": user_input})
-        with st.chat_message("user"):
-            st.write(user_input)
+def chat_history_page():
+    st.title("Chat History")
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
+        if "thoughts" in message:
+            with st.expander("Agent's Thoughts"):
+                for thought in message["thoughts"]:
+                    st.markdown(f"**{thought['type']}**: {thought['content']}")
 
-        # Get agent response
-        with st.spinner("Agent is thinking..."):
-            response = st.session_state.agent.message_loop(user_input)
 
-        # Add agent response to chat history
-        st.session_state.messages.append({"role": "assistant", "content": response})
-        with st.chat_message("assistant"):
-            st.write(response)
-
-    # Sidebar for logs and hints
-    with st.sidebar:
-        st.header("Logs and Hints")
-        if st.button("Clear Logs"):
-            st.session_state.logs = []
-        
-        for log in st.session_state.logs:
-            st.text(log)
-
-        st.header("Hints")
-        st.info("Hint: You can ask the agent about its capabilities or to perform specific tasks.")
 
 if __name__ == "__main__":
     start_trace()
