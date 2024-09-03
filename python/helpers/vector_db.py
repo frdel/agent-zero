@@ -14,9 +14,11 @@ from python.helpers.log import Log
 
 class VectorDB:
 
-    def __init__(self, embeddings_model, in_memory=False, memory_dir="./memory", knowledge_dir="./knowledge"):
+    def __init__(self, logger: Log, embeddings_model, in_memory=False, memory_dir="./memory", knowledge_dir="./knowledge"):
+        self.logger = logger
+
         print("Initializing VectorDB...")
-        Log.log("info", content="Initializing VectorDB...")
+        self.logger.log("info", content="Initializing VectorDB...")
         
         self.embeddings_model = embeddings_model
 
@@ -76,7 +78,7 @@ class VectorDB:
             with open(index_path, 'r') as f:
                 index = json.load(f)
        
-        index = knowledge_import.load_knowledge(kn_dir,index)
+        index = knowledge_import.load_knowledge(self.logger,kn_dir,index)
         
         for file in index:
             if index[file]['state'] in ['changed', 'removed'] and index[file].get('ids',[]): # for knowledge files that have been changed or removed and have IDs

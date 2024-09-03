@@ -1,7 +1,8 @@
+import asyncio
 import paramiko
 import time
 import re
-from typing import Optional, Tuple
+from typing import Tuple
 from python.helpers.log import Log
 from python.helpers.strings import calculate_valid_match_lengths
 
@@ -10,7 +11,8 @@ class SSHInteractiveSession:
     # end_comment = "# @@==>> SSHInteractiveSession End-of-Command  <<==@@"
     # ps1_label = "SSHInteractiveSession CLI>"
     
-    def __init__(self, hostname: str, port: int, username: str, password: str):
+    def __init__(self, logger: Log, hostname: str, port: int, username: str, password: str):
+        self.logger = logger
         self.hostname = hostname
         self.port = port
         self.username = username
@@ -23,7 +25,7 @@ class SSHInteractiveSession:
         self.trimmed_command_length = 0  # Initialize trimmed_command_length
 
 
-    def connect(self):
+    async def connect(self):
         # try 3 times with wait and then except
         errors = 0
         while True:
@@ -33,14 +35,14 @@ class SSHInteractiveSession:
                 # self.shell.send(f'PS1="{SSHInteractiveSession.ps1_label}"'.encode())
                 # return
                 while True: # wait for end of initial output
-                    full, part = self.read_output()
+                    full, part = await self.read_output()
                     if full and not part: return
                     time.sleep(0.1)
             except Exception as e:
                 errors += 1
                 if errors < 3:
                     print(f"SSH Connection attempt {errors}...")
-                    Log.log(type="info", content=f"SSH Connection attempt {errors}...")
+                    self.logger.log(type="info", content=f"SSH Connection attempt {errors}...")
                     
                     time.sleep(5)
                 else:
@@ -64,11 +66,12 @@ class SSHInteractiveSession:
         self.trimmed_command_length = 0
         self.shell.send(self.last_command)
 
-    def read_output(self) -> Tuple[str, str]:
+    async def read_output(self) -> Tuple[str, str]:
         if not self.shell:
             raise Exception("Shell not connected")
 
         partial_output = b''
+        leftover = b''
 
         while self.shell.recv_ready():
             data = self.shell.recv(1024)
@@ -76,17 +79,25 @@ class SSHInteractiveSession:
             # Trim own command from output
             if self.last_command and len(self.last_command) > self.trimmed_command_length:
                 command_to_trim = self.last_command[self.trimmed_command_length:]
-
+                data_to_trim = leftover + data
+                
                 trim_com, trim_out = calculate_valid_match_lengths(
-                    command_to_trim, data, deviation_threshold=8, deviation_reset=2, 
-                    ignore_patterns=[rb'\x1b\[\?\d{4}[a-zA-Z](?:> )?', rb'\r', rb'>'])
+                    command_to_trim, data_to_trim, deviation_threshold=8, deviation_reset=2, 
+                    ignore_patterns = [
+                        rb'\x1b\[\?\d{4}[a-zA-Z](?:> )?',  # ANSI escape sequences
+                        rb'\r',                            # Carriage return
+                        rb'>\s',                             # Greater-than symbol
+                    ], debug=False)
+
+                leftover = b''
                 if(trim_com > 0 and trim_out > 0):
-                    data = data[trim_out:]
+                    data = data_to_trim[trim_out:]
+                    leftover = data
                     self.trimmed_command_length += trim_com
             
             partial_output += data
             self.full_output += data
-            time.sleep(0.1)  # Prevent busy waiting
+            await asyncio.sleep(0.1)  # Prevent busy waiting
 
         # Decode once at the end
         decoded_partial_output = partial_output.decode('utf-8', errors='replace')

@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="index.css">
 
     <script>
-        window.safeCall = function(name,...args){
+        window.safeCall = function (name, ...args) {
             if (window[name]) window[name](...args)
         }
     </script>
@@ -21,7 +21,7 @@
     <div class="container">
         <div id="left-panel" class="panel">
             <!-- <h2>Configuration</h2> -->
-            
+
             <div class="config-section" id="status-section" x-data="{ connected: true }">
                 <h3>Status</h3>
                 <h4 class="connected" x-show="connected">&#10004; Connected</h4>
@@ -30,34 +30,34 @@
 
             <div class="config-section" x-data="{ showQuickActions: true }">
                 <h3>Quick Actions</h3>
-                <button class="config-button" id="resetChat" @click="resetChat()">New Chat</button>
+                <button class="config-button" id="resetChat" @click="resetChat()">Reset chat</button>
+                <button class="config-button" id="newChat" @click="newChat()">New Chat</button>
             </div>
-            <!--
-            <div class="config-section">
-                <h3>Model Settings</h3>
+
+            <div class="config-section" id="chats-section" x-data="{ contexts: [], selected: '' }" x-show="contexts.length > 0">
+                <h3>Chats</h3>
                 <ul class="config-list">
-                    <li>
-                        <span>GPT-4</span>
-                        <button class="edit-button">Edit</button>
-                    </li>
-                    <li>
-                        <span>Temperature: 0.7</span>
-                        <button class="edit-button">Edit</button>
-                    </li>
-                    <li>
-                        <span>Max Tokens: 2048</span>
-                        <button class="edit-button">Edit</button>
-                    </li>
+                    <template x-for="context in contexts">
+                        <li>
+                            <span 
+                                :class="{'chat-list-button': true, 'font-bold': context.id === selected}" 
+                                @click="selected = context.id; selectChat(context.id)">
+                                Chat #<span x-text="context.no"></span>
+                            </span>
+                            <button class="edit-button" @click="killChat(context.id)">X</button>
+                        </li>
+                    </template>
                 </ul>
             </div>
-        -->
+
             <div class="config-section">
                 <h3>Preferences</h3>
                 <ul class="config-list">
                     <li x-data="{ autoScroll: true }">
                         <span>Autoscroll</span>
                         <label class="switch">
-                            <input type="checkbox" x-model="autoScroll" x-effect="window.safeCall('toggleAutoScroll',autoScroll)">
+                            <input type="checkbox" x-model="autoScroll"
+                                x-effect="window.safeCall('toggleAutoScroll',autoScroll)">
                             <span class="slider"></span>
                         </label>
                     </li>
@@ -65,11 +65,12 @@
                     <li x-data="{ showThoughts: true }">
                         <span>Show thoughts</span>
                         <label class="switch">
-                            <input type="checkbox" x-model="showThoughts" x-effect="window.safeCall('toggleThoughts',showThoughts)">
+                            <input type="checkbox" x-model="showThoughts"
+                                x-effect="window.safeCall('toggleThoughts',showThoughts)">
                             <span class="slider"></span>
                         </label>
                     </li>
-                    
+
                     <li x-data="{ showJson: false }">
                         <span>Show JSON</span>
                         <label class="switch">
@@ -90,8 +91,10 @@
             <div id="input-section" x-data="{ paused: false }">
                 <textarea id="chat-input" placeholder="Type your message here..." rows="1"></textarea>
                 <button class="chat-button" id="send-button">&#10148;</button>
-                <button class="chat-button pause-button" id="pause-button" @click="pauseAgent(true)" x-show="!paused">&#10074;&#10074;</button>
-                <button class="chat-button pause-button" id="unpause-button" @click="pauseAgent(false)" x-show="paused">&#9654;</button>
+                <button class="chat-button pause-button" id="pause-button" @click="pauseAgent(true)"
+                    x-show="!paused">&#10074;&#10074;</button>
+                <button class="chat-button pause-button" id="unpause-button" @click="pauseAgent(false)"
+                    x-show="paused">&#9654;</button>
             </div>
         </div>
     </div>

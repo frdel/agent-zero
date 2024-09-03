@@ -3,7 +3,6 @@
 **/__pycache__/
 
 
-
 # Ignore all contents of the virtual environment directory
 .venv/*
 

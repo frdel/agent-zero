@@ -1,6 +1,12 @@
 import re
 import traceback
+import asyncio
 
+def handle_error(e: Exception):
+    # if asyncio.CancelledError, re-raise
+    if isinstance(e, asyncio.CancelledError):
+        raise e
+    
 def format_error(e: Exception, max_entries=2):
     traceback_text = traceback.format_exc()
     # Split the traceback into lines

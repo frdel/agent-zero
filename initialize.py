@@ -1,5 +1,5 @@
 import models
-from agent import Agent, AgentConfig
+from agent import AgentConfig
 
 def initialize():
     
@@ -52,9 +52,6 @@ def initialize():
         # code_exec_ssh_pass = "toor",
         # additional = {},
     )
-    
-    # create the first agent
-    agent0 = Agent( number = 0, config = config )
 
-    # return initialized agent
-    return agent0
+    # return config object
+    return config

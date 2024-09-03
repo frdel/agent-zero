@@ -28,7 +28,7 @@ def calculate_checksum(file_path: str) -> str:
         hasher.update(buf)
     return hasher.hexdigest()
 
-def load_knowledge(knowledge_dir: str, index: Dict[str, KnowledgeImport]) -> Dict[str, KnowledgeImport]:
+def load_knowledge(logger: Log, knowledge_dir: str, index: Dict[str, KnowledgeImport]) -> Dict[str, KnowledgeImport]:
     knowledge_dir = files.get_abs_path(knowledge_dir)
     
 
@@ -49,7 +49,7 @@ def load_knowledge(knowledge_dir: str, index: Dict[str, KnowledgeImport]) -> Dic
     kn_files = glob.glob(knowledge_dir + '/**/*', recursive=True)
     if kn_files:
         print(f"Found {len(kn_files)} knowledge files in {knowledge_dir}, processing...")
-        Log.log(type="info", content=f"Found {len(kn_files)} knowledge files in {knowledge_dir}, processing...")
+        logger.log(type="info", content=f"Found {len(kn_files)} knowledge files in {knowledge_dir}, processing...")
 
     for file_path in kn_files:
         ext = file_path.split('.')[-1].lower()
@@ -83,5 +83,5 @@ def load_knowledge(knowledge_dir: str, index: Dict[str, KnowledgeImport]) -> Dic
             index[file_key]['state'] = 'removed'
 
     print(f"Processed {cnt_docs} documents from {cnt_files} files.")
-    Log.log(type="info", content=f"Processed {cnt_docs} documents from {cnt_files} files.")
+    logger.log(type="info", content=f"Processed {cnt_docs} documents from {cnt_files} files.")
     return index

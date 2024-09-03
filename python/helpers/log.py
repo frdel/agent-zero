@@ -1,58 +1,78 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import json
 from typing import Optional, Dict
 import uuid
 
+
 @dataclass
 class LogItem:
+    log: 'Log'
     no: int
     type: str
     heading: str
     content: str
     kvps: Optional[Dict] = None
-    
+    guid: str = ""
+
+    def __post_init__(self):
+        self.guid = self.log.guid
+
+    def update(self, type: str | None = None, heading: str | None = None, content: str | None = None, kvps: dict | None = None):
+        if self.guid == self.log.guid:
+            self.log.update_item(self.no, type=type, heading=heading, content=content, kvps=kvps)
+
+    def output(self):
+        return {
+            "no": self.no,
+            "type": self.type,
+            "heading": self.heading,
+            "content": self.content,
+            "kvps": self.kvps
+        }
 
 class Log:
 
-    guid = uuid.uuid4()
-    version: int = 0
-    last_updated: int = 0
-    logs: list = []
-    
-    def __init__(self, type: str="placeholder", heading: str="", content: str="", kvps: dict|None = None):
-        self.item = Log.log(type, heading, content, kvps)  # create placeholder log item that will be updated
+    def __init__(self):
+        self.guid: str = str(uuid.uuid4())
+        self.updates: list[int] = []
+        self.logs: list[LogItem] = []
 
-    def update(self, type: Optional[str] = None, heading: str|None = None, content: str|None = None, kvps: dict|None = None):
-        Log.edit(self.item.no, type=type, heading=heading, content=content, kvps=kvps)
-
-    @staticmethod
-    def reset():
-        Log.guid = uuid.uuid4()
-        Log.version = 0
-        Log.last_updated = 0
-        Log.logs = []
-    
-    @staticmethod    
-    def log(type: str, heading: str|None = None, content: str|None = None, kvps: dict|None = None):
-        item = LogItem(len(Log.logs), type, heading or "", content or "", kvps)
-        Log.logs.append(item)
-        Log.last_updated = item.no
-        Log.version += 1
+    def log(self, type: str, heading: str | None = None, content: str | None = None, kvps: dict | None = None) -> LogItem:
+        item = LogItem(log=self,no=len(self.logs), type=type, heading=heading or "", content=content or "", kvps=kvps)
+        self.logs.append(item)
+        self.updates += [item.no]
         return item
-    
-    @staticmethod
-    def edit(no: int, type: Optional[str] = None, heading: str|None = None, content: str|None = None, kvps: dict|None = None):
-        if 0 <= no < len(Log.logs):
-            item = Log.logs[no]
-            if type is not None:
-                item.type = type
-            if heading is not None:
-                item.heading = heading
-            if content is not None:
-                item.content = content
-            if kvps is not None:
-                item.kvps = kvps
 
-            Log.last_updated = no
-            Log.version += 1
-        else:
-            raise IndexError("Log item number out of range")
+    def update_item(self, no: int, type: str | None = None, heading: str | None = None, content: str | None = None, kvps: dict | None = None):
+        item = self.logs[no]
+        if type is not None:
+            item.type = type
+        if heading is not None:
+            item.heading = heading
+        if content is not None:
+            item.content = content
+        if kvps is not None:
+            item.kvps = kvps
+        self.updates += [item.no]
+
+    def output(self, start=None, end=None):
+        if start is None:
+            start = 0
+        if end is None:
+            end = len(self.updates)
+        
+        out = []
+        seen = set()
+        for update in self.updates[start:end]:
+            if update not in seen:
+                out.append(self.logs[update].output())
+                seen.add(update)
+        
+        return out
+               
+
+
+    def reset(self):
+        self.guid = str(uuid.uuid4())
+        self.updates = []
+        self.logs = []

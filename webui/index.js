@@ -8,9 +8,12 @@ const chatHistory = document.getElementById('chat-history');
 const sendButton = document.getElementById('send-button');
 const inputSection = document.getElementById('input-section');
 const statusSection = document.getElementById('status-section');
+const chatsSection = document.getElementById('chats-section');
 
 let isResizing = false;
 let autoScroll = true;
+
+let context = "";
 
 
 splitter.addEventListener('mousedown', (e) => {
@@ -35,7 +38,7 @@ async function sendMessage() {
     const message = chatInput.value.trim();
     if (message) {
 
-        const response = await sendJsonData("/msg", { text: message });
+        const response = await sendJsonData("/msg", { text: message, context });
 
         //setMessage('user', message);
         chatInput.value = '';
@@ -75,7 +78,7 @@ function setMessage(id, type, heading, content, kvps = null) {
         chatHistory.appendChild(messageContainer);
     }
 
-    if(autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
+    if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
 
@@ -85,53 +88,66 @@ function adjustTextareaHeight() {
 }
 
 async function sendJsonData(url, data) {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    });
 
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
 
-        const jsonResponse = await response.json();
-        return jsonResponse;
+    const jsonResponse = await response.json();
+    return jsonResponse;
 }
 
-let lastLog = 0;
+function generateGUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        var r = Math.random() * 16 | 0;
+        var v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 let lastLogVersion = 0;
 let lastLogGuid = ""
 
 async function poll() {
-    try{
-    const response = await sendJsonData("/poll", { log_from: lastLog });
-    // console.log(response)
+    try {
+        const response = await sendJsonData("/poll", { log_from: lastLogVersion, context });
+        // console.log(response)
 
-    if (response.ok) {
+        if (response.ok) {
 
-        if (lastLogGuid != response.log_guid) {
-            chatHistory.innerHTML = ""
-        }
+            setContext(response.context)
 
-        if (lastLogVersion != response.log_version) {
-            for (const log of response.logs) {
-                setMessage(log.no, log.type, log.heading, log.content, log.kvps);
+            if (lastLogGuid != response.log_guid) {
+                chatHistory.innerHTML = ""
+                lastLogVersion = 0
             }
+
+            if (lastLogVersion != response.log_version) {
+                for (const log of response.logs) {
+                    setMessage(log.no, log.type, log.heading, log.content, log.kvps);
+                }
+            }
+
+            //set ui model vars from backend
+            const inputAD = Alpine.$data(inputSection);
+            inputAD.paused = response.paused;
+            const statusAD = Alpine.$data(statusSection);
+            statusAD.connected = response.ok;
+            const chatsAD = Alpine.$data(chatsSection);
+            chatsAD.contexts = response.contexts;
+
+            lastLogVersion = response.log_version;
+            lastLogGuid = response.log_guid;
+
+
         }
-
-        //set ui model vars from backend
-        const inputAD = Alpine.$data(inputSection);
-        inputAD.paused = response.paused;
-        const statusAD = Alpine.$data(statusSection);
-        statusAD.connected = response.ok;
-
-        lastLog = response.log_to;
-        lastLogVersion = response.log_version;
-        lastLogGuid = response.log_guid;
-    }
 
     } catch (error) {
         console.error('Error:', error);
@@ -141,12 +157,52 @@ async function poll() {
 }
 
 window.pauseAgent = async function (paused) {
-    const resp = await sendJsonData("/pause", { paused: paused });
+    const resp = await sendJsonData("/pause", { paused: paused, context });
 }
 
 window.resetChat = async function () {
-    const resp = await sendJsonData("/reset", {});
+    const resp = await sendJsonData("/reset", { context });
 }
+
+window.newChat = async function () {
+    setContext(generateGUID());
+}
+
+window.killChat = async function (id) {
+
+
+    const chatsAD = Alpine.$data(chatsSection);
+    let found, other
+    for (let i = 0; i < chatsAD.contexts.length; i++) {
+        if (chatsAD.contexts[i].id == id) {
+            found = true
+        } else {
+            other = chatsAD.contexts[i]
+        }
+        if (found && other) break
+    }
+
+    if (context == id && found) {
+        if (other) setContext(other.id)
+        else setContext(generateGUID())
+    }
+    
+    if (found) sendJsonData("/remove", { context: id });
+}
+
+window.selectChat = async function (id) {
+    setContext(id)
+}
+
+const setContext = function (id) {
+    if (id == context) return
+    context = id
+    lastLogGuid = ""
+    lastLogVersion = 0
+    const chatsAD = Alpine.$data(chatsSection);
+    chatsAD.selected = id
+}
+
 
 window.toggleAutoScroll = async function (_autoScroll) {
     autoScroll = _autoScroll;
@@ -176,7 +232,7 @@ function toggleCssProperty(selector, property, value) {
             const rule = rules[j];
             if (rule.selectorText == selector) {
                 // Check if the property is already applied
-                if (value===undefined) {
+                if (value === undefined) {
                     rule.style.removeProperty(property);  // Remove the property
                 } else {
                     rule.style.setProperty(property, value);  // Add the property (you can customize the value)

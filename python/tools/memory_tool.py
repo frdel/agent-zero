@@ -1,17 +1,16 @@
 import re
 from agent import Agent
 from python.helpers.vector_db import VectorDB, Document
-from python.helpers import files
-import os, json
+import os
 from python.helpers.tool import Tool, Response
 from python.helpers.print_style import PrintStyle
-from python.helpers.log import Log
+from python.helpers.errors import handle_error
 
 # databases based on subdirectories from agent config
 dbs = {}
 
 class Memory(Tool):
-    def execute(self,**kwargs):
+    async def execute(self,**kwargs):
         result=""
         
         try:
@@ -26,9 +25,10 @@ class Memory(Tool):
             elif "delete" in kwargs:
                 result = delete(self.agent, kwargs["delete"])
         except Exception as e:
+            handle_error(e)
             # hint about embedding change with existing database
             PrintStyle.hint("If you changed your embedding model, you will need to remove contents of /memory directory.")
-            Log(type="hint", content="If you changed your embedding model, you will need to remove contents of /memory directory.")
+            self.agent.context.log.log(type="hint", content="If you changed your embedding model, you will need to remove contents of /memory directory.")
             raise   
         
         # result = process_query(self.agent, self.args["memory"],self.args["action"], result_count=self.agent.config.auto_memory_count)
@@ -63,7 +63,7 @@ def get_db(agent: Agent):
     key = (mem_dir, kn_dir)
 
     if key not in dbs:
-        db = VectorDB(embeddings_model=agent.config.embeddings_model, in_memory=False, memory_dir=mem_dir, knowledge_dir=kn_dir)
+        db = VectorDB(agent.context.log,embeddings_model=agent.config.embeddings_model, in_memory=False, memory_dir=mem_dir, knowledge_dir=kn_dir)
         dbs[key] = db
     else:
         db = dbs[key]

@@ -209,6 +209,16 @@ h4 {
   transform: scale(0.95);
 }
 
+.chat-list-button {
+  cursor: pointer;
+  color: inherit; /* Keep the text color the same as the surrounding text */
+  text-decoration: none; /* Remove underline by default */
+}
+
+.chat-list-button:hover {
+  text-decoration: underline; /* Add underline on hover */
+}
+
 #send-button {
   background-color: #bb86fc;
 }
@@ -323,4 +333,8 @@ color: #6ec583;
 
 .disconnected{
   color: #d87979;
+}
+
+.font-bold{
+  font-weight: bold;
 }

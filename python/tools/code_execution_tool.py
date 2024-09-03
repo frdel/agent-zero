@@ -1,17 +1,13 @@
+import asyncio
 from dataclasses import dataclass
-import os, json, contextlib, subprocess, ast, shlex
-from io import StringIO
+import shlex
 import time
-from typing import Literal
-from python.helpers import files, messages
-from agent import Agent
 from python.helpers.tool import Tool, Response
 from python.helpers import files
 from python.helpers.print_style import PrintStyle
 from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
 from python.helpers.docker import DockerContainerManager
-from python.helpers.log import Log
 
 @dataclass
 class State:
@@ -21,91 +17,91 @@ class State:
 
 class CodeExecution(Tool):
 
-    def execute(self,**kwargs):
+    async def execute(self,**kwargs):
 
-        if self.agent.handle_intervention(): return Response(message="", break_loop=False)  # wait for intervention and handle it, if paused
+        await self.agent.handle_intervention() # wait for intervention and handle it, if paused
         
-        self.prepare_state()
+        await self.prepare_state()
 
         # os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
         
         runtime = self.args["runtime"].lower().strip()
         if runtime == "python":
-            response = self.execute_python_code(self.args["code"])
+            response = await self.execute_python_code(self.args["code"])
         elif runtime == "nodejs":
-            response = self.execute_nodejs_code(self.args["code"])
+            response = await self.execute_nodejs_code(self.args["code"])
         elif runtime == "terminal":
-            response = self.execute_terminal_command(self.args["code"])
+            response = await self.execute_terminal_command(self.args["code"])
         elif runtime == "output":
-            response = self.get_terminal_output()
+            response = await self.get_terminal_output()
         else:
             response = self.agent.read_prompt("fw.code_runtime_wrong.md", runtime=runtime)
 
         if not response: response = self.agent.read_prompt("fw.code_no_output.md")
         return Response(message=response, break_loop=False)
 
-    def before_execution(self, **kwargs):
-        if self.agent.handle_intervention(): return # wait for intervention and handle it, if paused
+    async def before_execution(self, **kwargs):
+        await self.agent.handle_intervention() # wait for intervention and handle it, if paused
         PrintStyle(font_color="#1B4F72", padding=True, background_color="white", bold=True).print(f"{self.agent.agent_name}: Using tool '{self.name}':")
-        self.log = Log(type="code_exe", heading=f"{self.agent.agent_name}: Using tool '{self.name}':", content="", kvps=self.args)
+        self.log = self.agent.context.log.log(type="code_exe", heading=f"{self.agent.agent_name}: Using tool '{self.name}':", content="", kvps=self.args)
         if self.args and isinstance(self.args, dict):
             for key, value in self.args.items():
                 PrintStyle(font_color="#85C1E9", bold=True).stream(self.nice_key(key)+": ")
                 PrintStyle(font_color="#85C1E9", padding=isinstance(value,str) and "\n" in value).stream(value)
                 PrintStyle().print()
 
-    def after_execution(self, response, **kwargs):
+    async def after_execution(self, response, **kwargs):
         msg_response = self.agent.read_prompt("fw.tool_response.md", tool_name=self.name, tool_response=response.message)
-        self.agent.append_message(msg_response, human=True)
+        await self.agent.append_message(msg_response, human=True)
 
-    def prepare_state(self):
+    async def prepare_state(self):
         self.state = self.agent.get_data("cot_state")
         if not self.state:
 
             #initialize docker container if execution in docker is configured
             if self.agent.config.code_exec_docker_enabled:
-                docker = DockerContainerManager(name=self.agent.config.code_exec_docker_name, image=self.agent.config.code_exec_docker_image, ports=self.agent.config.code_exec_docker_ports, volumes=self.agent.config.code_exec_docker_volumes)
+                docker = DockerContainerManager(logger=self.agent.context.log,name=self.agent.config.code_exec_docker_name, image=self.agent.config.code_exec_docker_image, ports=self.agent.config.code_exec_docker_ports, volumes=self.agent.config.code_exec_docker_volumes)
                 docker.start_container()
             else: docker = None
 
             #initialize local or remote interactive shell insterface
             if self.agent.config.code_exec_ssh_enabled:
-                shell = SSHInteractiveSession(self.agent.config.code_exec_ssh_addr,self.agent.config.code_exec_ssh_port,self.agent.config.code_exec_ssh_user,self.agent.config.code_exec_ssh_pass)
+                shell = SSHInteractiveSession(self.agent.context.log,self.agent.config.code_exec_ssh_addr,self.agent.config.code_exec_ssh_port,self.agent.config.code_exec_ssh_user,self.agent.config.code_exec_ssh_pass)
             else: shell = LocalInteractiveSession()
                 
             self.state = State(shell=shell,docker=docker)
-            shell.connect()
+            await shell.connect()
         self.agent.set_data("cot_state", self.state)
     
-    def execute_python_code(self, code):
+    async def execute_python_code(self, code):
         escaped_code = shlex.quote(code)
         command = f'python3 -c {escaped_code}'
-        return self.terminal_session(command)
+        return await self.terminal_session(command)
 
-    def execute_nodejs_code(self, code):
+    async def execute_nodejs_code(self, code):
         escaped_code = shlex.quote(code)
         command = f'node -e {escaped_code}'
-        return self.terminal_session(command)
+        return await self.terminal_session(command)
 
-    def execute_terminal_command(self, command):
-        return self.terminal_session(command)
+    async def execute_terminal_command(self, command):
+        return await self.terminal_session(command)
 
-    def terminal_session(self, command):
+    async def terminal_session(self, command):
 
-        if self.agent.handle_intervention(): return ""  # wait for intervention and handle it, if paused
+        await self.agent.handle_intervention() # wait for intervention and handle it, if paused
        
         self.state.shell.send_command(command)
 
         PrintStyle(background_color="white",font_color="#1B4F72",bold=True).print(f"{self.agent.agent_name} code execution output:")
-        return self.get_terminal_output()
+        return await self.get_terminal_output()
 
-    def get_terminal_output(self):
+    async def get_terminal_output(self):
         idle=0
         while True:       
-            time.sleep(0.1)  # Wait for some output to be generated
-            full_output, partial_output = self.state.shell.read_output()
+            await asyncio.sleep(0.1)  # Wait for some output to be generated
+            full_output, partial_output = await self.state.shell.read_output()
 
-            if self.agent.handle_intervention(): return full_output  # wait for intervention and handle it, if paused
+            await self.agent.handle_intervention() # wait for intervention and handle it, if paused
         
             if partial_output:
                 PrintStyle(font_color="#85C1E9").stream(partial_output)

@@ -12,7 +12,8 @@ class CallRecord:
     output_tokens: int = 0  # Default to 0, will be set separately
 
 class RateLimiter:
-    def __init__(self, max_calls: int, max_input_tokens: int, max_output_tokens: int, window_seconds: int = 60):
+    def __init__(self, logger: Log, max_calls: int, max_input_tokens: int, max_output_tokens: int, window_seconds: int = 60):
+        self.logger = logger
         self.max_calls = max_calls
         self.max_input_tokens = max_input_tokens
         self.max_output_tokens = max_output_tokens
@@ -49,7 +50,7 @@ class RateLimiter:
             wait_time = oldest_record.timestamp + self.window_seconds - current_time
             if wait_time > 0:
                 PrintStyle(font_color="yellow", padding=True).print(f"Rate limit exceeded. Waiting for {wait_time:.2f} seconds due to: {', '.join(wait_reasons)}")
-                Log.log("rate_limit","Rate limit exceeded",f"Rate limit exceeded. Waiting for {wait_time:.2f} seconds due to: {', '.join(wait_reasons)}")
+                self.logger.log("rate_limit","Rate limit exceeded",f"Rate limit exceeded. Waiting for {wait_time:.2f} seconds due to: {', '.join(wait_reasons)}")
                 time.sleep(wait_time)
             current_time = time.time()
 

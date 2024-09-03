@@ -1,18 +1,14 @@
 import os
-from agent import Agent
 from python.helpers import perplexity_search
 from python.helpers import duckduckgo_search
-
 from . import memory_tool
 import concurrent.futures
-
 from python.helpers.tool import Tool, Response
-from python.helpers import files
 from python.helpers.print_style import PrintStyle
-from python.helpers.log import Log
+from python.helpers.errors import handle_error
 
 class Knowledge(Tool):
-    def execute(self, question="", **kwargs):
+    async def execute(self, question="", **kwargs):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             # Schedule the two functions to be run in parallel
 
@@ -21,7 +17,7 @@ class Knowledge(Tool):
                 perplexity = executor.submit(perplexity_search.perplexity_search, question)
             else: 
                 PrintStyle.hint("No API key provided for Perplexity. Skipping Perplexity search.")
-                Log(type="hint", content="No API key provided for Perplexity. Skipping Perplexity search.")
+                self.agent.context.log.log(type="hint", content="No API key provided for Perplexity. Skipping Perplexity search.")
                 perplexity = None
                 
 
@@ -35,16 +31,19 @@ class Knowledge(Tool):
             try:
                 perplexity_result = (perplexity.result() if perplexity else "") or ""
             except Exception as e:
+                handle_error(e)
                 perplexity_result = "Perplexity search failed: " + str(e)
 
             try:
                 duckduckgo_result = duckduckgo.result()
             except Exception as e:
+                handle_error(e)
                 duckduckgo_result = "DuckDuckGo search failed: " + str(e)
 
             try:
                 memory_result = future_memory.result()
             except Exception as e:
+                handle_error(e)
                 memory_result = "Memory search failed: " + str(e)
 
         msg = self.agent.read_prompt("tool.knowledge.response.md", 

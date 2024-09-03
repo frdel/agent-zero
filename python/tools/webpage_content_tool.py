@@ -3,9 +3,11 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from newspaper import Article
 from python.helpers.tool import Tool, Response
+from python.helpers.errors import handle_error
+
 
 class WebpageContentTool(Tool):
-    def execute(self, url="", **kwargs):
+    async def execute(self, url="", **kwargs):
         if not url:
             return Response(message="Error: No URL provided.", break_loop=False)
 
@@ -36,4 +38,5 @@ class WebpageContentTool(Tool):
         except requests.RequestException as e:
             return Response(message=f"Error fetching webpage: {str(e)}", break_loop=False)
         except Exception as e:
+            handle_error(e)
             return Response(message=f"An error occurred: {str(e)}", break_loop=False)
