@@ -33,7 +33,9 @@ class CodeExecution(Tool):
         elif runtime == "terminal":
             response = await self.execute_terminal_command(self.args["code"])
         elif runtime == "output":
-            response = await self.get_terminal_output()
+            response = await self.get_terminal_output(wait_with_output=5, wait_without_output=20)
+        elif runtime == "reset":
+            response = await self.reset_terminal()
         else:
             response = self.agent.read_prompt("fw.code_runtime_wrong.md", runtime=runtime)
 
@@ -54,9 +56,9 @@ class CodeExecution(Tool):
         msg_response = self.agent.read_prompt("fw.tool_response.md", tool_name=self.name, tool_response=response.message)
         await self.agent.append_message(msg_response, human=True)
 
-    async def prepare_state(self):
+    async def prepare_state(self, reset=False):
         self.state = self.agent.get_data("cot_state")
-        if not self.state:
+        if not self.state or reset:
 
             #initialize docker container if execution in docker is configured
             if self.agent.config.code_exec_docker_enabled:
@@ -95,10 +97,11 @@ class CodeExecution(Tool):
         PrintStyle(background_color="white",font_color="#1B4F72",bold=True).print(f"{self.agent.agent_name} code execution output:")
         return await self.get_terminal_output()
 
-    async def get_terminal_output(self):
+    async def get_terminal_output(self, wait_with_output=3, wait_without_output=10):
         idle=0
+        SLEEP_TIME = 0.1
         while True:       
-            await asyncio.sleep(0.1)  # Wait for some output to be generated
+            await asyncio.sleep(SLEEP_TIME)  # Wait for some output to be generated
             full_output, partial_output = await self.state.shell.read_output()
 
             await self.agent.handle_intervention() # wait for intervention and handle it, if paused
@@ -109,5 +112,7 @@ class CodeExecution(Tool):
                 idle=0    
             else:
                 idle+=1
-                if ( full_output and idle > 30 ) or ( not full_output and idle > 100 ): return full_output
-                           
+                if ( full_output and idle > wait_with_output / SLEEP_TIME ) or ( not full_output and idle > wait_without_output / SLEEP_TIME ): return full_output
+
+    async def reset_terminal(self):
+        await self.prepare_state(reset=True)
