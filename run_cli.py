@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import threading, time, models, os
 from ansio import application_keypad, mouse_input, raw_input
 from ansio.input import InputEvent, get_input_event
@@ -24,13 +25,13 @@ async def chat(context: AgentContext):
             timeout = context.agent0.get_data("timeout") # how long the agent is willing to wait
             if not timeout: # if agent wants to wait for user input forever
                 PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ('e' to leave):")        
-                import readline # this fixes arrow keys in terminal
+                if sys.platform != "win32": import readline # this fixes arrow keys in terminal
                 user_input = input("> ")
                 PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}") 
                 
             else: # otherwise wait for user input with a timeout
                 PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ({timeout}s timeout, 'w' to wait, 'e' to leave):")        
-                import readline # this fixes arrow keys in terminal
+                if sys.platform != "win32": import readline # this fixes arrow keys in terminal
                 # user_input = timed_input("> ", timeout=timeout)
                 user_input = timeout_input("> ", timeout=timeout)
                                     
@@ -62,7 +63,7 @@ def intervention():
         context.paused = True # stop agent streaming
         PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User intervention ('e' to leave, empty to continue):")        
 
-        import readline # this fixes arrow keys in terminal
+        if sys.platform != "win32": import readline # this fixes arrow keys in terminal
         user_input = input("> ").strip()
         PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
         
