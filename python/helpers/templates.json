@@ -1,0 +1,22 @@
+[
+  {
+    "id": "8ba306f8-8aa3-4567-9d73-de66b5998615",
+    "name": "Nmap scan",
+    "url": "192.168.1.63",
+    "navigation_goal": "identify and scan the ports on my machine",
+    "data_extraction_goal": "open ports ",
+    "advanced_settings": {
+      "custom_field": ""
+    }
+  },
+  {
+    "id": "6c0ade2b-89df-447a-bdcc-16b4475a1d11",
+    "name": "WAF",
+    "url": "192.168.1.63",
+    "navigation_goal": "identify and analyze my network",
+    "data_extraction_goal": "important details from my network",
+    "advanced_settings": {
+      "custom_field": ""
+    }
+  }
+]

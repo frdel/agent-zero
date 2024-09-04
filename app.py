@@ -79,7 +79,7 @@ def chat_page():
     if not st.session_state.conversation_started:
         st.subheader("Available Templates")
         for i, template in enumerate(st.session_state.templates):
-            if st.button(f"Use Template: {template.name}", key=f"quick_template_{i}"):
+            if st.button(f"{template.name}", key=f"quick_template_{i}"):
                 process_template(template)
                 st.session_state.conversation_started = True
 
