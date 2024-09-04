@@ -18,6 +18,21 @@ def initialize():
     
     # main chat model used by agents (smarter, more accurate)
     # chat_llm = models.get_ollama_chat(model_name="gemma2:latest", temperature=0)
+    """
+    Initialize the agent system.
+
+    This function sets up the agent system by:
+    1. Setting up the main chat model used by agents.
+    2. Setting up the utility model used by agents.
+    3. Setting up the embedding model used by agents.
+    4. Creating the agent configuration.
+    5. Loading templates.
+    6. Creating the first agent.
+    7. Starting the chat loop.
+
+    The chat model, utility model, and embedding model can be changed by uncommenting the respective lines.
+    The agent configuration can be changed by modifying the AgentConfig object.
+    """
     chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o", temperature=0)
     # chat_llm = models.get_groq_chat(model_name="llama-3.1-70b-versatile", temperature=0)
     
@@ -47,8 +62,8 @@ def initialize():
         # max_tool_response_length = 3000,
         # response_timeout_seconds = 60,
         code_exec_docker_enabled = True,
-        code_exec_docker_name = "Herbie-exe",
-        code_exec_docker_image = " parrotsec/security",
+        code_exec_docker_name = "agent-zero-exe",
+        code_exec_docker_image = " frdel/agent-zero-exe:latest",
         code_exec_docker_ports = { "8022/tcp": 8022 },
         code_exec_docker_volumes = { files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"} },
 
@@ -76,6 +91,15 @@ def display_templates(agent: Agent):
 def chat(agent:Agent):
     
     # start the conversation loop  
+    """
+    Main conversation loop with the user.
+
+    This function starts the main conversation loop with the user. It prints a prompt and waits for the user to enter a message. The message is then sent to the agent, which will respond. The response is then printed to the user. The loop continues until the user types 'e' to leave.
+
+    The conversation loop waits for user input with a timeout, specified in the agent's configuration. If the timeout is reached without the user entering a message, a "waiting for message" prompt is printed. If the user enters 'w' at this prompt, the conversation loop waits again for the same duration. If the user enters anything else, the conversation loop continues with the entered message.
+
+    If the user types 'use template [template name]', the conversation loop will print the template information and continue with the entered message. If the user types 'templates', the conversation loop will print a list of available templates and continue with the entered message.
+    """
     while True:
         # ask user for message
         with input_lock:

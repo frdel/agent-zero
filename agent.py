@@ -29,8 +29,8 @@ class AgentConfig:
     response_timeout_seconds: int = 60
     max_tool_response_length: int = 3000
     code_exec_docker_enabled: bool = True
-    code_exec_docker_name: str = "Herbie-exe"
-    code_exec_docker_image: str = " parrotsec/security"
+    code_exec_docker_name: str = "agent-zero-exe"
+    code_exec_docker_image: str = " frdel/agent-zero-exe:latest"
     code_exec_docker_ports: dict[str,int] = field(default_factory=lambda: {"8022/tcp": 8022})
     code_exec_docker_volumes: dict[str, dict[str, str]] = field(default_factory=lambda: {files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"}})
     additional: Dict[str, Any] = field(default_factory=dict)
@@ -44,6 +44,19 @@ class Agent:
     def __init__(self, number:int, config: AgentConfig):
 
         # agent config  
+        """
+        Create a new Agent instance.
+
+        Args:
+        - number (int): Agent number, used in the agent name.
+        - config (AgentConfig): Configuration for this agent.
+
+        Sets up the agent with the given configuration, reads the system and tools prompts,
+        and sets up a rate limiter.
+
+        The agent is initialized with an empty history, and the current directory is changed
+        to the work_dir directory.
+        """
         self.config = config       
 
         # non-config vars
@@ -131,12 +144,39 @@ class Agent:
             Agent.streaming_agent = None
 
     def get_data(self, field:str):
+        
+        
         return self.data.get(field, None)
 
     def set_data(self, field:str, value):
-        self.data[field] = value
+        
+        """
+        Store a value in agent's memory.
 
+        Parameters
+        ----------
+        field : str
+            The field to store the value in.
+        value : Any
+            The value to store.
+
+        """
+        self.data[field] = value
+        """
+        Append a message to the conversation history.
+
+        If the message is of the same type (human or ai) as the last message, append it to the last message. Otherwise create a new message of the given type and append it to the history.
+
+        Parameters
+        ----------
+        msg : str
+            The message to append.
+        human : bool, optional
+            If True, the message is from a human. If False, the message is from the AI. Default is False.
+
+        """
     def append_message(self, msg: str, human: bool = False):
+        
         message_type = "human" if human else "ai"
         if self.history and self.history[-1].type == message_type:
             self.history[-1].content += "\n\n" + msg
@@ -192,6 +232,7 @@ class Agent:
         return [new_human_message]
 
     def cleanup_history(self, max:int, keep_start:int, keep_end:int):
+        
         if len(self.history) <= max:
             return self.history
 

@@ -8,6 +8,15 @@ from python.helpers.print_style import PrintStyle
 
 class DockerContainerManager:
     def __init__(self, image: str, name: str, ports: Optional[Dict[str, int]] = None, volumes: Optional[Dict[str, Dict[str, str]]] = None):
+        """
+        Initialize a DockerContainerManager.
+
+        Args:
+        - image (str): Name of the Docker image to use.
+        - name (str): Name of the Docker container.
+        - ports (Dict[str, int], optional): A dictionary of {host_port: container_port} to map ports from the container to the host. Defaults to None.
+        - volumes (Dict[str, Dict[str, str]], optional): A dictionary of {host_path: {container_path: mode}} to mount volumes from the host to the container. Defaults to None.
+        """
         self.image = image
         self.name = name
         self.ports = ports
@@ -16,6 +25,11 @@ class DockerContainerManager:
         self.container = None
 
     def init_docker(self):
+        """
+        Initialize a Docker client.
+
+        This method will retry indefinitely until a connection to Docker can be established.
+        """
         while True:
             try:
                 return docker.from_env()
@@ -29,6 +43,22 @@ class DockerContainerManager:
                     raise
 
     def start_container(self) -> None:
+        """
+        Start a Docker container.
+
+        If a container with the given name already exists and is not running,
+        start it. Otherwise, create a new container with the given image and
+        name.
+
+        Args:
+        - None
+
+        Returns:
+        - None
+
+        Raises:
+        - None
+        """
         existing_container = self.client.containers.list(filters={"name": self.name}, all=True)
         
         if existing_container:
@@ -51,6 +81,18 @@ class DockerContainerManager:
             time.sleep(5)
 
     def execute_command(self, command: str) -> str:
+        """
+        Execute a command in the Docker container.
+
+        Args:
+            command (str): The command to execute.
+
+        Returns:
+            str: The output of the command, or an error message if the command failed.
+
+        Raises:
+            Exception: If the Docker container is not initialized or started.
+        """
         if not self.container:
             raise Exception("Docker container is not initialized or started")
 
@@ -66,6 +108,17 @@ class DockerContainerManager:
             return f"Error (exit code {exit_code}): {error_message}"
 
     def cleanup_container(self) -> None:
+        """
+        Clean up the Docker container.
+
+        Stop and remove the container if it exists.
+
+        Returns:
+            None
+
+        Raises:
+            Exception: If the Docker container is not initialized or started.
+        """
         if self.container:
             try:
                 self.container.stop()
