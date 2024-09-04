@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 
 #initialize the internal Flask server
 app = Flask("app",static_folder=get_abs_path("./webui"),static_url_path="/")
+lock = threading.Lock()
 
 # Set up basic authentication, name and password from .env variables
 app.config['BASIC_AUTH_USERNAME'] = os.environ.get('BASIC_AUTH_USERNAME') or "admin" #default name
@@ -24,8 +25,9 @@ basic_auth = BasicAuth(app)
 
 # get context to run agent zero in
 def get_context(ctxid:str):
-    if not ctxid: return AgentContext.first() or AgentContext(config=initialize())
-    return AgentContext.get(ctxid) or AgentContext(config=initialize(),id=ctxid)
+    with lock:
+        if not ctxid: return AgentContext.first() or AgentContext(config=initialize())
+        return AgentContext.get(ctxid) or AgentContext(config=initialize(),id=ctxid)
 
 # Now you can use @requires_auth function decorator to require login on certain pages
 def requires_auth(f):
