@@ -48,8 +48,8 @@ def initialize():
         code_exec_ssh_enabled = True,
         # code_exec_ssh_addr = "localhost",
         # code_exec_ssh_port = 50022,
-        # code_exec_ssh_user = "root",
-        # code_exec_ssh_pass = "toor",
+        code_exec_ssh_user = "agent-zero",
+        code_exec_ssh_pass = "agent-zero",
         # additional = {},
     )
     

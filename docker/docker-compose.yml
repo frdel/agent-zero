@@ -1,0 +1,20 @@
+version: "3.9"
+
+#name: &PROJECTNAME agent-zero
+
+services:
+  agent-zero-exe:
+    container_name: agent-zero-exe
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+      args:
+          user_name: agent-zero 
+    ports:
+      - "50022:22"
+
+    volumes:
+      - ./../work_dir:/home/agent-zero/work_dir
+
+    entrypoint: ["/bin/bash", "-c", "/home/agent-zero/initialize.sh"]
+    command: ["tail", "-f", "/dev/null"]
