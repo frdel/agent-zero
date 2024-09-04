@@ -292,3 +292,7 @@ class Agent:
 
     def call_extension(self, name: str, **kwargs) -> Any:
         pass
+
+    def process_template(self, template):
+        prompt = f"Execute template: {template.name}\nURL: {template.url}\nNavigation Goal: {template.navigation_goal}\nData Extraction Goal: {template.data_extraction_goal}"
+        return self.message_loop(prompt)

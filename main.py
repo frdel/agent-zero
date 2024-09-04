@@ -6,6 +6,7 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.files import read_file
 from python.helpers import files
 import python.helpers.timed_input as timed_input
+from python.helpers.template_manager import load_templates
 # from promptflow.tracing import start_trace
 
 
@@ -53,13 +54,23 @@ def initialize():
 
     )
     
+    # Load templates
+    templates = load_templates()
+
+
     # create the first agent
     agent0 = Agent( number = 0, config = config )
 
     # start the chat loop
     chat(agent0)
 
-start_trace()
+def display_templates(agent: Agent):
+    templates = agent.get_data("templates")
+    PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print("Available Templates:")
+    for i, template in enumerate(templates, 1):
+        PrintStyle(font_color="white").print(f"{i}. {template.name}")
+    PrintStyle(font_color="white").print("To use a template, type 'use template [template name]'")
+
 
 # Main conversation loop
 def chat(agent:Agent):
@@ -89,6 +100,16 @@ def chat(agent:Agent):
                     if user_input.lower()=="w": # the user needs more time
                         user_input = input("> ").strip()
                     PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
+
+        if user_input.lower().startswith('use template'):
+            template_name = user_input[12:].strip()
+            templates = agent.get_data("templates")
+            template = next((t for t in templates if t.name.lower() == template_name.lower()), None)
+            if template:
+                user_input = f"Execute template: {template.name}\nURL: {template.url}\nNavigation Goal: {template.navigation_goal}\nData Extraction Goal: {template.data_extraction_goal}"
+            else:
+                PrintStyle(font_color="red").print(f"Template '{template_name}' not found.")
+                continue
                     
                     
 

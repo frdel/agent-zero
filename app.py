@@ -5,7 +5,8 @@ import models
 from python.helpers import files
 from python.helpers.print_style import PrintStyle
 from promptflow.tracing import start_trace
-from python.helpers.template_manager import load_templates, save_templates, templates_page, Template
+from python.helpers.template_manager import Template, load_templates, save_templates, templates_page
+import json
 
 # Initialize session state
 if 'agent' not in st.session_state:
@@ -15,7 +16,9 @@ if 'messages' not in st.session_state:
 if 'logs' not in st.session_state:
     st.session_state.logs = []
 if 'templates' not in st.session_state:
-    st.session_state.templates = []
+    st.session_state.templates = load_templates()
+if 'conversation_started' not in st.session_state:
+    st.session_state.conversation_started = False
 
 def initialize_agent():
     chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o", temperature=0)
@@ -37,105 +40,118 @@ def initialize_agent():
     return Agent(number=0, config=config)
 
 def main():
-    st.set_page_config(layout="wide", page_title="AI Agent Interaction")
+    st.set_page_config(layout="wide", page_title="AI Agent Interaction", page_icon="🤖")
     
-    # Load templates
-    if 'templates' not in st.session_state:
-        st.session_state.templates = load_templates()
-
-    # Sidebar
+    # Sidebar navigation
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", ["Create", "Templates", "Chat History"])
+    page = st.sidebar.radio("Go to", ["Chat", "Templates", "History"])
 
-    if page == "Create":
-        create_page()
+    if page == "Chat":
+        chat_page()
     elif page == "Templates":
         templates_page()
-    elif page == "Chat History":
-        chat_history_page()
+    elif page == "History":
+        history_page()
 
-    # Check if a template was selected to be used
-    if 'use_template' in st.session_state:
-        template = st.session_state.use_template
-        del st.session_state.use_template  # Clear the flag
-        process_user_input(f"Execute template: {template.name}", template)
+def chat_page():
+    st.title("AI Agent Interaction 🤖")
 
-def process_user_input(user_input, template=None):
-    st.session_state.messages.append({"role": "user", "content": user_input})
-    
-    with st.spinner("Agent is processing..."):
-        if template:
-            # Use template information to guide the agent
-            prompt = f"URL: {template.url}\nNavigation Goal: {template.navigation_goal}\nData Extraction Goal: {template.data_extraction_goal}\nUser Input: {user_input}"
-        else:
-            prompt = user_input
-
-        # Process the input and capture the response and thoughts
-        response, thoughts = st.session_state.agent.message_loop(prompt)
-        
-    # Add the response and thoughts to the message history
-    st.session_state.messages.append({
-        "role": "assistant", 
-        "content": response,
-        "thoughts": thoughts
-    })
-
-    # Display the response immediately
-    with st.chat_message("assistant"):
-        st.write(response)
-    with st.expander("Agent's Thoughts"):
-        for thought in thoughts:
-            st.markdown(f"**{thought['type']}**: {thought['content']}")
-
-def create_page():
-    st.title("AI Agent Interaction")
-
-    # Initialize agent if not already done
     if st.session_state.agent is None:
         with st.spinner("Initializing agent..."):
             st.session_state.agent = initialize_agent()
         st.success("Agent initialized successfully!")
 
-    # "Try a prompt" section
-    st.subheader("Try a prompt")
-    user_input = st.text_input("Enter your prompt...")
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("What is the top post on Hacker News?"):
-            user_input = "What is the top post on Hacker News?"
-    with col2:
-        if st.button("Search for AAPL stock price"):
-            user_input = "Search for AAPL stock price"
-
-    if user_input:
-        process_user_input(user_input)
-
-    # Display chat messages with thoughts
-    st.subheader("Chat History")
+    st.subheader("Chat with AI Agent")
+    
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.write(message["content"])
         if "thoughts" in message:
-            with st.expander("Agent's Thoughts"):
-                for thought in message["thoughts"]:
-                    st.markdown(f"**{thought['type']}**: {thought['content']}")
+            with st.expander("Agent's Thoughts", expanded=True):
+                st.markdown(message["thoughts"])
 
-def use_template(template):
-    st.session_state.messages.append({"role": "user", "content": f"Using template: {template.name}"})
-    process_user_input(f"Execute template: {template.name}", template)
-    st.success("Template executed successfully!")
+    user_input = st.chat_input("Type your message here...")
+    
+    if user_input:
+        st.session_state.conversation_started = True
+        process_user_input(user_input)
 
-def chat_history_page():
+    if not st.session_state.conversation_started:
+        st.subheader("Available Templates")
+        for i, template in enumerate(st.session_state.templates):
+            if st.button(f"Use Template: {template.name}", key=f"quick_template_{i}"):
+                process_template(template)
+                st.session_state.conversation_started = True
+
+def parse_and_format_thoughts(logs):
+    combined_log = ''.join(logs).replace('\n', '')
+    try:
+        thought_data = json.loads(combined_log)
+        formatted_output = ""
+        
+        if "thoughts" in thought_data:
+            formatted_output += "📝 **Thoughts:**\n"
+            for thought in thought_data["thoughts"]:
+                formatted_output += f"- {thought}\n"
+        
+        if "tool_name" in thought_data:
+            formatted_output += f"\n🛠️ **Tool:** `{thought_data['tool_name']}`\n"
+        
+        if "tool_args" in thought_data:
+            formatted_output += "**Arguments:**\n"
+            for key, value in thought_data["tool_args"].items():
+                formatted_output += f"- *{key}:* `{value}`\n"
+        
+        return formatted_output
+    except json.JSONDecodeError:
+        return f"💭 {combined_log}\n"
+    
+
+
+def process_user_input(user_input):
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    with st.chat_message("user"):
+        st.write(user_input)
+
+    with st.spinner("Agent is thinking..."):
+        st.session_state.logs = []
+        response = st.session_state.agent.message_loop(user_input)
+    
+    formatted_thoughts = parse_and_format_thoughts(st.session_state.logs)
+    
+    st.session_state.messages.append({
+        "role": "assistant", 
+        "content": response,
+        "thoughts": formatted_thoughts
+    })
+    
+    with st.chat_message("assistant"):
+        st.write(response)
+    
+    with st.expander("Agent's Thoughts", expanded=True):
+        st.markdown(formatted_thoughts)
+
+    # Keep raw logs in sidebar for debugging
+    with st.sidebar:
+        st.write("Raw logs:")
+        st.code(''.join(st.session_state.logs))
+
+
+def process_template(template):
+    prompt = f"Execute template: {template.name}\nURL: {template.url}\nNavigation Goal: {template.navigation_goal}\nData Extraction Goal: {template.data_extraction_goal}"
+    if template.advanced_settings:
+        prompt += "\nAdvanced Settings: " + ", ".join(f"{k}: {v}" for k, v in template.advanced_settings.items())
+    process_user_input(prompt)
+
+def history_page():
     st.title("Chat History")
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.write(message["content"])
         if "thoughts" in message:
-            with st.expander("Agent's Thoughts"):
+            with st.expander("Agent's Thoughts", expanded=True):
                 for thought in message["thoughts"]:
-                    st.markdown(f"**{thought['type']}**: {thought['content']}")
-
-
+                    st.markdown(thought)
 
 if __name__ == "__main__":
     start_trace()
