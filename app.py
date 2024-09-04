@@ -21,6 +21,7 @@ if 'conversation_started' not in st.session_state:
     st.session_state.conversation_started = False
 
 def initialize_agent():
+    
     chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o", temperature=0)
     utility_llm = chat_llm
     embedding_llm = models.get_azure_openai_embedding(deployment_name="text-embedding-3-small")
@@ -31,8 +32,8 @@ def initialize_agent():
         embeddings_model=embedding_llm,
         auto_memory_count=0,
         code_exec_docker_enabled=True,
-        code_exec_docker_name="Herbie-exe",
-        code_exec_docker_image="parrotsec/security",
+        code_exec_docker_name="agent-zero-exe",
+        code_exec_docker_image="frdel/agent-zero-exe:latest",
         code_exec_docker_ports={"8022/tcp": 8022},
         code_exec_docker_volumes={files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"}},
     )
