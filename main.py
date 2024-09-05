@@ -41,6 +41,7 @@ def initialize():
 
     # embedding model used for memory
     embedding_llm = models.get_azure_openai_embedding(deployment_name="text-embedding-3-small")
+    # embedding_llm = models.get_pinecone_embedding(model_name="multilingual-e5-large")
     # embedding_llm = models.get_ollama_embedding(model_name="nomic-embed-text")
      
 

@@ -8,6 +8,70 @@ from promptflow.tracing import start_trace
 from python.helpers.template_manager import Template, load_templates, save_templates, templates_page
 import json
 
+
+st.set_page_config(layout="wide", page_title="Multi-Agent Interaction", page_icon="🤖")
+
+# Custom CSS for a polished look that highlights multi-agent interactions
+st.markdown("""
+<style>
+    .reportview-container {
+        background: #f0f2f6;
+    }
+    .main .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+    h1, h2, h3 {
+        color: #1e1e1e;
+        font-weight: 300;
+    }
+    .stButton>button {
+        background-color: #007AFF;
+        color: white;
+        border-radius: 20px;
+        border: none;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        background-color: #0056b3;
+    }
+    .chat-message {
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        display: flex;
+        flex-direction: column;
+    }
+    .chat-message.user {
+        background-color: #DCF8C6;
+    }
+    .chat-message.agent {
+        background-color: #E3F2FD;
+    }
+    .chat-message .header {
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    .chat-message .content {
+        margin-bottom: 0.5rem;
+    }
+    .chat-message .thoughts {
+        background-color: #FFFFFF;
+        border-radius: 5px;
+        padding: 0.5rem;
+        font-style: italic;
+    }
+    .sub-agent {
+        margin-left: 2rem;
+        border-left: 2px solid #007AFF;
+        padding-left: 1rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+
 # Initialize session state
 if 'agent' not in st.session_state:
     st.session_state.agent = None
@@ -21,7 +85,6 @@ if 'conversation_started' not in st.session_state:
     st.session_state.conversation_started = False
 
 def initialize_agent():
-    
     chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o", temperature=0)
     utility_llm = chat_llm
     embedding_llm = models.get_azure_openai_embedding(deployment_name="text-embedding-3-small")
@@ -41,11 +104,18 @@ def initialize_agent():
     return Agent(number=0, config=config)
 
 def main():
-    st.set_page_config(layout="wide", page_title="AI Agent Interaction", page_icon="🤖")
+    if st.session_state.agent is None:
+        st.session_state.agent = initialize_agent()
     
-    # Sidebar navigation
-    st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", ["Chat", "Templates", "History"])
+    with st.sidebar:
+        st.title("Navigation")
+        page = st.radio("Select Page", ["Chat", "Templates", "History"], key="navigation")
+        
+        if st.button("Clear Conversation", key="clear_conversation"):
+            st.session_state.messages = []
+            st.session_state.conversation_started = False
+            st.session_state.agent = initialize_agent()
+            st.rerun()
 
     if page == "Chat":
         chat_page()
@@ -55,34 +125,28 @@ def main():
         history_page()
 
 def chat_page():
-    st.title("AI Agent Interaction 🤖")
+    st.title("Multi-Agent Interaction 🤖")
 
-    if st.session_state.agent is None:
-        with st.spinner("Initializing agent..."):
-            st.session_state.agent = initialize_agent()
-        st.success("Agent initialized successfully!")
-
-    st.subheader("Chat with AI Agent")
-    
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.write(message["content"])
-        if "thoughts" in message:
-            with st.expander("Agent's Thoughts", expanded=True):
-                st.markdown(message["thoughts"])
+            if "thoughts" in message:
+                with st.expander("Agent's Thoughts", expanded=False):
+                    st.write(message["thoughts"])
 
-    user_input = st.chat_input("Type your message here...")
-    
+    # User input
+    user_input = st.chat_input("Type your message here...", key="user_input")
     if user_input:
-        st.session_state.conversation_started = True
         process_user_input(user_input)
 
     if not st.session_state.conversation_started:
         st.subheader("Available Templates")
+        templates_grid = st.columns(3)
         for i, template in enumerate(st.session_state.templates):
-            if st.button(f"{template.name}", key=f"quick_template_{i}"):
-                process_template(template)
-                st.session_state.conversation_started = True
+            with templates_grid[i % 3]:
+                if st.button(f"{template.name}", key=f"quick_template_{i}"):
+                    process_template(template)
+                    st.session_state.conversation_started = True
 
 def parse_and_format_thoughts(logs):
     combined_log = ''.join(logs).replace('\n', '')
@@ -106,37 +170,24 @@ def parse_and_format_thoughts(logs):
         return formatted_output
     except json.JSONDecodeError:
         return f"💭 {combined_log}\n"
-    
-
 
 def process_user_input(user_input):
     st.session_state.messages.append({"role": "user", "content": user_input})
-    with st.chat_message("user"):
-        st.write(user_input)
-
+    
     with st.spinner("Agent is thinking..."):
-        st.session_state.logs = []
-        response = st.session_state.agent.message_loop(user_input)
+        main_response = st.session_state.agent.message_loop(user_input)
     
-    formatted_thoughts = parse_and_format_thoughts(st.session_state.logs)
+    main_thoughts = parse_and_format_thoughts(st.session_state.logs)
     
-    st.session_state.messages.append({
-        "role": "assistant", 
-        "content": response,
-        "thoughts": formatted_thoughts
-    })
+    agent_message = {
+        "role": "assistant",
+        "content": main_response,
+        "thoughts": main_thoughts,
+    }
     
-    with st.chat_message("assistant"):
-        st.write(response)
-    
-    with st.expander("Agent's Thoughts", expanded=True):
-        st.markdown(formatted_thoughts)
-
-    # Keep raw logs in sidebar for debugging
-    with st.sidebar:
-        st.write("Raw logs:")
-        st.code(''.join(st.session_state.logs))
-
+    st.session_state.messages.append(agent_message)
+    st.session_state.conversation_started = True
+    st.rerun()
 
 def process_template(template):
     prompt = f"Execute template: {template.name}\nURL: {template.url}\nNavigation Goal: {template.navigation_goal}\nData Extraction Goal: {template.data_extraction_goal}"
@@ -147,13 +198,7 @@ def process_template(template):
 def history_page():
     st.title("Chat History")
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.write(message["content"])
-        if "thoughts" in message:
-            with st.expander("Agent's Thoughts", expanded=True):
-                for thought in message["thoughts"]:
-                    st.markdown(thought)
+        st.write(f"{message['role'].capitalize()}: {message['content']}")
 
 if __name__ == "__main__":
-    start_trace()
     main()
