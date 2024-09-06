@@ -323,7 +323,7 @@ class Agent:
             msg = self.intervention_message
             self.intervention_message = "" # reset the intervention message
             if progress.strip(): await self.append_message(progress) # append the response generated so far
-            user_msg = self.read_prompt("fw.intervention.md", user_message=self.intervention_message) # format the user intervention template
+            user_msg = self.read_prompt("fw.intervention.md", user_message=msg) # format the user intervention template
             await self.append_message(user_msg,human=True) # append the intervention message
             raise InterventionException(msg)
 

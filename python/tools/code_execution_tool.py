@@ -115,4 +115,8 @@ class CodeExecution(Tool):
                 if ( full_output and idle > wait_with_output / SLEEP_TIME ) or ( not full_output and idle > wait_without_output / SLEEP_TIME ): return full_output
 
     async def reset_terminal(self):
+        self.state.shell.close()
         await self.prepare_state(reset=True)
+        response = self.agent.read_prompt("fw.code_reset.md")
+        self.log.update(content=response)
+        return response
