@@ -267,7 +267,7 @@ class Agent:
         self.rate_limiter.limit_call_and_input(tokens)
     
         async for chunk in chain.astream({}):
-            if self.handle_intervention(): break # wait for intervention and handle it, if paused
+            if await self.handle_intervention(): break # wait for intervention and handle it, if paused
 
             if isinstance(chunk, str): content = chunk
             elif hasattr(chunk, "content"): content = str(chunk.content)
