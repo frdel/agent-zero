@@ -2,8 +2,7 @@
 - Agent Zero is not an app. It's a framework. It's made to be customized, edited, enhanced. Therefore you need to install the necessary components to run it.
 - I will provide step by step instructions along with a video for this tutorial on how to make Agent Zero work on Windows and MacOS.
 
-> ⚠️ Video being created. Link will be updated soon.
-![Video](thumb_play.png)
+[![Video](thumb_play.png)](https://youtu.be/8H7mFsvxKYQ)
 
 ## Reminders:
 1. You don't need to install Python, Conda will take care of that for you.
