@@ -96,10 +96,12 @@ def timeout_input(prompt, timeout=10):
 if __name__ == "__main__":
     print("Initializing framework...")
 
+    # initialize context
+    config = initialize()
+    context = AgentContext(config)
+
     # Start the key capture thread for user intervention during agent streaming
     threading.Thread(target=capture_keys, daemon=True).start()
 
-    # initialize and start the chat
-    config = initialize()
-    context = AgentContext(config)
+    #start the chat
     asyncio.run(chat(context))
