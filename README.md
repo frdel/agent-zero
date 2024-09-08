@@ -3,8 +3,7 @@
 [![Join our Skool Community](https://img.shields.io/badge/Skool-Join%20our%20Community-4A90E2?style=for-the-badge&logo=skool&logoColor=white)](https://www.skool.com/agent-zero) [![Join our Discord](https://img.shields.io/badge/Discord-Join%20our%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/B8KZKNsPpj) [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@AgentZeroFW) [![Connect on LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/jan-tomasek/) [![Follow on X.com](https://img.shields.io/badge/X.com-Follow-1DA1F2?style=for-the-badge&logo=x&logoColor=white)](https://x.com/JanTomasekDev)
 
 
-
-[![Intro Video](/docs/intro_vid.jpg)](https://www.youtube.com/watch?v=C9n8zFpaV3I)
+[![Intro Video](/docs/res/intro_vid.jpg)](https://www.youtube.com/watch?v=C9n8zFpaV3I)
 
 **Personal and organic AI framework**
 - Agent Zero is not a predefined agentic framework. It is designed to be dynamic, organically growing, and learning as you use it.
@@ -12,7 +11,7 @@
 - Agent Zero uses the computer as a tool to accomplish its (your) tasks.
 
 ## Now with UI:
-![UI prototype](docs/ui_screen1.png)
+![UI prototype](/docs/res/ui_screen1.png)
 
 ## Key concepts
 1. **General-purpose assistant**
@@ -43,7 +42,7 @@
 - The terminal interface is real-time streamed and interactive. You can stop and intervene at any point. If you see your agent heading in the wrong direction, just stop and tell it right away.
 - There is a lot of freedom in this framework. You can instruct your agents to regularly report back to superiors asking for permission to continue. You can instruct them to use point-scoring systems when deciding when to delegate subtasks. Superiors can double-check subordinates' results and dispute. The possibilities are endless.
 
-![Agent Zero](docs/splash_wide.png)
+![Agent Zero](/docs/res/splash_wide.png)
 
 ## Nice features to have
 - Output is very clean, colorful, readable and interactive; nothing is hidden.
@@ -66,7 +65,7 @@ Agent Zero is made to be used in an isolated virtual environment (for safety) wi
 If you cannot provide all the necessary conditions or API keys, just change the system prompt and tell your agent what operating system and tools are at its disposal. Nothing is hard-coded; if you do not tell your agent about a certain tool, it will not know about it and will not try to use it.
 
 
-[![David Ondrej video](/docs/david_vid.jpg)](https://www.youtube.com/watch?v=_Pionjv4hGc)
+[![David Ondrej video](/docs/res/david_vid.jpg)](https://www.youtube.com/watch?v=_Pionjv4hGc)
 
 ## Known problems
 1. The system prompt sucks. You can do better. If you do, help me please :)
@@ -78,49 +77,13 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 - **Python**: Python has to be installed on the system to run the framework.
 - **Internet access**: The agent will need internet access to use its online knowledge tool and execute commands and scripts requiring a connection. If you do not need your agent to be online, you can alter its prompts in the **prompts/** folder and make it fully local.
 
-![Time example](docs/time_example.jpg)
+![Time example](/docs/res/time_example.jpg)
 
 ## Setup
+
+A detailed setup guide with a video can be found here: [/docs/installation](https://github.com/frdel/agent-zero/tree/main/docs/installation). Scroll down to see the readme file.
 
 > ⚠️ **Changes to launch files since v0.6:**  
 > main.py file has been replaced with run_ui.py (webui) and run_cli.py (terminal) launch files.
 > configuration has been moved to initialize.py for both webui and terminal launch files.
 
-Update: [Guide by CheezChat for Windows](./docs/win_installation_guide.txt)
-
-1. **Required API keys:**
-- No API keys are required. Models can run locally. The only recommended API key is for https://www.perplexity.ai/ API. Perplexity is used as a convenient web search tool and has not yet been replaced by an open-source alternative in Agent Zero. If you do not have an API key for Perplexity, leave it empty in the .env file and Perplexity will not be used.
-- Chat models and embedding models can be executed locally via Ollama, LMStudio and HuggingFace or via API as well.
-
-2. **Enter your API keys if needed:**
-- You can enter your API keys into the **.env** file, which you can copy from **example.env**
-- Or you can export your API keys in the terminal session:
-~~~bash
-export API_KEY_PERPLEXITY="your-api-key-here"
-export API_KEY_OPENAI="your-api-key-here"
-~~~
-
-3. **Install dependencies with the following terminal command:**
-~~~bash
-pip install -r requirements.txt
-~~~
-
-3. **Choose your chat, utility and embeddings model and check other configuration options:**
-- In the **initialize.py** file, you can see how the chat model and embedding model are set.
-- You can choose between online models (OpenAI, Anthropic, Groq) or offline (Ollama, LMStudio, HuggingFace) for both.
-
-4. **run Docker:**
-- Easiest way is to install Docker Desktop application ([Download](https://www.docker.com/products/docker-desktop/)) and just leave it running in the background.
-- You don't need to download and build any images, it will be done automatically by the framework at runtime.
-
-## Run the program
-- Just run the **run_ui.py** file in Python:
-~~~bash
-python run_ui.py
-~~~
-- And open the URL shown in the terminal:
-
-![Flask link](docs/flask_link.png)
-
-- Or run it in debug mode in VS Code using the **debug** button in the top right corner of the editor. I have provided config files for VS Code for this purpose.
-- For the original command line interface you can run run_cli.py instead of run_ui.py
