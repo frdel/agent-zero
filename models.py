@@ -22,7 +22,7 @@ def get_api_key(service):
 
 
 # Ollama models
-def get_ollama_chat(model_name:str, temperature=DEFAULT_TEMPERATURE, base_url="http://localhost:11434"):
+def get_ollama_chat(model_name:str, temperature=DEFAULT_TEMPERATURE, base_url=os.getenv("OLLAMA_BASE_URL")):
     return Ollama(model=model_name,temperature=temperature, base_url=base_url)
 
 def get_ollama_embedding(model_name:str, temperature=DEFAULT_TEMPERATURE):
@@ -34,10 +34,10 @@ def get_huggingface_embedding(model_name:str):
     return HuggingFaceEmbeddings(model_name=model_name)
 
 # LM Studio and other OpenAI compatible interfaces
-def get_lmstudio_chat(model_name:str, base_url="http://localhost:1234/v1", temperature=DEFAULT_TEMPERATURE):
+def get_lmstudio_chat(model_name:str, base_url=os.getenv("LM_STUDIO_BASE_URL"), temperature=DEFAULT_TEMPERATURE):
     return ChatOpenAI(model_name=model_name, base_url=base_url, temperature=temperature, api_key="none") # type: ignore
 
-def get_lmstudio_embedding(model_name:str, base_url="http://localhost:1234/v1"):
+def get_lmstudio_embedding(model_name:str, base_url=os.getenv("LM_STUDIO_BASE_URL")):
     return OpenAIEmbeddings(model_name=model_name, base_url=base_url) # type: ignore
 
 # Anthropic models
@@ -86,8 +86,8 @@ def get_groq_chat(model_name:str, api_key=None, temperature=DEFAULT_TEMPERATURE)
 # OpenRouter models
 def get_openrouter(model_name: str="meta-llama/llama-3.1-8b-instruct:free", api_key=None, temperature=DEFAULT_TEMPERATURE):
     api_key = api_key or get_api_key("openrouter")
-    return ChatOpenAI(api_key=api_key, base_url="https://openrouter.ai/api/v1", model=model_name, temperature=temperature) # type: ignore
-        
+    return ChatOpenAI(api_key=api_key, base_url=os.getenv("OPEN_ROUTER_BASE_URL"), model=model_name, temperature=temperature) # type: ignore
+      
 def get_embedding_hf(model_name="sentence-transformers/all-MiniLM-L6-v2"):
     return HuggingFaceEmbeddings(model_name=model_name)
 
