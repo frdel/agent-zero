@@ -4,20 +4,21 @@ from concurrent.futures import Future
 
 class DeferredTask:
     def __init__(self, func, *args, **kwargs):
-        self._loop = asyncio.new_event_loop()
+        self._loop: asyncio.AbstractEventLoop = None # type: ignore
         self._task = None
         self._future = Future()
-        self._task_initialized = threading.Event()  # Event to signal task initialization
+        self._task_initialized = threading.Event()
         self._start_task(func, *args, **kwargs)
 
     def _start_task(self, func, *args, **kwargs):
-        def run_in_thread(loop, func, args, kwargs):
-            asyncio.set_event_loop(loop)
-            self._task = loop.create_task(self._run(func, *args, **kwargs))
-            self._task_initialized.set()  # Signal that the task has been initialized
-            loop.run_forever()
+        def run_in_thread():
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
+            self._task = self._loop.create_task(self._run(func, *args, **kwargs))
+            self._task_initialized.set()
+            self._loop.run_forever()
 
-        self._thread = threading.Thread(target=run_in_thread, args=(self._loop, func, args, kwargs))
+        self._thread = threading.Thread(target=run_in_thread)
         self._thread.start()
 
     async def _run(self, func, *args, **kwargs):
@@ -27,13 +28,16 @@ class DeferredTask:
         except Exception as e:
             self._future.set_exception(e)
         finally:
-            self._loop.call_soon_threadsafe(self._loop.stop)
+            self._loop.call_soon_threadsafe(self._cleanup)
+
+    def _cleanup(self):
+        self._loop.stop()
 
     def is_ready(self):
         return self._future.done()
 
     async def result(self, timeout=None):
-        if not self._task_initialized.wait(timeout):  # Wait until the task is initialized
+        if not self._task_initialized.wait(timeout):
             raise RuntimeError("Task was not initialized properly.")
 
         try:
@@ -42,7 +46,7 @@ class DeferredTask:
             raise TimeoutError("The task did not complete within the specified timeout.")
 
     def result_sync(self, timeout=None):
-        if not self._task_initialized.wait(timeout):  # Wait until the task is initialized
+        if not self._task_initialized.wait(timeout):
             raise RuntimeError("Task was not initialized properly.")
         
         try:
@@ -58,8 +62,9 @@ class DeferredTask:
         return self._thread.is_alive() and not self._future.done()
 
     def __del__(self):
-        if self._loop.is_running():
-            self._loop.call_soon_threadsafe(self._loop.stop)
-        if self._thread.is_alive():
+        if self._loop and self._loop.is_running():
+            self._loop.call_soon_threadsafe(self._cleanup)
+        if self._thread and self._thread.is_alive():
             self._thread.join()
-        self._loop.close()
+        if self._loop:
+            self._loop.close()
