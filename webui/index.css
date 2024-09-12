@@ -327,6 +327,14 @@ input:checked + .slider:before {
 .msg-thoughts{
 }
 
+.message-temp {
+  display: none;
+}
+
+.message-temp:last-child {
+  display: block; /* or any style you want for visibility */
+}
+
 .connected{
 color: #6ec583;
 }

@@ -42,7 +42,7 @@ class SSHInteractiveSession:
                 errors += 1
                 if errors < 3:
                     print(f"SSH Connection attempt {errors}...")
-                    self.logger.log(type="info", content=f"SSH Connection attempt {errors}...")
+                    self.logger.log(type="info", content=f"SSH Connection attempt {errors}...", temp=True)
                     
                     time.sleep(5)
                 else:
@@ -66,14 +66,16 @@ class SSHInteractiveSession:
         self.trimmed_command_length = 0
         self.shell.send(self.last_command)
 
-    async def read_output(self) -> Tuple[str, str]:
+    async def read_output(self, timeout: float = 0) -> Tuple[str, str]:
         if not self.shell:
             raise Exception("Shell not connected")
 
         partial_output = b''
         leftover = b''
+        start_time = time.time()
 
-        while self.shell.recv_ready():
+        while self.shell.recv_ready() and (timeout <= 0 or time.time() - start_time < timeout):
+
             data = self.shell.recv(1024)
 
             # Trim own command from output
@@ -105,11 +107,6 @@ class SSHInteractiveSession:
 
         decoded_partial_output = self.clean_string(decoded_partial_output)
         decoded_full_output = self.clean_string(decoded_full_output)
-
-        # # Split output at end_comment
-        # if SSHInteractiveSession.end_comment in decoded_full_output:
-        #     decoded_full_output = decoded_full_output.split(SSHInteractiveSession.end_comment)[-1].lstrip("\r\n")
-        #     decoded_partial_output = decoded_partial_output.split(SSHInteractiveSession.end_comment)[-1].lstrip("\r\n")
 
         return decoded_full_output, decoded_partial_output
 

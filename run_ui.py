@@ -26,8 +26,13 @@ basic_auth = BasicAuth(app)
 # get context to run agent zero in
 def get_context(ctxid:str):
     with lock:
-        if not ctxid: return AgentContext.first() or AgentContext(config=initialize())
-        return AgentContext.get(ctxid) or AgentContext(config=initialize(),id=ctxid)
+        if not ctxid: 
+            first = AgentContext.first() 
+            if first: return first
+            return AgentContext(config=initialize())
+        got = AgentContext.get(ctxid)
+        if got: return got
+        return AgentContext(config=initialize(),id=ctxid)
 
 # Now you can use @requires_auth function decorator to require login on certain pages
 def requires_auth(f):

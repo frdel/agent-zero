@@ -24,8 +24,10 @@ class Knowledge(Tool):
             # duckduckgo search
             duckduckgo = executor.submit(duckduckgo_search.search, question)
 
-            # memory search
-            future_memory = executor.submit(memory_tool.search, self.agent, question)
+            # manual memory search
+            future_memory_man = executor.submit(memory_tool.search, self.agent, "manual", question)
+            # history memory search
+            # future_memory_man = executor.submit(memory_tool.search, self.agent, "history", question)
 
             # Wait for both functions to complete
             try:
@@ -41,7 +43,7 @@ class Knowledge(Tool):
                 duckduckgo_result = "DuckDuckGo search failed: " + str(e)
 
             try:
-                memory_result = future_memory.result()
+                memory_result = future_memory_man.result()
             except Exception as e:
                 handle_error(e)
                 memory_result = "Memory search failed: " + str(e)

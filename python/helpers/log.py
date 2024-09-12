@@ -1,8 +1,20 @@
 from dataclasses import dataclass, field
 import json
-from typing import Optional, Dict
+from typing import Literal, Optional, Dict
 import uuid
 
+
+type Type = Literal[
+    'agent',
+    'code_exe',
+    'error',
+    'hint',
+    'info',
+    'tool',
+    'user',
+    'util',
+    'warning',
+    ]
 
 @dataclass
 class LogItem:
@@ -11,15 +23,16 @@ class LogItem:
     type: str
     heading: str
     content: str
+    temp: bool
     kvps: Optional[Dict] = None
     guid: str = ""
 
     def __post_init__(self):
         self.guid = self.log.guid
 
-    def update(self, type: str | None = None, heading: str | None = None, content: str | None = None, kvps: dict | None = None):
+    def update(self, type: Type | None = None, heading: str | None = None, content: str | None = None, kvps: dict | None = None, temp: bool | None = None):
         if self.guid == self.log.guid:
-            self.log.update_item(self.no, type=type, heading=heading, content=content, kvps=kvps)
+            self.log.update_item(self.no, type=type, heading=heading, content=content, kvps=kvps, temp=temp)
 
     def output(self):
         return {
@@ -27,6 +40,7 @@ class LogItem:
             "type": self.type,
             "heading": self.heading,
             "content": self.content,
+            "temp": self.temp,
             "kvps": self.kvps
         }
 
@@ -37,13 +51,13 @@ class Log:
         self.updates: list[int] = []
         self.logs: list[LogItem] = []
 
-    def log(self, type: str, heading: str | None = None, content: str | None = None, kvps: dict | None = None) -> LogItem:
-        item = LogItem(log=self,no=len(self.logs), type=type, heading=heading or "", content=content or "", kvps=kvps)
+    def log(self, type: Type, heading: str | None = None, content: str | None = None, kvps: dict | None = None, temp: bool | None = None) -> LogItem:
+        item = LogItem(log=self,no=len(self.logs), type=type, heading=heading or "", content=content or "", kvps=kvps, temp=temp or False)
         self.logs.append(item)
         self.updates += [item.no]
         return item
 
-    def update_item(self, no: int, type: str | None = None, heading: str | None = None, content: str | None = None, kvps: dict | None = None):
+    def update_item(self, no: int, type: str | None = None, heading: str | None = None, content: str | None = None, kvps: dict | None = None, temp: bool | None = None):
         item = self.logs[no]
         if type is not None:
             item.type = type
@@ -53,6 +67,8 @@ class Log:
             item.content = content
         if kvps is not None:
             item.kvps = kvps
+        if temp is not None:
+            item.temp = temp
         self.updates += [item.no]
 
     def output(self, start=None, end=None):

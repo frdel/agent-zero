@@ -20,3 +20,4 @@ pypdf==4.3.1
 Flask[async]==3.0.3
 Flask-BasicAuth==0.2.0
 faiss-cpu==1.8.0.post1
+langchain-ollama==0.1.3

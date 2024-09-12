@@ -1,4 +1,4 @@
-import os, re, sys
+import os, re
 
 def read_file(relative_path, **kwargs):
     absolute_path = get_abs_path(relative_path)  # Construct the absolute path to the target file
@@ -31,3 +31,4 @@ def get_base_dir():
     # Get the base directory from the current file path
     base_dir = os.path.dirname(os.path.abspath(os.path.join(__file__,"../../")))
     return base_dir
+

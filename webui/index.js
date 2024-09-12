@@ -55,7 +55,7 @@ chatInput.addEventListener('keydown', (e) => {
 
 sendButton.addEventListener('click', sendMessage);
 
-function setMessage(id, type, heading, content, kvps = null) {
+function setMessage(id, type, heading, content, temp, kvps = null) {
     // Search for the existing message container by id
     let messageContainer = document.getElementById(`message-${id}`);
 
@@ -68,10 +68,12 @@ function setMessage(id, type, heading, content, kvps = null) {
         messageContainer = document.createElement('div');
         messageContainer.id = `message-${id}`;
         messageContainer.classList.add('message-container', `${sender}-container`);
+        if (temp) messageContainer.classList.add("message-temp")
+
     }
 
     const handler = msgs.getHandler(type);
-    handler(messageContainer, id, type, heading, content, kvps);
+    handler(messageContainer, id, type, heading, content, temp, kvps);
 
     // If the container was found, it was already in the DOM, no need to append again
     if (!document.getElementById(`message-${id}`)) {
@@ -80,6 +82,7 @@ function setMessage(id, type, heading, content, kvps = null) {
 
     if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
 }
+
 
 
 function adjustTextareaHeight() {
@@ -131,7 +134,7 @@ async function poll() {
 
             if (lastLogVersion != response.log_version) {
                 for (const log of response.logs) {
-                    setMessage(log.no, log.type, log.heading, log.content, log.kvps);
+                    setMessage(log.no, log.type, log.heading, log.content, log.temp, log.kvps);
                 }
             }
 
@@ -186,7 +189,7 @@ window.killChat = async function (id) {
         if (other) setContext(other.id)
         else setContext(generateGUID())
     }
-    
+
     if (found) sendJsonData("/remove", { context: id });
 }
 
