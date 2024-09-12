@@ -1,17 +1,22 @@
 import models
 from agent import AgentConfig
+from src.lib.awm import AgentWorkflowMemory
+from src.lib.embedding_memory import EmbeddingMemory
+import os
+from dotenv import load_dotenv
 
 def initialize():
+    load_dotenv()
     
     # main chat model used by agents (smarter, more accurate)
-    chat_llm = models.get_openai_chat(model_name="gpt-4o-mini", temperature=0)
-    # chat_llm = models.get_ollama_chat(model_name="gemma2:latest", temperature=0)
+    chat_llm = models.get_openai_chat(model_name="gpt-4-turbo-preview", temperature=0)
+    # chat_llm = models.get_ollama_chat(model_name="gemma:latest", temperature=0)
     # chat_llm = models.get_lmstudio_chat(model_name="TheBloke/Mistral-7B-Instruct-v0.2-GGUF", temperature=0)
-    # chat_llm = models.get_openrouter(model_name="meta-llama/llama-3-8b-instruct:free")
-    # chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o-mini", temperature=0)
-    # chat_llm = models.get_anthropic_chat(model_name="claude-3-5-sonnet-20240620", temperature=0)
-    # chat_llm = models.get_google_chat(model_name="gemini-1.5-flash", temperature=0)
-    # chat_llm = models.get_groq_chat(model_name="llama-3.1-70b-versatile", temperature=0)
+    # chat_llm = models.get_openrouter(model_name="meta-llama/llama-2-70b-chat:free")
+    # chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4", temperature=0)
+    # chat_llm = models.get_anthropic_chat(model_name="claude-3-opus-20240229", temperature=0)
+    # chat_llm = models.get_google_chat(model_name="gemini-1.0-pro", temperature=0)
+    # chat_llm = models.get_groq_chat(model_name="mixtral-8x7b-32768", temperature=0)
     
     # utility model used for helper functions (cheaper, faster)
     utility_llm = chat_llm # change if you want to use a different utility model
@@ -21,6 +26,14 @@ def initialize():
     # embedding_llm = models.get_ollama_embedding(model_name="nomic-embed-text")
     # embedding_llm = models.get_huggingface_embedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
+    # Initialize EmbeddingMemory
+    embedding_memory = EmbeddingMemory(embedding_llm)
+
+    # Initialize AgentWorkflowMemory with EmbeddingMemory
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    is_online_mode = os.getenv("AWM_ONLINE_MODE", "true").lower() == "true"
+    awm = AgentWorkflowMemory(api_key=openai_api_key, is_online_mode=is_online_mode, embedding_memory=embedding_memory)
+
     # agent configuration
     config = AgentConfig(
         chat_model = chat_llm,
@@ -28,7 +41,7 @@ def initialize():
         embeddings_model = embedding_llm,
         # prompts_subdir = "",
         # memory_subdir = "",
-        # knowledge_subdir: str = ""
+        # knowledge_subdir = "",
         auto_memory_count = 0,
         # auto_memory_skip = 2,
         # rate_limit_seconds = 60,
@@ -51,6 +64,7 @@ def initialize():
         # code_exec_ssh_user = "root",
         # code_exec_ssh_pass = "toor",
         # additional = {},
+        awm = awm  # Add the AWM instance to the config
     )
 
     # return config object

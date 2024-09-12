@@ -1,0 +1,246 @@
+pipelines:
+  Agent Zero Insights:
+    description: Pipeline for generating articles about Agent Zero.
+    parameters:
+      length: medium
+      tone: professional
+  Basic System Design in Erlang Pipeline:
+    topics:
+    - 'System Design in Erlang: Principles and Best Practices'
+    - 'Building Scalable Systems with Erlang: A Comprehensive Guide'
+  Career Development Insights:
+    content_type: article
+    description: Pipeline for generating content related to career development and
+      job searching.
+    guidelines: Focus on actionable insights and professional advice.
+    tone: professional and engaging
+  Career Growth Insights:
+    description: Pipeline for generating insights on career growth and networking.
+    topics:
+    - The importance of networking in career growth
+    - How to effectively use LinkedIn for job searching
+  Career Growth Insights with Content Type:
+    //: Assuming 'professional' is a valid tone
+    content_type: article
+    description: Pipeline for generating insights on career growth and networking
+      with specified content type.
+    guidelines: Ensure content is professional, engaging, and relevant to career growth
+      and networking.
+    tone: professional
+    topics:
+    - The importance of networking in career growth
+    - How to effectively use LinkedIn for job searching
+  Career Insights Pipeline:
+    content_type: article
+    description: A pipeline for generating articles and posts related to career development
+      and networking.
+  Creative & Artistic Pipeline:
+    content_types:
+    - Twitter posts
+    posting_frequency: 2 times per week
+    steps:
+    - Create Visual Assets
+    - Write Captions/Hashtags
+    - Schedule Posts
+  Creative & Artistic Pipeline V2:
+    content_types:
+    - Instagram carousels
+    - Twitter posts
+    posting_frequency: 2 times per week
+    steps:
+    - Create Visual Assets
+    - Write Captions/Hashtags
+    - Schedule Posts
+  DSPy Assertions:
+    content_type: text
+    description: Pipeline for generating content related to DSPy Assertions and their
+      applications in language models.
+    format: Twitter posts
+    guidelines: Keep posts concise, engaging, and informative.
+    length: Short
+    tone: Professional
+  DSPy Assertions Basic:
+    description: Basic pipeline for generating tweets about DSPy Assertions.
+    format: Twitter
+  DSPy Assertions Enhanced:
+    content_type: text
+    description: Updated pipeline for generating tweets about DSPy Assertions with
+      specified tone.
+    format: Twitter
+    guidelines: Ensure content is concise and relevant to DSPy Assertions.
+    tone: informative
+  Minimal System Design in Erlang Pipeline:
+    content_type: article
+    tone: professional
+    topics:
+    - 'System Design in Erlang: Principles and Best Practices'
+    - 'Building Scalable Systems with Erlang: A Comprehensive Guide'
+  Networking Strategies Pipeline:
+    content_type: article
+    description: A pipeline for generating articles and posts related to networking
+      strategies and job searching.
+    guidelines: Include best practices for networking and job searching.
+  Networking and Career Advancement:
+    content_formulas:
+    - AIDA
+    - PAS
+    description: Pipeline for generating content related to networking and career
+      advancement strategies.
+    tone: professional
+  New Content Pipeline:
+    //: Assuming 'article' is a valid content type
+    content_type: article
+    description: Pipeline for generating LinkedIn content
+    guidelines: Create engaging and informative content that encourages networking
+      and career growth.
+    settings: {}
+    tone: professional
+  Simple System Design in Erlang Pipeline:
+    content_type: article
+    description: A simplified pipeline for generating content related to system design
+      using Erlang.
+    format_handler:
+      max_characters: 2000
+    tone: professional
+    topics:
+    - 'System Design in Erlang: Principles and Best Practices'
+    - 'Building Scalable Systems with Erlang: A Comprehensive Guide'
+  System Design in Erlang:
+    description: Pipeline for generating content related to system design using Erlang.
+    topics:
+    - 'System Design in Erlang: Principles and Best Practices'
+    - 'Building Scalable Systems with Erlang: A Comprehensive Guide'
+  System Design in Erlang Basic Pipeline:
+    content_type: article
+    description: A basic pipeline for generating content related to system design
+      using Erlang.
+    format_handler:
+      max_characters: 2000
+    tone: professional
+    topics:
+    - 'System Design in Erlang: Principles and Best Practices'
+    - 'Building Scalable Systems with Erlang: A Comprehensive Guide'
+  System Design in Erlang with Complete Configuration:
+    content_type: article
+    description: Pipeline for generating content related to system design using Erlang
+      with specified content types.
+    format_handler:
+      max_characters: 2000
+    guidelines: Focus on best practices, scalability, and real-world applications.
+    tone: professional
+    topics:
+    - 'System Design in Erlang: Principles and Best Practices'
+    - 'Building Scalable Systems with Erlang: A Comprehensive Guide'
+  System Design in Erlang with Content Type:
+    content_type: article
+    description: Pipeline for generating content related to system design using Erlang
+      with specified content types.
+    guidelines: Focus on best practices, scalability, and real-world applications.
+    tone: professional
+    topics:
+    - 'System Design in Erlang: Principles and Best Practices'
+    - 'Building Scalable Systems with Erlang: A Comprehensive Guide'
+  System Design in Erlang with Explicit Format Handler:
+    content_type: article
+    description: Pipeline for generating content related to system design using Erlang
+      with specified content types.
+    format_handler:
+      max_characters: 2000
+    guidelines: Focus on best practices, scalability, and real-world applications.
+    tone: professional
+    topics:
+    - 'System Design in Erlang: Principles and Best Practices'
+    - 'Building Scalable Systems with Erlang: A Comprehensive Guide'
+  System Design in Erlang with Format Handler:
+    content_type: article
+    description: Pipeline for generating content related to system design using Erlang
+      with specified content types.
+    format_handler:
+      max_characters: 2000
+    guidelines: Focus on best practices, scalability, and real-world applications.
+    tone: professional
+    topics:
+    - 'System Design in Erlang: Principles and Best Practices'
+    - 'Building Scalable Systems with Erlang: A Comprehensive Guide'
+  Tweet Generation Pipeline:
+    character_limit: 280
+    format: tweet
+  Twitter Content Generation:
+    content_type: text
+    format: tweet
+    guidelines: Keep it concise, engaging, and relevant to current trends.
+    length: short
+    tone: engaging
+  Twitter Content Generation Pipeline:
+    content_types:
+    - Twitter post
+    objective: Create engaging Twitter posts related to design trends and artistic
+      showcases.
+    posting_frequency: As needed
+  default_pipeline:
+    content_format: text
+    content_type: LinkedIn post
+    guidelines: Ensure the content is engaging and relevant to the audience.
+    length: medium
+    tone: professional
+  leadership_tips:
+    content_type: LinkedIn post
+    guidelines: '- Provide actionable leadership tips
+
+      - Keep it concise (around 100-150 words)
+
+      - Include a motivational quote if relevant
+
+      '
+    tone: inspiring and authoritative
+    topics:
+    - Effective Team Communication
+    - Building a Growth Mindset in Your Organization
+    - Navigating Change in the Workplace
+  photon_entanglement:
+    content_type: LinkedIn article
+    guidelines: '- Discuss the nature of human memories
+
+      - Explore the connection between memories and quantum concepts
+
+      - Include examples and implications'
+    tone: informative and engaging
+    topics:
+    - The Science of Human Memories
+    - Quantum Mechanics and Memory
+    - The Role of Memories in Human Experience
+  photon_entanglement_long_article:
+    content_type: LinkedIn article
+    guidelines: '- Provide a comprehensive overview of photon entanglement
+
+      - Include historical context, recent advancements, and future implications
+
+      - Use clear and accessible language for a broad audience'
+    tone: informative and engaging
+    topics:
+    - 'Photon Entanglement: A Comprehensive Overview'
+    - Historical Context of Quantum Entanglement
+    - Recent Advancements in Quantum Physics
+    - Applications of Photon Entanglement in Technology
+    - Future Implications of Photon Entanglement in Science
+  tech_insights:
+    content_type: LinkedIn article
+    guidelines: '- Be engaging and professional
+
+      - Provide industry updates and trends
+
+      - Include practical tech-related content
+
+      - Be suitable for a Science & Technology audience
+
+      - Be around 500-700 words long
+
+      - Include a catchy title, introduction, 3-4 main points, and a conclusion
+
+      '
+    tone: positive and engaging
+    topics:
+    - 'The Future of AI in Business: Trends and Predictions'
+    - Cybersecurity Best Practices for Remote Work
+    - 'Blockchain Technology: Beyond Cryptocurrency'
+    - 'The Rise of Edge Computing: Transforming Data Processing'

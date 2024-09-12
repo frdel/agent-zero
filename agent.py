@@ -1,7 +1,7 @@
 import asyncio
 from dataclasses import dataclass, field
 import time, importlib, inspect, os, json
-from typing import Any, Optional, Dict
+from typing import Any, Optional, Dict, List
 import uuid
 from python.helpers import extract_tools, rate_limiter, files, errors
 from python.helpers.print_style import PrintStyle
@@ -14,6 +14,7 @@ from langchain_core.embeddings import Embeddings
 import python.helpers.log as Log
 from python.helpers.dirty_json import DirtyJson
 from python.helpers.defer import DeferredTask
+from src.lib.awm import AgentWorkflowMemory
 
 class AgentContext:
 
@@ -81,7 +82,8 @@ class AgentContext:
 class AgentConfig: 
     chat_model: BaseChatModel | BaseLLM
     utility_model: BaseChatModel | BaseLLM
-    embeddings_model:Embeddings
+    embeddings_model: Embeddings
+    awm: AgentWorkflowMemory
     prompts_subdir: str = ""
     memory_subdir: str = ""
     knowledge_subdir: str = ""
@@ -107,6 +109,7 @@ class AgentConfig:
     code_exec_ssh_user: str = "root"
     code_exec_ssh_pass: str = "toor"
     additional: Dict[str, Any] = field(default_factory=dict)
+    awm_api_key: str = ""
 
 # intervention exception class - skips rest of message loop iteration
 class InterventionException(Exception):
@@ -153,6 +156,11 @@ class Agent:
                     memories = await self.fetch_memories()
                     if memories: system+= "\n\n"+memories
 
+                    relevant_workflows = await self.get_relevant_workflows(msg)
+                    if relevant_workflows:
+                        workflow_info = "\n".join([f"- {w.description}" for w in relevant_workflows])
+                        system += f"\n\nRelevant workflows:\n{workflow_info}"
+
                     prompt = ChatPromptTemplate.from_messages([
                         SystemMessage(content=system),
                         MessagesPlaceholder(variable_name="messages") ])
@@ -196,6 +204,8 @@ class Agent:
                         tools_result = await self.process_tools(agent_response) # process tools requested in agent message
                         if tools_result: #final response of message loop available
                             return tools_result #break the execution if the task is done
+
+                    await self.update_workflows(msg, agent_response)
 
                 except InterventionException as e:
                     pass # intervention message has been handled in handle_intervention(), proceed with conversation loop
@@ -356,9 +366,15 @@ class Agent:
         from python.helpers.tool import Tool
         
         tool_class = Unknown
-        if files.exists("python/tools",f"{name}.py"): 
-            module = importlib.import_module("python.tools." + name)  # Import the module
-            class_list = inspect.getmembers(module, inspect.isclass)  # Get all functions in the module
+        if name == "linkedin_content_generator":
+            from python.tools.linkedin_content_generator import LinkedInContentGenerator
+            tool_class = LinkedInContentGenerator
+        elif name == "workflow_tool":
+            from python.tools.workflow_tool import WorkflowTool
+            tool_class = WorkflowTool
+        elif files.exists("python/tools",f"{name}.py"): 
+            module = importlib.import_module("python.tools." + name)
+            class_list = inspect.getmembers(module, inspect.isclass)
 
             for cls in class_list:
                 if cls[1] is not Tool and issubclass(cls[1], Tool):
@@ -397,3 +413,15 @@ class Agent:
 
     def call_extension(self, name: str, **kwargs) -> Any:
         pass
+
+    async def induce_workflow(self, experiences: List[str]):
+        await self.config.awm.induce_workflow(experiences)
+
+    async def get_relevant_workflows(self, task: str):
+        return await self.config.awm.get_relevant_workflows(task)
+
+    async def update_workflows(self, task: str, solution: str):
+        await self.config.awm.update_workflows(task, solution)
+
+    async def apply_workflow(self, workflow, context: Dict[str, Any]):
+        return self.config.awm.apply_workflow(workflow, context)

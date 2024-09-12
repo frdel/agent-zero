@@ -214,3 +214,13 @@ When writing own code, ALWAYS put print/log statements inside and at the end of 
     }
 }
 ~~~
+
+### linkedin_content_generator:
+Generate LinkedIn content using predefined pipelines.
+Provide "action" argument with one of the following values: "generate", "bulk_generate", "add_pipeline", "update_pipeline", "remove_pipeline", or "list_tools".
+For "generate" and "bulk_generate" actions, provide "pipeline_name" and "topic" arguments.
+For "bulk_generate", provide a list of topics in the "topics" argument.
+For "add_pipeline" and "update_pipeline", provide "name" and "config" arguments.
+For "remove_pipeline", provide "name" argument.
+
+**Example usage**:

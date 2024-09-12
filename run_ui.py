@@ -12,7 +12,7 @@ from python.helpers.files import get_abs_path
 from python.helpers.print_style import PrintStyle
 from python.helpers.log import Log
 from dotenv import load_dotenv
-
+from src.lib.awm import AgentWorkflowMemory
 
 #initialize the internal Flask server
 app = Flask("app",static_folder=get_abs_path("./webui"),static_url_path="/")
@@ -70,7 +70,6 @@ async def handle_msg_sync():
 
 async def handle_message(sync:bool):
     try:
-    
         #data sent to the server
         input = request.get_json()
         text = input.get("text", "")
@@ -93,7 +92,6 @@ async def handle_message(sync:bool):
                 "message": result,
             } 
         else:
-
             print("\n\n",(context.process and context.process.is_alive()))
             context.communicate(text)
             response = {
