@@ -6,8 +6,8 @@ def initialize():
     # main chat model used by agents (smarter, more accurate)
     chat_llm = models.get_openai_chat(model_name="gpt-4o-mini", temperature=0)
     # chat_llm = models.get_ollama_chat(model_name="gemma2:latest", temperature=0)
-    # chat_llm = models.get_lmstudio_chat(model_name="TheBloke/Mistral-7B-Instruct-v0.2-GGUF", temperature=0)
-    # chat_llm = models.get_openrouter_chat(model_name="nousresearch/hermes-3-llama-3.1-405b")
+    # chat_llm = models.get_lmstudio_chat(model_name="lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF", temperature=0)
+    # chat_llm = models.get_openrouter_chat(model_name="mattshumer/reflection-70b:free")
     # chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o-mini", temperature=0)
     # chat_llm = models.get_anthropic_chat(model_name="claude-3-5-sonnet-20240620", temperature=0)
     # chat_llm = models.get_google_chat(model_name="gemini-1.5-flash", temperature=0)
@@ -20,6 +20,7 @@ def initialize():
     embedding_llm = models.get_openai_embedding(model_name="text-embedding-3-small")
     # embedding_llm = models.get_ollama_embedding(model_name="nomic-embed-text")
     # embedding_llm = models.get_huggingface_embedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    # embedding_llm = models.get_lmstudio_embedding(model_name="nomic-ai/nomic-embed-text-v1.5-GGUF")
 
     # agent configuration
     config = AgentConfig(

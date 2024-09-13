@@ -40,7 +40,7 @@ def get_lmstudio_chat(model_name:str, temperature=DEFAULT_TEMPERATURE, base_url=
     return ChatOpenAI(model_name=model_name, base_url=base_url, temperature=temperature, api_key="none") # type: ignore
 
 def get_lmstudio_embedding(model_name:str, base_url=os.getenv("LM_STUDIO_BASE_URL") or "http://127.0.0.1:1234/v1"):
-    return OpenAIEmbeddings(model_name=model_name, base_url=base_url) # type: ignore
+    return OpenAIEmbeddings(model=model_name, api_key="none", base_url=base_url, check_embedding_ctx_length=False) # type: ignore
 
 # Anthropic models
 def get_anthropic_chat(model_name:str, api_key=get_api_key("anthropic"), temperature=DEFAULT_TEMPERATURE):
