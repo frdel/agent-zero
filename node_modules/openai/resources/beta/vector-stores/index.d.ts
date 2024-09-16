@@ -1,4 +1,0 @@
-export { AutoFileChunkingStrategyParam, FileChunkingStrategy, FileChunkingStrategyParam, OtherFileChunkingStrategyObject, StaticFileChunkingStrategy, StaticFileChunkingStrategyObject, StaticFileChunkingStrategyParam, VectorStore, VectorStoreDeleted, VectorStoreCreateParams, VectorStoreUpdateParams, VectorStoreListParams, VectorStoresPage, VectorStores, } from "./vector-stores.js";
-export { VectorStoreFile, VectorStoreFileDeleted, FileCreateParams, FileListParams, VectorStoreFilesPage, Files, } from "./files.js";
-export { VectorStoreFileBatch, FileBatchCreateParams, FileBatchListFilesParams, FileBatches, } from "./file-batches.js";
-//# sourceMappingURL=index.d.ts.map

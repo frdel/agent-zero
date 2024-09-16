@@ -29,4 +29,4 @@ tmp/*
 # Ignore all contents of the directory "knowledge"
 knowledge/*
 # But do not ignore the directory itself
-!knowledge/.gitkeep
+!knowledge/.gitkeepnode_modules/
