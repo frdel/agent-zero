@@ -53,7 +53,7 @@ async def chat(context: AgentContext):
         assistant_response = await context.communicate(user_input).result()
         
         # print agent0 response
-        PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{context.agent0.agent_name}: reponse:")        
+        PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{context.agent0.agent_name}: response:")        
         PrintStyle(font_color="white").print(f"{assistant_response}")        
                         
 
