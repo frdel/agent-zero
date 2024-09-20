@@ -37,6 +37,22 @@ class TestJsonParseDirty(unittest.TestCase):
         json_string = '"key": "value"}'
         self.assertIsNone(json_parse_dirty(json_string))
 
+    def test_unquoted_key(self):
+        json_string = '{key: "value"}'
+        self.assertRaises(ValueError, json_parse_dirty, json_string)
+
+    def test_unquoted_value(self):
+        json_string = '{"key": value}'
+        self.assertRaises(ValueError, json_parse_dirty, json_string)
+
+    def test_missing_colon(self):
+        json_string = '{"key" "value"}'
+        self.assertRaises(ValueError, json_parse_dirty, json_string)
+
+    def test_unterminated_string(self):
+        json_string = '{"key": "value}'
+        self.assertRaises(ValueError, json_parse_dirty, json_string)
+
     def test_agent_response(self):
         json_string = ('{"thoughts": ["The user wants to save the source code of their Hello, World! application to a '
                        'file.", "I can use the code_execution_tool with terminal runtime to achieve this."], '
