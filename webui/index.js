@@ -10,30 +10,27 @@ const inputSection = document.getElementById('input-section');
 const statusSection = document.getElementById('status-section');
 const chatsSection = document.getElementById('chats-section');
 
-let isResizing = false;
 let autoScroll = true;
-
 let context = "";
 
+// Sidebar Toggle Setup:
+function setupSidebarToggle() {
+    const toggleSidebarButton = document.getElementById('toggle-sidebar');
+    const leftPanel = document.getElementById('left-panel');
+    const rightPanel = document.getElementById('right-panel');
 
-splitter.addEventListener('mousedown', (e) => {
-    isResizing = true;
-    document.addEventListener('mousemove', resize);
-    document.addEventListener('mouseup', stopResize);
-});
-
-function resize(e) {
-    if (isResizing) {
-        const newWidth = e.clientX - container.offsetLeft;
-        leftPanel.style.width = `${newWidth}px`;
+    if (toggleSidebarButton && leftPanel && rightPanel) { 
+        toggleSidebarButton.addEventListener('click', () => {
+            leftPanel.classList.toggle('hidden');
+            rightPanel.classList.toggle('expanded');
+        });
+    } else {
+        setTimeout(setupSidebarToggle, 100); 
     }
 }
 
-function stopResize() {
-    isResizing = false;
-    document.removeEventListener('mousemove', resize);
-}
-
+// Initialize the toggle button 
+setupSidebarToggle(); 
 async function sendMessage() {
     const message = chatInput.value.trim();
     if (message) {
@@ -55,6 +52,21 @@ chatInput.addEventListener('keydown', (e) => {
 
 sendButton.addEventListener('click', sendMessage);
 
+
+function updateUTCTime() {
+    const now = new Date();
+    const hours = now.getUTCHours();
+    const minutes = now.getUTCMinutes();
+    const seconds = now.getUTCSeconds(); // Get UTC seconds
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    const formattedHours = hours % 12 || 12; 
+  
+    document.getElementById('utc-time').textContent = 
+      `${formattedHours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} ${ampm} UTC`; 
+  }
+  
+updateUTCTime();
+setInterval(updateUTCTime, 1000);
 function setMessage(id, type, heading, content, kvps = null) {
     // Search for the existing message container by id
     let messageContainer = document.getElementById(`message-${id}`);
