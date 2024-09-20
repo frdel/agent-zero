@@ -141,10 +141,7 @@
   ],
   "revised_thoughts": [
     "I will research both the benefits and potential drawbacks of a vegan diet.", 
-    "I will use the knowledge_tool to search for information from a variety of sources, including: 
-       - Peer-reviewed studies on the health effects of veganism
-       - Reputable health organizations (e.g., WHO, NHS) guidelines on vegan diets
-       - Perspectives from both proponents and critics of veganism",
+    "I will use the knowledge_tool to search for information from a variety of sources, including Peer-reviewed studies on the health effects of veganism, guidelines on vegan diets and perspectives from both proponents and critics of veganism",
     "I will critically evaluate the evidence, considering the methodology, sample size, and potential biases of each source.",
   ],
   "further_reflection": [
