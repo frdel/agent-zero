@@ -81,6 +81,8 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 
 ## Setup
 
+[![Open in DevZero](https://assets.devzero.io/open-in-devzero.svg)](https://www.devzero.io/dashboard/recipes/new?repo-url=https://github.com/frdel/agent-zero)
+
 A detailed setup guide with a video can be found here: [/docs/installation](https://github.com/frdel/agent-zero/tree/main/docs/installation). Scroll down to see the readme file.
 
 > ⚠️ **Changes to launch files since v0.6:**  
