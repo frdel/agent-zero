@@ -89,6 +89,13 @@
                             <span class="slider"></span>
                         </label>
                     </li>
+                    <li x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }" x-init="$watch('darkMode', val => toggleDarkMode(val))">
+                        <div class="switch-label">Light/Dark mode</div>
+                        <label class="switch">
+                          <input type="checkbox" x-model="darkMode">
+                          <span class="slider"></span>
+                        </label>
+                      </li>
                 </ul>
                 <span id="a0version">Agent Zero 0.6.5<br>built on 9/13/2024</span>
         </div>
