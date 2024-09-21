@@ -117,7 +117,23 @@ html {
 
 .left-panel-top {
   margin-top: 7.5rem;
-  overflow-y: auto;
+  overflow-y: hidden;
+}
+
+/* Apply the custom scrollbar style here */
+.left-panel-top::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+}
+
+.left-panel-top::-webkit-scrollbar {
+  width: 6px;
+}
+
+.left-panel-top::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  background-color: #555;
 }
 
 .switch-label { /* Style for the switch label */
@@ -194,7 +210,23 @@ h4 {
   flex-direction: column;
   flex-grow: 1;
   overflow-y: auto;
-  padding: var(--spacing-md);
+  padding: var(--spacing-md); 
+}
+
+/* Apply the custom scrollbar style here */
+#chat-history::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+}
+
+#chat-history::-webkit-scrollbar {
+  width: 6px;
+}
+
+#chat-history::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  background-color: #555;
 }
 
 /* Message Styles */
