@@ -230,6 +230,21 @@ window.toggleThoughts = async function (showThoughts) {
     toggleCssProperty('.msg-thoughts', 'display', showThoughts ? undefined : 'none');
 }
 
+window.toggleDarkMode = function(isDark) {
+    if (isDark) {
+      document.body.classList.remove('light-mode');
+    } else {
+      document.body.classList.add('light-mode');
+    }
+    console.log("Dark mode:", isDark);
+    localStorage.setItem('darkMode', isDark);
+  };
+  
+  // Modify this part
+  document.addEventListener('DOMContentLoaded', () => {
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    toggleDarkMode(isDarkMode);
+  });
 
 function toggleCssProperty(selector, property, value) {
     // Get the stylesheet that contains the class
@@ -245,9 +260,9 @@ function toggleCssProperty(selector, property, value) {
             if (rule.selectorText == selector) {
                 // Check if the property is already applied
                 if (value === undefined) {
-                    rule.style.removeProperty(property);  // Remove the property
+                    rule.style.removeProperty(property);
                 } else {
-                    rule.style.setProperty(property, value);  // Add the property (you can customize the value)
+                    rule.style.setProperty(property, value); 
                 }
                 return;
             }
