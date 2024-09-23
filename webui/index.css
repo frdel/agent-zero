@@ -167,36 +167,6 @@ body, #left-panel, #chat-input, .message, .config-button, .switch-label {
   opacity: 0.6;
 }
 
-/* Logo Container */
-#logo-container {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  left: 0;
-  margin-left: var(--spacing-md);
-  position: sticky;
-  top: var(--spacing-md);
-  transition: margin-left var(--transition-speed) ease-in-out;
-  z-index: 1001;
-}
-
-#logo-container a {
-  color: inherit;
-  text-decoration: none;
-}
-
-#logo-container img {
-  border-radius: var(--spacing-xs);
-  height: auto;
-  width: 3rem;
-  filter: none;
-  transition: filter 0.3s ease;
-}
-
-#right-panel.expanded #logo-container {
-  margin-left: 5.5rem;
-}
-
 /* Typography */
 h2,
 h3 {
@@ -247,6 +217,36 @@ h4 {
 
 #chat-history::-webkit-scrollbar-thumb:active {
   background-color: #888;
+}
+
+/* Logo Container */
+#logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  margin-left: var(--spacing-md);
+  margin-top: var(--spacing-md);
+  margin-bottom: -70px;
+  transition: margin-left var(--transition-speed) ease-in-out;
+  z-index: 1001;
+}
+
+#logo-container a {
+  color: inherit;
+  text-decoration: none;
+}
+
+#logo-container img {
+  border-radius: var(--spacing-xs);
+  height: auto;
+  width: 3rem;
+  filter: none;
+  transition: filter 0.3s ease;
+}
+
+#right-panel.expanded #logo-container {
+  margin-left: 5.5rem;
 }
 
 /* Message Styles */
