@@ -20,15 +20,15 @@
 <body>
     <div class="container">
         <div class="icons-section" id="hide-button" x-data="{ connected: true }">
+            <!--Sidebar-->
             <button id="toggle-sidebar" class="toggle-sidebar-button" aria-label="Toggle Sidebar" aria-expanded="false">
                 <span aria-hidden="true">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="CurrentColor">
+                      <svg id="sidebar-hamburger-svg" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="CurrentColor">
                         <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
                       </svg>
                 </span>
               </button>
         </div>
-        <!--Sidebar-->
         <div id="left-panel" class="panel">
             <div class="left-panel-top">
         <!--Sidebar upper elements-->
@@ -105,18 +105,28 @@
                 <a href="https://github.com/frdel/agent-zero" target="_blank" rel="noopener noreferrer">
                     <img src="splash.jpg" alt="a0" width="48" height="48">
                 </a>
-                <span id="utc-time"></span>
+                <div id="time-date"></div> 
               </div>
             <!--Chat-->
             <div id="chat-history">
             </div>
             <div id="input-section" x-data="{ paused: false }">
                 <textarea id="chat-input" placeholder="Type your message here..." rows="1"></textarea>
-                <button class="chat-button" id="send-button">&#10148;</button>
-                <button class="chat-button pause-button" id="pause-button" @click="pauseAgent(true)"
-                    x-show="!paused">&#10074;&#10074;</button>
-                <button class="chat-button pause-button" id="unpause-button" @click="pauseAgent(false)"
-                    x-show="paused">&#9654;</button>
+                <button class="chat-button" id="send-button" aria-label="Send message">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                        <path d="M25 20 L75 50 L25 80" fill="none" stroke="currentColor" stroke-width="15" />
+                      </svg>
+                </button>
+                <button class="chat-button pause-button" id="pause-button" @click="pauseAgent(true)" x-show="!paused" aria-label="Pause agent">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                </button>
+                <button class="chat-button pause-button" id="unpause-button" @click="pauseAgent(false)" x-show="paused" aria-label="Resume agent">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                </button>
         </div>
     </div>
     </div>
