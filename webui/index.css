@@ -227,7 +227,7 @@ h4 {
   position: sticky;
   margin-left: var(--spacing-md);
   margin-top: var(--spacing-md);
-  margin-bottom: -70px;
+  margin-bottom: -80px;
   transition: margin-left var(--transition-speed) ease-in-out;
   z-index: 1001;
 }
