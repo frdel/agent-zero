@@ -565,7 +565,7 @@ input:checked + .slider:before {
 .light-mode .message-tool { background-color: #EDE7F6; color: #5D4C6A; }
 .light-mode .message-code-exe { background-color: #FCE4EC; color: #3a147c; }
 .light-mode .message-adhoc { background-color: #FFF3E0; color: #cf7b0e; }
-.light-mode .message-info { background-color: #E8EAF6; color: var(--color-panel); }
+.light-mode .message-info { background-color: #E8EAF6; color: #2C3E50; }
 .light-mode .message-warning { background-color: #FFF3E0; color: #c2771b; }
 .light-mode .message-error { background-color: #FFEBEE; color: #ab1313; }
 .light-mode .message-user {
