@@ -7,6 +7,7 @@ langchain-openai==0.1.15
 langchain-community==0.2.7
 langchain-anthropic==0.1.19
 langchain-google-genai==1.0.7
+langchain_mistralai==0.1.8
 webcolors==24.6.0
 sentence-transformers==3.0.1
 docker==7.1.0
@@ -21,4 +22,3 @@ pypdf==4.3.1
 Flask[async]==3.0.3
 Flask-BasicAuth==0.2.0
 faiss-cpu==1.8.0.post1
-langchain-ollama==0.1.3

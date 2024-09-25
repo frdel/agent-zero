@@ -11,6 +11,7 @@ def initialize():
     # chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o-mini", temperature=0)
     # chat_llm = models.get_anthropic_chat(model_name="claude-3-5-sonnet-20240620", temperature=0)
     # chat_llm = models.get_google_chat(model_name="gemini-1.5-flash", temperature=0)
+    # chat_llm = models.get_mistral_chat(model_name="mistral-small-latest", temperature=0)
     # chat_llm = models.get_groq_chat(model_name="llama-3.1-70b-versatile", temperature=0)
     
     # utility model used for helper functions (cheaper, faster)

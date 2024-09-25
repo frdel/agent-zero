@@ -8,6 +8,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_google_genai import GoogleGenerativeAI, HarmBlockThreshold, HarmCategory
+from langchain_mistralai import ChatMistralAI
 from pydantic.v1.types import SecretStr
 
 
@@ -68,6 +69,10 @@ def get_azure_openai_embedding(deployment_name:str, api_key=get_api_key("openai_
 # Google models
 def get_google_chat(model_name:str, api_key=get_api_key("google"), temperature=DEFAULT_TEMPERATURE):
     return GoogleGenerativeAI(model=model_name, temperature=temperature, google_api_key=api_key, safety_settings={HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE }) # type: ignore
+
+# Mistral models
+def get_mistral_chat(model_name:str, api_key=get_api_key("mistral"), temperature=DEFAULT_TEMPERATURE):
+    return ChatMistralAI(model=model_name, temperature=temperature, api_key=api_key) # type: ignore
 
 # Groq models
 def get_groq_chat(model_name:str, api_key=get_api_key("groq"), temperature=DEFAULT_TEMPERATURE):
