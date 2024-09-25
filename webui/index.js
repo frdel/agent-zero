@@ -1,7 +1,7 @@
 import * as msgs from "./messages.js"
 
-const splitter = document.getElementById('splitter');
 const leftPanel = document.getElementById('left-panel');
+const rightPanel = document.getElementById('right-panel');
 const container = document.querySelector('.container');
 const chatInput = document.getElementById('chat-input');
 const chatHistory = document.getElementById('chat-history');
@@ -9,53 +9,96 @@ const sendButton = document.getElementById('send-button');
 const inputSection = document.getElementById('input-section');
 const statusSection = document.getElementById('status-section');
 const chatsSection = document.getElementById('chats-section');
+const scrollbarThumb = document.querySelector('#chat-history::-webkit-scrollbar-thumb'); 
 
-let isResizing = false;
 let autoScroll = true;
-
 let context = "";
 
+// Initialize the toggle button 
+setupSidebarToggle(); 
 
-splitter.addEventListener('mousedown', (e) => {
-    isResizing = true;
-    document.addEventListener('mousemove', resize);
-    document.addEventListener('mouseup', stopResize);
-});
-
-function resize(e) {
-    if (isResizing) {
-        const newWidth = e.clientX - container.offsetLeft;
-        leftPanel.style.width = `${newWidth}px`;
+function isMobile() {
+    return window.innerWidth <= 768;
+  }
+  
+  function toggleSidebar() {
+    leftPanel.classList.toggle('hidden');
+    rightPanel.classList.toggle('expanded');
+  }
+  
+  function handleResize() {  
+    if (isMobile()) {
+      leftPanel.classList.add('hidden');
+      rightPanel.classList.add('expanded');
+    } else {
+      leftPanel.classList.remove('hidden');
+      rightPanel.classList.remove('expanded');
     }
-}
-
-function stopResize() {
-    isResizing = false;
-    document.removeEventListener('mousemove', resize);
-}
+  }
+  
+  // Run on startup and window resize
+  window.addEventListener('load', handleResize);
+  window.addEventListener('resize', handleResize);
+  
+  function setupSidebarToggle() {
+    const leftPanel = document.getElementById('left-panel');
+    const rightPanel = document.getElementById('right-panel');
+    const toggleSidebarButton = document.getElementById('toggle-sidebar');
+    if (toggleSidebarButton) {
+      toggleSidebarButton.addEventListener('click', toggleSidebar);
+    } else {
+      console.error('Toggle sidebar button not found');
+      setTimeout(setupSidebarToggle, 100);
+    }
+  }
+    // Make sure to call this function
+    document.addEventListener('DOMContentLoaded', setupSidebarToggle);
 
 async function sendMessage() {
     const message = chatInput.value.trim();
     if (message) {
-
+    
         const response = await sendJsonData("/msg", { text: message, context });
-
+    
         //setMessage('user', message);
         chatInput.value = '';
         adjustTextareaHeight();
     }
 }
-
+    
 chatInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
     }
 });
-
+    
 sendButton.addEventListener('click', sendMessage);
 
-function setMessage(id, type, heading, content, temp, kvps = null) {
+function updateUserTime() {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    const formattedHours = hours % 12 || 12; 
+
+    // Format the time
+    const timeString = `${formattedHours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} ${ampm}`;
+
+    // Format the date
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    const dateString = now.toLocaleDateString(undefined, options);
+
+    // Update the HTML
+    const userTimeElement = document.getElementById('time-date');
+    userTimeElement.innerHTML = `${timeString}<br><span id="user-date">${dateString}</span>`;
+}
+  
+updateUserTime();
+setInterval(updateUserTime, 1000);
+    
+function setMessage(id, type, heading, content, kvps = null) {
     // Search for the existing message container by id
     let messageContainer = document.getElementById(`message-${id}`);
 
@@ -121,7 +164,7 @@ let lastLogGuid = ""
 async function poll() {
     try {
         const response = await sendJsonData("/poll", { log_from: lastLogVersion, context });
-        // console.log(response)
+        //console.log(response)
 
         if (response.ok) {
 
@@ -159,8 +202,22 @@ async function poll() {
     }
 }
 
+function updatePauseButtonState(isPaused) {
+    const pauseButton = document.getElementById('pause-button');
+    const unpauseButton = document.getElementById('unpause-button');
+    
+    if (isPaused) {
+        pauseButton.style.display = 'none';
+        unpauseButton.style.display = 'flex';
+    } else {
+        pauseButton.style.display = 'flex';
+        unpauseButton.style.display = 'none';
+    }
+}
+
 window.pauseAgent = async function (paused) {
     const resp = await sendJsonData("/pause", { paused: paused, context });
+    updatePauseButtonState(paused);
 }
 
 window.resetChat = async function () {
@@ -206,7 +263,6 @@ const setContext = function (id) {
     chatsAD.selected = id
 }
 
-
 window.toggleAutoScroll = async function (_autoScroll) {
     autoScroll = _autoScroll;
 }
@@ -222,6 +278,22 @@ window.toggleThoughts = async function (showThoughts) {
 }
 
 
+window.toggleDarkMode = function(isDark) {
+    if (isDark) {
+      document.body.classList.remove('light-mode');
+    } else {
+      document.body.classList.add('light-mode');
+    }
+    console.log("Dark mode:", isDark);
+    localStorage.setItem('darkMode', isDark);
+};
+  
+  // Modify this part
+  document.addEventListener('DOMContentLoaded', () => {
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    toggleDarkMode(isDarkMode);
+  });
+
 function toggleCssProperty(selector, property, value) {
     // Get the stylesheet that contains the class
     const styleSheets = document.styleSheets;
@@ -236,9 +308,9 @@ function toggleCssProperty(selector, property, value) {
             if (rule.selectorText == selector) {
                 // Check if the property is already applied
                 if (value === undefined) {
-                    rule.style.removeProperty(property);  // Remove the property
+                    rule.style.removeProperty(property);
                 } else {
-                    rule.style.setProperty(property, value);  // Add the property (you can customize the value)
+                    rule.style.setProperty(property, value); 
                 }
                 return;
             }
