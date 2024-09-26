@@ -1,4 +1,3 @@
 {
     "python.analysis.typeCheckingMode": "standard",
-    "deno.enable": true
 }

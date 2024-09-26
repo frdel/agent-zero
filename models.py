@@ -84,3 +84,8 @@ def get_openrouter_chat(model_name: str, api_key=get_api_key("openrouter"), temp
       
 def get_openrouter_embedding(model_name: str, api_key=get_api_key("openrouter"), base_url=os.getenv("OPEN_ROUTER_BASE_URL") or "https://openrouter.ai/api/v1"):
     return OpenAIEmbeddings(model=model_name, api_key=api_key, base_url=base_url) # type: ignore
+
+# Sambanova models
+def get_sambanova_chat(model_name: str, api_key=get_api_key("sambanova"), temperature=DEFAULT_TEMPERATURE, base_url=os.getenv("SAMBANOVA_BASE_URL") or "https://fast-api.snova.ai/v1", max_tokens=1024):
+    return ChatOpenAI(api_key=api_key, model=model_name, temperature=temperature, base_url=base_url, max_tokens=max_tokens) # type: ignore
+   

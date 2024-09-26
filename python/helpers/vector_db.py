@@ -1,3 +1,4 @@
+from typing import Any
 from langchain.storage import InMemoryByteStore, LocalFileStore
 from langchain.embeddings import CacheBackedEmbeddings
 
@@ -11,21 +12,31 @@ from . import files
 from langchain_core.documents import Document
 import uuid
 from python.helpers import knowledge_import
-from python.helpers.log import Log
+from python.helpers.log import Log, LogItem
+import pandas as pd
+from enum import Enum
+
+
+class Area(Enum):
+    MAIN = "main"
+    SOLUTIONS = "solutions"
+
 
 index: dict[str, "VectorDB"] = {}
 
 
-def get_or_create(
-    logger: Log,
+def get_or_create_db(
+    logger: Log | None,
     embeddings_model,
+    memory_dir: str,
     in_memory=False,
-    memory_dir="./memory",
-    knowledge_dir=None,
+    knowledge_dirs: list[str] = [],
 ):
     if index.get(memory_dir) is None:
+        log_item = None
+        if(logger): log_item = logger.log(type="util", heading=f"Initializing VectorDB in {memory_dir}")
         index[memory_dir] = VectorDB(
-            logger, embeddings_model, in_memory, memory_dir, knowledge_dir
+            log_item, embeddings_model, memory_dir, knowledge_dirs, in_memory
         )
     return index[memory_dir]
 
@@ -34,22 +45,23 @@ class VectorDB:
 
     def __init__(
         self,
-        logger: Log,
+        log_item: LogItem | None,
         embeddings_model,
+        memory_dir: str,
+        knowledge_dirs: list[str] = [],
         in_memory=False,
-        memory_dir="./memory/default",
-        knowledge_dir=None,
     ):
-        self.logger = logger
+        self.log_item = log_item
 
         print("Initializing VectorDB...")
-        self.logger.log("info", content="Initializing VectorDB...", temp=True)
+        if(self.log_item): self.log_item.stream(progress="\nInitializing VectorDB")
 
         self.embeddings_model = embeddings_model
 
-        self.em_dir = files.get_abs_path("./memory/embeddings") # just caching, no need to parameterize
+        self.em_dir = files.get_abs_path(
+            "./memory/embeddings"
+        )  # just caching, no need to parameterize
         self.db_dir = files.get_abs_path("./memory", memory_dir, "database")
-        self.kn_dir = files.get_abs_path(knowledge_dir) if knowledge_dir else ""
 
         # make sure embeddings and database directories exist
         os.makedirs(self.db_dir, exist_ok=True)
@@ -93,10 +105,10 @@ class VectorDB:
             )
 
         # preload knowledge files
-        if self.kn_dir:
-            self.preload_knowledge(self.kn_dir, self.db_dir)
+        if knowledge_dirs:
+            self.preload_knowledge(knowledge_dirs, self.db_dir)
 
-    def preload_knowledge(self, kn_dir: str, db_dir: str):
+    def preload_knowledge(self, kn_dirs: list[str], db_dir: str):
 
         # Load the index file if it exists
         index_path = files.get_abs_path(db_dir, "knowledge_import.json")
@@ -110,7 +122,8 @@ class VectorDB:
             with open(index_path, "r") as f:
                 index = json.load(f)
 
-        index = knowledge_import.load_knowledge(self.logger, kn_dir, index)
+        for kn_dir in kn_dirs:
+            index = knowledge_import.load_knowledge(self.log_item, kn_dir, index)
 
         for file in index:
             if index[file]["state"] in ["changed", "removed"] and index[file].get(
@@ -139,12 +152,16 @@ class VectorDB:
     def search_similarity(self, query, results=3):
         return self.db.similarity_search(query, results)
 
-    def search_similarity_threshold(self, query, results=3, threshold=0.5):
+    def search_similarity_threshold(
+        self, query: str, results=3, threshold=0.5, filter: str = ""
+    ):
+        comparator = VectorDB.get_comparator(filter) if filter else None
         return self.db.search(
             query,
             search_type="similarity_score_threshold",
             k=results,
             score_threshold=threshold,
+            filter=comparator,
         )
 
     def search_max_rel(self, query, results=3):
@@ -198,8 +215,20 @@ class VectorDB:
 
     def insert_documents(self, docs: list[Document]):
         ids = [str(uuid.uuid4()) for _ in range(len(docs))]
-        for doc, id in zip(docs, ids):
-            doc.metadata["id"] = id  # add ids to documents metadata
-        self.db.add_documents(documents=docs, ids=ids)
-        self.db.save_local(folder_path=self.db_dir)  # persist
+        if ids:
+            for doc, id in zip(docs, ids):
+                doc.metadata["id"] = id  # add ids to documents metadata
+            self.db.add_documents(documents=docs, ids=ids)
+            self.db.save_local(folder_path=self.db_dir)  # persist
         return ids
+
+    @staticmethod
+    def get_comparator(condition: str):
+        def comparator(data: dict[str, Any]):
+            try:
+                return eval(condition, {}, data)
+            except Exception as e:
+                print(f"Error evaluating condition: {e}")
+                return False
+
+        return comparator

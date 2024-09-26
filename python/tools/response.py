@@ -7,7 +7,7 @@ class ResponseTool(Tool):
         return Response(message=self.args["text"], break_loop=True)
 
     async def before_execution(self, **kwargs):
-        self.log = self.agent.context.log.log(type="response", heading=f"{self.agent.agent_name}: Responding:", content=self.args.get("text", ""))
+        self.log = self.agent.context.log.log(type="response", heading=f"{self.agent.agent_name}: Responding", content=self.args.get("text", ""))
 
     
     async def after_execution(self, response, **kwargs):

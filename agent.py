@@ -14,6 +14,7 @@ from langchain_core.embeddings import Embeddings
 import python.helpers.log as Log
 from python.helpers.dirty_json import DirtyJson
 from python.helpers.defer import DeferredTask
+from typing import Callable
 
 
 class AgentContext:
@@ -90,7 +91,7 @@ class AgentConfig:
     embeddings_model: Embeddings
     prompts_subdir: str = ""
     memory_subdir: str = ""
-    knowledge_subdir: str = ""
+    knowledge_subdirs: list[str] = field(default_factory=lambda: ["default", "custom"])
     auto_memory_count: int = 3
     auto_memory_skip: int = 2
     rate_limit_seconds: int = 60
@@ -162,28 +163,30 @@ class Agent:
     async def monologue(self, msg: str):
         try:
 
-            loop_data: dict[str, Any] = {"message": msg, "iteration": -1, "history_from": len(self.history) }
+            # loop data dictionary to pass to extensions
+            loop_data: dict[str, Any] = {
+                "message": msg,
+                "iteration": -1,
+                "history_from": len(self.history),
+            }
 
-            await self.call_extensions(
-                "monologue_start", loop_data=loop_data
-            )  # call monologue_start extensions
+            # call monologue_start extensions
+            await self.call_extensions("monologue_start", loop_data=loop_data)
 
             printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)
             user_message = self.read_prompt("fw.user_message.md", message=msg)
             await self.append_message(user_message, human=True)
 
             await self.call_extensions(
-                "monologue_start", message=msg
+                "monologue_start", loop_data=loop_data
             )  # call monologue_end extensions
 
-            while (
-                True
-            ):  # let the agent iterate on his thoughts until he stops by using a tool
+            # let the agent run message loop until he stops it with a response tool
+            while True:
 
                 self.context.streaming_agent = self  # mark self as current streamer
                 agent_response = ""
                 loop_data["iteration"] += 1
-
 
                 try:
 
@@ -219,9 +222,9 @@ class Agent:
                         font_color="green",
                         padding=True,
                         background_color="white",
-                    ).print(f"{self.agent_name}: Generating:")
+                    ).print(f"{self.agent_name}: Generating")
                     log = self.context.log.log(
-                        type="agent", heading=f"{self.agent_name}: Generating:"
+                        type="agent", heading=f"{self.agent_name}: Generating"
                     )
 
                     async for chunk in chain.astream(loop_data["history"]):
@@ -346,7 +349,7 @@ class Agent:
         return "\n".join([f"{msg.type}: {msg.content}" for msg in messages])
 
     async def call_utility_llm(
-        self, system: str, msg: str, log_type: Log.Type = "util", output_label: str = ""
+        self, system: str, msg: str, callback: Callable[[str], None] | None = None
     ):
         prompt = ChatPromptTemplate.from_messages(
             [SystemMessage(content=system), HumanMessage(content=msg)]
@@ -354,17 +357,6 @@ class Agent:
 
         chain = prompt | self.config.utility_model
         response = ""
-        printer = None
-        logger = None
-
-        if output_label:
-            PrintStyle(
-                bold=True, font_color="orange", padding=True, background_color="white"
-            ).print(f"{self.agent_name}: {output_label}:")
-            printer = PrintStyle(italic=True, font_color="orange", padding=False)
-            logger = self.context.log.log(
-                type=log_type, heading=f"{self.agent_name}: {output_label}:"
-            )
 
         formatted_inputs = prompt.format()
         tokens = int(len(formatted_inputs) / 4)
@@ -380,11 +372,10 @@ class Agent:
             else:
                 content = str(chunk)
 
-            if printer:
-                printer.stream(content)
+            if callback:
+                callback(content)
+
             response += content
-            if logger:
-                logger.update(content=response)
 
         self.rate_limiter.set_output_tokens(int(len(response) / 4))
 
@@ -396,10 +387,23 @@ class Agent:
 
     async def replace_middle_messages(self, middle_messages):
         cleanup_prompt = self.read_prompt("fw.msg_cleanup.md")
+        log_item = self.context.log.log(
+            type="util", heading="Mid messages cleanup summary"
+        )
+
+        PrintStyle(
+            bold=True, font_color="orange", padding=True, background_color="white"
+        ).print(f"{self.agent_name}: Mid messages cleanup summary")
+        printer = PrintStyle(italic=True, font_color="orange", padding=False)
+
+        def log_callback(content):
+            printer.print(content)
+            log_item.stream(content=content)
+
         summary = await self.call_utility_llm(
             system=cleanup_prompt,
             msg=self.concat_messages(middle_messages),
-            output_label="Mid messages cleanup summary",
+            callback=log_callback,
         )
         new_human_message = HumanMessage(content=summary)
         return [new_human_message]
@@ -473,7 +477,7 @@ class Agent:
             await self.append_message(msg, human=True)
             PrintStyle(font_color="red", padding=True).print(msg)
             self.context.log.log(
-                type="error", content=f"{self.agent_name}: Message misformat:"
+                type="error", content=f"{self.agent_name}: Message misformat"
             )
 
     def log_from_stream(self, stream: str, logItem: Log.LogItem):

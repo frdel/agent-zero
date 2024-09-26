@@ -25,9 +25,7 @@ class Knowledge(Tool):
             duckduckgo = executor.submit(duckduckgo_search.search, question)
 
             # manual memory search
-            future_memory_man = executor.submit(memory_tool.search, self.agent, "manual", question)
-            # history memory search
-            # future_memory_man = executor.submit(memory_tool.search, self.agent, "history", question)
+            future_memory_man = executor.submit(memory_tool.search, self.agent, question)
 
             # Wait for both functions to complete
             try:

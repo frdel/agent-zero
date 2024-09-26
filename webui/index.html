@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agent Zero</title>
     <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="toast.css">
 
     <script>
         window.safeCall = function (name, ...args) {
@@ -23,42 +24,44 @@
             <!--Sidebar-->
             <button id="toggle-sidebar" class="toggle-sidebar-button" aria-label="Toggle Sidebar" aria-expanded="false">
                 <span aria-hidden="true">
-                      <svg id="sidebar-hamburger-svg" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="CurrentColor">
-                        <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
-                      </svg>
+                    <svg id="sidebar-hamburger-svg" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                        viewBox="0 0 24 24" fill="CurrentColor">
+                        <path
+                            d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
+                    </svg>
                 </span>
-              </button>
+            </button>
         </div>
         <div id="left-panel" class="panel">
             <div class="left-panel-top">
-        <!--Sidebar upper elements-->
-            <div class="config-section" id="status-section" x-data="{ connected: true }">
-                <h3>Status</h3>
-                <h4 class="connected" x-show="connected">&#10004; Connected</h4>
-                <h4 class="disconnected" x-show="!connected">&#10008; Disconnected</h4>
-            </div>
+                <!--Sidebar upper elements-->
+                <div class="config-section" id="status-section" x-data="{ connected: true }">
+                    <h3>Status</h3>
+                    <h4 class="connected" x-show="connected">&#10004; Connected</h4>
+                    <h4 class="disconnected" x-show="!connected">&#10008; Disconnected</h4>
+                </div>
 
-            <div class="config-section" x-data="{ showQuickActions: true }">
-                <h3>Quick Actions</h3>
-                <button class="config-button" id="resetChat" @click="resetChat()">Reset chat</button>
-                <button class="config-button" id="newChat" @click="newChat()">New Chat</button>
-            </div>
+                <div class="config-section" x-data="{ showQuickActions: true }">
+                    <h3>Quick Actions</h3>
+                    <button class="config-button" id="resetChat" @click="resetChat()">Reset chat</button>
+                    <button class="config-button" id="newChat" @click="newChat()">New Chat</button>
+                </div>
 
-            <div class="config-section" id="chats-section" x-data="{ contexts: [], selected: '' }" x-show="contexts.length > 0">
-                <h3>Chats</h3>
-                <ul class="config-list">
-                    <template x-for="context in contexts">
-                        <li>
-                                <span 
-                                    :class="{'chat-list-button': true, 'font-bold': context.id === selected}" 
-                                @click="selected = context.id; selectChat(context.id)">
-                                Chat #<span x-text="context.no"></span>
-                            </span>
-                            <button class="edit-button" @click="killChat(context.id)">X</button>
-                        </li>
-                    </template>
-                </ul>
-            </div>
+                <div class="config-section" id="chats-section" x-data="{ contexts: [], selected: '' }"
+                    x-show="contexts.length > 0">
+                    <h3>Chats</h3>
+                    <ul class="config-list">
+                        <template x-for="context in contexts">
+                            <li>
+                                <span :class="{'chat-list-button': true, 'font-bold': context.id === selected}"
+                                    @click="selected = context.id; selectChat(context.id)">
+                                    Chat #<span x-text="context.no"></span>
+                                </span>
+                                <button class="edit-button" @click="killChat(context.id)">X</button>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
             </div>
             <!--Preferences-->
             <div class="pref-section">
@@ -89,46 +92,66 @@
                             <span class="slider"></span>
                         </label>
                     </li>
-                    <li x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }" x-init="$watch('darkMode', val => toggleDarkMode(val))">
-                        <div class="switch-label">Light/Dark mode</div>
+                    <li x-data="{ darkMode: localStorage.getItem('darkMode') != 'false' }"
+                        x-init="$watch('darkMode', val => toggleDarkMode(val))">
+                        <div class="switch-label">Dark mode</div>
                         <label class="switch">
-                          <input type="checkbox" x-model="darkMode">
-                          <span class="slider"></span>
+                            <input type="checkbox" x-model="darkMode">
+                            <span class="slider"></span>
                         </label>
-                      </li>
+                    </li>
+                    <li x-data="{ showUtils: false }">
+                        <span>Show utility messages</span>
+                        <label class="switch">
+                            <input type="checkbox" x-model="showUtils"
+                                x-effect="window.safeCall('toggleUtils',showUtils)">
+                            <span class="slider"></span>
+                        </label>
+                    </li>
+
                 </ul>
-                <span id="a0version">Agent Zero 0.6.5<br>built on 9/13/2024</span>
-        </div>
+                <span id="a0version">Agent Zero 0.7<br>built on 2024-09-25</span>
             </div>
+        </div>
         <div id="right-panel" class="panel">
             <div id="logo-container">
                 <a href="https://github.com/frdel/agent-zero" target="_blank" rel="noopener noreferrer">
                     <img src="splash.jpg" alt="a0" width="48" height="48">
                 </a>
-                <div id="time-date"></div> 
-              </div>
+                <div id="time-date"></div>
+            </div>
             <!--Chat-->
             <div id="chat-history">
+            </div>
+            <div id="progress-bar-box">
+                <h4 id="progress-bar-h"><span id="progress-bar-i">|></span><span id="progress-bar"></span></h4>
+            </div>
+            <div id="toast" class="toast">
+                <div class="toast__message"></div>
+                <button class="toast__copy">Copy</button>
+                <button class="toast__close">Close</button>
             </div>
             <div id="input-section" x-data="{ paused: false }">
                 <textarea id="chat-input" placeholder="Type your message here..." rows="1"></textarea>
                 <button class="chat-button" id="send-button" aria-label="Send message">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
                         <path d="M25 20 L75 50 L25 80" fill="none" stroke="currentColor" stroke-width="15" />
-                      </svg>
-                </button>
-                <button class="chat-button pause-button" id="pause-button" @click="pauseAgent(true)" x-show="!paused" aria-label="Pause agent">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
                     </svg>
                 </button>
-                <button class="chat-button pause-button" id="unpause-button" @click="pauseAgent(false)" x-show="paused" aria-label="Resume agent">
+                <button class="chat-button pause-button" id="pause-button" @click="pauseAgent(true)" x-show="!paused"
+                    aria-label="Pause agent">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z"/>
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                     </svg>
                 </button>
+                <button class="chat-button pause-button" id="unpause-button" @click="pauseAgent(false)" x-show="paused"
+                    aria-label="Resume agent">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z" />
+                    </svg>
+                </button>
+            </div>
         </div>
-    </div>
     </div>
 </body>
 

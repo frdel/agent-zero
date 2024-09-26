@@ -7,15 +7,16 @@ def initialize():
     chat_llm = models.get_openai_chat(model_name="gpt-4o-mini", temperature=0)
     # chat_llm = models.get_ollama_chat(model_name="gemma2:latest", temperature=0)
     # chat_llm = models.get_lmstudio_chat(model_name="lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF", temperature=0)
-    # chat_llm = models.get_openrouter_chat(model_name="mattshumer/reflection-70b:free")
+    # chat_llm = models.get_openrouter_chat(model_name="openai/o1-mini-2024-09-12")
     # chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o-mini", temperature=0)
     # chat_llm = models.get_anthropic_chat(model_name="claude-3-5-sonnet-20240620", temperature=0)
     # chat_llm = models.get_google_chat(model_name="gemini-1.5-flash", temperature=0)
     # chat_llm = models.get_mistral_chat(model_name="mistral-small-latest", temperature=0)
     # chat_llm = models.get_groq_chat(model_name="llama-3.1-70b-versatile", temperature=0)
-    
+    # chat_llm = models.get_sambanova_chat(model_name="Meta-Llama-3.1-70B-Instruct-8k", temperature=0)
+
     # utility model used for helper functions (cheaper, faster)
-    utility_llm = chat_llm # change if you want to use a different utility model
+    utility_llm = chat_llm
 
     # embedding model used for memory
     embedding_llm = models.get_openai_embedding(model_name="text-embedding-3-small")
@@ -30,7 +31,7 @@ def initialize():
         embeddings_model = embedding_llm,
         # prompts_subdir = "",
         # memory_subdir = "",
-        # knowledge_subdir: str = ""
+        knowledge_subdirs = ["default","custom"],
         auto_memory_count = 0,
         # auto_memory_skip = 2,
         # rate_limit_seconds = 60,

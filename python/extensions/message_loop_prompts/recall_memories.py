@@ -7,7 +7,7 @@ from python.helpers import errors, files
 from python.tools.memory_tool import get_db
 
 
-class RecallSolutions(Extension):
+class RecallMemories(Extension):
 
     INTERVAL = 3
     HISTORY = 5
@@ -18,29 +18,29 @@ class RecallSolutions(Extension):
 
         iter = loop_data.get("iteration", 0)
         if (
-            iter % RecallSolutions.INTERVAL == 0
-        ):  # every 3 iterations (or the first one) recall solution memories
-            await self.search_solutions(loop_data=loop_data, **kwargs)
+            iter % RecallMemories.INTERVAL == 0
+        ):  # every 3 iterations (or the first one) recall memories
+            await self.search_memories(loop_data=loop_data, **kwargs)
 
-    async def search_solutions(self, loop_data={}, **kwargs):
+    async def search_memories(self, loop_data={}, **kwargs):
         # try:
             # show temp info message
             self.agent.context.log.log(
-                type="info", content="Searching memory for solutions...", temp=True
+                type="info", content="Searching memories...", temp=True
             )
 
             # show full util message, this will hide temp message immediately if turned on
             log_item = self.agent.context.log.log(
                 type="util",
-                heading="Searching memory for solutions...",
+                heading="Searching memories...",
             )
 
             # get system message and chat history for util llm
             msgs_text = self.agent.concat_messages(
-                self.agent.history[-RecallSolutions.HISTORY :]
+                self.agent.history[-RecallMemories.HISTORY :]
             )  # only last X messages
             system = self.agent.read_prompt(
-                "memory.solutions_query.sys.md", history=msgs_text
+                "memory.memories_query.sys.md", history=msgs_text
             )
 
             # log query streamed by LLM
@@ -55,43 +55,43 @@ class RecallSolutions(Extension):
             # get solutions database
             vdb = get_db(self.agent)
 
-            solutions = vdb.search_similarity_threshold(
+            memories = vdb.search_similarity_threshold(
                 query=query,
-                results=RecallSolutions.RESULTS,
-                threshold=RecallSolutions.THRESHOLD,
-                filter=f"area == '{Area.SOLUTIONS.value}'"
+                results=RecallMemories.RESULTS,
+                threshold=RecallMemories.THRESHOLD,
+                filter=f"area != '{Area.SOLUTIONS.value}'" # exclude solutions
             )
 
             # log the short result
-            if not isinstance(solutions, list) or len(solutions) == 0:
+            if not isinstance(memories, list) or len(memories) == 0:
                 log_item.update(
-                    heading="No successful solution memories found.",
+                    heading="No useful memories found.",
                 )
                 return
             else:
                 log_item.update(
-                    heading=f"\n\n{len(solutions)} successful solution memories found.",
+                    heading=f"\n\n{len(memories)} memories found.",
                 )
 
-            # concatenate solution.page_content in solutions:
-            solutions_text = ""
-            for solution in solutions:
-                solutions_text += solution.page_content + "\n\n"
-            solutions_text = solutions_text.strip()
+            # concatenate memory.page_content in memories:
+            memories_text = ""
+            for memory in memories:
+                memories_text += memory.page_content + "\n\n"
+            memories_text = memories_text.strip()
 
             # log the full results
-            log_item.update(solutions=solutions_text)
+            log_item.update(memories=memories_text)
 
             # place to prompt
-            solutions_prompt = self.agent.read_prompt(
-                "agent.system.solutions.md", solutions=solutions_text
+            memories_prompt = self.agent.read_prompt(
+                "agent.system.memories.md", memories=memories_text
             )
 
             # append to system message
-            loop_data["system"] += solutions_prompt
+            loop_data["system"] += memories_prompt
 
         # except Exception as e:
         #     err = errors.format_error(e)
         #     self.agent.context.log.log(
-        #         type="error", heading="Recall solutions extension error:", content=err
+        #         type="error", heading="Recall memories extension error:", content=err
         #     )

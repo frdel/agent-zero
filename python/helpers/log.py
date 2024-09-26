@@ -5,20 +5,23 @@ import uuid
 
 
 type Type = Literal[
-    'agent',
-    'code_exe',
-    'error',
-    'hint',
-    'info',
-    'tool',
-    'user',
-    'util',
-    'warning',
-    ]
+    "agent",
+    "code_exe",
+    "error",
+    "hint",
+    "info",
+    "progress",
+    "response",
+    "tool",
+    "user",
+    "util",
+    "warning",
+]
+
 
 @dataclass
 class LogItem:
-    log: 'Log'
+    log: "Log"
     no: int
     type: str
     heading: str
@@ -30,9 +33,35 @@ class LogItem:
     def __post_init__(self):
         self.guid = self.log.guid
 
-    def update(self, type: Type | None = None, heading: str | None = None, content: str | None = None, kvps: dict | None = None, temp: bool | None = None):
+    def update(
+        self,
+        type: Type | None = None,
+        heading: str | None = None,
+        content: str | None = None,
+        kvps: dict | None = None,
+        temp: bool | None = None,
+        **kwargs,
+    ):
         if self.guid == self.log.guid:
-            self.log.update_item(self.no, type=type, heading=heading, content=content, kvps=kvps, temp=temp)
+            self.log.update_item(
+                self.no,
+                type=type,
+                heading=heading,
+                content=content,
+                kvps=kvps,
+                temp=temp,
+                **kwargs,
+            )
+
+    def stream(self, heading: str | None = None, content: str | None = None, **kwargs):
+        if heading is not None:
+            self.update(heading=self.heading + heading)
+        if content is not None:
+            self.update(content=self.content + content)
+
+        for k, v in kwargs.items():
+            prev = self.kvps.get(k, "") if self.kvps else ""
+            self.update(**{k: prev + v})
 
     def output(self):
         return {
@@ -41,8 +70,9 @@ class LogItem:
             "heading": self.heading,
             "content": self.content,
             "temp": self.temp,
-            "kvps": self.kvps
+            "kvps": self.kvps,
         }
+
 
 class Log:
 
@@ -50,25 +80,60 @@ class Log:
         self.guid: str = str(uuid.uuid4())
         self.updates: list[int] = []
         self.logs: list[LogItem] = []
+        self.progress = ""
 
-    def log(self, type: Type, heading: str | None = None, content: str | None = None, kvps: dict | None = None, temp: bool | None = None) -> LogItem:
-        item = LogItem(log=self,no=len(self.logs), type=type, heading=heading or "", content=content or "", kvps=kvps, temp=temp or False)
+    def log(
+        self,
+        type: Type,
+        heading: str | None = None,
+        content: str | None = None,
+        kvps: dict | None = None,
+        temp: bool | None = None,
+    ) -> LogItem:
+        item = LogItem(
+            log=self,
+            no=len(self.logs),
+            type=type,
+            heading=heading or "",
+            content=content or "",
+            kvps=kvps,
+            temp=temp or False,
+        )
         self.logs.append(item)
         self.updates += [item.no]
+        if heading:
+            self.progress = heading
         return item
 
-    def update_item(self, no: int, type: str | None = None, heading: str | None = None, content: str | None = None, kvps: dict | None = None, temp: bool | None = None):
+    def update_item(
+        self,
+        no: int,
+        type: str | None = None,
+        heading: str | None = None,
+        content: str | None = None,
+        kvps: dict | None = None,
+        temp: bool | None = None,
+        **kwargs,
+    ):
         item = self.logs[no]
         if type is not None:
             item.type = type
         if heading is not None:
             item.heading = heading
+            self.progress = heading
         if content is not None:
             item.content = content
         if kvps is not None:
             item.kvps = kvps
         if temp is not None:
             item.temp = temp
+
+        if kwargs:
+            if item.kvps is None:
+                item.kvps = {}
+            for k, v in kwargs.items():
+                item.kvps[k] = v
+
         self.updates += [item.no]
 
     def output(self, start=None, end=None):
@@ -76,19 +141,18 @@ class Log:
             start = 0
         if end is None:
             end = len(self.updates)
-        
+
         out = []
         seen = set()
         for update in self.updates[start:end]:
             if update not in seen:
                 out.append(self.logs[update].output())
                 seen.add(update)
-        
-        return out
-               
 
+        return out
 
     def reset(self):
         self.guid = str(uuid.uuid4())
         self.updates = []
         self.logs = []
+        self.progress = ""

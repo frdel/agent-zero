@@ -53,10 +53,10 @@ class CodeExecution(Tool):
         await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
         PrintStyle(
             font_color="#1B4F72", padding=True, background_color="white", bold=True
-        ).print(f"{self.agent.agent_name}: Using tool '{self.name}':")
+        ).print(f"{self.agent.agent_name}: Using tool '{self.name}'")
         self.log = self.agent.context.log.log(
             type="code_exe",
-            heading=f"{self.agent.agent_name}: Using tool '{self.name}':",
+            heading=f"{self.agent.agent_name}: Using tool '{self.name}'",
             content="",
             kvps=self.args,
         )
@@ -132,7 +132,7 @@ class CodeExecution(Tool):
         self.state.shell.send_command(command)
 
         PrintStyle(background_color="white", font_color="#1B4F72", bold=True).print(
-            f"{self.agent.agent_name} code execution output:"
+            f"{self.agent.agent_name} code execution output"
         )
         return await self.get_terminal_output()
 

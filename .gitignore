@@ -26,7 +26,16 @@ tmp/*
 # But do not ignore the directory itself
 !tmp/.gitkeep
 
-# Ignore all contents of the directory "knowledge"
+# Ignore everything in the "knowledge" directory
 knowledge/*
-# But do not ignore the directory itself
-!knowledge/.gitkeep
+
+# Do not ignore subdirectories (so we can track .gitkeep)
+!knowledge/*/
+
+# Ignore all files within subdirectories (except .gitkeep)
+knowledge/**/*.*
+!knowledge/**/.gitkeep
+
+# Explicitly allow the default folder and its contents
+!knowledge/default/
+!knowledge/default/**
