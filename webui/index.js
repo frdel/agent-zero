@@ -284,7 +284,6 @@ window.toggleDarkMode = function(isDark) {
     localStorage.setItem('darkMode', isDark);
 };
   
-  // Modify this part
   document.addEventListener('DOMContentLoaded', () => {
     const isDarkMode = localStorage.getItem('darkMode') === 'true';
     toggleDarkMode(isDarkMode);
@@ -316,4 +315,4 @@ function toggleCssProperty(selector, property, value) {
 
 chatInput.addEventListener('input', adjustTextareaHeight);
 
-setInterval(poll, 250);
+setInterval(poll, 100);

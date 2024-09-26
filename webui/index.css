@@ -96,6 +96,13 @@ body, #left-panel, #chat-input, .message, .config-button, .switch-label {
   width: 250px;
   color: var(--color-text);
   box-shadow: 1px 0 5px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  scrollbar-width: none;
+
+  /* Hide scrollbar for Webkit browsers */
+  &::-webkit-scrollbar {
+    display: none;
+}
 }
 
 #left-panel.hidden {
@@ -104,12 +111,15 @@ body, #left-panel, #chat-input, .message, .config-button, .switch-label {
 
 .left-panel-top {
   margin-top: 35%;
+  transition: all var(--transition-speed) ease-in-out;
+  overflow-x: hidden;
   overflow-y: auto;
-}
+  scrollbar-width: none;
 
-/* Apply the custom scrollbar style */
-.left-panel-top::-webkit-scrollbar {
-  width: 0px;
+  /* Hide scrollbar for Webkit browsers */
+  &::-webkit-scrollbar {
+    display: none;
+}
 }
 
 .toggle-sidebar-button {
@@ -191,7 +201,7 @@ h4 {
   flex-grow: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: var(--spacing-md); 
+  padding: 4rem var(--spacing-md) var(--spacing-md); 
 }
 
 /* Apply the custom scrollbar style here */
@@ -348,7 +358,7 @@ h4 {
   background-color: var(--color-panel);
   display: flex;
   padding: var(--spacing-sm) var(--spacing-md);
-  align-items: center;
+  align-items: flex-start;
   flex-shrink: 0;
 }
 
@@ -358,18 +368,26 @@ h4 {
   border-radius: var(--border-radius);
   color: var(--color-text);
   flex-grow: 1;
-  font-size: 0.7rem;
-  max-height: 9rem;
-  min-height: 20px;
+  font-size: var(--font-size-small);
+  height: fit-content;
+  max-height: 15rem;
+  min-height: 28px;
   resize: none;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) 0.9rem;
   transition: all var(--transition-speed) ease-in-out;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  /* Hide scrollbar for Webkit browsers */
+  &::-webkit-scrollbar {
+    display: none;
+}
 }
 
 #chat-input:focus {
   background-color: var(--color-input-focus);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   outline: none;
 }
 
@@ -438,7 +456,7 @@ h4 {
 }
 
 .pref-section > ul {
-  margin-bottom: 15px;
+  margin-bottom: var(--spacing-sm);
   margin-top: 0;
 }
 
@@ -637,12 +655,16 @@ input:checked + .slider:before {
     background-color: var(--color-primary-dark);
 }
 
+.light-mode .toggle-sidebar-button {
+  background-color: #dadbe5;
+}
+
 .light-mode .toggle-sidebar-button:hover {
-  background-color: #d6dae8;
+  background-color: #c6c8d4;
 }
 
 .light-mode .toggle-sidebar-button:active {
-  background-color: #bdc0cb;
+  background-color: #abadb8;
 }
 
 .light-mode #logo-container img {

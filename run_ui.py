@@ -23,6 +23,9 @@ app.config['BASIC_AUTH_USERNAME'] = os.environ.get('BASIC_AUTH_USERNAME') or "ad
 app.config['BASIC_AUTH_PASSWORD'] = os.environ.get('BASIC_AUTH_PASSWORD') or "admin" #default pass
 basic_auth = BasicAuth(app)
 
+A0_VERSION = os.getenv("A0_VERSION")
+BUILD_DATE = os.getenv("BUILD_DATE")
+
 # get context to run agent zero in
 def get_context(ctxid:str):
     with lock:
@@ -45,7 +48,10 @@ def requires_auth(f):
 # handle default address, show demo html page from ./test_form.html
 @app.route('/', methods=['GET'])
 async def test_form():
-    return Path(get_abs_path("./webui/index.html")).read_text()
+    html_content = Path(get_abs_path("./webui/index.html")).read_text()
+    html_content = html_content.replace("{{ version }}", A0_VERSION or "")
+    html_content = html_content.replace("{{ build_date }}", BUILD_DATE or "")
+    return html_content
 
 # simple health check, just return OK to see the server is running
 @app.route('/ok', methods=['GET','POST'])
@@ -256,4 +262,4 @@ if __name__ == "__main__":
 
     # run the server on port from .env
     port = int(os.environ.get("WEB_UI_PORT", 0)) or None
-    app.run(request_handler=NoRequestLoggingWSGIRequestHandler,port=port)
+    app.run(request_handler=NoRequestLoggingWSGIRequestHandler, host="0.0.0.0", port=port)
