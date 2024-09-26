@@ -1,0 +1,34 @@
+**/.DS_Store
+**/.env
+**/__pycache__/
+
+
+# Ignore all contents of the virtual environment directory
+.venv/*
+
+# Ignore all contents of the directory "work_dir"
+work_dir/*
+# But do not ignore the directory itself
+!work_dir/.gitkeep
+
+# Ignore all contents of the directory "memory"
+memory/*
+# But do not ignore the directory itself
+!memory/.gitkeep
+
+# Ignore all contents of the directory "logs"
+logs/*
+# But do not ignore the directory itself
+!logs/.gitkeep
+
+# Ignore all contents of the directory "tmp"
+tmp/*
+# But do not ignore the directory itself
+!tmp/.gitkeep
+
+# Ignore all contents of the directory "knowledge"
+knowledge/*
+# But do not ignore the directory itself
+!knowledge/.gitkeep
+
+.vscode/*

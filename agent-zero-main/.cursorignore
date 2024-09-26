@@ -1,0 +1,19 @@
+# Directories and files to ignore during indexing
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.vscode/
+.idea/
+*.log
+*.sqlite3
+*.db
+node_modules/
+dist/
+build/
+*.egg-info/
+.DS_Store
+Thumbs.db
+*.bak
+*.ignore

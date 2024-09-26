@@ -1,0 +1,44 @@
+Agent Zero Documentation
+
+1. Fallback Mechanism
+
+Agent Zero now supports a fallback mechanism to handle rate limit issues with the primary model. When the primary model hits a rate limit, the system automatically switches to a fallback model to ensure continuous operation.
+
+How to use the fallback mechanism:
+
+a. Web UI:
+   - When initializing the agent, you can specify both the primary and fallback models.
+   - If not specified, the system defaults to using GPT-4o-mini as the fallback model.
+
+b. CLI:
+   - When running the CLI interface, you will be prompted to select both a primary and a fallback model.
+   - The available models and their specifications will be displayed for you to choose from.
+
+2. Available Models
+
+The following models are currently available for use as either primary or fallback models:
+
+- groq_llama
+- gpt4o
+- gpt4o_mini
+- claude_3_5_sonnet
+
+Each model has its own specifications, including max tokens, input cost, and output cost. These details are displayed when selecting models in the CLI interface.
+
+3. Rate Limiting
+
+Rate limits are enforced to prevent overuse of the API. When a rate limit is reached for the primary model, the system automatically switches to the fallback model to ensure uninterrupted service.
+
+4. Model Selection
+
+When choosing models, consider the following factors:
+- Max tokens: The maximum number of tokens the model can process in a single request.
+- Input cost: The cost per token for input text.
+- Output cost: The cost per token for generated text.
+- Performance: Different models may have different strengths and weaknesses for various tasks.
+
+5. Customization
+
+The fallback mechanism can be further customized by modifying the `initialize.py`, `run_ui.py`, and `run_cli.py` files. You can add more models, change the default fallback model, or implement more complex fallback strategies as needed.
+
+For more detailed information on specific components or processes, please refer to the respective source files and inline comments.
