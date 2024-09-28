@@ -3,24 +3,25 @@
 ### response:
 Final answer for user.
 Ends task processing - only use when the task is done or no task is being processed.
-Place your result in "text" argument.
-Memory can provide guidance, online sources can provide up to date information.
-Always verify memory by online.
+Place your result of your complete chain of thought or processing steps in "text" argument.
+
 **Example usage**:
 ~~~json
 {
-    "thoughts": [
-        "The user has greeted me...",
-        "I will respond with a greeting." 
-    ],
-    "reflection": [
-        "I should ensure the greeting is appropriate for the context and user."
-    ],
+  "thoughts": [
+    "The user asked me to calculate the volume of a sphere with a radius of 5 cm.",
+    "I recall the formula for the volume of a sphere: (4/3) * pi * radius^3.",
+    "I will substitute the radius value into the formula and calculate the result."
+  ],
+  "reflection": [
+    "I need to ensure I use a sufficiently precise value of pi (e.g., 3.14159) for accurate calculation.",
+    "I should double-check the units of the final answer to ensure it is expressed in cubic centimeters (cm^3).",
+  ],
     "tool_name": "response",
     "tool_args": {
-        "text": "Hi...",
+        "text": "The volume of a sphere with a radius of 5 cm is approximately 523.6 cm³."
     }
-}
+  }
 ~~~
 
 ### call_subordinate:
@@ -52,10 +53,10 @@ Give him detailed instructions as well as good overview to understand what to do
 ### knowledge_tool:
 Provide "question" argument and get both online and memory response.
 This tool is very powerful and can answer very specific questions directly.
-First always try to ask for result rather that guidance.
+First always try to ask for result rather than guidance.
 Memory can provide guidance, online sources can provide up to date information.
 Always verify memory by online.
-DO NOT LOOP through searches, work with the first output of the tool.
+Cross-reference multiple sources for complex topics, for enhanced accuracy.
 **Example usage**:
 ~~~json
 {
@@ -173,7 +174,7 @@ You can use pip, npm and apt-get in terminal runtime to install any required pac
 IMPORTANT: Never use implicit print or implicit output, it does not work! If you need output of your code, you MUST use print() or console.log() to output selected variables. 
 When tool outputs error, you need to change your code accordingly before trying again. knowledge_tool can help analyze errors.
 IMPORTANT!: Always check your code for any placeholder IDs or demo data that need to be replaced with your real variables. Do not simply reuse code snippets from tutorials.
-Do not use in combination with other tools except for thoughts. Wait for response before using other tools.
+Do not use in combination with other tools except for thoughts and reflection. Wait for response before using other tools.
 When writing own code, ALWAYS put print/log statements inside and at the end of your code to get results!
 **Example usages:**
 1. Execute python code
