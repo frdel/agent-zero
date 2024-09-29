@@ -28,6 +28,8 @@ app.config["BASIC_AUTH_PASSWORD"] = (
 )  # default pass
 basic_auth = BasicAuth(app)
 
+A0_VERSION = os.getenv("A0_VERSION")
+BUILD_DATE = os.getenv("BUILD_DATE")
 
 # get context to run agent zero in
 def get_context(ctxid: str):
@@ -66,7 +68,10 @@ def requires_auth(f):
 # handle default address, show demo html page from ./test_form.html
 @app.route("/", methods=["GET"])
 async def test_form():
-    return Path(get_abs_path("./webui/index.html")).read_text()
+    html_content = Path(get_abs_path("./webui/index.html")).read_text()
+    html_content = html_content.replace("{{ version }}", A0_VERSION or "")
+    html_content = html_content.replace("{{ build_date }}", BUILD_DATE or "")
+    return html_content
 
 
 # simple health check, just return OK to see the server is running
