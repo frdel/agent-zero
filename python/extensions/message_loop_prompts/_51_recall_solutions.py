@@ -1,10 +1,6 @@
-from agent import Agent
 from python.helpers.extension import Extension
-from python.helpers.files import read_file
-from python.helpers.vector_db import Area
-import json
-from python.helpers import errors, files
-from python.tools.memory_tool import get_db
+from python.helpers.memory import Memory
+from agent import LoopData
 
 
 class RecallSolutions(Extension):
@@ -14,15 +10,14 @@ class RecallSolutions(Extension):
     RESULTS = 3
     THRESHOLD = 0.1
 
-    async def execute(self, loop_data={}, **kwargs):
+    async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
 
-        iter = loop_data.get("iteration", 0)
         if (
-            iter % RecallSolutions.INTERVAL == 0
+            loop_data.iteration % RecallSolutions.INTERVAL == 0
         ):  # every 3 iterations (or the first one) recall solution memories
             await self.search_solutions(loop_data=loop_data, **kwargs)
 
-    async def search_solutions(self, loop_data={}, **kwargs):
+    async def search_solutions(self, loop_data: LoopData, **kwargs):
         # try:
             # show temp info message
             self.agent.context.log.log(
@@ -49,17 +44,17 @@ class RecallSolutions(Extension):
 
             # call util llm to summarize conversation
             query = await self.agent.call_utility_llm(
-                system=system, msg=loop_data["message"], callback=log_callback
+                system=system, msg=loop_data.message, callback=log_callback
             )
 
             # get solutions database
-            vdb = get_db(self.agent)
+            db = await Memory.get(self.agent)
 
-            solutions = vdb.search_similarity_threshold(
+            solutions = await db.search_similarity_threshold(
                 query=query,
-                results=RecallSolutions.RESULTS,
+                limit=RecallSolutions.RESULTS,
                 threshold=RecallSolutions.THRESHOLD,
-                filter=f"area == '{Area.SOLUTIONS.value}'"
+                filter=f"area == '{Memory.Area.SOLUTIONS.value}'"
             )
 
             # log the short result
@@ -88,7 +83,7 @@ class RecallSolutions(Extension):
             )
 
             # append to system message
-            loop_data["system"] += solutions_prompt
+            loop_data.system.append(solutions_prompt)
 
         # except Exception as e:
         #     err = errors.format_error(e)

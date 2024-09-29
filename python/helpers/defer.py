@@ -1,6 +1,6 @@
 import asyncio
 import threading
-from concurrent.futures import Future
+from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any, Callable, Optional, Coroutine
 
 class EventLoopThread:
@@ -72,3 +72,9 @@ class DeferredTask:
 
     def restart(self) -> None:
         self._start_task()
+
+def run_in_background(func, *args, **kwargs):
+    async def wrapper(*args, **kwargs):
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, func, *args, **kwargs)
+    return wrapper

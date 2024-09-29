@@ -1,5 +1,1 @@
-~~~json
-{
-    "memory": "Memory has been saved with id {{memory_id}}."
-}
-~~~
+Memory saved with id {{memory_id}}

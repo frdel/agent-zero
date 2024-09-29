@@ -36,9 +36,9 @@ def calculate_checksum(file_path: str) -> str:
 def load_knowledge(
     log_item: LogItem | None, knowledge_dir: str, index: Dict[str, KnowledgeImport]
 ) -> Dict[str, KnowledgeImport]:
-    knowledge_dir = files.get_abs_path(knowledge_dir)
+    knowledge_dir = files.get_abs_path("knowledge",knowledge_dir)
 
-    from python.helpers.vector_db import Area
+    from python.helpers.memory import Memory
 
     # Mapping file extensions to corresponding loader classes
     file_types_loaders = {
@@ -53,7 +53,7 @@ def load_knowledge(
     cnt_files = 0
     cnt_docs = 0
 
-    for area in Area:
+    for area in Memory.Area:
         subdir = files.get_abs_path(knowledge_dir, area.value)
 
         if not os.path.exists(subdir):

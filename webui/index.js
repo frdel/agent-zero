@@ -11,6 +11,7 @@ const statusSection = document.getElementById('status-section');
 const chatsSection = document.getElementById('chats-section');
 const scrollbarThumb = document.querySelector('#chat-history::-webkit-scrollbar-thumb');
 const progressBar = document.getElementById('progress-bar');
+const autoScrollSwitch = document.getElementById('auto-scroll-switch');
 
 
 
@@ -394,6 +395,23 @@ function toast(text, type = 'info') {
         toast.style.display = 'none';
     }, 10000);
 }
+
+function scrollChanged(isAtBottom) {
+    const inputAS = Alpine.$data(autoScrollSwitch);
+    inputAS.autoScroll = isAtBottom
+    // autoScrollSwitch.checked = isAtBottom
+    console.log(isAtBottom)
+}
+
+chatHistory.addEventListener('scroll', function () {
+    // const toleranceEm = 1; // Tolerance in em units
+    // const tolerancePx = toleranceEm * parseFloat(getComputedStyle(document.documentElement).fontSize); // Convert em to pixels
+    const tolerancePx = 50;
+    const chatHistory = document.getElementById('chat-history');
+    const isAtBottom = (chatHistory.scrollHeight - chatHistory.scrollTop) <= (chatHistory.clientHeight + tolerancePx);
+    
+    scrollChanged(isAtBottom);
+});
 
 chatInput.addEventListener('input', adjustTextareaHeight);
 

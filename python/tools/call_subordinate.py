@@ -10,4 +10,5 @@ class Delegation(Tool):
             subordinate.set_data("superior", self.agent)
             self.agent.set_data("subordinate", subordinate) 
         # run subordinate agent message loop
-        return Response( message= await self.agent.get_data("subordinate").message_loop(message), break_loop=False)
+        subordinate: Agent = self.agent.get_data("subordinate")
+        return Response( message= await subordinate.monologue(message), break_loop=False)

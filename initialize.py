@@ -12,7 +12,7 @@ def initialize():
     # chat_llm = models.get_anthropic_chat(model_name="claude-3-5-sonnet-20240620", temperature=0)
     # chat_llm = models.get_google_chat(model_name="gemini-1.5-flash", temperature=0)
     # chat_llm = models.get_mistral_chat(model_name="mistral-small-latest", temperature=0)
-    # chat_llm = models.get_groq_chat(model_name="llama-3.1-70b-versatile", temperature=0)
+    # chat_llm = models.get_groq_chat(model_name="llama-3.2-90b-text-preview", temperature=0)
     # chat_llm = models.get_sambanova_chat(model_name="Meta-Llama-3.1-70B-Instruct-8k", temperature=0)
 
     # utility model used for helper functions (cheaper, faster)
@@ -35,7 +35,7 @@ def initialize():
         auto_memory_count = 0,
         # auto_memory_skip = 2,
         # rate_limit_seconds = 60,
-        rate_limit_requests = 15,
+        rate_limit_requests = 30,
         # rate_limit_input_tokens = 0,
         # rate_limit_output_tokens = 0,
         # msgs_keep_max = 25,

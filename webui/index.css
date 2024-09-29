@@ -15,7 +15,7 @@
     --color-input-focus-dark: #1b1b1b;
   
     /* Light mode */
-    --color-background-light: #F5F7FA;
+    --color-background-light: #e8e9e9;
     --color-text-light: #333333;
     --color-primary-light: #273b4d;
     --color-secondary-light: #e8eaf6;
@@ -312,6 +312,7 @@ h4 {
 .message-user {
   background-color: #4a4a4a;
   border-bottom-right-radius: var(--spacing-xs);
+  text-align: end;
 }
 
 .message-ai {
@@ -345,15 +346,15 @@ h4 {
 
 /* Update message types for dark mode */
 .message-default { background-color: #1A242F; color: #E0E0E0; }
-.message-agent { background-color: #2C3E50; color: #E0E0E0; }
-.message-agent-response { background-color: #002b54; color: #E0E0E0; }
-.message-agent-delegation { background-color: #00695C; color: #E0E0E0; }
-.message-tool { background-color: #5D4C6A; color: #E0E0E0; }
-.message-code-exe { background-color: #3a147c; color: #E0E0E0; }
+.message-agent { background-color: #34506b; color: #E0E0E0; }
+.message-agent-response { background-color: #1f3c1e; color: #E0E0E0; }
+.message-agent-delegation { background-color: #12685e; color: #E0E0E0; }
+.message-tool { background-color: #2a4170; color: #E0E0E0; }
+.message-code-exe { background-color: #4b3a69; color: #E0E0E0; }
 .message-info { background-color: var(--color-panel); color: #E0E0E0; }
 .message-util { background-color: #23211a; color: #E0E0E0; display:none }
-.message-warning { background-color: #c2771b; color: #E0E0E0; }
-.message-error { background-color: #ab1313; color: #E0E0E0; }
+.message-warning { background-color: #bc8036; color: #E0E0E0; }
+.message-error { background-color: #af2222; color: #E0E0E0; }
 
 /* Agent and AI Info */
 .agent-start {
@@ -615,18 +616,18 @@ input:checked + .slider:before {
     --color-input-focus: var(--color-input-focus-light);
 }
 
-.light-mode .message-default { background-color: #E3F2FD; color: #1A242F; }
-.light-mode .message-agent { background-color: #e9ebf3; color: #2C3E50; }
-.light-mode .message-agent-response { background-color: #E1E6F2; color: #002b54; }
-.light-mode .message-agent-delegation { background-color: #E0F2F1; color: #00695C; }
-.light-mode .message-tool { background-color: #EDE7F6; color: #5D4C6A; }
-.light-mode .message-code-exe { background-color: #FCE4EC; color: #3a147c; }
-.light-mode .message-info { background-color: #E8EAF6; color: #2C3E50; }
-.light-mode .message-util { background-color: #e8eaf6d6; color: #353c43; }
-.light-mode .message-warning { background-color: #FFF3E0; color: #c2771b; }
-.light-mode .message-error { background-color: #FFEBEE; color: #ab1313; }
+.light-mode .message-default { background-color: #ffffff; color: #1A242F; }
+.light-mode .message-agent { background-color: #ffffff; color: #356ca3; }
+.light-mode .message-agent-response { background-color: #ffffff; color: #188216; }
+.light-mode .message-agent-delegation { background-color: #ffffff; color: #12685e; }
+.light-mode .message-tool { background-color: #ffffff; color: #1c3c88; }
+.light-mode .message-code-exe { background-color: #ffffff; color: #6c43b0; }
+.light-mode .message-info { background-color: #ffffff; color: #3f3f3f; }
+.light-mode .message-util { background-color: #ffffff; color: #5b5540; }
+.light-mode .message-warning { background-color: #ffffff; color: #8f4800; }
+.light-mode .message-error { background-color: #ffffff; color: #8f1010; }
 .light-mode .message-user {
-    background-color: #eaeaea;
+    background-color: #ffffff;
     color: #4e4e4e;
 }
 

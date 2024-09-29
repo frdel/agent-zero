@@ -1,7 +1,7 @@
 import asyncio
 from dataclasses import dataclass, field
 import time, importlib, inspect, os, json
-from typing import Any, Optional, Dict
+from typing import Any, Optional, Dict, TypedDict
 import uuid
 from python.helpers import extract_tools, rate_limiter, files, errors
 from python.helpers.print_style import PrintStyle
@@ -122,6 +122,15 @@ class AgentConfig:
     additional: Dict[str, Any] = field(default_factory=dict)
 
 
+class LoopData:
+    def __init__(self):
+        self.iteration = -1
+        self.system = []
+        self.message = ""
+        self.history_from = 0
+        self.history = []
+
+
 # intervention exception class - skips rest of message loop iteration
 class InterventionException(Exception):
     pass
@@ -162,40 +171,35 @@ class Agent:
 
     async def monologue(self, msg: str):
         try:
-
             # loop data dictionary to pass to extensions
-            loop_data: dict[str, Any] = {
-                "message": msg,
-                "iteration": -1,
-                "history_from": len(self.history),
-            }
+            loop_data = LoopData()
+            loop_data.message = msg
+            loop_data.history_from = len(self.history)
 
             # call monologue_start extensions
             await self.call_extensions("monologue_start", loop_data=loop_data)
 
             printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)
-            user_message = self.read_prompt("fw.user_message.md", message=msg)
+            user_message = self.read_prompt("fw.user_message.md", message=loop_data.message)
             await self.append_message(user_message, human=True)
 
-            await self.call_extensions(
-                "monologue_start", loop_data=loop_data
-            )  # call monologue_end extensions
-
+ 
             # let the agent run message loop until he stops it with a response tool
             while True:
 
                 self.context.streaming_agent = self  # mark self as current streamer
                 agent_response = ""
-                loop_data["iteration"] += 1
+                loop_data.iteration += 1
 
                 try:
 
                     # set system prompt and message history
-                    loop_data["system"] = [
-                        self.read_prompt("agent.system.md", agent_name=self.agent_name),
-                        self.read_prompt("agent.system.tools.md"),
+                    loop_data.system = [
+                        self.read_prompt(
+                            "agent.system.main.md", agent_name=self.agent_name
+                        )
                     ]
-                    loop_data["history"] = {"messages": self.history}
+                    loop_data.history = self.history
 
                     # and allow extensions to edit them
                     await self.call_extensions(
@@ -205,7 +209,7 @@ class Agent:
                     # build chain from system prompt, message history and model
                     prompt = ChatPromptTemplate.from_messages(
                         [
-                            SystemMessage(content="\n\n".join(loop_data["system"])),
+                            SystemMessage(content="\n\n".join(loop_data.system)),
                             MessagesPlaceholder(variable_name="messages"),
                         ]
                     )
@@ -227,7 +231,7 @@ class Agent:
                         type="agent", heading=f"{self.agent_name}: Generating"
                     )
 
-                    async for chunk in chain.astream(loop_data["history"]):
+                    async for chunk in chain.astream({"messages": loop_data.history}):
                         await self.handle_intervention(
                             agent_response
                         )  # wait for intervention and handle it, if paused
@@ -323,6 +327,35 @@ class Agent:
                 files.get_abs_path(f"./prompts/default/{file}"), **kwargs
             )
         return content
+
+    def read_prompts(self, pattern: str, **kwargs):
+        import glob
+
+        prompts = []
+
+        # Scan both configured subdir and default folder
+        subdir_files = glob.glob(
+            files.get_abs_path("prompts", self.config.prompts_subdir, pattern)
+        )
+        default_files = glob.glob(files.get_abs_path("prompts", "default", pattern))
+
+        # Create a dictionary to store files, prioritizing the config subdir
+        files_to_read = {file.split("/")[-1]: file for file in default_files}
+
+        # Override with files from subdir if they exist
+        for file in subdir_files:
+            files_to_read[file.split("/")[-1]] = file
+
+        # Sort files alphabetically by their file names
+        sorted_files = sorted(files_to_read.items())
+
+        # Read the files in alphabetical order
+        for filename, filepath in sorted_files:
+            content = files.read_file(files.get_abs_path(filepath), **kwargs)
+            if content:
+                prompts.append(content)
+
+        return prompts
 
     def get_data(self, field: str):
         return self.data.get(field, None)

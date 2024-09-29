@@ -70,7 +70,7 @@
                     <li x-data="{ autoScroll: true }">
                         <span>Autoscroll</span>
                         <label class="switch">
-                            <input type="checkbox" x-model="autoScroll"
+                            <input id="auto-scroll-switch" type="checkbox" x-model="autoScroll"
                                 x-effect="window.safeCall('toggleAutoScroll',autoScroll)">
                             <span class="slider"></span>
                         </label>
@@ -123,13 +123,13 @@
             <!--Chat-->
             <div id="chat-history">
             </div>
-            <div id="progress-bar-box">
-                <h4 id="progress-bar-h"><span id="progress-bar-i">|></span><span id="progress-bar"></span></h4>
-            </div>
             <div id="toast" class="toast">
                 <div class="toast__message"></div>
                 <button class="toast__copy">Copy</button>
                 <button class="toast__close">Close</button>
+            </div>
+            <div id="progress-bar-box">
+                <h4 id="progress-bar-h"><span id="progress-bar-i">|></span><span id="progress-bar"></span></h4>
             </div>
             <div id="input-section" x-data="{ paused: false }">
                 <textarea id="chat-input" placeholder="Type your message here..." rows="1"></textarea>

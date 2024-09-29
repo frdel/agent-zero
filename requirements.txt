@@ -12,7 +12,6 @@ langchain_mistralai==0.1.8
 webcolors==24.6.0
 sentence-transformers==3.0.1
 docker==7.1.0
-pandas==2.2.3
 paramiko==3.4.0
 duckduckgo_search==6.1.12
 inputimeout==1.0.4

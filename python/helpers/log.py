@@ -81,6 +81,7 @@ class Log:
         self.updates: list[int] = []
         self.logs: list[LogItem] = []
         self.progress = ""
+        self.progress_no = 0
 
     def log(
         self,
@@ -101,8 +102,9 @@ class Log:
         )
         self.logs.append(item)
         self.updates += [item.no]
-        if heading:
+        if heading and item.no >= self.progress_no:
             self.progress = heading
+            self.progress_no = item.no
         return item
 
     def update_item(
@@ -120,7 +122,9 @@ class Log:
             item.type = type
         if heading is not None:
             item.heading = heading
-            self.progress = heading
+            if no >= self.progress_no:
+                self.progress = heading
+                self.progress_no = no
         if content is not None:
             item.content = content
         if kvps is not None:
@@ -156,3 +160,4 @@ class Log:
         self.updates = []
         self.logs = []
         self.progress = ""
+        self.progress_no = 0

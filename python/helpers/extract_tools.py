@@ -51,22 +51,30 @@ def fix_json_string(json_string):
 T = TypeVar('T')  # Define a generic type variable
 
 def load_classes_from_folder(folder: str, name_pattern: str, base_class: Type[T]) -> list[Type[T]]:
+    import os
+    import importlib
+    import inspect
+    from fnmatch import fnmatch
 
     classes = []
 
-    # Get all .py files in the folder that match the pattern
-    for file_name in os.listdir(folder):
-        if fnmatch(file_name, name_pattern) and file_name.endswith(".py"):
-            module_name = file_name[:-3]  # remove .py extension
-            module_path = folder.replace(os.sep, ".") + "." + module_name
-            module = importlib.import_module(module_path)
+    # Get all .py files in the folder that match the pattern, sorted alphabetically
+    py_files = sorted(
+        [file_name for file_name in os.listdir(folder) if fnmatch(file_name, name_pattern) and file_name.endswith(".py")]
+    )
 
-            # Get all classes in thde module
-            class_list = inspect.getmembers(module, inspect.isclass)
+    # Iterate through the sorted list of files
+    for file_name in py_files:
+        module_name = file_name[:-3]  # remove .py extension
+        module_path = folder.replace(os.sep, ".") + "." + module_name
+        module = importlib.import_module(module_path)
 
-            # Filter for classes that are subclasses of the given base_class
-            for cls in class_list:
-                if cls[1] is not base_class and issubclass(cls[1], base_class):
-                    classes.append(cls[1])
+        # Get all classes in the module
+        class_list = inspect.getmembers(module, inspect.isclass)
+
+        # Filter for classes that are subclasses of the given base_class
+        for cls in class_list:
+            if cls[1] is not base_class and issubclass(cls[1], base_class):
+                classes.append(cls[1])
 
     return classes
