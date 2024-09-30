@@ -66,7 +66,7 @@ def load_classes_from_folder(folder: str, name_pattern: str, base_class: Type[T]
     # Iterate through the sorted list of files
     for file_name in py_files:
         module_name = file_name[:-3]  # remove .py extension
-        module_path = folder.replace(os.sep, ".") + "." + module_name
+        module_path = folder.replace("/", ".") + "." + module_name
         module = importlib.import_module(module_path)
 
         # Get all classes in the module
