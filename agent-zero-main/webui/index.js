@@ -14,7 +14,9 @@ let isResizing = false;
 let autoScroll = true;
 
 let context = "";
+let messageCounter = 0;
 
+console.log("index.js loaded"); // Debug: Check if the script is loaded
 
 splitter.addEventListener('mousedown', (e) => {
     isResizing = true;
@@ -35,12 +37,27 @@ function stopResize() {
 }
 
 async function sendMessage() {
+    console.log("sendMessage function called"); // Debug: Check if the function is called
     const message = chatInput.value.trim();
     if (message) {
+        console.log("Message to send:", message); // Debug: Log the message content
+        messageCounter++;
+        setMessage(messageCounter, 'user', 'User', message);
 
-        const response = await sendJsonData("/msg", { text: message, context });
+        try {
+            const response = await sendJsonData("/msg", { text: message, context });
+            console.log("Response from server:", response); // Debug: Log the server response
 
-        //setMessage('user', message);
+            if (response.ok) {
+                messageCounter++;
+                setMessage(messageCounter, 'agent', 'Agent', response.response);
+            } else {
+                console.error("Server response not OK:", response); // Debug: Log error if response is not OK
+            }
+        } catch (error) {
+            console.error("Error sending message:", error); // Debug: Log any errors during the process
+        }
+
         chatInput.value = '';
         adjustTextareaHeight();
     }
@@ -48,14 +65,19 @@ async function sendMessage() {
 
 chatInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
+        console.log("Enter key pressed"); // Debug: Check if the event listener is triggered
         e.preventDefault();
         sendMessage();
     }
 });
 
-sendButton.addEventListener('click', sendMessage);
+sendButton.addEventListener('click', () => {
+    console.log("Send button clicked"); // Debug: Check if the button click is detected
+    sendMessage();
+});
 
 function setMessage(id, type, heading, content, kvps = null) {
+    console.log("setMessage called:", id, type, heading); // Debug: Log when a message is set
     // Search for the existing message container by id
     let messageContainer = document.getElementById(`message-${id}`);
 
@@ -81,13 +103,13 @@ function setMessage(id, type, heading, content, kvps = null) {
     if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
-
 function adjustTextareaHeight() {
     chatInput.style.height = 'auto';
     chatInput.style.height = (chatInput.scrollHeight) + 'px';
 }
 
 async function sendJsonData(url, data) {
+    console.log("Sending data to:", url, data); // Debug: Log the data being sent
     const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -118,39 +140,40 @@ let lastLogGuid = ""
 async function poll() {
     try {
         const response = await sendJsonData("/poll", { log_from: lastLogVersion, context });
-        // console.log(response)
+        console.log("Poll response:", response); // Debug: Log the poll response
 
         if (response.ok) {
+            setContext(response.context);
 
-            setContext(response.context)
-
-            if (lastLogGuid != response.log_guid) {
-                chatHistory.innerHTML = ""
-                lastLogVersion = 0
+            if (lastLogGuid !== response.log_guid) {
+                console.log("New log_guid received, updating lastLogGuid"); // Debug: Log when log_guid changes
+                lastLogGuid = response.log_guid;
+                lastLogVersion = 0; // Reset lastLogVersion when log_guid changes
+                chatHistory.innerHTML = ""; // Clear chat history when log_guid changes
+                messageCounter = 0; // Reset message counter
             }
 
-            if (lastLogVersion != response.log_version) {
+            if (lastLogVersion !== response.log_version) {
+                console.log("New messages received, updating chat history"); // Debug: Log when new messages are received
                 for (const log of response.logs) {
-                    setMessage(log.no, log.type, log.heading, log.content, log.kvps);
+                    if (log.no > lastLogVersion) {
+                        setMessage(log.no, log.type, log.heading, log.content, log.kvps);
+                        lastLogVersion = log.no;
+                        messageCounter = log.no; // Update message counter
+                    }
                 }
             }
 
-            //set ui model vars from backend
+            // Set UI model vars from backend
             const inputAD = Alpine.$data(inputSection);
             inputAD.paused = response.paused;
             const statusAD = Alpine.$data(statusSection);
             statusAD.connected = response.ok;
             const chatsAD = Alpine.$data(chatsSection);
             chatsAD.contexts = response.contexts;
-
-            lastLogVersion = response.log_version;
-            lastLogGuid = response.log_guid;
-
-
         }
-
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error in poll function:', error);
         const statusAD = Alpine.$data(statusSection);
         statusAD.connected = false;
     }
@@ -162,15 +185,21 @@ window.pauseAgent = async function (paused) {
 
 window.resetChat = async function () {
     const resp = await sendJsonData("/reset", { context });
+    chatHistory.innerHTML = "";
+    messageCounter = 0;
+    lastLogVersion = 0;
+    lastLogGuid = "";
 }
 
 window.newChat = async function () {
     setContext(generateGUID());
+    chatHistory.innerHTML = "";
+    messageCounter = 0;
+    lastLogVersion = 0;
+    lastLogGuid = "";
 }
 
 window.killChat = async function (id) {
-
-
     const chatsAD = Alpine.$data(chatsSection);
     let found, other
     for (let i = 0; i < chatsAD.contexts.length; i++) {
@@ -186,7 +215,7 @@ window.killChat = async function (id) {
         if (other) setContext(other.id)
         else setContext(generateGUID())
     }
-    
+
     if (found) sendJsonData("/remove", { context: id });
 }
 
@@ -203,21 +232,17 @@ const setContext = function (id) {
     chatsAD.selected = id
 }
 
-
 window.toggleAutoScroll = async function (_autoScroll) {
     autoScroll = _autoScroll;
 }
 
-window.toggleJson = async function (showJson) {
-    // add display:none to .msg-json class definition
+window.toggleShowJson = async function (showJson) {
     toggleCssProperty('.msg-json', 'display', showJson ? 'block' : 'none');
 }
 
-window.toggleThoughts = async function (showThoughts) {
-    // add display:none to .msg-json class definition
+window.toggleShowThoughts = async function (showThoughts) {
     toggleCssProperty('.msg-thoughts', 'display', showThoughts ? undefined : 'none');
 }
-
 
 function toggleCssProperty(selector, property, value) {
     // Get the stylesheet that contains the class
@@ -246,3 +271,41 @@ function toggleCssProperty(selector, property, value) {
 chatInput.addEventListener('input', adjustTextareaHeight);
 
 setInterval(poll, 250);
+
+console.log("index.js finished loading"); // Debug: Check if the script has finished loading
+
+// At the top, after existing imports
+// ...
+
+document.addEventListener('alpine:init', () => {
+    // Fetch available models from the backend
+    fetch('/get_available_models')
+        .then(response => response.json())
+        .then(data => {
+            const modelSection = document.getElementById('model-selection-section');
+            const modelData = Alpine.$data(modelSection);
+            modelData.models = data.models;
+            // Set default models
+            modelData.chatModel = data.current_models.chat;
+            modelData.utilityModel = data.current_models.utility;
+            modelData.embeddingModel = data.current_models.embedding;
+        });
+
+    // Define the updateModel function
+    window.updateModel = (role, modelName) => {
+        fetch('/update_model', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role, model_name: modelName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.ok) {
+                console.error('Failed to update model:', data.message);
+            } else {
+                console.log(`Updated ${role} model to ${modelName}`);
+            }
+        })
+        .catch(error => console.error('Error updating model:', error));
+    };
+});

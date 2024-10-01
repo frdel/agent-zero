@@ -1,5 +1,6 @@
 ansio==0.0.1
 python-dotenv==1.0.1
+langchain==0.1.12
 langchain-groq==0.1.6
 langchain-huggingface==0.0.3
 langchain-openai==0.1.15

@@ -5,23 +5,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agent Zero</title>
-    <link rel="stylesheet" href="index.css">
-
+    <link rel="stylesheet" href="/static/index.css">
     <script>
         window.safeCall = function(name, ...args) {
             if (window[name]) window[name](...args)
         }
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script type="module" src="index.js"></script>
-
+    <script type="module" src="/static/index.js?v=1"></script>
 </head>
 
 <body>
     <div class="container">
         <div id="left-panel" class="panel">
-            <!-- <h2>Configuration</h2> -->
-
+            <h2 class="panel-title">Agent Zero</h2>
             <div class="config-section" id="status-section" x-data="{ connected: true }">
                 <h3>Status</h3>
                 <h4 class="connected" x-show="connected">&#10004; Connected</h4>
@@ -30,8 +27,10 @@
 
             <div class="config-section" x-data="{ showQuickActions: true }">
                 <h3>Quick Actions</h3>
-                <button class="config-button" id="resetChat" @click="resetChat()">Reset chat</button>
-                <button class="config-button" id="newChat" @click="newChat()">New Chat</button>
+                <div class="button-group">
+                    <button class="config-button" id="resetChat" @click="resetChat()">Reset chat</button>
+                    <button class="config-button" id="newChat" @click="newChat()">New Chat</button>
+                </div>
             </div>
 
             <div class="config-section" id="chats-section" x-data="{ contexts: [], selected: '' }" x-show="contexts.length > 0">
@@ -40,7 +39,7 @@
                     <template x-for="context in contexts">
                         <li>
                             <span
-                                :class="{'chat-list-button': true, 'font-bold': context.id === selected}"
+                                :class="{'chat-list-button': true, 'selected': context.id === selected}"
                                 @click="selected = context.id; selectChat(context.id)">
                                 Chat #<span x-text="context.no"></span>
                             </span>
@@ -66,7 +65,7 @@
                         <label for="showThoughtsSwitch">Show thoughts</label>
                         <label class="switch" for="showThoughtsSwitch">
                             <input type="checkbox" id="showThoughtsSwitch" x-model="showThoughts"
-                                x-effect="window.safeCall('toggleThoughts',showThoughts)">
+                                x-effect="window.safeCall('toggleShowThoughts',showThoughts)">
                             <span class="slider"></span>
                         </label>
                     </li>
@@ -74,28 +73,62 @@
                     <li x-data="{ showJson: false }">
                         <label for="showJsonSwitch">Show JSON</label>
                         <label class="switch" for="showJsonSwitch">
-                            <input type="checkbox" id="showJsonSwitch" x-model="showJson" x-effect="window.safeCall('toggleJson',showJson)">
+                            <input type="checkbox" id="showJsonSwitch" x-model="showJson"
+                                x-effect="window.safeCall('toggleShowJson',showJson)">
                             <span class="slider"></span>
                         </label>
                     </li>
+                </ul>
+            </div>
 
+            <div class="config-section" id="model-selection-section" x-data="{ chatModel: '', utilityModel: '', embeddingModel: '', models: [] }">
+                <h3>Model Selection</h3>
+                <ul class="config-list">
+                    <li>
+                        <label for="chatModelSelect">Chat Model</label>
+                        <select id="chatModelSelect" x-model="chatModel" @change="updateModel('chat', chatModel)">
+                            <option value="">Select Chat Model</option>
+                            <template x-for="model in models">
+                                <option :value="model" x-text="model"></option>
+                            </template>
+                        </select>
+                    </li>
+                    <li>
+                        <label for="utilityModelSelect">Utility Model</label>
+                        <select id="utilityModelSelect" x-model="utilityModel" @change="updateModel('utility', utilityModel)">
+                            <option value="">Select Utility Model</option>
+                            <template x-for="model in models">
+                                <option :value="model" x-text="model"></option>
+                            </template>
+                        </select>
+                    </li>
+                    <li>
+                        <label for="embeddingModelSelect">Embedding Model</label>
+                        <select id="embeddingModelSelect" x-model="embeddingModel" @change="updateModel('embedding', embeddingModel)">
+                            <option value="">Select Embedding Model</option>
+                            <template x-for="model in models">
+                                <option :value="model" x-text="model"></option>
+                            </template>
+                        </select>
+                    </li>
                 </ul>
             </div>
         </div>
         <div class="splitter" id="splitter"></div>
         <div id="right-panel" class="panel">
-            <!--<h2>Chat</h2>-->
             <div id="chat-history">
-
+                <!-- Chat messages will be dynamically inserted here -->
             </div>
             <div id="input-section" x-data="{ paused: false }">
                 <label for="chat-input" class="visually-hidden">Chat Input</label>
                 <textarea id="chat-input" placeholder="Type your message here..." rows="1"></textarea>
-                <button class="chat-button" id="send-button">&#10148;</button>
-                <button class="chat-button pause-button" id="pause-button" @click="pauseAgent(true)"
-                    x-show="!paused">&#10074;&#10074;</button>
-                <button class="chat-button pause-button" id="unpause-button" @click="pauseAgent(false)"
-                    x-show="paused">&#9654;</button>
+                <div class="button-group">
+                    <button class="chat-button" id="send-button">&#10148;</button>
+                    <button class="chat-button pause-button" id="pause-button" @click="pauseAgent(true)"
+                        x-show="!paused">&#10074;&#10074;</button>
+                    <button class="chat-button pause-button" id="unpause-button" @click="pauseAgent(false)"
+                        x-show="paused">&#9654;</button>
+                </div>
             </div>
         </div>
     </div>

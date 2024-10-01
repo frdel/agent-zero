@@ -17,6 +17,9 @@ class AgentConfig:
         self.knowledge_subdir: str = "knowledge"
         self.embeddings_model: str = "default-model"
         self.response_timeout_seconds: int = 60
+        self.chat_model_name: str = "default_chat_model"
+        self.utility_model_name: str = "default_utility_model"
+        self.embedding_model_name: str = "default_embedding_model"
 
 
 # Define missing constants

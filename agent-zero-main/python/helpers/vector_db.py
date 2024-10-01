@@ -10,8 +10,8 @@ import os, json
 from . import files
 from langchain_core.documents import Document
 import uuid
-from python.helpers import knowledge_import
-from python.helpers.log import Log
+from .log import Log
+from . import knowledge_import  # Updated import statement
 
 
 class VectorDB:

@@ -1,0 +1,63 @@
+[tool.poetry]
+name = "agent-zero"
+version = "0.1.0"
+description = ""
+authors = ["GaryOcean428 <braden.lang77@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+ansio = "^0.0.2"
+sentence-transformers = "^3.1.1"
+langchain = "^0.3.1"
+langchain-community = "^0.3.1"
+python-dotenv = "^1.0.1"
+langchain-groq = "^0.2.0"
+langchain-huggingface = "^0.1.0"
+langchain-openai = "^0.2.1"
+langchain-anthropic = "^0.2.1"
+langchain-chroma = "^0.1.4"
+langchain-google-genai = "^2.0.0"
+webcolors = "^24.8.0"
+docker = "^7.1.0"
+paramiko = "^3.5.0"
+duckduckgo-search = "^6.2.13"
+inputimeout = "^1.0.4"
+types-regex = "^2024.9.11.20240912"
+
+
+[tool.poetry.group.dev.dependencies]
+types-regex = "^2024.9.11.20240912"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.flake8]
+max_line_length = 120
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = ["I"]
+
+[tool.mypy]
+ignore_missing_imports = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+implicit_reexport = false
+strict_equality = true
+
+[tool.poetry.devDependencies]
+markdown = { version = "^3.3.4", optional = true }
+
+[tool.poetry.scripts]
+agent-zero = "python -m agent_zero"
+
+[tool.poetry.extras]
+lint = ["markdown"]

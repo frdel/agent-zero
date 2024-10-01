@@ -13,22 +13,23 @@ import uuid
 
 class VectorDB:
 
-    def __init__(self, embeddings_model:Embeddings, in_memory=False, cache_dir="./cache"):
+    def __init__(
+        self, embeddings_model: Embeddings, in_memory=False, cache_dir="./cache"
+    ):
         print("Initializing VectorDB...")
         self.embeddings_model = embeddings_model
 
-        db_cache = files.get_abs_path(cache_dir,"database")
+        db_cache = files.get_abs_path(cache_dir, "database")
 
-        self.client =chromadb.PersistentClient(path=db_cache)
+        self.client = chromadb.PersistentClient(path=db_cache)
         self.collection = self.client.create_collection("my_collection")
         self.collection
 
-        
-    def search(self, query:str, results=2):
+    def search(self, query: str, results=2):
         emb = self.embeddings_model.embed_query(query)
-        res = self.collection.query(query_embeddings=[emb],n_results=results)
-        best = res["documents"][0][0] # type: ignore
-        
+        res = self.collection.query(query_embeddings=[emb], n_results=results)
+        best = res["documents"][0][0]  # type: ignore
+
     # def delete_documents(self, query):
     #     score_limit = 1
     #     k = 2
@@ -45,15 +46,15 @@ class VectorDB:
     #             fnd = self.db.get(where={"id": {"$in": document_ids}})
     #             if fnd["ids"]: self.db.delete(ids=fnd["ids"])
     #             tot += len(fnd["ids"])
-            
+
     #         # If fewer than K document IDs, break the loop
     #         if len(document_ids) < k:
     #             break
-        
+
     #     return tot
 
-    def insert(self, data:str):
-        
+    def insert(self, data: str):
+
         id = str(uuid.uuid4())
         emb = self.embeddings_model.embed_documents([data])[0]
 
@@ -61,9 +62,6 @@ class VectorDB:
             ids=[id],
             embeddings=[emb],
             documents=[data],
-            )
+        )
 
         return id
-        
-
-
