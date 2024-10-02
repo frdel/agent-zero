@@ -13,9 +13,7 @@ import uuid
 
 class VectorDB:
 
-    def __init__(
-        self, embeddings_model: Embeddings, in_memory=False, cache_dir="./cache"
-    ):
+    def __init__(self, embeddings_model: Embeddings, in_memory=False, cache_dir="./cache"):
         print("Initializing VectorDB...")
         self.embeddings_model = embeddings_model
 

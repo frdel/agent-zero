@@ -1,33 +1,27 @@
 from config import AgentConfig
-from models import (
-    get_groq_chat,
-)
-
-# Commented out imports that are not currently used to avoid linting errors
-# from models import (
-#     get_gpt4o,
-#     get_gpt4o_mini,
-#     get_claude_chat,
-#     get_available_models,
-# )
+from models import get_model_by_name, get_available_models
 
 # Initialize Agent Configuration
 config = AgentConfig()
 
-# Example usage of the imported functions (if needed)
-# groq_chat = get_groq_chat()
-# gpt4o = get_gpt4o()
-# gpt4o_mini = get_gpt4o_mini()
-# claude_chat = get_claude_chat()
-# available_models = get_available_models()
+# Set default values for the model names
+config.chat_model_name = "groq_llama"
+config.utility_model_name = "groq_llama"
+config.embedding_model_name = "default_embedding_model"
 
-# If these functions are not used in initialize.py, consider removing the imports to eliminate warnings
+# Get available models
+available_models = get_available_models()
 
-class AgentConfig:
-    # Existing code...
+# Create the actual model instances
+config.chat_model = get_model_by_name(config.chat_model_name)
+config.utility_model = get_model_by_name(config.utility_model_name)
 
-    def __init__(self):
-        # Other initializations...
-        self.chat_model_name = 'default_chat_model'
-        self.utility_model_name = 'default_utility_model'
-        self.embedding_model_name = 'default_embedding_model'
+# Set embeddings_model to None
+# TODO: Implement appropriate embedding model initialization
+config.embeddings_model = None
+
+# Export the config and available models
+__all__ = [
+    "config",
+    "available_models",
+]

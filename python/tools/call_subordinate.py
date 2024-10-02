@@ -3,9 +3,7 @@ from python.helpers.tool import Tool, Response
 
 
 class Delegation(Tool):
-    async def execute(
-        self, message: str = "", reset: str = "", **kwargs: Any
-    ) -> Response:
+    async def execute(self, message: str = "", reset: str = "", **kwargs: Any) -> Response:
         subordinate: Optional[Any] = self.get_agent_data(self.agent, "subordinate")
 
         if subordinate is None or str(reset).lower().strip() == "true":
@@ -17,9 +15,7 @@ class Delegation(Tool):
                 self.set_agent_data(subordinate, "superior", self.agent)
             except Exception as e:
                 print(f"Error creating subordinate agent: {e}")
-                return Response(
-                    message="Failed to create subordinate agent", break_loop=False
-                )
+                return Response(message="Failed to create subordinate agent", break_loop=False)
 
         if subordinate is None:
             return Response(message="No subordinate agent available", break_loop=False)
@@ -33,9 +29,7 @@ class Delegation(Tool):
             elif callable(generate_response):
                 response = await generate_response(message)
             else:
-                raise AttributeError(
-                    "Subordinate agent has no message_loop or generate_response method"
-                )
+                raise AttributeError("Subordinate agent has no message_loop or generate_response method")
             return Response(message=response, break_loop=False)
         except Exception as e:
             print(f"Error in subordinate agent processing: {e}")

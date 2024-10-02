@@ -25,9 +25,7 @@ class SSHInteractiveSession:
         errors = 0
         while True:
             try:
-                self.client.connect(
-                    self.hostname, self.port, self.username, self.password
-                )
+                self.client.connect(self.hostname, self.port, self.username, self.password)
                 self.shell = self.client.invoke_shell(width=160, height=48)
                 # self.shell.send(f'PS1="{SSHInteractiveSession.ps1_label}"'.encode())
                 return
@@ -53,9 +51,7 @@ class SSHInteractiveSession:
         if not self.shell:
             raise Exception("Shell not connected")
         self.full_output = b""
-        self.shell.send(
-            (command + " \\\n" + SSHInteractiveSession.end_comment + "\n").encode()
-        )
+        self.shell.send((command + " \\\n" + SSHInteractiveSession.end_comment + "\n").encode())
 
     def read_output(self) -> Tuple[str, str]:
         if not self.shell:
@@ -77,12 +73,8 @@ class SSHInteractiveSession:
 
         # Split output at end_comment
         if SSHInteractiveSession.end_comment in decoded_full_output:
-            decoded_full_output = decoded_full_output.split(
-                SSHInteractiveSession.end_comment
-            )[-1].lstrip("\r\n")
-            decoded_partial_output = decoded_partial_output.split(
-                SSHInteractiveSession.end_comment
-            )[-1].lstrip("\r\n")
+            decoded_full_output = decoded_full_output.split(SSHInteractiveSession.end_comment)[-1].lstrip("\r\n")
+            decoded_partial_output = decoded_partial_output.split(SSHInteractiveSession.end_comment)[-1].lstrip("\r\n")
 
         return decoded_full_output, decoded_partial_output
 

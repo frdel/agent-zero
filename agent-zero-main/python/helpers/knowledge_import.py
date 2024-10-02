@@ -33,9 +33,7 @@ def calculate_checksum(file_path: str) -> str:
     return hasher.hexdigest()
 
 
-def load_knowledge(
-    logger: Log, knowledge_dir: str, index: Dict[str, KnowledgeImport]
-) -> Dict[str, KnowledgeImport]:
+def load_knowledge(logger: Log, knowledge_dir: str, index: Dict[str, KnowledgeImport]) -> Dict[str, KnowledgeImport]:
     knowledge_dir = files.get_abs_path(knowledge_dir)
 
     # Mapping file extensions to corresponding loader classes
@@ -54,9 +52,7 @@ def load_knowledge(
     # Fetch all files in the directory with specified extensions
     kn_files = glob.glob(knowledge_dir + "/**/*", recursive=True)
     if kn_files:
-        print(
-            f"Found {len(kn_files)} knowledge files in {knowledge_dir}, processing..."
-        )
+        print(f"Found {len(kn_files)} knowledge files in {knowledge_dir}, processing...")
         logger.log(
             type="info",
             content=f"Found {len(kn_files)} knowledge files in {knowledge_dir}, processing...",
@@ -81,11 +77,7 @@ def load_knowledge(
                 loader_cls = file_types_loaders[ext]
                 loader = loader_cls(
                     file_path,
-                    **(
-                        text_loader_kwargs
-                        if ext in ["txt", "csv", "html", "md"]
-                        else {}
-                    ),
+                    **(text_loader_kwargs if ext in ["txt", "csv", "html", "md"] else {}),
                 )
                 file_data["documents"] = loader.load_and_split()
                 cnt_files += 1
@@ -101,7 +93,5 @@ def load_knowledge(
             index[file_key]["state"] = "removed"
 
     print(f"Processed {cnt_docs} documents from {cnt_files} files.")
-    logger.log(
-        type="info", content=f"Processed {cnt_docs} documents from {cnt_files} files."
-    )
+    logger.log(type="info", content=f"Processed {cnt_docs} documents from {cnt_files} files.")
     return index

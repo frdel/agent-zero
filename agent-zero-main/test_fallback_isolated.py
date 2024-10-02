@@ -16,19 +16,11 @@ class Agent:
 
     def message_loop(self, msg):
         try:
-            return self.config.chat_model(
-                {"messages": [{"role": "user", "content": msg}]}
-            )
+            return self.config.chat_model({"messages": [{"role": "user", "content": msg}]})
         except Exception as e:
             if "rate limit" in str(e).lower():
-                print(
-                    "{}: Rate limit hit. Falling back to GPT-4o-mini.".format(
-                        self.agent_name
-                    )
-                )
-                return self.config.fallback_model(
-                    {"messages": [{"role": "user", "content": msg}]}
-                )
+                print("{}: Rate limit hit. Falling back to GPT-4o-mini.".format(self.agent_name))
+                return self.config.fallback_model({"messages": [{"role": "user", "content": msg}]})
             else:
                 raise e
 
@@ -58,9 +50,7 @@ class TestFallbackMechanism(unittest.TestCase):
         self.assertEqual(response, "Fallback model response")
         self.chat_model.assert_called_once()
         self.fallback_model.assert_called_once()
-        mock_print.assert_called_with(
-            "Agent 0: Rate limit hit. Falling back to GPT-4o-mini."
-        )
+        mock_print.assert_called_with("Agent 0: Rate limit hit. Falling back to GPT-4o-mini.")
 
     def test_no_fallback_on_normal_operation(self):
         # Mock the primary model to return a normal response

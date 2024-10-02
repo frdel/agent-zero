@@ -1,8 +1,8 @@
-from typing import Dict
+from typing import Dict, Any
 
 
 class AgentConfig:
-    def __init__(self):
+    def __init__(self) -> None:
         self.max_tool_response_length: int = 1000
         self.code_exec_docker_enabled: bool = True
         self.code_exec_docker_name: str = "agent-zero-container"
@@ -15,11 +15,13 @@ class AgentConfig:
         self.code_exec_ssh_pass: str = ""
         self.memory_subdir: str = "memory"
         self.knowledge_subdir: str = "knowledge"
-        self.embeddings_model: str = "default-model"
         self.response_timeout_seconds: int = 60
         self.chat_model_name: str = "default_chat_model"
         self.utility_model_name: str = "default_utility_model"
         self.embedding_model_name: str = "default_embedding_model"
+        self.chat_model: Any = None
+        self.utility_model: Any = None
+        self.embeddings_model: Any = None
 
 
 # Define missing constants

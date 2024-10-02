@@ -30,10 +30,7 @@ class RateLimiter:
         self.call_records: deque = deque()
 
     def _clean_old_records(self, current_time: float):
-        while (
-            self.call_records
-            and current_time - self.call_records[0].timestamp > self.window_seconds
-        ):
+        while self.call_records and current_time - self.call_records[0].timestamp > self.window_seconds:
             self.call_records.popleft()
 
     def _get_counts(self) -> Tuple[int, int, int]:
@@ -50,10 +47,7 @@ class RateLimiter:
             wait_reasons = []
             if self.max_calls > 0 and calls >= self.max_calls:
                 wait_reasons.append("max calls")
-            if (
-                self.max_input_tokens > 0
-                and input_tokens + new_input_tokens > self.max_input_tokens
-            ):
+            if self.max_input_tokens > 0 and input_tokens + new_input_tokens > self.max_input_tokens:
                 wait_reasons.append("max input tokens")
             if self.max_output_tokens > 0 and output_tokens >= self.max_output_tokens:
                 wait_reasons.append("max output tokens")

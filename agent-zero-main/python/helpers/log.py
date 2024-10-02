@@ -25,9 +25,7 @@ class LogItem:
         kvps: dict | None = None,
     ):
         if self.guid == self.log.guid:
-            self.log.update_item(
-                self.no, type=type, heading=heading, content=content, kvps=kvps
-            )
+            self.log.update_item(self.no, type=type, heading=heading, content=content, kvps=kvps)
 
     def output(self):
         return {

@@ -42,17 +42,19 @@ groq_api_key = os.getenv("GROQ_API_KEY")
 groq_api_key_secret = SecretStr(groq_api_key) if groq_api_key else None
 
 # Create AgentConfig with Groq's Llama 3.2 model
+chat_model = ChatGroq(
+    model="llama-3.2-3b-preview",
+    api_key=groq_api_key_secret,
+    stop_sequences=[],  # Add stop sequences here if needed
+)
+utility_model = ChatGroq(
+    model="llama-3.2-3b-preview",
+    api_key=groq_api_key_secret,
+    stop_sequences=[],  # Add stop sequences here if needed
+)
 config = AgentConfig(
-    chat_model=ChatGroq(
-        model="llama-3.2-3b-preview",
-        api_key=groq_api_key_secret,
-        stop_sequences=[],  # Add stop sequences here if needed
-    ),
-    utility_model=ChatGroq(
-        model="llama-3.2-3b-preview",
-        api_key=groq_api_key_secret,
-        stop_sequences=[],  # Add stop sequences here if needed
-    ),
+    chat_model=chat_model,
+    utility_model=utility_model,
     embeddings_model=None,  # We'll set this to None for now
 )
 
@@ -84,15 +86,13 @@ chat_contexts: Dict[str, Dict[str, Any]] = {}
 async def generate_agent_response(prompt: str) -> str:
     print(f"Generating response for prompt: {prompt}")  # Debug: Log the prompt
 
-    # Update the agent's models before generating the response
-    agent.update_models()
-
-    response = agent.generate_response(
-        prompt
-    )  # Call the synchronous method without await
-    print(f"Generated response: {response}")  # Debug: Log the generated response
-    return response
-    return response
+    try:
+        response = agent.generate_response(prompt)
+        print(f"Generated response: {response}")  # Debug: Log the generated response
+        return response
+    except Exception as e:
+        print(f"Error generating response: {str(e)}")
+        return f"Error: {str(e)}"
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -124,10 +124,7 @@ async def poll(request: Request):
             "log_version": len(context_data["messages"]),
             "logs": new_messages,
             "paused": context_data["paused"],
-            "contexts": [
-                {"id": ctx, "no": idx + 1}
-                for idx, ctx in enumerate(chat_contexts.keys())
-            ],
+            "contexts": [{"id": ctx, "no": idx + 1} for idx, ctx in enumerate(chat_contexts.keys())],
         }
     )
 
@@ -142,20 +139,12 @@ async def message(request: Request):
         chat_contexts[context] = {"messages": [], "paused": False}
 
     # Generate a response using the agent
-    response = await generate_agent_response(text)  # Keep this call asynchronous
-    # Extract the agent's message content
-    agent_message = (
-        response
-        if isinstance(response, str)
-        else "\n".join(response.get("thoughts", []))
-    )
+    response = await generate_agent_response(text)
 
     # Add user message and agent response to the context
-    chat_contexts[context]["messages"].extend(
-        [{"type": "user", "content": text}, {"type": "agent", "content": agent_message}]
-    )
+    chat_contexts[context]["messages"].extend([{"type": "user", "content": text}, {"type": "agent", "content": response}])
 
-    print(f"Sending response: {agent_message}")  # Debug: Log the response being sent
+    print(f"Sending response: {response}")  # Debug: Log the response being sent
 
     return JSONResponse({"ok": True})
 
@@ -204,9 +193,7 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            response = await generate_agent_response(
-                data
-            )  # Keep this call asynchronous
+            response = await generate_agent_response(data)
             await websocket.send_text(response)
     except WebSocketDisconnect:
         print("WebSocket disconnected.")
@@ -216,9 +203,9 @@ async def websocket_endpoint(websocket: WebSocket):
 async def get_available_models_endpoint():
     models_list = get_available_models()
     current_models = {
-        "chat": agent.config.chat_model_name,
-        "utility": agent.config.utility_model_name,
-        "embedding": agent.config.embedding_model_name,
+        "chat": getattr(agent.config.chat_model, "model", None),
+        "utility": getattr(agent.config.utility_model, "model", None),
+        "embedding": getattr(agent.config.embeddings_model, "model", None),
     }
     return JSONResponse({"models": models_list, "current_models": current_models})
 
@@ -230,21 +217,16 @@ async def update_model(request: Request):
     model_name = data.get("model_name")
 
     if role not in ["chat", "utility", "embedding"]:
-        return JSONResponse(
-            {"ok": False, "message": f"Invalid role: {role}"}, status_code=400
-        )
+        return JSONResponse({"ok": False, "message": f"Invalid role: {role}"}, status_code=400)
 
     try:
         # Update the agent's configuration
         if role == "chat":
             agent.config.chat_model = get_model_by_name(model_name)
-            agent.config.chat_model_name = model_name
         elif role == "utility":
             agent.config.utility_model = get_model_by_name(model_name)
-            agent.config.utility_model_name = model_name
         elif role == "embedding":
             agent.config.embeddings_model = get_embedding_model_by_name(model_name)
-            agent.config.embedding_model_name = model_name
 
         return JSONResponse({"ok": True})
     except Exception as e:

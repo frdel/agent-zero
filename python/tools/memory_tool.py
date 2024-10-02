@@ -28,9 +28,7 @@ class Memory(Tool):
                 result = delete(self.agent, kwargs["delete"])
         except InvalidDimensionException as e:
             # hint about embedding change with existing database
-            PrintStyle.hint(
-                "If you changed your embedding model, you will need to remove contents of /memory directory."
-            )
+            PrintStyle.hint("If you changed your embedding model, you will need to remove contents of /memory directory.")
             raise
 
         # result = process_query(self.agent, self.args["memory"],self.args["action"], result_count=self.agent.config.auto_memory_count)

@@ -43,14 +43,9 @@ try:
     from langchain_core.language_models import BaseLLM  # type: ignore
     from langchain_core.language_models.chat_models import BaseChatModel  # type: ignore
 except ImportError:
-    print(
-        "Warning: Unable to import some langchain modules. "
-        "Make sure langchain is installed."
-    )
+    print("Warning: Unable to import some langchain modules. " "Make sure langchain is installed.")
     # Use Any as a fallback type
-    AIMessage = HumanMessage = SystemMessage = ChatPromptTemplate = (
-        MessagesPlaceholder
-    ) = BaseLLM = BaseChatModel = Any
+    AIMessage = HumanMessage = SystemMessage = ChatPromptTemplate = MessagesPlaceholder = BaseLLM = BaseChatModel = Any
 
 # Type alias for the complex dictionary type
 DockerVolume = Dict[str, str]
@@ -77,9 +72,7 @@ class AgentConfig:
     code_exec_docker_enabled: bool = True
     code_exec_docker_name: str = "agent-zero-exe"
     code_exec_docker_image: str = "frdel/agent-zero-exe:latest"
-    code_exec_docker_ports: Dict[str, int] = field(
-        default_factory=lambda: {"22/tcp": 50022}
-    )
+    code_exec_docker_ports: Dict[str, int] = field(default_factory=lambda: {"22/tcp": 50022})
     code_exec_docker_volumes: Optional[DockerVolumes] = None
     code_exec_ssh_enabled: bool = True
     code_exec_ssh_addr: str = "localhost"
@@ -108,9 +101,7 @@ class Agent:
         self.config = config
         self.number = number
         self.agent_name = f"Agent {self.number}"
-        self.system_prompt = files.read_file(
-            "./prompts/agent.system.md", agent_name=self.agent_name
-        )
+        self.system_prompt = files.read_file("./prompts/agent.system.md", agent_name=self.agent_name)
         self.tools_prompt = files.read_file("./prompts/agent.tools.md")
         self.history: List[Union[HumanMessage, AIMessage]] = []  # type: ignore
         self.last_message = ""
@@ -153,10 +144,7 @@ class Agent:
 
         # Trim the history if it exceeds the maximum number of messages
         if len(self.history) > self.config.msgs_keep_max:
-            self.history = (
-                self.history[: self.config.msgs_keep_start]
-                + self.history[-self.config.msgs_keep_end :]
-            )
+            self.history = self.history[: self.config.msgs_keep_start] + self.history[-self.config.msgs_keep_end :]
 
         return response_content
 

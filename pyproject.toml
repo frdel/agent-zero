@@ -21,23 +21,22 @@ langchain-google-genai = "^2.0.0"
 webcolors = "^24.8.0"
 docker = "^7.1.0"
 paramiko = "^3.5.0"
-duckduckgo-search = "^6.2.13"
-inputimeout = "^1.0.4"
-types-regex = "^2024.9.11.20240912"
-
+duckduckgo-search = "^6.2.0"
 
 [tool.poetry.group.dev.dependencies]
-types-regex = "^2024.9.11.20240912"
+black = "^24.3.0"
+flake8 = "^7.0.0"
+mypy = "^1.9.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.flake8]
-max_line_length = 120
+[tool.black]
+line-length = 160
 
 [tool.ruff]
-line-length = 120
+line-length = 160
 
 [tool.ruff.lint]
 extend-select = ["I"]
@@ -52,9 +51,6 @@ warn_unused_ignores = true
 warn_return_any = true
 implicit_reexport = false
 strict_equality = true
-
-[tool.poetry.devDependencies]
-markdown = { version = "^3.3.4", optional = true }
 
 [tool.poetry.scripts]
 agent-zero = "python -m agent_zero"

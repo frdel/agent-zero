@@ -57,18 +57,10 @@ def calculate_valid_match_lengths(
             # Look ahead to find the best match within the remaining deviation allowance
             best_match = None
             for k in range(1, look_ahead + 1):
-                if (
-                    i + k < first_length
-                    and j < second_length
-                    and first[i + k] == second[j]
-                ):
+                if i + k < first_length and j < second_length and first[i + k] == second[j]:
                     best_match = ("i", k)
                     break
-                if (
-                    j + k < second_length
-                    and i < first_length
-                    and first[i] == second[j + k]
-                ):
+                if j + k < second_length and i < first_length and first[i] == second[j + k]:
                     best_match = ("j", k)
                     break
 
@@ -94,9 +86,7 @@ def calculate_valid_match_lengths(
                 f"Second (up to {last_matched_j}): {second[:last_matched_j]!r}\n"
                 "\n"
                 f"Current deviation: {deviations}\n"
-                f"Matched since last deviation: {matched_since_deviation}\n"
-                + "-" * 40
-                + "\n"
+                f"Matched since last deviation: {matched_since_deviation}\n" + "-" * 40 + "\n"
             )
             sys.stdout.write("\r" + output)
             sys.stdout.flush()

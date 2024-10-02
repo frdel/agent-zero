@@ -19,13 +19,9 @@ class Knowledge(Tool):
 
             # perplexity search, if API provided
             if os.getenv("API_KEY_PERPLEXITY"):
-                perplexity = executor.submit(
-                    perplexity_search.perplexity_search, question
-                )
+                perplexity = executor.submit(perplexity_search.perplexity_search, question)
             else:
-                PrintStyle.hint(
-                    "No API key provided for Perplexity. Skipping Perplexity search."
-                )
+                PrintStyle.hint("No API key provided for Perplexity. Skipping Perplexity search.")
                 perplexity = None
 
             # duckduckgo search
@@ -45,7 +41,7 @@ class Knowledge(Tool):
             memory=memory_result,
         )
 
-        handle_intervention = getattr(self.agent, 'handle_intervention', None)
+        handle_intervention = getattr(self.agent, "handle_intervention", None)
         if callable(handle_intervention):
             handle_intervention(msg)
 

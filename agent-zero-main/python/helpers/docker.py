@@ -32,13 +32,8 @@ class DockerContainerManager:
                 self.container = None
             except Exception as e:
                 err = format_error(e)
-                if (
-                    "ConnectionRefusedError(61," in err
-                    or "Error while fetching server API version" in err
-                ):
-                    PrintStyle.hint(
-                        "Connection to Docker failed. Is docker or Docker Desktop running?"
-                    )  # hint for user
+                if "ConnectionRefusedError(61," in err or "Error while fetching server API version" in err:
+                    PrintStyle.hint("Connection to Docker failed. Is docker or Docker Desktop running?")  # hint for user
                     self.logger.log(
                         type="hint",
                         content="Connection to Docker failed. Is docker or Docker Desktop running?",
@@ -78,9 +73,7 @@ class DockerContainerManager:
 
         if existing_container:
             if existing_container.status != "running":
-                print(
-                    f"Starting existing container: {self.name} for safe code execution..."
-                )
+                print(f"Starting existing container: {self.name} for safe code execution...")
                 self.logger.log(
                     type="info",
                     content=f"Starting existing container: {self.name} for safe code execution...",
@@ -94,9 +87,7 @@ class DockerContainerManager:
                 self.container = existing_container
                 # print(f"Container with name '{self.name}' is already running with ID: {existing_container.id}")
         else:
-            print(
-                f"Initializing docker container {self.name} for safe code execution..."
-            )
+            print(f"Initializing docker container {self.name} for safe code execution...")
             self.logger.log(
                 type="info",
                 content=f"Initializing docker container {self.name} for safe code execution...",
@@ -111,7 +102,5 @@ class DockerContainerManager:
             )
             atexit.register(self.cleanup_container)
             print(f"Started container with ID: {self.container.id}")
-            self.logger.log(
-                type="info", content=f"Started container with ID: {self.container.id}"
-            )
+            self.logger.log(type="info", content=f"Started container with ID: {self.container.id}")
             time.sleep(5)  # this helps to get SSH ready

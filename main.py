@@ -77,32 +77,24 @@ def chat(agent: Agent) -> None:
                     padding=True,
                 ).print("User message ('e' to leave):")
                 user_input: Optional[str] = input("> ")
-                PrintStyle(font_color="white", padding=False, log_only=True).print(
-                    f"> {user_input}"
-                )
+                PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")
             else:  # otherwise wait for user input with a timeout
                 PrintStyle(
                     background_color="#6C3483",
                     font_color="white",
                     bold=True,
                     padding=True,
-                ).print(
-                    f"User message ({timeout}s timeout, 'w' to wait, 'e' to leave):"
-                )
+                ).print(f"User message ({timeout}s timeout, 'w' to wait, 'e' to leave):")
                 user_input = timeout_input("> ", timeout=timeout)
 
                 if user_input is None:
                     user_input = read_file("prompts/fw.msg_timeout.md")
-                    PrintStyle(font_color="white", padding=False).stream(
-                        f"{user_input}"
-                    )
+                    PrintStyle(font_color="white", padding=False).stream(f"{user_input}")
                 else:
                     user_input = user_input.strip()
                     if user_input.lower() == "w":  # the user needs more time
                         user_input = input("> ").strip()
-                    PrintStyle(font_color="white", padding=False, log_only=True).print(
-                        f"> {user_input}"
-                    )
+                    PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")
 
         # exit the conversation when the user types 'exit'
         if user_input is not None and user_input.lower() == "e":
@@ -113,9 +105,7 @@ def chat(agent: Agent) -> None:
         assistant_response = message_loop(cast(str, user_input))
 
         # print agent0 response
-        PrintStyle(
-            font_color="white", background_color="#1D8348", bold=True, padding=True
-        ).print(f"{agent.agent_name}: response:")
+        PrintStyle(font_color="white", background_color="#1D8348", bold=True, padding=True).print(f"{agent.agent_name}: response:")
         PrintStyle(font_color="white").print(f"{assistant_response}")
 
 
@@ -123,14 +113,10 @@ def chat(agent: Agent) -> None:
 def intervention() -> None:
     if getattr(Agent, "streaming_agent", None) and not getattr(Agent, "paused", False):
         Agent.paused = True  # type: ignore
-        PrintStyle(
-            background_color="#6C3483", font_color="white", bold=True, padding=True
-        ).print("User intervention ('e' to leave, empty to continue):")
+        PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print("User intervention ('e' to leave, empty to continue):")
 
         user_input = input("> ").strip()
-        PrintStyle(font_color="white", padding=False, log_only=True).print(
-            f"> {user_input}"
-        )
+        PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")
 
         if user_input.lower() == "e":
             os._exit(0)  # exit the conversation when the user types 'exit'
@@ -149,19 +135,11 @@ def capture_keys() -> None:
         intervent = False
         time.sleep(0.1)
 
-        if (
-            getattr(Agent, "streaming_agent", None)
-            and app_keypad
-            and get_input_event_func
-        ):
+        if getattr(Agent, "streaming_agent", None) and app_keypad and get_input_event_func:
             with input_lock:
                 with app_keypad():
                     event = get_input_event_func()
-                    if (
-                        event
-                        and hasattr(event, "shortcut")
-                        and (event.shortcut.isalpha() or event.shortcut.isspace())
-                    ):
+                    if event and hasattr(event, "shortcut") and (event.shortcut.isalpha() or event.shortcut.isspace()):
                         intervent = True
                         continue
 

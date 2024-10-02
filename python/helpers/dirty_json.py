@@ -22,9 +22,7 @@ class DirtyJson:
     def parse(self, json_string: str) -> JsonValue:
         self._reset()
         self.json_string = json_string
-        self.index = self.index_of_first_brace(
-            self.json_string
-        )  # skip any text up to the first brace
+        self.index = self.index_of_first_brace(self.json_string)  # skip any text up to the first brace
         self.current_char = self.json_string[self.index]
         self._parse()
         return self.result
@@ -76,9 +74,7 @@ class DirtyJson:
             if self.current_char is not None and self._peek(2) == self.current_char * 2:
                 return self._parse_multiline_string()
             return self._parse_string()
-        elif self.current_char and (
-            self.current_char.isdigit() or self.current_char in ["-", "+"]
-        ):
+        elif self.current_char and (self.current_char.isdigit() or self.current_char in ["-", "+"]):
             return self._parse_number()
         elif self._match("true"):
             return True
@@ -152,11 +148,7 @@ class DirtyJson:
 
     def _parse_unquoted_key(self) -> str:
         result = ""
-        while (
-            self.current_char is not None
-            and not self.current_char.isspace()
-            and self.current_char not in [":", ",", "}", "]"]
-        ):
+        while self.current_char is not None and not self.current_char.isspace() and self.current_char not in [":", ",", "}", "]"]:
             result += self.current_char
             self._advance()
         return result
@@ -222,11 +214,7 @@ class DirtyJson:
         quote_char = self.current_char
         self._advance(3)  # Skip first quote
         while self.current_char is not None:
-            if (
-                quote_char is not None
-                and self.current_char == quote_char
-                and self._peek(2) == quote_char * 2
-            ):
+            if quote_char is not None and self.current_char == quote_char and self._peek(2) == quote_char * 2:
                 self._advance(3)  # Skip closing quotes
                 break
             result += self.current_char

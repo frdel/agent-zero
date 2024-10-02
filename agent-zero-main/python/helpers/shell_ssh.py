@@ -12,9 +12,7 @@ class SSHInteractiveSession:
     # end_comment = "# @@==>> SSHInteractiveSession End-of-Command  <<==@@"
     # ps1_label = "SSHInteractiveSession CLI>"
 
-    def __init__(
-        self, logger: Log, hostname: str, port: int, username: str, password: str
-    ):
+    def __init__(self, logger: Log, hostname: str, port: int, username: str, password: str):
         self.logger = logger
         self.hostname = hostname
         self.port = port
@@ -32,9 +30,7 @@ class SSHInteractiveSession:
         errors = 0
         while True:
             try:
-                self.client.connect(
-                    self.hostname, self.port, self.username, self.password
-                )
+                self.client.connect(self.hostname, self.port, self.username, self.password)
                 self.shell = self.client.invoke_shell(width=160, height=48)
                 # self.shell.send(f'PS1="{SSHInteractiveSession.ps1_label}"'.encode())
                 # return
@@ -47,9 +43,7 @@ class SSHInteractiveSession:
                 errors += 1
                 if errors < 3:
                     print(f"SSH Connection attempt {errors}...")
-                    self.logger.log(
-                        type="info", content=f"SSH Connection attempt {errors}..."
-                    )
+                    self.logger.log(type="info", content=f"SSH Connection attempt {errors}...")
 
                     time.sleep(5)
                 else:
@@ -84,10 +78,7 @@ class SSHInteractiveSession:
             data = self.shell.recv(1024)
 
             # Trim own command from output
-            if (
-                self.last_command
-                and len(self.last_command) > self.trimmed_command_length
-            ):
+            if self.last_command and len(self.last_command) > self.trimmed_command_length:
                 command_to_trim = self.last_command[self.trimmed_command_length :]
                 data_to_trim = leftover + data
 
@@ -143,8 +134,6 @@ class SSHInteractiveSession:
             # Handle carriage returns '\r' by splitting and taking the last part
             parts = [part for part in lines[i].split("\r") if part.strip()]
             if parts:
-                lines[i] = parts[
-                    -1
-                ].rstrip()  # Overwrite with the last part after the last '\r'
+                lines[i] = parts[-1].rstrip()  # Overwrite with the last part after the last '\r'
 
         return "\n".join(lines)

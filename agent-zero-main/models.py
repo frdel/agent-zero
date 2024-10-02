@@ -1,80 +1,92 @@
-from config import DEFAULT_MODEL, FALLBACK_MODEL, MODEL_SPECS
+from typing import Optional, Any, Callable, Type, cast
+from pydantic import SecretStr
+
+from config import MODEL_SPECS
 from langchain.chat_models import ChatOpenAI, ChatAnthropic
 from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
-from langchain.llms import OpenAI
-from constants import DEFAULT_TEMPERATURE  # Or define it if not available
+from langchain_groq import ChatGroq
+
+# Define DEFAULT_TEMPERATURE if not available from constants
+DEFAULT_TEMPERATURE = 0.7
 
 
-def get_groq_chat():
-    # Implementation for Groq Chat model
-    pass
+def get_groq_chat(model_name: str, api_key: Optional[str] = None, temperature: float = DEFAULT_TEMPERATURE) -> ChatGroq:
+    api_key = api_key or get_api_key("groq")
+    if api_key is None:
+        raise ValueError("API key for Groq is not available")
+    return ChatGroq(model=model_name, temperature=temperature, api_key=SecretStr(api_key) if api_key else None, stop_sequences=None)
 
 
-def get_gpt4o():
-    # Implementation for GPT-4O model
-    pass
+def get_gpt4o(model_name: str, api_key: Optional[str] = None, temperature: float = DEFAULT_TEMPERATURE) -> Any:
+    return get_openai_chat(model_name, api_key, temperature)
 
 
-def get_gpt4o_mini():
-    # Implementation for GPT-4O Mini model
-    pass
+def get_gpt4o_mini(model_name: str, api_key: Optional[str] = None, temperature: float = DEFAULT_TEMPERATURE) -> Any:
+    return get_openai_chat(model_name, api_key, temperature)
 
 
-def get_claude_chat():
-    # Implementation for Claude Chat model
-    pass
+def get_claude_chat(model_name: str, api_key: Optional[str] = None, temperature: float = DEFAULT_TEMPERATURE) -> Any:
+    return get_anthropic_chat(model_name, api_key, temperature)
 
 
-def get_available_models():
+def get_available_models() -> list[str]:
     return list(MODEL_SPECS.keys())
 
 
-def get_api_key() -> str:
+def get_api_key(provider: str) -> Optional[str]:
     # Implementation to retrieve the API key
+    # This should be implemented to securely retrieve API keys
     return "your_api_key"
 
 
-def get_model_by_name(model_name: str):
-    model_getters = {
+def get_model_by_name(model_name: str) -> Any:
+    model_getters: dict[str, Callable] = {
         "groq_llama": get_groq_chat,
-        "gpt4o": get_openai_chat,
-        "gpt4o_mini": get_openai_chat,
-        "claude_3_5_sonnet": get_anthropic_chat,
+        "gpt4o": get_gpt4o,
+        "gpt4o_mini": get_gpt4o_mini,
+        "claude_3_5_sonnet": get_claude_chat,
         # Add other models as needed
     }
     if model_name not in model_getters:
         raise ValueError(f"Model '{model_name}' is not available.")
-    # You may need to adjust the parameters passed based on the actual model
-    return model_getters[model_name](model_name)
+    # Type assertion to satisfy type checker
+    getter = cast(Type[Any], model_getters[model_name])
+    return getter(model_name)
 
 
-def get_embedding_model_by_name(model_name: str):
-    embedding_getters = {
+def get_embedding_model_by_name(model_name: str) -> Any:
+    embedding_getters: dict[str, Callable] = {
         "openai_embedding": get_openai_embedding,
         "huggingface_embedding": get_huggingface_embedding,
         # Add other embedding models as needed
     }
     if model_name not in embedding_getters:
         raise ValueError(f"Embedding model '{model_name}' is not available.")
-    return embedding_getters[model_name]()
+    # Type assertion to satisfy type checker
+    getter = cast(Type[Any], embedding_getters[model_name])
+    return getter(model_name)
 
 
-def get_openai_chat(model_name: str, api_key=None, temperature=DEFAULT_TEMPERATURE):
+def get_openai_chat(model_name: str, api_key: Optional[str] = None, temperature: float = DEFAULT_TEMPERATURE) -> Any:
     api_key = api_key or get_api_key("openai")
-    return ChatOpenAI(model_name=model_name, temperature=temperature, api_key=api_key)
+    if api_key is None:
+        raise ValueError("API key for OpenAI is not available")
+    return cast(Any, ChatOpenAI(model_name=model_name, temperature=temperature, openai_api_key=api_key))  # type: ignore
 
 
-def get_anthropic_chat(model_name: str, api_key=None, temperature=DEFAULT_TEMPERATURE):
+def get_anthropic_chat(model_name: str, api_key: Optional[str] = None, temperature: float = DEFAULT_TEMPERATURE) -> Any:
     api_key = api_key or get_api_key("anthropic")
-    return ChatAnthropic(
-        model_name=model_name, temperature=temperature, api_key=api_key
-    )
+    if api_key is None:
+        raise ValueError("API key for Anthropic is not available")
+    return cast(Any, ChatAnthropic(model=model_name, temperature=temperature, anthropic_api_key=api_key))  # type: ignore
 
 
-def get_openai_embedding(model_name: str, api_key=None):
+def get_openai_embedding(model_name: str, api_key: Optional[str] = None) -> OpenAIEmbeddings:
     api_key = api_key or get_api_key("openai")
+    if api_key is None:
+        raise ValueError("API key for OpenAI is not available")
     return OpenAIEmbeddings(model=model_name, api_key=api_key)
 
 
-def get_huggingface_embedding(model_name: str):
+def get_huggingface_embedding(model_name: str) -> HuggingFaceEmbeddings:
     return HuggingFaceEmbeddings(model_name=model_name)

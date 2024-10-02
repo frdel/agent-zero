@@ -1,21 +1,20 @@
-from typing import Any, Callable, Coroutine
 import asyncio
+from typing import Any
+
 from initialize import AgentConfig
 
+
 class Agent:
-    def __init__(self):
+    def __init__(self, number: int, config: AgentConfig):
         self.context: dict = {}
-        self.agent_name: str = "Agent Zero"
+        self.agent_name: str = f"Agent {number}"
         self.read_prompt: str = ""
-        self.generate_response: Callable[[str], Coroutine[Any, Any, str]] = self._generate_response
-        self.max_tool_response_length: int = 1000
-        self.config: AgentConfig = AgentConfig()
+        self.config: AgentConfig = config
         self.messages: list = []
         self.data: dict = {}
-        self.chat_model: Any = None
-        self.utility_model: Any = None
-        self.embeddings_model: Any = None
-        self.update_models()
+        self.chat_model: Any = config.chat_model
+        self.utility_model: Any = config.utility_model
+        self.embeddings_model: Any = config.embeddings_model
 
     def retrieve_data(self, key: str) -> Any:
         return self.context.get(key, None)
@@ -44,13 +43,23 @@ class Agent:
         # Logic to handle intervention
         pass
 
-    async def _generate_response(self, prompt: str) -> str:
-        # Implementation to generate a response based on the prompt
-        await asyncio.sleep(0.1)  # Simulate async processing
-        return "response_text"
+    async def generate_response(self, prompt: str) -> str:
+        try:
+            if hasattr(self.chat_model, "agenerate"):
+                response = await self.chat_model.agenerate([prompt])
+                return str(response.generations[0][0].text)
+            elif hasattr(self.chat_model, "generate"):
+                response = self.chat_model.generate([prompt])
+                return str(response.generations[0][0].text)
+            else:
+                raise AttributeError("Chat model does not have 'generate' or 'agenerate' method")
+        except Exception as e:
+            print(f"Error generating response: {str(e)}")
+            return f"Error: {str(e)}"
 
-    def update_models(self) -> None:
-        # Update the agent's models from the config
-        self.chat_model = getattr(self.config, 'chat_model', None)
-        self.utility_model = getattr(self.config, 'utility_model', None)
-        self.embeddings_model = getattr(self.config, 'embeddings_model', None)
+
+if __name__ == "__main__":
+    # This is just for testing purposes
+    config = AgentConfig()
+    agent = Agent(1, config)
+    asyncio.run(agent.generate_response("Hello, how are you?"))

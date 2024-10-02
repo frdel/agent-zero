@@ -24,9 +24,7 @@ class CodeExecution(Tool):
     async def execute(self, **kwargs):
 
         if await self.agent.handle_intervention():
-            return Response(
-                message="", break_loop=False
-            )  # wait for intervention and handle it, if paused
+            return Response(message="", break_loop=False)  # wait for intervention and handle it, if paused
 
         await self.prepare_state()
 
@@ -42,9 +40,7 @@ class CodeExecution(Tool):
         elif runtime == "output":
             response = await self.get_terminal_output()
         else:
-            response = await files.read_file(
-                "./prompts/fw.code_runtime_wrong.md", runtime=runtime
-            )
+            response = await files.read_file("./prompts/fw.code_runtime_wrong.md", runtime=runtime)
 
         if not response:
             response = await files.read_file("./prompts/fw.code_no_output.md")
@@ -109,9 +105,7 @@ class CodeExecution(Tool):
 
         self.state.shell.send_command(command)
 
-        PrintStyle(background_color="white", font_color="#1B4F72", bold=True).print(
-            f"{self.agent.agent_name} code execution output:"
-        )
+        PrintStyle(background_color="white", font_color="#1B4F72", bold=True).print(f"{self.agent.agent_name} code execution output:")
         return self.get_terminal_output()
 
     def get_terminal_output(self):

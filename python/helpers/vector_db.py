@@ -53,9 +53,7 @@ class VectorDB:
         tot = 0
         while True:
             # Perform similarity search with score
-            docs = self.search_similarity_threshold(
-                query, results=k, threshold=threshold
-            )
+            docs = self.search_similarity_threshold(query, results=k, threshold=threshold)
 
             # Extract document IDs and filter based on score
             # document_ids = [result[0].metadata["id"] for result in docs if result[1] < score_limit]

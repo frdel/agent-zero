@@ -38,10 +38,7 @@ class DockerContainerManager:
                 self.client = DockerClient.from_env()
             except Exception as e:
                 err = format_error(e)
-                if (
-                    "ConnectionRefusedError(61," in err
-                    or "Error while fetching server API version" in err
-                ):
+                if "ConnectionRefusedError(61," in err or "Error while fetching server API version" in err:
                     PrintStyle.hint("Connection to Docker failed. Is Docker running?")
                     PrintStyle.error(err)
                     time.sleep(5)  # try again in 5 seconds
@@ -64,30 +61,20 @@ class DockerContainerManager:
 
         if self.client:
             existing_container = next(
-                (
-                    c
-                    for c in self.client.containers.list(all=True)
-                    if c.name == self.name
-                ),
+                (c for c in self.client.containers.list(all=True) if c.name == self.name),
                 None,
             )
 
             if existing_container:
                 if existing_container.status != "running":
-                    print(
-                        f"Starting existing container: {self.name} "
-                        "for safe code execution..."
-                    )
+                    print(f"Starting existing container: {self.name} " "for safe code execution...")
                     existing_container.start()
                     self.container = existing_container
                     time.sleep(2)  # this helps to get SSH ready
                 else:
                     self.container = existing_container
             else:
-                print(
-                    f"Initializing docker container {self.name} "
-                    "for safe code execution..."
-                )
+                print(f"Initializing docker container {self.name} " "for safe code execution...")
                 run_kwargs: Dict[str, Any] = {
                     "image": self.image,
                     "detach": True,

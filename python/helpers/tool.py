@@ -33,16 +33,12 @@ class Tool:
         handle_intervention = getattr(self.agent, "handle_intervention", None)
         if callable(handle_intervention):
             handle_intervention()
-        PrintStyle(
-            font_color="#1B4F72", padding=True, background_color="white", bold=True
-        ).print(
+        PrintStyle(font_color="#1B4F72", padding=True, background_color="white", bold=True).print(
             f"{getattr(self.agent, 'agent_name', 'Agent')}: Using tool '{self.name}':"
         )
         if self.args and isinstance(self.args, dict):
             for key, value in self.args.items():
-                PrintStyle(font_color="#85C1E9", bold=True).stream(
-                    self.nice_key(key) + ": "
-                )
+                PrintStyle(font_color="#85C1E9", bold=True).stream(self.nice_key(key) + ": ")
                 PrintStyle(
                     font_color="#85C1E9",
                     padding=isinstance(value, str) and "\n" in value,
@@ -51,24 +47,18 @@ class Tool:
 
     def after_execution(self, response: Response, **kwargs):
         text = messages.truncate_text(response.message.strip(), self.max_output_length)
-        msg_response = files.read_file(
-            "./prompts/fw.tool_response.md", tool_name=self.name, tool_response=text
-        )
+        msg_response = files.read_file("./prompts/fw.tool_response.md", tool_name=self.name, tool_response=text)
         handle_intervention = getattr(self.agent, "handle_intervention", None)
         if callable(handle_intervention):
             handle_intervention()
         self.add_message_to_agent(msg_response, human=True)
-        PrintStyle(
-            font_color="#1B4F72", background_color="white", padding=True, bold=True
-        ).print(
+        PrintStyle(font_color="#1B4F72", background_color="white", padding=True, bold=True).print(
             f"{getattr(self.agent, 'agent_name', 'Agent')}: Response from tool '{self.name}':"
         )
         PrintStyle(font_color="#85C1E9").print(response.message)
 
     def add_message_to_agent(self, message: str, human: bool = False):
-        method = getattr(self.agent, "add_message", None) or getattr(
-            self.agent, "append_message", None
-        )
+        method = getattr(self.agent, "add_message", None) or getattr(self.agent, "append_message", None)
         if callable(method):
             method(message)
         else:

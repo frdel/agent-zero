@@ -15,9 +15,7 @@ def format_error(e: Exception, max_entries=2):
     lines = traceback_text.split("\n")
 
     # Find all "File" lines
-    file_indices = [
-        i for i, line in enumerate(lines) if line.strip().startswith("File ")
-    ]
+    file_indices = [i for i, line in enumerate(lines) if line.strip().startswith("File ")]
 
     # If we found at least one "File" line, keep up to max_entries
     if file_indices:

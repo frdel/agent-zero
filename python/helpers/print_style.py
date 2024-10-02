@@ -33,9 +33,7 @@ class PrintStyle:
             log_filename = datetime.now().strftime("log_%Y%m%d_%H%M%S.html")
             PrintStyle.log_file_path = os.path.join(logs_dir, log_filename)
             with open(PrintStyle.log_file_path, "w") as f:
-                f.write(
-                    "<html><body style='background-color:black;font-family: Arial, Helvetica, sans-serif;'><pre>\n"
-                )
+                f.write("<html><body style='background-color:black;font-family: Arial, Helvetica, sans-serif;'><pre>\n")
 
     def _get_rgb_color_code(self, color, is_background=False):
         try:
@@ -85,9 +83,7 @@ class PrintStyle:
         styles.append(font_color_code)
         styles.append(background_color_code)
         style_attr = " ".join(styles)
-        escaped_text = html.escape(text).replace(
-            "\n", "<br>"
-        )  # Escape HTML special characters
+        escaped_text = html.escape(text).replace("\n", "<br>")  # Escape HTML special characters
         return f'<span style="{style_attr}">{escaped_text}</span>'
 
     def _add_padding_if_needed(self):
