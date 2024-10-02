@@ -4,7 +4,7 @@ from typing import Literal, Optional, Dict
 import uuid
 
 
-type Type = Literal[
+Type = Literal[
     "agent",
     "code_exe",
     "error",
