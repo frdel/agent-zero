@@ -6,32 +6,24 @@ from agent import Agent, LoopData
 class SystemPrompt(Extension):
 
     async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
-        # collect and concatenate main prompts
-        main = concat_main_prompts(self.agent)
-        # collect and concatenate tool instructions
-        tools = concat_tool_prompts(self.agent)
-        # append to system message
+        # append main system prompt and tools
+        main = get_main_prompt(self.agent)
+        tools = get_tools_prompt(self.agent)
         loop_data.system.append(main)
         loop_data.system.append(tools)
 
+def get_main_prompt(agent: Agent):
+    return get_prompt("agent.system.main.md", agent)
 
-def concat_main_prompts(agent: Agent):
-    # variables for prompts
+def get_tools_prompt(agent: Agent):
+    return get_prompt("agent.system.tools.md", agent)
+
+def get_prompt(file: str, agent: Agent):
+    # variables for system prompts
+    # TODO: move variables to the end of chain
+    # variables in system prompt would break prompt caching, better to add them to the last message in conversation
     vars = {
         "date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "agent_name": agent.agent_name,
     }
-
-    # prompt files
-    mains = agent.read_prompts("agent.system.main.*.md", **vars)
-    mains = "\n\n".join(mains)
-    return mains
-
-
-def concat_tool_prompts(agent: Agent):
-    # prompt files
-    tools = agent.read_prompts("agent.system.tool.*.md")
-    tools = "\n\n".join(tools)
-    # tools template
-    sys = agent.read_prompt("agent.system.tools.md", tools=tools)
-    return sys
+    return agent.read_prompt(file, **vars)

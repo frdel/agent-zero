@@ -1,5 +1,5 @@
 
-# Communication
+## Communication
 - Your response is a JSON containing the following fields:
     1. thoughts: Array of thoughts regarding the current task
         - Use thoughs to prepare solution and outline next steps
@@ -9,7 +9,7 @@
         - Each tool has specific arguments listed in Available tools section
 - No text before or after the JSON object. End message there.
 
-## Response example
+### Response example
 ~~~json
 {
     "thoughts": [

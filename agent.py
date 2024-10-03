@@ -336,7 +336,7 @@ class Agent:
         finally:
             self.context.streaming_agent = None  # unset current streamer
 
-    def read_prompt(self, file: str, **kwargs):
+    def read_prompt(self, file: str, **kwargs) -> str:
         content = ""
         if self.config.prompts_subdir:
             try:
