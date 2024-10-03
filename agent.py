@@ -122,6 +122,35 @@ class AgentConfig:
     additional: Dict[str, Any] = field(default_factory=dict)
 
 
+class Message:
+    def __init__(self):
+        self.segments: list[str]
+        self.human: bool
+
+class Monologue:
+    def __init__(self):
+        self.done = False
+        self.summary: str = ""
+        self.messages: list[Message] = []
+
+    def finish(self):
+        pass
+
+class History:
+    def __init__(self):
+        self.monologues: list[Monologue] = []
+        self.start_monologue()
+
+    def current_monologue(self):
+        return self.monologues[-1]
+    
+    def start_monologue(self):
+        if self.monologues:
+            self.current_monologue().finish()
+        self.monologues.append(Monologue())
+        return self.current_monologue()
+        
+
 class LoopData:
     def __init__(self):
         self.iteration = -1
@@ -180,10 +209,11 @@ class Agent:
             await self.call_extensions("monologue_start", loop_data=loop_data)
 
             printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)
-            user_message = self.read_prompt("fw.user_message.md", message=loop_data.message)
+            user_message = self.read_prompt(
+                "fw.user_message.md", message=loop_data.message
+            )
             await self.append_message(user_message, human=True)
 
- 
             # let the agent run message loop until he stops it with a response tool
             while True:
 
@@ -194,11 +224,7 @@ class Agent:
                 try:
 
                     # set system prompt and message history
-                    loop_data.system = [
-                        self.read_prompt(
-                            "agent.system.main.md", agent_name=self.agent_name
-                        )
-                    ]
+                    loop_data.system = []
                     loop_data.history = self.history
 
                     # and allow extensions to edit them

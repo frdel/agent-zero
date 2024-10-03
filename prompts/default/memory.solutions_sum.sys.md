@@ -8,7 +8,7 @@
 - The problem section contains a description of the problem, the solution section contains step by step instructions to solve the problem including necessary details and code.
 - If the history does not contain any helpful technical solutions, the response will be an empty JSON array.
 
-# Example
+# Example when solution found (do not output this example):
 ~~~json
 [
   {
@@ -16,6 +16,10 @@
     "solution": "1. Install yt-dlp library using 'pip install yt-dlp'\n2. Download the video using yt-dlp command: 'yt-dlp YT_URL', replace YT_URL with your video URL."
   }
 ]
+~~~
+# Example when no solutions:
+~~~json
+[]
 ~~~
 
 # Rules

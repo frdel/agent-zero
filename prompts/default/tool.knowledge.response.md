@@ -1,6 +1,5 @@
-~~~json
-{
-    "online_sources": "{{online_sources}}",
-    "memory": "{{memory}}",
-}
-~~~
+# Online sources
+{{online_sources}}
+
+# Memory
+{{memory}}

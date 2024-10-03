@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, List, Sequence
 from langchain.storage import InMemoryByteStore, LocalFileStore
 from langchain.embeddings import CacheBackedEmbeddings
 
@@ -21,6 +21,14 @@ from python.helpers.log import Log, LogItem
 from enum import Enum
 from agent import Agent
 
+class MyFaiss(FAISS):
+    #override aget_by_ids
+    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+        # return all self.docstore._dict[id] in ids
+        return [self.docstore._dict[id] for id in ids if id in self.docstore._dict] #type: ignore
+
+    async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+        return self.get_by_ids(ids)
 
 class Memory:
 
@@ -28,7 +36,7 @@ class Memory:
         MAIN = "main"
         SOLUTIONS = "solutions"
 
-    index: dict[str, "FAISS"] = {}
+    index: dict[str, "MyFaiss"] = {}
 
     @staticmethod
     async def get(agent: Agent):
@@ -64,7 +72,7 @@ class Memory:
         embeddings_model,
         memory_subdir: str,
         in_memory=False,
-    ):
+    ) -> MyFaiss:
 
         print("Initializing VectorDB...")
 
@@ -102,7 +110,7 @@ class Memory:
 
         # if db folder exists and is not empty:
         if os.path.exists(db_dir) and files.exists(db_dir, "index.faiss"):
-            db = FAISS.load_local(
+            db = MyFaiss.load_local(
                 folder_path=db_dir,
                 embeddings=embedder,
                 allow_dangerous_deserialization=True,
@@ -113,7 +121,7 @@ class Memory:
         else:
             index = faiss.IndexFlatIP(len(embedder.embed_query("example")))
 
-            db = FAISS(
+            db = MyFaiss(
                 embedding_function=embedder,
                 index=index,
                 docstore=InMemoryDocstore(),
@@ -122,12 +130,12 @@ class Memory:
                 # normalize_L2=True,
                 relevance_score_fn=Memory._cosine_normalizer,
             )
-        return db
+        return db # type: ignore
 
     def __init__(
         self,
         agent: Agent,
-        db: FAISS,
+        db: MyFaiss,
         memory_subdir: str,
     ):
         self.agent = agent
@@ -226,13 +234,15 @@ class Memory:
         return removed
 
     async def delete_documents_by_ids(self, ids: list[str]):
-        # pre = self.db.get(ids=ids)["ids"]
-        self.db.delete(ids=ids)
-        # post = self.db.get(ids=ids)["ids"]
-        # TODO? compare pre and post
-        if ids:
+        # aget_by_ids is not yet implemented in faiss, need to do a workaround
+        rem_docs =self.db.get_by_ids(ids) # existing docs to remove (prevents error)
+        if rem_docs:
+            rem_ids = [doc.metadata["id"] for doc in rem_docs] # ids to remove
+            await self.db.adelete(ids=rem_ids)
+
+        if rem_docs:
             self._save_db()  # persist
-        return len(ids)
+        return rem_docs
 
     def insert_text(self, text, metadata: dict = {}):
         id = str(uuid.uuid4())

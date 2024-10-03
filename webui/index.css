@@ -194,6 +194,9 @@ h4 {
   overflow-x: hidden;
   padding: var(--spacing-md); 
 }
+#chat-history > *:first-child {
+  margin-top: 5em;
+}
 
 /* Apply the custom scrollbar style here */
 #chat-history::-webkit-scrollbar {

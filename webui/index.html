@@ -75,7 +75,14 @@
                             <span class="slider"></span>
                         </label>
                     </li>
-
+                    <li x-data="{ darkMode: localStorage.getItem('darkMode') != 'false' }"
+                        x-init="$watch('darkMode', val => toggleDarkMode(val))">
+                        <div class="switch-label">Dark mode</div>
+                        <label class="switch">
+                            <input type="checkbox" x-model="darkMode">
+                            <span class="slider"></span>
+                        </label>
+                    </li>
                     <li x-data="{ showThoughts: true }">
                         <span>Show thoughts</span>
                         <label class="switch">
@@ -84,19 +91,10 @@
                             <span class="slider"></span>
                         </label>
                     </li>
-
                     <li x-data="{ showJson: false }">
                         <span>Show JSON</span>
                         <label class="switch">
                             <input type="checkbox" x-model="showJson" x-effect="window.safeCall('toggleJson',showJson)">
-                            <span class="slider"></span>
-                        </label>
-                    </li>
-                    <li x-data="{ darkMode: localStorage.getItem('darkMode') != 'false' }"
-                        x-init="$watch('darkMode', val => toggleDarkMode(val))">
-                        <div class="switch-label">Dark mode</div>
-                        <label class="switch">
-                            <input type="checkbox" x-model="darkMode">
                             <span class="slider"></span>
                         </label>
                     </li>

@@ -5,7 +5,7 @@ def initialize():
     
     # main chat model used by agents (smarter, more accurate)
     chat_llm = models.get_openai_chat(model_name="gpt-4o-mini", temperature=0)
-    # chat_llm = models.get_ollama_chat(model_name="gemma2:latest", temperature=0)
+    # chat_llm = models.get_ollama_chat(model_name="llama3.2:3b-instruct-fp16", temperature=0)
     # chat_llm = models.get_lmstudio_chat(model_name="lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF", temperature=0)
     # chat_llm = models.get_openrouter_chat(model_name="openai/o1-mini-2024-09-12")
     # chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o-mini", temperature=0)

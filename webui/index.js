@@ -250,10 +250,12 @@ window.pauseAgent = async function (paused) {
 
 window.resetChat = async function () {
     const resp = await sendJsonData("/reset", { context });
+    updateAfterScroll()
 }
 
 window.newChat = async function () {
     setContext(generateGUID());
+    updateAfterScroll()
 }
 
 window.killChat = async function (id) {
@@ -276,10 +278,13 @@ window.killChat = async function (id) {
     }
 
     if (found) sendJsonData("/remove", { context: id });
+
+    updateAfterScroll()
 }
 
 window.selectChat = async function (id) {
     setContext(id)
+    updateAfterScroll()
 }
 
 const setContext = function (id) {
@@ -403,15 +408,17 @@ function scrollChanged(isAtBottom) {
     console.log(isAtBottom)
 }
 
-chatHistory.addEventListener('scroll', function () {
+function updateAfterScroll() {
     // const toleranceEm = 1; // Tolerance in em units
     // const tolerancePx = toleranceEm * parseFloat(getComputedStyle(document.documentElement).fontSize); // Convert em to pixels
     const tolerancePx = 50;
     const chatHistory = document.getElementById('chat-history');
     const isAtBottom = (chatHistory.scrollHeight - chatHistory.scrollTop) <= (chatHistory.clientHeight + tolerancePx);
-    
+
     scrollChanged(isAtBottom);
-});
+}
+
+chatHistory.addEventListener('scroll', updateAfterScroll);
 
 chatInput.addEventListener('input', adjustTextareaHeight);
 
