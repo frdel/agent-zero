@@ -1,4 +1,4 @@
-import asyncio
+import json
 from functools import wraps
 import os
 from pathlib import Path
@@ -10,13 +10,14 @@ from agent import AgentContext
 from initialize import initialize
 from python.helpers.files import get_abs_path
 from python.helpers.print_style import PrintStyle
-from python.helpers.log import Log
 from dotenv import load_dotenv
 
 load_dotenv()
 
 # initialize the internal Flask server
 app = Flask("app", static_folder=get_abs_path("./webui"), static_url_path="/")
+app.config['JSON_SORT_KEYS'] = False  # Disable key sorting in jsonify
+
 lock = threading.Lock()
 
 # Set up basic authentication, name and password from .env variables
@@ -277,8 +278,10 @@ async def poll():
         }
         PrintStyle.error(str(e))
 
-    # respond with json
-    return jsonify(response)
+    # serialize json with json.dumps to preserve OrderedDict order
+    response_json = json.dumps(response)
+    return Response(response=response_json, status=200, mimetype="application/json")
+    # return jsonify(response)
 
 
 # run the internal server

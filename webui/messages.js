@@ -108,6 +108,10 @@ export function drawMessageInfo(messageContainer, id, type, heading, content, te
 }
 
 export function drawMessageUtil(messageContainer, id, type, heading, content, temp, kvps = null) {
+    //if kvps is not null and contains "query"
+    if (kvps && kvps["query"]) {
+        const a  = 1+1
+    }
     _drawMessage(messageContainer, heading, content, temp, false, kvps, ['message-util'], ['msg-json']);
     messageContainer.classList.add('center-container')
 }
@@ -127,7 +131,7 @@ function drawKvps(container, kvps) {
         for (let [key, value] of Object.entries(kvps)) {
             const row = table.insertRow();
             row.classList.add('kvps-row');
-            if (key == "thoughts") row.classList.add('msg-thoughts');
+            if (key == "thoughts" || key=="reflection") row.classList.add('msg-thoughts');
 
             const th = row.insertCell();
             th.textContent = convertToTitleCase(key);

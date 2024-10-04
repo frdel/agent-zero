@@ -163,7 +163,6 @@ async function sendJsonData(url, data) {
     if (!response.ok) {
         throw new Error('Network response was not ok');
     }
-
     const jsonResponse = await response.json();
     return jsonResponse;
 }
@@ -180,6 +179,7 @@ let lastLogVersion = 0;
 let lastLogGuid = ""
 
 async function poll() {
+    let updated = false
     try {
         const response = await sendJsonData("/poll", { log_from: lastLogVersion, context });
         //console.log(response)
@@ -194,6 +194,7 @@ async function poll() {
             }
 
             if (lastLogVersion != response.log_version) {
+                updated = true
                 for (const log of response.logs) {
                     setMessage(log.no, log.type, log.heading, log.content, log.temp, log.kvps);
                 }
@@ -220,6 +221,8 @@ async function poll() {
         const statusAD = Alpine.$data(statusSection);
         statusAD.connected = false;
     }
+
+    return updated
 }
 
 function updateProgress(progress) {
@@ -422,4 +425,31 @@ chatHistory.addEventListener('scroll', updateAfterScroll);
 
 chatInput.addEventListener('input', adjustTextareaHeight);
 
-setInterval(poll, 250);
+// setInterval(poll, 250);
+
+async function startPolling() {
+    const shortInterval = 25
+    const longInterval = 250
+    const shortIntervalPeriod = 100
+    let shortIntervalCount = 0
+
+    async function _doPoll() {
+        let nextInterval = longInterval
+
+        try {
+            const result = await poll();
+            if (result) shortIntervalCount = shortIntervalPeriod; // Reset the counter when the result is true
+            if (shortIntervalCount > 0) shortIntervalCount--; // Decrease the counter on each call
+            nextInterval = shortIntervalCount > 0 ? shortInterval : longInterval;
+        } catch (error) {
+            console.error('Error:', error);
+        }
+
+        // Call the function again after the selected interval
+        setTimeout(_doPoll.bind(this), nextInterval);
+    }
+
+    _doPoll();
+}
+
+document.addEventListener("DOMContentLoaded", startPolling);

@@ -127,6 +127,7 @@ class Message:
         self.segments: list[str]
         self.human: bool
 
+
 class Monologue:
     def __init__(self):
         self.done = False
@@ -136,6 +137,7 @@ class Monologue:
     def finish(self):
         pass
 
+
 class History:
     def __init__(self):
         self.monologues: list[Monologue] = []
@@ -143,13 +145,13 @@ class History:
 
     def current_monologue(self):
         return self.monologues[-1]
-    
+
     def start_monologue(self):
         if self.monologues:
             self.current_monologue().finish()
         self.monologues.append(Monologue())
         return self.current_monologue()
-        
+
 
 class LoopData:
     def __init__(self):
@@ -337,51 +339,14 @@ class Agent:
             self.context.streaming_agent = None  # unset current streamer
 
     def read_prompt(self, file: str, **kwargs) -> str:
-        content = ""
-        if self.config.prompts_subdir:
-            try:
-                content = files.read_file(
-                    files.get_abs_path(
-                        f"./prompts/{self.config.prompts_subdir}/{file}"
-                    ),
-                    **kwargs,
-                )
-            except Exception as e:
-                pass
-        if not content:
-            content = files.read_file(
-                files.get_abs_path(f"./prompts/default/{file}"), **kwargs
-            )
-        return content
-
-    def read_prompts(self, pattern: str, **kwargs):
-        import glob
-
-        prompts = []
-
-        # Scan both configured subdir and default folder
-        subdir_files = glob.glob(
-            files.get_abs_path("prompts", self.config.prompts_subdir, pattern)
+        prompt_dir = files.get_abs_path("prompts/default")
+        backup_dir = []
+        if self.config.prompts_subdir: # if agent has custom folder, use it and use default as backup
+            prompt_dir = files.get_abs_path("prompts", self.config.prompts_subdir)
+            backup_dir.append(files.get_abs_path("prompts/default"))
+        return files.read_file(
+            files.get_abs_path(prompt_dir, file), backup_dirs=backup_dir, **kwargs
         )
-        default_files = glob.glob(files.get_abs_path("prompts", "default", pattern))
-
-        # Create a dictionary to store files, prioritizing the config subdir
-        files_to_read = {file.split("/")[-1]: file for file in default_files}
-
-        # Override with files from subdir if they exist
-        for file in subdir_files:
-            files_to_read[file.split("/")[-1]] = file
-
-        # Sort files alphabetically by their file names
-        sorted_files = sorted(files_to_read.items())
-
-        # Read the files in alphabetical order
-        for filename, filepath in sorted_files:
-            content = files.read_file(files.get_abs_path(filepath), **kwargs)
-            if content:
-                prompts.append(content)
-
-        return prompts
 
     def get_data(self, field: str):
         return self.data.get(field, None)

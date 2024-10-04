@@ -1,1 +1,0 @@
-Message from subordinate {{name}}: {{message}}

@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 import json
 from typing import Literal, Optional, Dict
 import uuid
+from collections import OrderedDict  # Import OrderedDict
 
 
 Type = Literal[
@@ -27,7 +28,7 @@ class LogItem:
     heading: str
     content: str
     temp: bool
-    kvps: Optional[Dict] = None
+    kvps: Optional[OrderedDict] = None  # Use OrderedDict for kvps
     guid: str = ""
 
     def __post_init__(self):
@@ -91,6 +92,9 @@ class Log:
         kvps: dict | None = None,
         temp: bool | None = None,
     ) -> LogItem:
+        # Use OrderedDict if kvps is provided
+        if kvps is not None:
+            kvps = OrderedDict(kvps)
         item = LogItem(
             log=self,
             no=len(self.logs),
@@ -128,13 +132,14 @@ class Log:
         if content is not None:
             item.content = content
         if kvps is not None:
-            item.kvps = kvps
+            item.kvps = OrderedDict(kvps)  # Use OrderedDict to keep the order
+
         if temp is not None:
             item.temp = temp
 
         if kwargs:
             if item.kvps is None:
-                item.kvps = {}
+                item.kvps = OrderedDict()  # Ensure kvps is an OrderedDict
             for k, v in kwargs.items():
                 item.kvps[k] = v
 
