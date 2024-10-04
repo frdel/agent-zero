@@ -3,7 +3,7 @@
 - Explain each step using your thoughts argument.
 
 0. Outline the plan by repeating these instructions.
-1. Check the memory output of your knowledge_tool. Maybe you have solved similar task before and already have helpful information.
+1. Check your memories, solutions and instruments. Prefer using instruments when possible.
 2. Check the online sources output of your knowledge_tool. 
     - Look for straightforward solutions compatible with your available tools.
     - Always look for opensource python/nodejs/terminal tools and packages first.

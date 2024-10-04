@@ -21,20 +21,23 @@ from python.helpers.log import Log, LogItem
 from enum import Enum
 from agent import Agent
 
+
 class MyFaiss(FAISS):
-    #override aget_by_ids
+    # override aget_by_ids
     def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
         # return all self.docstore._dict[id] in ids
-        return [self.docstore._dict[id] for id in ids if id in self.docstore._dict] #type: ignore
+        return [self.docstore._dict[id] for id in ids if id in self.docstore._dict]  # type: ignore
 
     async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
         return self.get_by_ids(ids)
+
 
 class Memory:
 
     class Area(Enum):
         MAIN = "main"
         SOLUTIONS = "solutions"
+        INSTRUMENTS = "instruments"
 
     index: dict[str, "MyFaiss"] = {}
 
@@ -130,7 +133,7 @@ class Memory:
                 # normalize_L2=True,
                 relevance_score_fn=Memory._cosine_normalizer,
             )
-        return db # type: ignore
+        return db  # type: ignore
 
     def __init__(
         self,
@@ -160,8 +163,8 @@ class Memory:
             with open(index_path, "r") as f:
                 index = json.load(f)
 
-        for kn_dir in kn_dirs:
-            index = knowledge_import.load_knowledge(log_item, kn_dir, index)
+        # preload knowledge folders
+        index = self._preload_knowledge_folders(log_item, kn_dirs, index)
 
         for file in index:
             if index[file]["state"] in ["changed", "removed"] and index[file].get(
@@ -186,6 +189,33 @@ class Memory:
                 del index[file]["state"]  # type: ignore
         with open(index_path, "w") as f:
             json.dump(index, f)
+
+    def _preload_knowledge_folders(
+        self,
+        log_item: LogItem | None,
+        kn_dirs: list[str],
+        index: dict[str, knowledge_import.KnowledgeImport],
+    ):
+        # load knowledge folders, subfolders by area
+        for kn_dir in kn_dirs:
+            for area in Memory.Area:
+                index = knowledge_import.load_knowledge(
+                    log_item,
+                    files.get_abs_path("knowledge", kn_dir, area.value),
+                    index,
+                    {"area": area.value},
+                )
+
+        # load instruments descriptions
+        index = knowledge_import.load_knowledge(
+            log_item,
+            files.get_abs_path("instruments"),
+            index,
+            {"area": Memory.Area.INSTRUMENTS.value},
+            filename_pattern="**/*.md",
+        )
+
+        return index
 
     async def search_similarity_threshold(
         self, query: str, limit: int, threshold: float, filter: str = ""
@@ -235,9 +265,9 @@ class Memory:
 
     async def delete_documents_by_ids(self, ids: list[str]):
         # aget_by_ids is not yet implemented in faiss, need to do a workaround
-        rem_docs =self.db.get_by_ids(ids) # existing docs to remove (prevents error)
+        rem_docs = self.db.get_by_ids(ids)  # existing docs to remove (prevents error)
         if rem_docs:
-            rem_ids = [doc.metadata["id"] for doc in rem_docs] # ids to remove
+            rem_ids = [doc.metadata["id"] for doc in rem_docs]  # ids to remove
             await self.db.adelete(ids=rem_ids)
 
         if rem_docs:

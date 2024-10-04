@@ -39,3 +39,17 @@ knowledge/**/*.*
 # Explicitly allow the default folder and its contents
 !knowledge/default/
 !knowledge/default/**
+
+# Ignore everything in the "instruments" directory
+instruments/*
+
+# Do not ignore subdirectories (so we can track .gitkeep)
+!instruments/*/
+
+# Ignore all files within subdirectories (except .gitkeep)
+instruments/**/*.*
+!instruments/**/.gitkeep
+
+# Explicitly allow the default folder and its contents
+!instruments/default/
+!instruments/default/**

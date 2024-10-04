@@ -14,6 +14,10 @@
 - Communication is the key to succesfull solution.
 - NEVER delegate your whole task, only parts of it.
 
+## Instruments
+- Instruments are programs you can utilize to solve tasks
+- Instrument descriptions are injected into the prompt and can be executed with code_execution_tool
+
 ## Tips and tricks
 - Focus on python/nodejs/linux libraries when searching for solutions. You can use them with your tools and make solutions easy.
 - Sometimes you don't need tools, some things can be determined.

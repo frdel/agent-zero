@@ -36,7 +36,7 @@ class CodeExecution(Tool):
             response = await self.execute_terminal_command(self.args["code"])
         elif runtime == "output":
             response = await self.get_terminal_output(
-                wait_with_output=5, wait_without_output=20
+                wait_with_output=5, wait_without_output=60
             )
         elif runtime == "reset":
             response = await self.reset_terminal()
@@ -137,7 +137,7 @@ class CodeExecution(Tool):
         return await self.get_terminal_output()
 
     async def get_terminal_output(
-        self, wait_with_output=3, wait_without_output=10, max_exec_time=15
+        self, wait_with_output=3, wait_without_output=10, max_exec_time=60
     ):
         idle = 0
         SLEEP_TIME = 0.1

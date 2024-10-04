@@ -60,12 +60,12 @@ class RecallMemories(Extension):
         # log the short result
         if not isinstance(memories, list) or len(memories) == 0:
             log_item.update(
-                heading="No useful memories found.",
+                heading="No useful memories found",
             )
             return
         else:
             log_item.update(
-                heading=f"\n\n{len(memories)} memories found.",
+                heading=f"{len(memories)} memories found",
             )
 
         # concatenate memory.page_content in memories:

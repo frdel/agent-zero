@@ -111,7 +111,8 @@ class AgentConfig:
     )
     code_exec_docker_volumes: dict[str, dict[str, str]] = field(
         default_factory=lambda: {
-            files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"}
+            files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"},
+            files.get_abs_path("instruments"): {"bind": "/instruments", "mode": "rw"},
         }
     )
     code_exec_ssh_enabled: bool = True
