@@ -8,7 +8,7 @@ class RecallMemories(Extension):
     INTERVAL = 3
     HISTORY = 5
     RESULTS = 3
-    THRESHOLD = 0.1
+    THRESHOLD = 0.6
 
     async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
 
@@ -54,7 +54,7 @@ class RecallMemories(Extension):
             query=query,
             limit=RecallMemories.RESULTS,
             threshold=RecallMemories.THRESHOLD,
-            filter=f"area != '{Memory.Area.SOLUTIONS.value}'",  # exclude solutions
+            filter=f"area == '{Memory.Area.MAIN.value}' or area == '{Memory.Area.FRAGMENTS.value}'",  # exclude solutions
         )
 
         # log the short result

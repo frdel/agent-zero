@@ -7,7 +7,6 @@ from python.helpers.log import LogItem
 from python.helpers.defer import run_in_background
 
 
-
 class MemorizeMemories(Extension):
 
     REPLACE_THRESHOLD = 0.9
@@ -26,8 +25,8 @@ class MemorizeMemories(Extension):
             heading="Memorizing new information...",
         )
 
-        #memorize in background
-        asyncio.create_task(self.memorize(loop_data, log_item))        
+        # memorize in background
+        asyncio.create_task(self.memorize(loop_data, log_item))
 
     async def memorize(self, loop_data: LoopData, log_item: LogItem, **kwargs):
 
@@ -64,21 +63,20 @@ class MemorizeMemories(Extension):
             txt = f"{memory}"
             memories_txt += "\n\n" + txt
             log_item.update(memories=memories_txt.strip())
-            
+
             # remove previous solutions too similiar to this one
             if self.REPLACE_THRESHOLD > 0:
                 rem += await db.delete_documents_by_query(
                     query=txt,
                     threshold=self.REPLACE_THRESHOLD,
-                    filter=f"area=='{Memory.Area.MAIN.value}'",
+                    filter=f"area=='{Memory.Area.FRAGMENTS.value}'",
                 )
-                rem_txt = "\n\n".join(Memory.format_docs_plain(rem))
-                log_item.update(replaced=rem_txt)
-                
-                
+                if rem:
+                    rem_txt = "\n\n".join(Memory.format_docs_plain(rem))
+                    log_item.update(replaced=rem_txt)
 
             # insert new solution
-            db.insert_text(text=txt, metadata={"area": Memory.Area.MAIN.value})
+            db.insert_text(text=txt, metadata={"area": Memory.Area.FRAGMENTS.value})
 
         log_item.update(
             result=f"{len(memories)} entries memorized.",

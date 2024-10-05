@@ -70,8 +70,9 @@ class MemorizeSolutions(Extension):
                     threshold=self.REPLACE_THRESHOLD,
                     filter=f"area=='{Memory.Area.SOLUTIONS.value}'",
                 )
-                rem_txt = "\n\n".join(Memory.format_docs_plain(rem))
-                log_item.update(replaced=rem_txt)
+                if rem:
+                    rem_txt = "\n\n".join(Memory.format_docs_plain(rem))
+                    log_item.update(replaced=rem_txt)
 
             # insert new solution
             db.insert_text(text=txt, metadata={"area": Memory.Area.SOLUTIONS.value})

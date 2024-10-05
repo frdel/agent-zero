@@ -9,7 +9,7 @@ class RecallSolutions(Extension):
     HISTORY = 5
     SOLUTIONS_COUNT = 2
     INSTRUMENTS_COUNT = 2
-    THRESHOLD = 0.1
+    THRESHOLD = 0.6
 
     async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
 

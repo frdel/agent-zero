@@ -36,6 +36,7 @@ class Memory:
 
     class Area(Enum):
         MAIN = "main"
+        FRAGMENTS = "fragments"
         SOLUTIONS = "solutions"
         INSTRUMENTS = "instruments"
 
@@ -276,6 +277,9 @@ class Memory:
 
     def insert_text(self, text, metadata: dict = {}):
         id = str(uuid.uuid4())
+        if not metadata.get("area", ""):
+            metadata["area"] = Memory.Area.MAIN.value
+
         self.db.add_documents(
             documents=[
                 Document(
