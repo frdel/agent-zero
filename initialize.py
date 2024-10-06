@@ -30,7 +30,7 @@ def initialize():
         chat_model = chat_llm,
         utility_model = utility_llm,
         embeddings_model = embedding_llm,
-        # prompts_subdir = "",
+        # prompts_subdir = "default",
         # memory_subdir = "",
         knowledge_subdirs = ["default","custom"],
         auto_memory_count = 0,
