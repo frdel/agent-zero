@@ -1,6 +1,16 @@
 site_name: Agent Zero Documentation
 theme:
   name: material
+  nav:
+    - Home: index.md
+    - Installation: installation.md
+    - Quick Start: quickstart.md
+    - Usage: usage.md
+    - Architecture: architecture.md
+    - Contributing: contribution.md
+    - API Reference: api_reference.md
+    - FAQ: faq.md
+    - Troubleshooting: troubleshooting.md
   palette:
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
@@ -36,7 +46,7 @@ theme:
     - toc.integrate
     - toc.follow
     - content.code.copy
-    
+
   plugins:
     - search
     - search.suggest
@@ -44,18 +54,16 @@ theme:
     - search.share
 
   markdown_extensions:
-
-    # Python Markdown
-    - abbr
     - admonition
-    - attr_list
-    - def_list
-    - footnotes
-    - md_in_html
+    - pymdownx.details
+    - pymdownx.superfences
+    - pymdownx.emoji
+    - pymdownx.magiclink
     - pymdownx.highlight:
         anchor_linenums: true
         line_spans: __span
         pygments_lang_class: true
     - pymdownx.inlinehilite
     - pymdownx.snippets
-    - pymdownx.superfences
+    - pymdownx.keys
+    - pymdownx.tabbed
