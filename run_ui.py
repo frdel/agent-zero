@@ -123,7 +123,6 @@ async def handle_message(sync: bool):
             }
         else:
 
-            print("\n\n", (context.process and context.process.is_alive()))
             context.communicate(text)
             response = {
                 "ok": True,
