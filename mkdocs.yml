@@ -3,12 +3,11 @@ theme:
   name: material
   nav:
     - Home: index.md
-    - Installation: installation.md
     - Quick Start: quickstart.md
+    - Installation: installation.md
     - Usage: usage.md
     - Architecture: architecture.md
     - Contributing: contribution.md
-    - API Reference: api_reference.md
     - FAQ: faq.md
     - Troubleshooting: troubleshooting.md
   palette:
@@ -31,7 +30,7 @@ theme:
         icon: material/toggle-switch
         name: Switch to dark mode
   font:
-    text: Roboto
+    text: Rubik
     code: Roboto Mono
   favicon: assets/favicon.png
   features:

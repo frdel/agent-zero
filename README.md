@@ -25,7 +25,7 @@ To build and preview the documentation locally, follow these steps:
 
 ## Live Documentation
 
-The live documentation is published via GitHub Pages and can be found at: [Link to your GitHub Pages site]  (e.g., `https://<your_username>.github.io/agent-zero-docs/`).
+The live documentation is published via GitHub Pages and can be found at: [https://3clyp50.github.io/agent-zero/].
 
 ## Contributing
 
