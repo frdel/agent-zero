@@ -1,15 +1,22 @@
 site_name: Agent Zero Documentation
+site_url: https://3clyp50.github.io/agent-zero
+repo_url: https://github.com/frdel/agent-zero
+repo_name: frdel/agent-zero
+nav:
+  - Home: index.md
+  - Quick Start: quickstart.md
+  - Installation: installation.md
+  - Usage: usage.md
+  - Architecture: section/architecture.md 
+  - Troubleshooting: troubleshooting.md
+  - FAQ: faq.md
+  - Contributing: contribution.md
 theme:
   name: material
-  nav:
-    - Home: index.md
-    - Quick Start: quickstart.md
-    - Installation: installation.md
-    - Usage: usage.md
-    - Architecture: architecture.md
-    - Contributing: contribution.md
-    - FAQ: faq.md
-    - Troubleshooting: troubleshooting.md
+  language: en 
+  icon:
+    repo: fontawesome/brands/github 
+
   palette:
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
@@ -32,7 +39,8 @@ theme:
   font:
     text: Rubik
     code: Roboto Mono
-  favicon: assets/favicon.png
+  logo: res/logo.png
+  favicon: res/logo.png
   features:
     - navigation.instant
     - navigation.instant.preview
@@ -42,6 +50,7 @@ theme:
     - navigation.expand
     - navigation.indexes
     - navigation.top
+    - header.autohide
     - toc.integrate
     - toc.follow
     - content.code.copy
@@ -51,6 +60,7 @@ theme:
     - search.suggest
     - search.highlight
     - search.share
+    - offline
 
   markdown_extensions:
     - admonition
@@ -66,3 +76,5 @@ theme:
     - pymdownx.snippets
     - pymdownx.keys
     - pymdownx.tabbed
+  extra:
+    generator: false
