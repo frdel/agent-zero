@@ -6,60 +6,73 @@ This guide provides comprehensive instructions for installing Agent Zero on vari
 
 ### Quick Start
 
-1. **Install Anaconda or Miniconda:** Download and install the appropriate version for your system from [here](https://docs.anaconda.com/anaconda/install/). Choose Miniconda for a minimal installation or Anaconda for a full distribution.
-2. **Create an Environment:** Open Anaconda Navigator (or use the `conda` command in your terminal), create a new environment named `agent-zero`, and select Python 3.11 or higher.
+1. **Install Anaconda or Miniconda:** Download and install the appropriate version for your system from [here](https://docs.anaconda.com/anaconda/install/).  Miniconda is a smaller installation, while Anaconda includes a broader set of packages.
+2. **Create an Environment:**  Open Anaconda Navigator (or use the `conda` command in your terminal) and create a new environment named `agent-zero` with Python 3.11 or higher.
 3. **Install Docker Desktop:** Download and install Docker Desktop from [here](https://www.docker.com/products/docker-desktop/).
-4. **Download Agent Zero:** Download the latest release (zip file) from the [GitHub releases page](https://github.com/frdel/agent-zero/releases). Extract the zip file to a directory of your choice.
-5. **Configure API Keys:** Duplicate `example.env` and rename it to `.env`. Add your API keys for OpenAI (or other providers) inside this file.
-6. **Install Requirements:** Open a terminal in the Agent Zero directory (within your activated `agent-zero` environment) and run: `pip install -r requirements.txt`
-7. **Run Agent Zero (Web UI):**  In your terminal, execute: `python run_ui.py`
-8. **Access the Web UI:** Open the URL displayed in the terminal in your web browser (usually `http://127.0.0.1:50001`).
+4. **Download Agent Zero:**  Download the latest release zip file from the [GitHub releases page](https://github.com/frdel/agent-zero/releases).  Extract the zip to your desired location.
+5. **Configure API Keys:** Copy `example.env`, rename it to `.env`, and add your API keys (OpenAI or other providers).
+6. **Install Requirements:**  In your activated `agent-zero` environment, navigate to the Agent Zero directory in your terminal and run:  `pip install -r requirements.txt`
+7. **Run Agent Zero (Web UI):**  Execute `python run_ui.py` in your terminal.
+8. **Access the Web UI:**  Open the URL shown in the terminal (typically `http://127.0.0.1:50001`) in your web browser.
 
-### Detailed Guide with Video
 
-For a more in-depth guide with visual instructions, including screenshots and explanations for each step, please refer to the [Windows Installation Tips & Quick-Start](./windows_detailed.md). This expanded guide covers common installation pitfalls and troubleshooting steps.
+### Detailed Guide with Screenshots
+
+The README file provides a detailed, step-by-step walkthrough of the Windows installation process, including helpful screenshots.  It also offers tips for beginners and addresses common installation issues.  Refer to the README within the project root folder for this comprehensive guide.  (This assumes you will embed the relevant sections of the README directly into your MkDocs project or link to it appropriately.)
 
 
 ## macOS
 
-1. **Install Miniconda:**  Download the pkg installer from [here](https://docs.anaconda.com/miniconda/#miniconda-latest-installer-links) and follow the on-screen instructions.
-2. **Install Docker Desktop:** Download the dmg image from [here](https://www.docker.com/products/docker-desktop/) and drag the Docker application to your Applications folder.  Create a Docker Hub account if you don't already have one.
-3. **Download Agent Zero:** Download the latest release from the [GitHub releases page](https://github.com/frdel/agent-zero/releases) and extract the zip file.
-4. **Open Terminal:** Navigate to the Agent Zero directory in your terminal.
-5. **Create Conda Environment:** Run: `conda create -n a0 python=3.12 -y`
-6. **Activate Environment:** Run: `conda activate a0`
-7. **Install Requirements:** Run: `pip install -r requirements.txt`
-8. **Configure API Keys:** Create a `.env` file and add your API keys.
-9. **Run Agent Zero (Web UI):** Run: `python run_ui.py`
-10. **Access the Web UI:** Open the URL displayed in your terminal.
+1. **Install Miniconda:** Download the pkg installer and follow the instructions.
+2. **Install Docker Desktop:** Download the dmg image, drag Docker to Applications, and create a Docker Hub account.
+3. **Download Agent Zero:** Download the latest release zip and extract it.
+4. **Open Terminal:** Navigate to the Agent Zero directory.
+5. **Create Conda Environment:** `conda create -n a0 python=3.12 -y`
+6. **Activate Environment:**  `conda activate a0`
+7. **Install Requirements:** `pip install -r requirements.txt`
+8. **Configure API Keys:** Create a `.env` file and add your keys.
+9. **Run Agent Zero (Web UI):** `python run_ui.py`
+10. **Access the Web UI:** Open the displayed URL.
 
-**Troubleshooting Docker Image Push on macOS:** If you encounter errors while pushing the Docker image, refer to the [Docker Push Troubleshooting section](./macos_docker_push.md).
+
+### Troubleshooting Docker Image Push on macOS
+
+If you experience issues pushing Docker images on macOS, such as authentication errors or repository not found errors, follow these steps:
+
+1. **Verify Repository:** Check if the `frdel/agent-zero-exe` repository exists on Docker Hub under your account. Create it if it doesn't exist.
+2. **Check Docker Credentials:** Log out of Docker Hub (`docker logout`) and log back in using your Docker Hub username (not email address) and password (`docker login`).
+3. **Verify Permissions:** Ensure your Docker Hub account has push access to the repository.
+4. **Check Image Name and Tag:** Double-check the image name and tag in your `docker push` command. It should be `frdel/agent-zero-exe:latest` or similar.
+
+For more detailed Docker troubleshooting information and solutions to other potential errors, consult the Docker documentation and online resources.
 
 
 
 ## Linux
 
-1. **Install Python:** Use your distribution's package manager to install Python 3.12 or higher.  For example, on Ubuntu/Debian: `sudo apt install python3.12`
-2. **Install Docker:** Install Docker Desktop or Docker CE using your distribution's instructions. Ensure the Docker service is running: `sudo systemctl start docker`
-3. **Install Miniconda:** Download the appropriate installer for your distribution from [here](https://docs.anaconda.com/miniconda/#miniconda-latest-installer-links) and follow the instructions.
-4. **Navigate to Agent Zero Directory:** Open your terminal and change the directory to the extracted Agent Zero folder.
-5. **Create Conda Environment:** Run: `conda create -n a0 python=3.12`
-6. **Activate Environment:** Run: `conda activate a0`
-7. **Install Requirements:** Run: `pip install -r requirements.txt`
-8. **Configure API Keys:** Create a `.env` file in the project root and add your API keys.
-9. **Run Agent Zero (Web UI):** Run: `python run_ui.py`
-10. **Access the Web UI:** Open the URL displayed in your terminal.
+
+1. **Install Python:** Use your distribution's package manager (e.g., `apt`, `yum`, `dnf`) to install Python 3.12 or higher.
+2. **Install Docker:**  Install Docker Desktop or Docker CE and ensure the service is running (`sudo systemctl start docker`).
+3. **Install Miniconda:**  Download the appropriate installer for your distribution and follow the instructions.
+4. **Navigate to Agent Zero Directory:** Use the `cd` command in your terminal.
+5. **Create Conda Environment:** `conda create -n a0 python=3.12`
+6. **Activate Environment:** `conda activate a0`
+7. **Install Requirements:** `pip install -r requirements.txt`
+8. **Configure API Keys:** Create a `.env` file and add your keys.
+9. **Run Agent Zero (Web UI):** `python run_ui.py`
+10. **Access the Web UI:** Open the displayed URL.
+
 
 
 ## Video Tutorial (v0.7)
 
-For a video walkthrough of the latest features and installation process, check out this [YouTube video](https://www.youtube.com/watch?v=U_Gl0NPalKA).
-
+A video walkthrough demonstrating the installation process and showcasing the latest features in Agent Zero v0.7 is available on [YouTube](https://www.youtube.com/watch?v=U_Gl0NPalKA).
 
 
 ## Running on All Hosts (Not Just Localhost)
 
-To access the Agent Zero Web UI from other devices on your network, modify `run_ui.py`:
 
-1. Add `host="0.0.0.0"` before `port=port` in the `app.run()` command.  Alternatively, use your private IP address if you want to restrict access.
-2. Access the Web UI from another device using `$YOUR_PRIVATE_IP:50001` as the URL.
+To make the Agent Zero Web UI accessible from other devices on your network, modify `run_ui.py`:
+
+1. Add `host="0.0.0.0"` (or your private IP address for restricted access) to the `app.run()` command, before the `port` argument.
+2. Access the Web UI from other devices using `$YOUR_PRIVATE_IP:50001`.
