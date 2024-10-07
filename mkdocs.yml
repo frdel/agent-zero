@@ -1,4 +1,5 @@
 site_name: Agent Zero Documentation
+site_description: Welcome to the official documentation for Agent Zero.
 site_url: https://3clyp50.github.io/agent-zero
 repo_url: https://github.com/frdel/agent-zero
 repo_name: frdel/agent-zero
@@ -7,7 +8,7 @@ nav:
   - Quick Start: quickstart.md
   - Installation: installation.md
   - Usage: usage.md
-  - Architecture: section/architecture.md 
+  - Architecture: architecture.md 
   - Troubleshooting: troubleshooting.md
   - FAQ: faq.md
   - Contributing: contribution.md
@@ -31,16 +32,16 @@ theme:
         name: Switch to light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: indigo
-      accent: indigo
+      primary: grey
+      accent: grey
       toggle:
         icon: material/toggle-switch
         name: Switch to dark mode
   font:
     text: Rubik
     code: Roboto Mono
-  logo: res/logo.png
-  favicon: res/logo.png
+  logo: res/lightSymbol.svg
+  favicon: res/darkSymbol.svg
   features:
     - navigation.instant
     - navigation.instant.preview
@@ -65,7 +66,6 @@ theme:
   markdown_extensions:
     - admonition
     - pymdownx.details
-    - pymdownx.superfences
     - pymdownx.emoji
     - pymdownx.magiclink
     - pymdownx.highlight:
@@ -76,5 +76,13 @@ theme:
     - pymdownx.snippets
     - pymdownx.keys
     - pymdownx.tabbed
+    - attr_list
+    - def_list
+    - md_in_html
+    - pymdownx.superfences:
+        custom_fences:
+          - name: mermaid
+            class: mermaid
+            format: !!python/name:pymdownx.superfences.fence_code_format
   extra:
     generator: false
