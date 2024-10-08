@@ -154,7 +154,7 @@ Once you've downloaded some models, you might want to check which ones you have 
 
 *  Changing the `embedding_llm` requires clearing the `memory` folder to avoid errors, as the embeddings can't be mixed in the vector database. The `knowledge` folder will be automatically imported again.
 
-*  Experiment with different model combinations to find the balance of performance and cost that best suits your needs.  (Refer to the image provided from Google Drive - potentially linked in the FAQ or a separate cost comparison section - for information on model pricing).
+*  Experiment with different model combinations to find the balance of performance and cost that best suits your needs. E.g., using a smaller model for `utility_llm` can save costs without significantly impacting performance.
 
 
 ## Agent Configuration (`AgentConfig`)
