@@ -156,7 +156,6 @@ Once you've downloaded some models, you might want to check which ones you have 
 
 *  Experiment with different model combinations to find the balance of performance and cost that best suits your needs. E.g., using a smaller model for `utility_llm` can save costs without significantly impacting performance.
 
-
 ## Agent Configuration (`AgentConfig`)
 
 The `AgentConfig` class in `initialize.py` provides further customization options:
