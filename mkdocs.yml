@@ -5,8 +5,8 @@ repo_url: https://github.com/frdel/agent-zero
 repo_name: frdel/agent-zero
 nav:
   - Home: index.md
-  - Quick Start: quickstart.md
   - Installation: installation.md
+  - Quick Start: quickstart.md
   - Usage: usage.md
   - Architecture: architecture.md
   - Contributing: contribution.md
@@ -21,7 +21,7 @@ theme:
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: black
-      accent: indigo
+      accent: grey
       toggle:
         icon: material/toggle-switch-off
         name: Switch to system preference
@@ -78,6 +78,10 @@ theme:
     - attr_list
     - def_list
     - md_in_html
-    - pymdownx.superfences
+    - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   extra:
     generator: false

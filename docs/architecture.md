@@ -101,15 +101,59 @@ The `initialize.py` file is the control center for selecting the Large Language 
    ```python
    chat_llm = models.get_openai_chat(model_name="gpt-4", temperature=0)
    ```
-4.  Ensure only one model is uncommented for each LLM role.
+4. Ensure only one model is uncommented for each LLM role.
+
+### Installing and Using Ollama
+
+If you're interested in Ollama, which is a powerful tool that allows you to run various large language models locally, here's how to install and use it:
+
+#### First step: installation
+
+**On Windows:**
+```Windows Setup
+Download Ollama from the official website and install it on your machine.
+[Download OllamaSetup.exe](https://ollama.com/download/OllamaSetup.exe)
+```
+**On MacOS:**
+```MacOS terminal
+brew install ollama
+```
+**On Linux:**
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
 
 **Finding Model Names:**
+Visit the [Ollama model library](https://ollama.com/library) for a list of available models and their corresponding names.  The format is usually `provider/model-name` (or just `model-name` in some cases).
 
-* Refer to your LLM provider's documentation for a list of available models and their corresponding names.  The format is usually `provider/model-name` (e.g., `openai/gpt-4`, `google/gemini-pro`).
+#### Second step: pulling the model
+
+**On Windows, MacOS, and Linux:**
+```
+ollama pull <model-name>
+```
+
+Replace `<model-name>` with the name of the model you want to use.  For example, to pull the Mistral Large model, you would use the command `ollama pull mistral-large`.
+
+#### Managing your downloaded models
+
+Once you've downloaded some models, you might want to check which ones you have available or remove any you no longer need.
+
+* **Listing downloaded models:** 
+  To see a list of all the models you've downloaded, use the command:
+  ```
+  ollama list
+  ```
+* **Removing a model:**
+  If you need to remove a downloaded model, you can use the `ollama rm` command followed by the model name:
+  ```
+  ollama rm <model-name>
+  ```
 
 **Important Considerations:**
 
-*  Changing the `embedding_llm` requires clearing the `memory` folder to avoid errors, as the embeddings might be incompatible.
+*  Changing the `embedding_llm` requires clearing the `memory` folder to avoid errors, as the embeddings can't be mixed in the vector database. The `knowledge` folder will be automatically imported again.
+
 *  Experiment with different model combinations to find the balance of performance and cost that best suits your needs.  (Refer to the image provided from Google Drive - potentially linked in the FAQ or a separate cost comparison section - for information on model pricing).
 
 

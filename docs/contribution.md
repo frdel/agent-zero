@@ -29,12 +29,12 @@ We welcome contributions from the community to improve Agent Zero!  This guide o
 If your contribution involves changes to the documentation:
 
 1. **Install Requirements (if you haven't already):** 
-    ```bash
+    ```
     pip install mkdocs-material
     ```
 2. **Start the Development Server:** Navigate to the documentation directory in your terminal (`docs`) and run:
 
-   ```bash
+   ```
    mkdocs serve
    ```
 
@@ -42,7 +42,7 @@ If your contribution involves changes to the documentation:
 
 3. **Build the Documentation:** To build a static HTML version of the documentation:
 
-   ```bash
+   ```
    mkdocs build
    ```
 

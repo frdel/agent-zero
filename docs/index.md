@@ -1,3 +1,8 @@
+---
+hide:
+  - navigation
+---
+
 # Welcome to the Agent Zero Documentation
 
 <div style="display:flex;">
@@ -14,10 +19,9 @@
     <source src="./res/mobile_webui.webm" type="video/webm">
   </video>
 </figure>
-</div> 
+</div>
 
 Welcome to the official documentation for Agent Zero, a personal and organic AI agentic framework.  Agent Zero is designed to be dynamic, organically growing, and learning as you use it. This framework empowers you to create autonomous agents that can perform tasks, learn from experience, and adapt to new situations.  Unlike traditional agentic systems, Agent Zero is highly transparent, customizable, and allows for direct user interaction, offering a unique and powerful approach to AI agent development.
-
 
 ## Key Features
 
@@ -31,16 +35,13 @@ Welcome to the official documentation for Agent Zero, a personal and organic AI 
 
 ## Getting Started
 
-Ready to experience the power of Agent Zero?  This documentation will guide you through every step:
+This documentation will guide you through every step:
 
 * **Installation:**  Set up Agent Zero on Windows, macOS, or Linux with our detailed installation guides.  We cover environment setup, dependency management, and API key configuration.
 * **Quick Start:**  Jump into action with practical examples and code snippets.  Learn the basics of agent creation, task assignment, and observing agent behavior.
 * **Usage Guide:**  Explore advanced topics like prompt engineering, tool utilization, multi-agent collaboration, and customization.  Unlock the full potential of Agent Zero.
 * **Architecture Overview:** Understand the inner workings of the framework. Learn about agents, tools, memory management, and the flow of communication within the system.
 * **Contributing:** Help us improve Agent Zero!  This section provides contribution guidelines, including coding standards, testing procedures, and how to submit pull requests.
-* **API Reference:**  Explore the available API calls and functionalities (if applicable).
-* **FAQ:**  Find answers to common questions and troubleshoot potential roadblocks.
-* **Troubleshooting:**  Resolve installation, setup, and usage errors with our comprehensive troubleshooting guide.
+* **Troubleshooting and FAQ:**  Find FAQs and resolve installation, setup, and usage errors with our troubleshooting guide.
 
-
-Begin your Agent Zero journey now!
+Your experience with Agent Zero starts now!
