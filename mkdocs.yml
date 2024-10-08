@@ -8,14 +8,14 @@ nav:
   - Quick Start: quickstart.md
   - Installation: installation.md
   - Usage: usage.md
-  - Architecture: architecture.md 
-  - Contributing: contribution.md  
+  - Architecture: architecture.md
+  - Contributing: contribution.md
   - Troubleshooting & FAQ: troubleshooting.md
 theme:
   name: material
-  language: en 
+  language: en
   icon:
-    repo: fontawesome/brands/github 
+    repo: fontawesome/brands/github
 
   palette:
     - media: "(prefers-color-scheme: dark)"
@@ -78,10 +78,6 @@ theme:
     - attr_list
     - def_list
     - md_in_html
-    - pymdownx.superfences:
-        custom_fences:
-          - name: mermaid
-            class: mermaid
-            format: !!python/name:pymdownx.superfences.fence_code_format
+    - pymdownx.superfences
   extra:
     generator: false
