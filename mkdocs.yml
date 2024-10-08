@@ -9,9 +9,8 @@ nav:
   - Installation: installation.md
   - Usage: usage.md
   - Architecture: architecture.md 
-  - Troubleshooting: troubleshooting.md
-  - FAQ: faq.md
-  - Contributing: contribution.md
+  - Contributing: contribution.md  
+  - Troubleshooting & FAQ: troubleshooting.md
 theme:
   name: material
   language: en 
