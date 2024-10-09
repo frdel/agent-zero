@@ -1,18 +1,15 @@
 #!/bin/bash
 
-# Ensure .bashrc is in the root directory
-if [ ! -f /root/.bashrc ]; then
-    cp /etc/skel/.bashrc /root/.bashrc
-    chmod 444 /root/.bashrc
+USER_HOME="/home/user"
+
+if [ ! -f "$USER_HOME/.bashrc" ]; then # Adjusted path here!
+    cp /etc/skel/.bashrc "$USER_HOME/.bashrc"
 fi
 
-# Ensure .profile is in the root directory
-if [ ! -f /root/.profile ]; then
-    cp /etc/skel/.bashrc /root/.profile
-    chmod 444 /root/.profile
+if [ ! -f "$USER_HOME/.profile" ]; then # Adjusted path here!
+     cp "/etc/skel/.bashrc" "$USER_HOME/.profile"
 fi
-
+    
 apt-get update
-
-# Start SSH service
-exec /usr/sbin/sshd -D
+  
+exec /usr/sbin/sshd -D  # Start SSH service.
