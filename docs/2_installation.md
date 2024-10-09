@@ -1,13 +1,10 @@
-# Installation guide and Video Tutorial
-A video walkthrough demonstrating the installation process of Agent Zero.
-<iframe width="560" height="315" src="https://www.youtube.com/embed/8H7mFsvxKYQ?si=vmGqb--6vczI9gik" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+# Installation guide for Windows, MacOS and Linux
+A [video](https://www.youtube.com/embed/8H7mFsvxKYQ?si=vmGqb--6vczI9gik) walkthrough demonstrating the installation process of Agent Zero.
 
 The following guide provides comprehensive instructions for installing Agent Zero on various operating systems. Choose the section that corresponds to your OS:
 
 ## Windows
-
 ### Quick Start
-
 1. **Install Anaconda or Miniconda:** Download and install the appropriate version for your system from [here](https://docs.anaconda.com/anaconda/install/). Miniconda is recommended for a minimal installation.
 2. **Create an Environment:** Open Anaconda Navigator (or use the `conda` command), create an environment named `agent-zero`, and select Python 3.12.
 3. **Install Docker Desktop:** Download and install Docker Desktop from [here](https://www.docker.com/products/docker-desktop/).
@@ -17,12 +14,14 @@ The following guide provides comprehensive instructions for installing Agent Zer
 7. **Run Agent Zero (Web UI):** Execute `python run_ui.py` in your terminal.
 8. **Access the Web UI:** Open the URL displayed in your browser.
 
-### Detailed Guide with Screenshots
+
+<details>
+
+<summary><h2>In-Depth Guide with Screenshots</h1></summary>
 
 Follow these detailed steps with accompanying screenshots:
 
 #### 1. Install Conda (Miniconda)
-
 Conda is a Python environment manager.  We'll use Miniconda.
 
 1. Download Miniconda: Go to the [Miniconda download page](https://docs.anaconda.com/miniconda/#miniconda-latest-installer-links) and download the appropriate installer for Windows.
@@ -42,7 +41,6 @@ Conda is a Python environment manager.  We'll use Miniconda.
     ![miniconda installed](res/setup/image-6.png)
 
 #### 2. Install Docker Desktop
-
 Docker provides isolated environments for running applications.
 
 1. Download Docker Desktop: Go to the [Docker Desktop download page](https://www.docker.com/products/docker-desktop/) and download the Windows installer.
@@ -62,7 +60,6 @@ Docker provides isolated environments for running applications.
 4. Create a Docker Hub Account: Sign in or create a free account within the Docker Desktop application. This is required for Agent Zero to pull the necessary Docker images.
 
 #### 3. Download and Extract Agent Zero
-
 1. Download the latest Agent Zero release from the [GitHub releases](https://github.com/frdel/agent-zero/releases) page.  Choose the "Source code (zip)" option.
 
     ![agent zero download](res/setup/image-14.png)
@@ -70,7 +67,6 @@ Docker provides isolated environments for running applications.
 2. Extract the zip file to a directory on your computer.
 
 #### 4. Set Up the Conda Environment
-
 1. Open Anaconda Powershell Prompt: Search for "Anaconda Powershell Prompt" in the Windows Start menu and open it.
 
 2. Navigate to Agent Zero Directory: Use the `cd` command to navigate to the directory where you extracted Agent Zero.  For example: `cd C:\Users\YourUsername\Desktop\agent-zero`
@@ -88,13 +84,11 @@ Docker provides isolated environments for running applications.
      ![conda reqs](res/setup/image-19.png)
 
 #### 5. Configure Agent Zero
-
 1. Configure API Keys: Locate the `example.env` file, copy it, and rename the copy to `.env`.  Open the `.env` file and add your API key for OpenAI (or other providers) after `API_KEY_OPENAI=`.
 
     ![conda reqs](res/setup/image-20.png)
 
 #### 6. Run Agent Zero
-
 1. Ensure Docker Desktop is running.
 2. In the Anaconda Powershell Prompt (with the "a0" environment activated and in the Agent Zero directory), run: `python run_ui.py`
 
@@ -104,11 +98,10 @@ Docker provides isolated environments for running applications.
 
     ![run ui](res/setup/image-22.png)
     ![run ui](res/setup/image-23.png)
+</details>
 
 ## macOS
-
 ### Quick Start
-
 1. **Install Miniconda:** Download the pkg installer from [here](https://docs.anaconda.com/miniconda/#miniconda-latest-installer-links) and follow the instructions.
 2. **Install Docker Desktop:** Download the dmg image from [here](https://www.docker.com/products/docker-desktop/), drag the Docker application to your Applications folder, and create a Docker Hub account.
 3. **Download Agent Zero:** Download the latest release zip from the [GitHub releases page](https://github.com/frdel/agent-zero/releases) and extract it.
@@ -120,12 +113,13 @@ Docker provides isolated environments for running applications.
 9. **Run Agent Zero (Web UI):** Run: `python run_ui.py`
 10. **Access the Web UI:** Open the displayed URL.
 
-### Detailed Guide with Screenshots
+<details>
+
+<summary><h2>In-Depth Guide with Screenshots</h1></summary>
 
 Follow these detailed steps with accompanying screenshots:
 
 #### 1. Install Conda (Miniconda)
-
 Conda is a Python environment manager.  We'll use Miniconda.
 
 1. Download Miniconda: Go to the [Miniconda download page](https://docs.anaconda.com/miniconda/#miniconda-latest-installer-links) and download the macOS pkg installer.
@@ -139,7 +133,6 @@ Conda is a Python environment manager.  We'll use Miniconda.
     ![miniconda installed macOS](res/setup/image-7.png)
 
 #### 2. Install Docker Desktop
-
 Docker provides containerization for running applications in isolated environments.
 
 1. Download Docker Desktop: Go to [Docker Desktop download page](https://www.docker.com/products/docker-desktop/) and download the macOS dmg image.
@@ -157,7 +150,6 @@ Docker provides containerization for running applications in isolated environmen
     ![docker socket macOS](res/setup/macsocket.png)
 
 #### 3. Download and Extract Agent Zero
-
 1. Download Agent Zero: Go to the [GitHub releases](https://github.com/frdel/agent-zero/releases) page and download the latest "Source code (zip)" release.
 
     ![agent zero download](res/setup/image-14.png)
@@ -165,7 +157,6 @@ Docker provides containerization for running applications in isolated environmen
 2. Extract Agent Zero: Double-click the downloaded zip file to extract its contents.
 
 #### 4. Set up Conda Environment
-
 1. Open Terminal:  Launch the Terminal application.
 2. Navigate to Agent Zero Directory:  Use the `cd` command to navigate to the extracted Agent Zero folder.  For example: `cd /Users/YourUsername/Desktop/agent-zero`
 
@@ -186,13 +177,11 @@ Docker provides containerization for running applications in isolated environmen
     ![conda reqs macOS](res/setup/image-19.png)
 
 #### 5. Configure Agent Zero
-
 1. Configure API Keys: Find the `example.env` file, copy and rename it to `.env`. Open `.env` and add your OpenAI API key (or other API keys) as needed.
 
     ![conda reqs macOS](res/setup/image-20.png)
 
 #### 6. Run Agent Zero
-
 1. Make sure Docker Desktop is running.
 2. In your terminal (with the "a0" environment active and within the Agent Zero directory), run: `python run_ui.py`
 
@@ -203,11 +192,10 @@ Docker provides containerization for running applications in isolated environmen
 
  ![run ui](res/setup/image-22.png)
  ![run ui](res/setup/image-23.png)
+</details>
 
 ## Linux
-
 ### Quick Start
-
 1. **Install Python and Pip:** Use your distribution's package manager (e.g., `apt`, `yum`, `dnf`) to install Python 3.12 or higher and pip. On Debian/Ubuntu systems, you would typically use:
    ```bash
    sudo apt-get update
@@ -228,5 +216,4 @@ Docker provides containerization for running applications in isolated environmen
 10. **Access the Web UI:** Open the URL displayed in your terminal.
 
 ## Conclusion
-
 After following the instructions for your specific operating system, you should have Agent Zero successfully installed and running. You can now start exploring the framework's capabilities and experimenting with creating your own intelligent agents.  If you encounter any issues during the installation process, please consult the Troubleshooting section of this documentation or refer to the Agent Zero community for assistance.
