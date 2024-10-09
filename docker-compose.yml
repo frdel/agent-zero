@@ -1,0 +1,23 @@
+version: '3.8'  # Make sure you're using a compatible version
+
+services:
+    agent-zero:
+        container_name: agent-zero
+        hostname: agent-zero
+        volumes:
+            - work_dir:/root
+            - /var/run/docker.sock:/var/run/docker.sock  # Mount the Docker socket here!
+        ports:
+            - 50022:22
+        image: bpawnzz/agent-zero:current
+        user: "1001:1001"  # Set the user and group to UID/GID 1001 
+        networks:
+            - caddy_default   # Connect to the existing network
+
+volumes:
+    work_dir:
+        external: true
+
+networks:
+    caddy_default:
+      external: true   # Indicate that this is an existing external network.

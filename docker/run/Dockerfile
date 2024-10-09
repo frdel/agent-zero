@@ -17,26 +17,31 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up SSH
-RUN mkdir /var/run/sshd && \
-    echo 'root:toor' | chpasswd && \
+RUN mkdir /var/run/sshd && \ 
+    echo 'root:toor' | chpasswd && \ 
     sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 
-# Create and activate Python virtual environment
-ENV VIRTUAL_ENV=/opt/venv
-RUN python3 -m venv $VIRTUAL_ENV
+# Create a new user with UID 1000 (you can change this if needed)
+RUN useradd -m user && echo "user:1001" | chpasswd && adduser user sudo 
 
-# Copy initial .bashrc with virtual environment activation to a temporary location
-COPY .bashrc /etc/skel/.bashrc
+# Allow 'user' to run sudo without a password
+RUN echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers 
 
-# Copy the script to ensure .bashrc is in the root directory
-COPY initialize.sh /usr/local/bin/initialize.sh
-RUN chmod +x /usr/local/bin/initialize.sh
+# Create and activate Python virtual environment for the new user
+ENV VIRTUAL_ENV=/opt/venv 
+RUN python3 -m venv $VIRTUAL_ENV 
 
-# Ensure the virtual environment and pip setup
-RUN $VIRTUAL_ENV/bin/pip install --upgrade pip
+# Copy initial .bashrc with virtual environment activation to a temporary location 
+COPY .bashrc /etc/skel/.bashrc 
 
-# Expose SSH port
-EXPOSE 22
+# Copy the script to ensure .bashrc is in the root directory 
+COPY initialize.sh /usr/local/bin/initialize.sh 
+RUN chmod +x /usr/local/bin/initialize.sh 
 
-# Init .bashrc
+# Ensure pip setup in virtual environment before switching users  
+RUN $VIRTUAL_ENV/bin/pip install --upgrade pip  
+
+# Expose SSH port  
+EXPOSE 22  
+
 CMD ["/usr/local/bin/initialize.sh"]
