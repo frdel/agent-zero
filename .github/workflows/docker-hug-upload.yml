@@ -2,13 +2,13 @@ name: Docker Build and Push
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "new_user" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "new_user" ]
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/agent-zero # Adjust this if needed.
+  IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/agent-zero-user # Adjust this if needed.
 
 jobs:
   build-and-push:
