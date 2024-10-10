@@ -8,17 +8,18 @@ import pathspec
 import importlib
 import importlib.metadata as metadata
 
+
 def get_package_data_folder(package_name):
     """Return the package path if it contains data files."""
     try:
         # Get the module and its file path
         package = importlib.import_module(package_name)
         package_path = os.path.dirname(package.__file__)  # type: ignore
-        #only if package path does not end with "site-packages"
+        # only if package path does not end with "site-packages"
         if not package_path.endswith("site-packages"):
-        # Check if the package contains any relevant data files
+            # Check if the package contains any relevant data files
             has_data = any(
-                file.endswith(('.json', '.txt', '.csv', '.yml', '.yaml'))
+                file.endswith((".json", ".txt", ".csv", ".yml", ".yaml"))
                 for root, dirs, files in os.walk(package_path)
                 for file in files
             )
@@ -27,26 +28,30 @@ def get_package_data_folder(package_name):
                 return package_path
 
     except ImportError:
-        print(f"Warning: Unable to import {package_name}. Skipping data folder discovery for this package.")
-    
+        print(
+            f"Warning: Unable to import {package_name}. Skipping data folder discovery for this package."
+        )
+
     return None
+
 
 def get_add_data_args():
     """Return an array of --add-data arguments for PyInstaller, one per package."""
     add_data_args = []
 
     # Use importlib.metadata to get the installed packages
-    installed_packages = [dist.metadata['Name'] for dist in metadata.distributions()]
+    installed_packages = [dist.metadata["Name"] for dist in metadata.distributions()]
 
     # Discover the data folder for each package and add it as a --add-data argument
     for package in installed_packages:
         package_data_folder = get_package_data_folder(package)
         if package_data_folder:
             # Add the whole package directory
-            add_data_args.append(f"--add-data={package_data_folder}{os.pathsep}{package}")
+            add_data_args.append(
+                f"--add-data={package_data_folder}{os.pathsep}{package}"
+            )
 
     return add_data_args
-
 
 
 def get_site_packages_path():
@@ -174,6 +179,12 @@ def build_executable(script_name, exe_name=None):
         print(f"Project files copied to: '{project_files_dir}'")
         print(f"Bundled contents are in: '{dist_dir}'")
 
+        # Remove all __pycache__ directories in the _internal subdirectory
+        internal_dir = os.path.join(dist_dir, "_internal")
+        if os.path.exists(internal_dir):
+            print(f"Cleaning up __pycache__ folders in {internal_dir}...")
+            remove_pycache_folders(internal_dir)
+
         # Final cleanup (keeping dist folder)
         cleanup_directories(exe_name, keep_dist=True)
 
@@ -181,6 +192,14 @@ def build_executable(script_name, exe_name=None):
         print(f"Error during PyInstaller execution: {e}")
     except Exception as e:
         print(f"Error: {e}")
+
+
+def remove_pycache_folders(root_dir):
+    for root, dirs, files in os.walk(root_dir):
+        for dir_name in dirs:
+            if dir_name == "__pycache__":
+                pycache_path = os.path.join(root, dir_name)
+                shutil.rmtree(pycache_path)
 
 
 if __name__ == "__main__":
