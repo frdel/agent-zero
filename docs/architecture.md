@@ -4,7 +4,7 @@ Agent Zero is built on a flexible and modular architecture designed for extensib
 ```mermaid
 graph LR;    
     User(((User))) <==> AgentZero(Agent 0);
-    Data2[(
+    Data[(
     Memory,
     Knowledge,
     Instruments,
@@ -25,9 +25,9 @@ graph LR;
         CodeExec[Code Execution Tool] <--> WorkDir[Work Directory
         work_dir];
     end
-    Data2 --> AgentZero;
-    Data2 --> SubAgent1;
-    Data2 --> SubAgent2;
+    Data --> AgentZero;
+    Data --> SubAgent1;
+    Data --> SubAgent2;
     classDef bk fill:#048,stroke:#000,stroke-width:2px;
     class User,AgentZero,SubAgent1,SubAgent2 bk;
     classDef grey fill:#333,stroke:#555,stroke-width:2px;
