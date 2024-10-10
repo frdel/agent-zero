@@ -5,10 +5,46 @@ import site
 import shutil
 from pathlib import Path
 import pathspec
+import pkg_resources
+import importlib
+
+def get_package_data_files(package_name):
+    """Discover data files for a given package."""
+    try:
+        package = importlib.import_module(package_name)
+        package_path = os.path.dirname(package.__file__) # type: ignore
+        data_files = []
+
+        for root, dirs, files in os.walk(package_path):
+            for file in files:
+                if file.endswith(('.json', '.txt', '.csv', '.yml', '.yaml')):
+                    file_path = os.path.join(root, file)
+                    relative_path = os.path.relpath(root, package_path)
+                    data_files.append((file_path, os.path.join(package_name, relative_path)))
+
+        return data_files
+    except ImportError:
+        print(f"Warning: Unable to import {package_name}. Skipping data file discovery for this package.")
+        return []
+
+def get_add_data_args():
+    """Return an array of --add-data arguments for PyInstaller."""
+    add_data_args = []
+
+    # Get all installed packages
+    installed_packages = [d.project_name for d in pkg_resources.working_set]
+
+    # Discover data files for each package
+    for package in installed_packages:
+        data_files = get_package_data_files(package)
+        for file_path, dest_path in data_files:
+            add_data_args.append(f"--add-data={file_path}{os.pathsep}{dest_path}")
+
+    return add_data_args
 
 def get_site_packages_path():
     """Get the path to the site-packages directory of the current environment."""
-    if hasattr(site, 'getsitepackages'):
+    if hasattr(site, "getsitepackages"):
         paths = site.getsitepackages()
     else:
         paths = [site.getusersitepackages()]
@@ -18,13 +54,15 @@ def get_site_packages_path():
     else:
         raise RuntimeError("Couldn't determine the site-packages path.")
 
+
 def parse_gitignore(gitignore_path):
     """Parse .gitignore file and return a PathSpec object."""
     if not os.path.exists(gitignore_path):
-        return pathspec.PathSpec.from_lines('gitwildmatch', [])
-    
-    with open(gitignore_path, 'r') as f:
-        return pathspec.PathSpec.from_lines('gitwildmatch', f)
+        return pathspec.PathSpec.from_lines("gitwildmatch", [])
+
+    with open(gitignore_path, "r") as f:
+        return pathspec.PathSpec.from_lines("gitwildmatch", f)
+
 
 def copy_project_files(src_dir, dst_dir, spec):
     """Copy project files respecting .gitignore rules using pathspec."""
@@ -46,15 +84,16 @@ def copy_project_files(src_dir, dst_dir, spec):
 
 def cleanup_directories(bundle_name, keep_dist=False):
     """Remove build directory and .spec file. Optionally keep dist."""
-    if not keep_dist and os.path.exists('dist'):
-        shutil.rmtree('dist')
-    
-    if os.path.exists('build'):
-        shutil.rmtree('build')
-    
+    if not keep_dist and os.path.exists("dist"):
+        shutil.rmtree("dist")
+
+    if os.path.exists("build"):
+        shutil.rmtree("build")
+
     spec_file = f"{bundle_name}.spec"
     if os.path.exists(spec_file):
         os.remove(spec_file)
+
 
 def build_executable(script_name, exe_name=None):
     """Run PyInstaller with the correct site-packages path, clean, and additional data."""
@@ -66,11 +105,11 @@ def build_executable(script_name, exe_name=None):
         print(f"Using site-packages path: {site_packages_path}")
 
         # Parse .gitignore
-        gitignore_path = os.path.join(os.getcwd(), '.gitignore')
+        gitignore_path = os.path.join(os.getcwd(), ".gitignore")
         spec = parse_gitignore(gitignore_path)
 
         # Create a temporary directory for project files
-        temp_project_dir = os.path.join('build', 'temp_project')
+        temp_project_dir = os.path.join("build", "temp_project")
         os.makedirs(temp_project_dir, exist_ok=True)
 
         # Copy project files respecting .gitignore
@@ -86,6 +125,9 @@ def build_executable(script_name, exe_name=None):
             "--workpath=build",  # Specify the build directory
         ]
 
+        # Add data arguments
+        pyinstaller_command.extend(get_add_data_args())
+
         # Add custom name if provided
         if exe_name:
             pyinstaller_command.append(f"--name={exe_name}")
@@ -100,8 +142,8 @@ def build_executable(script_name, exe_name=None):
         subprocess.run(pyinstaller_command, check=True)
 
         # Post-processing: Manually create the desired structure
-        dist_dir = os.path.join('dist', exe_name)
-        project_files_dir = os.path.join(dist_dir, exe_name+"-files")
+        dist_dir = os.path.join("dist", exe_name)
+        project_files_dir = os.path.join(dist_dir, exe_name + "-files")
 
         # Move the executable to the root of dist/
         # shutil.move(os.path.join(temp_exe_dir, exe_name), os.path.join(dist_dir, exe_name))
@@ -132,6 +174,7 @@ def build_executable(script_name, exe_name=None):
         print(f"Error during PyInstaller execution: {e}")
     except Exception as e:
         print(f"Error: {e}")
+
 
 if __name__ == "__main__":
     build_executable("run_bundle.py", "agent-zero")

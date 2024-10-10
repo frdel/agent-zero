@@ -19,7 +19,9 @@ import langchain_huggingface
 import langchain_mistralai
 import langchain_ollama
 import langchain_openai
-import lxml.html.clean
+import lxml_html_clean
+import emoji
+from emoji import unicode_codes
 import markdown
 import newspaper
 import paramiko
