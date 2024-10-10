@@ -5,42 +5,49 @@ import site
 import shutil
 from pathlib import Path
 import pathspec
-import pkg_resources
 import importlib
+import importlib.metadata as metadata
 
-def get_package_data_files(package_name):
-    """Discover data files for a given package."""
+def get_package_data_folder(package_name):
+    """Return the package path if it contains data files."""
     try:
+        # Get the module and its file path
         package = importlib.import_module(package_name)
-        package_path = os.path.dirname(package.__file__) # type: ignore
-        data_files = []
+        package_path = os.path.dirname(package.__file__)  # type: ignore
+        #only if package path does not end with "site-packages"
+        if not package_path.endswith("site-packages"):
+        # Check if the package contains any relevant data files
+            has_data = any(
+                file.endswith(('.json', '.txt', '.csv', '.yml', '.yaml'))
+                for root, dirs, files in os.walk(package_path)
+                for file in files
+            )
 
-        for root, dirs, files in os.walk(package_path):
-            for file in files:
-                if file.endswith(('.json', '.txt', '.csv', '.yml', '.yaml')):
-                    file_path = os.path.join(root, file)
-                    relative_path = os.path.relpath(root, package_path)
-                    data_files.append((file_path, os.path.join(package_name, relative_path)))
+            if has_data:
+                return package_path
 
-        return data_files
     except ImportError:
-        print(f"Warning: Unable to import {package_name}. Skipping data file discovery for this package.")
-        return []
+        print(f"Warning: Unable to import {package_name}. Skipping data folder discovery for this package.")
+    
+    return None
 
 def get_add_data_args():
-    """Return an array of --add-data arguments for PyInstaller."""
+    """Return an array of --add-data arguments for PyInstaller, one per package."""
     add_data_args = []
 
-    # Get all installed packages
-    installed_packages = [d.project_name for d in pkg_resources.working_set]
+    # Use importlib.metadata to get the installed packages
+    installed_packages = [dist.metadata['Name'] for dist in metadata.distributions()]
 
-    # Discover data files for each package
+    # Discover the data folder for each package and add it as a --add-data argument
     for package in installed_packages:
-        data_files = get_package_data_files(package)
-        for file_path, dest_path in data_files:
-            add_data_args.append(f"--add-data={file_path}{os.pathsep}{dest_path}")
+        package_data_folder = get_package_data_folder(package)
+        if package_data_folder:
+            # Add the whole package directory
+            add_data_args.append(f"--add-data={package_data_folder}{os.pathsep}{package}")
 
     return add_data_args
+
+
 
 def get_site_packages_path():
     """Get the path to the site-packages directory of the current environment."""
