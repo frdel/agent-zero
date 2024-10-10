@@ -137,7 +137,11 @@ class CodeExecution(Tool):
         return await self.get_terminal_output()
 
     async def get_terminal_output(
-        self, wait_with_output=3, wait_without_output=10, max_exec_time=60
+        self,
+        reset_full_output=True,
+        wait_with_output=3,
+        wait_without_output=10,
+        max_exec_time=60,
     ):
         idle = 0
         SLEEP_TIME = 0.1
@@ -147,8 +151,9 @@ class CodeExecution(Tool):
         while max_exec_time <= 0 or time.time() - start_time < max_exec_time:
             await asyncio.sleep(SLEEP_TIME)  # Wait for some output to be generated
             full_output, partial_output = await self.state.shell.read_output(
-                max_exec_time
+                timeout=max_exec_time, reset_full_output=reset_full_output
             )
+            reset_full_output = False # only reset once
 
             await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
 

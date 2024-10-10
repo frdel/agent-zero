@@ -1,6 +1,7 @@
 import re, os, importlib, inspect
 from typing import Any, Type, TypeVar
 from .dirty_json import DirtyJson
+from .files import get_abs_path
 import regex
 from fnmatch import fnmatch
 
@@ -57,10 +58,11 @@ def load_classes_from_folder(folder: str, name_pattern: str, base_class: Type[T]
     from fnmatch import fnmatch
 
     classes = []
+    abs_folder = get_abs_path(folder)
 
     # Get all .py files in the folder that match the pattern, sorted alphabetically
     py_files = sorted(
-        [file_name for file_name in os.listdir(folder) if fnmatch(file_name, name_pattern) and file_name.endswith(".py")]
+        [file_name for file_name in os.listdir(abs_folder) if fnmatch(file_name, name_pattern) and file_name.endswith(".py")]
     )
 
     # Iterate through the sorted list of files

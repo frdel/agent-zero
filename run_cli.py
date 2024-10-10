@@ -9,6 +9,7 @@ from python.helpers.files import read_file
 from python.helpers import files
 import python.helpers.timed_input as timed_input
 from initialize import initialize
+from python.helpers.dotenv import load_dotenv
 
 
 context: AgentContext = None # type: ignore
@@ -93,8 +94,11 @@ def capture_keys():
 def timeout_input(prompt, timeout=10):
     return timed_input.timeout_input(prompt=prompt, timeout=timeout)
 
-if __name__ == "__main__":
+def run():
     print("Initializing framework...")
+
+    #load env vars
+    load_dotenv()
 
     # initialize context
     config = initialize()
@@ -105,3 +109,6 @@ if __name__ == "__main__":
 
     #start the chat
     asyncio.run(chat(context))
+
+if __name__ == "__main__":
+    run()

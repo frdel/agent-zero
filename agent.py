@@ -173,6 +173,10 @@ class RepairableException(Exception):
     pass
 
 
+class HandledException(Exception):
+    pass
+
+
 class Agent:
 
     def __init__(
@@ -202,147 +206,170 @@ class Agent:
         self.data = {}  # free data object all the tools can use
 
     async def monologue(self, msg: str):
-        try:
-            # loop data dictionary to pass to extensions
-            loop_data = LoopData()
-            loop_data.message = msg
-            loop_data.history_from = len(self.history)
+        while True:
+            try:
+                # loop data dictionary to pass to extensions
+                loop_data = LoopData()
+                loop_data.message = msg
+                loop_data.history_from = len(self.history)
 
-            # call monologue_start extensions
-            await self.call_extensions("monologue_start", loop_data=loop_data)
+                # call monologue_start extensions
+                await self.call_extensions("monologue_start", loop_data=loop_data)
 
-            printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)
-            user_message = self.read_prompt(
-                "fw.user_message.md", message=loop_data.message
+                printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)
+                user_message = self.read_prompt(
+                    "fw.user_message.md", message=loop_data.message
+                )
+                await self.append_message(user_message, human=True)
+
+                # let the agent run message loop until he stops it with a response tool
+                while True:
+
+                    self.context.streaming_agent = self  # mark self as current streamer
+                    agent_response = ""
+                    loop_data.iteration += 1
+
+                    try:
+
+                        # set system prompt and message history
+                        loop_data.system = []
+                        loop_data.history = self.history
+
+                        # and allow extensions to edit them
+                        await self.call_extensions(
+                            "message_loop_prompts", loop_data=loop_data
+                        )
+
+                        # build chain from system prompt, message history and model
+                        prompt = ChatPromptTemplate.from_messages(
+                            [
+                                SystemMessage(content="\n\n".join(loop_data.system)),
+                                MessagesPlaceholder(variable_name="messages"),
+                            ]
+                        )
+                        chain = prompt | self.config.chat_model
+
+                        # rate limiter TODO - move to extension, make per-model
+                        formatted_inputs = prompt.format(messages=self.history)
+                        tokens = int(len(formatted_inputs) / 4)
+                        self.rate_limiter.limit_call_and_input(tokens)
+
+                        # output that the agent is starting
+                        PrintStyle(
+                            bold=True,
+                            font_color="green",
+                            padding=True,
+                            background_color="white",
+                        ).print(f"{self.agent_name}: Generating")
+                        log = self.context.log.log(
+                            type="agent", heading=f"{self.agent_name}: Generating"
+                        )
+
+                        async for chunk in chain.astream(
+                            {"messages": loop_data.history}
+                        ):
+                            await self.handle_intervention(
+                                agent_response
+                            )  # wait for intervention and handle it, if paused
+
+                            if isinstance(chunk, str):
+                                content = chunk
+                            elif hasattr(chunk, "content"):
+                                content = str(chunk.content)
+                            else:
+                                content = str(chunk)
+
+                            if content:
+                                printer.stream(
+                                    content
+                                )  # output the agent response stream
+                                agent_response += (
+                                    content  # concatenate stream into the response
+                                )
+                                self.log_from_stream(agent_response, log)
+
+                        self.rate_limiter.set_output_tokens(
+                            int(len(agent_response) / 4)
+                        )  # rough estimation
+
+                        await self.handle_intervention(agent_response)
+
+                        if (
+                            self.last_message == agent_response
+                        ):  # if assistant_response is the same as last message in history, let him know
+                            await self.append_message(
+                                agent_response
+                            )  # Append the assistant's response to the history
+                            warning_msg = self.read_prompt("fw.msg_repeat.md")
+                            await self.append_message(
+                                warning_msg, human=True
+                            )  # Append warning message to the history
+                            PrintStyle(font_color="orange", padding=True).print(
+                                warning_msg
+                            )
+                            self.context.log.log(type="warning", content=warning_msg)
+
+                        else:  # otherwise proceed with tool
+                            await self.append_message(
+                                agent_response
+                            )  # Append the assistant's response to the history
+                            tools_result = await self.process_tools(
+                                agent_response
+                            )  # process tools requested in agent message
+                            if tools_result:  # final response of message loop available
+                                await self.call_extensions(
+                                    "monologue_end", tools_result=tools_result
+                                )  # call monologue_end extensions
+                                return tools_result  # break the execution if the task is done
+
+                    # exceptions inside message loop:
+                    except InterventionException as e:
+                        pass  # intervention message has been handled in handle_intervention(), proceed with conversation loop
+                    except (
+                        RepairableException
+                    ) as e:  # Forward repairable errors to the LLM, maybe it can fix them
+                        error_message = errors.format_error(e)
+                        msg_response = self.read_prompt(
+                            "fw.error.md", error=error_message
+                        )  # error message template
+                        await self.append_message(msg_response, human=True)
+                        PrintStyle(font_color="red", padding=True).print(msg_response)
+                        self.context.log.log(type="error", content=msg_response)
+                    except Exception as e:  # Other exception kill the loop
+                        self.handle_critical_exception(e)
+
+            # exceptions outside message loop:
+            except InterventionException as e:
+                pass  # just start over
+            except Exception as e:
+                self.handle_critical_exception(e)
+            finally:
+                self.context.streaming_agent = None  # unset current streamer
+
+    def handle_critical_exception(self, exception: Exception):
+        if isinstance(exception, HandledException):
+            raise exception  # Re-raise the exception to kill the loop
+        elif isinstance(exception, asyncio.CancelledError):
+            # Handling for asyncio.CancelledError
+            PrintStyle(font_color="white", background_color="red", padding=True).print(
+                f"Context {self.context.id} terminated during message loop"
             )
-            await self.append_message(user_message, human=True)
-
-            # let the agent run message loop until he stops it with a response tool
-            while True:
-
-                self.context.streaming_agent = self  # mark self as current streamer
-                agent_response = ""
-                loop_data.iteration += 1
-
-                try:
-
-                    # set system prompt and message history
-                    loop_data.system = []
-                    loop_data.history = self.history
-
-                    # and allow extensions to edit them
-                    await self.call_extensions(
-                        "message_loop_prompts", loop_data=loop_data
-                    )
-
-                    # build chain from system prompt, message history and model
-                    prompt = ChatPromptTemplate.from_messages(
-                        [
-                            SystemMessage(content="\n\n".join(loop_data.system)),
-                            MessagesPlaceholder(variable_name="messages"),
-                        ]
-                    )
-                    chain = prompt | self.config.chat_model
-
-                    # rate limiter TODO - move to extension, make per-model
-                    formatted_inputs = prompt.format(messages=self.history)
-                    tokens = int(len(formatted_inputs) / 4)
-                    self.rate_limiter.limit_call_and_input(tokens)
-
-                    # output that the agent is starting
-                    PrintStyle(
-                        bold=True,
-                        font_color="green",
-                        padding=True,
-                        background_color="white",
-                    ).print(f"{self.agent_name}: Generating")
-                    log = self.context.log.log(
-                        type="agent", heading=f"{self.agent_name}: Generating"
-                    )
-
-                    async for chunk in chain.astream({"messages": loop_data.history}):
-                        await self.handle_intervention(
-                            agent_response
-                        )  # wait for intervention and handle it, if paused
-
-                        if isinstance(chunk, str):
-                            content = chunk
-                        elif hasattr(chunk, "content"):
-                            content = str(chunk.content)
-                        else:
-                            content = str(chunk)
-
-                        if content:
-                            printer.stream(content)  # output the agent response stream
-                            agent_response += (
-                                content  # concatenate stream into the response
-                            )
-                            self.log_from_stream(agent_response, log)
-
-                    self.rate_limiter.set_output_tokens(
-                        int(len(agent_response) / 4)
-                    )  # rough estimation
-
-                    await self.handle_intervention(agent_response)
-
-                    if (
-                        self.last_message == agent_response
-                    ):  # if assistant_response is the same as last message in history, let him know
-                        await self.append_message(
-                            agent_response
-                        )  # Append the assistant's response to the history
-                        warning_msg = self.read_prompt("fw.msg_repeat.md")
-                        await self.append_message(
-                            warning_msg, human=True
-                        )  # Append warning message to the history
-                        PrintStyle(font_color="orange", padding=True).print(warning_msg)
-                        self.context.log.log(type="warning", content=warning_msg)
-
-                    else:  # otherwise proceed with tool
-                        await self.append_message(
-                            agent_response
-                        )  # Append the assistant's response to the history
-                        tools_result = await self.process_tools(
-                            agent_response
-                        )  # process tools requested in agent message
-                        if tools_result:  # final response of message loop available
-                            await self.call_extensions(
-                                "monologue_end", tools_result=tools_result
-                            )  # call monologue_end extensions
-                            return (
-                                tools_result  # break the execution if the task is done
-                            )
-
-                except InterventionException as e:
-                    pass  # intervention message has been handled in handle_intervention(), proceed with conversation loop
-                except asyncio.CancelledError as e:
-                    PrintStyle(
-                        font_color="white", background_color="red", padding=True
-                    ).print(f"Context {self.context.id} terminated during message loop")
-                    raise e  # process cancelled from outside, kill the loop
-                except (
-                    RepairableException
-                ) as e:  # Forward repairable errors to the LLM, maybe it can fix them
-                    error_message = errors.format_error(e)
-                    msg_response = self.read_prompt(
-                        "fw.error.md", error=error_message
-                    )  # error message template
-                    await self.append_message(msg_response, human=True)
-                    PrintStyle(font_color="red", padding=True).print(msg_response)
-                    self.context.log.log(type="error", content=msg_response)
-                except Exception as e:  # Other exception kill the loop
-                    error_message = errors.format_error(e)
-                    PrintStyle(font_color="red", padding=True).print(error_message)
-                    self.context.log.log(type="error", content=error_message)
-                    raise e  # kill the loop
-
-        finally:
-            self.context.streaming_agent = None  # unset current streamer
+            raise HandledException(
+                exception
+            )  # Re-raise the exception to cancel the loop
+        else:
+            # Handling for general exceptions
+            error_message = errors.format_error(exception)
+            PrintStyle(font_color="red", padding=True).print(error_message)
+            self.context.log.log(type="error", content=error_message)
+            raise HandledException(exception)  # Re-raise the exception to kill the loop
 
     def read_prompt(self, file: str, **kwargs) -> str:
         prompt_dir = files.get_abs_path("prompts/default")
         backup_dir = []
-        if self.config.prompts_subdir: # if agent has custom folder, use it and use default as backup
+        if (
+            self.config.prompts_subdir
+        ):  # if agent has custom folder, use it and use default as backup
             prompt_dir = files.get_abs_path("prompts", self.config.prompts_subdir)
             backup_dir.append(files.get_abs_path("prompts/default"))
         return files.read_file(

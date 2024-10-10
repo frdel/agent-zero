@@ -1,5 +1,4 @@
 import os
-from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAI, OpenAIEmbeddings, AzureChatOpenAI, AzureOpenAIEmbeddings, AzureOpenAI
 from langchain_community.llms.ollama import Ollama
 from langchain_ollama import ChatOllama
@@ -10,9 +9,9 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_google_genai import GoogleGenerativeAI, HarmBlockThreshold, HarmCategory
 from langchain_mistralai import ChatMistralAI
 from pydantic.v1.types import SecretStr
+from python.helpers.dotenv import load_dotenv
 
-
-# Load environment variables
+# environment variables
 load_dotenv()
 
 # Configuration
