@@ -131,7 +131,7 @@ Extensions can be found in `python/extensions` directory.
 | --- | --- |
 | `agent.py` | Contains the core logic for the `AgentConfig` class, which defines the `prompts_subdir`, rate limits for models, and mechanisms for tweaking SSH and Docker connections. |
 | `example.env` | Contains environment variables for configuring API keys and other settings of Agent Zero. |
-| `initialize.py` | Defines Agent Zero's core configuration, including model choices and other critical settings. This is the central point for customizing the framework's behavior. See [Choosing Your LLMs](#choosing-your-llms) for more details. |
+| `initialize.py` | Defines Agent Zero's core configuration, including model choices and other critical settings. This is the central point for customizing the framework's behavior. See [Choosing Your LLMs](installation.md#choosing-your-llms) for more details. |
 | `models.py` | Defines the `get_provider_chat` or `..._embedding` functions, which specifies the model provider, model name, and other parameters for adding support for new models or custom models. |
 | `requirements.txt` | Lists the dependencies used by pip to install the necessary packages when you setup Agent Zero. |
 | `run_cli.py` | Starts the Agent Zero CLI. |
