@@ -27,7 +27,7 @@ pip install -r requirements.txt
 ```
 
 **3. How do I integrate models like `ollama` or `llama` with Agent Zero?**
-Refer to the [Choosing your LLMs](5_architecture.md#installing-and-using-ollama) section of the documentation for detailed instructions and examples for configuring different LLMs in `initialize.py`. (This assumes you'll have a dedicated documentation page for model integration).
+Refer to the [Choosing your LLMs](architecture.md#installing-and-using-ollama) section of the documentation for detailed instructions and examples for configuring different LLMs in `initialize.py`. (This assumes you'll have a dedicated documentation page for model integration).
 
 **4. How can I make Agent Zero retain memory between sessions?**
 Auto memory automatically saves and loads solutions and informations from previous sessions.
@@ -36,7 +36,7 @@ Auto memory automatically saves and loads solutions and informations from previo
 *   Join the [Agent Zero Discord community](https://discord.gg/Z2tun2N3) for support and discussions.
 
 **6. Can I run Agent Zero without API keys or for free?**
-You can experiment with locally hosted open-source LLMs like Llama.  Refer to [Choosing Your LLMs](5_architecture#choosing-your-llms) section for configuration instructions.  Using API-based LLMs like those from OpenAI, Google, etc., requires API keys and might incur costs.
+You can experiment with locally hosted open-source LLMs like Llama.  Refer to [Choosing Your LLMs](architecture#choosing-your-llms) section for configuration instructions.  Using API-based LLMs like those from OpenAI, Google, etc., requires API keys and might incur costs.
 
 **7. How do I adjust API rate limits?**
 Modify the `rate_limit_seconds` and `rate_limit_requests` parameters in the `AgentConfig` class within `initialize.py`.

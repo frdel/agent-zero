@@ -2,7 +2,7 @@
 This guide provides a quick introduction to using Agent Zero. We'll cover launching the web UI, starting a new chat, and running a simple task.
 
 ## Launching the Web UI
-1. Make sure you have Agent Zero installed and your environment set up correctly (refer to the [Installation guide](2_installation.md) if needed).
+1. Make sure you have Agent Zero installed and your environment set up correctly (refer to the [Installation guide](installation.md) if needed).
 2. Open a terminal in the Agent Zero directory and activate your conda environment (if you're using one).
 3. Run the following command:
 
@@ -12,16 +12,11 @@ python run_ui.py
 
 4.  A message similar to this will appear in your terminal, indicating the Web UI is running:
 
-```
-* Serving Flask app 'app'
-* Debug mode: off
-WARNING: This is a development server. Do not use it in a production deployment. 
-Use a production WSGI server instead.
-* Running on http://127.0.0.1:50001
-Press CTRL+C to quit
-```
+![](res/flask_link.png)
 
 5. Open your web browser and navigate to the URL shown in the terminal (usually `http://127.0.0.1:50001`). You should see the Agent Zero Web UI.
+
+![](res/ui_newchat.png)
 
 ## Running a Simple Task
 Let's ask Agent Zero to tell us the current time.  Here's how:

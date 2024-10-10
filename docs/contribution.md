@@ -26,6 +26,4 @@ Contributions to improve Agent Zero are very welcome!  This guide outlines how t
 
 ## Documentation Stack
 
-The documentation is built using Markdown. Familiarity with Markdown is helpful but not strictly required for contributing documentation updates.
-
-We appreciate your contributions and look forward to improving Agent Zero for everyone's benefit!
+- The documentation is built using Markdown. We appreciate your contributions and look forward to improving Agent Zero for everyone's benefit.
