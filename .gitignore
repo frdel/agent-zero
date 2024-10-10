@@ -1,3 +1,55 @@
+**/.DS_Store
+**/.env
+**/__pycache__/
+
+
 # Ignore all contents of the virtual environment directory
-venv
-site
+.venv/*
+
+# Ignore all contents of the directory "work_dir"
+work_dir/*
+# But do not ignore the directory itself
+!work_dir/.gitkeep
+
+# Ignore all contents of the directory "memory"
+memory/*
+# But do not ignore the directory itself
+!memory/.gitkeep
+
+# Ignore all contents of the directory "logs"
+logs/*
+# But do not ignore the directory itself
+!logs/.gitkeep
+
+# Ignore all contents of the directory "tmp"
+tmp/*
+# But do not ignore the directory itself
+!tmp/.gitkeep
+
+# Ignore everything in the "knowledge" directory
+knowledge/*
+
+# Do not ignore subdirectories (so we can track .gitkeep)
+!knowledge/*/
+
+# Ignore all files within subdirectories (except .gitkeep)
+knowledge/**/*.*
+!knowledge/**/.gitkeep
+
+# Explicitly allow the default folder and its contents
+!knowledge/default/
+!knowledge/default/**
+
+# Ignore everything in the "instruments" directory
+instruments/*
+
+# Do not ignore subdirectories (so we can track .gitkeep)
+!instruments/*/
+
+# Ignore all files within subdirectories (except .gitkeep)
+instruments/**/*.*
+!instruments/**/.gitkeep
+
+# Explicitly allow the default folder and its contents
+!instruments/default/
+!instruments/default/**
