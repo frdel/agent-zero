@@ -1,38 +1,7 @@
 # Architecture Overview
 Agent Zero is built on a flexible and modular architecture designed for extensibility and customization. This document outlines the key components and their interactions. This simplified diagram illustrates the hierarchical relationship between agents and their interaction with tools, prompts, memory, knowledge base and instruments. 
 
-```mermaid
-graph LR;    
-    User(((User))) <==> AgentZero(Agent 0);
-    Data[(
-    Memory,
-    Knowledge,
-    Instruments,
-    Prompts,
-    Extensions
-    )]    
-    AgentZero <==> SubAgent1(Subordinate 
-    Agent 1);
-    SubAgent1 <==> SubAgent2(Subordinate 
-    Agent 2);
-    AgentZero <==> SubAgent2
-    AgentZero <--> Tools{Tools};
-    SubAgent1 <--> Tools;
-    SubAgent2 <--> Tools;
-    Tools -.- CodeExec;
-    subgraph "Docker Container"
-    direction TB
-        CodeExec[Code Execution Tool] <--> WorkDir[Work Directory
-        work_dir];
-    end
-    Data --> AgentZero;
-    Data --> SubAgent1;
-    Data --> SubAgent2;
-    classDef bk fill:#048,stroke:#000,stroke-width:2px;
-    class User,AgentZero,SubAgent1,SubAgent2 bk;
-    classDef grey fill:#333,stroke:#555,stroke-width:2px;
-    class Data,Tools,CodeExec,WorkDir grey;
-```
+![Agent Zero Architecture](res/arch-01.svg)
 
 The user or Agent 0 is at the top of the hierarchy, delegating tasks to subordinate agents, which can further delegate to other agents.  Each agent can utilize tools and access the shared assets (prompts, memory, knowledge, extensions and instruments) to perform its tasks.
 
@@ -69,12 +38,7 @@ Communication flows between agents through messages, which are structured accord
 ## Interaction Flow
 A typical interaction flow within Agent Zero might look like this:
 
-```mermaid
-graph LR;
-    1(User input) --> 2(VectorDB Initialize) --> Data[(Memory Access)] --> 4{Planning} --> 5(Tool Use) --> 6(Sub-agent Creation) --> 7(Tool Use) --> 8(Feedback) --> 9(User Response);
-    classDef bk fill:#048,stroke:#000,stroke-width:2px;
-    class 1,2,Data,4,5,6,7,8,9 bk;
-```
+![Interaction Flow](res/flow-01.svg)
 
 1.  The user provides an instruction to Agent 0.
 2.  Agent 0 initializes VectorDB and access memory as needed.
