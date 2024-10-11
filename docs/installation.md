@@ -1,8 +1,10 @@
-# Installation guide for Windows, MacOS and Linux
+# Installation guide for Windows, macOS and Linux
 
 [![Video](res/setup/thumb_play.png)](https://youtu.be/8H7mFsvxKYQ)
 
 The following guide provides both quick start instructions for the full installation of Agent Zero on various operating systems and in-depth guides for Windows and macOS with screenshots.
+
+## You were looking for this? [How to update Agent Zero](#how-to-update-agent-zero)
 
 <details>
 <summary><h2>Windows Quick Start</h2></summary>
@@ -46,8 +48,8 @@ The following guide provides both quick start instructions for the full installa
    sudo apt-get update
    sudo apt-get install python3.12 python3-pip
    ```
-2. **Install Docker:** Install Docker Desktop or Docker CE using your distribution's package manager. Make sure the Docker service is running: `sudo systemctl start docker`
-3. **Install Miniconda:** Download the appropriate installer for your Linux distribution from [here](https://docs.anaconda.com/miniconda/#miniconda-latest-installer-links) and follow the instructions.
+2. **Install Miniconda:** Download the appropriate installer for your Linux distribution from [here](https://docs.anaconda.com/miniconda/#miniconda-latest-installer-links) and follow the instructions.
+3. **Install Docker:** Install Docker Desktop or Docker CE using your distribution's package manager. Make sure the Docker service is running: `sudo systemctl start docker`
 4. **Download Agent Zero:** Download the latest release zip from the [GitHub releases page](https://github.com/frdel/agent-zero/releases) and extract it.
 5. **Open Terminal and Navigate:** Open your terminal and navigate to the extracted Agent Zero folder using the `cd` command.
 6. **Create and Activate Conda Environment:**
@@ -56,35 +58,34 @@ The following guide provides both quick start instructions for the full installa
    conda activate a0
    ```
 7. **Install Requirements:** `pip install -r requirements.txt`
-8. **Configure API Keys:** Create a `.env` file in the project root and add your API keys.  You can copy the `example.env` file and rename it to `.env`.
+8. **Configure API Keys:** Create a `.env` file in the project root and add your API keys. You can copy the `example.env` file and rename it to `.env`.
 9. **Run Agent Zero (Web UI):** `python run_ui.py`
 10. **Access the Web UI:** Open the URL displayed in your terminal.
 
 </details>
 
-# In-Depth Guide for Windows and MacOS
-
+# In-Depth Guide for Windows and macOS
 - Agent Zero is not an app. It's a framework. It's made to be customized, edited, enhanced. Therefore you need to install the necessary components to run it.
-- I will provide step by step instructions along with a video for this tutorial on how to make Agent Zero work on Windows and MacOS.
+- The following step by step instructions can be followed along with a video for this tutorial on how to make Agent Zero work on Windows and macOS that you find in the [top section](#installation-guide-for-windows-macos-and-linux) of the page.
 
 ## Reminders:
-1. You don't need to install Python, Conda will take care of that for you.
-2. You don't need API keys, Agent Zero can run with local models, but for this tutorial I will leave it to the default OpenAI API. Local models will be covered in another tutorial.
-3. You don't need Visual Studio Code or any other code editor, but it's easier to navigate and edit files if you have one.
-4. Docker is not mandatory, but running Agent Zero without docker is actually more complicated and can be very dangerous, so I will be showing the easier and recommended way to do it - with Docker Desktop application.
-5. Git/Github is not mandatory, you can download the framework files in browser. I will not be showing how to use Git in this tutorial.
+1. There's no need to install Python, Conda will manage that for you.
+2. You don't necessarily need API keys: Agent Zero can run with local models. For this tutorial though, we will leave it to the default OpenAI API. A simple video explanation for running Free and Local models is available [in this video](https://www.youtube.com/watch?v=sLMhLRHDIPY&t=80s).
+3. Visual Studio Code or any other code editor is not mandatory, but it makes it easier to navigate and edit files.
+4. Docker is not mandatory, but running Agent Zero without Docker is actually more complicated and can be very dangerous, so we will be covering the easier and recommended way - using Docker Desktop application.
+5. Git/GitHub is not mandatory, you can download the framework files through your browser. We will not be showing how to use Git in this tutorial.
 
 ## 1. Install Conda (miniconda)
 - Conda is a python environment manager, it will help you keep your projects and installations separated. Full Conda has many more features, but you only need "miniconda".
 
 1. Go to the download page of miniconda [here](https://docs.anaconda.com/miniconda/#miniconda-latest-installer-links). If the link does not work, just search the web for "miniconda download".
-2. Based on your operating system, download the right installer of miniconda. For MacOS select the version with "pkg" at the end.
+2. Based on your operating system, download the right installer of miniconda. For macOS select the version with "pkg" at the end.
 
 <img src="res/setup/image-1.png" alt="miniconda download win" width="500"/>
 <img src="res/setup/image-5.png" alt="miniconda download macos" width="500"/>
 <br><br>
 
-3. Run the installer and go through the installation process, here you can leave everything to default and just click Next, Next... The same goes for MacOS with the "pkg" graphical installer.
+3. Run the installer and go through the installation process, here you can leave everything to default and just click Next, Next... The same goes for macOS with the "pkg" graphical installer.
 
 <img src="res/setup/image.png" alt="miniconda install" width="200"/>
 <img src="res/setup/image-2.png" alt="miniconda install" width="200"/>
@@ -92,7 +93,7 @@ The following guide provides both quick start instructions for the full installa
 <img src="res/setup/image-4.png" alt="miniconda install" width="200"/>
 <br><br>
 
-4. After the installation is complete, you should have "Anaconda Powershell Prompt" installed on your Windows machine. On MacOS, when you open the Terminal application in your Applications folder and type "conda --version", you should see the version installed.
+4. After the installation is complete, you should have "Anaconda Powershell Prompt" installed on your Windows machine. On macOS, when you open the Terminal application in your Applications folder and type "conda --version", you should see the version installed.
 
 <img src="res/setup/image-6.png" alt="miniconda installed" height="100"/>
 <img src="res/setup/image-7.png" alt="miniconda installed" height="100"/>
@@ -101,7 +102,7 @@ The following guide provides both quick start instructions for the full installa
 ## 2. Install Docker (Docker Desktop application)
 - Simply put, Docker is a way of running virtual computers on your machine. These are lightweight, disposable and isolated from your operating system, so it is a way to sandbox Agent Zero.
 - Agent Zero only connects to the Docker container when it needs to execute code and commands. The frameworks itself runs on your machine.
-- Running Agent Zero without docker is possible, but more complicated and dangerous, I will not be covering that in this tutorial.
+- Running Agent Zero without Docker is possible, but more complicated and dangerous, I will not be covering that in this tutorial.
 - Docker has a desktop application with GUI for all major operating system, so I will be using that.
 
 1. Go to the download page of Docker Desktop [here](https://www.docker.com/products/docker-desktop/). If the link does not work, just search the web for "docker desktop download".
@@ -110,7 +111,7 @@ The following guide provides both quick start instructions for the full installa
 <img src="res/setup/image-8.png" alt="docker download" width="200"/>
 <br><br>
 
-3. Run the installer and go through the installattion process. It should be even shorter than Conda installation, you can leave everything to default. On MacOS, the installer is a "dmg" image, so just drag and drop the application to your Applications folder like always.
+3. Run the installer and go through the installattion process. It should be even shorter than Conda installation, you can leave everything to default. On macOS, the installer is a "dmg" image, so just drag and drop the application to your Applications folder like always.
 
 <img src="res/setup/image-9.png" alt="docker install" width="300"/>
 <img src="res/setup/image-10.png" alt="docker install" width="300"/>
@@ -133,7 +134,7 @@ No need to create images or containers, the framework will do that for you. Howe
 ![docker socket macOS](res/setup/macsocket.png)
 
 ## 3. Download Agent Zero
-- You can clone the Agent Zero repository (https://github.com/frdel/agent-zero) from GitHub if you know how to use git. In this tutorial I will just show how to download the files.
+- You can clone the Agent Zero repository (https://github.com/frdel/agent-zero) from GitHub if you know how to use Git. In this tutorial I will just show how to download the files.
 
 1. Go to the Agent Zero releases [here](https://github.com/frdel/agent-zero/releases).
 2. The latest release is on the top of the list, click the "Source Code (zip)" button under "Assets" to download it.
@@ -141,13 +142,13 @@ No need to create images or containers, the framework will do that for you. Howe
 <img src="res/setup/image-14.png" alt="agent zero download" width="500"/>
 <br><br>
 
-3. Extract the downloaded archive where you want to have it. I will extract them to "agent-zero" folder on my Desktop - "C:\Users\frdel\Desktop\agent-zero" on Windows and "/Users/frdel/Desktop/agent-zero" on MacOS.
+3. Extract the downloaded archive where you want to have it. I will extract them to "agent-zero" folder on my Desktop - "C:\Users\frdel\Desktop\agent-zero" on Windows and "/Users/frdel/Desktop/agent-zero" on macOS.
 
 
 ## 4. Set up Conda environment
 - Now that we have the project files and Conda, we can create **virtual Python environment** for this project, activate it and install requirements.
 
-1. Open your **"Anaconda Powershell Prompt"** application on windows or **"Terminal"** application on MacOS.
+1. Open your **"Anaconda Powershell Prompt"** application on windows or **"Terminal"** application on macOS.
 2. In the terminal, navigate to your Agent Zero folder using **"cd"** command. Replace the path with your actual Agent Zero folder path.
 ~~~
 cd C:\Users\frdel\Desktop\agent-zero
@@ -223,7 +224,7 @@ The `initialize.py` file is the control center for selecting the Large Language 
 | --- | --- |
 | `chat_llm` | This is the primary LLM used for conversations and generating responses. |
 | `utility_llm` | This LLM handles internal tasks like summarizing messages, managing memory, and processing internal prompts.  Using a smaller, less expensive model here can improve efficiency. |
-| `embedding_llm` | This LLM is responsible for generating embeddings used for memory retrieval and knowledge base lookups. |
+| `embedding_llm` | This LLM is responsible for generating embeddings used for memory retrieval and knowledge base lookups. Changing the `embedding_llm` will re-index all of A0's memory. |
 
 **How to Change:**
 1. Open `initialize.py`.
@@ -236,7 +237,7 @@ The `initialize.py` file is the control center for selecting the Large Language 
 
 ## Important Considerations
 
-- ⚠️ Changing the `embedding_llm` requires clearing the `memory` folder to avoid errors, as the embeddings can't be mixed in the vector database. Beware that this will DELETE ALL your Agent Zero's memory.
+- ⚠️ **IMPORTANT NOTICE**: Changing the `embedding_llm` will re-index all the memory and knowledge, and requires clearing the `memory` folder to avoid errors, as the embeddings can't be mixed in the vector database. Beware that this will DELETE ALL OF AGENT ZERO'S MEMORY.
 
 - Experiment with different model combinations to find the balance of performance and cost that best suits your needs. E.g., using a smaller model for `utility_llm` can save costs without significantly impacting performance.
 
@@ -250,7 +251,7 @@ Download Ollama from the official website and install it on your machine.
 
 <button>[Download Ollama Setup](https://ollama.com/download/OllamaSetup.exe)</button>
 
-**On MacOS:**
+**On macOS:**
 ```
 brew install ollama
 ```
@@ -265,7 +266,7 @@ curl -fsSL https://ollama.com/install.sh | sh
 Visit the [Ollama model library](https://ollama.com/library) for a list of available models and their corresponding names.  The format is usually `provider/model-name` (or just `model-name` in some cases).
 
 #### Second step: pulling the model
-**On Windows, MacOS, and Linux:**
+**On Windows, macOS, and Linux:**
 ```
 ollama pull <model-name>
 ```
@@ -286,6 +287,21 @@ Once you've downloaded some models, you might want to check which ones you have 
   ollama rm <model-name>
   ```
 
+## ❗ How to update Agent Zero
+To update Agent Zero to the latest version, follow these steps:
+1. **Backup .env and initialize.py**: Before updating, make sure to save your `.env` file with all your API keys and the customizations you've made to the first part of `def_initialize` function in the `initialize.py` file to choose your LLMs (highlighted section in below figure). This is important because the update process will overwrite these files with the default versions from the repository and can save you time rewriting all your LLMs choices.
 
+![Update initialize.py](res/setup/update-initialize.png)
+
+Beware of indentations when pasting the model selection code back into the `initialize.py` file after the update.
+
+- **Using Git/GitHub:** Pull the latest version of the Agent Zero repository with Git/GitHub. The custom knowledge, solutions, memory, and other data will get ignored by Git, so you don't need to worry about losing any of your custom data. You just have to save your `.env` file before updating.
+- **Manual Update:** Alternatively, you can manually download the latest version of Agent Zero from the [releases page](https://github.com/frdel/agent-zero/releases). The only folders that you must save to retain custom data are the following: `/memory`, `/knowledge`. If you have created custom `instruments` or `prompts` you must save their dirs as well.
+
+   If you update manually, beware of new dependencies. If any changes are made to requirements.txt in the updated version, you have to execute this command inside the a0 conda env after activating it:
+
+      
+      pip install -r requirements.txt
+      
 ## Conclusion
 After following the instructions for your specific operating system, you should have Agent Zero successfully installed and running. You can now start exploring the framework's capabilities and experimenting with creating your own intelligent agents.  If you encounter any issues during the installation process, please consult the Troubleshooting section of this documentation or refer to the Agent Zero community for assistance.

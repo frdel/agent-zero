@@ -94,11 +94,10 @@ The memory system is a critical component of Agent Zero, enabling the agent to l
   - **Metadata**: Each memory entry includes metadata (IDs, timestamps), enabling efficient filtering and searching based on specific criteria.
 
 ## Knowledge
-
-- **Knowledge Base:** Place your knowledge files (`.txt`, `.pdf`, `.csv`, `.html`, `.json`, `.md`) directly inside `/knowledge/custom/main`. Agent Zero will automatically import them. The list of supported file formats is yet to be expanded.
+- **Knowledge Base:** Wiki, books, code documentation, and other documents can be added to the knowledge base. Agent Zero uses this information to answer questions and make decisions. The `/docs` folder, containing Agent Zero's documentation, is automatically added to the knowledge base.
+- **Custom Knowledge:** Users can add custom knowledge files to the `/knowledge/custom/main` directory. Agent Zero will automatically import these files, expanding its knowledge base. Supported file formats include `.txt`, `.pdf`, `.csv`, `.html`, `.json`, and `.md`. The list of supported file formats is yet to be expanded.
 
 ## Prompts
-
 The `prompts` directory contains various Markdown files that control agent behavior and communication. The most important file is `agent.system.main.md`, which acts as a central hub, referencing other prompt files.  
 
 **Key Prompt Files:**
@@ -114,7 +113,6 @@ The `prompts` directory contains various Markdown files that control agent behav
 You can customize any of these files.  Agent Zero will use the files in your custom `prompts_subdir` if they exist, otherwise, it will fall back to the files in `prompts/default`.
 
 ## Extensions
-
 - Extensions are a powerful feature of Agent Zero, designed to keep the main codebase clean and organized while allowing for greater flexibility and modularity. Here’s a detailed exploration of the extensions feature:
 - The extensions framework allows users to create modular components that can be integrated into the main system.
 ### Structure of Extensions
@@ -124,12 +122,14 @@ Extensions can be found in `python/extensions` directory.
 ### Types of Default Extensions
 - **Message Loop Prompts**: These extensions handle the construction of system messages and maintain message history, ensuring that the agent has access to relevant context during interactions.
 - **Memory Management**: Extensions can also manage memory recall and solution memorization, allowing for dynamic updates based on user interactions.
-- **Custom Extensions**: Users can create custom extensions to add new functionalities or modify existing ones (Adding Extensions section to be added soon).
+- **Custom Extensions**: Users can create custom extensions to add new functionalities or modify existing ones.
+
+If you believe the extension could bring value to the community, consider contributing it to the main repository by making a pull request.
 
 ## Key Files
 | File | Description |
 | --- | --- |
-| `agent.py` | Contains the core logic for the `AgentConfig` class, which defines the `prompts_subdir`, rate limits for models, and mechanisms for tweaking SSH and Docker connections. |
+| `agent.py` | Contains the core logic for the `AgentConfig` class, which defines the `prompts_subdir`, rate limits for models, and more, though `AgentConfig` class must be edited through `initialize.py` file. |
 | `example.env` | Contains environment variables for configuring API keys and other settings of Agent Zero. |
 | `initialize.py` | Defines Agent Zero's core configuration, including model choices and other critical settings. This is the central point for customizing the framework's behavior. See [Choosing Your LLMs](installation.md#choosing-your-llms) for more details. |
 | `models.py` | Defines the `get_provider_chat` or `..._embedding` functions, which specifies the model provider, model name, and other parameters for adding support for new models or custom models. |
@@ -168,7 +168,7 @@ Agent Zero's strength lies in its flexibility. This section details how to custo
    ```
 
 ## AgentConfig
-The `AgentConfig` class in `initialize.py` provides further customization options:
+The `AgentConfig` class is present in both `agent.py` and `initialize.py` and provides further customization options. You must edit `AgentConfig` class through `initialize.py` file. Here are some of the key parameters you can configure:
 
 - `prompts_subdir`: Specifies the directory containing your custom prompts.  This allows you to create and manage different sets of prompts for different use cases.  (See *Prompt Customization* below).
 
@@ -184,6 +184,13 @@ While good prompting can often achieve the desired behavior, sometimes custom to
 1. Create a new file named `agent.system.tool.$TOOL_NAME.md` inside your `prompts/$SUBDIR` directory. This file will contain the prompt for your custom tool.
 2. Open `agent.system.tools.md` and add a reference to your new tool prompt.
 3. If your tool requires specific code or external API calls, create a Python file for it in the `python/tools` directory, implementing the `Tool` base class.
+
+## Adding Extensions
+To create a new extension, follow these steps:
+1. Create a new Python file in the appropriate subfolder within the `python/extensions` directory.
+2. Implement the desired functionality within the file, following the existing structure and naming conventions, that implies following the alphabetical order of execution of the extensions in the subfolder.
+3. Your desired extension's name has to start with a number to ensure it is executed before or after an already existing extension based on your needs.
+4. Ensure that the extension is compatible with the main system and does not introduce any conflicts or errors.
 
 ## Adding Instruments
 Instruments allow you to add predefined actions or workflows to Agent Zero without adding to the token count of the system prompt.
