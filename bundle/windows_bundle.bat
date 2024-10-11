@@ -99,7 +99,7 @@ if %errorlevel% neq 0 (
 )
 
 :: 8. Run bundle.py
-python bundle.py
+python ./bundle/bundle.py
 if %errorlevel% neq 0 (
     echo Error running bundle.py
     pause
