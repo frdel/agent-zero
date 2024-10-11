@@ -289,17 +289,16 @@ Once you've downloaded some models, you might want to check which ones you have 
 
 ## ❗ How to update Agent Zero
 To update Agent Zero to the latest version, follow these steps:
-1. **Backup .env and initialize.py**: Before updating, make sure to save your `.env` file with all your API keys and the customizations you've made to the first part of `def_initialize` function in the `initialize.py` file to choose your LLMs (highlighted section in below figure). This is important because the update process will overwrite these files with the default versions from the repository and can save you time rewriting all your LLMs choices.
+- **Using Git/GitHub:** Pull the latest version of the Agent Zero repository with Git/GitHub. The custom knowledge, solutions, memory, and other data will get ignored by Git, so you don't need to worry about losing any of your custom data. The same goes for your .env file with all of your API keys.
+- **Backup LLM choices**: Before updating, make sure to save your customizations you've made to the first part of `def_initialize` function in the `initialize.py` file to choose your LLMs (highlighted section in below figure). This is important because the update process will overwrite these files with the default versions from the repository and can save you time rewriting all your LLMs choices.
 
 ![Update initialize.py](res/setup/update-initialize.png)
 
 Beware of indentations when pasting the model selection code back into the `initialize.py` file after the update.
 
-- **Using Git/GitHub:** Pull the latest version of the Agent Zero repository with Git/GitHub. The custom knowledge, solutions, memory, and other data will get ignored by Git, so you don't need to worry about losing any of your custom data. You just have to save your `.env` file before updating.
 - **Manual Update:** Alternatively, you can manually download the latest version of Agent Zero from the [releases page](https://github.com/frdel/agent-zero/releases). The only folders that you must save to retain custom data are the following: `/memory`, `/knowledge`. If you have created custom `instruments` or `prompts` you must save their dirs as well.
 
-   If you update manually, beware of new dependencies. If any changes are made to requirements.txt in the updated version, you have to execute this command inside the a0 conda env after activating it:
-
+   If you update manually, beware: save your .env file with the API keys, and look for new dependencies in requirements.txt. If any changes are made in the updated version, you have to execute this command inside the a0 conda env after activating it:
       
       pip install -r requirements.txt
       
