@@ -18,7 +18,7 @@ Agent Zero's architecture revolves around the following key components:
 
 5. **Knowledge:** Knowledge refers to the user-provided information and data that agents can leverage. This can include documents, databases, or any other relevant resources. Agents can retrieve and utilize this knowledge to answer questions, make decisions, and perform RAG-augmented tasks.
 
-6. **Instruments:** Instruments provide a way to add custom functionalities to Agent Zero. They can modify agent behavior introducing new procedures, call for tools, or scripts to integrate with other systems. Instruments scripts are run inside the Docker container.
+6. **Instruments:** Instruments provide a way to add custom functionalities to Agent Zero. They can modify agent behavior introducing new procedures, call for tools, or scripts to integrate with other systems. Instruments scripts are run inside the Docker Container.
 
 7. **Extensions:** Extensions are custom components that can be added to Agent Zero to enhance its capabilities. Extensions can include new message loops, custom memory management rules, or even more.
 
@@ -86,9 +86,7 @@ Extensions can be found in `python/extensions` directory.
 ### Types of Default Extensions
 - **Message Loop Prompts**: These extensions handle the construction of system messages and maintain message history, ensuring that the agent has access to relevant context during interactions.
 - **Memory Management**: Extensions can also manage memory recall and solution memorization, allowing for dynamic updates based on user interactions.
-- **Custom Extensions**: Users can create custom extensions to add new functionalities or modify existing ones.
-
-If you believe the extension could bring value to the community, consider contributing it to the main repository by making a pull request.
+- **Custom Extensions**: Users can create custom extensions to add new functionalities or modify existing ones. See [Adding Extensions](#adding-extensions) for more details.
 
 ## Key Files
 | File | Description |
@@ -162,3 +160,5 @@ Instruments allow you to add predefined actions or workflows to Agent Zero witho
 1. Create a new folder with the name of your instrument (without spaces) inside `instruments/custom`.
 2. Inside this folder, create a `.md` file with the description of the instrument and a `.sh` script (or other executable) with the actual implementation. The `.md` file acts as the interface for the Agent to interact with the Instrument, and the agent will call the `.sh` with the given user arguments. The agent will parse the `.md` file, using the Instrument's name, description, and arguments described in it.
 3. The agent will automatically detect and use your custom instruments.
+
+If you believe your custom tool, instrument or extension could bring value to the community, consider contributing it to the main repository by making a pull request. This will make it available for others to use and benefit from your work. See [Contributing](contributing.md) for more information.
