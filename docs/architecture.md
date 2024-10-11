@@ -161,4 +161,4 @@ Instruments allow you to add predefined actions or workflows to Agent Zero witho
 2. Inside this folder, create a `.md` file with the description of the instrument and a `.sh` script (or other executable) with the actual implementation. The `.md` file acts as the interface for the Agent to interact with the Instrument, and the agent will call the `.sh` with the given user arguments. The agent will parse the `.md` file, using the Instrument's name, description, and arguments described in it.
 3. The agent will automatically detect and use your custom instruments.
 
-If you believe your custom tool, instrument or extension could bring value to the community, consider contributing it to the main repository by making a pull request. This will make it available for others to use and benefit from your work. See [Contributing](contributing.md) for more information.
+If you believe your custom tool, instrument or extension could bring value to the community, consider contributing it to the main repository by making a pull request. This will make it available for others to use and benefit from your work. See [Contributing](contribution.md) for more information.
