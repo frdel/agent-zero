@@ -80,7 +80,7 @@ This is a very dangerous feature, and we are not responsible for any damage or o
 
 - If you are a power-user and 100% sure of what you're doing, you can use the code_execution_tool outside of the Docker container by following these steps:
 
-    ![Code Execution Jailbreak](res/code_exec_death.png)
+    ![Code Execution Jailbreak](res/code_exec_jailbreak.png)
 
 1. After the installation and configuration of your Agent Zero instance, go in `initialize.py` and set the `code_exec_docker_enabled` to `False` (line 47). This will disable the code_execution_tool for your Agent Zero instance to communicate with the Docker container. The tool will search for an SSH connection at this point.
 
