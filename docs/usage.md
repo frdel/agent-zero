@@ -8,7 +8,7 @@ Agent Zero's power comes from its ability to use tools. Here's how to leverage t
 
 * **Default Tools:** Agent Zero typically includes default tools like knowledge, webpage content, code execution, and communication.  Understand the capabilities of these tools and how to invoke them.
 * **Creating Custom Tools:**  Extend Agent Zero's functionality by creating your own custom tools. Refer to [Adding Tools](architecture.md#adding_tools) for detailed instructions.
-* ❗ **New in 0.7 | Creating Instruments:**  Instruments are a new type of tool that allow you to create custom functions that can be called by Agent Zero.  Refer to [Adding Instruments](architecture.md#adding_instruments) for further details.
+* **New in 0.7 ❗ | Instruments:**  Instruments are a new type of tool that allow you to create custom functions that can be called by Agent Zero.  Refer to [Adding Instruments](architecture.md#adding_instruments) for further details.
 * **Tool Arguments:**  Provide the necessary arguments to the tools.  Agent Zero expects tools to be invoked with a JSON-formatted string containing the tool name and arguments.  Refer to the Quick Start and example prompts for how to format tool calls.
 
 ## Example: Web Search and Code Execution
