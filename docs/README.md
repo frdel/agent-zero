@@ -44,7 +44,7 @@ To begin with Agent Zero, follow the links below for detailed guides on various 
     - [6. Run Agent Zero](installation.md#6-run-agent-zero)
     - [Choosing Your LLMs](installation.md#choosing-your-llms)
       - [Installing and Using Ollama](installation.md#installing-and-using-ollama)
-    - [How to update Agent Zero](installation.md#how-to-update-agent-zero)
+    - [How to update Agent Zero](installation.md#-how-to-update-agent-zero)
     - [Conclusion](installation.md#conclusion)
 - [Quick Start](quickstart.md)
   - [Launching the Web UI](quickstart.md#launching-the-web-ui)
