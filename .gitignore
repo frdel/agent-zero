@@ -9,9 +9,8 @@
 # Ignore all contents of the virtual environment directory
 .venv/
 
-# Ignore bundled files
-build/
-dist/
+# ignore all folders under /bundle
+/bundle/*/
 
 # Ignore all contents of the directory "work_dir"
 work_dir/*
