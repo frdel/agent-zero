@@ -19,7 +19,7 @@ python run_ui.py
 ![](res/ui_newchat.png)
 
 ## Running a Simple Task
-Let's ask Agent Zero to tell us the current time.  Here's how:
+Let's ask Agent Zero to download a YouTube video. Here's how:
 
 1.  Type "Download a YouTube video for me" in the chat input field and press Enter or click the send button.
 
