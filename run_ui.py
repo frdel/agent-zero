@@ -8,9 +8,11 @@ from flask import Flask, request, jsonify, Response
 from flask_basicauth import BasicAuth
 from agent import AgentContext
 from initialize import initialize
+from python.helpers import files
 from python.helpers.files import get_abs_path
 from python.helpers.print_style import PrintStyle
 from python.helpers.dotenv import load_dotenv
+from python.helpers import persist_chat
 
 
 # initialize the internal Flask server
@@ -119,6 +121,7 @@ async def handle_message(sync: bool):
             response = {
                 "ok": True,
                 "message": result,
+                "context": context.id,
             }
         else:
 
@@ -126,6 +129,7 @@ async def handle_message(sync: bool):
             response = {
                 "ok": True,
                 "message": "Message received.",
+                "context": context.id,
             }
 
     except Exception as e:
@@ -183,6 +187,7 @@ async def reset():
         # context instance - get or create
         context = get_context(ctxid)
         context.reset()
+        persist_chat.save_chat(context)
 
         response = {
             "ok": True,
@@ -211,6 +216,7 @@ async def remove():
 
         # context instance - get or create
         AgentContext.remove(ctxid)
+        persist_chat.remove_chat(ctxid)
 
         response = {
             "ok": True,
@@ -235,7 +241,7 @@ async def poll():
 
         # data sent to the server
         input = request.get_json()
-        ctxid = input.get("context", uuid.uuid4())
+        ctxid = input.get("context", None)
         from_no = input.get("log_from", 0)
 
         # context instance - get or create
@@ -286,6 +292,9 @@ def run():
 
     #load env vars
     load_dotenv()
+
+    # initialize contexts from persisted chats
+    persist_chat.load_chats()
     
     # Suppress only request logs but keep the startup messages
     from werkzeug.serving import WSGIRequestHandler

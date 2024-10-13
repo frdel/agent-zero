@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import json
-from typing import Literal, Optional, Dict
+from typing import Any, Literal, Optional, Dict
 import uuid
 from collections import OrderedDict  # Import OrderedDict
 
@@ -145,7 +145,7 @@ class Log:
 
         self.updates += [item.no]
 
-    def output(self, start=None, end=None):
+    def output(self, start=None, end=None):        
         if start is None:
             start = 0
         if end is None:

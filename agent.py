@@ -23,19 +23,22 @@ class AgentContext:
     _counter: int = 0
 
     def __init__(
-        self, config: "AgentConfig", id: str | None = None, agent0: "Agent|None" = None
+        self, config: "AgentConfig", id: str | None = None, name: str | None = None, agent0: "Agent|None" = None,
+        log: Log.Log | None = None,
+        paused: bool = False, streaming_agent: "Agent|None" = None,
     ):
         # build context
         self.id = id or str(uuid.uuid4())
+        self.name = name
         self.config = config
-        self.log = Log.Log()
+        self.log = log or Log.Log()
         self.agent0 = agent0 or Agent(0, self.config, self)
-        self.paused = False
-        self.streaming_agent: Agent | None = None
+        self.paused = paused
+        self.streaming_agent = streaming_agent
         self.process: DeferredTask | None = None
         AgentContext._counter += 1
         self.no = AgentContext._counter
-
+        
         self._contexts[self.id] = self
 
     @staticmethod
@@ -317,9 +320,6 @@ class Agent:
                                 agent_response
                             )  # process tools requested in agent message
                             if tools_result:  # final response of message loop available
-                                await self.call_extensions(
-                                    "monologue_end", tools_result=tools_result
-                                )  # call monologue_end extensions
                                 return tools_result  # break the execution if the task is done
 
                     # exceptions inside message loop:
@@ -338,6 +338,12 @@ class Agent:
                     except Exception as e:  # Other exception kill the loop
                         self.handle_critical_exception(e)
 
+                    finally:
+                        # call message_loop_end extensions
+                        await self.call_extensions(
+                            "message_loop_end", loop_data=loop_data
+                        )
+
             # exceptions outside message loop:
             except InterventionException as e:
                 pass  # just start over
@@ -345,6 +351,8 @@ class Agent:
                 self.handle_critical_exception(e)
             finally:
                 self.context.streaming_agent = None  # unset current streamer
+                # call monologue_end extensions
+                await self.call_extensions("monologue_end", loop_data=loop_data)  # type: ignore
 
     def handle_critical_exception(self, exception: Exception):
         if isinstance(exception, HandledException):

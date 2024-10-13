@@ -1,3 +1,4 @@
+from fnmatch import fnmatch
 import os, re
 
 import re
@@ -62,6 +63,22 @@ def find_file_in_dirs(file_path, backup_dirs):
 def remove_code_fences(text):
     return re.sub(r'~~~\w*\n|~~~', '', text)
 
+def write_file(relative_path:str, content:str):
+    abs_path = get_abs_path(relative_path)
+    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+    with open(abs_path, 'w') as f:
+        f.write(content)
+
+def delete_file(relative_path:str):
+    abs_path = get_abs_path(relative_path)
+    if os.path.exists(abs_path):
+        os.remove(abs_path)
+
+def list_files(relative_path:str, filter:str="*"):
+    abs_path = get_abs_path(relative_path)
+    if not os.path.exists(abs_path):
+        return []
+    return [file for file in os.listdir(abs_path) if fnmatch(file, filter)]
 
 def get_abs_path(*relative_paths):
     return os.path.join(get_base_dir(), *relative_paths)
@@ -69,7 +86,6 @@ def get_abs_path(*relative_paths):
 def exists(*relative_paths):
     path = get_abs_path(*relative_paths)
     return os.path.exists(path)
-
 
 def get_base_dir():
     # Get the base directory from the current file path

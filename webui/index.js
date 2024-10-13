@@ -73,6 +73,8 @@ async function sendMessage() {
                 } else {
                     toast("Undefined error.", "error")
                 }
+            } else {
+                setContext(response.context)
             }
 
             //setMessage('user', message);
@@ -186,7 +188,8 @@ async function poll() {
 
         if (response.ok) {
 
-            setContext(response.context)
+            if (!context) setContext(response.context)
+            if (response.context != context) return //skip late polls after context change
 
             if (lastLogGuid != response.log_guid) {
                 chatHistory.innerHTML = ""
@@ -408,7 +411,6 @@ function scrollChanged(isAtBottom) {
     const inputAS = Alpine.$data(autoScrollSwitch);
     inputAS.autoScroll = isAtBottom
     // autoScrollSwitch.checked = isAtBottom
-    console.log(isAtBottom)
 }
 
 function updateAfterScroll() {
