@@ -17,7 +17,7 @@ from python.helpers import persist_chat
 
 # initialize the internal Flask server
 app = Flask("app", static_folder=get_abs_path("./webui"), static_url_path="/")
-app.config['JSON_SORT_KEYS'] = False  # Disable key sorting in jsonify
+app.config["JSON_SORT_KEYS"] = False  # Disable key sorting in jsonify
 
 lock = threading.Lock()
 
@@ -175,6 +175,66 @@ async def pause():
     return jsonify(response)
 
 
+# load chats from json
+@app.route("/loadChats", methods=["POST"])
+async def load_chats():
+    try:
+        # data sent to the server
+        input = request.get_json()
+        chats = input.get("chats", [])
+        if not chats:
+            raise Exception("No chats provided")
+
+        ctxids = persist_chat.load_json_chats(chats)
+
+        response = {
+            "ok": True,
+            "message": "Chats loaded.",
+            "ctxids": ctxids,
+        }
+
+    except Exception as e:
+        response = {
+            "ok": False,
+            "message": str(e),
+        }
+        PrintStyle.error(str(e))
+
+    # respond with json
+    return jsonify(response)
+
+
+# load chats from json
+@app.route("/exportChat", methods=["POST"])
+async def export_chat():
+    try:
+        # data sent to the server
+        input = request.get_json()
+        ctxid = input.get("ctxid", "")
+        if not ctxid:
+            raise Exception("No context id provided")
+
+        context = get_context(ctxid)
+        content = persist_chat.export_json_chat(context)
+
+        response = {
+            "ok": True,
+            "message": "Chats loaded.",
+            "ctxid": context.id,
+            "content": content,
+        }
+
+    except Exception as e:
+        response = {
+            "ok": False,
+            "message": str(e),
+        }
+        PrintStyle.error(str(e))
+
+    # respond with json
+    return jsonify(response)
+
+
 # restarting with new agent0
 @app.route("/reset", methods=["POST"])
 async def reset():
@@ -187,7 +247,7 @@ async def reset():
         # context instance - get or create
         context = get_context(ctxid)
         context.reset()
-        persist_chat.save_chat(context)
+        persist_chat.save_tmp_chat(context)
 
         response = {
             "ok": True,
@@ -287,15 +347,16 @@ async def poll():
     return Response(response=response_json, status=200, mimetype="application/json")
     # return jsonify(response)
 
-def run():
-    print("Initializing framework...")    
 
-    #load env vars
+def run():
+    print("Initializing framework...")
+
+    # load env vars
     load_dotenv()
 
     # initialize contexts from persisted chats
-    persist_chat.load_chats()
-    
+    persist_chat.load_tmp_chats()
+
     # Suppress only request logs but keep the startup messages
     from werkzeug.serving import WSGIRequestHandler
 

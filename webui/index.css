@@ -502,6 +502,8 @@ h4 {
   font-family: "Rubik", Arial, Helvetica, sans-serif;
   font-size: var(--font-size-small);
   margin-top: 0;
+  margin-bottom: var(--spacing-xs);
+  /* margin-right: var(--spacing-xs); */
   padding: var(--spacing-sm) 0.75rem;
   text-wrap: nowrap;
   background-color: var(--color-secondary);

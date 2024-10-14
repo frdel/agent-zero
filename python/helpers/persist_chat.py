@@ -12,21 +12,35 @@ CHATS_FOLDER = "tmp/chats"
 LOG_SIZE = 1000
 
 
-def save_chat(context: AgentContext):
+def save_tmp_chat(context: AgentContext):
     relative_path = _get_file_path(context.id)
     data = _serialize_context(context)
     js = _safe_json_serialize(data, ensure_ascii=False)
     files.write_file(relative_path, js)
 
-
-def load_chats():
+def load_tmp_chats():
     json_files = files.list_files("tmp/chats", "*.json")
+    ctxids = []
     for file in json_files:
         path = files.get_abs_path(CHATS_FOLDER, file)
         js = files.read_file(path)
         data = json.loads(js)
         ctx = _deserialize_context(data)
+        ctxids.append(ctx.id)
+    return ctxids
 
+def load_json_chats(jsons: list[str]):
+    ctxids = []
+    for js in jsons:
+        data = json.loads(js)
+        ctx = _deserialize_context(data)
+        ctxids.append(ctx.id)
+    return ctxids
+
+def export_json_chat(context: AgentContext):
+    data = _serialize_context(context)
+    js = _safe_json_serialize(data, ensure_ascii=False)
+    return js
 
 def remove_chat(ctxid):
     files.delete_file(_get_file_path(ctxid))
@@ -91,20 +105,19 @@ def _deserialize_context(data):
         id=data.get("id", None),
         name=data.get("name", None),
         log=log,
-        paused=True,
+        paused=False,
         # agent0=agent0,
         # streaming_agent=straming_agent,
     )
 
     agents = data.get("agents", [])
     agent0 = _deserialize_agents(agents, config, context)
-    streaming_agent_no = data.get("streaming_agent", 0)
-    straming_agent = (
-        agents[streaming_agent_no] if streaming_agent_no < len(agents) else None
-    )
-
+    streaming_agent = agent0
+    while streaming_agent.number != data.get("streaming_agent", 0):
+        streaming_agent = streaming_agent.data.get("subordinate", None)
+        
     context.agent0 = agent0
-    context.streaming_agent = straming_agent
+    context.streaming_agent = streaming_agent
 
     return context
 

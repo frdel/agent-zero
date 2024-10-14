@@ -373,6 +373,115 @@ function toggleCssProperty(selector, property, value) {
     }
 }
 
+window.loadChats = async function () {
+    try {
+        const fileContents = await readJsonFiles();
+        const response = await sendJsonData("/loadChats", { chats: fileContents });
+
+        if (!response) {
+            toast("No response returned.", "error")
+        } else if (!response.ok) {
+            if (response.message) {
+                toast(response.message, "error")
+            } else {
+                toast("Undefined error.", "error")
+            }
+        } else {
+            setContext(response.ctxids[0])
+            toast("Chats loaded.", "success")
+        }
+
+    } catch (e) {
+        toast(e.message, "error")
+    }
+}
+
+window.saveChat = async function () {
+    try {
+        const response = await sendJsonData("/exportChat", { ctxid: context });
+
+        if (!response) {
+            toast("No response returned.", "error")
+        } else if (!response.ok) {
+            if (response.message) {
+                toast(response.message, "error")
+            } else {
+                toast("Undefined error.", "error")
+            }
+        } else {
+            downloadFile(response.ctxid + ".json", response.content)
+            toast("Chat file downloaded.", "success")
+        }
+
+    } catch (e) {
+        toast(e.message, "error")
+    }
+}
+
+function downloadFile(filename, content) {
+    // Create a Blob with the content to save
+    const blob = new Blob([content], { type: 'application/json' });
+    
+    // Create a link element
+    const link = document.createElement('a');
+    
+    // Create a URL for the Blob
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    
+    // Set the file name for download
+    link.download = filename;
+    
+    // Programmatically click the link to trigger the download
+    link.click();
+    
+    // Clean up by revoking the object URL
+    setTimeout(() => {
+        URL.revokeObjectURL(url);
+    }, 0);
+}
+
+
+function readJsonFiles() {
+    return new Promise((resolve, reject) => {
+        // Create an input element of type 'file'
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json'; // Only accept JSON files
+        input.multiple = true;  // Allow multiple file selection
+
+        // Trigger the file dialog
+        input.click();
+
+        // When files are selected
+        input.onchange = async () => {
+            const files = input.files;
+            if (!files.length) {
+                resolve([]); // Return an empty array if no files are selected
+                return;
+            }
+
+            // Read each file as a string and store in an array
+            const filePromises = Array.from(files).map(file => {
+                return new Promise((fileResolve, fileReject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => fileResolve(reader.result);
+                    reader.onerror = fileReject;
+                    reader.readAsText(file);
+                });
+            });
+
+            try {
+                const fileContents = await Promise.all(filePromises);
+                resolve(fileContents);
+            } catch (error) {
+                reject(error); // In case of any file reading error
+            }
+        };
+    });
+}
+
+
 function toast(text, type = 'info') {
     const toast = document.getElementById('toast');
 
