@@ -38,8 +38,8 @@ if [ -d "agent-zero" ]; then
 fi
 
 # 4. Clone the repository (development branch)
-echo "Cloning the repository (development branch)..."
-git clone --branch development https://github.com/frdel/agent-zero agent-zero
+echo "Cloning the repository (testing branch)..."
+git clone --branch testing https://github.com/frdel/agent-zero agent-zero
 if [ $? -ne 0 ]; then
     echo "Error cloning the repository."
     exit 1

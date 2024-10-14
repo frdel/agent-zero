@@ -70,8 +70,8 @@ if exist agent-zero (
     )
 )
 
-:: 4. Clone the repository (development branch)
-git clone --branch development https://github.com/frdel/agent-zero agent-zero
+:: 4. Clone the repository (testing branch)
+git clone --branch testing https://github.com/frdel/agent-zero agent-zero
 if %ERRORLEVEL% neq 0 (
     echo Error cloning the repository
     pause
