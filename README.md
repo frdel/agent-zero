@@ -3,15 +3,15 @@
 [![Join our Skool Community](https://img.shields.io/badge/Skool-Join%20our%20Community-4A90E2?style=for-the-badge&logo=skool&logoColor=white)](https://www.skool.com/agent-zero) [![Join our Discord](https://img.shields.io/badge/Discord-Join%20our%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/B8KZKNsPpj) [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@AgentZeroFW) [![Connect on LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/jan-tomasek/) [![Follow on X.com](https://img.shields.io/badge/X.com-Follow-1DA1F2?style=for-the-badge&logo=x&logoColor=white)](https://x.com/JanTomasekDev)
 
 
-[![Intro Video](/docs/res/intro_vid.jpg)](https://www.youtube.com/watch?v=C9n8zFpaV3I)
+[![Intro Video](/docs/res/new_vid.jpg)](https://www.youtube.com/watch?v=U_Gl0NPalKA)
 
 **Personal and organic AI framework**
 - Agent Zero is not a predefined agentic framework. It is designed to be dynamic, organically growing, and learning as you use it.
 - Agent Zero is fully transparent, readable, comprehensible, customizable and interactive.
 - Agent Zero uses the computer as a tool to accomplish its (your) tasks.
 
-## Now with UI:
-![UI prototype](/docs/res/ui_screen1.png)
+## Now with Responsive UI and Progress Bar:
+![Web UI](/docs/res/win_webui.gif)
 
 ## Key concepts
 1. **General-purpose assistant**
@@ -51,6 +51,8 @@
 - No coding is required, only prompting and communication skills.
 - With a solid system prompt, the framework is reliable even with small models, including precise tool usage.
 
+![Agent 1 System Load](/docs/res/ui_screen1.png)
+
 ## Keep in mind
 1. **Agent Zero can be dangerous!**
 With proper instruction, Agent Zero is capable of many things, even potentially dangerous to your computer, data, or accounts. Always run Agent Zero in an isolated environment (like the built in docker container) and be careful what you wish for.
@@ -81,9 +83,15 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 
 ## Setup
 
-A detailed setup guide with a video can be found here: [/docs/installation](https://github.com/frdel/agent-zero/tree/main/docs/installation). Scroll down to see the readme file.
+A detailed setup guide with a video can be found in /docs/installation.md. Open the [Documentation](docs/installation.md#in-depth-guide-for-windows-and-macos).
+
+### New in version 0.7
+> - UI Revamp
+> - Auto Memory
+> - Instruments
+> - Extensions Framework
+> - Reflection
 
 > ⚠️ **Changes to launch files since v0.6:**  
-> main.py file has been replaced with run_ui.py (webui) and run_cli.py (terminal) launch files.
-> configuration has been moved to initialize.py for both webui and terminal launch files.
-
+> - main.py file has been replaced with run_ui.py (webui) and run_cli.py (terminal) launch files.
+> - configuration has been moved to initialize.py for both webui and terminal launch files.
