@@ -11,7 +11,7 @@
 - Agent Zero uses the computer as a tool to accomplish its (your) tasks.
 
 ## Now with Responsive UI and Progress Bar:
-![Web UI](/docs/res/win_webui.gif)
+![Web UI](/docs/res/win_webui2.gif)
 
 ## Key concepts
 1. **General-purpose assistant**

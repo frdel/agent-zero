@@ -213,8 +213,8 @@ python run_ui.py
 
 5. Open the URL shown in terminal in your web browser. You should see the Agent Zero interface. The first time it needs to execute code, Docker image will be downloaded and deployed, this might take some time. Be patient when seeing "Initializing docker container agent-zero-exe for safe code execution...".
 
-<img src="res/setup/image-22.png" alt="run ui" width="400"/>
-<img src="res/setup/image-23.png" alt="run ui" width="400"/>
+<img src="res/setup/image-22-1.png" alt="run ui" width="400"/>
+<img src="res/setup/image-23-1.png" alt="run ui" width="400"/>
 <br><br>
 
 ## Choosing Your LLMs
