@@ -58,17 +58,24 @@ To access the Agent Zero Web UI from other devices on your network and run it on
 app.run(request_handler=NoRequestLoggingWSGIRequestHandler, host="0.0.0.0", port=port)
 ```
 2. Access the Web UI from other devices using `http://$YOUR_PRIVATE_IP:50001`.
-> On local networks, usually 192.168.x.x or 10.0.x.x.
 
-- Tips for running on cloud servers or VPNs:
-    - If you're using a VPN, you may need to use your public IP address instead of your private IP. You can find your public IP address by visiting a website like [https://www.whatismyip.com/](https://www.whatismyip.com/).
-
-    - If you're using a cloud server, you can use the server's public IP address instead of your private IP. You may need to configure your server's firewall to allow incoming traffic on port 50001.
-
-    - If you're using a remote server, you may need to use a service like [ngrok](https://ngrok.com/) to create a secure tunnel to your server. This allows you to access the Web UI from other devices using a public URL.
+> [!TIP]
+> On local networks, the private address is usually 192.168.x.x or 10.0.x.x.
+> If you're using a VPN, you may need to use your public IP address instead of your 
+> private IP. You can find your public IP address by visiting a website like
+> [https://www.whatismyip.com/](https://www.whatismyip.com/).
+>
+> If you're using a cloud server, you can use the server's public IP address instead 
+> of your private IP. You may need to configure your server's firewall to allow 
+> incoming traffic on port 50001.
+> If you're using a remote server, you may need to use a service like [ngrok]
+> (https://ngrok.com/) to create a secure tunnel to your server. This allows you to 
+> access the Web UI from other devices using a public URL.
 
 ## Using code_execution_tool outside of the Docker Container
-### ⚠️ VERY IMPORTANT NOTICE: We believe in safe and ethical AI development, and highly suggest you to use the Docker container designed for running Agent Zero.
+> [!CAUTION]
+> VERY IMPORTANT NOTICE: We believe in safe and ethical AI development, and highly 
+> suggest you to use the Docker container designed for running Agent Zero.
 
 This is a dangerous and untested feature, and we are not responsible for any damage or illegal activities or legal liabilities caused by the use of this feature. As you are responsible for your own actions, use this feature only if 100% sure of what you're doing.
 <details>
@@ -82,5 +89,7 @@ This is a dangerous and untested feature, and we are not responsible for any dam
 
 2. Comment out lines 56, 57, 58 and 59 in `initialize.py` that sets the `code_execution_tool` SSH connection parameters. Point them to your machine accordingly. This will enable the code_execution_tool for your Agent Zero instance.
 
-3. The `code_exec_ssh_pass` parameter (root user password) has to be provided to `initialize.py` for the code_execution_tool to be able to connect to the machine.
+> [!IMPORTANT]  
+> The `code_exec_ssh_pass` parameter (root user password) has to be provided to 
+> `initialize.py` for the code_execution_tool to be able to connect to the machine.
 </details>

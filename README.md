@@ -10,7 +10,7 @@
 - Agent Zero is fully transparent, readable, comprehensible, customizable and interactive.
 - Agent Zero uses the computer as a tool to accomplish its (your) tasks.
 
-## Now with Responsive UI and Progress Bar:
+## Now with Responsive UI, Auto-memory and Reflection:
 ![Web UI](/docs/res/win_webui2.gif)
 
 ## Key concepts
@@ -70,12 +70,11 @@ If your agent fails to communicate properly, use tools, reason, use memory, find
 Agent Zero is made to be used in an isolated virtual environment (for safety) with some tools preinstalled and configured.
 If you cannot provide all the necessary conditions or API keys, just change the system prompt and tell your agent what operating system and tools are at its disposal. Nothing is hard-coded; if you do not tell your agent about a certain tool, it will not know about it and will not try to use it.
 
-
 [![David Ondrej video](/docs/res/david_vid.jpg)](https://www.youtube.com/watch?v=_Pionjv4hGc)
 
 ## Known problems
 1. The system prompt sucks. You can do better. If you do, help me please :)
-2. The communication between agent and terminal in docker container via SSH can sometimes break and stop producing outputs. Sometimes it is because the agent runs something like "server.serve_forever()" which causes the terminal to hang, sometimes a random error can occur. Restarting the agent and/or the docker container helps.
+2. The communication between agents and terminal in Docker Container via SSH can sometimes break and stop producing outputs. Sometimes it is because the agent runs something like "server.serve_forever()" which causes the terminal to hang, sometimes a random error can occur. Restarting the agent and/or the docker container helps.
 3. The agent can break his operating system. Sometimes the agent can deactivate virtual environment, uninstall packages, change config etc. Again, removing the docker container and cleaning up the **work_dir/** is enough to fix that.
 
 ## Ideal environment
@@ -86,8 +85,15 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 ![Time example](/docs/res/time_example.jpg)
 
 ## Setup
-
 A detailed setup guide with a video can be found in /docs/installation.md. Open the [Documentation](docs/installation.md#in-depth-guide-for-windows-and-macos).
+
+## Changelog [since version 0.7]
+
+### v0.7.1
+- **Bug Fixes**
+- **Persistent Chats** - Serialized to /tmp/chats and automatically loaded in run_ui.py on startup
+- **Preinstalled binaries and bundler scripts**
+- **Documentation stack merged into the repository**
 
 ### New in version 0.7
 > - UI Revamp
@@ -96,6 +102,12 @@ A detailed setup guide with a video can be found in /docs/installation.md. Open 
 > - Extensions Framework
 > - Reflection
 
-> ⚠️ **Changes to launch files since v0.6:**  
+> [!NOTE]  
+> **Changes to launch files since v0.6:**  
 > - main.py file has been replaced with run_ui.py (webui) and run_cli.py (terminal) launch files.
 > - configuration has been moved to initialize.py for both webui and terminal launch files.
+
+## Coming up
+- **Preinstalled bundles**
+- **Knowledge tool improvements and web scraping tool**
+- **User interaction refinements**
