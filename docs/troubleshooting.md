@@ -1,51 +1,56 @@
-# Quick Start
-This guide provides a quick introduction to using Agent Zero. We'll cover launching the web UI, starting a new chat, and running a simple task.
+# Troubleshooting and FAQ
+This page addresses frequently asked questions (FAQ) and provides troubleshooting steps for common issues encountered while using Agent Zero.
 
-## Launching the Web UI
-1. Make sure you have Agent Zero installed and your environment set up correctly (refer to the [Installation guide](installation.md) if needed).
-2. Open a terminal in the Agent Zero directory and activate your conda environment (if you're using one).
-3. Run the following command:
+## Frequently Asked Questions
+**1. How do I set up and activate a Python virtual environment?**
+Use the `venv` module or `conda` (recommended).
+* **`venv`:**
+    ```bash
+    python -m venv .venv  # Create the environment
+    source .venv/bin/activate  # Activate (Linux/macOS)
+    .venv\Scripts\activate  # Activate (Windows)
+    ```
+* **`conda`:**
+    ```bash
+    conda create -n agent-zero python=3.12  # Create
+    conda activate agent-zero  # Activate
+    ```
+**2. How do I resolve `ModuleNotFoundError` errors (e.g., for `ansio`, `pyflakes`, `Flask`)?**
+Ensure your virtual environment is activated *before* installing requirements:
 
 ```bash
-python run_ui.py
+pip install -r requirements.txt
 ```
 
-4.  A message similar to this will appear in your terminal, indicating the Web UI is running:
+**3. How do I integrate open-source models with Agent Zero?**
+Refer to the [Choosing your LLMs](installation.md#installing-and-using-ollama-local-models) section of the documentation for detailed instructions and examples for configuring different LLMs in `initialize.py`. Local models can be run using Ollama or LM Studio.
 
-![](res/flask_link.png)
+> [!TIP]  
+> Some LLM providers offer free usage of their APIs, for example Groq, Mistral or SambaNova.
 
-5. Open your web browser and navigate to the URL shown in the terminal (usually `http://127.0.0.1:50001`). You should see the Agent Zero Web UI.
+**4. How can I make Agent Zero retain memory between sessions?**
+Auto memory automatically saves and loads solutions and informations from previous sessions.
 
-![New Chat](res/ui_newchat1.png)
+**5. Where can I find more documentation or tutorials?**
+*   Join the Agent Zero [Skool](https://www.skool.com/agent-zero) or [Discord](https://discord.gg/Z2tun2N3) community for support and discussions.
 
-> [!TIP]
-> As you can see, the Web UI has four distinct buttons for easy chat management: 
-> `New Chat`, `Reset Chat`, `Save Chat`, and `Load Chat`.
-> Chats can be saved and loaded individually in `json` format and are stored in the
-> `/tmp/chats` directory.
+**6. How do I adjust API rate limits?**
+Modify the `rate_limit_seconds` and `rate_limit_requests` parameters in the `AgentConfig` class within `initialize.py`.
 
-    ![Chat Management](res/ui_chat_management.png)
+**7. Can Agent Zero interact with external APIs or services (e.g., WhatsApp)?**
+Extending Agent Zero to interact with external APIs is possible by creating custom tools or solutions. Refer to the documentation on creating them. 
 
-## Running a Simple Task
-Let's ask Agent Zero to download a YouTube video. Here's how:
+## Troubleshooting
 
-1.  Type "Download a YouTube video for me" in the chat input field and press Enter or click the send button.
+**Installation**
+* **Dependency Conflicts:** If encountering version conflicts during installation, try creating a fresh virtual environment and reinstalling the requirements.
+* **Docker Issues:** If Docker containers fail to start or Agent Zero can't connect to Docker, consult the Docker documentation and verify your Docker installation and configuration.  On macOS, ensure you've granted Docker access to your project files in Docker Desktop's settings as described in the [Installation guide](installation.md#2-install-docker-docker-desktop-application).
 
-2. Agent Zero will process your request.  You'll see its "thoughts" and the actions it takes displayed in the UI. It will find a default already existing solution, that implies using the `code_execution_tool` to run a simple Python script to perform the task.
+**Usage**
+* **"Nothing happens" when sending a message:** This often indicates a tool execution issue, an API connection problem, or rate limiting. Check your API keys, internet connection, and ensure any required services (like Docker) are running.  Examine the logs for more details.
 
-3. The agent will then ask you for the URL of the YouTube video you want to download.
+* **Terminal commands not executing:** If using Docker for code execution, ensure the Docker container is running and properly configured.  Check SSH settings if applicable.
 
-## Example Interaction
-Here's an example of what you might see in the Web UI at step 3:
-![1](res/image-24.png)
+* **Error Messages:** Pay close attention to the error messages displayed in the Web UI or terminal.  They often provide valuable clues for diagnosing the issue. Refer to the specific error message in online searches or community forums for potential solutions.
 
-## Next Steps
-Now that you've run a simple task, you can experiment with more complex requests. Try asking Agent Zero to:
-
-* Perform calculations
-* Search the web for information
-* Execute shell commands
-* Explore web development tasks
-* Create or modify files
-
-The [Usage Guide](usage.md) provides more in-depth information on using Agent Zero's various features, including prompt engineering, tool usage, and multi-agent cooperation.
+* **Performance Issues:** If Agent Zero is slow or unresponsive, it might be due to resource limitations, network latency, or the complexity of your prompts and tasks.

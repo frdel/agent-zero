@@ -4,7 +4,7 @@
 
 The following guide provides both quick start instructions for the full installation of Agent Zero on various operating systems and in-depth guides for Windows and macOS with screenshots.
 
-## You were looking for this? [How to update Agent Zero](#-how-to-update-agent-zero)
+## You were looking for this? [How to update Agent Zero](#how-to-update-agent-zero)
 
 <details>
 <summary><h2>Windows Quick Start</h2></summary>
@@ -227,7 +227,7 @@ python run_ui.py
 <img src="res/setup/image-23-1.png" alt="run ui" width="400"/>
 <br><br>
 
-## Choosing Your LLMs
+# Choosing Your LLMs
 The `initialize.py` file is the control center for selecting the Large Language Models (LLMs) that power Agent Zero.  You can choose different LLMs for different roles:
 
 | LLM Role | Description |
@@ -254,7 +254,7 @@ The `initialize.py` file is the control center for selecting the Large Language 
 
 - Experiment with different model combinations to find the balance of performance and cost that best suits your needs. E.g., faster and lower latency LLMs will help, and you can also use `faiss_gpu` instead of `faiss_cpu` for the memory.
 
-### Installing and Using Ollama (Local Models)
+## Installing and Using Ollama (Local Models)
 If you're interested in Ollama, which is a powerful tool that allows you to run various large language models locally, here's how to install and use it:
 
 #### First step: installation
@@ -300,7 +300,7 @@ Once you've downloaded some models, you might want to check which ones you have 
   ollama rm <model-name>
   ```
 
-## How to update Agent Zero
+# How to update Agent Zero
 To update Agent Zero to the latest version, follow these steps:
 - **Using Git/GitHub:** Pull the latest version of the Agent Zero repository with Git/GitHub. The custom knowledge, solutions, memory, and other data will get ignored by Git, so you don't need to worry about losing any of your custom data. The same goes for your .env file with all of your API keys.
 - **Backup LLM choices**: Before updating, make sure to save your customizations you've made to the first part of `def_initialize` function in the `initialize.py` file to choose your LLMs (highlighted section in below figure). This is important because the update process will overwrite these files with the default versions from the repository and can save you time rewriting all your LLMs choices.
@@ -330,5 +330,5 @@ Two scripts allows you to easily create executable files for Windows, macOS and 
 > are run. If you want to run Agent Zero on another machine, you will need to run 
 > the scripts on that machine as well to have executable files.
       
-## Conclusion
+### Conclusion
 After following the instructions for your specific operating system, you should have Agent Zero successfully installed and running. You can now start exploring the framework's capabilities and experimenting with creating your own intelligent agents.  If you encounter any issues during the installation process, please consult the Troubleshooting section of this documentation or refer to the Agent Zero community for assistance.

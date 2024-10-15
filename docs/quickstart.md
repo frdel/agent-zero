@@ -18,8 +18,11 @@ python run_ui.py
 
 ![New Chat](res/ui_newchat1.png)
 
-- As you can see, the Web UI has four distinct buttons for easy chat management: `New Chat`, `Reset Chat`, `Save Chat`, and `Load Chat`.
-- Chats can be saved and loaded individually in `json` format and are stored in the `/tmp/chats` directory.
+> [!TIP]
+> As you can see, the Web UI has four distinct buttons for easy chat management: 
+> `New Chat`, `Reset Chat`, `Save Chat`, and `Load Chat`.
+> Chats can be saved and loaded individually in `json` format and are stored in the
+> `/tmp/chats` directory.
 
     ![Chat Management](res/ui_chat_management.png)
 
@@ -45,4 +48,7 @@ Now that you've run a simple task, you can experiment with more complex requests
 * Explore web development tasks
 * Create or modify files
 
-The Usage Guide provides more in-depth information on using Agent Zero's various features, including prompt engineering, tool usage, and multi-agent cooperation.
+> [!TIP]
+> The [Usage Guide](usage.md) provides more in-depth information on using Agent 
+> Zero's various features, including prompt engineering, tool usage, and multi-agent 
+> cooperation.

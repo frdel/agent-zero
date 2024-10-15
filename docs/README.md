@@ -2,20 +2,20 @@
 # Agent Zero Documentation
 To begin with Agent Zero, follow the links below for detailed guides on various topics:
 
-- **[Installation](installation.md):** Set up (or [update](installation.md#-how-to-update-agent-zero)) Agent Zero on your system.
+- **[Installation](installation.md):** Set up (or [update](installation.md#how-to-update-agent-zero)) Agent Zero on your system.
 - **[Quick Start](quickstart.md):** Begin using Agent Zero with practical examples.
 - **[Usage Guide](usage.md):** Explore advanced features and capabilities.
 - **[Architecture Overview](architecture.md):** Understand the internal workings of the framework.
 - **[Contributing](contribution.md):** Learn how to contribute to the Agent Zero project.
 - **[Troubleshooting and FAQ](troubleshooting.md):** Find answers to common issues and questions.
-
+##
 ### Your experience with Agent Zero starts now!
 
 - **Download Agent Zero:** Download the latest release from the [GitHub releases page](https://github.com/frdel/agent-zero/releases).
 - **Join the Community:** Join the Agent Zero [Skool](https://www.skool.com/agent-zero) or [Discord](https://discord.gg/Z2tun2N3) community to discuss ideas, ask questions, and collaborate with other contributors.
 - **Share your Work:** Share your Agent Zero creations, workflows and discoverings on our [Show and Tell](https://github.com/frdel/agent-zero/discussions/categories/show-and-tell) area on GitHub.
-- **Report Issues:** Use the GitHub issue tracker to report bugs or suggest new features.
-
+- **Report Issues:** Use the [GitHub issue tracker](https://github.com/frdel/agent-zero/issues) to report framework-relative bugs or suggest new features.
+##
 ## Table of Contents
 
 - [Welcome to the Agent Zero Documentation](#agent-zero-documentation)
@@ -34,8 +34,8 @@ To begin with Agent Zero, follow the links below for detailed guides on various 
     - [5. Configure Agent Zero](installation.md#5-configure-agent-zero)
     - [6. Run Agent Zero](installation.md#6-run-agent-zero)
     - [Choosing Your LLMs](installation.md#choosing-your-llms)
-      - [Installing and Using Ollama](installation.md#installing-and-using-ollama)
-    - [How to update Agent Zero](installation.md#-how-to-update-agent-zero)
+      - [Installing and Using Ollama](installation.md#installing-and-using-ollama-local-models)
+    - [How to update Agent Zero](installation.md#how-to-update-agent-zero)
     - [How to create executable files for Agent Zero](installation.md#how-to-create-executable-files-for-agent-zero-in-windows-macos-and-linux)
     - [Conclusion](installation.md#conclusion)
 - [Quick Start](quickstart.md)
@@ -68,42 +68,15 @@ To begin with Agent Zero, follow the links below for detailed guides on various 
   - [Customization](architecture.md#customization)
     - [Custom Prompts](architecture.md#custom-prompts)
       - [Changing the System Prompt Folder](architecture.md#changing-the-system-prompt-folder)
-      - [Editing Prompts](architecture.md#editing-prompts)
     - [AgentConfig](architecture.md#agentconfig)
     - [Adding Tools](architecture.md#adding-tools)
     - [Adding Instruments](architecture.md#adding-instruments)
     - [Adding Extensions](architecture.md#adding-extensions)
-    - [Important Considerations](architecture.md#important-considerations)
 - [Contributing to Agent Zero](contribution.md)
   - [Getting Started](contribution.md#getting-started)
   - [Making Changes](contribution.md#making-changes)
   - [Submitting a Pull Request](contribution.md#submitting-a-pull-request)
   - [Documentation Stack](contribution.md#documentation-stack)
-- [Troubleshooting and FAQ](troubleshooting.md)
+- [FAQ and Troubleshooting](troubleshooting.md)
   - [Frequently Asked Questions](troubleshooting.md#frequently-asked-questions)
   - [Troubleshooting](troubleshooting.md#troubleshooting)
-    - [Installation](troubleshooting.md#installation)
-    - [Usage](troubleshooting.md#usage)
-
-## Changelog [since version 0.7]
-
-### v0.7.1
-- **Bug Fixes**
-- **Persistent Chats** - Serialized to /tmp/chats and automatically loaded in run_ui.py on startup
-- **Preinstalled binaries and bundler scripts**
-- **Documentation stack merged into the repository**
-
-### v0.7
-- **Auto Memory System**
-- **UI Revamp**
-    - The chat interface is now fully responsive, has a progress bar and supports both light and dark themes.
-- **Instruments**: Users can create custom tools (instruments) using markdown files. These instruments execute commands within the Docker container and can be used to perform various tasks, such as downloading YouTube videos or executing scripts.
-- **Extensions Framework**
-    - A new extensions framework has been introduced to keep the main agent.py file clean and maintainable. This allows for better organization of code with various subfolders for different functionalities. Files within python/extensions folders are executed in alphabetical order, streamlining processes like memory recall and solution memorization.
-- **Reflection**
-    - The framework supports advanced AI concepts like Chain of Thought and reflection through customizable prompts. Users can choose between two reflection models: dianoia-small and dianoia-xl.
-
-> [!WARNING]  
-> Changes to launch files since v0.6:
-> - main.py file has been replaced with run_ui.py (Web UI) and run_cli.py (terminal) launch files.
-> - The configuration has been moved to initialize.py for both Web UI and CLI launch files.

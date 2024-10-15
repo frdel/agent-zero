@@ -91,7 +91,7 @@ A detailed setup guide for Windows, macOS and Linux with a video can be found in
 The documentation dives deep into the framework and its features. It is a good place to start if you are new to Agent Zero. Click [here](docs/README.md) to see the Documentation.
 
 ## Coming up
-- **Preinstalled bundles**
+- **Preinstalled binaries and bundler scripts**
 - **Knowledge tool open-sourcing and web scraping tool**
 - **User interaction refinements**
 - **In-context switchable LLMs**
@@ -99,17 +99,17 @@ The documentation dives deep into the framework and its features. It is a good p
 ### Changelog [since version 0.7]
 
 #### v0.7.1
-- **Bug Fixes**
 - **Persistent Chats** - Serialized to /tmp/chats and automatically loaded in run_ui.py on startup
-- **Preinstalled binaries and bundler scripts**
 - **Documentation stack merged into the repository**
+- **Bug Fixes**
 
-#### New in version 0.7
-> - UI Revamp
-> - Auto Memory
-> - Instruments
-> - Extensions Framework
-> - Reflection
+#### v0.7
+- **Automatic memory**
+- **UI improvements**
+- **Instruments**
+- **Extensions framework**
+- **Reflection prompts**
+- **Bugfixes**
 
 > [!NOTE]  
 > **Changes to launch files since v0.6:**  
