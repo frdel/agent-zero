@@ -76,8 +76,9 @@ app.run(request_handler=NoRequestLoggingWSGIRequestHandler, host="0.0.0.0", port
 > [!CAUTION]
 > VERY IMPORTANT NOTICE: We believe in safe and ethical AI development, and highly 
 > suggest you to use the Docker container designed for running Agent Zero.
-
-This is a dangerous and untested feature, and we are not responsible for any damage or illegal activities or legal liabilities caused by the use of this feature. As you are responsible for your own actions, use this feature only if 100% sure of what you're doing.
+> This is a dangerous and untested feature, and we are not responsible for any damage 
+> or illegal activities or legal liabilities caused by the use of this feature. 
+> As you are responsible for your own actions, use this feature only if 100% sure of what you're doing.
 <details>
 <summary>I accept the risks and want to use this feature.</summary>
 

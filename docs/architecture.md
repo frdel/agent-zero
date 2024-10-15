@@ -93,7 +93,9 @@ The `prompts` directory contains various Markdown files that control agent behav
 | agent.system.tools.md | Organizes and calls the individual tool prompt files. |
 | agent.system.tool.*.md | Individual tool prompt files (with * as the tool name). |
 
-You can customize any of these files.  Agent Zero will use the files in your custom `prompts_subdir` if they exist, otherwise, it will fall back to the files in `prompts/default`.
+> [!NOTE]  
+> You can customize any of these files.  Agent Zero will use the files in your custom `prompts_subdir` 
+> if they exist, otherwise, it will fall back to the files in `prompts/default`.
 
 ## Extensions
 - Extensions are a powerful feature of Agent Zero, designed to keep the main codebase clean and organized while allowing for greater flexibility and modularity. Here’s a detailed exploration of the extensions feature:
@@ -179,4 +181,7 @@ To create a new extension, follow these steps:
 3. Your desired extension's name has to start with a number to ensure it is executed before or after an already existing extension based on your needs.
 4. Ensure that the extension is compatible with the main system and does not introduce any conflicts or errors.
 
-If you believe your custom tool, instrument or extension could bring value to the community, consider contributing it to the main repository by making a pull request. This will make it available for others to use and benefit from your work. See [Contributing](contribution.md) for more information.
+> [!NOTE]  
+> If you believe your custom tool, instrument or extension could bring value to the community, consider contributing 
+> it to the main repository by making a pull request. This will make it available for others to use and benefit from your work. 
+> See [Contributing](contribution.md) for more information.
