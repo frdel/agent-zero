@@ -74,7 +74,7 @@ app.run(request_handler=NoRequestLoggingWSGIRequestHandler, host="0.0.0.0", port
 
 ## Using code_execution_tool outside of the Docker Container
 > [!CAUTION]
-> VERY IMPORTANT NOTICE: We believe in safe and ethical AI development, and highly 
+> We believe in safe and ethical AI development, and highly 
 > suggest you to use the Docker container designed for running Agent Zero.
 > This is a dangerous and untested feature, and we are not responsible for any damage 
 > or illegal activities or legal liabilities caused by the use of this feature. 

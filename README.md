@@ -55,7 +55,7 @@
 - No coding is required, only prompting and communication skills.
 - With a solid system prompt, the framework is reliable even with small models, including precise tool usage.
 
-![Agent 1 System Load](/docs/res/ui_screen1.png)
+![Agent 1 System Load](/docs/res/ui_screen.png)
 
 ## Keep in mind
 1. **Agent Zero can be dangerous!**
@@ -85,17 +85,26 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 ![Time example](/docs/res/time_example.jpg)
 
 ## Setup
-A detailed setup guide with a video can be found in /docs/installation.md. Open the [Documentation](docs/installation.md#in-depth-guide-for-windows-and-macos).
+A detailed setup guide for Windows, macOS and Linux with a video can be found in the new Agent Zero Documentation at [this page](docs/installation.md#in-depth-guide-for-windows-and-macos).
 
-## Changelog [since version 0.7]
+## Consult the Documentation
+The documentation dives deep into the framework and its features. It is a good place to start if you are new to Agent Zero. Click [here](docs/README.md) to see the Documentation.
 
-### v0.7.1
+## Coming up
+- **Preinstalled bundles**
+- **Knowledge tool open-sourcing and web scraping tool**
+- **User interaction refinements**
+- **In-context switchable LLMs**
+
+### Changelog [since version 0.7]
+
+#### v0.7.1
 - **Bug Fixes**
 - **Persistent Chats** - Serialized to /tmp/chats and automatically loaded in run_ui.py on startup
 - **Preinstalled binaries and bundler scripts**
 - **Documentation stack merged into the repository**
 
-### New in version 0.7
+#### New in version 0.7
 > - UI Revamp
 > - Auto Memory
 > - Instruments
@@ -106,8 +115,3 @@ A detailed setup guide with a video can be found in /docs/installation.md. Open 
 > **Changes to launch files since v0.6:**  
 > - main.py file has been replaced with run_ui.py (webui) and run_cli.py (terminal) launch files.
 > - configuration has been moved to initialize.py for both webui and terminal launch files.
-
-## Coming up
-- **Preinstalled bundles**
-- **Knowledge tool improvements and web scraping tool**
-- **User interaction refinements**

@@ -69,6 +69,18 @@ The memory system is a critical component of Agent Zero, enabling the agent to l
 | memory_tool | Enables agents to save, load, delete and forget information from memory. |
 | webpage_content_tool | Enables agents to fetch and analyze the text content of webpages. |
 
+- **Knowledge Tool:** The `knowledge_tool` uses DuckDuckGo and Perplexity APIs to search the web and retrieve information. It can also search the local knowledge base and memory for relevant information. The tool returns a summary of the information, which can be used by the agent to make decisions or answer questions.
+
+> [!TIP]
+> The Perplexity API key is the only service recommended for a full experience of 
+> Agent Zero, but you can use DuckDuckGo by leaving the Perplexity API key value 
+> empty. DuckDuckGo usage in Agent Zero is free of charge but has its rate limits.
+  
+> [!NOTE]  
+> It's important to note that the DuckDuckGo API is not as powerful as Perplexity 
+> and may not return accurate or relevant results for some queries. The Perplexity 
+> API is yet to be replaced with an open-source alternative.
+
 - **Custom Tools:** Users can create custom tools to extend Agent Zero's capabilities. Custom tools can be integrated into the framework by defining a tool specification, which includes the tool's prompt to be placed in `/prompts/$FOLDERNAME/agent.system.tool.$TOOLNAME.md`, as further detailed [here](#adding-tools).
 
 - **Tools vs. Instruments:** Tools are always present in system prompt, so you should keep them to minimum. To save yourself some tokens, use the [Instruments module](#adding-instruments) to call custom scripts or functions.
