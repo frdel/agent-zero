@@ -23,9 +23,14 @@ class AgentContext:
     _counter: int = 0
 
     def __init__(
-        self, config: "AgentConfig", id: str | None = None, name: str | None = None, agent0: "Agent|None" = None,
+        self,
+        config: "AgentConfig",
+        id: str | None = None,
+        name: str | None = None,
+        agent0: "Agent|None" = None,
         log: Log.Log | None = None,
-        paused: bool = False, streaming_agent: "Agent|None" = None,
+        paused: bool = False,
+        streaming_agent: "Agent|None" = None,
     ):
         # build context
         self.id = id or str(uuid.uuid4())
@@ -38,7 +43,7 @@ class AgentContext:
         self.process: DeferredTask | None = None
         AgentContext._counter += 1
         self.no = AgentContext._counter
-        
+
         self._contexts[self.id] = self
 
     @staticmethod
@@ -69,12 +74,12 @@ class AgentContext:
     def communicate(self, msg: str, broadcast_level: int = 1):
         self.paused = False  # unpause if paused
 
-        if self.process and self.process.is_alive():
-            if self.streaming_agent:
-                current_agent = self.streaming_agent
-            else:
-                current_agent = self.agent0
+        if self.streaming_agent:
+            current_agent = self.streaming_agent
+        else:
+            current_agent = self.agent0
 
+        if self.process and self.process.is_alive():
             # set intervention messages to agent(s):
             intervention_agent = current_agent
             while intervention_agent and broadcast_level != 0:
@@ -82,10 +87,30 @@ class AgentContext:
                 broadcast_level -= 1
                 intervention_agent = intervention_agent.data.get("superior", None)
         else:
-            self.process = DeferredTask(self.agent0.monologue, msg)
+
+            # self.process = DeferredTask(current_agent.monologue, msg)
+            self.process = DeferredTask(self._process_chain, current_agent, msg)
 
         return self.process
 
+    # this wrapper ensures that superior agents are called back if the chat was loaded from file and original callstack is gone
+    async def _process_chain(self, agent: 'Agent', msg: str, user=True):
+        try:
+            msg_template = (
+                agent.read_prompt("fw.user_message.md", message=msg)
+                if user
+                else agent.read_prompt(
+                    "fw.tool_response.md",
+                    tool_name="call_subordinate",
+                    tool_response=msg,
+                )
+            )
+            response = await agent.monologue(msg_template)
+            superior = agent.data.get("superior", None)
+            if superior:
+                await self._process_chain(superior, response, False)
+        except Exception as e:
+            agent.handle_critical_exception(e)
 
 @dataclass
 class AgentConfig:
@@ -220,9 +245,7 @@ class Agent:
                 await self.call_extensions("monologue_start", loop_data=loop_data)
 
                 printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)
-                user_message = self.read_prompt(
-                    "fw.user_message.md", message=loop_data.message
-                )
+                user_message = loop_data.message
                 await self.append_message(user_message, human=True)
 
                 # let the agent run message loop until he stops it with a response tool

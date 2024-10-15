@@ -112,12 +112,12 @@ class CodeExecution(Tool):
 
     async def execute_python_code(self, code: str, reset: bool = False):
         escaped_code = shlex.quote(code)
-        command = f"python3 -c {escaped_code}"
+        command = f"ipython -c {escaped_code}"
         return await self.terminal_session(command, reset)
 
     async def execute_nodejs_code(self, code: str, reset: bool = False):
         escaped_code = shlex.quote(code)
-        command = f"node -e {escaped_code}"
+        command = f"node /exe/node_eval.js {escaped_code}"
         return await self.terminal_session(command, reset)
 
     async def execute_terminal_command(self, command: str, reset: bool = False):

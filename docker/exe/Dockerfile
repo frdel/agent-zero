@@ -13,7 +13,12 @@ RUN apt-get update && apt-get install -y \
     npm \
     openssh-server \
     sudo \
-    && rm -rf /var/lib/apt/lists/*
+    curl \
+    wget \
+    git
+
+# Cleanup package list
+RUN rm -rf /var/lib/apt/lists/*
 
 # Set up SSH
 RUN mkdir /var/run/sshd && \
@@ -24,15 +29,20 @@ RUN mkdir /var/run/sshd && \
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 
-# Copy initial .bashrc with virtual environment activation to a temporary location
-COPY .bashrc /etc/skel/.bashrc
-
 # Copy the script to ensure .bashrc is in the root directory
 COPY initialize.sh /usr/local/bin/initialize.sh
 RUN chmod +x /usr/local/bin/initialize.sh
 
+# Copy contents of filesystem directory to /
+COPY ./fs/ /
+
 # Ensure the virtual environment and pip setup
 RUN $VIRTUAL_ENV/bin/pip install --upgrade pip
+
+# Install additional python packages
+RUN $VIRTUAL_ENV/bin/pip install \
+    ipython \
+    requests
 
 # Expose SSH port
 EXPOSE 22

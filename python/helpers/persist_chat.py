@@ -102,7 +102,7 @@ def _deserialize_context(data):
 
     context = AgentContext(
         config=config,
-        id=data.get("id", None),
+        # id=data.get("id", None), #get new id
         name=data.get("name", None),
         log=log,
         paused=False,
@@ -143,6 +143,7 @@ def _deserialize_agents(
         if prev:
             prev.set_data("subordinate", current)
             current.set_data("superior", prev)
+        prev = current
 
     return zero or Agent(0, config, context)
 
