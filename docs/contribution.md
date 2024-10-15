@@ -10,9 +10,9 @@ Contributions to improve Agent Zero are very welcome!  This guide outlines how t
 
 ## Making Changes
 
-* **Code Style:** Follow the existing code style.  Agent Zero generally follows PEP 8 conventions.
-* **Testing:** Write unit tests for new features.  Agent Zero uses the `pytest` framework. Ensure your changes pass all existing and new tests.
-* **Documentation:**  Update the documentation if your changes affect user-facing functionality.  The documentation is written in Markdown.
+* **Code Style:** Follow the existing code style. Agent Zero generally follows PEP 8 conventions.
+* **Testing:** Write unit tests for new features. Agent Zero uses the `pytest` framework. Ensure your changes pass all existing and new tests.
+* **Documentation:**  Update the documentation if your changes affect user-facing functionality. The documentation is written in Markdown.
 * **Commit Messages:**  Write clear and concise commit messages that explain the purpose of your changes.
 
 ## Submitting a Pull Request
@@ -26,4 +26,4 @@ Contributions to improve Agent Zero are very welcome!  This guide outlines how t
 
 ## Documentation Stack
 
-- The documentation is built using Markdown. We appreciate your contributions and look forward to improving Agent Zero for everyone's benefit.
+- The documentation is built using Markdown. We appreciate your contributions even if you don't know Markdown, and look forward to improve Agent Zero for everyone's benefit.
