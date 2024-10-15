@@ -103,6 +103,7 @@ To begin with Agent Zero, follow the links below for detailed guides on various 
 - **Reflection**
     - The framework supports advanced AI concepts like Chain of Thought and reflection through customizable prompts. Users can choose between two reflection models: dianoia-small and dianoia-xl.
 
-### ⚠️ Changes to launch files since v0.6:
-- main.py file has been replaced with run_ui.py (webui) and run_cli.py (terminal) launch files.
-- configuration has been moved to initialize.py for both webui and terminal launch files.
+> [!WARNING]  
+> Changes to launch files since v0.6:
+> - main.py file has been replaced with run_ui.py (Web UI) and run_cli.py (terminal) launch files.
+> - The configuration has been moved to initialize.py for both Web UI and CLI launch files.
