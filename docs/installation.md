@@ -111,7 +111,7 @@ The following guide provides both quick start instructions for the full installa
 <img src="res/setup/image-8.png" alt="docker download" width="200"/>
 <br><br>
 
-3. Run the installer and go through the installattion process. It should be even shorter than Conda installation, you can leave everything to default. On macOS, the installer is a "dmg" image, so just drag and drop the application to your Applications folder like always.
+3. Run the installer and go through the installation process. It should be even shorter than Conda installation, you can leave everything to default. On macOS, the installer is a "dmg" image, so just drag and drop the application to your Applications folder like always.
 
 <img src="res/setup/image-9.png" alt="docker install" width="300"/>
 <img src="res/setup/image-10.png" alt="docker install" width="300"/>
@@ -239,7 +239,7 @@ The `initialize.py` file is the control center for selecting the Large Language 
 
 - ⚠️ **IMPORTANT NOTICE**: Changing the `embedding_llm` will re-index all the memory and knowledge, and requires clearing the `memory` folder to avoid errors, as the embeddings can't be mixed in the vector database. Beware that this will DELETE ALL OF AGENT ZERO'S MEMORY.
 
-- Experiment with different model combinations to find the balance of performance and cost that best suits your needs. E.g., using a smaller model for `utility_llm` can save costs without significantly impacting performance.
+- Experiment with different model combinations to find the balance of performance and cost that best suits your needs. E.g., faster and lower latency LLMs will help, and you can also use `faiss_gpu` instead of `faiss_cpu` for the memory.
 
 ### Installing and Using Ollama (Local Models)
 If you're interested in Ollama, which is a powerful tool that allows you to run various large language models locally, here's how to install and use it:
@@ -287,7 +287,7 @@ Once you've downloaded some models, you might want to check which ones you have 
   ollama rm <model-name>
   ```
 
-## ❗ How to update Agent Zero
+## How to update Agent Zero
 To update Agent Zero to the latest version, follow these steps:
 - **Using Git/GitHub:** Pull the latest version of the Agent Zero repository with Git/GitHub. The custom knowledge, solutions, memory, and other data will get ignored by Git, so you don't need to worry about losing any of your custom data. The same goes for your .env file with all of your API keys.
 - **Backup LLM choices**: Before updating, make sure to save your customizations you've made to the first part of `def_initialize` function in the `initialize.py` file to choose your LLMs (highlighted section in below figure). This is important because the update process will overwrite these files with the default versions from the repository and can save you time rewriting all your LLMs choices.
@@ -301,6 +301,17 @@ Beware of indentations when pasting the model selection code back into the `init
    If you update manually, beware: save your .env file with the API keys, and look for new dependencies in requirements.txt. If any changes are made in the updated version, you have to execute this command inside the a0 conda env after activating it:
       
       pip install -r requirements.txt
+
+# How to create executable files for Agent Zero in Windows, macOS and Linux
+Two scripts allows you to easily create executable files for Windows, macOS and Linux, including all the necessary dependencies to run Agent Zero without the need for Python, Conda, or additional steps:
+1. **Navigate to Bundle folder:** Navigate to /agent-zero/bundle.
+2. **Run the script:** Run the bundling of Agent Zero by running `macos_bundle.sh` (macOS and Linux) or `windows_bundle.bat` (Windows) in your terminal window. The process usually takes about 2 to 5 minutes depending on the platform.
+3. **Edit your Files:** Now you can configure API keys and edit `initialize.py` for [Choosing Your LLMs](#choosing-your-llms).
+4. **Run Agent Zero:** Run Agent Zero by running the .exe file just created (Windows), or by running `./agent-zero` in your terminal window.
+
+- ⚠️ **IMPORTANT:** The 2 scripts will create executable files valid only for the machine where they are run. 
+
+If you want to run Agent Zero on another machine, you will need to run the scripts on that machine as well to have executable files.
       
 ## Conclusion
 After following the instructions for your specific operating system, you should have Agent Zero successfully installed and running. You can now start exploring the framework's capabilities and experimenting with creating your own intelligent agents.  If you encounter any issues during the installation process, please consult the Troubleshooting section of this documentation or refer to the Agent Zero community for assistance.

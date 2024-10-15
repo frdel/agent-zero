@@ -36,6 +36,7 @@ To begin with Agent Zero, follow the links below for detailed guides on various 
     - [Choosing Your LLMs](installation.md#choosing-your-llms)
       - [Installing and Using Ollama](installation.md#installing-and-using-ollama)
     - [How to update Agent Zero](installation.md#-how-to-update-agent-zero)
+    - [How to create executable files for Agent Zero](installation.md#how-to-create-executable-files-for-agent-zero-in-windows-macos-and-linux)
     - [Conclusion](installation.md#conclusion)
 - [Quick Start](quickstart.md)
   - [Launching the Web UI](quickstart.md#launching-the-web-ui)
@@ -44,17 +45,19 @@ To begin with Agent Zero, follow the links below for detailed guides on various 
   - [Next Steps](quickstart.md#next-steps)
 - [Usage Guide](usage.md)
   - [Tool Usage](usage.md#tool-usage)
-  - [Example: Web Search and Code Execution](usage.md#example-web-search-and-code-execution)
+  - [Prompt Engineering](usage.md#prompt-engineering)
+  - [Example of Tools Usage](usage.md#example-of-tools-usage-web-search-and-code-execution)
   - [Memory Management](usage.md#memory-management)
   - [Multi-Agent Cooperation](usage.md#multi-agent-cooperation)
-  - [Prompt Engineering](usage.md#prompt-engineering)
   - [Agent Behavior](usage.md#agent-behavior)
   - [Using Agent Zero on your mobile device](usage.md#using-agent-zero-on-your-mobile-device)
+  - [Using code_execution_tool outside of the Docker Container](usage.md#using-code_execution_tool-outside-of-the-docker-container)
 - [Architecture Overview](architecture.md)
   - [Core Components](architecture.md#core-components)
   - [Agent Hierarchy and Communication](architecture.md#agent-hierarchy-and-communication)
   - [Interaction Flow](architecture.md#interaction-flow)
   - [Memory System](architecture.md#memory-system)
+  - [Tools](architecture.md#tools)
   - [Knowledge](architecture.md#knowledge)
   - [Prompts](architecture.md#prompts)
   - [Extensions](architecture.md#extensions)
@@ -68,8 +71,8 @@ To begin with Agent Zero, follow the links below for detailed guides on various 
       - [Editing Prompts](architecture.md#editing-prompts)
     - [AgentConfig](architecture.md#agentconfig)
     - [Adding Tools](architecture.md#adding-tools)
-    - [Adding Extensions](architecture.md#adding-extensions)
     - [Adding Instruments](architecture.md#adding-instruments)
+    - [Adding Extensions](architecture.md#adding-extensions)
     - [Important Considerations](architecture.md#important-considerations)
 - [Contributing to Agent Zero](contribution.md)
   - [Getting Started](contribution.md#getting-started)
@@ -82,10 +85,16 @@ To begin with Agent Zero, follow the links below for detailed guides on various 
     - [Installation](troubleshooting.md#installation)
     - [Usage](troubleshooting.md#usage)
 
-## Changelog
+## Changelog [since version 0.7]
+
+### v0.7.1
+- **Bug Fixes**
+- **Persistent Chats** - Serialized to /tmp/chats and automatically loaded in run_ui.py on startup
+- **Preinstalled binaries and bundler scripts**
+- **Documentation stack merged into the repository**
 
 ### v0.7
-- **Hybrid Memory System**: The memory system now operates on a hybrid model where part of the memory is managed automatically by the framework while users can also manually input information.
+- **Auto Memory System**
 - **UI Revamp**
     - The chat interface is now fully responsive, has a progress bar and supports both light and dark themes.
 - **Instruments**: Users can create custom tools (instruments) using markdown files. These instruments execute commands within the Docker container and can be used to perform various tasks, such as downloading YouTube videos or executing scripts.

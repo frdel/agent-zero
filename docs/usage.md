@@ -1,34 +1,39 @@
 # Usage Guide
-This guide explores more advanced usage scenarios for Agent Zero, building upon the basics covered in the Quick Start.
+This guide explores more advanced usage scenarios for Agent Zero, building upon the basics covered in the [Quick Start](quickstart.md).
 
-![](res/memory-man.png)
+![Utility Message with Solutions](res/memory-man.png)
 
 ## Tool Usage
-Agent Zero's power comes from its ability to use tools. Here's how to leverage them effectively:
+Agent Zero's power comes from its ability to use [tools](architecture.md#tools). Here's how to leverage them effectively:
 
-* **Default Tools:** Agent Zero typically includes default tools like knowledge, webpage content, code execution, and communication.  Understand the capabilities of these tools and how to invoke them.
-* **Creating Custom Tools:**  Extend Agent Zero's functionality by creating your own custom tools. Refer to [Adding Tools](architecture.md#adding_tools) for detailed instructions.
-* **New in 0.7 ❗ | Instruments:**  Instruments are a new type of tool that allow you to create custom functions that can be called by Agent Zero.  Refer to [Adding Instruments](architecture.md#adding_instruments) for further details.
-* **Tool Arguments:**  Provide the necessary arguments to the tools.  Agent Zero expects tools to be invoked with a JSON-formatted string containing the tool name and arguments.  Refer to the Quick Start and example prompts for how to format tool calls.
+- **Understand Tools:** Agent Zero typically includes default tools like knowledge, webpage content, code execution, and communication.  Understand the capabilities of these tools and how to invoke them.
 
-## Example: Web Search and Code Execution
-Let's say you want Agent Zero to find the current price of Bitcoin and then convert it to Euros. Here's a possible prompt:
+## Prompt Engineering
+Effective prompt engineering is crucial for getting the most out of Agent Zero. Here are some tips and techniques:
 
-> Please be a professional financial analyst. Find last month Bitcoin/USD price trend and make a chart in your environment. The chart must have highlighted key points corresponding with dates of major news about cryptocurrency. Use the 'knowledge_tool' to find the price and the 'code_execution_tool' to perform the rest of the job.
+* **Be Clear and Specific:** Clearly state your desired outcome.  The more specific you are, the better Agent Zero can understand and fulfill your request.  Avoid vague or ambiguous language.
+* **Provide Context:** If necessary, provide background information or context to help the agent understand the task better. This might include relevant details, constraints, or desired format for the response.
+* **Break Down Complex Tasks:**  For complex tasks, break them down into smaller, more manageable sub-tasks.  This makes it easier for the agent to reason through the problem and generate a solution.
+* **Iterative Refinement:** Don't expect perfect results on the first try.  Experiment with different prompts, refine your instructions based on the agent's responses, and iterate until you achieve the desired outcome. To achieve a full-stack, web-app development task, for example, you might need to iterate for a few hours for 100% success.
+
+## Example of Tools Usage: Web Search and Code Execution
+Let's say you want Agent Zero to perform some financial analysis tasks. Here's a possible prompt:
+
+> Please be a professional financial analyst. Find last month Bitcoin/ USD price trend and make a chart in your environment. The chart must  have highlighted key points corresponding with dates of major news  about cryptocurrency. Use the 'knowledge_tool' to find the price and  the news, and the 'code_execution_tool' to perform the rest of the job.
 
 Agent Zero might then:
 
-1. Use the `knowledge_tool` to query a reliable source for the Bitcoin price.
-2. Extract the price from the search results.
-3. Use the `code_execution_tool` to execute a Python script that performs the conversion using the provided exchange rate.
-4. Return the final price in Euros.
+1. Use the `knowledge_tool` to query a reliable source for the Bitcoin price and for the news about cryptocurrency as prompted.
+2. Extract the price from the search results and save the news, extracting their dates and possible impact on the price.
+3. Use the `code_execution_tool` to execute a Python script that performs the graph creation and key points highlighting, using the extracted data and the news dates as inputs.
+4. Return the final chart that you'll find in `/work_dir`, responding to the user with the `response_tool`.
 
-This example demonstrates how to combine multiple tools to achieve a simple task. By mastering prompt engineering and tool usage, you can unlock the full potential of Agent Zero to solve complex problems.
+This example demonstrates how to combine multiple tools to achieve an analysis task. By mastering prompt engineering and tool usage, you can unlock the full potential of Agent Zero to solve complex problems.
 
 ## Memory Management
 * **Persistence:** Agent Zero's memory persists across sessions, allowing agents to learn from past interactions.
-* **Memory Retrieval:** Agents can access their memory to retrieve relevant information and experiences.  The `memory_tool` is used for this purpose.
-* **Knowledge Base:** You can augment the agent's knowledge by providing external knowledge files. (Link to documentation on knowledge base management).
+* **Memory Retrieval:** Agents can access their [memory](architecture.md#memory-system) to retrieve relevant information and experiences.
+* **Knowledge Base:** You can augment the agent's knowledge by providing [external knowledge files](architecture.md#knowledge).
 
 ## Multi-Agent Cooperation
 One of Agent Zero's unique features is multi-agent cooperation.
@@ -40,19 +45,10 @@ One of Agent Zero's unique features is multi-agent cooperation.
 ![](res/physics.png)
 ![](res/physics-2.png)
 
-## Prompt Engineering
-Effective prompt engineering is crucial for getting the most out of Agent Zero. Here are some tips and techniques:
-
-* **Be Clear and Specific:** Clearly state your desired outcome.  The more specific you are, the better Agent Zero can understand and fulfill your request.  Avoid vague or ambiguous language.
-* **Provide Context:** If necessary, provide background information or context to help the agent understand the task better. This might include relevant details, constraints, or desired format for the response.
-* **Break Down Complex Tasks:**  For complex tasks, break them down into smaller, more manageable sub-tasks.  This makes it easier for the agent to reason through the problem and generate a solution.
-* **Iterative Refinement:** Don't expect perfect results on the first try.  Experiment with different prompts, refine your instructions based on the agent's responses, and iterate until you achieve the desired outcome.
-* **System-Level Instructions:** A custom prompts directory changes the agent's overall behavior.  You can copy the default files and modify them to give the agent specific instructions, biases, or constraints. The same goes for the tool files, that you can modify to give the agent specific instructions, biases, or constraints for each tool. See (architecture.md#prompts) for more information.
-
 ## Agent Behavior
 * **System Prompt:**  The core of Agent Zero's behavior is defined in the system prompt.  Experiment with different system prompts to customize the agent's personality, biases, and reasoning approach.
 * **Prompts Directory:** The `prompts` directory contains various prompt templates used by the framework. You can modify these templates to customize the agent's communication style, instructions, and responses. See [Prompt Customization](architecture.md#custom-prompts) for more information.
-* **Creating New Tools and Instructions:** Extend Agent Zero's capabilities with custom tools and instructions. This allows you to add new features, modify existing behavior, and integrate with other systems.
+* **Creating New Tools and Instruments:** Extend Agent Zero's capabilities with custom tools and instruments. This allows you to add new features, modify existing behavior, and integrate with other systems. See [Adding Tools](architecture.md#adding-tools) and [Adding Instruments](architecture.md#adding-instruments) for more information.
 
 ## Using Agent Zero on your mobile device
 To access the Agent Zero Web UI from other devices on your network and run it on all hosts, such as your smartphones or tablets:
@@ -72,9 +68,9 @@ app.run(request_handler=NoRequestLoggingWSGIRequestHandler, host="0.0.0.0", port
     - If you're using a remote server, you may need to use a service like [ngrok](https://ngrok.com/) to create a secure tunnel to your server. This allows you to access the Web UI from other devices using a public URL.
 
 ## Using code_execution_tool outside of the Docker Container
-### ☠️ VERY IMPORTANT NOTICE: We believe in safe and ethical AI development, and highly suggest you to use the Docker container designed for running Agent Zero.
+### ⚠️ VERY IMPORTANT NOTICE: We believe in safe and ethical AI development, and highly suggest you to use the Docker container designed for running Agent Zero.
 
-This is a very dangerous feature, and we are not responsible for any damage or other illegal activities or legal liabilities caused by the use of this feature. You are responsible for your own actions. Use this feature only for research purposes at most, and only if you are 100% sure of what you're doing.
+This is a dangerous and untested feature, and we are not responsible for any damage or illegal activities or legal liabilities caused by the use of this feature. As you are responsible for your own actions, use this feature only if 100% sure of what you're doing.
 <details>
 <summary>I accept the risks and want to use this feature.</summary>
 

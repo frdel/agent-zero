@@ -16,7 +16,12 @@ python run_ui.py
 
 5. Open your web browser and navigate to the URL shown in the terminal (usually `http://127.0.0.1:50001`). You should see the Agent Zero Web UI.
 
-![](res/ui_newchat.png)
+![New Chat](res/ui_newchat1.png)
+
+- As you can see, the Web UI has four distinct buttons for easy chat management: `New Chat`, `Reset Chat`, `Save Chat`, and `Load Chat`.
+- Chats can be saved and loaded individually in `json` format and are stored in the `/tmp/chats` directory.
+
+    ![Chat Management](res/ui_chat_management.png)
 
 ## Running a Simple Task
 Let's ask Agent Zero to download a YouTube video. Here's how:
