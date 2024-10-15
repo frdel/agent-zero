@@ -76,13 +76,13 @@ app.run(request_handler=NoRequestLoggingWSGIRequestHandler, host="0.0.0.0", port
 > [!CAUTION]
 > We believe in safe and ethical AI development, and highly 
 > suggest you to use the Docker container designed for running Agent Zero.
+> However, we understand that some users may want to use the code_execution_tool outside of the Docker container.
+>
 > This is a dangerous and untested feature, and we are not responsible for any damage 
 > or illegal activities or legal liabilities caused by the use of this feature. 
 > As you are responsible for your own actions, use this feature only if 100% sure of what you're doing.
-<details>
-<summary>I accept the risks and want to use this feature.</summary>
 
-- If you are a power-user and 100% sure of what you're doing, you can use the code_execution_tool outside of the Docker container by following these steps:
+- If you accept the risks, follow these steps:
 
     ![Code Execution Jailbreak](res/code_exec_jailbreak.png)
 
@@ -90,7 +90,6 @@ app.run(request_handler=NoRequestLoggingWSGIRequestHandler, host="0.0.0.0", port
 
 2. Comment out lines 56, 57, 58 and 59 in `initialize.py` that sets the `code_execution_tool` SSH connection parameters. Point them to your machine accordingly. This will enable the code_execution_tool for your Agent Zero instance.
 
-> [!IMPORTANT]  
+> [!IMPORTANT] 
 > The `code_exec_ssh_pass` parameter (root user password) has to be provided to 
 > `initialize.py` for the code_execution_tool to be able to connect to the machine.
-</details>
