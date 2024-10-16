@@ -3,7 +3,7 @@ import os, re
 
 import re
 
-def read_file(relative_path, backup_dirs=None, **kwargs):
+def read_file(relative_path, backup_dirs=None, encoding="utf-8", **kwargs):
     if backup_dirs is None:
         backup_dirs = []
 
@@ -11,7 +11,7 @@ def read_file(relative_path, backup_dirs=None, **kwargs):
     absolute_path = find_file_in_dirs(relative_path, backup_dirs)
 
     # Read the file content
-    with open(absolute_path) as f:
+    with open(absolute_path, 'r', encoding=encoding) as f:
         content = remove_code_fences(f.read())
 
     # Replace placeholders with values from kwargs
@@ -63,10 +63,10 @@ def find_file_in_dirs(file_path, backup_dirs):
 def remove_code_fences(text):
     return re.sub(r'~~~\w*\n|~~~', '', text)
 
-def write_file(relative_path:str, content:str):
+def write_file(relative_path:str, content:str, encoding:str="utf-8"):
     abs_path = get_abs_path(relative_path)
     os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-    with open(abs_path, 'w') as f:
+    with open(abs_path, 'w', encoding=encoding) as f:
         f.write(content)
 
 def delete_file(relative_path:str):
