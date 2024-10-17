@@ -44,13 +44,13 @@
 - Give your agent a proper system prompt and instructions, and it can do miracles.
 - Agents can communicate with their superiors and subordinates, asking questions, giving instructions, and providing guidance. Instruct your agents in the system prompt on how to communicate effectively.
 - The terminal interface is real-time streamed and interactive. You can stop and intervene at any point. If you see your agent heading in the wrong direction, just stop and tell it right away.
-- There is a lot of freedom in this framework. You can instruct your agents to regularly report back to superiors asking for permission to continue. You can instruct them to use point-scoring systems when deciding when to delegate subtasks. Superiors can double-check subordinates' results and dispute. The possibilities are endless.
+- There is a lot of freedom in this framework. You can instruct your agents to regularly report back to superiors, asking for permission to continue. You can instruct them to use point-scoring systems when deciding when to delegate subtasks. Superiors can double-check subordinates' results and dispute. The possibilities are endless.
 
 ![Agent Zero](/docs/res/splash_wide.png)
 
 ## Nice features to have
-- Output is very clean, colorful, readable and interactive; nothing is hidden.
-- The same colorful output you see in the terminal is automatically saved to HTML file in **logs/** folder for every session.
+- The output is very clean, colorful, readable and interactive; nothing is hidden.
+- The same colorful output you see in the terminal is automatically saved to an HTML file in **logs/** folder for every session.
 - Agent output is streamed in real-time, allowing the user to read along and intervene at any time.
 - No coding is required, only prompting and communication skills.
 - With a solid system prompt, the framework is reliable even with small models, including precise tool usage.
