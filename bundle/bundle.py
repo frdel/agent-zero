@@ -7,6 +7,7 @@ from pathlib import Path
 import pathspec
 import importlib
 import importlib.metadata as metadata
+import py7zr  # New import for 7z compression
 
 def get_package_data_folder(package_name):
     """Return the package path if it contains data files."""
@@ -76,7 +77,31 @@ def cleanup_directories(bundle_name, build_dir, dist_dir, keep_dist=False):
     if os.path.exists(spec_file):
         os.remove(spec_file)
 
-def build_executable(script_path, exe_name=None):
+def compress_dist_folder(dist_dir, exe_name):
+    """Compress the dist folder using py7zr library."""
+    try:
+        archive_path = Path(dist_dir) / f"{exe_name}.7z"
+        files_path = Path(dist_dir) / exe_name
+
+        
+        # Remove existing archive if it exists
+        if archive_path.exists():
+            archive_path.unlink()
+        
+        print(f"Compressing dist folder to: {archive_path}")
+        
+        # Create the 7z archive with maximum compression
+        with py7zr.SevenZipFile(archive_path, 'w', filters=[{'id': py7zr.FILTER_LZMA2, 'preset': 9}]) as archive:
+            archive.writeall(files_path, arcname=dist_dir.name)
+        
+        print("Compression completed successfully")
+        return str(archive_path)
+            
+    except Exception as e:
+        print(f"Error during compression: {e}")
+        return None
+
+def build_executable(script_path, exe_name=None, compress=False):
     """Run PyInstaller with the correct site-packages path, clean, and additional data."""
     try:
         # Resolve the absolute path to the script, relative to the current file location (__file__)
@@ -147,6 +172,12 @@ def build_executable(script_path, exe_name=None):
         print(f"Executable created at: '{dist_dir}/{exe_name}'")
         print(f"Project files copied to: '{project_files_dir}'")
 
+        # Compress the dist folder if requested
+        if compress:
+            archive_path = compress_dist_folder(dist_dir, exe_name)
+            if archive_path:
+                print(f"Created compressed archive at: {archive_path}")
+
         # Final cleanup (keeping dist folder)
         cleanup_directories(exe_name, build_dir, dist_dir, keep_dist=True)
 
@@ -156,4 +187,4 @@ def build_executable(script_path, exe_name=None):
         print(f"Error: {e}")
 
 if __name__ == "__main__":
-    build_executable("../run_bundle.py", "agent-zero")
+    build_executable("../run_bundle.py", "agent-zero", compress=True)

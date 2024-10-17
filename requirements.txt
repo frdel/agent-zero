@@ -19,6 +19,7 @@ markdown==3.7
 newspaper3k==0.2.8
 paramiko==3.4.0
 pathspec==0.12.1
+py7zr==0.22.0
 pyinstaller==6.10.0
 pypdf==4.3.1
 python-dotenv==1.0.1
