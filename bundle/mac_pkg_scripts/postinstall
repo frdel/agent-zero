@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Prompt the user to select a folder using an AppleScript dialog
+TARGET_FOLDER=$(osascript <<EOT
+    tell application "System Events"
+        activate
+        set chosenFolder to choose folder with prompt "Please select a folder for the installation:"
+        return POSIX path of chosenFolder
+    end tell
+EOT
+)
+
+# Check if the user selected a folder
+if [ -n "$TARGET_FOLDER" ]; then
+    echo "Installing files to $TARGET_FOLDER"
+
+    # Move the installed files to the selected folder
+    mv /tmp/agent-zero/* "$TARGET_FOLDER"
+
+    # Check if the move operation was successful
+    if [ $? -eq 0 ]; then
+        echo "Files successfully moved to $TARGET_FOLDER"
+
+        # Remove the /tmp/agent-zero folder
+        rm -rf /tmp/agent-zero
+        echo "/tmp/agent-zero folder removed."
+    else
+        echo "Error moving files. Exiting."
+        exit 1
+    fi
+else
+    echo "No folder selected. Exiting installation."
+    exit 1
+fi
+
+exit 0

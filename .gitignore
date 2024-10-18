@@ -10,7 +10,9 @@
 .venv/
 
 # ignore all folders under /bundle
-/bundle/*/
+bundle/*/
+# except some
+!bundle/mac_pkg_scripts
 
 # Ignore all contents of the directory "work_dir"
 work_dir/*

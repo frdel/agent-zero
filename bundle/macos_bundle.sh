@@ -38,8 +38,8 @@ if [ -d "agent-zero" ]; then
 fi
 
 # 4. Clone the repository (development branch)
-echo "Cloning the repository (testing branch)..."
-git clone --branch testing https://github.com/frdel/agent-zero agent-zero
+echo "Cloning the repository (development branch)..."
+git clone --branch development https://github.com/frdel/agent-zero agent-zero
 if [ $? -ne 0 ]; then
     echo "Error cloning the repository."
     exit 1
@@ -67,18 +67,30 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 9. Move the generated 7z file to the script directory and remove agent-zero folder
-BUNDLE_FILE="bundle/dist/agent-zero.7z"
-if [ -f "$BUNDLE_FILE" ]; then
-    SCRIPT_DIR=$(dirname "$0")
-    echo "Moving $BUNDLE_FILE to $SCRIPT_DIR..."
-    mv "$BUNDLE_FILE" "$SCRIPT_DIR"
-    if [ $? -ne 0 ]; then
-        echo "Error moving $BUNDLE_FILE to $SCRIPT_DIR."
-        exit 1
-    fi
-else
-    echo "Error: $BUNDLE_FILE not found."
+# # 9. Move the generated 7z file to the script directory and remove agent-zero folder
+# BUNDLE_FILE="bundle/dist/agent-zero.7z"
+# if [ -f "$BUNDLE_FILE" ]; then
+#     SCRIPT_DIR=$(dirname "$0")
+#     echo "Moving $BUNDLE_FILE to $SCRIPT_DIR..."
+#     mv "$BUNDLE_FILE" "$SCRIPT_DIR"
+#     if [ $? -ne 0 ]; then
+#         echo "Error moving $BUNDLE_FILE to $SCRIPT_DIR."
+#         exit 1
+#     fi
+# else
+#     echo "Error: $BUNDLE_FILE not found."
+#     exit 1
+# fi
+
+# 9. Create macOS package
+echo "Creating macOS package..."
+pkgbuild --root ./dist/agent-zero \
+         --identifier frdel.agent-zero \
+         --install-location /tmp/agent-zero \
+         --scripts ./mac_pkg_scripts \
+         agent-zero-preinstalled-mac-m1.pkg
+if [ $? -ne 0 ]; then
+    echo "Error creating macOS package."
     exit 1
 fi
 

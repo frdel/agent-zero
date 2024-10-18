@@ -7,7 +7,8 @@ from pathlib import Path
 import pathspec
 import importlib
 import importlib.metadata as metadata
-import py7zr  # New import for 7z compression
+import py7zr
+import zipfile
 
 def get_package_data_folder(package_name):
     """Return the package path if it contains data files."""
@@ -77,6 +78,38 @@ def cleanup_directories(bundle_name, build_dir, dist_dir, keep_dist=False):
     if os.path.exists(spec_file):
         os.remove(spec_file)
 
+def compress_internal_folder(dist_dir, exe_name):
+    """Compress the _internal folder using zipfile."""
+    try:
+        internal_path = Path(dist_dir) / exe_name / "_internal"
+        archive_path = internal_path.parent / "_internal.zip"
+        
+        if not internal_path.exists():
+            print("Warning: _internal folder not found")
+            return False
+            
+        # Remove existing archive if it exists
+        if archive_path.exists():
+            archive_path.unlink()
+        
+        print(f"Compressing _internal folder to: {archive_path}")
+        
+        # Create the zip archive
+        with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_STORED) as archive:
+            for root, dirs, files in os.walk(internal_path):
+                for file in files:
+                    file_path = Path(root) / file
+                    archive.write(file_path, arcname=file_path.relative_to(internal_path.parent))
+        
+        # Remove the original _internal folder
+        shutil.rmtree(internal_path)
+        print("_internal folder compressed and removed successfully")
+        return True
+            
+    except Exception as e:
+        print(f"Error during _internal compression: {e}")
+        return False
+
 def compress_dist_folder(dist_dir, exe_name):
     """Compress the dist folder using py7zr library."""
     try:
@@ -91,8 +124,8 @@ def compress_dist_folder(dist_dir, exe_name):
         print(f"Compressing dist folder to: {archive_path}")
         
         # Create the 7z archive with maximum compression
-        with py7zr.SevenZipFile(archive_path, 'w', filters=[{'id': py7zr.FILTER_LZMA2, 'preset': 9}]) as archive:
-            archive.writeall(files_path, arcname=dist_dir.name)
+        with py7zr.SevenZipFile(archive_path, 'w', filters=[{'id': py7zr.FILTER_LZMA2, 'preset': 2}]) as archive:
+            archive.writeall(files_path, arcname=files_path.name)
         
         print("Compression completed successfully")
         return str(archive_path)
@@ -172,6 +205,9 @@ def build_executable(script_path, exe_name=None, compress=False):
         print(f"Executable created at: '{dist_dir}/{exe_name}'")
         print(f"Project files copied to: '{project_files_dir}'")
 
+        # Compress the _internal folder first
+        # compress_internal_folder(dist_dir, exe_name)
+
         # Compress the dist folder if requested
         if compress:
             archive_path = compress_dist_folder(dist_dir, exe_name)
@@ -187,4 +223,4 @@ def build_executable(script_path, exe_name=None, compress=False):
         print(f"Error: {e}")
 
 if __name__ == "__main__":
-    build_executable("../run_bundle.py", "agent-zero", compress=True)
+    build_executable("../run_bundle.py", "agent-zero", compress=False)
