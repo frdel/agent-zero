@@ -1,17 +1,13 @@
 #!/bin/bash
 
-# # Ensure .bashrc is in the root directory
-# if [ ! -f /root/.bashrc ]; then
-#     cp /etc/skel/.bashrc /root/.bashrc
-#     chmod 444 /root/.bashrc
-# fi
+# Copy all contents from /fs to root directory (/) with overwriting
+cp -r /fs/* / --no-preserve=ownership,mode
 
-# # Ensure .profile is in the root directory
-# if [ ! -f /root/.profile ]; then
-#     cp /etc/skel/.bashrc /root/.profile
-#     chmod 444 /root/.profile
-# fi
+# allow execution of /root/.bashrc and /root/.profile
+chmod 444 /root/.bashrc
+chmod 444 /root/.profile
 
+# update package list to save time later
 apt-get update
 
 # Start SSH service

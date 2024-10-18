@@ -33,8 +33,8 @@ RUN python3 -m venv $VIRTUAL_ENV
 COPY initialize.sh /usr/local/bin/initialize.sh
 RUN chmod +x /usr/local/bin/initialize.sh
 
-# Copy contents of filesystem directory to /
-COPY ./fs/ /
+# Copy contents of filesystem directory to /fs
+COPY ./fs/ /fs
 
 # Ensure the virtual environment and pip setup
 RUN $VIRTUAL_ENV/bin/pip install --upgrade pip
