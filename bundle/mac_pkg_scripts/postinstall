@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Define the source path in the user's Library/Application Support
+SOURCE_PATH="$HOME/Library/Application Support/agent-zero/install"
+
 # Prompt the user to select a folder using an AppleScript dialog
 TARGET_FOLDER=$(osascript <<EOT
     tell application "System Events"
@@ -15,15 +18,15 @@ if [ -n "$TARGET_FOLDER" ]; then
     echo "Installing files to $TARGET_FOLDER"
 
     # Move the installed files to the selected folder
-    mv /tmp/agent-zero/* "$TARGET_FOLDER"
+    mv "$SOURCE_PATH"/* "$TARGET_FOLDER"
 
     # Check if the move operation was successful
     if [ $? -eq 0 ]; then
         echo "Files successfully moved to $TARGET_FOLDER"
 
-        # Remove the /tmp/agent-zero folder
-        rm -rf /tmp/agent-zero
-        echo "/tmp/agent-zero folder removed."
+        # Remove the agent-zero folder in Library/Application Support
+        rm -rf "$SOURCE_PATH"
+        echo "$SOURCE_PATH folder removed."
     else
         echo "Error moving files. Exiting."
         exit 1

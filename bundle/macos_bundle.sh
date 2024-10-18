@@ -22,35 +22,41 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 3. Purge folder ./agent-zero (retry mechanism in case of failure)
-if [ -d "agent-zero" ]; then
-    echo "Deleting agent-zero folder..."
-    rm -rf agent-zero
-    if [ -d "agent-zero" ]; then
-        echo "Error: Unable to delete agent-zero folder, retrying..."
+# 3. Purge folder ./agent-zero-git (retry mechanism in case of failure)
+if [ -d "agent-zero-git" ]; then
+    echo "Deleting agent-zero-git folder..."
+    rm -rf agent-zero-git
+    if [ -d "agent-zero-git" ]; then
+        echo "Error: Unable to delete agent-zero-git folder, retrying..."
         sleep 3
-        rm -rf agent-zero
+        rm -rf agent-zero-git
     fi
-    if [ -d "agent-zero" ]; then
-        echo "Error: Failed to purge agent-zero folder after retry."
+    if [ -d "agent-zero-git" ]; then
+        echo "Error: Failed to purge agent-zero-git folder after retry."
         exit 1
     fi
 fi
 
 # 4. Clone the repository (development branch)
 echo "Cloning the repository (development branch)..."
-git clone --branch development https://github.com/frdel/agent-zero agent-zero
+git clone --branch development https://github.com/frdel/agent-zero agent-zero-git
 if [ $? -ne 0 ]; then
     echo "Error cloning the repository."
     exit 1
 fi
 
 # 5. Change directory to agent-zero
-cd agent-zero || { echo "Error changing directory"; exit 1; }
+# cd agent-zero || { echo "Error changing directory"; exit 1; }
 
 # 6. Install requirements
 echo "Installing requirements from requirements.txt..."
-pip install -r requirements.txt
+pip install -r ./agent-zero-git/requirements.txt
+if [ $? -ne 0 ]; then
+    echo "Error installing requirements."
+    exit 1
+fi
+
+pip install -r ./agent-zero-git/bundle/requirements.txt
 if [ $? -ne 0 ]; then
     echo "Error installing requirements."
     exit 1
@@ -61,7 +67,7 @@ fi
 
 # 8. Run bundle.py
 echo "Running bundle.py..."
-python ./bundle/bundle.py
+python ./agent-zero-git/bundle/bundle.py
 if [ $? -ne 0 ]; then
     echo "Error running bundle.py."
     exit 1
@@ -84,22 +90,24 @@ fi
 
 # 9. Create macOS package
 echo "Creating macOS package..."
-pkgbuild --root ./dist/agent-zero \
+pkgbuild --root ./agent-zero-git/bundle/dist/agent-zero \
          --identifier frdel.agent-zero \
-         --install-location /tmp/agent-zero \
-         --scripts ./mac_pkg_scripts \
+         --install-location "$HOME/Library/Application Support/agent-zero/install" \
+         --scripts ./agent-zero-git/bundle/mac_pkg_scripts \
+         --ownership preserve \
          agent-zero-preinstalled-mac-m1.pkg
+
 if [ $? -ne 0 ]; then
     echo "Error creating macOS package."
     exit 1
 fi
 
-# 10. Remove the agent-zero folder
-echo "Deleting agent-zero folder..."
+# 10. Remove the agent-zero-git folder
+echo "Deleting agent-zero-git folder..."
 cd ..
-rm -rf agent-zero
-if [ -d "agent-zero" ]; then
-    echo "Error: Failed to delete agent-zero folder."
+rm -rf agent-zero-git
+if [ -d "agent-zero-git" ]; then
+    echo "Error: Failed to delete agent-zero-git folder."
     exit 1
 fi
 
