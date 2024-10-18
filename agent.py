@@ -108,7 +108,8 @@ class AgentContext:
             response = await agent.monologue(msg_template)
             superior = agent.data.get("superior", None)
             if superior:
-                await self._process_chain(superior, response, False)
+                response = await self._process_chain(superior, response, False)
+            return response
         except Exception as e:
             agent.handle_critical_exception(e)
 
