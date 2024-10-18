@@ -95,6 +95,7 @@ def timeout_input(prompt, timeout=10):
     return timed_input.timeout_input(prompt=prompt, timeout=timeout)
 
 def run():
+    global context
     print("Initializing framework...")
 
     #load env vars
