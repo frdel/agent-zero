@@ -15,13 +15,13 @@
 
 ## Key concepts
 1. **General-purpose assistant**
-- Agent Zero is not pre-programmed for specific tasks (but can be). It is meant to be a general-purpose personal assistant. Give it a task, and it will gather information, execute commands and code, cooperate with other agent instances, and do its best to accomplish it.
+- Agent Zero is not pre-programmed for specific tasks (but it can be). It is meant to be a general-purpose personal assistant. Give it a task, and it will gather information, execute commands and code, cooperate with other agent instances, and do its best to accomplish it.
 - It has a persistent memory, allowing it to memorize previous solutions, code, facts, instructions, etc., to solve tasks faster and more reliably in the future.
 
 2. **Computer as a tool**
 - Agent Zero uses the operating system as a tool to accomplish its tasks. It has no single-purpose tools pre-programmed. Instead, it can write its own code and use the terminal to create and use its own tools as needed.
 - The only default tools in its arsenal are online search, memory features, communication (with the user and other agents), and code/terminal execution. Everything else is created by the agent itself or can be extended by the user.
-- Tool usage functionality has been developed from scratch to be the most compatible and reliable, even with very small models.
+- Tool-usage functionality has been developed from scratch to be the most compatible and reliable, even with very small models.
 
 * **Default Tools:** Agent Zero includes tools like knowledge, webpage content, code execution, and communication. 
 * **Creating Custom Tools:**  Extend Agent Zero's functionality by creating your own custom tools.
@@ -44,7 +44,7 @@
 - Give your agent a proper system prompt and instructions, and it can do miracles.
 - Agents can communicate with their superiors and subordinates, asking questions, giving instructions, and providing guidance. Instruct your agents in the system prompt on how to communicate effectively.
 - The terminal interface is real-time streamed and interactive. You can stop and intervene at any point. If you see your agent heading in the wrong direction, just stop and tell it right away.
-- There is a lot of freedom in this framework. You can instruct your agents to regularly report back to superiors asking for permission to continue. You can instruct them to use point-scoring systems when deciding when to delegate subtasks. Superiors can double-check subordinates' results and dispute. The possibilities are endless.
+- There is a lot of freedom in this framework. You can instruct your agents to regularly report back to superiors, asking for permission to continue. You can instruct them to use point-scoring systems when deciding when to delegate subtasks. Superiors can double-check subordinates' results and dispute. The possibilities are endless.
 
 ![Agent Zero](/docs/res/splash_wide.png)
 
