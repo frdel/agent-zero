@@ -204,7 +204,7 @@ async def load_chats():
     return jsonify(response)
 
 
-# load chats from json
+# save chats to json
 @app.route("/exportChat", methods=["POST"])
 async def export_chat():
     try:
@@ -219,7 +219,7 @@ async def export_chat():
 
         response = {
             "ok": True,
-            "message": "Chats loaded.",
+            "message": "Chats exported.",
             "ctxid": context.id,
             "content": content,
         }

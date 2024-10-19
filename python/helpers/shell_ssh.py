@@ -33,7 +33,12 @@ class SSHInteractiveSession:
         while True:
             try:
                 self.client.connect(
-                    self.hostname, self.port, self.username, self.password
+                    self.hostname,
+                    self.port,
+                    self.username,
+                    self.password,
+                    allow_agent=False,
+                    look_for_keys=False,
                 )
                 self.shell = self.client.invoke_shell(width=160, height=48)
                 # self.shell.send(f'PS1="{SSHInteractiveSession.ps1_label}"'.encode())

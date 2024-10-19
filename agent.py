@@ -44,6 +44,9 @@ class AgentContext:
         AgentContext._counter += 1
         self.no = AgentContext._counter
 
+        existing = self._contexts.get(self.id, None)
+        if existing:
+            AgentContext.remove(self.id)
         self._contexts[self.id] = self
 
     @staticmethod
