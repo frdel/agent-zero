@@ -33,6 +33,7 @@ def load_json_chats(jsons: list[str]):
     ctxids = []
     for js in jsons:
         data = json.loads(js)
+        if "id" in data: del data["id"] # remove id to get new
         ctx = _deserialize_context(data)
         ctxids.append(ctx.id)
     return ctxids
@@ -102,7 +103,7 @@ def _deserialize_context(data):
 
     context = AgentContext(
         config=config,
-        # id=data.get("id", None), #get new id
+        id=data.get("id", None), #get new id
         name=data.get("name", None),
         log=log,
         paused=False,
