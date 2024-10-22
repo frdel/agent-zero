@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>Agent Zero</title>
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="toast.css">
@@ -14,6 +14,8 @@
             if (window[name]) window[name](...args)
         }
     </script>
+    
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script type="module" src="index.js"></script>
     <script type="text/javascript" src="settings.js"></script>
@@ -24,16 +26,23 @@
     <div class="container">
         <div class="icons-section" id="hide-button" x-data="{ connected: true }">
             <!--Sidebar-->
+            <!-- Sidebar Toggle Button -->
             <button id="toggle-sidebar" class="toggle-sidebar-button" aria-label="Toggle Sidebar" aria-expanded="false">
                 <span aria-hidden="true">
-                    <svg id="sidebar-hamburger-svg" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                        viewBox="0 0 24 24" fill="CurrentColor">
-                        <path
-                            d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
+                    <!-- Hamburger Icon -->
+                    <svg id="sidebar-hamburger-svg" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="CurrentColor">
+                    <path d="M3 13h18v-2H3v2zm0 4h18v-2H3v2zm0-8h18V7H3v2z"></path>
                     </svg>
                 </span>
             </button>
+            
+        <div id="logo-container">
+                <a href="https://github.com/frdel/agent-zero" target="_blank" rel="noopener noreferrer">
+                    <img src="splash.jpg" alt="a0" width="22" height="22">
+                </a>
+            </div>
         </div>
+        
         <div id="left-panel" class="panel">
             <div class="left-panel-top">
                 <!--Sidebar upper elements-->
@@ -45,34 +54,46 @@
 
                 <div class="config-section" x-data="{ showQuickActions: true }">
                     <h3>Quick Actions</h3>
-                    <button class="config-button" id="resetChat" @click="resetChat()">Reset chat</button>
+                    <button class="config-button" id="resetChat" @click="resetChat()">Reset Chat</button>
                     <button class="config-button" id="newChat" @click="newChat()">New Chat</button>
                     <button class="config-button" id="loadChats" @click="loadChats()">Load Chat</button>
                     <button class="config-button" id="loadChat" @click="saveChat()">Save Chat</button>
                     <button class="config-button" id="settings"
                         @click="settingsModalProxy.openModal()">Settings</button>
                 </div>
-
+                <!-- Chats List -->
                 <div class="config-section" id="chats-section" x-data="{ contexts: [], selected: '' }"
-                    x-show="contexts.length > 0">
-                    <h3>Chats</h3>
+                x-show="contexts.length > 0">
+                <h3>Chats</h3>
+                <div class="chats-list-container">
                     <ul class="config-list">
                         <template x-for="context in contexts">
                             <li>
-                                <span :class="{'chat-list-button': true, 'font-bold': context.id === selected}"
-                                    @click="selected = context.id; selectChat(context.id)">
-                                    Chat #<span x-text="context.no"></span>
-                                </span>
-                                <button class="edit-button" @click="killChat(context.id)">X</button>
+                            <span :class="{'chat-list-button': true, 'font-bold': context.id === selected}"
+                                @click="selected = context.id; selectChat(context.id)">
+                                Chat #<span x-text="context.no"></span>
+                            </span>
+                            <button class="edit-button" @click="killChat(context.id)">X</button>
                             </li>
                         </template>
                     </ul>
                 </div>
             </div>
-            <!--Preferences-->
-            <div class="pref-section">
-                <h3>Preferences</h3>
-                <ul class="config-list">
+            </div>
+                   <!--Sidebar lower elements-->
+                <div class="left-panel-bottom">
+            <!-- Preferences -->
+            <div class="pref-section" x-data="{ prefOpen: true }">
+                <span><h3 class="pref-header" @click="prefOpen = !prefOpen">
+                    Preferences
+                    <svg class="arrow-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
+                        fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" 
+                        :class="{'rotated': !prefOpen}">
+                        <path d="M8 4l8 8-8 8"/>
+                    </svg>
+                </h3>
+                <ul class="config-list" x-show="prefOpen" x-collapse x-transition>
+                    <!-- Preferences Items -->
                     <li x-data="{ autoScroll: true }">
                         <span>Autoscroll</span>
                         <label class="switch">
@@ -83,7 +104,7 @@
                     </li>
                     <li x-data="{ darkMode: localStorage.getItem('darkMode') != 'false' }"
                         x-init="$watch('darkMode', val => toggleDarkMode(val))">
-                        <div class="switch-label">Dark mode</div>
+                        <span class="switch-label">Dark mode</span>
                         <label class="switch">
                             <input type="checkbox" x-model="darkMode">
                             <span class="slider"></span>
@@ -112,19 +133,18 @@
                             <span class="slider"></span>
                         </label>
                     </li>
-
-                </ul>
-                <span id="a0version">Agent Zero 0.7<br>built on 2024-10-6</span>
+                    </ul>
+                </span>
+            </div>
+            <!-- Version Info -->
+            <div class="version-info">
+                <span id="a0version">Agent Zero 0.7.1<br>built on 2024-10-16</span>
             </div>
         </div>
+    </div>
         <div id="right-panel" class="panel">
-            <div id="logo-container">
-                <a href="https://github.com/frdel/agent-zero" target="_blank" rel="noopener noreferrer">
-                    <img src="splash.jpg" alt="a0" width="48" height="48">
-                </a>
-                <div id="time-date"></div>
-            </div>
             <!--Chat-->
+            <div id="time-date"></div>
             <div id="chat-history">
             </div>
             <div id="toast" class="toast">
@@ -133,27 +153,30 @@
                 <button class="toast__close">Close</button>
             </div>
             <div id="progress-bar-box">
-                <h4 id="progress-bar-h"><span id="progress-bar-i">|></span><span id="progress-bar"></span></h4>
+            <h4 id="progress-bar-h"><span id="progress-bar-i">|></span><span id="progress-bar"></span></h4>
             </div>
             <div id="input-section" x-data="{ paused: false }">
                 <textarea id="chat-input" placeholder="Type your message here..." rows="1"></textarea>
-                <button class="chat-button" id="send-button" aria-label="Send message">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-                        <path d="M25 20 L75 50 L25 80" fill="none" stroke="currentColor" stroke-width="15" />
-                    </svg>
-                </button>
-                <button class="chat-button pause-button" id="pause-button" @click="pauseAgent(true)" x-show="!paused"
-                    aria-label="Pause agent">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                    </svg>
-                </button>
-                <button class="chat-button pause-button" id="unpause-button" @click="pauseAgent(false)" x-show="paused"
-                    aria-label="Resume agent">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z" />
-                    </svg>
-                </button>
+
+                <div id="chat-buttons-wrapper">
+                    <button class="chat-button" id="send-button" aria-label="Send message">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                        <path d="M25 20 L75 50 L25 80" fill="none" stroke="currentColor" stroke-width="15"></path>
+                        </svg>
+                    </button>
+                    <br>
+                    <button class="chat-button pause-button" id="pause-button" @click="pauseAgent(true)" x-show="!paused" aria-label="Pause agent">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
+                        </svg>
+                    </button>
+                    <button class="chat-button pause-button" id="unpause-button" @click="pauseAgent(false)" x-show="paused" aria-label="Resume agent" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"></path>
+                        </svg>
+                    </button>
+    
+                </div>
             </div>
         </div>
     </div>
