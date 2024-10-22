@@ -104,6 +104,7 @@ async def handle_message(sync: bool):
         text = input.get("text", "")
         ctxid = input.get("context", "")
         blev = input.get("broadcast", 1)
+        thinking_enabled = input.get("thinking_enabled", True)  # New line to get thinking state
 
         # context instance - get or create
         context = get_context(ctxid)
@@ -346,6 +347,33 @@ async def poll():
     response_json = json.dumps(response)
     return Response(response=response_json, status=200, mimetype="application/json")
     # return jsonify(response)
+
+
+# New route to handle the toggle button state
+@app.route("/toggle_thinking", methods=["POST"])
+async def toggle_thinking():
+    try:
+        input = request.get_json()
+        thinking_enabled = input.get("thinking_enabled", True)
+        ctxid = input.get("context", "")
+
+        context = get_context(ctxid)
+        context.thinking_enabled = thinking_enabled
+
+        response = {
+            "ok": True,
+            "message": "Thinking process toggled.",
+            "thinking_enabled": thinking_enabled,
+        }
+
+    except Exception as e:
+        response = {
+            "ok": False,
+            "message": str(e),
+        }
+        PrintStyle.error(str(e))
+
+    return jsonify(response)
 
 
 def run():

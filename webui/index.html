@@ -108,7 +108,14 @@
                             <span class="slider"></span>
                         </label>
                     </li>
-
+                    <li x-data="{ toggleThinking: true }">
+                        <span>Toggle Thinking</span>
+                        <label class="switch">
+                            <input type="checkbox" x-model="toggleThinking"
+                                x-effect="window.safeCall('toggleThinking',toggleThinking)">
+                            <span class="slider"></span>
+                        </label>
+                    </li>
                 </ul>
                 <span id="a0version">Agent Zero 0.7<br>built on 2024-10-6</span>
             </div>

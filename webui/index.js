@@ -17,6 +17,7 @@ const autoScrollSwitch = document.getElementById('auto-scroll-switch');
 
 let autoScroll = true;
 let context = "";
+let thinkingEnabled = true; // New variable to track the thinking state
 
 // Initialize the toggle button 
 setupSidebarToggle();
@@ -63,7 +64,7 @@ async function sendMessage() {
         const message = chatInput.value.trim();
         if (message) {
 
-            const response = await sendJsonData("/msg", { text: message, context });
+            const response = await sendJsonData("/msg", { text: message, context, thinking_enabled: thinkingEnabled });
 
             if (!response) {
                 toast("No response returned.", "error")
@@ -564,3 +565,13 @@ async function startPolling() {
 }
 
 document.addEventListener("DOMContentLoaded", startPolling);
+
+window.toggleThinking = async function (enabled) {
+    thinkingEnabled = enabled;
+    const response = await sendJsonData("/toggle_thinking", { thinking_enabled: enabled, context });
+    if (!response.ok) {
+        toast(response.message, "error");
+    } else {
+        toast("Thinking process " + (enabled ? "enabled" : "disabled"), "success");
+    }
+};
