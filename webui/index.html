@@ -1,25 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>Agent Zero</title>
     <link rel="stylesheet" href="css/index.css">
     <link rel="stylesheet" href="css/toast.css">
+    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.15.1/dist/ort.js"></script> 
 
     <script>
         window.safeCall = function (name, ...args) {
             if (window[name]) window[name](...args)
         }
     </script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.15.1/dist/ort.js"></script>
 
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script type="module" src="./js/index.js"></script>
+    <script type="module" src="js/index.js"></script>
 
 </head>
 

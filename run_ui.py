@@ -31,12 +31,6 @@ app.config["BASIC_AUTH_PASSWORD"] = (
 )  # default pass
 basic_auth = BasicAuth(app)
 
-def run_node_server():
-    node_executable = shutil.which('node')
-    if not node_executable:
-        raise RuntimeError("Node.js executable not found in PATH. Please install Node.js.")
-    node_script = os.path.join(os.path.dirname(__file__), './webui/js/node_server.js')
-    return subprocess.Popen([node_executable, node_script], cwd=os.path.dirname(__file__))
 
 # get context to run agent zero in
 def get_context(ctxid: str):
@@ -360,9 +354,6 @@ def run():
     # load env vars
     load_dotenv()
 
-    # start Node.js server
-    node_process = run_node_server()
-
     # initialize contexts from persisted chats
     persist_chat.load_tmp_chats()
 
@@ -375,12 +366,7 @@ def run():
 
     # run the server on port from .env
     port = int(os.environ.get("WEB_UI_PORT", 0)) or None
-        
-    try:
-        app.run(request_handler=NoRequestLoggingWSGIRequestHandler, port=port)
-    finally:
-        # node.js server kill when Flask stops
-        node_process.terminate()
+    app.run(request_handler=NoRequestLoggingWSGIRequestHandler, port=port)
 
 # run the internal server
 if __name__ == "__main__":

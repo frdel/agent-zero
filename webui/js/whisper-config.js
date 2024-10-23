@@ -2,7 +2,7 @@
 import { env } from '@xenova/transformers';
 
 // location for model files
-env.localModelPath = '../models';
+env.localModelPath = './models';
 
 // Whisper english only tiny model
 env.defaultModelName = 'Xenova/whisper-tiny.en';

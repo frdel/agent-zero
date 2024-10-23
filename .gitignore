@@ -37,9 +37,6 @@ tmp/*
 # Ignore everything in the "knowledge" directory
 knowledge/*
 
-# Ignore node.js packages
-webui/node_modules/*
-
 # Do not ignore subdirectories (so we can track .gitkeep)
 !knowledge/*/
 

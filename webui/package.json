@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "@xenova/transformers": "^2.6.2",
-    "express": "^4.21.1",
     "onnxruntime-web": "^1.15.1"
   }
 }
