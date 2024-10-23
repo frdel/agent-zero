@@ -796,6 +796,20 @@ input:checked + .slider:before {
   background-color: var(--color-primary-light);
 }
 
+/* MIC BUTTON */
+#microphone-button {
+  background-color: var(--color-secondary);
+}
+
+#microphone-button:hover {
+  background-color: var(--color-primary-light);
+}
+
+#microphone-button.recording {
+  background-color: #ff4136; /* Red color for recording */
+}
+
+
 .pause-button {
   background-color: #3270e2;
 }

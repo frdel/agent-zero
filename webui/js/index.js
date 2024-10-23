@@ -1,4 +1,5 @@
 import * as msgs from "./messages.js"
+import { MicrophoneInput } from './MicrophoneInput.js';
 
 const leftPanel = document.getElementById('left-panel');
 const rightPanel = document.getElementById('right-panel');
@@ -12,11 +13,13 @@ const chatsSection = document.getElementById('chats-section');
 const scrollbarThumb = document.querySelector('#chat-history::-webkit-scrollbar-thumb');
 const progressBar = document.getElementById('progress-bar');
 const autoScrollSwitch = document.getElementById('auto-scroll-switch');
+const microphoneButton = document.getElementById('microphone-button');
 
 
 
 let autoScroll = true;
 let context = "";
+let microphoneInput = null;
 
 // Initialize the toggle button 
 setupSidebarToggle();
@@ -57,6 +60,65 @@ function setupSidebarToggle() {
 }
 // Make sure to call this function
 document.addEventListener('DOMContentLoaded', setupSidebarToggle);
+
+async function initializeMicrophoneInput() {
+    microphoneInput = new MicrophoneInput(updateChatInput);
+    await microphoneInput.initialize();
+}
+
+function updateChatInput(text) {
+    chatInput.value += text + ' ';
+    adjustTextareaHeight();
+}
+
+microphoneButton.addEventListener('click', () => {
+    if (!microphoneInput) {
+        initializeMicrophoneInput().then(() => {
+            toggleRecording();
+        });
+    } else {
+        toggleRecording();
+    }
+});
+
+function toggleRecording() {
+    if (microphoneInput.isRecording) {
+        microphoneInput.stopRecording();
+        microphoneButton.classList.remove('recording');
+    } else {
+        microphoneInput.startRecording();
+        microphoneButton.classList.add('recording');
+    }
+}
+
+
+// Some error handling for microphone input
+
+async function requestMicrophonePermission() {
+    try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        return true;
+    } catch (err) {
+        console.error('Error accessing microphone:', err);
+        toast('Microphone access denied. Please enable microphone access in your browser settings.', 'error');
+        return false;
+    }
+}
+
+// microphoneButton click event listener modifier
+microphoneButton.addEventListener('click', async () => {
+    const hasPermission = await requestMicrophonePermission();
+    if (!hasPermission) return;
+
+    if (!microphoneInput) {
+        initializeMicrophoneInput().then(() => {
+            toggleRecording();
+        });
+    } else {
+        toggleRecording();
+    }
+});
+
 
 async function sendMessage() {
     try {

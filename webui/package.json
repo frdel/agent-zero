@@ -1,0 +1,14 @@
+{
+  "name": "agent-zero-webui",
+  "version": "0.7.1",
+  "description": "Web UI for Agent Zero with Whisper Web integration",
+  "main": "js/index.js",
+  "scripts": {
+    "start": "python ../run_ui.py"
+  },
+  "dependencies": {
+    "@xenova/transformers": "^2.6.2",
+    "express": "^4.21.1",
+    "onnxruntime-web": "^1.15.1"
+  }
+}
