@@ -57,7 +57,20 @@ echo Docker installation complete!
 echo Done!
 )
 
-
+REM Set up Python virtual environment
+echo Creating Python virtual environment...
+python -m venv .venv
+IF %ERRORLEVEL% NEQ 0 (
+    echo Failed to create virtual environment. Exiting...
+    exit /b
+)
+REM Activate Python virtual environment
+echo Activating Python virtual environment...
+call .venv\Scripts\activate
+IF %ERRORLEVEL% NEQ 0 (
+    echo Failed to activate virtual environment. Exiting...
+    exit /b
+)
 REM Install required Python packages
 echo Installing required Python packages...
 pip install -r requirements.txt
@@ -65,11 +78,9 @@ IF %ERRORLEVEL% NEQ 0 (
     echo Failed to install Python packages. Please check your setup.
     exit /b
 )
-
 REM Navigate to bundle directory
 echo Setting up bundle environment...
 cd bundle
-
 REM Check for platform and run respective bundle script
 IF "%OS%"=="Windows_NT" (
     echo Running Windows bundle script...
@@ -78,13 +89,10 @@ IF "%OS%"=="Windows_NT" (
     echo Running MacOS bundle script...
     sh macos_bundle.sh
 )
-
 REM Return to main directory
 cd..
-
 REM Display success message for setup
 echo Setup complete.
-
 REM Provide user options to run either CLI or UI mode
 echo.
 echo =============================================
@@ -93,7 +101,6 @@ echo        1. Run CLI
 echo        2. Run UI
 echo =============================================
 set /p option="Enter 1 or 2: "
-
 IF "%option%"=="1" (
     echo Running Agent Zero in CLI mode...
     echo Configure API Keys by: Duplicating example.env, rename it to .env, and add your API keys and then run by running the setup.bat again or by python run_cli.py command.
@@ -107,4 +114,3 @@ IF "%option%"=="1" (
     echo Invalid option selected. Exiting...
     exit /b
 )
-
