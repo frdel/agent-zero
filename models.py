@@ -5,7 +5,7 @@ from langchain_ollama import ChatOllama
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_anthropic import ChatAnthropic
 from langchain_groq import ChatGroq
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings, HuggingFaceEndpoint
 from langchain_google_genai import GoogleGenerativeAI, HarmBlockThreshold, HarmCategory
 from langchain_mistralai import ChatMistralAI
 from pydantic.v1.types import SecretStr
@@ -34,6 +34,9 @@ def get_ollama_embedding(model_name:str, temperature=DEFAULT_TEMPERATURE, base_u
 
 def get_huggingface_embedding(model_name:str):
     return HuggingFaceEmbeddings(model_name=model_name)
+
+def get_huggingface_chat(model_name:str, api_key=get_api_key("huggingface"), temperature=0.01, base_url=os.getenv("HUGGINGFACE_BASE_URL") or "https://api-inference.huggingface.co/models/{model_name}"):
+    return HuggingFaceEndpoint(endpoint_url=model_name, temperature=temperature, huggingfacehub_api_token=api_key) # type: ignore
 
 # LM Studio and other OpenAI compatible interfaces
 def get_lmstudio_chat(model_name:str, temperature=DEFAULT_TEMPERATURE, base_url=os.getenv("LM_STUDIO_BASE_URL") or "http://127.0.0.1:1234/v1"):
