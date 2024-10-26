@@ -5,7 +5,7 @@ from python.helpers import files
 def initialize():
     
     # main chat model used by agents (smarter, more accurate)
-    chat_llm = models.get_openai_chat(model_name="gpt-4o-mini", temperature=0)
+    # chat_llm = models.get_openai_chat(model_name="gpt-4o-mini", temperature=0)
     # chat_llm = models.get_ollama_chat(model_name="llama3.2:3b-instruct-fp16", temperature=0)
     # chat_llm = models.get_lmstudio_chat(model_name="lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF", temperature=0)
     # chat_llm = models.get_openrouter_chat(model_name="openai/o1-mini-2024-09-12")
@@ -15,6 +15,7 @@ def initialize():
     # chat_llm = models.get_mistral_chat(model_name="mistral-small-latest", temperature=0)
     # chat_llm = models.get_groq_chat(model_name="llama-3.2-90b-text-preview", temperature=0)
     # chat_llm = models.get_sambanova_chat(model_name="Meta-Llama-3.1-70B-Instruct-8k", temperature=0)
+    chat_llm = models.get_huggingface_chat(model_name="Qwen/Qwen2.5-72B-Instruct", temperature=0.01)
 
     # utility model used for helper functions (cheaper, faster)
     utility_llm = chat_llm
