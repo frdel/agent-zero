@@ -12,7 +12,7 @@ from python.helpers import files
 from python.helpers.files import get_abs_path
 from python.helpers.print_style import PrintStyle
 from python.helpers.dotenv import load_dotenv
-from python.helpers import persist_chat
+from python.helpers import persist_chat, settings
 
 
 # initialize the internal Flask server
@@ -347,6 +347,51 @@ async def poll():
     return Response(response=response_json, status=200, mimetype="application/json")
     # return jsonify(response)
 
+
+# get current settings
+@app.route("/getSettings", methods=["POST"])
+async def get_settings():
+    try:
+
+        # data sent to the server
+        input = request.get_json()
+
+        set = settings.convert_out(settings.get_settings())
+
+        response = {"ok": True, "settings": set}
+
+    except Exception as e:
+        response = {
+            "ok": False,
+            "message": str(e),
+        }
+        PrintStyle.error(str(e))
+
+    # respond with json
+    return jsonify(response)
+
+# set current settings
+@app.route("/setSettings", methods=["POST"])
+async def set_settings():
+    try:
+
+        # data sent to the server
+        input = request.get_json()
+
+        set = settings.convert_in(input)
+        set = settings.set_settings(set)
+
+        response = {"ok": True, "settings": set}
+
+    except Exception as e:
+        response = {
+            "ok": False,
+            "message": str(e),
+        }
+        PrintStyle.error(str(e))
+
+    # respond with json
+    return jsonify(response)
 
 def run():
     print("Initializing framework...")

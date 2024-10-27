@@ -1,11 +1,11 @@
 import models
 from agent import AgentConfig
-from python.helpers import files
+from python.helpers import files, settings
 
 def initialize():
     
     # main chat model used by agents (smarter, more accurate)
-    chat_llm = models.get_openai_chat(model_name="gpt-4o-mini", temperature=0)
+    # chat_llm = models.get_openai_chat(model_name="gpt-4o-mini", temperature=0)
     # chat_llm = models.get_ollama_chat(model_name="llama3.2:3b-instruct-fp16", temperature=0)
     # chat_llm = models.get_lmstudio_chat(model_name="lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF", temperature=0)
     # chat_llm = models.get_openrouter_chat(model_name="openai/o1-mini-2024-09-12")
@@ -15,22 +15,25 @@ def initialize():
     # chat_llm = models.get_mistral_chat(model_name="mistral-small-latest", temperature=0)
     # chat_llm = models.get_groq_chat(model_name="llama-3.2-90b-text-preview", temperature=0)
     # chat_llm = models.get_sambanova_chat(model_name="Meta-Llama-3.1-70B-Instruct-8k", temperature=0)
+    chat_llm = settings.get_chat_model() # chat model from user settings
 
     # utility model used for helper functions (cheaper, faster)
-    utility_llm = chat_llm
+    # utility_llm = chat_llm
+    utility_llm = settings.get_utility_model() # utility model from user settings
 
     # embedding model used for memory
-    embedding_llm = models.get_openai_embedding(model_name="text-embedding-3-small")
+    # embedding_llm = models.get_openai_embedding(model_name="text-embedding-3-small")
     # embedding_llm = models.get_ollama_embedding(model_name="nomic-embed-text")
     # embedding_llm = models.get_huggingface_embedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
     # embedding_llm = models.get_lmstudio_embedding(model_name="nomic-ai/nomic-embed-text-v1.5-GGUF")
-
+    embedding_llm = settings.get_embedding_model() # embedding model from user settings
+    
     # agent configuration
     config = AgentConfig(
         chat_model = chat_llm,
         utility_model = utility_llm,
         embeddings_model = embedding_llm,
-        # prompts_subdir = "default",
+        prompts_subdir = "dianoia-xl",
         # memory_subdir = "",
         knowledge_subdirs = ["default","custom"],
         auto_memory_count = 0,
