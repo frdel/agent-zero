@@ -7,6 +7,7 @@
     <title>Agent Zero</title>
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="toast.css">
+    <link rel="stylesheet" href="settings.css">
 
     <script>
         window.safeCall = function (name, ...args) {
@@ -15,6 +16,7 @@
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script type="module" src="index.js"></script>
+    <script type="text/javascript" src="settings.js"></script>
 
 </head>
 
@@ -47,6 +49,8 @@
                     <button class="config-button" id="newChat" @click="newChat()">New Chat</button>
                     <button class="config-button" id="loadChats" @click="loadChats()">Load Chat</button>
                     <button class="config-button" id="loadChat" @click="saveChat()">Save Chat</button>
+                    <button class="config-button" id="settings"
+                        @click="settingsModalProxy.openModal()">Settings</button>
                 </div>
 
                 <div class="config-section" id="chats-section" x-data="{ contexts: [], selected: '' }"
@@ -153,6 +157,116 @@
             </div>
         </div>
     </div>
+
+    <div id="settingsModal" x-data="settingsModalProxy">
+        <h1 x-text="settings.title"></h1>
+        <template x-teleport="body">
+            <div x-show="isOpen" class="modal-overlay" @click.self="handleCancel()"
+                x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+                <div class="modal-container">
+                    <div class="modal-header">
+                        <h2 x-text="settings.title"></h2>
+                        <!-- Dynamically generated navigation -->
+                        <nav>
+                            <ul>
+                                <!-- Loop over sections to generate links dynamically -->
+                                <template x-for="(section, index) in settings.sections" :key="index">
+                                    <li>
+                                        <a :href="'#section' + (index + 1)" x-text="section.title"></a>
+                                    </li>
+                                </template>
+                            </ul>
+                        </nav>
+                    </div>
+
+                    <div class="modal-content">
+                        <template x-for="(section, sectionIndex) in settings.sections" :key="sectionIndex">
+                            <div :id="'section' + (sectionIndex + 1)" class="section">
+                                <div class="section-title" x-text="section.title"></div>
+                                <div class="section-description" x-text="section.description"></div>
+
+                                <template x-for="(field, fieldIndex) in section.fields" :key="fieldIndex">
+                                    <div :class="{'field': true, 'field-full': field.type === 'textarea'}">
+                                        <div class="field-label">
+                                            <div class="field-title" x-text="field.title"></div>
+                                            <div class="field-description" x-text="field.description"></div>
+                                        </div>
+
+                                        <div class="field-control">
+                                            <!-- Input field -->
+                                            <template x-if="field.type === 'input'">
+                                                <input type="text" :class="field.classes" :value="field.value"
+                                                    :readonly="field.readonly === true"
+                                                    @input="field.value = $event.target.value">
+                                            </template>
+
+                                            <!-- Textarea field -->
+                                            <template x-if="field.type === 'textarea'">
+                                                <textarea :class="field.classes" :value="field.value"
+                                                    :readonly="field.readonly === true"
+                                                    @input="field.value = $event.target.value"></textarea>
+                                            </template>
+
+                                            <!-- Switch field -->
+                                            <template x-if="field.type === 'switch'">
+                                                <label class="toggle">
+                                                    <input type="checkbox" :checked="field.value"
+                                                        :disabled="field.readonly === true"
+                                                        @change="field.value = $event.target.checked">
+                                                    <span class="toggler"></span>
+                                                </label>
+                                            </template>
+
+                                            <!-- Range field -->
+                                            <template x-if="field.type === 'range'">
+                                                <div class="field-control">
+                                                    <input type="range" :min="field.min" :max="field.max"
+                                                        :step="field.step" :value="field.value"
+                                                        :disabled="field.readonly === true"
+                                                        @input="field.value = $event.target.value"
+                                                        :class="field.classes">
+                                                    <span class="range-value" x-text="field.value"></span>
+                                                </div>
+                                            </template>
+
+                                            <!-- Button field -->
+                                            <template x-if="field.type === 'button'">
+                                                <button class="btn btn-field" :class="field.classes"
+                                                    :disabled="field.readonly === true"
+                                                    @click="handleFieldButton(field)" x-text="field.value"></button>
+                                            </template>
+
+                                            <!-- Select field -->
+                                            <template x-if="field.type === 'select'">
+                                                <select :class="field.classes" x-model="field.value"
+                                                    :disabled="field.readonly === true">
+                                                    <template x-for="option in field.options" :key="option.value">
+                                                        <option :value="option.value" x-text="option.label"
+                                                            :selected="option.value === field.value"></option>
+                                                    </template>
+                                                </select>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="modal-footer">
+                        <template x-for="button in settings.buttons" :key="button.id">
+                            <button :class="button.classes" @click="handleButton(button.id)"
+                                x-text="button.title"></button>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+
+
 </body>
 
 </html>

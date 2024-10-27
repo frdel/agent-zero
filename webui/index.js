@@ -153,7 +153,7 @@ function adjustTextareaHeight() {
     chatInput.style.height = (chatInput.scrollHeight) + 'px';
 }
 
-async function sendJsonData(url, data) {
+window.sendJsonData = async function (url, data) {
     const response = await fetch(url, {
         method: 'POST',
         headers: {
