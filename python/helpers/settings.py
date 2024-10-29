@@ -20,7 +20,6 @@ class Settings(TypedDict):
 
     embed_model_provider: str
     embed_model_name: str
-    embed_model_temperature: float
     embed_model_kwargs: dict[str, str]
 
 
@@ -203,7 +202,6 @@ def get_embedding_model() -> Embeddings:
         type=ModelType.EMBEDDING,
         provider=ModelProvider[settings["embed_model_provider"]],
         name=settings["embed_model_name"],
-        temperature=settings["embed_model_temperature"],
         **settings["embed_model_kwargs"],
     )
 
@@ -232,7 +230,6 @@ def _get_default_settings() -> Settings:
         util_model_kwargs={},
         embed_model_provider=ModelProvider.OPENAI.name,
         embed_model_name="text-embedding-3-small",
-        embed_model_temperature=0,
         embed_model_kwargs={},
     )
 

@@ -348,3 +348,6 @@ class Memory:
     @staticmethod
     def get_timestamp():
         return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+def get_memory_subdir_abs(agent: Agent) -> str:
+    return files.get_abs_path("memory", agent.config.memory_subdir or "default")
