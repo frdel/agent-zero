@@ -29,6 +29,8 @@ def initialize():
     # embedding_llm = models.get_ollama_embedding(model_name="nomic-embed-text")
     # embedding_llm = models.get_huggingface_embedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
     # embedding_llm = models.get_lmstudio_embedding(model_name="nomic-ai/nomic-embed-text-v1.5-GGUF")
+    # embedding_llm = models.get_google_embedding(model_name="models/embedding-001")
+    embedding_llm = models.get_google_embedding(model_name="models/text-embedding-004")
 
     # agent configuration
     config = AgentConfig(
