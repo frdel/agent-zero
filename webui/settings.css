@@ -1,3 +1,11 @@
+* {
+    transition: all var(--transition-speed) ease-in-out;
+}
+
+select {
+  transition: none;
+}
+
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -23,8 +31,8 @@
 }
 
 .modal-header {
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid #eee;
+    padding: 0.875rem 2rem;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .modal-content {
@@ -34,6 +42,8 @@
     background-clip: border-box;
     border: 6px solid transparent;
     transition: all 0.3s ease;
+    margin-bottom: 0;
+    padding-bottom: 0;
 }
 
 .modal-content::-webkit-scrollbar {
@@ -212,19 +222,29 @@ input[type="range"] {
 .btn-ok {
     background: #3270e2;
     color: white;
+    transition: background 0.3s ease-in-out;
 }
 
 .btn-ok:hover{
-    background: #274170;
+    background: #3265c0;
+}
+
+.btn-ok:active{
+    background: #345693;
 }
 
 .btn-cancel {
     background: #ddd;
     color: #333;
+    transition: background 0.3s ease-in-out;
 }
 
 .btn-cancel:hover {
-    background: #222
+    background: #a6a6a6
+}
+
+.btn-cancel:active {
+    background: #808080
 }
 
 .btn-field {
@@ -247,6 +267,7 @@ select {
     font-size: inherit;
     cursor: pointer;
     font-family: Rubik;
+    outline: none;
 }
 
 select:disabled {
