@@ -3,7 +3,7 @@ import os
 import re
 from typing import Any, Optional, TypedDict
 from . import files
-from models import get_model, get_embedding_model, ModelProvider, EmbeddingProvider, ModelType
+from models import get_model, ModelProvider, ModelType
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.embeddings import Embeddings
 
@@ -143,7 +143,7 @@ def convert_out(settings: Settings) -> dict[str, Any]:
             "description": "Select provider for embedding model used by the framework",
             "type": "select",
             "value": settings["embed_model_provider"],
-            "options": [{"value": p.name, "label": p.value} for p in EmbeddingProvider],
+            "options": [{"value": p.name, "label": p.value} for p in ModelProvider],
         }
     )
     embed_model_fields.append(
@@ -237,7 +237,7 @@ def get_embedding_model() -> Embeddings:
     settings = get_settings()
     return get_model(
         type=ModelType.EMBEDDING,
-        provider=EmbeddingProvider[settings["embed_model_provider"]],
+        provider=ModelProvider[settings["embed_model_provider"]],
         name=settings["embed_model_name"],
         **settings["embed_model_kwargs"],
     )
@@ -265,7 +265,7 @@ def _get_default_settings() -> Settings:
         util_model_name="gpt-4o-mini",
         util_model_temperature=0,
         util_model_kwargs={},
-        embed_model_provider=EmbeddingProvider.OPENAI.name,
+        embed_model_provider=ModelProvider.OPENAI.name,
         embed_model_name="text-embedding-3-small",
         embed_model_kwargs={},
     )

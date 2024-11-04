@@ -64,7 +64,7 @@ class MemorizeMemories(Extension):
             memories_txt += "\n\n" + txt
             log_item.update(memories=memories_txt.strip())
 
-            # remove previous solutions too similiar to this one
+            # remove previous fragments too similiar to this one
             if self.REPLACE_THRESHOLD > 0:
                 rem += await db.delete_documents_by_query(
                     query=txt,
