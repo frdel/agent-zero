@@ -44,6 +44,13 @@ class ModelProvider(Enum):
     OPENROUTER = "OpenRouter"
     SAMBANOVA = "Sambanova"
 
+class EmbeddingProvider(Enum):
+    OPENAI = "OpenAI" # default
+    HUGGINGFACE = "HuggingFace"
+    OLLAMA = "Ollama"
+    LMSTUDIO = "LM Studio"
+    OPENROUTER = "OpenRouter"
+    AZURE = "OpenAI Azure"
 
 # Utility function to get API keys from environment variables
 def get_api_key(service):
@@ -53,10 +60,18 @@ def get_api_key(service):
 
 
 def get_model(type: ModelType, provider: ModelProvider, name: str, **kwargs):
+    if type == ModelType.EMBEDDING:
+        # call function for embedding models
+        return get_embedding_model(provider, name, **kwargs)
+    # for other model types
     fnc_name = f"get_{provider.name.lower()}_{type.name.lower()}"  # function name of model getter
     model = globals()[fnc_name](name, **kwargs)  # call function by name
     return model
 
+def get_embedding_model(provider: EmbeddingProvider, name: str, **kwargs):
+    fnc_name = f"get_{provider.name.lower()}_embedding"  # function name for embedding models
+    model = globals()[fnc_name](name, **kwargs)  # call function by name
+    return model
 
 # Ollama models
 def get_ollama_chat(

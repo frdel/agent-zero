@@ -33,7 +33,7 @@ def initialize():
         chat_model = chat_llm,
         utility_model = utility_llm,
         embeddings_model = embedding_llm,
-        prompts_subdir = "dianoia-xl",
+        prompts_subdir = "",
         # memory_subdir = "",
         knowledge_subdirs = ["default","custom"],
         auto_memory_count = 0,

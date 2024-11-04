@@ -27,6 +27,7 @@
   }
   
   .toast__message {
+    margin-left: var(--spacing-xs);
     margin-right: 16px;
     flex-grow: 1;
   }
