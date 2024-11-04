@@ -588,12 +588,13 @@ pre {
   font-optical-sizing: auto;
   font-size: 0.875rem;
   max-height: 7rem;
-  min-height: 1.9rem;
+  min-height: 1.5rem;
   padding: var(--spacing-xs) var(--spacing-sm);
   overflow-y: auto;
   scroll-behavior: smooth;
   resize: none;
-  /* scrollbar padding */
+  align-content: space-around;
+  /* scrollbar padding */  
   background-clip: border-box;
   border: 6px solid transparent;
   transition: all 0.3s ease;
@@ -1042,6 +1043,8 @@ input:checked + .slider:before {
 
   #chat-input {
     min-height: 4.2rem;
+    padding-top: 0.7rem;
+    align-content:baseline;
   }
 }
 

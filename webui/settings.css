@@ -8,7 +8,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1001;
+    z-index: 2001;
 }
 
 .modal-container {
@@ -28,7 +28,7 @@
 }
 
 .modal-content {
-    padding: 2rem;
+    padding: 1.5rem;
     overflow-y: auto;
     flex-grow: 1;
     background-clip: border-box;
@@ -59,7 +59,7 @@
 
 .modal-footer {
     padding: 1.5rem 2rem;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--color-border);
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
@@ -69,7 +69,7 @@
 .section {
     margin-bottom: 2rem;
     padding: 1rem;
-    border: 1px solid #eee;
+    border: 1px solid var(--color-border);
     border-radius: 0.5rem;
 }
 
@@ -85,10 +85,9 @@
 }
 
 .field {
-    margin-bottom: 1.5rem;
     display: grid;
-    grid-template-columns: 200px 1fr;
-    gap: 1rem;
+    margin-block-start: 1rem;
+    grid-template-columns: 250px 1fr;
     align-items: center;
 }
 
@@ -109,12 +108,13 @@
     color: #666;
     font-size: 0.875rem;
     margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
 }
 
 .field-control {
+    width: 100%;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
 }
 
 input[type="text"] {
@@ -131,7 +131,6 @@ textarea {
     padding: 0.5rem;
     border: 1px solid #ddd;
     border-radius: 0.25rem;
-    margin-top: 1rem;
     font-family: Roboto Mono;
     scroll-behavior: smooth;
     resize: none;
@@ -211,13 +210,21 @@ input[type="range"] {
 }
 
 .btn-ok {
-    background: #2196F3;
+    background: #3270e2;
     color: white;
+}
+
+.btn-ok:hover{
+    background: #274170;
 }
 
 .btn-cancel {
     background: #ddd;
     color: #333;
+}
+
+.btn-cancel:hover {
+    background: #222
 }
 
 .btn-field {
@@ -270,8 +277,8 @@ nav ul li a:hover {
 
 @media (max-width: 768px) {
     .modal-header {
-        padding: 1.5rem 2rem;
-        border-bottom: 1px solid #eee;
+        padding: 0.7rem 2rem;
+        border-bottom: 1px solid var(--color-border);
     }
     
     .modal-content {
@@ -291,9 +298,9 @@ nav ul li a:hover {
     }
     
     .section {
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         padding: 1rem;
-        border: 1px solid #eee;
+        border: 1px solid var(--color-border);
         border-radius: 0.5rem;
     }
 
@@ -301,16 +308,12 @@ nav ul li a:hover {
      width: 100%;   
     }
     .field-description {
-     padding-bottom: var(--spacing-xs);
+     padding-bottom: var(--spacing-sm);
     }
     .field {
     padding-top: var(--spacing-xs);
     padding-bottom: var(--spacing-xs);
     display: block;
     align-items: center;
-    }
-    .select {
-        margin-top: 100px !important;
-        padding-bottom: 1rem;
     }
 }
