@@ -94,7 +94,7 @@ class AgentContext:
         return self.process
 
     # this wrapper ensures that superior agents are called back if the chat was loaded from file and original callstack is gone
-    async def _process_chain(self, agent: 'Agent', msg: str, user=True):
+    async def _process_chain(self, agent: "Agent", msg: str, user=True):
         try:
             msg_template = (
                 agent.read_prompt("fw.user_message.md", message=msg)
@@ -112,6 +112,7 @@ class AgentContext:
             return response
         except Exception as e:
             agent.handle_critical_exception(e)
+
 
 @dataclass
 class AgentConfig:

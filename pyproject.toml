@@ -1,0 +1,39 @@
+[project]
+name = "agent-zero"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ansio>=0.0.2",
+    "beautifulsoup4>=4.12.3",
+    "docker>=7.1.0",
+    "duckduckgo-search>=6.3.3",
+    "faiss-cpu==1.8.0.post1",
+    "flask-basicauth>=0.2.0",
+    "flask[async]>=3.0.3",
+    "inputimeout>=1.0.4",
+    "langchain-anthropic>=0.2.4",
+    "langchain-community>=0.3.5",
+    "langchain-google-genai>=2.0.4",
+    "langchain-groq>=0.2.1",
+    "langchain-huggingface>=0.1.2",
+    "langchain-mistralai>=0.2.1",
+    "langchain-ollama>=0.2.0",
+    "langchain-openai>=0.2.5",
+    "lxml-html-clean>=0.3.1",
+    "markdown>=3.7",
+    "newspaper3k>=0.2.8",
+    "paramiko>=3.5.0",
+    "pypdf>=5.1.0",
+    "python-dotenv>=1.0.1",
+    "sentence-transformers>=3.2.1",
+    "unstructured>=0.16.4",
+    "unstructured-client>=0.26.2",
+    "webcolors>=24.8.0",
+    "pinecone>=5.3.1",
+    "black>=24.10.0",
+]
+
+[tool.flake8]
+max-line-length = 120

@@ -20,7 +20,7 @@ class TestJsonParseDirty(unittest.TestCase):
         self.assertEqual(json_parse_dirty(json_string), expected_output)
 
     def test_invalid_json(self):
-        json_string = 'invalid json'
+        json_string = "invalid json"
         self.assertIsNone(json_parse_dirty(json_string))
 
     def test_partial_json(self):
@@ -38,23 +38,25 @@ class TestJsonParseDirty(unittest.TestCase):
         self.assertIsNone(json_parse_dirty(json_string))
 
     def test_agent_response(self):
-        json_string = ('{"thoughts": ["The user wants to save the source code of their Hello, World! application to a '
-                       'file.", "I can use the code_execution_tool with terminal runtime to achieve this."], '
-                       '"tool_name": "code_execution_tool", "tool_args": {"runtime": "terminal", "code": "echo '
-                       '\'print(\'Hello, World!\')\' > hello_world.py"}}')
+        json_string = (
+            '{"thoughts": ["The user wants to save the source code of their Hello, World! application to a '
+            'file.", "I can use the code_execution_tool with terminal runtime to achieve this."], '
+            '"tool_name": "code_execution_tool", "tool_args": {"runtime": "terminal", "code": "echo '
+            "'print('Hello, World!')' > hello_world.py\"}}"
+        )
         expected_result = {
             "thoughts": [
                 "The user wants to save the source code of their Hello, World! application to a file.",
-                "I can use the code_execution_tool with terminal runtime to achieve this."
+                "I can use the code_execution_tool with terminal runtime to achieve this.",
             ],
             "tool_name": "code_execution_tool",
             "tool_args": {
                 "runtime": "terminal",
-                "code": "echo \'print(\'Hello, World!\')\' > hello_world.py"
-            }
+                "code": "echo 'print('Hello, World!')' > hello_world.py",
+            },
         }
         self.assertEqual(json_parse_dirty(json_string), expected_result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

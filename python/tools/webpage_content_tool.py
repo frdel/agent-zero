@@ -28,15 +28,19 @@ class WebpageContentTool(Tool):
 
             # If it's not an article, fall back to BeautifulSoup
             if not article.text:
-                soup = BeautifulSoup(response.content, 'html.parser')
-                text_content = ' '.join(soup.stripped_strings)
+                soup = BeautifulSoup(response.content, "html.parser")
+                text_content = " ".join(soup.stripped_strings)
             else:
                 text_content = article.text
 
-            return Response(message=f"Webpage content:\n\n{text_content}", break_loop=False)
+            return Response(
+                message=f"Webpage content:\n\n{text_content}", break_loop=False
+            )
 
         except requests.RequestException as e:
-            return Response(message=f"Error fetching webpage: {str(e)}", break_loop=False)
+            return Response(
+                message=f"Error fetching webpage: {str(e)}", break_loop=False
+            )
         except Exception as e:
             handle_error(e)
             return Response(message=f"An error occurred: {str(e)}", break_loop=False)

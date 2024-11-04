@@ -1,7 +1,8 @@
 from collections import OrderedDict
 from typing import Any
 import uuid
-from agent import Agent, AgentConfig, AgentContext, HumanMessage, AIMessage
+from agent import Agent, AgentConfig, AgentContext, HumanMessage
+from langchain.schema import AIMessage
 from python.helpers import files
 import json
 from initialize import initialize
@@ -18,6 +19,7 @@ def save_tmp_chat(context: AgentContext):
     js = _safe_json_serialize(data, ensure_ascii=False)
     files.write_file(relative_path, js)
 
+
 def load_tmp_chats():
     json_files = files.list_files("tmp/chats", "*.json")
     ctxids = []
@@ -29,6 +31,7 @@ def load_tmp_chats():
         ctxids.append(ctx.id)
     return ctxids
 
+
 def load_json_chats(jsons: list[str]):
     ctxids = []
     for js in jsons:
@@ -37,10 +40,12 @@ def load_json_chats(jsons: list[str]):
         ctxids.append(ctx.id)
     return ctxids
 
+
 def export_json_chat(context: AgentContext):
     data = _serialize_context(context)
     js = _safe_json_serialize(data, ensure_ascii=False)
     return js
+
 
 def remove_chat(ctxid):
     files.delete_file(_get_file_path(ctxid))
@@ -89,8 +94,9 @@ def _serialize_agent(agent: Agent):
 def _serialize_log(log: Log):
     return {
         "guid": log.guid,
-        "logs": [item.output() for item in log.logs[-LOG_SIZE:]]
-,  # serialize LogItem objects
+        "logs": [
+            item.output() for item in log.logs[-LOG_SIZE:]
+        ],  # serialize LogItem objects
         "progress": log.progress,
         "progress_no": log.progress_no,
     }
@@ -115,7 +121,7 @@ def _deserialize_context(data):
     streaming_agent = agent0
     while streaming_agent.number != data.get("streaming_agent", 0):
         streaming_agent = streaming_agent.data.get("subordinate", None)
-        
+
     context.agent0 = agent0
     context.streaming_agent = streaming_agent
 
@@ -170,18 +176,20 @@ def _deserialize_log(data: dict[str, Any]) -> "Log":
     # Deserialize the list of LogItem objects
     i = 0
     for item_data in data.get("logs", []):
-        log.logs.append(LogItem(
-            log=log,  # restore the log reference
-            no=item_data["no"],
-            type=item_data["type"],
-            heading=item_data.get("heading", ""),
-            content=item_data.get("content", ""),
-            kvps=OrderedDict(item_data["kvps"]) if item_data["kvps"] else None,
-            temp=item_data.get("temp", False),
-        ))
+        log.logs.append(
+            LogItem(
+                log=log,  # restore the log reference
+                no=item_data["no"],
+                type=item_data["type"],
+                heading=item_data.get("heading", ""),
+                content=item_data.get("content", ""),
+                kvps=OrderedDict(item_data["kvps"]) if item_data["kvps"] else None,
+                temp=item_data.get("temp", False),
+            )
+        )
         log.updates.append(i)
         i += 1
-        
+
     return log
 
 

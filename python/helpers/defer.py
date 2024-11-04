@@ -3,6 +3,7 @@ import threading
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any, Callable, Optional, Coroutine
 
+
 class EventLoopThread:
     _instance = None
     _lock = threading.Lock()
@@ -11,20 +12,23 @@ class EventLoopThread:
         with cls._lock:
             if cls._instance is None:
                 cls._instance = super(EventLoopThread, cls).__new__(cls)
-                cls._instance.loop = asyncio.new_event_loop() # type: ignore
-                cls._instance.thread = threading.Thread(target=cls._instance._run_event_loop, daemon=True) # type: ignore
-                cls._instance.thread.start() # type: ignore
+                cls._instance.loop = asyncio.new_event_loop()  # type: ignore
+                cls._instance.thread = threading.Thread(target=cls._instance._run_event_loop, daemon=True)  # type: ignore
+                cls._instance.thread.start()  # type: ignore
             return cls._instance
 
     def _run_event_loop(self):
-        asyncio.set_event_loop(self.loop) # type: ignore
-        self.loop.run_forever() # type: ignore
+        asyncio.set_event_loop(self.loop)  # type: ignore
+        self.loop.run_forever()  # type: ignore
 
     def run_coroutine(self, coro):
-        return asyncio.run_coroutine_threadsafe(coro, self.loop) # type: ignore
+        return asyncio.run_coroutine_threadsafe(coro, self.loop)  # type: ignore
+
 
 class DeferredTask:
-    def __init__(self, func: Callable[..., Coroutine[Any, Any, Any]], *args: Any, **kwargs: Any):
+    def __init__(
+        self, func: Callable[..., Coroutine[Any, Any, Any]], *args: Any, **kwargs: Any
+    ):
         self.func = func
         self.args = args
         self.kwargs = kwargs
@@ -47,20 +51,24 @@ class DeferredTask:
         try:
             return self._future.result(timeout)
         except TimeoutError:
-            raise TimeoutError("The task did not complete within the specified timeout.")
+            raise TimeoutError(
+                "The task did not complete within the specified timeout."
+            )
 
     async def result(self, timeout: Optional[float] = None) -> Any:
         if not self._future:
             raise RuntimeError("Task hasn't been started")
-        
+
         loop = asyncio.get_running_loop()
-        
+
         def _get_result():
             try:
-                return self._future.result(timeout) # type: ignore
+                return self._future.result(timeout)  # type: ignore
             except TimeoutError:
-                raise TimeoutError("The task did not complete within the specified timeout.")
-        
+                raise TimeoutError(
+                    "The task did not complete within the specified timeout."
+                )
+
         return await loop.run_in_executor(None, _get_result)
 
     def kill(self) -> None:
@@ -68,13 +76,15 @@ class DeferredTask:
             self._future.cancel()
 
     def is_alive(self) -> bool:
-        return self._future and not self._future.done() # type: ignore
+        return self._future and not self._future.done()  # type: ignore
 
     def restart(self) -> None:
         self._start_task()
+
 
 def run_in_background(func, *args, **kwargs):
     async def wrapper(*args, **kwargs):
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, func, *args, **kwargs)
+
     return wrapper

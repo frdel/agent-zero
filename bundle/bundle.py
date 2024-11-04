@@ -10,6 +10,7 @@ import importlib.metadata as metadata
 import py7zr
 import zipfile
 
+
 def get_package_data_folder(package_name):
     """Return the package path if it contains data files."""
     try:
@@ -24,8 +25,11 @@ def get_package_data_folder(package_name):
             if has_data:
                 return package_path
     except ImportError:
-        print(f"Warning: Unable to import {package_name}. Skipping data folder discovery for this package.")
+        print(
+            f"Warning: Unable to import {package_name}. Skipping data folder discovery for this package."
+        )
     return None
+
 
 def get_add_data_args():
     """Return an array of --add-data arguments for PyInstaller, one per package."""
@@ -34,8 +38,11 @@ def get_add_data_args():
     for package in installed_packages:
         package_data_folder = get_package_data_folder(package)
         if package_data_folder:
-            add_data_args.append(f"--add-data={package_data_folder}{os.pathsep}{package}")
+            add_data_args.append(
+                f"--add-data={package_data_folder}{os.pathsep}{package}"
+            )
     return add_data_args
+
 
 def get_site_packages_path():
     """Get the path to the site-packages directory of the current environment."""
@@ -48,12 +55,14 @@ def get_site_packages_path():
     else:
         raise RuntimeError("Couldn't determine the site-packages path.")
 
+
 def parse_gitignore(gitignore_path):
     """Parse .gitignore file and return a PathSpec object."""
     if not os.path.exists(gitignore_path):
         return pathspec.PathSpec.from_lines("gitwildmatch", [])
     with open(gitignore_path, "r") as f:
         return pathspec.PathSpec.from_lines("gitwildmatch", f)
+
 
 def copy_project_files(src_dir, dst_dir, spec):
     """Copy project files respecting .gitignore rules using pathspec."""
@@ -68,6 +77,7 @@ def copy_project_files(src_dir, dst_dir, spec):
                 dst_file.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src_file, dst_file)
 
+
 def cleanup_directories(bundle_name, build_dir, dist_dir, keep_dist=False):
     """Remove build directory and .spec file. Optionally keep dist."""
     if not keep_dist and os.path.exists(dist_dir):
@@ -78,37 +88,41 @@ def cleanup_directories(bundle_name, build_dir, dist_dir, keep_dist=False):
     if os.path.exists(spec_file):
         os.remove(spec_file)
 
+
 def compress_internal_folder(dist_dir, exe_name):
     """Compress the _internal folder using zipfile."""
     try:
         internal_path = Path(dist_dir) / exe_name / "_internal"
         archive_path = internal_path.parent / "_internal.zip"
-        
+
         if not internal_path.exists():
             print("Warning: _internal folder not found")
             return False
-            
+
         # Remove existing archive if it exists
         if archive_path.exists():
             archive_path.unlink()
-        
+
         print(f"Compressing _internal folder to: {archive_path}")
-        
+
         # Create the zip archive
-        with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_STORED) as archive:
+        with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_STORED) as archive:
             for root, dirs, files in os.walk(internal_path):
                 for file in files:
                     file_path = Path(root) / file
-                    archive.write(file_path, arcname=file_path.relative_to(internal_path.parent))
-        
+                    archive.write(
+                        file_path, arcname=file_path.relative_to(internal_path.parent)
+                    )
+
         # Remove the original _internal folder
         shutil.rmtree(internal_path)
         print("_internal folder compressed and removed successfully")
         return True
-            
+
     except Exception as e:
         print(f"Error during _internal compression: {e}")
         return False
+
 
 def compress_dist_folder(dist_dir, exe_name):
     """Compress the dist folder using py7zr library."""
@@ -116,23 +130,25 @@ def compress_dist_folder(dist_dir, exe_name):
         archive_path = Path(dist_dir) / f"{exe_name}.7z"
         files_path = Path(dist_dir) / exe_name
 
-        
         # Remove existing archive if it exists
         if archive_path.exists():
             archive_path.unlink()
-        
+
         print(f"Compressing dist folder to: {archive_path}")
-        
+
         # Create the 7z archive with maximum compression
-        with py7zr.SevenZipFile(archive_path, 'w', filters=[{'id': py7zr.FILTER_LZMA2, 'preset': 2}]) as archive:
+        with py7zr.SevenZipFile(
+            archive_path, "w", filters=[{"id": py7zr.FILTER_LZMA2, "preset": 2}]
+        ) as archive:
             archive.writeall(files_path, arcname=files_path.name)
-        
+
         print("Compression completed successfully")
         return str(archive_path)
-            
+
     except Exception as e:
         print(f"Error during compression: {e}")
         return None
+
 
 def build_executable(script_path, exe_name=None, compress=False):
     """Run PyInstaller with the correct site-packages path, clean, and additional data."""
@@ -142,7 +158,7 @@ def build_executable(script_path, exe_name=None, compress=False):
         script_path = (bundling_script_dir / script_path).resolve()
         script_name = script_path.name  # run_bundle.py
         project_dir = script_path.parent  # Folder containing run_bundle.py
-        
+
         # Define build and dist paths under the /bundle directory (bundling_script_dir)
         build_dir = bundling_script_dir / "build"
         dist_dir = bundling_script_dir / "dist"
@@ -175,7 +191,7 @@ def build_executable(script_path, exe_name=None, compress=False):
             "--onedir",
             f"--paths={site_packages_path}",
             f"--workpath={build_dir}",  # Specify the build directory under /bundle
-            f"--distpath={dist_dir}",   # Specify the dist directory under /bundle
+            f"--distpath={dist_dir}",  # Specify the dist directory under /bundle
         ]
 
         # Add data arguments
@@ -221,6 +237,7 @@ def build_executable(script_path, exe_name=None, compress=False):
         print(f"Error during PyInstaller execution: {e}")
     except Exception as e:
         print(f"Error: {e}")
+
 
 if __name__ == "__main__":
     build_executable("../run_bundle.py", "agent-zero", compress=False)

@@ -1,16 +1,19 @@
 def post_install():
     # if "_internal.zip" exists, unzip and remove
     import os
+
     if os.path.exists("_internal.zip"):
         import zipfile
+
         print("\nDecompressing internal binaries...\n")
-        with zipfile.ZipFile("_internal.zip", 'r') as zip_ref:
+        with zipfile.ZipFile("_internal.zip", "r") as zip_ref:
             zip_ref.extractall("_internal")
         os.remove("_internal.zip")
-        
+
+
 def run_bundle():
     print("\nImporting dependencies, this may take a while...\n")
-    
+
     # dependencies to bundle
     import ansio
     import bs4
@@ -44,18 +47,16 @@ def run_bundle():
     import unstructured_client
     import webcolors
 
-
-
     # but do not bundle project files, these are to be imported at runtime
-
-
 
     import sys
     import os
     import importlib.util
 
     # Add the project_files directory to the Python path
-    project_files_dir = os.path.join(os.path.dirname(sys.executable), 'agent-zero-files')
+    project_files_dir = os.path.join(
+        os.path.dirname(sys.executable), "agent-zero-files"
+    )
     sys.path.insert(0, project_files_dir)
 
     # Dynamically load the 'run_ui' module

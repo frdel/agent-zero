@@ -153,7 +153,7 @@ class CodeExecution(Tool):
             full_output, partial_output = await self.state.shell.read_output(
                 timeout=max_exec_time, reset_full_output=reset_full_output
             )
-            reset_full_output = False # only reset once
+            reset_full_output = False  # only reset once
 
             await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
 

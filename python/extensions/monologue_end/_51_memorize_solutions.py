@@ -24,8 +24,8 @@ class MemorizeSolutions(Extension):
             heading="Memorizing succesful solutions...",
         )
 
-        #memorize in background
-        asyncio.create_task(self.memorize(loop_data, log_item))        
+        # memorize in background
+        asyncio.create_task(self.memorize(loop_data, log_item))
 
     async def memorize(self, loop_data: LoopData, log_item: LogItem, **kwargs):
         # get system message and chat history for util llm

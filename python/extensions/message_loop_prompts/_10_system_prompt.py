@@ -12,11 +12,14 @@ class SystemPrompt(Extension):
         loop_data.system.append(main)
         loop_data.system.append(tools)
 
+
 def get_main_prompt(agent: Agent):
     return get_prompt("agent.system.main.md", agent)
 
+
 def get_tools_prompt(agent: Agent):
     return get_prompt("agent.system.tools.md", agent)
+
 
 def get_prompt(file: str, agent: Agent):
     # variables for system prompts
