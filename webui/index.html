@@ -14,7 +14,7 @@
             if (window[name]) window[name](...args)
         }
     </script>
-    
+
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script type="module" src="index.js"></script>
@@ -40,13 +40,13 @@
                 <a href="https://github.com/frdel/agent-zero" target="_blank" rel="noopener noreferrer">
                     <img src="splash.jpg" alt="a0" width="22" height="22">
                 </a>
-            </div>
         </div>
+    </div>
         
-        <div id="left-panel" class="panel">
-            <div class="left-panel-top">
-                <!--Sidebar upper elements-->
-                <div class="config-section" id="status-section" x-data="{ connected: true }">
+    <div id="left-panel" class="panel">
+        <!--Sidebar upper elements-->
+        <div class="left-panel-top">                
+            <div class="config-section" id="status-section" x-data="{ connected: true }">
                     <h3>Status</h3>
                     <h4 class="connected" x-show="connected">&#10004; Connected</h4>
                     <h4 class="disconnected" x-show="!connected">&#10008; Disconnected</h4>
@@ -79,9 +79,9 @@
                     </ul>
                 </div>
             </div>
-            </div>
-                   <!--Sidebar lower elements-->
-                <div class="left-panel-bottom">
+        </div>
+        <!--Sidebar lower elements-->
+        <div class="left-panel-bottom">
             <!-- Preferences -->
             <div class="pref-section" x-data="{ prefOpen: true }">
                 <span><h3 class="pref-header" @click="prefOpen = !prefOpen">
@@ -180,7 +180,6 @@
             </div>
         </div>
     </div>
-
     <div id="settingsModal" x-data="settingsModalProxy">
         <h1 x-text="settings.title"></h1>
         <template x-teleport="body">
@@ -279,16 +278,17 @@
                     </div>
 
                     <div class="modal-footer">
+                        <div id="buttons-container">
                         <template x-for="button in settings.buttons" :key="button.id">
                             <button :class="button.classes" @click="handleButton(button.id)"
                                 x-text="button.title"></button>
                         </template>
+                        </div>
                     </div>
                 </div>
             </div>
         </template>
     </div>
-
 
 </body>
 

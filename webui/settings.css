@@ -8,6 +8,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 1001;
 }
 
 .modal-container {
@@ -30,6 +31,30 @@
     padding: 2rem;
     overflow-y: auto;
     flex-grow: 1;
+    background-clip: border-box;
+    border: 6px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px 0;
+  border-radius: 6px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.5);
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(155, 155, 155, 0.7);
 }
 
 .modal-footer {
@@ -97,6 +122,7 @@ input[type="text"] {
     padding: 0.5rem;
     border: 1px solid #ddd;
     border-radius: 0.25rem;
+    font-family: Rubik;
 }
 
 textarea {
@@ -106,8 +132,13 @@ textarea {
     border: 1px solid #ddd;
     border-radius: 0.25rem;
     margin-top: 1rem;
-    font-family: inherit;
-    resize: vertical;
+    font-family: Roboto Mono;
+    scroll-behavior: smooth;
+    resize: none;
+      /*-/* scrollbar padding */
+      background-clip: border-box;
+      border: 6px solid transparent;
+      transition: all 0.3s ease;
 }
 
 .toggle {
@@ -165,12 +196,18 @@ input[type="range"] {
     text-align: right;
 }
 
+#buttons-container {
+        display: flex;
+        gap: 0.875rem;
+    }
+
 .btn {
-    padding: 0.5rem 1rem;
+    padding: 0.7rem 1.5rem;
     border-radius: 0.25rem;
     cursor: pointer;
     border: none;
     font-size: 0.875rem;
+    font-family: Rubik;
 }
 
 .btn-ok {
@@ -202,6 +239,7 @@ select {
     background-color: white;
     font-size: inherit;
     cursor: pointer;
+    font-family: Rubik;
 }
 
 select:disabled {
@@ -228,4 +266,51 @@ nav ul li a {
 
 nav ul li a:hover {
     text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .modal-header {
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .modal-content {
+        padding: 1rem;
+        overflow-y: auto;
+        flex-grow: 1;
+    }
+    
+    .modal-footer {
+        padding: 1.5rem;
+    }
+
+    #buttons-container {
+        display: flex;
+        gap: 1rem;
+        margin: 0 auto;
+    }
+    
+    .section {
+        margin-bottom: 2rem;
+        padding: 1rem;
+        border: 1px solid #eee;
+        border-radius: 0.5rem;
+    }
+
+    .field-control {
+     width: 100%;   
+    }
+    .field-description {
+     padding-bottom: var(--spacing-xs);
+    }
+    .field {
+    padding-top: var(--spacing-xs);
+    padding-bottom: var(--spacing-xs);
+    display: block;
+    align-items: center;
+    }
+    .select {
+        margin-top: 100px !important;
+        padding-bottom: 1rem;
+    }
 }
