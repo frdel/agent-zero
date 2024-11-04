@@ -15,13 +15,11 @@
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script type="module" src="index.js"></script>
-
 </head>
 
 <body>
     <div class="container">
         <div class="icons-section" id="hide-button" x-data="{ connected: true }">
-            <!--Sidebar-->
             <button id="toggle-sidebar" class="toggle-sidebar-button" aria-label="Toggle Sidebar" aria-expanded="false">
                 <span aria-hidden="true">
                     <svg id="sidebar-hamburger-svg" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -34,7 +32,6 @@
         </div>
         <div id="left-panel" class="panel">
             <div class="left-panel-top">
-                <!--Sidebar upper elements-->
                 <div class="config-section" id="status-section" x-data="{ connected: true }">
                     <h3>Status</h3>
                     <h4 class="connected" x-show="connected">&#10004; Connected</h4>
@@ -65,51 +62,86 @@
                     </ul>
                 </div>
             </div>
-            <!--Preferences-->
             <div class="pref-section">
                 <h3>Preferences</h3>
                 <ul class="config-list">
                     <li x-data="{ autoScroll: true }">
-                        <span>Autoscroll</span>
+                        <label class="switch-label" for="auto-scroll-switch">Autoscroll</label>
                         <label class="switch">
                             <input id="auto-scroll-switch" type="checkbox" x-model="autoScroll"
-                                x-effect="window.safeCall('toggleAutoScroll',autoScroll)">
+                                x-effect="window.safeCall('toggleAutoScroll',autoScroll)" 
+                                title="Toggle autoscroll">
                             <span class="slider"></span>
                         </label>
                     </li>
                     <li x-data="{ darkMode: localStorage.getItem('darkMode') != 'false' }"
                         x-init="$watch('darkMode', val => toggleDarkMode(val))">
-                        <div class="switch-label">Dark mode</div>
+                        <label class="switch-label" for="dark-mode-switch">Dark mode</label>
                         <label class="switch">
-                            <input type="checkbox" x-model="darkMode">
+                            <input id="dark-mode-switch" type="checkbox" x-model="darkMode" 
+                                title="Toggle dark mode">
                             <span class="slider"></span>
                         </label>
                     </li>
                     <li x-data="{ showThoughts: true }">
-                        <span>Show thoughts</span>
+                        <label class="switch-label" for="show-thoughts-switch">Show thoughts</label>
                         <label class="switch">
-                            <input type="checkbox" x-model="showThoughts"
-                                x-effect="window.safeCall('toggleThoughts',showThoughts)">
+                            <input id="show-thoughts-switch" type="checkbox" x-model="showThoughts"
+                                x-effect="window.safeCall('toggleThoughts',showThoughts)" 
+                                title="Toggle thoughts visibility">
                             <span class="slider"></span>
                         </label>
                     </li>
                     <li x-data="{ showJson: false }">
-                        <span>Show JSON</span>
+                        <label class="switch-label" for="show-json-switch">Show JSON</label>
                         <label class="switch">
-                            <input type="checkbox" x-model="showJson" x-effect="window.safeCall('toggleJson',showJson)">
+                            <input id="show-json-switch" type="checkbox" x-model="showJson" 
+                                x-effect="window.safeCall('toggleJson',showJson)"
+                                title="Toggle JSON visibility">
                             <span class="slider"></span>
                         </label>
                     </li>
                     <li x-data="{ showUtils: false }">
-                        <span>Show utility messages</span>
+                        <label class="switch-label" for="show-utils-switch">Show utility messages</label>
                         <label class="switch">
-                            <input type="checkbox" x-model="showUtils"
-                                x-effect="window.safeCall('toggleUtils',showUtils)">
+                            <input id="show-utils-switch" type="checkbox" x-model="showUtils"
+                                x-effect="window.safeCall('toggleUtils',showUtils)"
+                                title="Toggle utility messages visibility">
                             <span class="slider"></span>
                         </label>
                     </li>
-
                 </ul>
+                <div class="config-section" id="model-selection">
+                    <h3>Select Models</h3>
+                    <div class="model-select">
+                        <label for="chat-model">Chat Model:</label>
+                        <select id="chat-model" title="Select chat model">
+                            <!-- Options will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="model-select">
+                        <label for="utility-model">Utility Model:</label>
+                        <select id="utility-model" title="Select utility model">
+                            <!-- Options will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="model-select">
+                        <label for="embedding-model">Embedding Model:</label>
+                        <select id="embedding-model" title="Select embedding model">
+                            <!-- Options will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <button id="save-models-button" class="config-button">Save Models</button>
+                </div>
+                <div class="config-section">
+                    <h3>Settings</h3>
+                    <div class="temperature-control">
+                        <label for="temperature">Temperature:</label>
+                        <input type="number" id="temperature" name="temperature" min="0" max="1" step="0.1" value="0.7"
+                            title="Set model temperature">
+                        <button onclick="updateTemperature()" class="config-button">Set Temperature</button>
+                    </div>
+                </div>
                 <span id="a0version">Agent Zero 0.7<br>built on 2024-10-6</span>
             </div>
         </div>
@@ -120,7 +152,6 @@
                 </a>
                 <div id="time-date"></div>
             </div>
-            <!--Chat-->
             <div id="chat-history">
             </div>
             <div id="toast" class="toast">
@@ -132,7 +163,8 @@
                 <h4 id="progress-bar-h"><span id="progress-bar-i">|></span><span id="progress-bar"></span></h4>
             </div>
             <div id="input-section" x-data="{ paused: false }">
-                <textarea id="chat-input" placeholder="Type your message here..." rows="1"></textarea>
+                <textarea id="chat-input" placeholder="Type your message here..." rows="1" 
+                    title="Chat input"></textarea>
                 <button class="chat-button" id="send-button" aria-label="Send message">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
                         <path d="M25 20 L75 50 L25 80" fill="none" stroke="currentColor" stroke-width="15" />

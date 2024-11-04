@@ -1,20 +1,22 @@
 import asyncio
 from dataclasses import dataclass, field
-import time, importlib, inspect, os, json
-from typing import Any, Optional, Dict, TypedDict
 import uuid
+from typing import Any, Dict, Callable
 from python.helpers import extract_tools, rate_limiter, files, errors
 from python.helpers.print_style import PrintStyle
-from langchain.schema import AIMessage
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.language_models.llms import BaseLLM
-from langchain_core.embeddings import Embeddings
+from langchain import (
+    AIMessage,
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain.language_models import BaseChatModel, BaseLLM
+from langchain.embeddings import Embeddings
 import python.helpers.log as Log
 from python.helpers.dirty_json import DirtyJson
 from python.helpers.defer import DeferredTask
-from typing import Callable
+from agent.agent_types import AgentException  # Add this import
 
 
 class AgentContext:
@@ -93,7 +95,8 @@ class AgentContext:
 
         return self.process
 
-    # this wrapper ensures that superior agents are called back if the chat was loaded from file and original callstack is gone
+    # this wrapper ensures that superior agents are called back if the chat was loaded from file
+    # and the original callstack is gone
     async def _process_chain(self, agent: "Agent", msg: str, user=True):
         try:
             msg_template = (
@@ -116,14 +119,13 @@ class AgentContext:
 
 @dataclass
 class AgentConfig:
-    chat_model: BaseChatModel | BaseLLM
-    utility_model: BaseChatModel | BaseLLM
-    embeddings_model: Embeddings
+    chat_model: str
+    utility_model: str
+    embeddings_model: str
     prompts_subdir: str = ""
     memory_subdir: str = ""
     knowledge_subdirs: list[str] = field(default_factory=lambda: ["default", "custom"])
     auto_memory_count: int = 3
-    auto_memory_skip: int = 2
     rate_limit_seconds: int = 60
     rate_limit_requests: int = 15
     rate_limit_input_tokens: int = 0
@@ -136,14 +138,8 @@ class AgentConfig:
     code_exec_docker_enabled: bool = True
     code_exec_docker_name: str = "agent-zero-exe"
     code_exec_docker_image: str = "frdel/agent-zero-exe:latest"
-    code_exec_docker_ports: dict[str, int] = field(
+    code_exec_docker_ports: Dict[str, int] = field(
         default_factory=lambda: {"22/tcp": 50022}
-    )
-    code_exec_docker_volumes: dict[str, dict[str, str]] = field(
-        default_factory=lambda: {
-            files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"},
-            files.get_abs_path("instruments"): {"bind": "/instruments", "mode": "rw"},
-        }
     )
     code_exec_ssh_enabled: bool = True
     code_exec_ssh_addr: str = "localhost"
@@ -212,7 +208,8 @@ class Agent:
     def __init__(
         self, number: int, config: AgentConfig, context: AgentContext | None = None
     ):
-
+        if config is None:
+            raise AgentException("AgentConfig must be provided")
         # agent config
         self.config = config
 

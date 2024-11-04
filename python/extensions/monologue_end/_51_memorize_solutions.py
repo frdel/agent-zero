@@ -2,7 +2,7 @@ import asyncio
 from python.helpers.extension import Extension
 from python.helpers.memory import Memory
 from python.helpers.dirty_json import DirtyJson
-from agent import LoopData
+from agent import LoopData, Agent
 from python.helpers.log import LogItem
 
 
@@ -10,7 +10,8 @@ class MemorizeSolutions(Extension):
 
     REPLACE_THRESHOLD = 0.9
 
-    async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
+    async def execute(self, agent: Agent):
+        solutions = agent.concat_messages(agent.history)
         # try:
 
         # show temp info message

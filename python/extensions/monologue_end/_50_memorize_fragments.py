@@ -2,9 +2,15 @@ import asyncio
 from python.helpers.extension import Extension
 from python.helpers.memory import Memory
 from python.helpers.dirty_json import DirtyJson
-from agent import LoopData
+from agent import LoopData, Agent
 from python.helpers.log import LogItem
 from python.helpers.defer import run_in_background
+
+
+class MemorizeFragments(Extension):
+    async def execute(self, agent: Agent):
+        fragments = agent.concat_messages(agent.history)
+        # Further implementation...
 
 
 class MemorizeMemories(Extension):

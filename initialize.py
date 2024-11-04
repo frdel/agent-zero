@@ -6,10 +6,11 @@ for the agent system. It provides a centralized way to configure model parameter
 knowledge directories, and system settings.
 """
 
+import json
+import os
 from typing import List, Optional
 import models
-from agent import AgentConfig
-from agent.config import ConfigValidator
+from agent.config import AgentConfig, ConfigValidator
 from python.helpers.log import Log, LogItem
 
 # Default configuration values
@@ -21,12 +22,34 @@ DEFAULT_KNOWLEDGE_SUBDIRS = ["default", "custom"]
 DEFAULT_AUTO_MEMORY_COUNT = 0
 DEFAULT_RATE_LIMIT = 30
 DEFAULT_MAX_TOOL_RESPONSE = 3000
+CONFIG_FILE = "config.json"
+
+
+def load_selected_models():
+    if not os.path.exists(CONFIG_FILE):
+        return {
+            "chat_model": "gpt-4o-mini",
+            "utility_model": "gpt-4o-mini",
+            "embedding_model": "text-embedding-3-small",
+        }
+    with open(CONFIG_FILE, "r") as f:
+        return json.load(f)
+
+
+def load_config():
+    with open("config.json", "r") as f:
+        return json.load(f)
+
+
+config = load_config()
+default_model = config.get("default_model", "default_model_name")
+temperature = config.get("default_temperature", 0.7)
 
 
 def initialize(
-    chat_model: str = DEFAULT_CHAT_MODEL,
-    utility_model: str = DEFAULT_UTILITY_MODEL,
-    embedding_model: str = DEFAULT_EMBEDDING_MODEL,
+    chat_model: Optional[str] = None,
+    utility_model: Optional[str] = None,
+    embedding_model: Optional[str] = None,
     temperature: float = DEFAULT_TEMPERATURE,
     knowledge_subdirs: Optional[List[str]] = None,
     auto_memory_count: int = DEFAULT_AUTO_MEMORY_COUNT,
@@ -57,11 +80,20 @@ def initialize(
         Exception: If model initialization fails
     """
     try:
+        models_selected = load_selected_models()
+        chat_model = chat_model or models_selected.get("chat_model", DEFAULT_CHAT_MODEL)
+        utility_model = utility_model or models_selected.get(
+            "utility_model", DEFAULT_UTILITY_MODEL
+        )
+        embedding_model = embedding_model or models_selected.get(
+            "embedding_model", DEFAULT_EMBEDDING_MODEL
+        )
+
         # Initialize language models
-        chat_llm = models.get_anthropic_chat(
+        chat_llm = models.get_openai_chat(
             model_name=chat_model, temperature=temperature
         )
-        utility_llm = models.get_groq_chat(
+        utility_llm = models.get_openai_chat(
             model_name=utility_model, temperature=temperature
         )
         embedding_llm = models.get_openai_embedding(model_name=embedding_model)
@@ -73,10 +105,14 @@ def initialize(
             embeddings_model=embedding_llm,
             knowledge_subdirs=knowledge_subdirs or DEFAULT_KNOWLEDGE_SUBDIRS,
             auto_memory_count=auto_memory_count,
+            rate_limit_seconds=60,  # Example value
             rate_limit_requests=rate_limit,
-            max_tool_response_length=max_tool_response,
-            code_exec_docker_enabled=enable_docker,
-            code_exec_ssh_enabled=enable_ssh,
+            rate_limit_input_tokens=0,
+            rate_limit_output_tokens=0,
+            msgs_keep_max=25,
+            max_tool_response_length=max_tool_response,  # Add this line
+            code_exec_docker_enabled=enable_docker,     # Add this line
+            code_exec_ssh_enabled=enable_ssh,           # Add this line
         )
 
         # Validate configuration

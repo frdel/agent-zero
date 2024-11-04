@@ -271,7 +271,7 @@ h4 {
   align-items: left;
   justify-content: flex-start;
   height: 1.2em;
-  text-wrap: ellipsis;
+  text-overflow: ellipsis;
   overflow: hidden;
   font-weight: normal;
 }
@@ -406,7 +406,6 @@ h4 {
   color: var(--color-text);
   font-size: var(--font-size-small);
   margin-bottom: var(--spacing-xs);
-  opacity: 0.7;
 }
 .msg-kvps {
   font-size: 0.9em;
@@ -505,7 +504,7 @@ h4 {
   margin-bottom: var(--spacing-xs);
   /* margin-right: var(--spacing-xs); */
   padding: var(--spacing-sm) 0.75rem;
-  text-wrap: nowrap;
+  white-space: nowrap;
   background-color: var(--color-secondary);
   width: 48%;
 }
@@ -858,4 +857,35 @@ input:checked + .slider:before {
     flex-shrink: 0;
     text-wrap: nowrap;
   }
+}
+
+/* Add this to `webui/index.css` */
+
+#model-selection {
+    margin-bottom: var(--spacing-md);
+}
+
+.model-select {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.model-select label {
+    width: 150px;
+    font-weight: bold;
+}
+
+.model-select select {
+    flex-grow: 1;
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--spacing-xs);
+    background-color: var(--color-input);
+    color: var(--color-text);
+}
+
+#save-models-button {
+    width: 100%;
+    margin-top: var(--spacing-sm);
 }

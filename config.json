@@ -1,0 +1,32 @@
+{
+    "chat_model": "llama-3.2-90b-text-preview",
+    "utility_model": "llama-3.2-90b-text-preview",
+    "embedding_model": "text-embedding-3-small",
+    "available_models": {
+        "chat": [
+            "gpt-4o-mini",
+            "llama3.2:3b-instruct-fp16",
+            "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF",
+            "openai/o1-mini-2024-09-12",
+            "claude-3-5-sonnet-20241022",
+            "gemini-1.5-flash",
+            "mistral-small-latest",
+            "llama-3.2-90b-text-preview",
+            "Meta-Llama-3.1-70B-Instruct-8k"
+        ],
+        "utility": [
+            "gpt-4o-mini",
+            "llama3.2:3b-instruct-fp16",
+            "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF",
+            "openai/o1-mini-2024-09-12",
+            "claude-3-5-sonnet-20241022",
+            "gemini-1.5-flash",
+            "mistral-small-latest",
+            "llama-3.2-90b-text-preview",
+            "Meta-Llama-3.1-70B-Instruct-8k"
+        ],
+        "embedding": [
+            "text-embedding-3-small"
+        ]
+    }
+}

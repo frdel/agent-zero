@@ -13,6 +13,7 @@ from python.helpers.files import get_abs_path
 from python.helpers.print_style import PrintStyle
 from python.helpers.dotenv import load_dotenv
 from python.helpers import persist_chat
+import python.helpers.log as Log
 
 
 # initialize the internal Flask server
@@ -29,6 +30,53 @@ app.config["BASIC_AUTH_PASSWORD"] = (
     os.environ.get("BASIC_AUTH_PASSWORD") or "admin"
 )  # default pass
 basic_auth = BasicAuth(app)
+
+# Use absolute path for CONFIG_FILE
+CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+
+
+def load_selected_models():
+    if not os.path.exists(CONFIG_FILE):
+        return {
+            "chat_model": "gpt-4o-mini",
+            "utility_model": "gpt-4o-mini",
+            "embedding_model": "text-embedding-3-small",
+        }
+    with open(CONFIG_FILE, "r") as f:
+        return json.load(f)
+
+
+def save_selected_models(models):
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(models, f, indent=4)
+
+
+@app.route("/api/models", methods=["GET"])
+def get_models():
+    selected_models = load_selected_models()
+    print(f"Loaded models: {selected_models}")  # Debugging Statement
+    return jsonify(selected_models), 200
+
+
+@app.route("/api/models", methods=["POST"])
+def update_models():
+    data = request.get_json()
+    required_keys = {"chat_model", "utility_model", "embedding_model"}
+    if not required_keys.issubset(data.keys()):
+        return jsonify({"error": "Missing model parameters"}), 400
+    save_selected_models(data)
+    # Reinitialize AgentConfig if necessary
+    try:
+        config = initialize(
+            chat_model=data["chat_model"],
+            utility_model=data["utility_model"],
+            embedding_model=data["embedding_model"],
+        )
+        print(f"Updated models: {data}")  # Debugging Statement
+        return jsonify({"message": "Models updated successfully"}), 200
+    except Exception as e:
+        print(f"Error initializing models: {e}")  # Debugging Statement
+        return jsonify({"error": str(e)}), 500
 
 
 # get context to run agent zero in
@@ -67,6 +115,7 @@ def requires_auth(f):
 
 # handle default address, show demo html page from ./test_form.html
 @app.route("/", methods=["GET"])
+@basic_auth.required
 async def test_form():
     return Path(get_abs_path("./webui/index.html")).read_text()
 
@@ -346,6 +395,12 @@ async def poll():
     response_json = json.dumps(response)
     return Response(response=response_json, status=200, mimetype="application/json")
     # return jsonify(response)
+
+
+@app.route("/")
+@basic_auth.required
+def home():
+    return "Hello, World!"
 
 
 def run():

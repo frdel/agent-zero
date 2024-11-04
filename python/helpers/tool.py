@@ -67,3 +67,13 @@ class Tool:
         words = [words[0].capitalize()] + [word.lower() for word in words[1:]]
         result = " ".join(words)
         return result
+
+
+class Agent:
+    def __init__(
+        self, number: int, config: AgentConfig, context: AgentContext | None = None
+    ):
+        # Existing initialization code...
+        
+        self.agent_name = f"Agent {self.number}"  # Add this line
+        self.context = context                     # Ensure context is set

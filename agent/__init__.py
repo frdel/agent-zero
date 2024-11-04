@@ -1,6 +1,8 @@
 # D:\Dev2\agent-zero\agent\__init__.py
 
 from .agent_types import LoopData
+from .agent_context import AgentContext
+from .config import AgentConfig  # Fixed import to use correct module
 
 
 class Agent:
@@ -16,4 +18,4 @@ class Agent:
 
 
 # Export the classes
-__all__ = ["Agent", "LoopData"]
+__all__ = ["Agent", "LoopData", "AgentContext", "AgentConfig"]

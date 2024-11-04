@@ -11,4 +11,7 @@
     "github.copilot.chat.inlineChatCompletionTrigger.enabled": true,
     "github.copilot.chat.generateTests.codeLens": true,
     "github.copilot.chat.scopeSelection": true,
+    "[html]": {
+        "editor.defaultFormatter": "vscode.html-language-features"
+    },
 }

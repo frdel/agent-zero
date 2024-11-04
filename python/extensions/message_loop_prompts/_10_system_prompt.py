@@ -11,6 +11,7 @@ class SystemPrompt(Extension):
         tools = get_tools_prompt(self.agent)
         loop_data.system.append(main)
         loop_data.system.append(tools)
+        loop_data.system.append("System prompt added by _10_system_prompt.")
 
 
 def get_main_prompt(agent: Agent):

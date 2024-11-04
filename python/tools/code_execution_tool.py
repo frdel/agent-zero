@@ -8,6 +8,7 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
 from python.helpers.docker import DockerContainerManager
+from agent.agent_types import Agent  # Added missing import
 
 
 @dataclass
@@ -16,15 +17,23 @@ class State:
     docker: DockerContainerManager | None
 
 
-class CodeExecution(Tool):
+class CodeExecutionTool(Tool):
+    def __init__(self, agent: Agent, name: str, args: dict, message: str):
+        super().__init__(agent, name, args, message)
+        self.context = agent.context            
+        self.agent_name = agent.agent_name      
 
     async def execute(self, **kwargs):
+        await self.agent.handle_intervention()
+        code = self.args.get("code", "")
+        prompt = self.agent.read_prompt("execute_code.md", code=code)
+        await self.agent.append_message(f"Executing code:\n{code}")
+        # Further implementation...
 
+    async def execute(self, **kwargs):
         await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
 
         await self.prepare_state()
-
-        # os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
 
         runtime = self.args.get("runtime", "").lower().strip()
 
@@ -80,7 +89,6 @@ class CodeExecution(Tool):
     async def prepare_state(self, reset=False):
         self.state = self.agent.get_data("cot_state")
         if not self.state or reset:
-
             # initialize docker container if execution in docker is configured
             if self.agent.config.code_exec_docker_enabled:
                 docker = DockerContainerManager(
@@ -124,7 +132,6 @@ class CodeExecution(Tool):
         return await self.terminal_session(command, reset)
 
     async def terminal_session(self, command: str, reset: bool = False):
-
         await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
         if reset:
             await self.reset_terminal()
@@ -175,3 +182,26 @@ class CodeExecution(Tool):
         response = self.agent.read_prompt("fw.code_reset.md")
         self.log.update(content=response)
         return response
+
+def list_available_models():
+    available_models = {
+        "chat_model": [
+            "gpt-4o-mini",
+            "llama3.2:3b-instruct-fp16",
+            "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF",
+            "openai/o1-mini-2024-09-12",
+            "azure_openai_chat",
+            "claude-3-5-sonnet-20241022",
+            "gemini-1.5-flash",
+            "mistral-small-latest",
+            "llama-3.2-90b-text-preview",
+            "Meta-Llama-3.1-70B-Instruct-8k"
+        ],
+        "utility_model": [
+            # ...existing utility models...
+        ],
+        "embedding_model": [
+            # ...existing embedding models...
+        ]
+    }
+    return available_models
