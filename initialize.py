@@ -1,75 +1,98 @@
+"""
+Agent initialization module.
+
+This module handles the initialization of language models and configuration
+for the agent system. It provides a centralized way to configure model parameters,
+knowledge directories, and system settings.
+"""
+
+from typing import List, Optional
 import models
 from agent import AgentConfig
-from python.helpers import files
+from agent.config import ConfigValidator
+from python.helpers.log import Log, LogItem
+
+# Default configuration values
+DEFAULT_CHAT_MODEL = "claude-3-5-sonnet-20241022"
+DEFAULT_UTILITY_MODEL = "llama-3.2-90b-text-preview"
+DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small"
+DEFAULT_TEMPERATURE = 0.5
+DEFAULT_KNOWLEDGE_SUBDIRS = ["default", "custom"]
+DEFAULT_AUTO_MEMORY_COUNT = 0
+DEFAULT_RATE_LIMIT = 30
+DEFAULT_MAX_TOOL_RESPONSE = 3000
 
 
-def initialize():
-    # main chat model used by agents (smarter, more accurate)
-    # chat_llm = models.get_openai_chat(model_name="gpt-4o-mini", temperature=0.5)
-    # chat_llm = models.get_ollama_chat(model_name="llama3.2:3b-instruct-fp16", temperature=0)
-    # chat_llm = models.get_lmstudio_chat(model_name="lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF", temperature=0)
-    # chat_llm = models.get_openrouter_chat(model_name="openai/o1-mini-2024-09-12")
-    # chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o-mini", temperature=0)
-    chat_llm = models.get_anthropic_chat(model_name="claude-3-5-sonnet-20241022", temperature=0.5)
-    # chat_llm = models.get_google_chat(model_name="gemini-1.5-flash", temperature=0)
-    # chat_llm = models.get_mistral_chat(model_name="mistral-small-latest", temperature=0)
-    # chat_llm = models.get_groq_chat(model_name="llama-3.2-90b-text-preview", temperature=0)
-    # chat_llm = models.get_sambanova_chat(model_name="Meta-Llama-3.1-70B-Instruct-8k", temperature=0)
+def initialize(
+    chat_model: str = DEFAULT_CHAT_MODEL,
+    utility_model: str = DEFAULT_UTILITY_MODEL,
+    embedding_model: str = DEFAULT_EMBEDDING_MODEL,
+    temperature: float = DEFAULT_TEMPERATURE,
+    knowledge_subdirs: Optional[List[str]] = None,
+    auto_memory_count: int = DEFAULT_AUTO_MEMORY_COUNT,
+    rate_limit: int = DEFAULT_RATE_LIMIT,
+    max_tool_response: int = DEFAULT_MAX_TOOL_RESPONSE,
+    enable_docker: bool = True,
+    enable_ssh: bool = True,
+) -> AgentConfig:
+    """
+    Initialize the agent configuration with language models and settings.
 
-    # utility model used for helper functions (cheaper, faster)
-    # utility_llm = chat_llm
-    # main chat model used by agents (smarter, more accurate)
-    # utility_llm = models.get_openai_chat(model_name="gpt-4o-mini", temperature=0.5)
-    # utility_llm = models.get_ollama_chat(model_name="llama3.2:3b-instruct-fp16", temperature=0)
-    # utility_llm = models.get_lmstudio_chat(model_name="lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF", temperature=0)
-    # utility_llm = models.get_openrouter_chat(model_name="openai/o1-mini-2024-09-12")
-    # utility_llm = models.get_azure_openai_chat(deployment_name="gpt-4o-mini", temperature=0)
-    # utility_llm = models.get_anthropic_chat(model_name="claude-3-5-sonnet-20241022", temperature=0)
-    # utility_llm = models.get_google_chat(model_name="gemini-1.5-flash", temperature=0)
-    # utility_llm = models.get_mistral_chat(model_name="mistral-small-latest", temperature=0)
-    utility_llm = models.get_groq_chat(model_name="llama-3.2-90b-text-preview", temperature=0.5)
-    # utility_llm = models.get_sambanova_chat(model_name="Meta-Llama-3.1-70B-Instruct-8k", temperature=0)
+    Args:
+        chat_model: Name of the chat model to use
+        utility_model: Name of the utility model to use
+        embedding_model: Name of the embedding model to use
+        temperature: Temperature setting for model responses
+        knowledge_subdirs: List of knowledge subdirectories to use
+        auto_memory_count: Number of automatic memories to maintain
+        rate_limit: Rate limit for API requests
+        max_tool_response: Maximum length for tool responses
+        enable_docker: Whether to enable Docker-based code execution
+        enable_ssh: Whether to enable SSH-based code execution
 
-    # embedding model used for memory
-    embedding_llm = models.get_openai_embedding(model_name="text-embedding-3-small")
-    # embedding_llm = models.get_ollama_embedding(model_name="nomic-embed-text")
-    # embedding_llm = models.get_huggingface_embedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    # embedding_llm = models.get_lmstudio_embedding(model_name="nomic-ai/nomic-embed-text-v1.5-GGUF")
+    Returns:
+        AgentConfig: Configured agent settings
 
-    # agent configuration
-    config = AgentConfig(
-        chat_model=chat_llm,
-        utility_model=utility_llm,
-        embeddings_model=embedding_llm,
-        # prompts_subdir = "default",
-        # memory_subdir = "",
-        knowledge_subdirs=["default", "custom"],
-        auto_memory_count=0,
-        # auto_memory_skip = 2,
-        # rate_limit_seconds = 60,
-        rate_limit_requests=30,
-        # rate_limit_input_tokens = 0,
-        # rate_limit_output_tokens = 0,
-        # msgs_keep_max = 25,
-        # msgs_keep_start = 5,
-        # msgs_keep_end = 10,
-        max_tool_response_length=3000,
-        # response_timeout_seconds = 60,
-        code_exec_docker_enabled=True,
-        # code_exec_docker_name = "agent-zero-exe",
-        # code_exec_docker_image = "frdel/agent-zero-exe:latest",
-        # code_exec_docker_ports = { "22/tcp": 50022 }
-        # code_exec_docker_volumes = {
-        # files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"},
-        # files.get_abs_path("instruments"): {"bind": "/instruments", "mode": "rw"},
-        #                         },
-        code_exec_ssh_enabled=True,
-        # code_exec_ssh_addr = "localhost",
-        # code_exec_ssh_port = 50022,
-        # code_exec_ssh_user = "root",
-        # code_exec_ssh_pass = "toor",
-        # additional = {},
-    )
+    Raises:
+        Exception: If model initialization fails
+    """
+    try:
+        # Initialize language models
+        chat_llm = models.get_anthropic_chat(
+            model_name=chat_model, temperature=temperature
+        )
+        utility_llm = models.get_groq_chat(
+            model_name=utility_model, temperature=temperature
+        )
+        embedding_llm = models.get_openai_embedding(model_name=embedding_model)
 
-    # return config object
-    return config
+        # Create configuration
+        config = AgentConfig(
+            chat_model=chat_llm,
+            utility_model=utility_llm,
+            embeddings_model=embedding_llm,
+            knowledge_subdirs=knowledge_subdirs or DEFAULT_KNOWLEDGE_SUBDIRS,
+            auto_memory_count=auto_memory_count,
+            rate_limit_requests=rate_limit,
+            max_tool_response_length=max_tool_response,
+            code_exec_docker_enabled=enable_docker,
+            code_exec_ssh_enabled=enable_ssh,
+        )
+
+        # Validate configuration
+        config = ConfigValidator.validate_config(config)
+
+        return config
+
+    except Exception as e:
+        Log().logs.append(
+            LogItem(
+                log=Log(),
+                no=len(Log().logs),
+                type="error",
+                heading="Initialization Error",
+                content=f"Failed to initialize agent: {str(e)}",
+                temp=False,
+            )
+        )
+        raise Exception(f"Failed to initialize agent: {str(e)}")

@@ -1,3 +1,14 @@
 {
     "python.analysis.typeCheckingMode": "standard",
+    "githubPullRequests.experimental.chat": true,
+    "githubPullRequests.experimental.notificationsView": true,
+    "githubPullRequests.experimental.useQuickChat": true,
+    "javascript.referencesCodeLens.enabled": true,
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "github.copilot.chat.temporalContext.enabled": true,
+    "github.copilot.chat.search.semanticTextResults": true,
+    "github.copilot.chat.inlineChatHint.enabled": true,
+    "github.copilot.chat.inlineChatCompletionTrigger.enabled": true,
+    "github.copilot.chat.generateTests.codeLens": true,
+    "github.copilot.chat.scopeSelection": true,
 }

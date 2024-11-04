@@ -1,0 +1,16 @@
+LICENSE
+README.md
+pyproject.toml
+setup.py
+agent/__init__.py
+agent/agent.py
+agent/messages.py
+agent_zero.egg-info/PKG-INFO
+agent_zero.egg-info/SOURCES.txt
+agent_zero.egg-info/dependency_links.txt
+agent_zero.egg-info/requires.txt
+agent_zero.egg-info/top_level.txt
+python/__init__.py
+tests/__init__.py
+tests/helpers/__init__.py
+tests/helpers/test_json_parse_dirty.py
