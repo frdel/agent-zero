@@ -13,8 +13,17 @@ from langchain_ollama import ChatOllama
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_anthropic import ChatAnthropic
 from langchain_groq import ChatGroq
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_google_genai import GoogleGenerativeAI, HarmBlockThreshold, HarmCategory
+from langchain_huggingface import (
+    HuggingFaceEmbeddings,
+    ChatHuggingFace,
+    HuggingFaceEndpoint,
+)
+from langchain_google_genai import (
+    GoogleGenerativeAI,
+    HarmBlockThreshold,
+    HarmCategory,
+    embeddings as google_embeddings,
+)
 from langchain_mistralai import ChatMistralAI
 from pydantic.v1.types import SecretStr
 from python.helpers.dotenv import load_dotenv
@@ -43,6 +52,7 @@ class ModelProvider(Enum):
     OPENAI_AZURE = "OpenAI Azure"
     OPENROUTER = "OpenRouter"
     SAMBANOVA = "Sambanova"
+    OTHER = "Other" 
 
 
 # Utility function to get API keys from environment variables
@@ -87,6 +97,27 @@ def get_ollama_embedding(
 
 
 # HuggingFace models
+def get_huggingface_chat(
+    model_name: str,
+    api_key=get_api_key("huggingface"),
+    temperature=DEFAULT_TEMPERATURE,
+    **kwargs,
+):
+    # different naming convention here
+    if not api_key:
+        api_key = os.environ["HUGGINGFACEHUB_API_TOKEN"]
+
+    # Initialize the HuggingFaceEndpoint with the specified model and parameters
+    llm = HuggingFaceEndpoint(
+        repo_id=model_name,
+        task="text-generation",
+        do_sample=True,
+        temperature=temperature,
+        **kwargs,
+    )
+
+    # Initialize the ChatHuggingFace with the configured llm
+    return ChatHuggingFace(llm=llm)
 
 
 def get_huggingface_embedding(model_name: str, **kwargs):
@@ -119,6 +150,15 @@ def get_anthropic_chat(
     **kwargs,
 ):
     return ChatAnthropic(model_name=model_name, temperature=temperature, api_key=api_key, **kwargs)  # type: ignore
+
+
+# right now anthropic does not have embedding models, but that might change
+def get_anthropic_embedding(
+    model_name: str,
+    api_key=get_api_key("anthropic"),
+    **kwargs,
+):
+    return OpenAIEmbeddings(model=model_name, api_key=api_key, **kwargs)  # type: ignore
 
 
 # OpenAI models
@@ -183,6 +223,14 @@ def get_google_chat(
     return GoogleGenerativeAI(model=model_name, temperature=temperature, google_api_key=api_key, safety_settings={HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE}, **kwargs)  # type: ignore
 
 
+def get_google_embedding(
+    model_name: str,
+    api_key=get_api_key("google"),
+    **kwargs,
+):
+    return google_embeddings.GoogleGenerativeAIEmbeddings(model=model_name, api_key=api_key, **kwargs)  # type: ignore
+
+
 # Mistral models
 def get_mistral_chat(
     model_name: str,
@@ -233,6 +281,16 @@ def get_sambanova_chat(
     **kwargs,
 ):
     return ChatOpenAI(api_key=api_key, model=model_name, temperature=temperature, base_url=base_url, max_tokens=max_tokens, **kwargs)  # type: ignore
+
+
+# right now sambanova does not have embedding models, but that might change
+def get_sambanova_embedding(
+    model_name: str,
+    api_key=get_api_key("sambanova"),
+    base_url=os.getenv("SAMBANOVA_BASE_URL") or "https://fast-api.snova.ai/v1",
+    **kwargs,
+):
+    return OpenAIEmbeddings(model=model_name, api_key=api_key, base_url=base_url, **kwargs)  # type: ignore
 
 
 # Other OpenAI compatible models

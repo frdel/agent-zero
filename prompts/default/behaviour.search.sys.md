@@ -7,6 +7,10 @@
 - The response format is a JSON array of instructions on how the agent should behave in the future
 - If the history does not contain any instructions, the response will be an empty JSON array
 
+# Rules
+- Only return instructions that are relevant to the AGENT's behaviour in the future
+- Do not return work commands given to the agent
+
 # Example when instructions found (do not output this example):
 ```json
 [

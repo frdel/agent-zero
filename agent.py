@@ -124,8 +124,6 @@ class AgentConfig:
     prompts_subdir: str = ""
     memory_subdir: str = ""
     knowledge_subdirs: list[str] = field(default_factory=lambda: ["default", "custom"])
-    auto_memory_count: int = 3
-    auto_memory_skip: int = 2
     rate_limit_seconds: int = 60
     rate_limit_requests: int = 15
     rate_limit_input_tokens: int = 0
@@ -165,6 +163,8 @@ class Monologue:
     def __init__(self):
         self.done = False
         self.summary: str = ""
+        self.index_from = 0
+        self.index_to = 0
         self.messages: list[Message] = []
 
     def finish(self):
@@ -174,6 +174,7 @@ class Monologue:
 class History:
     def __init__(self):
         self.monologues: list[Monologue] = []
+        self.messages: list[Message] = []
         self.start_monologue()
 
     def current_monologue(self):
@@ -467,10 +468,6 @@ class Agent:
         self.rate_limiter.set_output_tokens(int(len(response) / 4))
 
         return response
-
-    def get_last_message(self):
-        if self.history:
-            return self.history[-1]
 
     async def replace_middle_messages(self, middle_messages):
         cleanup_prompt = self.read_prompt("fw.msg_cleanup.md")
