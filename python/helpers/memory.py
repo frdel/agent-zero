@@ -349,6 +349,7 @@ class Memory:
     def get_timestamp():
         return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+
 def some_memory_function(agent: Agent):
     memory_subdir = agent.config.get("memory_subdir", "default")
     embeddings_model = agent.config.get("embeddings_model", "default_embedding")

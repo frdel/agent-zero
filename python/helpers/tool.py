@@ -74,6 +74,6 @@ class Agent:
         self, number: int, config: AgentConfig, context: AgentContext | None = None
     ):
         # Existing initialization code...
-        
+
         self.agent_name = f"Agent {self.number}"  # Add this line
-        self.context = context                     # Ensure context is set
+        self.context = context  # Ensure context is set

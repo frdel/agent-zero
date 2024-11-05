@@ -8,10 +8,11 @@ knowledge directories, and system settings.
 
 import json
 import os
-from typing import List, Optional
+from typing import List, Optional, Any
 import models
 from agent.config import AgentConfig, ConfigValidator
 from python.helpers.log import Log, LogItem
+
 
 # Default configuration values
 DEFAULT_CHAT_MODEL = "claude-3-5-sonnet-20241022"
@@ -25,25 +26,65 @@ DEFAULT_MAX_TOOL_RESPONSE = 3000
 CONFIG_FILE = "config.json"
 
 
-def load_selected_models():
+def get_model_provider(model_name: str) -> str:
+    """Determine the model provider based on the model name."""
+    model_name = model_name.lower()
+    if "llama" in model_name:
+        return "ollama"
+    elif "claude" in model_name:
+        return "anthropic"
+    elif "gpt" in model_name or "text-embedding" in model_name:
+        return "openai"
+    elif "mistral" in model_name:
+        return "mistral"
+    elif "gemini" in model_name:
+        return "google"
+    elif "meta-llama" in model_name:
+        return "lmstudio"
+    return "openai"  # default fallback
+
+
+def initialize_model(
+    model_name: str, model_type: str, temperature: float = DEFAULT_TEMPERATURE
+) -> Any:
+    """Initialize a model based on its name and provider."""
+    provider = get_model_provider(model_name)
+
+    if model_type == "embedding":
+        if provider == "openai":
+            return models.get_openai_embedding(model_name)
+        elif provider == "ollama":
+            return models.get_ollama_embedding(model_name)
+        elif provider == "lmstudio":
+            return models.get_lmstudio_embedding(model_name)
+        else:
+            return models.get_huggingface_embedding(model_name)
+    else:
+        if provider == "anthropic":
+            return models.get_anthropic_chat(model_name, temperature=temperature)
+        elif provider == "openai":
+            return models.get_openai_chat(model_name, temperature=temperature)
+        elif provider == "ollama":
+            return models.get_ollama_chat(model_name, temperature=temperature)
+        elif provider == "mistral":
+            return models.get_mistral_chat(model_name, temperature=temperature)
+        elif provider == "google":
+            return models.get_google_chat(model_name, temperature=temperature)
+        elif provider == "lmstudio":
+            return models.get_lmstudio_chat(model_name, temperature=temperature)
+        else:
+            return models.get_openai_chat(model_name, temperature=temperature)
+
+
+def load_selected_models() -> dict:
     if not os.path.exists(CONFIG_FILE):
         return {
-            "chat_model": "gpt-4o-mini",
-            "utility_model": "gpt-4o-mini",
-            "embedding_model": "text-embedding-3-small",
+            "chat_model": DEFAULT_CHAT_MODEL,
+            "utility_model": DEFAULT_UTILITY_MODEL,
+            "embedding_model": DEFAULT_EMBEDDING_MODEL,
         }
     with open(CONFIG_FILE, "r") as f:
         return json.load(f)
-
-
-def load_config():
-    with open("config.json", "r") as f:
-        return json.load(f)
-
-
-config = load_config()
-default_model = config.get("default_model", "default_model_name")
-temperature = config.get("default_temperature", 0.7)
 
 
 def initialize(
@@ -81,22 +122,20 @@ def initialize(
     """
     try:
         models_selected = load_selected_models()
-        chat_model = chat_model or models_selected.get("chat_model", DEFAULT_CHAT_MODEL)
-        utility_model = utility_model or models_selected.get(
+        chat_model_name = chat_model or models_selected.get(
+            "chat_model", DEFAULT_CHAT_MODEL
+        )
+        utility_model_name = utility_model or models_selected.get(
             "utility_model", DEFAULT_UTILITY_MODEL
         )
-        embedding_model = embedding_model or models_selected.get(
+        embedding_model_name = embedding_model or models_selected.get(
             "embedding_model", DEFAULT_EMBEDDING_MODEL
         )
 
-        # Initialize language models
-        chat_llm = models.get_openai_chat(
-            model_name=chat_model, temperature=temperature
-        )
-        utility_llm = models.get_openai_chat(
-            model_name=utility_model, temperature=temperature
-        )
-        embedding_llm = models.get_openai_embedding(model_name=embedding_model)
+        # Initialize language models with proper provider routing
+        chat_llm = initialize_model(chat_model_name, "chat", temperature)
+        utility_llm = initialize_model(utility_model_name, "chat", temperature)
+        embedding_llm = initialize_model(embedding_model_name, "embedding")
 
         # Create configuration
         config = AgentConfig(
@@ -105,14 +144,10 @@ def initialize(
             embeddings_model=embedding_llm,
             knowledge_subdirs=knowledge_subdirs or DEFAULT_KNOWLEDGE_SUBDIRS,
             auto_memory_count=auto_memory_count,
-            rate_limit_seconds=60,  # Example value
             rate_limit_requests=rate_limit,
-            rate_limit_input_tokens=0,
-            rate_limit_output_tokens=0,
-            msgs_keep_max=25,
-            max_tool_response_length=max_tool_response,  # Add this line
-            code_exec_docker_enabled=enable_docker,     # Add this line
-            code_exec_ssh_enabled=enable_ssh,           # Add this line
+            max_tool_response_length=max_tool_response,
+            code_exec_docker_enabled=enable_docker,
+            code_exec_ssh_enabled=enable_ssh,
         )
 
         # Validate configuration

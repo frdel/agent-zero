@@ -20,8 +20,8 @@ class State:
 class CodeExecutionTool(Tool):
     def __init__(self, agent: Agent, name: str, args: dict, message: str):
         super().__init__(agent, name, args, message)
-        self.context = agent.context            
-        self.agent_name = agent.agent_name      
+        self.context = agent.context
+        self.agent_name = agent.agent_name
 
     async def execute(self, **kwargs):
         await self.agent.handle_intervention()
@@ -183,6 +183,7 @@ class CodeExecutionTool(Tool):
         self.log.update(content=response)
         return response
 
+
 def list_available_models():
     available_models = {
         "chat_model": [
@@ -195,13 +196,13 @@ def list_available_models():
             "gemini-1.5-flash",
             "mistral-small-latest",
             "llama-3.2-90b-text-preview",
-            "Meta-Llama-3.1-70B-Instruct-8k"
+            "Meta-Llama-3.1-70B-Instruct-8k",
         ],
         "utility_model": [
             # ...existing utility models...
         ],
         "embedding_model": [
             # ...existing embedding models...
-        ]
+        ],
     }
     return available_models
