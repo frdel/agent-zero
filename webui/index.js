@@ -425,17 +425,17 @@ function readJsonFiles() {
 
 function toast(text, type = 'info') {
     const toast = document.getElementById('toast');
-    toast.querySelector('#toast .toast__message').textContent = text;
+    toast.querySelector('.toast__message').textContent = text;
     toast.className = `toast toast--${type}`;
     toast.style.display = 'flex';
 
-    const closeButton = toast.querySelector('#toast .toast__close');
+    const closeButton = toast.querySelector('.toast__close');
     closeButton.onclick = () => {
         toast.style.display = 'none';
         clearTimeout(toast.timeoutId);
     };
 
-    const copyButton = toast.querySelector('#toast .toast__copy');
+    const copyButton = toast.querySelector('.toast__copy');
     copyButton.onclick = () => {
         navigator.clipboard.writeText(text);
         copyButton.textContent = 'Copied!';
@@ -469,6 +469,7 @@ async function startPolling() {
     const shortInterval = 25;
     const longInterval = 250;
     const shortIntervalPeriod = 100;
+
     let shortIntervalCount = 0;
 
     async function _doPoll() {
@@ -493,7 +494,7 @@ document.addEventListener("DOMContentLoaded", startPolling);
 
 async function populateModelDropdowns() {
     try {
-        const response = await sendJsonData("/msg", { text: "list available models", context: context });
+        const response = await sendJsonData("/api/models", {});
 
         if (!response) {
             toast("No response returned.", "error")
@@ -505,9 +506,9 @@ async function populateModelDropdowns() {
             }
         } else {
             if (response.models) {
-                populateDropdown('chat-model', response.models.chat_model, response.models.chat_model);
-                populateDropdown('utility-model', response.models.utility_model, response.models.utility_model);
-                populateDropdown('embedding-model', response.models.embedding_model, response.models.embedding_model);
+                populateDropdown('chat-model', response.models.chat_model, [response.models.chat_model]);
+                populateDropdown('utility-model', response.models.utility_model, [response.models.utility_model]);
+                populateDropdown('embedding-model', response.models.embedding_model, [response.models.embedding_model]);
             }
         }
     } catch (error) {
@@ -544,14 +545,15 @@ async function saveSelectedModels() {
     const embeddingModel = document.getElementById('embedding-model').value;
 
     try {
-        const response = await fetch('/msg', {
+        const response = await fetch('/api/models', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                text: `set models: chat=${chatModel}, utility=${utilityModel}, embedding=${embeddingModel}`,
-                context: context
+                chat_model: chatModel,
+                utility_model: utilityModel,
+                embedding_model: embeddingModel
             })
         });
 

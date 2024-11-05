@@ -30,12 +30,17 @@ dependencies = [
     "unstructured-client>=0.26.2",
     "webcolors>=24.8.0",
     "pinecone>=5.3.1",
-    "black>=24.10.0",
-    "typing-extensions>=4.12.2",
     "langchain>=0.3.7",
+    "quart>=0.18.0",
+    "groq>=0.11.0",
+    "openai>=1.53.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=24.10.0",
     "pyright>=1.1.387",
     "pytest>=8.3.3",
-    "quart>=0.18.0",
 ]
 
 [tool.flake8]

@@ -1,7 +1,6 @@
 import asyncio
-from dataclasses import dataclass
+from typing import Any, Optional, Dict, List
 import uuid
-from typing import Any, Dict, Callable, Optional
 from python.helpers import extract_tools, rate_limiter, files, errors
 from python.helpers.print_style import PrintStyle
 from langchain import (
@@ -19,18 +18,18 @@ from .config import ConfigValidator, AgentConfig
 
 
 class AgentContext:
-    _contexts: dict[str, "AgentContext"] = {}
+    _contexts: Dict[str, "AgentContext"] = {}
     _counter: int = 0
 
     def __init__(
         self,
         config: AgentConfig,
-        id: str | None = None,
-        name: str | None = None,
-        agent0: "Agent|None" = None,
-        log: Log.Log | None = None,
+        id: Optional[str] = None,
+        name: Optional[str] = None,
+        agent0: Optional["Agent"] = None,
+        log: Optional[Log.Log] = None,
         paused: bool = False,
-        streaming_agent: "Agent|None" = None,
+        streaming_agent: Optional["Agent"] = None,
     ):
         self.id = id or str(uuid.uuid4())
         self.name = name
@@ -39,23 +38,23 @@ class AgentContext:
         self.agent0 = agent0 or Agent(0, self.config, self)
         self.paused = paused
         self.streaming_agent = streaming_agent
-        self.process: DeferredTask | None = None
+        self.process: Optional[DeferredTask] = None
         AgentContext._counter += 1
         self.no = AgentContext._counter
         self._contexts[self.id] = self
 
     @staticmethod
-    def get(id: str):
+    def get(id: str) -> Optional["AgentContext"]:
         return AgentContext._contexts.get(id, None)
 
     @staticmethod
-    def first():
+    def first() -> Optional["AgentContext"]:
         if not AgentContext._contexts:
             return None
         return list(AgentContext._contexts.values())[0]
 
     @staticmethod
-    def remove(id: str):
+    def remove(id: str) -> Optional["AgentContext"]:
         context = AgentContext._contexts.pop(id, None)
         if context and context.process:
             context.process.kill()
@@ -88,7 +87,7 @@ class AgentContext:
 
         return self.process
 
-    async def _process_chain(self, agent: "Agent", msg: str, user=True):
+    async def _process_chain(self, agent: "Agent", msg: str, user: bool = True):
         try:
             msg_template = (
                 agent.read_prompt("fw.user_message.md", message=msg)
@@ -110,11 +109,11 @@ class AgentContext:
 
 class Agent:
     def __init__(
-        self, number: int, config: AgentConfig, context: AgentContext | None = None
+        self, number: int, config: AgentConfig, context: Optional[AgentContext] = None
     ):
         if config is None:
             raise AgentException("AgentConfig must be provided")
-        
+
         self.config = config
         self.context = context or AgentContext(config)
         self.number = number
@@ -125,11 +124,11 @@ class Agent:
         self.rate_limiter = rate_limiter.RateLimiter(
             self.context.log,
             max_calls=self.config.rate_limit_requests,
-            max_input_tokens=0,
-            max_output_tokens=0,
-            window_seconds=60,
+            max_input_tokens=self.config.rate_limit_input_tokens,
+            max_output_tokens=self.config.rate_limit_output_tokens,
+            window_seconds=self.config.rate_limit_seconds,
         )
-        self.data = {}
+        self.data: Dict[str, Any] = {}
 
     def initialize(self, config: Optional[AgentConfig] = None):
         if config:
@@ -147,10 +146,10 @@ class Agent:
             files.get_abs_path(prompt_dir, file), backup_dirs=backup_dir, **kwargs
         )
 
-    def get_data(self, field: str):
+    def get_data(self, field: str) -> Any:
         return self.data.get(field, None)
 
-    def set_data(self, field: str, value):
+    def set_data(self, field: str, value: Any):
         self.data[field] = value
 
     async def append_message(self, msg: str, human: bool = False):
@@ -299,7 +298,9 @@ class Agent:
                 return
             response = DirtyJson.parse_string(stream)
             if isinstance(response, dict):
-                logItem.update(content=stream, kvps=response)
+                logItem.update(
+                    content=stream, kvps=response
+                )
         except Exception:
             pass
 
@@ -331,7 +332,7 @@ class Agent:
                 type="error", content=f"{self.agent_name}: Message misformat"
             )
 
-    def get_tool(self, name: str, args: dict, message: str, **kwargs):
+    def get_tool(self, name: str, args: Dict[str, Any], message: str, **kwargs) -> Any:
         from python.tools.unknown import Unknown
         from python.helpers.tool import Tool
 
