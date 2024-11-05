@@ -68,9 +68,43 @@ def save_selected_models(models):
 
 @app.route("/api/models", methods=["GET"])
 async def get_models():
-    selected_models = load_selected_models()
-    print(f"Loaded models: {selected_models}")  # Debugging Statement
-    return jsonify(selected_models), 200
+    try:
+        selected_models = load_selected_models()
+        available_models = {
+            "chat_model": [
+                "claude-3-5-sonnet-20241022"
+            ],
+            "utility_model": [
+                "claude-3-5-sonnet-20241022"
+            ],
+            "embedding_model": [
+                "text-embedding-3-small"
+            ]
+        }
+
+        # Ensure selected models exist in available models, otherwise use defaults
+        for model_type in ["chat_model", "utility_model", "embedding_model"]:
+            if model_type not in selected_models or selected_models[model_type] not in available_models[model_type]:
+                selected_models[model_type] = available_models[model_type][0]
+        
+        models = {
+            "chat_model": selected_models["chat_model"],
+            "utility_model": selected_models["utility_model"],
+            "embedding_model": selected_models["embedding_model"]
+        }
+        
+        return jsonify({
+            "ok": True,
+            "models": models,
+            "available_models": available_models
+        })
+
+    except Exception as e:
+        print(f"Error fetching models: {e}")
+        return jsonify({
+            "ok": False,
+            "error": str(e)
+        }), 500
 
 
 @app.route("/api/models", methods=["POST"])

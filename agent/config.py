@@ -6,6 +6,7 @@ from typing import Dict, Any, Optional, List
 
 class AgentException(Exception):
     """Base exception class for agent configuration errors."""
+
     pass
 
 
@@ -33,7 +34,9 @@ class AgentConfig:
     response_timeout_seconds: int = 60
     code_exec_docker_name: str = "agent-zero-exe"
     code_exec_docker_image: str = "frdel/agent-zero-exe:latest"
-    code_exec_docker_ports: Dict[str, int] = field(default_factory=lambda: {"22/tcp": 50022})
+    code_exec_docker_ports: Dict[str, int] = field(
+        default_factory=lambda: {"22/tcp": 50022}
+    )
     code_exec_ssh_addr: str = "localhost"
     code_exec_ssh_port: int = 50022
     code_exec_ssh_user: str = "root"

@@ -1,28 +1,34 @@
-from typing import Dict, List, Any
 from dataclasses import dataclass, field
+from typing import List, Any, Dict, Protocol, runtime_checkable
+from langchain_core.messages import BaseMessage
 
 
 @dataclass
 class LoopData:
-    """Data structure for managing loop state"""
-    iteration: int = -1
     message: str = ""
     history_from: int = 0
-    history: List[Any] = field(default_factory=list)
+    iteration: int = 0
     system: List[str] = field(default_factory=list)
-    messages: List[Any] = field(default_factory=list)
-    state: Dict[str, Any] = field(default_factory=dict)
-    context: Dict[str, Any] = field(default_factory=dict)
-    memory: Dict[str, Any] = field(default_factory=dict)
+    history: List[BaseMessage] = field(default_factory=list)
 
 
 class AgentException(Exception):
-    """Base exception class for Agent errors"""
     pass
 
 
-class Response:
-    """Base class for tool responses"""
-    def __init__(self, message: str = "", break_loop: bool = False):
-        self.message = message
-        self.break_loop = break_loop
+@runtime_checkable
+class BaseAgent(Protocol):
+    """Protocol defining the Agent interface to avoid circular imports"""
+
+    agent_name: str
+    context: Any
+    data: Dict[str, Any]
+    config: Any
+
+    def read_prompt(self, file: str, **kwargs) -> str:
+        """Read a prompt file and format it with the given kwargs"""
+        ...
+
+    async def append_message(self, msg: str, human: bool = False) -> None:
+        """Append a message to the agent's history"""
+        ...

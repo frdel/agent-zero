@@ -15,7 +15,7 @@ def create_test_config():
         rate_limit_requests=30,
         max_tool_response_length=3000,
         code_exec_docker_enabled=True,
-        code_exec_ssh_enabled=True
+        code_exec_ssh_enabled=True,
     )
 
 
@@ -37,7 +37,7 @@ def test_agent_context_initialization():
     """Test AgentContext initialization"""
     config = create_test_config()
     context = AgentContext(config=config)
-    
+
     assert context.config == config
     assert context.id is not None
     assert context.name is None
@@ -52,14 +52,14 @@ def test_agent_context_initialization():
 def test_agent_context_management():
     """Test AgentContext static methods"""
     config = create_test_config()
-    
+
     # Test context creation and retrieval
     context = AgentContext(config=config, id="test-id")
     assert AgentContext.get("test-id") == context
-    
+
     # Test first context
     assert AgentContext.first() == context
-    
+
     # Test context removal
     removed = AgentContext.remove("test-id")
     assert removed == context
@@ -71,7 +71,7 @@ def test_agent_initialization():
     config = create_test_config()
     context = AgentContext(config=config)
     agent = Agent(0, config, context)
-    
+
     assert agent.number == 0
     assert agent.agent_name == "Agent 0"
     assert agent.config == config
@@ -87,7 +87,7 @@ def test_agent_data_management():
     config = create_test_config()
     context = AgentContext(config=config)
     agent = Agent(0, config, context)
-    
+
     # Test data setting and getting
     agent.set_data("test_key", "test_value")
     assert agent.get_data("test_key") == "test_value"
@@ -99,7 +99,7 @@ def test_response_initialization():
     response = Response("test message", True)
     assert response.message == "test message"
     assert response.break_loop is True
-    
+
     default_response = Response()
     assert default_response.message == ""
     assert default_response.break_loop is False
@@ -110,22 +110,22 @@ def test_invalid_agent_initialization():
     config = create_test_config()
     context = AgentContext(config=config)
     agent = Agent(0, config, context)
-    
+
     # Create invalid config by setting required models to None
     invalid_config = AgentConfig(
         chat_model=None,
-        utility_model=None, 
+        utility_model=None,
         embeddings_model=None,
         knowledge_subdirs=["default"],
         auto_memory_count=0,
         rate_limit_requests=30,
         max_tool_response_length=3000,
         code_exec_docker_enabled=True,
-        code_exec_ssh_enabled=True
+        code_exec_ssh_enabled=True,
     )
-    
+
     # Should raise AgentException during initialize() due to missing required models
     with pytest.raises(AgentException) as exc_info:
         agent.initialize(invalid_config)
-    
+
     assert "Missing required config attribute" in str(exc_info.value)

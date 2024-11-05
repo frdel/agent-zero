@@ -807,11 +807,7 @@ input:checked + .slider:before {
   margin-bottom: 0;
 }
 
-.message-util .msg-kvps {
-}
 
-.message-util .msg-content {
-}
 
 .message-temp {
   display: none;
@@ -855,7 +851,7 @@ input:checked + .slider:before {
 
   #left-panel.expanded #time-date {
     flex-shrink: 0;
-    text-wrap: nowrap;
+    white-space: nowrap;
   }
 }
 

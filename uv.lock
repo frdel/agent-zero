@@ -13,7 +13,6 @@ source = { virtual = "." }
 dependencies = [
     { name = "ansio" },
     { name = "beautifulsoup4" },
-    { name = "black" },
     { name = "docker" },
     { name = "duckduckgo-search" },
     { name = "faiss-cpu" },
@@ -22,6 +21,7 @@ dependencies = [
     { name = "langchain" },
     { name = "langchain-anthropic" },
     { name = "langchain-community" },
+    { name = "langchain-core" },
     { name = "langchain-google-genai" },
     { name = "langchain-groq" },
     { name = "langchain-huggingface" },
@@ -35,22 +35,26 @@ dependencies = [
     { name = "paramiko" },
     { name = "pinecone" },
     { name = "pypdf" },
-    { name = "pyright" },
-    { name = "pytest" },
     { name = "python-dotenv" },
     { name = "quart" },
     { name = "sentence-transformers" },
-    { name = "typing-extensions" },
     { name = "unstructured" },
     { name = "unstructured-client" },
     { name = "webcolors" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "black" },
+    { name = "pyright" },
+    { name = "pytest" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "ansio", specifier = ">=0.0.2" },
     { name = "beautifulsoup4", specifier = ">=4.12.3" },
-    { name = "black", specifier = ">=24.10.0" },
+    { name = "black", marker = "extra == 'dev'", specifier = ">=24.10.0" },
     { name = "docker", specifier = ">=7.1.0" },
     { name = "duckduckgo-search", specifier = ">=6.3.3" },
     { name = "faiss-cpu", specifier = "==1.8.0.post1" },
@@ -59,6 +63,7 @@ requires-dist = [
     { name = "langchain", specifier = ">=0.3.7" },
     { name = "langchain-anthropic", specifier = ">=0.2.4" },
     { name = "langchain-community", specifier = ">=0.3.5" },
+    { name = "langchain-core", specifier = ">=0.2.0" },
     { name = "langchain-google-genai", specifier = ">=2.0.4" },
     { name = "langchain-groq", specifier = ">=0.2.1" },
     { name = "langchain-huggingface", specifier = ">=0.1.2" },
@@ -72,12 +77,11 @@ requires-dist = [
     { name = "paramiko", specifier = ">=3.5.0" },
     { name = "pinecone", specifier = ">=5.3.1" },
     { name = "pypdf", specifier = ">=5.1.0" },
-    { name = "pyright", specifier = ">=1.1.387" },
-    { name = "pytest", specifier = ">=8.3.3" },
+    { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.387" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.3" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "quart", specifier = ">=0.18.0" },
     { name = "sentence-transformers", specifier = ">=3.2.1" },
-    { name = "typing-extensions", specifier = ">=4.12.2" },
     { name = "unstructured", specifier = ">=0.16.4" },
     { name = "unstructured-client", specifier = ">=0.26.2" },
     { name = "webcolors", specifier = ">=24.8.0" },

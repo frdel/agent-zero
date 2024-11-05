@@ -466,22 +466,33 @@ chatHistory.addEventListener('scroll', updateAfterScroll);
 chatInput.addEventListener('input', adjustTextareaHeight);
 
 async function startPolling() {
-    const shortInterval = 25;
-    const longInterval = 250;
-    const shortIntervalPeriod = 100;
-
+    const shortInterval = 100;  // Increased from 25ms
+    const longInterval = 1000;  // Increased from 250ms
+    const shortIntervalPeriod = 50; // Reduced from 100
+    
     let shortIntervalCount = 0;
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 3;
 
     async function _doPoll() {
         let nextInterval = longInterval;
 
         try {
             const result = await poll();
-            if (result) shortIntervalCount = shortIntervalPeriod;
+            if (result) {
+                shortIntervalCount = shortIntervalPeriod;
+                consecutiveErrors = 0;  // Reset error count on success
+            }
             if (shortIntervalCount > 0) shortIntervalCount--;
             nextInterval = shortIntervalCount > 0 ? shortInterval : longInterval;
         } catch (error) {
             console.error('Error:', error);
+            consecutiveErrors++;
+            
+            // Exponential backoff if there are consecutive errors
+            if (consecutiveErrors > maxConsecutiveErrors) {
+                nextInterval = Math.min(longInterval * Math.pow(2, consecutiveErrors - maxConsecutiveErrors), 10000);
+            }
         }
 
         setTimeout(_doPoll.bind(this), nextInterval);
@@ -496,24 +507,25 @@ async function populateModelDropdowns() {
     try {
         const response = await sendJsonData("/api/models", {});
 
-        if (!response) {
-            toast("No response returned.", "error")
-        } else if (!response.ok) {
-            if (response.message) {
-                toast(response.message, "error")
-            } else {
-                toast("Undefined error.", "error")
-            }
-        } else {
-            if (response.models) {
-                populateDropdown('chat-model', response.models.chat_model, [response.models.chat_model]);
-                populateDropdown('utility-model', response.models.utility_model, [response.models.utility_model]);
-                populateDropdown('embedding-model', response.models.embedding_model, [response.models.embedding_model]);
-            }
+        if (!response || !response.ok) {
+            throw new Error(response?.error || "Failed to fetch models");
         }
+
+        const models = response.models;
+        const available = response.available_models;
+
+        if (!models || !available) {
+            throw new Error("Invalid response format");
+        }
+
+        // Populate dropdowns
+        populateDropdown('chat-model', models.chat_model, available.chat_model);
+        populateDropdown('utility-model', models.utility_model, available.utility_model);
+        populateDropdown('embedding-model', models.embedding_model, available.embedding_model);
+
     } catch (error) {
         console.error('Error fetching models:', error);
-        toast("Failed to fetch available models", "error");
+        toast("Failed to fetch available models: " + error.message, "error");
     }
 }
 
@@ -531,9 +543,7 @@ function populateDropdown(elementId, selectedModel, availableModels) {
             const option = document.createElement('option');
             option.value = model;
             option.textContent = model;
-            if (model === selectedModel) {
-                option.selected = true;
-            }
+            option.selected = model === selectedModel;
             dropdown.appendChild(option);
         });
     }

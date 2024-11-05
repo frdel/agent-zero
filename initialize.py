@@ -8,7 +8,7 @@ knowledge directories, and system settings.
 
 import json
 import os
-from typing import List, Optional, Any
+from typing import Optional, Any
 import models
 from agent.config import AgentConfig, ConfigValidator
 from python.helpers.log import Log, LogItem
@@ -16,7 +16,7 @@ from python.helpers.log import Log, LogItem
 
 # Default configuration values
 DEFAULT_CHAT_MODEL = "claude-3-5-sonnet-20241022"
-DEFAULT_UTILITY_MODEL = "llama-3.2-90b-text-preview"
+DEFAULT_UTILITY_MODEL = "claude-3-5-sonnet-20241022"
 DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small"
 DEFAULT_TEMPERATURE = 0.5
 DEFAULT_KNOWLEDGE_SUBDIRS = ["default", "custom"]
@@ -92,7 +92,7 @@ def initialize(
     utility_model: Optional[str] = None,
     embedding_model: Optional[str] = None,
     temperature: float = DEFAULT_TEMPERATURE,
-    knowledge_subdirs: Optional[List[str]] = None,
+    knowledge_subdirs: Optional[list] = None,
     auto_memory_count: int = DEFAULT_AUTO_MEMORY_COUNT,
     rate_limit: int = DEFAULT_RATE_LIMIT,
     max_tool_response: int = DEFAULT_MAX_TOOL_RESPONSE,

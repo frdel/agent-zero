@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from agent import Agent
+from agent.agent_types import BaseAgent
 from python.helpers.print_style import PrintStyle
 from python.helpers import messages
 
@@ -14,7 +14,7 @@ class Response:
 class Tool:
 
     def __init__(
-        self, agent: Agent, name: str, args: dict[str, str], message: str, **kwargs
+        self, agent: BaseAgent, name: str, args: dict[str, str], message: str, **kwargs
     ) -> None:
         self.agent = agent
         self.name = name
@@ -67,13 +67,3 @@ class Tool:
         words = [words[0].capitalize()] + [word.lower() for word in words[1:]]
         result = " ".join(words)
         return result
-
-
-class Agent:
-    def __init__(
-        self, number: int, config: AgentConfig, context: AgentContext | None = None
-    ):
-        # Existing initialization code...
-
-        self.agent_name = f"Agent {self.number}"  # Add this line
-        self.context = context  # Ensure context is set

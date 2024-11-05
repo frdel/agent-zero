@@ -1,19 +1,18 @@
 import asyncio
-from typing import Any, Optional, Dict, List
+from typing import Any, Optional, Dict
 import uuid
 from python.helpers import extract_tools, rate_limiter, files, errors
 from python.helpers.print_style import PrintStyle
-from langchain import (
+from langchain_core.messages import (
     AIMessage,
-    ChatPromptTemplate,
-    MessagesPlaceholder,
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import python.helpers.log as Log
 from python.helpers.dirty_json import DirtyJson
 from python.helpers.defer import DeferredTask
-from .agent_types import AgentException, LoopData
+from .agent_types import AgentException, LoopData, BaseAgent
 from .config import ConfigValidator, AgentConfig
 
 
@@ -107,7 +106,7 @@ class AgentContext:
             agent.handle_critical_exception(e)
 
 
-class Agent:
+class Agent(BaseAgent):
     def __init__(
         self, number: int, config: AgentConfig, context: Optional[AgentContext] = None
     ):
@@ -139,7 +138,7 @@ class Agent:
     def read_prompt(self, file: str, **kwargs) -> str:
         prompt_dir = files.get_abs_path("prompts/default")
         backup_dir = []
-        if hasattr(self.config, 'prompts_subdir') and self.config.prompts_subdir:
+        if hasattr(self.config, "prompts_subdir") and self.config.prompts_subdir:
             prompt_dir = files.get_abs_path("prompts", self.config.prompts_subdir)
             backup_dir.append(files.get_abs_path("prompts/default"))
         return files.read_file(
@@ -163,9 +162,9 @@ class Agent:
             self.last_message = msg
 
     async def monologue(self, msg: str):
+        loop_data = LoopData()  # Initialize here
         while True:
             try:
-                loop_data = LoopData()
                 loop_data.message = msg
                 loop_data.history_from = len(self.history)
 
@@ -227,7 +226,9 @@ class Agent:
                                 agent_response += content
                                 self.log_from_stream(agent_response, log)
 
-                        self.rate_limiter.set_output_tokens(int(len(agent_response) / 4))
+                        self.rate_limiter.set_output_tokens(
+                            int(len(agent_response) / 4)
+                        )
 
                         await self.handle_intervention(agent_response)
 
@@ -235,7 +236,9 @@ class Agent:
                             await self.append_message(agent_response)
                             warning_msg = self.read_prompt("fw.msg_repeat.md")
                             await self.append_message(warning_msg, human=True)
-                            PrintStyle(font_color="orange", padding=True).print(warning_msg)
+                            PrintStyle(font_color="orange", padding=True).print(
+                                warning_msg
+                            )
                             self.context.log.log(type="warning", content=warning_msg)
                         else:
                             await self.append_message(agent_response)
@@ -247,7 +250,9 @@ class Agent:
                         pass
                     except RepairableException as e:
                         error_message = errors.format_error(e)
-                        msg_response = self.read_prompt("fw.error.md", error=error_message)
+                        msg_response = self.read_prompt(
+                            "fw.error.md", error=error_message
+                        )
                         await self.append_message(msg_response, human=True)
                         PrintStyle(font_color="red", padding=True).print(msg_response)
                         self.context.log.log(type="error", content=msg_response)
@@ -298,9 +303,7 @@ class Agent:
                 return
             response = DirtyJson.parse_string(stream)
             if isinstance(response, dict):
-                logItem.update(
-                    content=stream, kvps=response
-                )
+                logItem.update(content=stream, kvps=response)
         except Exception:
             pass
 
@@ -332,7 +335,7 @@ class Agent:
                 type="error", content=f"{self.agent_name}: Message misformat"
             )
 
-    def get_tool(self, name: str, args: Dict[str, Any], message: str, **kwargs) -> Any:
+    def get_tool(self: "Agent", name: str, args: Dict[str, Any], message: str, **kwargs) -> Any:
         from python.tools.unknown import Unknown
         from python.helpers.tool import Tool
 

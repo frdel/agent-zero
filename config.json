@@ -1,6 +1,6 @@
 {
-    "chat_model": "llama-3.2-90b-text-preview",
-    "utility_model": "llama-3.2-90b-text-preview",
+    "chat_model": "claude-3-5-sonnet-20241022",
+    "utility_model": "claude-3-5-sonnet-20241022",
     "embedding_model": "text-embedding-3-small",
     "available_models": {
         "chat": [
