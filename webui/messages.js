@@ -29,39 +29,47 @@ export function getHandler(type) {
 
 export function _drawMessage(messageContainer, heading, content, temp, followUp, kvps = null, messageClasses = [], contentClasses = []) {
 
-
-    // if (type !== 'user') {
-    //     const agentStart = document.createElement('div');
-    //     agentStart.classList.add('agent-start');
-    //     agentStart.textContent = 'Agent 0 starts a message...';
-    //     messageContainer.appendChild(agentStart);
-    // }
-
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('message', ...messageClasses);
 
-    if (heading) messageDiv.appendChild(document.createElement('h4')).textContent = heading
+    if (heading) {
+        const headingElement = document.createElement('h4');
+        headingElement.textContent = heading;
+        messageDiv.appendChild(headingElement);
+    }
 
     drawKvps(messageDiv, kvps);
 
-    const textNode = document.createElement('pre');
-    textNode.textContent = content;
-    textNode.style.whiteSpace = 'pre-wrap';
-    textNode.style.wordBreak = 'break-word';
-    textNode.classList.add("msg-content", ...contentClasses)
-    messageDiv.appendChild(textNode);
+    const preElement = document.createElement('pre');
+    preElement.classList.add("msg-content", ...contentClasses);
+    preElement.style.whiteSpace = 'pre-wrap';
+    preElement.style.wordBreak = 'break-word';
+
+    // Wrap content in a <span> to allow HTML parsing
+    const spanElement = document.createElement('span');
+    spanElement.innerHTML = content;  // Use innerHTML instead of textContent
+    preElement.appendChild(spanElement);
+    messageDiv.appendChild(preElement);
     messageContainer.appendChild(messageDiv);
 
-    if (followUp) messageContainer.classList.add("message-followup")
+    if (followUp) {
+        messageContainer.classList.add("message-followup");
+    }
 
-    // if (type !== 'user') {
-    //     const actions = document.createElement('div');
-    //     actions.classList.add('message-actions');
-    //     actions.innerHTML = '<span class="message-action">Copy</span> · <span class="message-action">Retry</span> · <span class="message-action">Edit</span>';
-    //     messageContainer.appendChild(actions);
-    // }
+    // Render LaTeX math within the span
+    if (window.renderMathInElement) {
+        renderMathInElement(spanElement, {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "\$$", right: "\$$", display: true},
+                {left: "$", right: "$", display: false},
+                {left: "\$$", right: "\$$", display: false}
+            ],
+            throwOnError: false  // Prevent KaTeX from throwing errors
+        });
+    }
 
-    return messageDiv
+    return messageDiv;
 }
 
 export function drawMessageDefault(messageContainer, id, type, heading, content, temp, kvps = null) {
@@ -131,7 +139,7 @@ function drawKvps(container, kvps) {
         for (let [key, value] of Object.entries(kvps)) {
             const row = table.insertRow();
             row.classList.add('kvps-row');
-            if (key == "thoughts" || key=="reflection") row.classList.add('msg-thoughts');
+            if (key === "thoughts" || key === "reflection") row.classList.add('msg-thoughts');
 
             const th = row.insertCell();
             th.textContent = convertToTitleCase(key);
@@ -139,13 +147,35 @@ function drawKvps(container, kvps) {
 
             const td = row.insertCell();
             const pre = document.createElement('pre');
+            pre.classList.add('kvps-val');
 
             // if value is array, join it with new line
             if (Array.isArray(value)) value = value.join('\n');
 
-            pre.textContent = value;
-            pre.classList.add('kvps-val');
-            td.appendChild(pre);
+            if (row.classList.contains('msg-thoughts')) {
+                // Wrap content in a <span> to allow HTML parsing
+                const span = document.createElement('span');
+                span.innerHTML = value;  // Use innerHTML to enable KaTeX parsing
+                pre.appendChild(span);
+                td.appendChild(pre);
+
+                // Render LaTeX math within the span
+                if (window.renderMathInElement) {
+                    renderMathInElement(span, {
+                        delimiters: [
+                            {left: "$$", right: "$$", display: true},
+                            {left: "\$$", right: "\$$", display: true},
+                            {left: "$", right: "$", display: false},
+                            {left: "\$$", right: "\$$", display: false}
+                        ],
+                        throwOnError: false  // Prevent KaTeX from throwing errors
+                    });
+                }
+            } else {
+                // For non-thought rows, use textContent as before
+                pre.textContent = value;
+                td.appendChild(pre);
+            }
         }
         container.appendChild(table);
     }
