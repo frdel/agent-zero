@@ -371,7 +371,7 @@ pre {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  overflow-y: auto;
+  overflow-y: scroll;
   scroll-behavior: smooth;
   overflow-x: hidden;
   padding: var(--spacing-md) var(--spacing-md) 0;
@@ -889,12 +889,16 @@ pre {
   background-color: var(--color-primary-light);
 }
 
+/* MIC BUTTON */
 #microphone-button {
   background-color: #3270e2;
 }
 
 #microphone-button:hover {
   background-color: #4382e8;
+}
+#microphone-button.recording {
+  background-color: #ff4136; /* Red color for recording */
 }
 
 .chat-button svg {

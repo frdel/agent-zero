@@ -12,11 +12,13 @@ const chatsSection = document.getElementById('chats-section');
 const scrollbarThumb = document.querySelector('#chat-history::-webkit-scrollbar-thumb');
 const progressBar = document.getElementById('progress-bar');
 const autoScrollSwitch = document.getElementById('auto-scroll-switch');
-
+const microphoneButton = document.getElementById('microphone-button');
 
 
 let autoScroll = true;
 let context = "";
+let microphoneInput = null;
+
 
 // Initialize the toggle button 
 setupSidebarToggle();
@@ -95,6 +97,59 @@ chatInput.addEventListener('keydown', (e) => {
 
 sendButton.addEventListener('click', sendMessage);
 
+
+// MICROPHONE INPUT
+
+async function initializeMicrophoneInput() {
+    microphoneInput = new MicrophoneInput(updateChatInput);
+    await microphoneInput.initialize();
+}
+function updateChatInput(text) {
+    chatInput.value += text + ' ';
+    adjustTextareaHeight();
+}
+microphoneButton.addEventListener('click', () => {
+    if (!microphoneInput) {
+        initializeMicrophoneInput().then(() => {
+            toggleRecording();
+        });
+    } else {
+        toggleRecording();
+    }
+});
+function toggleRecording() {
+    if (microphoneInput.isRecording) {
+        microphoneInput.stopRecording();
+        microphoneButton.classList.remove('recording');
+    } else {
+        microphoneInput.startRecording();
+        microphoneButton.classList.add('recording');
+    }
+}
+// Some error handling for microphone input
+async function requestMicrophonePermission() {
+    try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        return true;
+    } catch (err) {
+        console.error('Error accessing microphone:', err);
+        toast('Microphone access denied. Please enable microphone access in your browser settings.', 'error');
+        return false;
+    }
+}
+// microphoneButton click event listener modifier
+microphoneButton.addEventListener('click', async () => {
+    const hasPermission = await requestMicrophonePermission();
+    if (!hasPermission) return;
+    if (!microphoneInput) {
+        initializeMicrophoneInput().then(() => {
+            toggleRecording();
+        });
+    } else {
+        toggleRecording();
+    }
+});
+
 function updateUserTime() {
     const now = new Date();
     const hours = now.getHours();
@@ -142,8 +197,9 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
     if (!document.getElementById(`message-${id}`)) {
         chatHistory.appendChild(messageContainer);
     }
-
-    if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
+    
+    // Remove the automatic scrolling
+    // if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
 
@@ -181,31 +237,29 @@ let lastLogVersion = 0;
 let lastLogGuid = ""
 
 async function poll() {
-    let updated = false
+    let updated = false;
     try {
         const response = await sendJsonData("/poll", { log_from: lastLogVersion, context });
-        //console.log(response)
 
         if (response.ok) {
-
-            if (!context) setContext(response.context)
-            if (response.context != context) return //skip late polls after context change
+            if (!context) setContext(response.context);
+            if (response.context != context) return; // Skip if context changed
 
             if (lastLogGuid != response.log_guid) {
-                chatHistory.innerHTML = ""
-                lastLogVersion = 0
+                chatHistory.innerHTML = "";
+                lastLogVersion = 0;
             }
 
             if (lastLogVersion != response.log_version) {
-                updated = true
+                updated = true;
                 for (const log of response.logs) {
                     setMessage(log.no, log.type, log.heading, log.content, log.temp, log.kvps);
                 }
             }
 
-            updateProgress(response.log_progress)
+            updateProgress(response.log_progress);
 
-            //set ui model vars from backend
+            // Set UI model vars from backend
             const inputAD = Alpine.$data(inputSection);
             inputAD.paused = response.paused;
             const statusAD = Alpine.$data(statusSection);
@@ -215,17 +269,22 @@ async function poll() {
 
             lastLogVersion = response.log_version;
             lastLogGuid = response.log_guid;
-
-
         }
-
     } catch (error) {
         console.error('Error:', error);
         const statusAD = Alpine.$data(statusSection);
         statusAD.connected = false;
     }
 
-    return updated
+    if (updated && autoScroll) {
+        const lastMessage = chatHistory.lastElementChild;
+        if (lastMessage) {
+            // Scroll the last message into view
+            lastMessage.scrollIntoView({ behavior: 'auto' });
+        }
+    }
+
+    return updated;
 }
 
 function updateProgress(progress) {
@@ -289,8 +348,17 @@ window.killChat = async function (id) {
 }
 
 window.selectChat = async function (id) {
-    setContext(id)
-    updateAfterScroll()
+    setContext(id);
+    updateAfterScroll();
+
+    // Optionally, wait for poll to load messages and then scroll
+    const updated = await poll();
+    if (updated && autoScroll) {
+        const lastMessage = chatHistory.lastElementChild;
+        if (lastMessage) {
+            lastMessage.scrollIntoView({ behavior: 'auto' });
+        }
+    }
 }
 
 const setContext = function (id) {
