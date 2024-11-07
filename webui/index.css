@@ -922,12 +922,12 @@ pre {
 /* Image preview section */
 .image-preview-section {
   display: flex;
-  gap: 8px;
-  padding: 8px;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-sm) 0.37rem var(--spacing-sm);
   overflow-x: auto;
   background-color: var(--color-input);
   border-radius: 8px;
-  margin-bottom: 8px;
+  margin-bottom: var(--spacing-xs);
 }
 
 .preview-item {
@@ -936,19 +936,18 @@ pre {
 }
 
 .preview-item img {
-  width: 100px;
-  height: 100px;
+  max-height: 100px;
   object-fit: cover;
-  border-radius: 4px;
-  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  border: 1px solid var(--color-border-light);
 }
 
 .remove-image {
   position: absolute;
   top: -6px;
   right: -6px;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background-color: var(--color-accent);
   color: white;

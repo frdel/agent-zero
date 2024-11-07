@@ -202,6 +202,94 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
 }
 
 
+async function handleFileUpload(event) {
+    const files = event.target.files;
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        formData.append('file', files[i]);
+    }
+
+    const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData,
+    });
+
+    const data = await response.json();
+    if (!data.ok) {
+        toast(data.message, "error");
+    } else {
+        toast("Files uploaded: " + data.filenames.join(", "), "success");
+    }
+}
+
+
+window.loadKnowledge = async function() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.pdf,.csv,.html,.json,.md';
+    input.multiple = true;
+
+    input.onchange = async () => {
+        const formData = new FormData();
+        for (let file of input.files) {
+            formData.append('files[]', file);
+        }
+
+        const response = await fetch('/import_knowledge', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await response.json();
+        if (!data.ok) {
+            toast(data.message, "error");
+        } else {
+            toast("Knowledge files imported: " + data.filenames.join(", "), "success");
+        }
+    };
+
+    input.click();
+}
+
+
+const workDirModalProxy = {
+    isOpen: false,
+    files: [],
+
+    async openModal() { // Define openModal
+        // Inside openModal, call the existing open method:
+        await this.open(); // Or directly include the fetching logic here
+    },
+
+    async open() {
+        const response = await sendJsonData('/work_dir');
+        if (response.ok) {
+            this.files = response.files;
+            this.isOpen = true;
+        } else {
+            toast(response.message, 'error');
+        }
+    },
+
+    close() {
+        this.isOpen = false;
+    }
+};
+
+// Make the proxy available globally
+window.workDirModalProxy = workDirModalProxy; 
+
+// Ensure correct setup for Alpine.js x-data.
+window.workDirModal = function() {
+    return workDirModalProxy; // Returns the proxy object for the Work Dir modal
+}
+
+
+document.addEventListener('alpine:init', () => {
+    // Make workDirModalProxy available as an Alpine component/store
+    Alpine.data('workDirModal', workDirModal); 
+});
+
 
 function adjustTextareaHeight() {
     chatInput.style.height = 'auto';
