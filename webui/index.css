@@ -372,7 +372,7 @@ pre {
   flex-direction: column;
   flex-grow: 1;
   overflow-y: scroll;
-  scroll-behavior: smooth;
+  scroll-behavior: auto !important; /* avoid infinite scrolling! */
   overflow-x: hidden;
   padding: var(--spacing-md) var(--spacing-md) 0;
   transition: all 0.3s ease;
@@ -392,18 +392,15 @@ pre {
 }
 
 #chat-history::-webkit-scrollbar-track {
-  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
   border-radius: 3px;
 }
 
 #chat-history::-webkit-scrollbar-thumb {
   border-radius: 3px;
-  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
   background-color: #555;
   transition: background-color var(--transition-speed) ease-in-out;
-  -webkit-transition: background-color var(--transition-speed) ease-in-out;
 }
 
 #chat-history::-webkit-scrollbar-thumb:hover {
@@ -776,7 +773,7 @@ pre {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md) var(--spacing-sm) 0.8rem;
   background-color: var(--color-panel);
 }
 
@@ -832,6 +829,7 @@ pre {
   width: 100%;
   display: flex;
   padding-top: var(--spacing-xs);
+  margin-left: 0.7rem;
   gap: var(--spacing-xs);
   white-space: pre-wrap;
 }
@@ -1051,7 +1049,8 @@ input:checked + .slider:before {
   cursor: pointer;
   font-size: var(--font-size-normal);
   height: 2.525rem;
-  margin-left: var(--spacing-sm);
+  margin-left: var(--spacing-xs);
+  margin-right: 0.18rem;
   transition: background-color var(--transition-speed), transform 0.1s ease-in-out;
   transition: background-color var(--transition-speed), transform 0.1s ease-in-out;
   -webkit-transition: background-color var(--transition-speed), transform 0.1s ease-in-out;
