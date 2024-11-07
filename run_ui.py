@@ -13,6 +13,7 @@ from python.helpers.files import get_abs_path
 from python.helpers.print_style import PrintStyle
 from python.helpers.dotenv import load_dotenv
 from python.helpers import persist_chat, settings
+from werkzeug.utils import secure_filename
 
 
 # initialize the internal Flask server
@@ -64,6 +65,61 @@ def requires_auth(f):
 
     return decorated
 
+
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'work_dir', 'uploads')
+
+@app.route('/upload', methods=['POST'])
+async def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'ok': False, 'message': 'No file part'}), 400
+
+    files = request.files.getlist('file')  # Handle multiple files
+    saved_filenames = []
+
+    for file in files:
+        if file and allowed_file(file.filename):  # Check file type
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(UPLOAD_FOLDER, filename))
+            saved_filenames.append(filename)
+
+    return jsonify({'ok': True, 'filenames': saved_filenames})  # Return saved filenames
+
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'txt', 'pdf', 'csv', 'html', 'json', 'md'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route("/import_knowledge", methods=["POST"])
+async def import_knowledge():
+    if 'files[]' not in request.files:
+        return jsonify({'ok': False, 'message': 'No files part'}), 400
+
+    files = request.files.getlist('files[]')
+    KNOWLEDGE_FOLDER = os.path.join(os.getcwd(), 'knowledge', 'custom', 'main')
+
+    saved_filenames = []
+
+    for file in files:
+        if file:
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(KNOWLEDGE_FOLDER, filename))
+            saved_filenames.append(filename)
+
+    return jsonify({'ok': True, 'message': "Knowledge Imported", 'filenames': saved_filenames})
+
+
+@app.route("/work_dir", methods=["GET"])  # Correct route
+async def browse_work_dir():
+    work_dir = os.path.join(os.getcwd(), 'work_dir')
+    try:
+        files = [f for f in os.listdir(work_dir) if os.path.isfile(os.path.join(work_dir, f))]
+        return jsonify({'ok': True, 'files': files})
+    except FileNotFoundError:
+        return jsonify({'ok': False, 'message': 'work_dir not found'}), 404
+    except Exception as e:
+        return jsonify({'ok': False, 'message': f'Error browsing work_dir: {str(e)}'}), 500
 
 # handle default address, show demo html page from ./test_form.html
 @app.route("/", methods=["GET"])

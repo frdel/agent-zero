@@ -371,8 +371,8 @@ pre {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  overflow-y: auto;
-  scroll-behavior: smooth;
+  overflow-y: scroll;
+  scroll-behavior: auto !important; /* avoid infinite scrolling! */
   overflow-x: hidden;
   padding: var(--spacing-md) var(--spacing-md) 0;
   transition: all 0.3s ease;
@@ -392,18 +392,15 @@ pre {
 }
 
 #chat-history::-webkit-scrollbar-track {
-  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
   border-radius: 3px;
 }
 
 #chat-history::-webkit-scrollbar-thumb {
   border-radius: 3px;
-  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
   background-color: #555;
   transition: background-color var(--transition-speed) ease-in-out;
-  -webkit-transition: background-color var(--transition-speed) ease-in-out;
 }
 
 #chat-history::-webkit-scrollbar-thumb:hover {
@@ -776,7 +773,7 @@ pre {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md) var(--spacing-sm) 0.8rem;
   background-color: var(--color-panel);
 }
 
@@ -832,6 +829,7 @@ pre {
   width: 100%;
   display: flex;
   padding-top: var(--spacing-xs);
+  margin-left: 0.7rem;
   gap: var(--spacing-xs);
   white-space: pre-wrap;
 }
@@ -889,12 +887,16 @@ pre {
   background-color: var(--color-primary-light);
 }
 
+/* MIC BUTTON */
 #microphone-button {
   background-color: #3270e2;
 }
 
 #microphone-button:hover {
   background-color: #4382e8;
+}
+#microphone-button.recording {
+  background-color: #ff4136; /* Red color for recording */
 }
 
 .chat-button svg {
@@ -920,12 +922,12 @@ pre {
 /* Image preview section */
 .image-preview-section {
   display: flex;
-  gap: 8px;
-  padding: 8px;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-sm) 0.37rem var(--spacing-sm);
   overflow-x: auto;
   background-color: var(--color-input);
   border-radius: 8px;
-  margin-bottom: 8px;
+  margin-bottom: var(--spacing-xs);
 }
 
 .preview-item {
@@ -934,19 +936,18 @@ pre {
 }
 
 .preview-item img {
-  width: 100px;
-  height: 100px;
+  max-height: 100px;
   object-fit: cover;
-  border-radius: 4px;
-  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  border: 1px solid var(--color-border-light);
 }
 
 .remove-image {
   position: absolute;
   top: -6px;
   right: -6px;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background-color: var(--color-accent);
   color: white;
@@ -1047,7 +1048,8 @@ input:checked + .slider:before {
   cursor: pointer;
   font-size: var(--font-size-normal);
   height: 2.525rem;
-  margin-left: var(--spacing-sm);
+  margin-left: var(--spacing-xs);
+  margin-right: 0.18rem;
   transition: background-color var(--transition-speed), transform 0.1s ease-in-out;
   transition: background-color var(--transition-speed), transform 0.1s ease-in-out;
   -webkit-transition: background-color var(--transition-speed), transform 0.1s ease-in-out;

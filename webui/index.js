@@ -12,11 +12,13 @@ const chatsSection = document.getElementById('chats-section');
 const scrollbarThumb = document.querySelector('#chat-history::-webkit-scrollbar-thumb');
 const progressBar = document.getElementById('progress-bar');
 const autoScrollSwitch = document.getElementById('auto-scroll-switch');
-
+const microphoneButton = document.getElementById('microphone-button');
 
 
 let autoScroll = true;
 let context = "";
+let microphoneInput = null;
+
 
 // Initialize the toggle button 
 setupSidebarToggle();
@@ -95,6 +97,59 @@ chatInput.addEventListener('keydown', (e) => {
 
 sendButton.addEventListener('click', sendMessage);
 
+
+// MICROPHONE INPUT
+
+async function initializeMicrophoneInput() {
+    microphoneInput = new MicrophoneInput(updateChatInput);
+    await microphoneInput.initialize();
+}
+function updateChatInput(text) {
+    chatInput.value += text + ' ';
+    adjustTextareaHeight();
+}
+microphoneButton.addEventListener('click', () => {
+    if (!microphoneInput) {
+        initializeMicrophoneInput().then(() => {
+            toggleRecording();
+        });
+    } else {
+        toggleRecording();
+    }
+});
+function toggleRecording() {
+    if (microphoneInput.isRecording) {
+        microphoneInput.stopRecording();
+        microphoneButton.classList.remove('recording');
+    } else {
+        microphoneInput.startRecording();
+        microphoneButton.classList.add('recording');
+    }
+}
+// Some error handling for microphone input
+async function requestMicrophonePermission() {
+    try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        return true;
+    } catch (err) {
+        console.error('Error accessing microphone:', err);
+        toast('Microphone access denied. Please enable microphone access in your browser settings.', 'error');
+        return false;
+    }
+}
+// microphoneButton click event listener modifier
+microphoneButton.addEventListener('click', async () => {
+    const hasPermission = await requestMicrophonePermission();
+    if (!hasPermission) return;
+    if (!microphoneInput) {
+        initializeMicrophoneInput().then(() => {
+            toggleRecording();
+        });
+    } else {
+        toggleRecording();
+    }
+});
+
 function updateUserTime() {
     const now = new Date();
     const hours = now.getHours();
@@ -146,6 +201,94 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
     if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
+
+async function handleFileUpload(event) {
+    const files = event.target.files;
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        formData.append('file', files[i]);
+    }
+
+    const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData,
+    });
+
+    const data = await response.json();
+    if (!data.ok) {
+        toast(data.message, "error");
+    } else {
+        toast("Files uploaded: " + data.filenames.join(", "), "success");
+    }
+}
+
+
+window.loadKnowledge = async function() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.pdf,.csv,.html,.json,.md';
+    input.multiple = true;
+
+    input.onchange = async () => {
+        const formData = new FormData();
+        for (let file of input.files) {
+            formData.append('files[]', file);
+        }
+
+        const response = await fetch('/import_knowledge', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await response.json();
+        if (!data.ok) {
+            toast(data.message, "error");
+        } else {
+            toast("Knowledge files imported: " + data.filenames.join(", "), "success");
+        }
+    };
+
+    input.click();
+}
+
+
+const workDirModalProxy = {
+    isOpen: false,
+    files: [],
+
+    async openModal() { // Define openModal
+        // Inside openModal, call the existing open method:
+        await this.open(); // Or directly include the fetching logic here
+    },
+
+    async open() {
+        const response = await sendJsonData('/work_dir');
+        if (response.ok) {
+            this.files = response.files;
+            this.isOpen = true;
+        } else {
+            toast(response.message, 'error');
+        }
+    },
+
+    close() {
+        this.isOpen = false;
+    }
+};
+
+// Make the proxy available globally
+window.workDirModalProxy = workDirModalProxy; 
+
+// Ensure correct setup for Alpine.js x-data.
+window.workDirModal = function() {
+    return workDirModalProxy; // Returns the proxy object for the Work Dir modal
+}
+
+
+document.addEventListener('alpine:init', () => {
+    // Make workDirModalProxy available as an Alpine component/store
+    Alpine.data('workDirModal', workDirModal); 
+});
 
 
 function adjustTextareaHeight() {
