@@ -60,31 +60,81 @@ function setupSidebarToggle() {
 // Make sure to call this function
 document.addEventListener('DOMContentLoaded', setupSidebarToggle);
 
+   // index.js
 async function sendMessage() {
     try {
         const message = chatInput.value.trim();
-        if (message) {
+        const inputAD = Alpine.$data(inputSection);
+        const attachments = inputAD.attachments;
+        const hasAttachments = attachments && attachments.length > 0;
 
-            const response = await sendJsonData("/msg", { text: message, context });
+        if (message || hasAttachments) {
+            let response;
+            const messageId = generateGUID();
 
-            if (!response) {
-                toast("No response returned.", "error")
-            } else if (!response.ok) {
-                if (response.message) {
-                    toast(response.message, "error")
-                } else {
-                    toast("Undefined error.", "error")
+            // Only render immediately for attachments
+            if (hasAttachments) {
+                const attachmentsWithUrls = attachments.map(attachment => ({
+                    ...attachment,
+                    url: URL.createObjectURL(attachment.file)
+                }));
+                
+                // Only render if there's text content or it's an image-only message
+                setMessage(messageId, 'user', '', message, false, {
+                    attachments: attachmentsWithUrls
+                });
+
+                const formData = new FormData();
+                formData.append('text', message);
+                formData.append('context', context);
+                formData.append('message_id', messageId);
+
+                for (let i = 0; i < attachments.length; i++) {
+                    formData.append('attachments', attachments[i].file);
                 }
+
+                response = await fetch('/msg', {
+                    method: 'POST',
+                    body: formData
+                });
             } else {
-                setContext(response.context)
+                // For text-only messages, let polling handle the rendering
+                const data = { 
+                    text: message, 
+                    context,
+                    message_id: messageId 
+                };
+                response = await fetch('/msg', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
             }
 
-            //setMessage('user', message);
+            // Handle response
+            const jsonResponse = await response.json();
+            if (!jsonResponse) {
+                toast("No response returned.", "error");
+            } else if (!jsonResponse.ok) {
+                if (jsonResponse.message) {
+                    toast(jsonResponse.message, "error");
+                } else {
+                    toast("Undefined error.", "error");
+                }
+            } else {
+                setContext(jsonResponse.context);
+            }
+
+            // Clear input and attachments
             chatInput.value = '';
+            inputAD.attachments = [];
+            inputAD.hasAttachments = false;
             adjustTextareaHeight();
         }
     } catch (e) {
-        toast(e.message, "error")
+        toast(e.message, "error");
     }
 }
 

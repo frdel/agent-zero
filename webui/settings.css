@@ -128,7 +128,7 @@ select {
       padding: 0.5rem;
       border: 1px solid #ddd;
       border-radius: 0.25rem;
-      font-family: Rubik;
+      font-family: "Rubik", Arial, Helvetica, sans-serif;
   }
   
   textarea {
@@ -212,7 +212,7 @@ select {
       cursor: pointer;
       border: none;
       font-size: 0.875rem;
-      font-family: Rubik;
+      font-family: "Rubik", Arial, Helvetica, sans-serif;
   }
   
   .btn-ok {
@@ -262,7 +262,7 @@ select {
       background-color: white;
       font-size: inherit;
       cursor: pointer;
-      font-family: Rubik;
+      font-family: "Rubik", Arial, Helvetica, sans-serif;
       outline: none;
   }
   

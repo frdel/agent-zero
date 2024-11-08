@@ -116,6 +116,7 @@ class AgentContext:
         except Exception as e:
             agent.handle_critical_exception(e)
 
+
 @dataclass
 class AgentConfig:
     chat_model: BaseChatModel | BaseLLM
@@ -194,6 +195,7 @@ class LoopData:
         self.message = ""
         self.history_from = 0
         self.history = []
+        self.attachments = [] # Add attachments field
 
 
 # intervention exception class - skips rest of message loop iteration
@@ -251,6 +253,13 @@ class Agent:
 
                 printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)
                 user_message = loop_data.message
+
+                # Include attachments in user message if available
+                if loop_data.attachments:
+                    user_message += "\n" + "\n".join(loop_data.attachments) # Add attachments to message
+                    loop_data.attachments = [] # Clear attachments after adding to message
+
+
                 await self.append_message(user_message, human=True)
 
                 # let the agent run message loop until he stops it with a response tool

@@ -143,8 +143,7 @@ async def health_check():
 # send message to agent (async UI)
 @app.route("/msg", methods=["POST"])
 async def handle_message_async():
-    return await handle_message(False)
-
+  return await handle_message(False)
 
 # send message to agent (synchronous API)
 @app.route("/msg_sync", methods=["POST"])
@@ -153,50 +152,71 @@ async def handle_msg_sync():
 
 
 async def handle_message(sync: bool):
-    try:
+  try:
+      # Handle both JSON and multipart/form-data
+      if request.content_type.startswith('multipart/form-data'):
+          text = request.form.get('text', '')
+          ctxid = request.form.get('context', '')
+          attachments = request.files.getlist('attachments')
+          attachment_paths = []
 
-        # data sent to the server
-        input = request.get_json()
-        text = input.get("text", "")
-        ctxid = input.get("context", "")
-        blev = input.get("broadcast", 1)
+          upload_folder = os.path.join(os.getcwd(), 'work_dir', 'uploads')
 
-        # context instance - get or create
-        context = get_context(ctxid)
+          if attachments:
+              os.makedirs(upload_folder, exist_ok=True)
+              for attachment in attachments:
+                  filename = secure_filename(attachment.filename)
+                  save_path = os.path.join(upload_folder, filename)
+                  attachment.save(save_path)
+                  attachment_paths.append(save_path)
+      else:
+          # Handle JSON request as before
+          input_data = request.get_json()
+          text = input_data.get('text', '')
+          ctxid = input_data.get('context', '')
+          attachment_paths = []
 
-        # print to console and log
-        PrintStyle(
-            background_color="#6C3483", font_color="white", bold=True, padding=True
-        ).print(f"User message:")
-        PrintStyle(font_color="white", padding=False).print(f"> {text}")
-        context.log.log(type="user", heading="User message", content=text)
+      # Now process the message
+      message = text
 
-        if sync:
-            context.communicate(text)
-            result = await context.process.result()  # type: ignore
-            response = {
-                "ok": True,
-                "message": result,
-                "context": context.id,
-            }
-        else:
+      # Obtain agent context
+      context = get_context(ctxid)
 
-            context.communicate(text)
-            response = {
-                "ok": True,
-                "message": "Message received.",
-                "context": context.id,
-            }
+      # Store attachments in agent data
+      context.agent0.set_data('attachments', attachment_paths)
 
-    except Exception as e:
-        response = {
-            "ok": False,
-            "message": str(e),
-        }
-        PrintStyle.error(str(e))
+      # Print to console and log
+      PrintStyle(
+          background_color="#6C3483", font_color="white", bold=True, padding=True
+      ).print(f"User message:")
+      PrintStyle(font_color="white", padding=False).print(f"> {message}")
+      context.log.log(type="user", heading="User message", content=message)
 
-    # respond with json
-    return jsonify(response)
+      if sync:
+          context.communicate(message)
+          result = await context.process.result()  # type: ignore
+          response = {
+              "ok": True,
+              "message": result,
+              "context": context.id,
+          }
+      else:
+          context.communicate(message)
+          response = {
+              "ok": True,
+              "message": "Message received.",
+              "context": context.id,
+          }
+
+  except Exception as e:
+      response = {
+          "ok": False,
+          "message": str(e),
+      }
+      PrintStyle.error(str(e))
+
+  # respond with json
+  return jsonify(response)
 
 
 # pausing/unpausing the agent
