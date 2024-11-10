@@ -446,6 +446,8 @@ pre {
   padding-bottom: 0;*/
   padding: var(--spacing-sm) var(--spacing-md);
   padding-bottom: 0;
+  display: flex;
+  justify-content: space-between;
 }
 
 #progress-bar-h {

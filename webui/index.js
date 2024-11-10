@@ -1,4 +1,5 @@
 import * as msgs from "./messages.js"
+import { speech } from "./speech.js";
 
 const leftPanel = document.getElementById('left-panel');
 const rightPanel = document.getElementById('right-panel');
@@ -59,7 +60,7 @@ function setupSidebarToggle() {
 // Make sure to call this function
 document.addEventListener('DOMContentLoaded', setupSidebarToggle);
 
-   // index.js
+// index.js
 export async function sendMessage() {
     try {
         const message = chatInput.value.trim();
@@ -77,7 +78,7 @@ export async function sendMessage() {
                     ...attachment,
                     url: URL.createObjectURL(attachment.file)
                 }));
-                
+
                 // Only render if there's text content or it's an image-only message
                 setMessage(messageId, 'user', '', message, false, {
                     attachments: attachmentsWithUrls
@@ -98,10 +99,10 @@ export async function sendMessage() {
                 });
             } else {
                 // For text-only messages, let polling handle the rendering
-                const data = { 
-                    text: message, 
+                const data = {
+                    text: message,
                     context,
-                    message_id: messageId 
+                    message_id: messageId
                 };
                 response = await fetch('/msg', {
                     method: 'POST',
@@ -149,16 +150,16 @@ sendButton.addEventListener('click', sendMessage);
 
 export function updateChatInput(text) {
     console.log('updateChatInput called with:', text);
-        
+
     // Append text with proper spacing
     const currentValue = chatInput.value;
     const needsSpace = currentValue.length > 0 && !currentValue.endsWith(' ');
     chatInput.value = currentValue + (needsSpace ? ' ' : '') + text + ' ';
-    
+
     // Adjust height and trigger input event
     adjustTextareaHeight();
     chatInput.dispatchEvent(new Event('input'));
-    
+
     console.log('Updated chat input value:', chatInput.value);
 }
 
@@ -235,7 +236,7 @@ async function handleFileUpload(event) {
 }
 
 
-window.loadKnowledge = async function() {
+window.loadKnowledge = async function () {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.txt,.pdf,.csv,.html,.json,.md';
@@ -289,17 +290,17 @@ const workDirModalProxy = {
 };
 
 // Make the proxy available globally
-window.workDirModalProxy = workDirModalProxy; 
+window.workDirModalProxy = workDirModalProxy;
 
 // Ensure correct setup for Alpine.js x-data.
-window.workDirModal = function() {
+window.workDirModal = function () {
     return workDirModalProxy; // Returns the proxy object for the Work Dir modal
 }
 
 
 document.addEventListener('alpine:init', () => {
     // Make workDirModalProxy available as an Alpine component/store
-    Alpine.data('workDirModal', workDirModal); 
+    Alpine.data('workDirModal', workDirModal);
 });
 
 
@@ -334,6 +335,7 @@ function generateGUID() {
 
 let lastLogVersion = 0;
 let lastLogGuid = ""
+let lastSpokenNo = 0
 
 async function poll() {
     let updated = false
@@ -356,6 +358,7 @@ async function poll() {
                 for (const log of response.logs) {
                     setMessage(log.no, log.type, log.heading, log.content, log.temp, log.kvps);
                 }
+                afterMessagesUpdate(response.logs)
             }
 
             updateProgress(response.log_progress)
@@ -381,6 +384,26 @@ async function poll() {
     }
 
     return updated
+}
+
+function afterMessagesUpdate(logs) {
+    if(localStorage.getItem('speech') == 'true') {
+        speakMessages(logs)
+    }
+}
+
+function speakMessages(logs) {
+    // log.no, log.type, log.heading, log.content
+    for (let i = logs.length - 1; i >= 0; i--) {
+        const log = logs[i]
+        if (log.type == "response") {
+            if (log.no > lastSpokenNo) {
+                lastSpokenNo = log.no
+                speech.speak(log.content)
+                return
+            }
+        }
+    }
 }
 
 function updateProgress(progress) {
@@ -453,6 +476,7 @@ const setContext = function (id) {
     context = id
     lastLogGuid = ""
     lastLogVersion = 0
+    lastSpokenNo = 0
     const chatsAD = Alpine.$data(chatsSection);
     chatsAD.selected = id
 }
@@ -486,6 +510,12 @@ window.toggleDarkMode = function (isDark) {
     }
     console.log("Dark mode:", isDark);
     localStorage.setItem('darkMode', isDark);
+};
+
+window.toggleSpeech = function (isOn) {
+    console.log("Speech:", isOn);
+    localStorage.setItem('speech', isOn);
+    if(!isOn) speech.stop()
 };
 
 // Modify this part
@@ -576,20 +606,20 @@ window.saveChat = async function () {
 function downloadFile(filename, content) {
     // Create a Blob with the content to save
     const blob = new Blob([content], { type: 'application/json' });
-    
+
     // Create a link element
     const link = document.createElement('a');
-    
+
     // Create a URL for the Blob
     const url = URL.createObjectURL(blob);
     link.href = url;
-    
+
     // Set the file name for download
     link.download = filename;
-    
+
     // Programmatically click the link to trigger the download
     link.click();
-    
+
     // Clean up by revoking the object URL
     setTimeout(() => {
         URL.revokeObjectURL(url);

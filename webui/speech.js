@@ -217,7 +217,8 @@ class MicrophoneInput {
                 this.silenceStartTime = null;
 
                 if (this.status === Status.LISTENING || this.status === Status.WAITING) {
-                    this.status = Status.RECORDING;
+                    if (!speech.isSpeaking()) // TODO? a better way to ignore agent's voice?
+                        this.status = Status.RECORDING;
                 }
             } else if (this.status === Status.RECORDING) {
                 if (!this.silenceStartTime) {
@@ -347,3 +348,44 @@ async function requestMicrophonePermission() {
         return false;
     }
 }
+
+
+class Speech {
+    constructor() {
+        this.synth = window.speechSynthesis;
+        this.utterance = null;
+    }
+
+    stripEmojis(str) {
+        return str
+            .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    speak(text) {
+        console.log('Speaking:', text);
+        // Stop any current utterance
+        this.stop();
+
+        // Remove emojis and create a new utterance
+        text = this.stripEmojis(text);
+        this.utterance = new SpeechSynthesisUtterance(text);
+
+        // Speak the new utterance
+        this.synth.speak(this.utterance);
+    }
+
+    stop() {
+        if (this.isSpeaking()) {
+            this.synth.cancel();
+        }
+    }
+
+    isSpeaking() {
+        return this.synth?.speaking || false;
+    }
+}
+
+export const speech = new Speech();
+window.speech = speech

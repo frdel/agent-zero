@@ -62,10 +62,10 @@ export function _drawMessage(messageContainer, heading, content, temp, followUp,
     if (window.renderMathInElement) {
         renderMathInElement(spanElement, {
             delimiters: [
-                {left: "$", right: "$", display: true},
-                {left: "\\$", right: "\\$", display: true},
-                {left: "$", right: "$", display: false},
-                {left: "\\$", right: "\\$", display: false}
+                { left: "$", right: "$", display: true },
+                { left: "\\$", right: "\\$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\$", right: "\\$", display: false }
             ],
             throwOnError: false  // Prevent KaTeX from throwing errors
         });
@@ -115,7 +115,7 @@ export function drawMessageUser(messageContainer, id, type, heading, content, te
     if (hasAttachments) {
         const attachmentsContainer = document.createElement('div');
         attachmentsContainer.classList.add('attachments-container');
-        
+
         // Add "Attachments" heading if there's text content
         if (hasContent) {
             const attachmentsHeading = document.createElement('h4');
@@ -204,10 +204,10 @@ function drawKvps(container, kvps) {
                 if (window.renderMathInElement) {
                     renderMathInElement(span, {
                         delimiters: [
-                            {left: "$$", right: "$$", display: true},
-                            {left: "\$$", right: "\$$", display: true},
-                            {left: "$", right: "$", display: false},
-                            {left: "\$$", right: "\$$", display: false}
+                            { left: "$$", right: "$$", display: true },
+                            { left: "\$$", right: "\$$", display: true },
+                            { left: "$", right: "$", display: false },
+                            { left: "\$$", right: "\$$", display: false }
                         ],
                         throwOnError: false  // Prevent KaTeX from throwing errors
                     });
