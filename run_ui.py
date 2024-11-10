@@ -13,6 +13,8 @@ from python.helpers.files import get_abs_path
 from python.helpers.print_style import PrintStyle
 from python.helpers.dotenv import load_dotenv
 from python.helpers import persist_chat, settings
+from python.helpers.voice_transcription import VoiceTranscription
+import base64
 from werkzeug.utils import secure_filename
 from python.helpers.cloudflare_tunnel import CloudflareTunnel
 
@@ -134,6 +136,78 @@ async def health_check():
     return "OK"
 
 
+@app.route('/transcribe', methods=['POST'])
+def transcribe_audio():
+  """
+  Transcribe audio data using Whisper.
+  Expected JSON payload:
+  {
+      'audio_data': base64 encoded audio,
+      'model_size': 'base',  # Optional, defaults to 'base'
+      'language': None,      # Optional language code
+      'is_final': False      # Optional flag for final transcription
+  }
+  """
+  try:
+      # Parse request data
+      data = request.json
+      audio_data = data.get('audio_data')
+      model_size = data.get('model_size', 'base')
+      language = data.get('language')
+      is_final = data.get('is_final', False)
+
+      # Validate input
+      if not audio_data:
+          return jsonify({
+              "error": "No audio data provided", 
+              "status": "error"
+          }), 400
+
+      # Validate model size
+      valid_model_sizes = ['tiny', 'base', 'small', 'medium', 'large']
+      if model_size not in valid_model_sizes:
+          return jsonify({
+              "error": f"Invalid model size. Choose from {valid_model_sizes}", 
+              "status": "error"
+          }), 400
+
+      # Log the received audio data size
+      print(f"Received audio data size: {len(audio_data)} characters (base64)")
+
+      try:
+          # Transcribe using VoiceTranscription helper
+          text = VoiceTranscription.transcribe_bytes(
+              audio_data, 
+              model_size=model_size, 
+              language=language
+          )
+
+          # Return transcription result
+          return jsonify({
+              "text": text,
+              "is_final": is_final,
+              "model_size": model_size,
+              "status": "success"
+          })
+
+      except Exception as transcribe_error:
+          # Detailed error logging for transcription failures
+          print(f"Transcription error: {transcribe_error}")
+          return jsonify({
+              "error": "Transcription failed",
+              "details": str(transcribe_error),
+              "status": "error"
+          }), 500
+
+  except Exception as e:
+      # Catch-all error handler
+      print(f"Unexpected transcription error: {e}")
+      return jsonify({
+          "error": "Unexpected error during transcription",
+          "details": str(e),
+          "status": "error"
+      }), 500
+
 # # secret page, requires authentication
 # @app.route('/secret', methods=['GET'])
 # @requires_auth
@@ -144,8 +218,7 @@ async def health_check():
 # send message to agent (async UI)
 @app.route("/msg", methods=["POST"])
 async def handle_message_async():
-    return await handle_message(False)
-
+  return await handle_message(False)
 
 # send message to agent (synchronous API)
 @app.route("/msg_sync", methods=["POST"])
@@ -154,50 +227,71 @@ async def handle_msg_sync():
 
 
 async def handle_message(sync: bool):
-    try:
+  try:
+      # Handle both JSON and multipart/form-data
+      if request.content_type.startswith('multipart/form-data'):
+          text = request.form.get('text', '')
+          ctxid = request.form.get('context', '')
+          attachments = request.files.getlist('attachments')
+          attachment_paths = []
 
-        # data sent to the server
-        input = request.get_json()
-        text = input.get("text", "")
-        ctxid = input.get("context", "")
-        blev = input.get("broadcast", 1)
+          upload_folder = os.path.join(os.getcwd(), 'work_dir', 'uploads')
 
-        # context instance - get or create
-        context = get_context(ctxid)
+          if attachments:
+              os.makedirs(upload_folder, exist_ok=True)
+              for attachment in attachments:
+                  filename = secure_filename(attachment.filename)
+                  save_path = os.path.join(upload_folder, filename)
+                  attachment.save(save_path)
+                  attachment_paths.append(save_path)
+      else:
+          # Handle JSON request as before
+          input_data = request.get_json()
+          text = input_data.get('text', '')
+          ctxid = input_data.get('context', '')
+          attachment_paths = []
 
-        # print to console and log
-        PrintStyle(
-            background_color="#6C3483", font_color="white", bold=True, padding=True
-        ).print(f"User message:")
-        PrintStyle(font_color="white", padding=False).print(f"> {text}")
-        context.log.log(type="user", heading="User message", content=text)
+      # Now process the message
+      message = text
 
-        if sync:
-            context.communicate(text)
-            result = await context.process.result()  # type: ignore
-            response = {
-                "ok": True,
-                "message": result,
-                "context": context.id,
-            }
-        else:
+      # Obtain agent context
+      context = get_context(ctxid)
 
-            context.communicate(text)
-            response = {
-                "ok": True,
-                "message": "Message received.",
-                "context": context.id,
-            }
+      # Store attachments in agent data
+      context.agent0.set_data('attachments', attachment_paths)
 
-    except Exception as e:
-        response = {
-            "ok": False,
-            "message": str(e),
-        }
-        PrintStyle.error(str(e))
+      # Print to console and log
+      PrintStyle(
+          background_color="#6C3483", font_color="white", bold=True, padding=True
+      ).print(f"User message:")
+      PrintStyle(font_color="white", padding=False).print(f"> {message}")
+      context.log.log(type="user", heading="User message", content=message)
 
-    # respond with json
-    return jsonify(response)
+      if sync:
+          context.communicate(message)
+          result = await context.process.result()  # type: ignore
+          response = {
+              "ok": True,
+              "message": result,
+              "context": context.id,
+          }
+      else:
+          context.communicate(message)
+          response = {
+              "ok": True,
+              "message": "Message received.",
+              "context": context.id,
+          }
+
+  except Exception as e:
+      response = {
+          "ok": False,
+          "message": str(e),
+      }
+      PrintStyle.error(str(e))
+
+  # respond with json
+  return jsonify(response)
 
 
 # pausing/unpausing the agent

@@ -27,6 +27,8 @@ export function getHandler(type) {
     }
 }
 
+
+// draw a message with a specific type
 export function _drawMessage(messageContainer, heading, content, temp, followUp, kvps = null, messageClasses = [], contentClasses = []) {
 
     const messageDiv = document.createElement('div');
@@ -60,10 +62,10 @@ export function _drawMessage(messageContainer, heading, content, temp, followUp,
     if (window.renderMathInElement) {
         renderMathInElement(spanElement, {
             delimiters: [
-                {left: "$$", right: "$$", display: true},
-                {left: "\$$", right: "\$$", display: true},
+                {left: "$", right: "$", display: true},
+                {left: "\\$", right: "\\$", display: true},
                 {left: "$", right: "$", display: false},
-                {left: "\$$", right: "\$$", display: false}
+                {left: "\\$", right: "\\$", display: false}
             ],
             throwOnError: false  // Prevent KaTeX from throwing errors
         });
@@ -72,43 +74,85 @@ export function _drawMessage(messageContainer, heading, content, temp, followUp,
     return messageDiv;
 }
 
+
 export function drawMessageDefault(messageContainer, id, type, heading, content, temp, kvps = null) {
-    _drawMessage(messageContainer, heading, content, temp, false, kvps, ['message-ai', 'message-default'], ['msg-json']);
+    const messageContent = convertImageTags(content); // Convert image tags
+    _drawMessage(messageContainer, heading, messageContent, temp, false, kvps, ['message-ai', 'message-default'], ['msg-json']);
 }
 
 export function drawMessageAgent(messageContainer, id, type, heading, content, temp, kvps = null) {
-    let kvpsFlat = null
+    let kvpsFlat = null;
     if (kvps) {
-        kvpsFlat = { ...kvps, ...kvps['tool_args'] || {} }
-        delete kvpsFlat['tool_args']
+        kvpsFlat = { ...kvps, ...kvps['tool_args'] || {} };
+        delete kvpsFlat['tool_args'];
     }
 
-    _drawMessage(messageContainer, heading, content, temp, false, kvpsFlat, ['message-ai', 'message-agent'], ['msg-json']);
+    const messageContent = convertImageTags(content); // Convert image tags
+    _drawMessage(messageContainer, heading, messageContent, temp, false, kvpsFlat, ['message-ai', 'message-agent'], ['msg-json']);
 }
 
 export function drawMessageResponse(messageContainer, id, type, heading, content, temp, kvps = null) {
-    _drawMessage(messageContainer, heading, content, temp, true, null, ['message-ai', 'message-agent-response']);
+    const messageContent = convertImageTags(content); // Convert image tags
+    _drawMessage(messageContainer, heading, messageContent, temp, true, null, ['message-ai', 'message-agent-response']);
 }
 
 export function drawMessageDelegation(messageContainer, id, type, heading, content, temp, kvps = null) {
-    _drawMessage(messageContainer, heading, content, temp, true, kvps, ['message-ai', 'message-agent', 'message-agent-delegation']);
+    const messageContent = convertImageTags(content); // Convert image tags
+    _drawMessage(messageContainer, heading, messageContent, temp, true, kvps, ['message-ai', 'message-agent', 'message-agent-delegation']);
 }
 
 export function drawMessageUser(messageContainer, id, type, heading, content, temp, kvps = null) {
-    _drawMessage(messageContainer, heading, content, temp, false, kvps, ['message-user']);
+    const hasContent = content && content.trim().length > 0;
+    const hasAttachments = kvps && kvps.attachments && kvps.attachments.length > 0;
+
+    // Only create message container if there's content or it's the initial message
+    if (hasContent || !messageContainer.hasChildNodes()) {
+        // Create the message with user heading and content
+        _drawMessage(messageContainer, "User message", content, temp, false, null, ['message-user'], []);
+    }
+
+    // Render image attachments for user messages
+    if (hasAttachments) {
+        const attachmentsContainer = document.createElement('div');
+        attachmentsContainer.classList.add('attachments-container');
+        
+        // Add "Attachments" heading if there's text content
+        if (hasContent) {
+            const attachmentsHeading = document.createElement('h4');
+            attachmentsHeading.textContent = "Attachments";
+            attachmentsContainer.appendChild(attachmentsHeading);
+        }
+
+        kvps.attachments.forEach(attachment => {
+            const image = document.createElement('img');
+            if (attachment.url) {
+                image.src = attachment.url;
+            } else if (attachment.data) {
+                image.src = `data:image/jpeg;base64,${attachment.data}`;
+            }
+            image.alt = 'Attachment';
+            image.classList.add('message-attachment');
+            attachmentsContainer.appendChild(image);
+        });
+
+        messageContainer.appendChild(attachmentsContainer);
+    }
 }
 
 export function drawMessageTool(messageContainer, id, type, heading, content, temp, kvps = null) {
-    _drawMessage(messageContainer, heading, content, temp, true, kvps, ['message-ai', 'message-tool'], ['msg-output']);
+    const messageContent = convertImageTags(content); // Convert image tags
+    _drawMessage(messageContainer, heading, messageContent, temp, true, kvps, ['message-ai', 'message-tool'], ['msg-output']);
 }
 
 export function drawMessageCodeExe(messageContainer, id, type, heading, content, temp, kvps = null) {
-    _drawMessage(messageContainer, heading, content, temp, true, null, ['message-ai', 'message-code-exe']);
+    const messageContent = convertImageTags(content); // Convert image tags
+    _drawMessage(messageContainer, heading, messageContent, temp, true, null, ['message-ai', 'message-code-exe']);
 }
 
 export function drawMessageAgentPlain(classes, messageContainer, id, type, heading, content, temp, kvps = null) {
-    _drawMessage(messageContainer, heading, content, temp, false, null, [...classes]);
-    messageContainer.classList.add('center-container')
+    const messageContent = convertImageTags(content); // Convert image tags
+    _drawMessage(messageContainer, heading, messageContent, temp, false, null, [...classes]);
+    messageContainer.classList.add('center-container');
 }
 
 export function drawMessageInfo(messageContainer, id, type, heading, content, temp, kvps = null) {
@@ -116,12 +160,9 @@ export function drawMessageInfo(messageContainer, id, type, heading, content, te
 }
 
 export function drawMessageUtil(messageContainer, id, type, heading, content, temp, kvps = null) {
-    //if kvps is not null and contains "query"
-    if (kvps && kvps["query"]) {
-        const a  = 1+1
-    }
-    _drawMessage(messageContainer, heading, content, temp, false, kvps, ['message-util'], ['msg-json']);
-    messageContainer.classList.add('center-container')
+    const messageContent = convertImageTags(content); // Convert image tags
+    _drawMessage(messageContainer, heading, messageContent, temp, false, kvps, ['message-util'], ['msg-json']);
+    messageContainer.classList.add('center-container');
 }
 
 export function drawMessageWarning(messageContainer, id, type, heading, content, temp, kvps = null) {
@@ -188,4 +229,17 @@ function convertToTitleCase(str) {
         .replace(/\b\w/g, function (match) {
             return match.toUpperCase();  // Capitalize the first letter of each word
         });
+}
+
+
+function convertImageTags(content) {
+    // Regular expression to match <image> tags and extract base64 content
+    const imageTagRegex = /<image>(.*?)<\/image>/g;
+
+    // Replace <image> tags with <img> tags with base64 source
+    const updatedContent = content.replace(imageTagRegex, (match, base64Content) => {
+        return `<img src="data:image/jpeg;base64,${base64Content}" alt="Image Attachment" style="max-width: 250px !important;"/>`;
+    });
+
+    return updatedContent;
 }

@@ -807,16 +807,36 @@ pre {
   opacity: 0.5;
 }
 
+.attachments-container {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.message-attachment {
+  max-width: 100%;
+  max-height: 400px;
+  margin: 5px 0;
+  border-radius: 5px;
+  object-fit: contain;
+}
+
+.image-error {
+  border: 1px solid #ff0000;
+  padding: 10px;
+  color: #ff0000;
+}
+
 /* Text input */
 #chat-input {
   flex-grow: 1;
   min-height: 2.7rem;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background-color: var(--color-input);
+  padding: var(--spacing-sm) var(--spacing-sm);
+  padding-top: 0.70rem;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   resize: none;
-  align-content: center;
+  align-content: start;
 }
 
 .input-row {
@@ -838,7 +858,7 @@ pre {
   background: none;
   border: none;
   color: var(--color-text);
-  font-family: Rubik;
+  font-family: "Rubik", Arial, Helvetica, sans-serif;
   font-size: 0.7rem;
   padding: 6px var(--spacing-sm);
   cursor: pointer;
@@ -897,6 +917,23 @@ pre {
 }
 #microphone-button.recording {
   background-color: #ff4136; /* Red color for recording */
+  transition: background-color 0.3s ease;
+}
+
+.mic-pulse {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+      transform: scale(1);
+  }
+  50% {
+      transform: scale(1.1);
+  }
+  100% {
+      transform: scale(1);
+  }
 }
 
 .chat-button svg {
@@ -1284,7 +1321,7 @@ input:checked + .slider:before {
 .katex {
   font-family: Roboto Mono !important;
   line-height: 1rem !important;
-  font-size: var(--font-size-normal) !important;
+  font-size: 3rem;
 }
 
 /* Animations */
@@ -1316,6 +1353,8 @@ input:checked + .slider:before {
   #chat-input {
     min-height: 5.3rem;
     align-content: start;
+  
+    
   }
 
   #chat-buttons-wrapper {
