@@ -22,6 +22,7 @@ paramiko==3.4.0
 pypdf==4.3.1
 python-dotenv==1.0.1
 sentence-transformers==3.0.1
+tiktoken==0.8.0
 unstructured==0.15.13
 unstructured-client==0.25.9
 webcolors==24.6.0

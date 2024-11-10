@@ -1,0 +1,2 @@
+# behavioral rules
+!!! {{rules}}

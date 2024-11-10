@@ -174,6 +174,45 @@ def convert_out(settings: Settings) -> dict[str, Any]:
     }
 
     result = {"sections": [chat_model_section, util_model_section, embed_model_section]}
+    # embedding model section
+    embed_model_fields = []
+    embed_model_fields.append(
+        {
+            "id": "embed_model_provider",
+            "title": "Embedding model provider",
+            "description": "Select provider for embedding model used by the framework",
+            "type": "select",
+            "value": settings["embed_model_provider"],
+            "options": [{"value": p.name, "label": p.value} for p in ModelProvider],
+        }
+    )
+    embed_model_fields.append(
+        {
+            "id": "embed_model_name",
+            "title": "Embedding model name",
+            "description": "Exact name of model from selected provider",
+            "type": "input",
+            "value": settings["embed_model_name"],
+        }
+    )
+
+    embed_model_fields.append(
+        {
+            "id": "embed_model_kwargs",
+            "title": "Embedding model additional parameters",
+            "description": "Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.",
+            "type": "textarea",
+            "value": _dict_to_env(settings["embed_model_kwargs"]),
+        }
+    )
+
+    embed_model_section = {
+        "title": "Embedding Model",
+        "description": "Settings for the embedding model used by Agent Zero.",
+        "fields": embed_model_fields,
+    }
+
+    result = {"sections": [chat_model_section, util_model_section, embed_model_section]}
     return result
 
 def convert_in(settings: dict[str, Any]) -> Settings:

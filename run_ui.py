@@ -13,7 +13,7 @@ from python.helpers.files import get_abs_path
 from python.helpers.print_style import PrintStyle
 from python.helpers.dotenv import load_dotenv
 from python.helpers import persist_chat, settings
-from python.helpers.voice_transcription import VoiceTranscription
+# from python.helpers.voice_transcription import VoiceTranscription
 import base64
 from werkzeug.utils import secure_filename
 from python.helpers.cloudflare_tunnel import CloudflareTunnel
@@ -136,77 +136,77 @@ async def health_check():
     return "OK"
 
 
-@app.route('/transcribe', methods=['POST'])
-def transcribe_audio():
-  """
-  Transcribe audio data using Whisper.
-  Expected JSON payload:
-  {
-      'audio_data': base64 encoded audio,
-      'model_size': 'base',  # Optional, defaults to 'base'
-      'language': None,      # Optional language code
-      'is_final': False      # Optional flag for final transcription
-  }
-  """
-  try:
-      # Parse request data
-      data = request.json
-      audio_data = data.get('audio_data')
-      model_size = data.get('model_size', 'base')
-      language = data.get('language')
-      is_final = data.get('is_final', False)
+# @app.route('/transcribe', methods=['POST'])
+# def transcribe_audio():
+#   """
+#   Transcribe audio data using Whisper.
+#   Expected JSON payload:
+#   {
+#       'audio_data': base64 encoded audio,
+#       'model_size': 'base',  # Optional, defaults to 'base'
+#       'language': None,      # Optional language code
+#       'is_final': False      # Optional flag for final transcription
+#   }
+#   """
+#   try:
+#       # Parse request data
+#       data = request.json
+#       audio_data = data.get('audio_data')
+#       model_size = data.get('model_size', 'base')
+#       language = data.get('language')
+#       is_final = data.get('is_final', False)
 
-      # Validate input
-      if not audio_data:
-          return jsonify({
-              "error": "No audio data provided", 
-              "status": "error"
-          }), 400
+#       # Validate input
+#       if not audio_data:
+#           return jsonify({
+#               "error": "No audio data provided", 
+#               "status": "error"
+#           }), 400
 
-      # Validate model size
-      valid_model_sizes = ['tiny', 'base', 'small', 'medium', 'large']
-      if model_size not in valid_model_sizes:
-          return jsonify({
-              "error": f"Invalid model size. Choose from {valid_model_sizes}", 
-              "status": "error"
-          }), 400
+#       # Validate model size
+#       valid_model_sizes = ['tiny', 'base', 'small', 'medium', 'large']
+#       if model_size not in valid_model_sizes:
+#           return jsonify({
+#               "error": f"Invalid model size. Choose from {valid_model_sizes}", 
+#               "status": "error"
+#           }), 400
 
-      # Log the received audio data size
-      print(f"Received audio data size: {len(audio_data)} characters (base64)")
+#       # Log the received audio data size
+#       print(f"Received audio data size: {len(audio_data)} characters (base64)")
 
-      try:
-          # Transcribe using VoiceTranscription helper
-          text = VoiceTranscription.transcribe_bytes(
-              audio_data, 
-              model_size=model_size, 
-              language=language
-          )
+#       try:
+#           # Transcribe using VoiceTranscription helper
+#           text = VoiceTranscription.transcribe_bytes(
+#               audio_data, 
+#               model_size=model_size, 
+#               language=language
+#           )
 
-          # Return transcription result
-          return jsonify({
-              "text": text,
-              "is_final": is_final,
-              "model_size": model_size,
-              "status": "success"
-          })
+#           # Return transcription result
+#           return jsonify({
+#               "text": text,
+#               "is_final": is_final,
+#               "model_size": model_size,
+#               "status": "success"
+#           })
 
-      except Exception as transcribe_error:
-          # Detailed error logging for transcription failures
-          print(f"Transcription error: {transcribe_error}")
-          return jsonify({
-              "error": "Transcription failed",
-              "details": str(transcribe_error),
-              "status": "error"
-          }), 500
+#       except Exception as transcribe_error:
+#           # Detailed error logging for transcription failures
+#           print(f"Transcription error: {transcribe_error}")
+#           return jsonify({
+#               "error": "Transcription failed",
+#               "details": str(transcribe_error),
+#               "status": "error"
+#           }), 500
 
-  except Exception as e:
-      # Catch-all error handler
-      print(f"Unexpected transcription error: {e}")
-      return jsonify({
-          "error": "Unexpected error during transcription",
-          "details": str(e),
-          "status": "error"
-      }), 500
+#   except Exception as e:
+#       # Catch-all error handler
+#       print(f"Unexpected transcription error: {e}")
+#       return jsonify({
+#           "error": "Unexpected error during transcription",
+#           "details": str(e),
+#           "status": "error"
+#       }), 500
 
 # # secret page, requires authentication
 # @app.route('/secret', methods=['GET'])

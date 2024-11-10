@@ -154,39 +154,6 @@ class AgentConfig:
     additional: Dict[str, Any] = field(default_factory=dict)
 
 
-class Message:
-    def __init__(self):
-        self.segments: list[str]
-        self.human: bool
-
-
-class Monologue:
-    def __init__(self):
-        self.done = False
-        self.summary: str = ""
-        self.index_from = 0
-        self.index_to = 0
-        self.messages: list[Message] = []
-
-    def finish(self):
-        pass
-
-
-class History:
-    def __init__(self):
-        self.monologues: list[Monologue] = []
-        self.messages: list[Message] = []
-        self.start_monologue()
-
-    def current_monologue(self):
-        return self.monologues[-1]
-
-    def start_monologue(self):
-        if self.monologues:
-            self.current_monologue().finish()
-        self.monologues.append(Monologue())
-        return self.current_monologue()
-
 
 class LoopData:
     def __init__(self):

@@ -34,37 +34,65 @@ class CloudflareTunnel:
             
         # Map platform/arch to download URLs
         base_url = "https://github.com/cloudflare/cloudflared/releases/latest/download/"
-        download_file = None
         
-        if system == "linux":
-            download_file = "cloudflared-linux-amd64" if arch in ["x86_64", "amd64"] else "cloudflared-linux-arm"
-        elif system == "darwin":
-            download_file = "cloudflared-darwin-amd64" if arch in ["x86_64"] else "cloudflared-darwin-arm64"
-        elif system == "windows":
-            download_file = "cloudflared-windows-amd64.exe"
+        if system == "darwin":  # macOS
+            # Download and extract .tgz for macOS
+            download_file = "cloudflared-darwin-amd64.tgz" if arch == "x86_64" else "cloudflared-darwin-arm64.tgz"
+            download_url = f"{base_url}{download_file}"
+            download_path = files.get_abs_path(self.bin_dir, download_file)
             
-        if not download_file:
-            raise RuntimeError(f"Unsupported platform: {system} {arch}")
-            
-        # Download binary
-        download_url = f"{base_url}{download_file}"
-        download_path = files.get_abs_path(self.bin_dir, download_file)
-        
-        print(f"\nDownloading cloudflared from: {download_url}")
-        response = requests.get(download_url, stream=True)
-        if response.status_code == 200:
+            print(f"\nDownloading cloudflared from: {download_url}")
+            response = requests.get(download_url, stream=True)
+            if response.status_code != 200:
+                raise RuntimeError(f"Failed to download cloudflared: {response.status_code}")
+                
+            # Save the .tgz file
             with open(download_path, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
-            print(f"Downloaded to {download_path}")
-        else:
-            raise RuntimeError(f"Failed to download cloudflared: {response.status_code}")
+                    
+            # Extract cloudflared binary from .tgz
+            import tarfile
+            with tarfile.open(download_path, "r:gz") as tar:
+                tar.extract("cloudflared", files.get_abs_path(self.bin_dir))
+                
+            # Cleanup .tgz file
+            os.remove(download_path)
             
-        # Rename and set permissions
-        if os.path.exists(install_path):
-            os.remove(install_path)
-        os.rename(download_path, install_path)
+        else:  # Linux and Windows
+            if system == "linux":
+                if arch in ["x86_64", "amd64"]:
+                    download_file = "cloudflared-linux-amd64"
+                elif arch == "arm64" or arch == "aarch64":
+                    download_file = "cloudflared-linux-arm64"
+                elif arch == "arm":
+                    download_file = "cloudflared-linux-arm"
+                else:
+                    download_file = "cloudflared-linux-386"
+            elif system == "windows":
+                download_file = "cloudflared-windows-amd64.exe"
+            else:
+                raise RuntimeError(f"Unsupported platform: {system} {arch}")
+                
+            download_url = f"{base_url}{download_file}"
+            download_path = files.get_abs_path(self.bin_dir, download_file)
+            
+            print(f"\nDownloading cloudflared from: {download_url}")
+            response = requests.get(download_url, stream=True)
+            if response.status_code != 200:
+                raise RuntimeError(f"Failed to download cloudflared: {response.status_code}")
+                
+            with open(download_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            
+            
+            # Rename and set permissions
+            if os.path.exists(install_path):
+                os.remove(install_path)
+            os.rename(download_path, install_path)
         
+        # Set executable permissions
         if system != "windows":
             os.chmod(install_path, 0o755)
             

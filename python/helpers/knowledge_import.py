@@ -49,7 +49,8 @@ def load_knowledge(
         "pdf": PyPDFLoader,
         "csv": CSVLoader,
         "html": UnstructuredHTMLLoader,
-        "json": JSONLoader,
+        # "json": JSONLoader,
+        "json": TextLoader,
         # "md": UnstructuredMarkdownLoader,
         "md": TextLoader,
     }
