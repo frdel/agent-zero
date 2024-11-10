@@ -14,6 +14,7 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.dotenv import load_dotenv
 from python.helpers import persist_chat, settings
 from werkzeug.utils import secure_filename
+from python.helpers.cloudflare_tunnel import CloudflareTunnel
 
 
 # initialize the internal Flask server
@@ -465,10 +466,32 @@ def run():
         def log_request(self, code="-", size="-"):
             pass  # Override to suppress request logging
 
-    # run the server on port from .env
+    # Get configuration from environment
     port = int(os.environ.get("WEB_UI_PORT", 0)) or None
-    app.run(request_handler=NoRequestLoggingWSGIRequestHandler, port=port)
+    host = os.environ.get("WEB_UI_HOST") or None
+    use_cloudflare = os.environ.get("USE_CLOUDFLARE", "false").lower() == "true"
 
+    # Initialize and start Cloudflare tunnel if enabled
+    tunnel = None
+    if use_cloudflare and port:
+        try:
+            tunnel = CloudflareTunnel(port)
+            tunnel.start()
+        except Exception as e:
+            print(f"Failed to start Cloudflare tunnel: {e}")
+            print("Continuing without tunnel...")
+
+    try:
+        # Run Flask app
+        app.run(
+            request_handler=NoRequestLoggingWSGIRequestHandler,
+            port=port,
+            host=host
+        )
+    finally:
+        # Clean up tunnel if it was started
+        if tunnel:
+            tunnel.stop()
 
 # run the internal server
 if __name__ == "__main__":

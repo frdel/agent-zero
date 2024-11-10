@@ -61,3 +61,8 @@ instruments/**/*.*
 # Explicitly allow the default folder and its contents
 !instruments/default/
 !instruments/default/**
+
+# Ignore all contents of the directory "bin"
+bin/*
+# But do not ignore the directory itself
+!bin/.gitkeep
