@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Agent Zero</title>
+
+    <script type="module">
+        import { pipeline, read_audio } from './transformers@3.0.2.js';
+
+        let transcriber;
+        let mediaRecorder;
+        let isRecording = false;
+        let audioChunks = [];
+        let chunks_to_process = [{ tokens: [], finalized: false }];
+
+        async function initTranscriber() {
+            try {
+                transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
+            } catch (error) {
+                console.error("Failed to initialize transcriber:", error);
+            }
+        }
+
+        async function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+
+        async function startRecording() {
+            isRecording = true;
+            document.getElementById("micButton").innerText = "Stop Recording";
+
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+
+            // Handle data as it’s available
+            mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
+
+                // Process chunks every 3 seconds
+                if (audioChunks.length >= 3) {
+                    processAudioChunks();
+                }
+            };
+
+            // Capture small chunks every second
+            mediaRecorder.start(1000);
+        }
+
+        async function processAudioChunks() {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+
+            try {
+                const audioData = await read_audio(audioUrl, 16000);
+
+                if (transcriber) {
+                    await transcriber(audioData, {
+                        callback_function: mergeChunksCallback,
+                        chunk_callback: processChunkCallback,
+                        return_timestamps: true,
+                        force_full_sequences: false,
+                    });
+                } else {
+                    console.warn("Transcriber is not ready yet.");
+                }
+            } catch (error) {
+                console.error("Error during transcription:", error);
+            }
+
+            // Cleanup and reset buffer
+            URL.revokeObjectURL(audioUrl);
+            audioChunks = [];
+        }
+
+        function processChunkCallback(chunk) {
+            let lastChunk = chunks_to_process[chunks_to_process.length - 1];
+            Object.assign(lastChunk, chunk);
+            lastChunk.finalized = true;
+
+            if (!chunk.is_last) {
+                chunks_to_process.push({ tokens: [], finalized: false });
+            }
+        }
+
+        function mergeChunksCallback(item) {
+            let lastChunk = chunks_to_process[chunks_to_process.length - 1];
+            lastChunk.tokens = [...item[0].output_token_ids];
+
+            // Merge text chunks and update transcript
+            const mergedText = transcriber.tokenizer._decode_asr(chunks_to_process, {
+                time_precision: 1.0 / transcriber.processor.feature_extractor.config.chunk_length,
+                return_timestamps: true,
+                force_full_sequences: false,
+            });
+
+            document.getElementById("transcript").innerText += mergedText + ' ';
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            document.getElementById("micButton").innerText = "Start Recording";
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        }
+
+        window.toggleRecording = toggleRecording;
+        window.onload = initTranscriber;
+    </script>
+</head>
+
+<body>
+    <h1>Agent Zero Speech Transcription</h1>
+    <button id="micButton" onclick="toggleRecording()">Start Recording</button>
+    <p id="transcript">Transcript will appear here...</p>
+</body>
+</html>
