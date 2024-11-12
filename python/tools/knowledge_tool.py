@@ -1,6 +1,6 @@
 import os
 import asyncio
-from python.helpers import memory, perplexity_search, duckduckgo_search
+from python.helpers import memory, perplexity_search, duckduckgo_search, google_search
 from python.helpers.tool import Tool, Response
 from python.helpers.print_style import PrintStyle
 from python.helpers.errors import handle_error
@@ -11,21 +11,23 @@ class Knowledge(Tool):
         tasks = [
             self.perplexity_search(question),
             self.duckduckgo_search(question),
+            self.google_search(question),
             self.mem_search(question)
         ]
 
         # Run all tasks concurrently
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        perplexity_result, duckduckgo_result, memory_result = results
+        perplexity_result, duckduckgo_result, google_result, memory_result = results
 
         # Handle exceptions and format results
         perplexity_result = self.format_result(perplexity_result, "Perplexity")
         duckduckgo_result = self.format_result(duckduckgo_result, "DuckDuckGo")
+        google_result = self.format_result(google_result, "Google")
         memory_result = self.format_result(memory_result, "Memory")
 
         msg = self.agent.read_prompt("tool.knowledge.response.md", 
-                              online_sources = ((perplexity_result + "\n\n") if perplexity_result else "") + str(duckduckgo_result),
+                              online_sources = ((perplexity_result + "\n\n") if perplexity_result else "") + str(duckduckgo_result) + str(google_result),
                               memory = memory_result)
 
         await self.agent.handle_intervention(msg)  # wait for intervention and handle it, if paused
@@ -42,6 +44,9 @@ class Knowledge(Tool):
 
     async def duckduckgo_search(self, question):
         return await asyncio.to_thread(duckduckgo_search.search, question)
+    
+    async def google_search(self, question):
+        return await asyncio.to_thread(google_search.search, question)
 
     async def mem_search(self, question: str):
         db = await memory.Memory.get(self.agent)
