@@ -1,4 +1,4 @@
-import * as msgs from "./messages.js"
+import * as msgs from "./messages.js";
 import { speech } from "./speech.js";
 
 const leftPanel = document.getElementById('left-panel');
@@ -10,15 +10,11 @@ const sendButton = document.getElementById('send-button');
 const inputSection = document.getElementById('input-section');
 const statusSection = document.getElementById('status-section');
 const chatsSection = document.getElementById('chats-section');
-const scrollbarThumb = document.querySelector('#chat-history::-webkit-scrollbar-thumb');
 const progressBar = document.getElementById('progress-bar');
 const autoScrollSwitch = document.getElementById('auto-scroll-switch');
 
-
 let autoScroll = true;
 let context = "";
-
-
 
 // Initialize the toggle button 
 setupSidebarToggle();
@@ -42,7 +38,6 @@ function handleResize() {
     }
 }
 
-// Run on startup and window resize
 window.addEventListener('load', handleResize);
 window.addEventListener('resize', handleResize);
 
@@ -57,10 +52,8 @@ function setupSidebarToggle() {
         setTimeout(setupSidebarToggle, 100);
     }
 }
-// Make sure to call this function
 document.addEventListener('DOMContentLoaded', setupSidebarToggle);
 
-// index.js
 export async function sendMessage() {
     try {
         const message = chatInput.value.trim();
@@ -72,14 +65,22 @@ export async function sendMessage() {
             let response;
             const messageId = generateGUID();
 
-            // Only render immediately for attachments
+            // Include attachments in the user message
             if (hasAttachments) {
-                const attachmentsWithUrls = attachments.map(attachment => ({
-                    ...attachment,
-                    url: URL.createObjectURL(attachment.file)
-                }));
+                const attachmentsWithUrls = attachments.map(attachment => {
+                    if (attachment.type === 'image') {
+                        return {
+                            ...attachment,
+                            url: URL.createObjectURL(attachment.file)
+                        };
+                    } else {
+                        return {
+                            ...attachment
+                        };
+                    }
+                });
 
-                // Only render if there's text content or it's an image-only message
+                // Render user message with attachments
                 setMessage(messageId, 'user', '', message, false, {
                     attachments: attachmentsWithUrls
                 });
@@ -98,7 +99,7 @@ export async function sendMessage() {
                     body: formData
                 });
             } else {
-                // For text-only messages, let polling handle the rendering
+                // For text-only messages
                 const data = {
                     text: message,
                     context,
@@ -186,12 +187,17 @@ function updateUserTime() {
 updateUserTime();
 setInterval(updateUserTime, 1000);
 
+
 function setMessage(id, type, heading, content, temp, kvps = null) {
     // Search for the existing message container by id
     let messageContainer = document.getElementById(`message-${id}`);
 
     if (messageContainer) {
-        // Clear the existing container's content if found
+        // Don't re-render user messages
+        if (type === 'user') {
+            return; // Skip re-rendering
+        }
+        // For other types, update the message
         messageContainer.innerHTML = '';
     } else {
         // Create a new container if not found
@@ -199,8 +205,7 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
         messageContainer = document.createElement('div');
         messageContainer.id = `message-${id}`;
         messageContainer.classList.add('message-container', `${sender}-container`);
-        if (temp) messageContainer.classList.add("message-temp")
-
+        if (temp) messageContainer.classList.add("message-temp");
     }
 
     const handler = msgs.getHandler(type);
@@ -212,27 +217,6 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
     }
 
     if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
-}
-
-
-async function handleFileUpload(event) {
-    const files = event.target.files;
-    const formData = new FormData();
-    for (let i = 0; i < files.length; i++) {
-        formData.append('file', files[i]);
-    }
-
-    const response = await fetch('/upload', {
-        method: 'POST',
-        body: formData,
-    });
-
-    const data = await response.json();
-    if (!data.ok) {
-        toast(data.message, "error");
-    } else {
-        toast("Files uploaded: " + data.filenames.join(", "), "success");
-    }
 }
 
 
@@ -356,7 +340,8 @@ async function poll() {
             if (lastLogVersion != response.log_version) {
                 updated = true
                 for (const log of response.logs) {
-                    setMessage(log.no, log.type, log.heading, log.content, log.temp, log.kvps);
+                    const messageId = log.id || log.no; // Use log.id if available
+                    setMessage(messageId, log.type, log.heading, log.content, log.temp, log.kvps);
                 }
                 afterMessagesUpdate(response.logs)
             }
