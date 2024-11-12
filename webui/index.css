@@ -516,6 +516,14 @@ pre {
   text-align: end;
 }
 
+.message-user > div {
+padding-top: var(--spacing-xs);
+font-family: 'Roboto Mono', monospace;
+font-optical-sizing: auto;
+-webkit-font-optical-sizing: auto;
+font-size: var(--font-size-small)
+}
+
 .message-ai {
   border-bottom-left-radius: var(--spacing-xs);
 }
@@ -785,7 +793,6 @@ pre {
   align-items: center;
   gap: var(--spacing-xs);
 }
-
 /* Attachment icon */
 .attachment-wrapper {
   position: relative;
@@ -796,7 +803,7 @@ pre {
   cursor: pointer;
   color: var(--color-text);
   opacity: 0.7;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s ease;
   display: flex;
   align-items: center;
 }
@@ -809,24 +816,195 @@ pre {
   opacity: 0.5;
 }
 
+/* Message attachments styles */
 .attachments-container {
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 5px;
+  margin-top: 0.5em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
 }
 
-.message-attachment {
-  max-width: 100%;
-  max-height: 400px;
-  margin: 5px 0;
-  border-radius: 5px;
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  background: var(--color-background);
+  padding: 0.5em;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.attachment-item:hover {
+  background: var(--color-secondary-dark);
+}
+
+.attachment-item.file-type {
+  background: var(--color-background);
+}
+
+.attachment-item:hover {
+  background: var(--color-secondary-dark);
+}
+
+.attachment-preview {
+  max-width: 100px;
+  max-height: 100px;
+  border-radius: 4px;
   object-fit: contain;
 }
 
+.attachment-image .attachment-preview {
+  margin-right: 8px;
+}
+
+.attachment-info,
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.attachment-name,
+.filename,
+.file-name {
+  font-size: 0.9em;
+  color: var(--color-text);
+  word-break: break-word;
+}
+
+.attachment-ext,
+.extension,
+.file-ext {
+  background: var(--color-primary);
+  color: var(--color-text);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Preview section styles */
+.preview-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: var(--spacing-xs);
+}
+
+.preview-item {
+  position: relative;
+  background: var(--color-secondary);
+  border-radius: 8px;
+  padding: 8px;
+  max-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.preview-item:hover {
+  background: var(--color-secondary-dark);
+}
+
+.preview-item.image-preview img {
+  max-height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.image-wrapper {
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.extension {
+  background: var(--color-primary);
+  color: var(--color-text);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  text-transform: uppercase;
+}
+
+.file-preview:hover {
+  background: var(--color-secondary-dark);
+}
+
+.remove-attachment {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: var(--color-primary);
+  /* opacity: 0.6; */
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  z-index: 1;
+}
+
+.remove-attachment:hover {
+  background-color: var(--color-accent);
+  transform: scale(1.1);
+}
+
+.remove-attachment:active {
+  transform: scale(0.9);
+}
+
+/* File type specific styles
+.extension[data-type="image"] {
+  background: #4CAF50;
+}
+
+.extension[data-type="code"] {
+  background: #2196F3;
+}
+
+.extension[data-type="document"] {
+  background: #FF9800;
+}
+
+*/
+
+/* Error handling */
 .image-error {
-  border: 1px solid #ff0000;
+  border: 1px solid var(--color-error);
   padding: 10px;
-  color: #ff0000;
+  color: var(--color-error);
+  border-radius: 4px;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.image-error::before {
+  content: "⚠️";
 }
 
 /* Text input */

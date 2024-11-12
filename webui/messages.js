@@ -30,7 +30,6 @@ export function getHandler(type) {
 
 // draw a message with a specific type
 export function _drawMessage(messageContainer, heading, content, temp, followUp, kvps = null, messageClasses = [], contentClasses = []) {
-
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('message', ...messageClasses);
 
@@ -42,33 +41,35 @@ export function _drawMessage(messageContainer, heading, content, temp, followUp,
 
     drawKvps(messageDiv, kvps);
 
-    const preElement = document.createElement('pre');
-    preElement.classList.add("msg-content", ...contentClasses);
-    preElement.style.whiteSpace = 'pre-wrap';
-    preElement.style.wordBreak = 'break-word';
+    if (content && content.trim().length > 0) {
+        const preElement = document.createElement('pre');
+        preElement.classList.add("msg-content", ...contentClasses);
+        preElement.style.whiteSpace = 'pre-wrap';
+        preElement.style.wordBreak = 'break-word';
 
-    // Wrap content in a <span> to allow HTML parsing
-    const spanElement = document.createElement('span');
-    spanElement.innerHTML = content;  // Use innerHTML instead of textContent
-    preElement.appendChild(spanElement);
-    messageDiv.appendChild(preElement);
+        const spanElement = document.createElement('span');
+        spanElement.innerHTML = content;
+        preElement.appendChild(spanElement);
+        messageDiv.appendChild(preElement);
+
+        // Render LaTeX math within the span
+        if (window.renderMathInElement) {
+            renderMathInElement(spanElement, {
+                delimiters: [
+                    { left: "$", right: "$", display: true },
+                    { left: "\\$", right: "\\$", display: true },
+                    { left: "$", right: "$", display: false },
+                    { left: "\\$", right: "\\$", display: false }
+                ],
+                throwOnError: false
+            });
+        }
+    }
+
     messageContainer.appendChild(messageDiv);
 
     if (followUp) {
         messageContainer.classList.add("message-followup");
-    }
-
-    // Render LaTeX math within the span
-    if (window.renderMathInElement) {
-        renderMathInElement(spanElement, {
-            delimiters: [
-                { left: "$", right: "$", display: true },
-                { left: "\\$", right: "\\$", display: true },
-                { left: "$", right: "$", display: false },
-                { left: "\\$", right: "\\$", display: false }
-            ],
-            throwOnError: false  // Prevent KaTeX from throwing errors
-        });
     }
 
     return messageDiv;
@@ -102,41 +103,79 @@ export function drawMessageDelegation(messageContainer, id, type, heading, conte
 }
 
 export function drawMessageUser(messageContainer, id, type, heading, content, temp, kvps = null) {
-    const hasContent = content && content.trim().length > 0;
-    const hasAttachments = kvps && kvps.attachments && kvps.attachments.length > 0;
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message', 'message-user');
 
-    // Only create message container if there's content or it's the initial message
-    if (hasContent || !messageContainer.hasChildNodes()) {
-        // Create the message with user heading and content
-        _drawMessage(messageContainer, "User message", content, temp, false, null, ['message-user'], []);
+    const headingElement = document.createElement('h4');
+    headingElement.textContent = "User message";
+    messageDiv.appendChild(headingElement);
+
+    if (content && content.trim().length > 0) {
+        const textDiv = document.createElement('div');
+        textDiv.classList.add('message-text');
+        textDiv.textContent = content;
+        messageDiv.appendChild(textDiv);
     }
 
-    // Render image attachments for user messages
-    if (hasAttachments) {
+    // Handle attachments
+    if (kvps && kvps.attachments && kvps.attachments.length > 0) {
         const attachmentsContainer = document.createElement('div');
         attachmentsContainer.classList.add('attachments-container');
 
-        // Add "Attachments" heading if there's text content
-        if (hasContent) {
-            const attachmentsHeading = document.createElement('h4');
-            attachmentsHeading.textContent = "Attachments";
-            attachmentsContainer.appendChild(attachmentsHeading);
-        }
-
         kvps.attachments.forEach(attachment => {
-            const image = document.createElement('img');
-            if (attachment.url) {
-                image.src = attachment.url;
-            } else if (attachment.data) {
-                image.src = `data:image/jpeg;base64,${attachment.data}`;
+            const attachmentDiv = document.createElement('div');
+            attachmentDiv.classList.add('attachment-item');
+
+            if (typeof attachment === 'string') {
+                // attachment is filename
+                const filename = attachment;
+                const extension = filename.split('.').pop().toUpperCase();
+
+                attachmentDiv.classList.add('file-type');
+                attachmentDiv.innerHTML = `
+                    <div class="file-preview">
+                        <span class="filename">${filename}</span>
+                        <span class="extension">${extension}</span>
+                    </div>
+                `;
+            } else if (attachment.type === 'image') {
+                // Existing logic for images
+                const imgWrapper = document.createElement('div');
+                imgWrapper.classList.add('image-wrapper');
+
+                const img = document.createElement('img');
+                img.src = attachment.url;
+                img.alt = attachment.name;
+                img.classList.add('attachment-preview');
+
+                const fileInfo = document.createElement('div');
+                fileInfo.classList.add('file-info');
+                fileInfo.innerHTML = `
+                    <span class="filename">${attachment.name}</span>
+                    <span class="extension">${attachment.extension.toUpperCase()}</span>
+                `;
+
+                imgWrapper.appendChild(img);
+                attachmentDiv.appendChild(imgWrapper);
+                attachmentDiv.appendChild(fileInfo);
+            } else {
+                // Existing logic for non-image files
+                attachmentDiv.classList.add('file-type');
+                attachmentDiv.innerHTML = `
+                    <div class="file-preview">
+                        <span class="filename">${attachment.name}</span>
+                        <span class="extension">${attachment.extension.toUpperCase()}</span>
+                    </div>
+                `;
             }
-            image.alt = 'Attachment';
-            image.classList.add('message-attachment');
-            attachmentsContainer.appendChild(image);
+
+            attachmentsContainer.appendChild(attachmentDiv);
         });
 
-        messageContainer.appendChild(attachmentsContainer);
+        messageDiv.appendChild(attachmentsContainer);
     }
+
+    messageContainer.appendChild(messageDiv);
 }
 
 export function drawMessageTool(messageContainer, id, type, heading, content, temp, kvps = null) {

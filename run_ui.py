@@ -225,13 +225,13 @@ async def handle_message_async():
 async def handle_msg_sync():
     return await handle_message(True)
 
-
 async def handle_message(sync: bool):
   try:
       # Handle both JSON and multipart/form-data
       if request.content_type.startswith('multipart/form-data'):
           text = request.form.get('text', '')
           ctxid = request.form.get('context', '')
+          message_id = request.form.get('message_id', None)
           attachments = request.files.getlist('attachments')
           attachment_paths = []
 
@@ -249,6 +249,7 @@ async def handle_message(sync: bool):
           input_data = request.get_json()
           text = input_data.get('text', '')
           ctxid = input_data.get('context', '')
+          message_id = input_data.get('message_id', None)
           attachment_paths = []
 
       # Now process the message
@@ -260,12 +261,21 @@ async def handle_message(sync: bool):
       # Store attachments in agent data
       context.agent0.set_data('attachments', attachment_paths)
 
+      # Prepare attachment filenames for logging
+      attachment_filenames = [os.path.basename(path) for path in attachment_paths] if attachment_paths else []
+
       # Print to console and log
       PrintStyle(
           background_color="#6C3483", font_color="white", bold=True, padding=True
       ).print(f"User message:")
       PrintStyle(font_color="white", padding=False).print(f"> {message}")
-      context.log.log(type="user", heading="User message", content=message)
+      if attachment_filenames:
+          PrintStyle(font_color="white", padding=False).print("Attachments:")
+          for filename in attachment_filenames:
+              PrintStyle(font_color="white", padding=False).print(f"- {filename}")
+
+      # Log the message with message_id and attachments
+      context.log.log(type="user", heading="User message", content=message, kvps={'attachments': attachment_filenames}, id=message_id)
 
       if sync:
           context.communicate(message)
