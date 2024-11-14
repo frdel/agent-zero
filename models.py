@@ -183,7 +183,7 @@ def get_openai_embedding(model_name: str, api_key=get_api_key("openai"), **kwarg
     return OpenAIEmbeddings(model=model_name, api_key=api_key, **kwargs)  # type: ignore
 
 
-def get_azure_openai_chat(
+def get_openai_azure_chat(
     deployment_name: str,
     api_key=get_api_key("openai_azure"),
     temperature=DEFAULT_TEMPERATURE,
@@ -193,7 +193,7 @@ def get_azure_openai_chat(
     return AzureChatOpenAI(deployment_name=deployment_name, temperature=temperature, api_key=api_key, azure_endpoint=azure_endpoint, **kwargs)  # type: ignore
 
 
-def get_azure_openai_instruct(
+def get_openai_azure_instruct(
     deployment_name: str,
     api_key=get_api_key("openai_azure"),
     temperature=DEFAULT_TEMPERATURE,
@@ -203,7 +203,7 @@ def get_azure_openai_instruct(
     return AzureOpenAI(deployment_name=deployment_name, temperature=temperature, api_key=api_key, azure_endpoint=azure_endpoint, **kwargs)  # type: ignore
 
 
-def get_azure_openai_embedding(
+def get_openai_azure_embedding(
     deployment_name: str,
     api_key=get_api_key("openai_azure"),
     azure_endpoint=dotenv.get_dotenv_value("OPENAI_AZURE_ENDPOINT"),
