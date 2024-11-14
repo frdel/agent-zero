@@ -25,6 +25,7 @@ app = Flask("app", static_folder=get_abs_path("./webui"), static_url_path="/")
 app.config["JSON_SORT_KEYS"] = False  # Disable key sorting in jsonify
 
 lock = threading.Lock()
+parser = argparse.ArgumentParser()
 
 # Set up basic authentication, name and password from .env variables
 app.config["BASIC_AUTH_USERNAME"] = (
@@ -571,10 +572,7 @@ def run():
         def log_request(self, code="-", size="-"):
             pass  # Override to suppress request logging
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=0, help="Web UI port")
-    parser.add_argument("--host", type=int, default=0, help="Web UI host")
-    args = parser.parse_args()
+    args,_ = parser.parse_known_args()
 
     # Get configuration from environment
     port = args.port or int(os.environ.get("WEB_UI_PORT", 0)) or None
@@ -605,4 +603,8 @@ def run():
 
 # run the internal server
 if __name__ == "__main__":
+
+    parser.add_argument("--port", type=int, default=0, help="Web UI port")
+    parser.add_argument("--host", type=str, default=0, help="Web UI host")
+
     run()

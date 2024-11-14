@@ -52,14 +52,12 @@ class ModelProvider(Enum):
     OPENAI_AZURE = "OpenAI Azure"
     OPENROUTER = "OpenRouter"
     SAMBANOVA = "Sambanova"
-    OTHER = "Other" 
+    OTHER = "Other"
 
 
 # Utility function to get API keys from environment variables
 def get_api_key(service):
-    return os.getenv(f"API_KEY_{service.upper()}") or os.getenv(
-        f"{service.upper()}_API_KEY"
-    )
+    return os.getenv(f"API_KEY_{service.upper()}") or os.getenv(f"{service.upper()}_API_KEY") or "None"
 
 
 def get_model(type: ModelType, provider: ModelProvider, name: str, **kwargs):

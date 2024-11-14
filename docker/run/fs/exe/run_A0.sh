@@ -26,7 +26,7 @@ while true; do
     fi
 
     echo "Starting A0..."
-    python "$PYTHON_SCRIPT" --port 80 --host 0.0.0.0
+    python "$PYTHON_SCRIPT" --port 80 --host "0.0.0.0"
     
     # Check the exit status
     if [ $? -ne 0 ]; then
