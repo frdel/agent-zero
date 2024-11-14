@@ -22,11 +22,11 @@ while true; do
     # Copy repository files if target is empty
     if [ -z "$(ls -A "$TARGET_DIR")" ]; then
         echo "Copying files from $SOURCE_DIR to $TARGET_DIR..."
-        cp -rn --no-preserve=ownership,mode "$SOURCE_DIR/" "$TARGET_DIR"
+        cp -rn --no-preserve=ownership,mode "$SOURCE_DIR/." "$TARGET_DIR"
     fi
 
     echo "Starting A0..."
-    python "$PYTHON_SCRIPT" --port 80
+    python "$PYTHON_SCRIPT" --port 80 --host 0.0.0.0
     
     # Check the exit status
     if [ $? -ne 0 ]; then

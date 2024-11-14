@@ -573,11 +573,12 @@ def run():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=0, help="Web UI port")
+    parser.add_argument("--host", type=int, default=0, help="Web UI host")
     args = parser.parse_args()
 
     # Get configuration from environment
     port = args.port or int(os.environ.get("WEB_UI_PORT", 0)) or None
-    host = os.environ.get("WEB_UI_HOST") or None
+    host = args.host or os.environ.get("WEB_UI_HOST") or None
     use_cloudflare = os.environ.get("USE_CLOUDFLARE", "false").lower() == "true"
 
     # Initialize and start Cloudflare tunnel if enabled
