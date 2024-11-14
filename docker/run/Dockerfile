@@ -13,8 +13,15 @@ RUN apt-get update && apt-get install -y \
     npm \
     openssh-server \
     sudo \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+    curl \
+    wget \
+    git
+
+# Cleanup package list
+RUN rm -rf /var/lib/apt/lists/*
+
+# Clone Agent Zero repository
+RUN git clone --branch development https://github.com/frdel/agent-zero.git /git/agent-zero
 
 # Set up SSH
 RUN mkdir /var/run/sshd && \
@@ -25,18 +32,26 @@ RUN mkdir /var/run/sshd && \
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 
-# Copy initial .bashrc with virtual environment activation to a temporary location
-COPY .bashrc /etc/skel/.bashrc
-
 # Copy the script to ensure .bashrc is in the root directory
 COPY initialize.sh /usr/local/bin/initialize.sh
 RUN chmod +x /usr/local/bin/initialize.sh
 
+# Copy contents of filesystem directory to /fs
+COPY ./fs/ /fs
+
 # Ensure the virtual environment and pip setup
 RUN $VIRTUAL_ENV/bin/pip install --upgrade pip
 
-# Expose SSH port
-EXPOSE 22
+# Install additional python packages
+RUN $VIRTUAL_ENV/bin/pip install \
+    ipython \
+    requests
+
+# Install A0 python packages
+RUN $VIRTUAL_ENV/bin/pip install -r /git/agent-zero/requirements.txt
+
+# Expose ports
+EXPOSE 22 80
 
 # Init .bashrc
 CMD ["/usr/local/bin/initialize.sh"]

@@ -1,3 +1,4 @@
+import argparse
 import json
 from functools import wraps
 import os
@@ -235,13 +236,13 @@ async def handle_message(sync: bool):
           attachments = request.files.getlist('attachments')
           attachment_paths = []
 
-          upload_folder = os.path.join(os.getcwd(), 'work_dir', 'uploads')
+          upload_folder = files.get_abs_path('work_dir/uploads')
 
           if attachments:
               os.makedirs(upload_folder, exist_ok=True)
               for attachment in attachments:
                   filename = secure_filename(attachment.filename)
-                  save_path = os.path.join(upload_folder, filename)
+                  save_path = files.get_abs_path(upload_folder, filename)
                   attachment.save(save_path)
                   attachment_paths.append(save_path)
       else:
@@ -570,8 +571,12 @@ def run():
         def log_request(self, code="-", size="-"):
             pass  # Override to suppress request logging
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=0, help="Web UI port")
+    args = parser.parse_args()
+
     # Get configuration from environment
-    port = int(os.environ.get("WEB_UI_PORT", 0)) or None
+    port = args.port or int(os.environ.get("WEB_UI_PORT", 0)) or None
     host = os.environ.get("WEB_UI_HOST") or None
     use_cloudflare = os.environ.get("USE_CLOUDFLARE", "false").lower() == "true"
 
