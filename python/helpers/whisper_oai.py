@@ -1,7 +1,10 @@
 # Import the necessary libraries
+import warnings
 import whisper
-import files
 import tempfile
+
+# suppress FutureWarning from torch.load
+warnings.filterwarnings('ignore', category=FutureWarning)
 
 model = None
 
