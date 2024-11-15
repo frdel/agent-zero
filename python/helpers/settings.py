@@ -2,10 +2,13 @@ import json
 import os
 import re
 from typing import Any, Optional, TypedDict
-from . import files
+
+import models
+from . import files, dotenv
 from models import get_model, ModelProvider, ModelType
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.embeddings import Embeddings
+
 
 class Settings(TypedDict):
     chat_model_provider: str
@@ -21,6 +24,8 @@ class Settings(TypedDict):
     embed_model_provider: str
     embed_model_name: str
     embed_model_kwargs: dict[str, str]
+
+    api_keys: dict[str, str]
 
 
 class PartialSettings(Settings, total=False):
@@ -212,17 +217,55 @@ def convert_out(settings: Settings) -> dict[str, Any]:
         "fields": embed_model_fields,
     }
 
-    result = {"sections": [chat_model_section, util_model_section, embed_model_section]}
+    # embedding model section
+    api_keys_fields = []
+    api_keys_fields.append(_get_api_key_field(settings, "openai", "OpenAI API Key"))
+    api_keys_fields.append(_get_api_key_field(settings, "anthropic", "Anthropic API Key"))
+    api_keys_fields.append(_get_api_key_field(settings, "groq", "Groq API Key"))
+    api_keys_fields.append(_get_api_key_field(settings, "google", "Google API Key"))
+    api_keys_fields.append(_get_api_key_field(settings, "openrouter", "OpenRouter API Key"))
+    api_keys_fields.append(_get_api_key_field(settings, "sambanova", "Sambanova API Key"))
+    api_keys_fields.append(_get_api_key_field(settings, "mistralai", "MistralAI API Key"))
+
+    api_keys_section = {
+        "title": "API Keys",
+        "description": "API keys for model providers and services used by Agent Zero.",
+        "fields": api_keys_fields,
+    }
+
+    result = {
+        "sections": [
+            chat_model_section,
+            util_model_section,
+            embed_model_section,
+            api_keys_section,
+        ]
+    }
     return result
+
+
+def _get_api_key_field(settings: Settings, provider: str, title: str):
+    key = settings["api_keys"].get(provider, models.get_api_key(provider))
+    return {
+        "id": f"api_key_{provider}",
+        "title": title,
+        "type": "password",
+        "value": key if key != "None" else "",
+    }
+
 
 def convert_in(settings: dict[str, Any]) -> Settings:
     current = get_settings()
     for section in settings["sections"]:
         for field in section["fields"]:
             if field["id"].endswith("_kwargs"):
-                current[field["id"]] = _env_to_dict(field["value"]) #parse KWARGS from env format
+                current[field["id"]] = _env_to_dict(
+                    field["value"]
+                )  # parse KWARGS from env format
+            elif field["id"].startswith("api_key_"):
+                current["api_keys"][field["id"]] = field["value"]
             else:
-                current[field["id"]] = field["value"] 
+                current[field["id"]] = field["value"]
     return current
 
 
@@ -238,7 +281,7 @@ def get_settings() -> Settings:
 def set_settings(settings: Settings):
     global _settings
     _settings = normalize_settings(settings)
-    _apply_settings() 
+    _apply_settings()
     _write_settings_file(_settings)
 
 
@@ -291,6 +334,12 @@ def _read_settings_file() -> Settings | None:
 
 
 def _write_settings_file(settings: Settings):
+    #write api keys
+    for key, val in settings["api_keys"].items():
+        dotenv.save_dotenv_value(key.upper(), val)
+    settings["api_keys"] = {}  # remove API keys before saving
+
+    #write settings
     content = json.dumps(settings, indent=4)
     files.write_file(SETTINGS_FILE, content)
 
@@ -308,7 +357,9 @@ def _get_default_settings() -> Settings:
         embed_model_provider=ModelProvider.OPENAI.name,
         embed_model_name="text-embedding-3-small",
         embed_model_kwargs={},
+        api_keys={},
     )
+
 
 def _apply_settings():
     global _settings
@@ -317,16 +368,17 @@ def _apply_settings():
         from initialize import initialize
 
         for ctx in AgentContext._contexts.values():
-            ctx.config = initialize() # reinitialize context config with new settings
-            #apply config to agents
+            ctx.config = initialize()  # reinitialize context config with new settings
+            # apply config to agents
             agent = ctx.agent0
             while agent:
                 agent.config = ctx.config
                 agent = agent.get_data("subordinate")
 
-def _env_to_dict(data:str):
+
+def _env_to_dict(data: str):
     env_dict = {}
-    line_pattern = re.compile(r'\s*([^#][^=]*)\s*=\s*(.*)')
+    line_pattern = re.compile(r"\s*([^#][^=]*)\s*=\s*(.*)")
     for line in data.splitlines():
         match = line_pattern.match(line)
         if match:
@@ -336,12 +388,13 @@ def _env_to_dict(data:str):
             env_dict[key.strip()] = value
     return env_dict
 
+
 def _dict_to_env(data_dict):
     lines = []
     for key, value in data_dict.items():
-        if '\n' in value:
+        if "\n" in value:
             value = f"'{value}'"
-        elif ' ' in value or value == '' or any(c in value for c in '"\''):
+        elif " " in value or value == "" or any(c in value for c in "\"'"):
             value = f'"{value}"'
         lines.append(f"{key}={value}")
     return "\n".join(lines)

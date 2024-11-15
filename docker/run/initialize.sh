@@ -10,8 +10,12 @@ chmod 444 /root/.profile
 # update package list to save time later
 apt-get update
 
-# Start A0
-bash /exe/run_A0.sh
+# Start SSH service in background
+/usr/sbin/sshd -D &
 
-# Start SSH service
-exec /usr/sbin/sshd -D
+# Start A0 and restart on exit
+bash /exe/run_A0.sh
+if [ $? -ne 0 ]; then
+    echo "A0 script exited with an error. Restarting container..."
+    exit 1
+fi

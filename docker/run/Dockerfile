@@ -15,7 +15,8 @@ RUN apt-get update && apt-get install -y \
     sudo \
     curl \
     wget \
-    git
+    git \
+    ffmpeg
 
 # Cleanup package list
 RUN rm -rf /var/lib/apt/lists/*
@@ -49,6 +50,8 @@ RUN $VIRTUAL_ENV/bin/pip install \
 
 # Install A0 python packages
 RUN $VIRTUAL_ENV/bin/pip install -r /git/agent-zero/requirements.txt
+# Preload A0
+RUN $VIRTUAL_ENV/bin/python /git/agent-zero/preload.py
 
 # Expose ports
 EXPOSE 22 80

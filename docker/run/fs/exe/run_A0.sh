@@ -1,14 +1,11 @@
 #!/bin/bash
 
 # Paths
-PYTHON_SCRIPT="/a0/run_ui.py"
 SOURCE_DIR="/git/agent-zero"
 TARGET_DIR="/a0"
 
 
-# Loop to restart the Python script when it finishes
-while true; do
-
+function setup_venv() {
     # Create virtual environment if it doesn't exist
     if [ ! -d /opt/venv ]; then
         echo "Creating virtual environment..."
@@ -18,6 +15,16 @@ while true; do
 
     # Activate the virtual environment
     source /opt/venv/bin/activate
+}
+
+# preload A0
+setup_venv
+python /a0/preload.py
+
+# Loop to restart the Python script when it finishes
+while true; do
+
+    setup_venv
 
     # Copy repository files if target is empty
     if [ -z "$(ls -A "$TARGET_DIR")" ]; then
@@ -26,7 +33,15 @@ while true; do
     fi
 
     echo "Starting A0..."
-    python "$PYTHON_SCRIPT" --port 80 --host "0.0.0.0"
+    python /a0/run_ui.py \
+        --port 80 \
+        --host "0.0.0.0" \
+        --code_exec_docker_enabled False \
+        --code_exec_ssh_enabled True \
+        --code_exec_ssh_addr "localhost" \
+        --code_exec_ssh_port 22 \
+        --code_exec_ssh_user "root" \
+        --code_exec_ssh_pass "toor"
     
     # Check the exit status
     if [ $? -ne 0 ]; then

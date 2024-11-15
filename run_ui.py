@@ -8,7 +8,7 @@ import uuid
 from flask import Flask, request, jsonify, Response
 from flask_basicauth import BasicAuth
 from agent import AgentContext
-from initialize import initialize
+from initialize import initialize, set_global_kwargs
 from python.helpers import files
 from python.helpers.files import get_abs_path
 from python.helpers.print_style import PrintStyle
@@ -572,7 +572,15 @@ def run():
         def log_request(self, code="-", size="-"):
             pass  # Override to suppress request logging
 
-    args,_ = parser.parse_known_args()
+    args, add_args = parser.parse_known_args()
+    #add_args to dict
+    glob_args = {}
+    for arg in add_args:
+        if "=" in arg:
+            key, value = arg.split("=", 1)
+            key = key.lstrip("-")
+            glob_args[key] = value
+    set_global_kwargs(**glob_args)
 
     # Get configuration from environment
     port = args.port or int(os.environ.get("WEB_UI_PORT", 0)) or None

@@ -1,6 +1,6 @@
 import os
 import asyncio
-from python.helpers import memory, perplexity_search, duckduckgo_search
+from python.helpers import dotenv, memory, perplexity_search, duckduckgo_search
 from python.helpers.tool import Tool, Response
 from python.helpers.print_style import PrintStyle
 from python.helpers.errors import handle_error
@@ -33,7 +33,7 @@ class Knowledge(Tool):
         return Response(message=msg, break_loop=False)
 
     async def perplexity_search(self, question):
-        if os.getenv("API_KEY_PERPLEXITY"):
+        if dotenv.get_dotenv_value("API_KEY_PERPLEXITY"):
             return await asyncio.to_thread(perplexity_search.perplexity_search, question)
         else:
             PrintStyle.hint("No API key provided for Perplexity. Skipping Perplexity search.")
