@@ -14,7 +14,7 @@
 
 from duckduckgo_search import DDGS
 
-def search(query: str, results = 5, region = "wt-wt", time="y") -> list[str]:
+def search(query: str, results = 5, region = "us-en", time="y") -> list[str]:
 
     ddgs = DDGS()
     src = ddgs.text(

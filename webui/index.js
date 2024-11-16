@@ -265,27 +265,43 @@ window.newChat = async function () {
 }
 
 window.killChat = async function (id) {
+    try {
+        const response = await sendJsonData("/remove", { context: id });
+        
+        if (response && response.ok) {
+            const chatsAD = Alpine.$data(chatsSection);
+            let found, other;
+            
+            // Find the chat to remove and potentially another chat
+            for (let i = 0; i < chatsAD.contexts.length; i++) {
+                if (chatsAD.contexts[i].id === id) {
+                    found = true;
+                    // Remove the chat from the contexts array
+                    chatsAD.contexts.splice(i, 1);
+                    i--; // Adjust index after removal
+                } else {
+                    other = chatsAD.contexts[i];
+                }
+                if (found && other) break;
+            }
 
+            // If we're deleting the current chat, switch to another one
+            if (context === id && found) {
+                if (other) {
+                    setContext(other.id);
+                } else {
+                    setContext(generateGUID());
+                }
+            }
 
-    const chatsAD = Alpine.$data(chatsSection);
-    let found, other
-    for (let i = 0; i < chatsAD.contexts.length; i++) {
-        if (chatsAD.contexts[i].id == id) {
-            found = true
+            updateAfterScroll();
+            toast("Chat deleted successfully.", "success");
         } else {
-            other = chatsAD.contexts[i]
+            toast("Failed to delete chat.", "error");
         }
-        if (found && other) break
+    } catch (e) {
+        toast("Error deleting chat: " + e.message, "error");
     }
-
-    if (context == id && found) {
-        if (other) setContext(other.id)
-        else setContext(generateGUID())
-    }
-
-    if (found) sendJsonData("/remove", { context: id });
-
-    updateAfterScroll()
 }
 
 window.selectChat = async function (id) {
@@ -348,6 +364,68 @@ window.toggleDarkMode = function (isDark) {
     console.log("Dark mode:", isDark);
     localStorage.setItem('darkMode', isDark);
 };
+
+// Chat renaming functionality
+window.startRename = async function(context) {
+    const titleSpan = event.target;
+    const currentName = titleSpan.textContent;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentName;
+    input.className = 'chat-title-input';
+    
+    input.onblur = async () => finishRename(input, titleSpan, context);
+    input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            input.blur();
+        }
+        if (e.key === 'Escape') {
+            titleSpan.textContent = currentName;
+            titleSpan.style.display = '';
+            input.remove();
+        }
+    };
+    
+    titleSpan.style.display = 'none';
+    titleSpan.parentNode.insertBefore(input, titleSpan);
+    input.focus();
+    input.select();
+};
+
+async function finishRename(input, titleSpan, context) {
+    const newName = input.value.trim();
+    if (newName && newName !== titleSpan.textContent) {
+        try {
+            const response = await sendJsonData("/rename", { 
+                context: context.id, 
+                name: newName 
+            });
+            
+            if (response && response.ok) {
+                // Update the context in the Alpine.js data
+                const chatsAD = Alpine.$data(chatsSection);
+                const chatIndex = chatsAD.contexts.findIndex(c => c.id === context.id);
+                if (chatIndex !== -1) {
+                    chatsAD.contexts[chatIndex].name = newName;
+                }
+                titleSpan.textContent = newName;
+                toast("Chat renamed successfully.", "success");
+            } else {
+                toast("Failed to rename chat.", "error");
+                titleSpan.textContent = context.name || `Chat #${context.no}`;
+            }
+        } catch (e) {
+            toast("Error renaming chat: " + e.message, "error");
+            titleSpan.textContent = context.name || `Chat #${context.no}`;
+        }
+    } else {
+        titleSpan.textContent = context.name || `Chat #${context.no}`;
+    }
+    
+    titleSpan.style.display = '';
+    input.remove();
+}
 
 function toggleCssProperty(selector, property, value) {
     // Get the stylesheet that contains the class

@@ -604,6 +604,33 @@ input:checked + .slider:before {
   text-decoration: underline;
 }
 
+/* Chat Title Input */
+.chat-title-input {
+  background-color: var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--spacing-xs);
+  color: var(--color-text);
+  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  font-size: var(--font-size-small);
+  padding: 2px 4px;
+  margin: -2px 0;
+  width: calc(100% - 30px);
+}
+
+.chat-title-input:focus {
+  background-color: var(--color-input-focus);
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.chat-title {
+  cursor: pointer;
+}
+
+.chat-title:hover {
+  text-decoration: underline;
+}
+
 .chat-button {
   border: none;
   border-radius: 50%;
