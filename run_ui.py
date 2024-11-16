@@ -23,10 +23,10 @@ lock = threading.Lock()
 
 # Set up basic authentication, name and password from .env variables
 app.config["BASIC_AUTH_USERNAME"] = (
-    os.environ.get("BASIC_AUTH_USERNAME") or "admin"
+    os.environ.get("BASIC_AUTH_USERNAME")
 )  # default name
 app.config["BASIC_AUTH_PASSWORD"] = (
-    os.environ.get("BASIC_AUTH_PASSWORD") or "admin"
+    os.environ.get("BASIC_AUTH_PASSWORD")
 )  # default pass
 basic_auth = BasicAuth(app)
 
@@ -67,12 +67,14 @@ def requires_auth(f):
 
 # handle default address, show demo html page from ./test_form.html
 @app.route("/", methods=["GET"])
+@requires_auth
 async def test_form():
     return Path(get_abs_path("./webui/index.html")).read_text()
 
 
 # simple health check, just return OK to see the server is running
 @app.route("/ok", methods=["GET", "POST"])
+@requires_auth
 async def health_check():
     return "OK"
 
@@ -86,12 +88,14 @@ async def health_check():
 
 # send message to agent (async UI)
 @app.route("/msg", methods=["POST"])
+@requires_auth
 async def handle_message_async():
     return await handle_message(False)
 
 
 # send message to agent (synchronous API)
 @app.route("/msg_sync", methods=["POST"])
+@requires_auth
 async def handle_msg_sync():
     return await handle_message(True)
 
@@ -145,6 +149,7 @@ async def handle_message(sync: bool):
 
 # pausing/unpausing the agent
 @app.route("/pause", methods=["POST"])
+@requires_auth
 async def pause():
     try:
 
@@ -175,8 +180,43 @@ async def pause():
     return jsonify(response)
 
 
+# rename chat
+@app.route("/rename", methods=["POST"])
+@requires_auth
+async def rename_chat():
+    try:
+        input = request.get_json()
+        ctxid = input.get("context", "")
+        name = input.get("name", "")
+
+        if not ctxid:
+            raise Exception("No context id provided")
+        if not name:
+            raise Exception("No name provided")
+
+        context = get_context(ctxid)
+        context.name = name
+        persist_chat.save_tmp_chat(context)
+
+        response = {
+            "ok": True,
+            "message": "Chat renamed successfully.",
+            "name": name
+        }
+
+    except Exception as e:
+        response = {
+            "ok": False,
+            "message": str(e),
+        }
+        PrintStyle.error(str(e))
+
+    return jsonify(response)
+
+
 # load chats from json
 @app.route("/loadChats", methods=["POST"])
+@requires_auth
 async def load_chats():
     try:
         # data sent to the server
@@ -206,6 +246,7 @@ async def load_chats():
 
 # load chats from json
 @app.route("/exportChat", methods=["POST"])
+@requires_auth
 async def export_chat():
     try:
         # data sent to the server
@@ -237,6 +278,7 @@ async def export_chat():
 
 # restarting with new agent0
 @app.route("/reset", methods=["POST"])
+@requires_auth
 async def reset():
     try:
 
@@ -267,21 +309,27 @@ async def reset():
 
 # killing context
 @app.route("/remove", methods=["POST"])
+@requires_auth
 async def remove():
     try:
-
         # data sent to the server
         input = request.get_json()
         ctxid = input.get("context", "")
 
-        # context instance - get or create
-        AgentContext.remove(ctxid)
-        persist_chat.remove_chat(ctxid)
-
-        response = {
-            "ok": True,
-            "message": "Context removed.",
-        }
+        # Remove from memory and file system
+        if persist_chat.remove_chat(ctxid):
+            AgentContext.remove(ctxid)
+            PrintStyle(font_color="green", padding=True).print(f"Successfully removed chat {ctxid}")
+            response = {
+                "ok": True,
+                "message": "Chat removed successfully.",
+            }
+        else:
+            PrintStyle(font_color="red", padding=True).print(f"Failed to remove chat file for {ctxid}")
+            response = {
+                "ok": False,
+                "message": "Failed to remove chat file.",
+            }
 
     except Exception as e:
         response = {
@@ -296,6 +344,7 @@ async def remove():
 
 # Web UI polling
 @app.route("/poll", methods=["POST"])
+@requires_auth
 async def poll():
     try:
 
@@ -316,6 +365,7 @@ async def poll():
                 {
                     "id": ctx.id,
                     "no": ctx.no,
+                    "name": getattr(ctx, 'name', None),  # Add name to context data
                     "log_guid": ctx.log.guid,
                     "log_version": len(ctx.log.updates),
                     "log_length": len(ctx.log.logs),
@@ -366,7 +416,8 @@ def run():
 
     # run the server on port from .env
     port = int(os.environ.get("WEB_UI_PORT", 0)) or None
-    app.run(request_handler=NoRequestLoggingWSGIRequestHandler, port=port)
+    # app.run(request_handler=NoRequestLoggingWSGIRequestHandler, port=port)
+    app.run(request_handler=NoRequestLoggingWSGIRequestHandler, host="0.0.0.0", port=50001)
 
 
 # run the internal server

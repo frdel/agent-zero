@@ -5,6 +5,8 @@ from agent import Agent, AgentConfig, AgentContext, HumanMessage, AIMessage
 from python.helpers import files
 import json
 from initialize import initialize
+import os
+from python.helpers.print_style import PrintStyle
 
 from python.helpers.log import Log, LogItem
 
@@ -13,12 +15,16 @@ LOG_SIZE = 1000
 
 
 def save_tmp_chat(context: AgentContext):
+    # Ensure the chats directory exists
+    os.makedirs(files.get_abs_path(CHATS_FOLDER), exist_ok=True)
     relative_path = _get_file_path(context.id)
     data = _serialize_context(context)
     js = _safe_json_serialize(data, ensure_ascii=False)
     files.write_file(relative_path, js)
 
 def load_tmp_chats():
+    # Ensure the chats directory exists
+    os.makedirs(files.get_abs_path(CHATS_FOLDER), exist_ok=True)
     json_files = files.list_files("tmp/chats", "*.json")
     ctxids = []
     for file in json_files:
@@ -43,7 +49,25 @@ def export_json_chat(context: AgentContext):
     return js
 
 def remove_chat(ctxid):
-    files.delete_file(_get_file_path(ctxid))
+    try:
+        # Get the absolute path of the file
+        file_path = _get_file_path(ctxid)
+        abs_path = files.get_abs_path(file_path)
+        
+        # Debug print to verify the path
+        PrintStyle(font_color="yellow", padding=True).print(f"Attempting to delete file: {abs_path}")
+        
+        # Check if file exists before attempting to delete
+        if os.path.exists(abs_path):
+            os.remove(abs_path)
+            PrintStyle(font_color="green", padding=True).print(f"Successfully deleted file: {abs_path}")
+            return True
+        else:
+            PrintStyle(font_color="red", padding=True).print(f"File not found: {abs_path}")
+            return False
+    except Exception as e:
+        PrintStyle(font_color="red", padding=True).print(f"Error removing chat file: {e}")
+        return False
 
 
 def _get_file_path(ctxid: str):
@@ -60,6 +84,7 @@ def _serialize_context(context: AgentContext):
 
     return {
         "id": context.id,
+        "name": getattr(context, 'name', None),  # Include name in serialization
         "agents": agents,
         "streaming_agent": (
             context.streaming_agent.number if context.streaming_agent else 0
@@ -100,14 +125,18 @@ def _deserialize_context(data):
     config = initialize()
     log = _deserialize_log(data.get("log", None))
 
+    # Use the original ID when deserializing
+    original_id = data.get("id")
+    if not original_id:
+        original_id = str(uuid.uuid4())
+        PrintStyle(font_color="yellow", padding=True).print(f"Generated new ID for chat: {original_id}")
+
     context = AgentContext(
         config=config,
-        # id=data.get("id", None), #get new id
+        id=original_id,  # Use the original ID
         name=data.get("name", None),
         log=log,
         paused=False,
-        # agent0=agent0,
-        # streaming_agent=straming_agent,
     )
 
     agents = data.get("agents", [])
