@@ -102,7 +102,7 @@ select {
 .field {
   display: grid;
   margin-block-start: 1rem;
-  grid-template-columns: 250px 1fr;
+  grid-template-columns: 60% 1fr;
   align-items: center;
 }
 
@@ -113,6 +113,7 @@ select {
 .field-label {
   display: flex;
   flex-direction: column;
+  padding-right: 0.5em;
 }
 
 .field-title {

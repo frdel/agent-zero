@@ -92,3 +92,9 @@ def get_base_dir():
     base_dir = os.path.dirname(os.path.abspath(os.path.join(__file__,"../../")))
     return base_dir
 
+def get_subdirectories(relative_path:str, include:str="*", exclude=None):
+    abs_path = get_abs_path(relative_path)
+    if not os.path.exists(abs_path):
+        return []
+    return [subdir for subdir in os.listdir(abs_path) if os.path.isdir(os.path.join(abs_path, subdir)) and fnmatch(subdir, include) and (exclude is None or not fnmatch(subdir, exclude))]
+

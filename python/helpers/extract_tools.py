@@ -52,11 +52,6 @@ def fix_json_string(json_string):
 T = TypeVar('T')  # Define a generic type variable
 
 def load_classes_from_folder(folder: str, name_pattern: str, base_class: Type[T]) -> list[Type[T]]:
-    import os
-    import importlib
-    import inspect
-    from fnmatch import fnmatch
-
     classes = []
     abs_folder = get_abs_path(folder)
 

@@ -457,7 +457,7 @@ class Agent:
         printer = PrintStyle(italic=True, font_color="orange", padding=False)
 
         def log_callback(content):
-            printer.print(content)
+            printer.stream(content)
             log_item.stream(content=content)
 
         summary = await self.call_utility_llm(

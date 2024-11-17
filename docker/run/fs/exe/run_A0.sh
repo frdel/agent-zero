@@ -34,14 +34,14 @@ while true; do
 
     echo "Starting A0..."
     python /a0/run_ui.py \
-        --port 80 \
-        --host "0.0.0.0" \
-        --code_exec_docker_enabled False \
-        --code_exec_ssh_enabled True \
-        --code_exec_ssh_addr "localhost" \
-        --code_exec_ssh_port 22 \
-        --code_exec_ssh_user "root" \
-        --code_exec_ssh_pass "toor"
+        --port=80 \
+        --host="0.0.0.0" \
+        --code_exec_docker_enabled=false \
+        --code_exec_ssh_enabled=true \
+        --code_exec_ssh_addr="localhost" \
+        --code_exec_ssh_port=22 \
+        --code_exec_ssh_user="root" \
+        --code_exec_ssh_pass="toor"
     
     # Check the exit status
     if [ $? -ne 0 ]; then

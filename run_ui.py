@@ -1,4 +1,3 @@
-import argparse
 import json
 from functools import wraps
 import os
@@ -8,13 +7,12 @@ import uuid
 from flask import Flask, request, jsonify, Response
 from flask_basicauth import BasicAuth
 from agent import AgentContext
-from initialize import initialize, set_global_kwargs
+from initialize import initialize
 from python.helpers import files
 from python.helpers.files import get_abs_path
 from python.helpers.print_style import PrintStyle
 from python.helpers.dotenv import load_dotenv
-from python.helpers import persist_chat, settings
-# from python.helpers.voice_transcription import VoiceTranscription
+from python.helpers import persist_chat, settings, whisper, rfc, runtime, dotenv
 import base64
 from werkzeug.utils import secure_filename
 from python.helpers.cloudflare_tunnel import CloudflareTunnel
@@ -25,15 +23,8 @@ app = Flask("app", static_folder=get_abs_path("./webui"), static_url_path="/")
 app.config["JSON_SORT_KEYS"] = False  # Disable key sorting in jsonify
 
 lock = threading.Lock()
-parser = argparse.ArgumentParser()
 
-# Set up basic authentication, name and password from .env variables
-app.config["BASIC_AUTH_USERNAME"] = (
-    os.environ.get("BASIC_AUTH_USERNAME") or "admin"
-)  # default name
-app.config["BASIC_AUTH_PASSWORD"] = (
-    os.environ.get("BASIC_AUTH_PASSWORD") or "admin"
-)  # default pass
+# Set up basic authentication
 basic_auth = BasicAuth(app)
 
 
@@ -55,30 +46,35 @@ def get_context(ctxid: str):
 def requires_auth(f):
     @wraps(f)
     async def decorated(*args, **kwargs):
-        auth = request.authorization
-        if not auth or not (
-            auth.username == app.config["BASIC_AUTH_USERNAME"]
-            and auth.password == app.config["BASIC_AUTH_PASSWORD"]
-        ):
-            return Response(
-                "Could not verify your access level for that URL.\n"
-                "You have to login with proper credentials",
-                401,
-                {"WWW-Authenticate": 'Basic realm="Login Required"'},
-            )
+        user = dotenv.get_dotenv_value("AUTH_LOGIN")
+        password = dotenv.get_dotenv_value("AUTH_PASSWORD")
+        if user and password:    
+            auth = request.authorization
+            if not auth or not (
+                auth.username == user
+                and auth.password == password
+            ):
+                return Response(
+                    "Could not verify your access level for that URL.\n"
+                    "You have to login with proper credentials",
+                    401,
+                    {"WWW-Authenticate": 'Basic realm="Login Required"'},
+                )
         return await f(*args, **kwargs)
 
     return decorated
 
 
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'work_dir', 'uploads')
+UPLOAD_FOLDER = os.path.join(os.getcwd(), "work_dir", "uploads")
 
-@app.route('/upload', methods=['POST'])
+
+@app.route("/upload", methods=["POST"])
+@requires_auth
 async def upload_file():
-    if 'file' not in request.files:
-        return jsonify({'ok': False, 'message': 'No file part'}), 400
+    if "file" not in request.files:
+        return jsonify({"ok": False, "message": "No file part"}), 400
 
-    files = request.files.getlist('file')  # Handle multiple files
+    files = request.files.getlist("file")  # Handle multiple files
     saved_filenames = []
 
     for file in files:
@@ -87,22 +83,22 @@ async def upload_file():
             file.save(os.path.join(UPLOAD_FOLDER, filename))
             saved_filenames.append(filename)
 
-    return jsonify({'ok': True, 'filenames': saved_filenames})  # Return saved filenames
+    return jsonify({"ok": True, "filenames": saved_filenames})  # Return saved filenames
 
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'txt', 'pdf', 'csv', 'html', 'json', 'md'}
-
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "txt", "pdf", "csv", "html", "json", "md"}
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @app.route("/import_knowledge", methods=["POST"])
+@requires_auth
 async def import_knowledge():
-    if 'files[]' not in request.files:
-        return jsonify({'ok': False, 'message': 'No files part'}), 400
+    if "files[]" not in request.files:
+        return jsonify({"ok": False, "message": "No files part"}), 400
 
-    files = request.files.getlist('files[]')
-    KNOWLEDGE_FOLDER = os.path.join(os.getcwd(), 'knowledge', 'custom', 'main')
+    files = request.files.getlist("files[]")
+    KNOWLEDGE_FOLDER = os.path.join(os.getcwd(), "knowledge", "custom", "main")
 
     saved_filenames = []
 
@@ -112,22 +108,32 @@ async def import_knowledge():
             file.save(os.path.join(KNOWLEDGE_FOLDER, filename))
             saved_filenames.append(filename)
 
-    return jsonify({'ok': True, 'message': "Knowledge Imported", 'filenames': saved_filenames})
+    return jsonify(
+        {"ok": True, "message": "Knowledge Imported", "filenames": saved_filenames}
+    )
 
 
 @app.route("/work_dir", methods=["GET"])  # Correct route
+@requires_auth
 async def browse_work_dir():
-    work_dir = os.path.join(os.getcwd(), 'work_dir')
+    work_dir = os.path.join(os.getcwd(), "work_dir")
     try:
-        files = [f for f in os.listdir(work_dir) if os.path.isfile(os.path.join(work_dir, f))]
-        return jsonify({'ok': True, 'files': files})
+        files = [
+            f for f in os.listdir(work_dir) if os.path.isfile(os.path.join(work_dir, f))
+        ]
+        return jsonify({"ok": True, "files": files})
     except FileNotFoundError:
-        return jsonify({'ok': False, 'message': 'work_dir not found'}), 404
+        return jsonify({"ok": False, "message": "work_dir not found"}), 404
     except Exception as e:
-        return jsonify({'ok': False, 'message': f'Error browsing work_dir: {str(e)}'}), 500
+        return (
+            jsonify({"ok": False, "message": f"Error browsing work_dir: {str(e)}"}),
+            500,
+        )
+
 
 # handle default address, show demo html page from ./test_form.html
 @app.route("/", methods=["GET"])
+@requires_auth
 async def test_form():
     return Path(get_abs_path("./webui/index.html")).read_text()
 
@@ -137,177 +143,112 @@ async def test_form():
 async def health_check():
     return "OK"
 
-
-# @app.route('/transcribe', methods=['POST'])
-# def transcribe_audio():
-#   """
-#   Transcribe audio data using Whisper.
-#   Expected JSON payload:
-#   {
-#       'audio_data': base64 encoded audio,
-#       'model_size': 'base',  # Optional, defaults to 'base'
-#       'language': None,      # Optional language code
-#       'is_final': False      # Optional flag for final transcription
-#   }
-#   """
-#   try:
-#       # Parse request data
-#       data = request.json
-#       audio_data = data.get('audio_data')
-#       model_size = data.get('model_size', 'base')
-#       language = data.get('language')
-#       is_final = data.get('is_final', False)
-
-#       # Validate input
-#       if not audio_data:
-#           return jsonify({
-#               "error": "No audio data provided", 
-#               "status": "error"
-#           }), 400
-
-#       # Validate model size
-#       valid_model_sizes = ['tiny', 'base', 'small', 'medium', 'large']
-#       if model_size not in valid_model_sizes:
-#           return jsonify({
-#               "error": f"Invalid model size. Choose from {valid_model_sizes}", 
-#               "status": "error"
-#           }), 400
-
-#       # Log the received audio data size
-#       print(f"Received audio data size: {len(audio_data)} characters (base64)")
-
-#       try:
-#           # Transcribe using VoiceTranscription helper
-#           text = VoiceTranscription.transcribe_bytes(
-#               audio_data, 
-#               model_size=model_size, 
-#               language=language
-#           )
-
-#           # Return transcription result
-#           return jsonify({
-#               "text": text,
-#               "is_final": is_final,
-#               "model_size": model_size,
-#               "status": "success"
-#           })
-
-#       except Exception as transcribe_error:
-#           # Detailed error logging for transcription failures
-#           print(f"Transcription error: {transcribe_error}")
-#           return jsonify({
-#               "error": "Transcription failed",
-#               "details": str(transcribe_error),
-#               "status": "error"
-#           }), 500
-
-#   except Exception as e:
-#       # Catch-all error handler
-#       print(f"Unexpected transcription error: {e}")
-#       return jsonify({
-#           "error": "Unexpected error during transcription",
-#           "details": str(e),
-#           "status": "error"
-#       }), 500
-
-# # secret page, requires authentication
-# @app.route('/secret', methods=['GET'])
-# @requires_auth
-# async def secret_page():
-#     return Path("./secret_page.html").read_text()
-
-
 # send message to agent (async UI)
 @app.route("/msg", methods=["POST"])
+@requires_auth
 async def handle_message_async():
-  return await handle_message(False)
+    return await handle_message(False)
+
 
 # send message to agent (synchronous API)
 @app.route("/msg_sync", methods=["POST"])
+@requires_auth
 async def handle_msg_sync():
     return await handle_message(True)
 
+
 async def handle_message(sync: bool):
-  try:
-      # Handle both JSON and multipart/form-data
-      if request.content_type.startswith('multipart/form-data'):
-          text = request.form.get('text', '')
-          ctxid = request.form.get('context', '')
-          message_id = request.form.get('message_id', None)
-          attachments = request.files.getlist('attachments')
-          attachment_paths = []
+    try:
+        # Handle both JSON and multipart/form-data
+        if request.content_type.startswith("multipart/form-data"):
+            text = request.form.get("text", "")
+            ctxid = request.form.get("context", "")
+            message_id = request.form.get("message_id", None)
+            attachments = request.files.getlist("attachments")
+            attachment_paths = []
 
-          upload_folder = files.get_abs_path('work_dir/uploads')
+            upload_folder = files.get_abs_path("work_dir/uploads")
 
-          if attachments:
-              os.makedirs(upload_folder, exist_ok=True)
-              for attachment in attachments:
-                  filename = secure_filename(attachment.filename)
-                  save_path = files.get_abs_path(upload_folder, filename)
-                  attachment.save(save_path)
-                  attachment_paths.append(save_path)
-      else:
-          # Handle JSON request as before
-          input_data = request.get_json()
-          text = input_data.get('text', '')
-          ctxid = input_data.get('context', '')
-          message_id = input_data.get('message_id', None)
-          attachment_paths = []
+            if attachments:
+                os.makedirs(upload_folder, exist_ok=True)
+                for attachment in attachments:
+                    filename = secure_filename(attachment.filename)
+                    save_path = files.get_abs_path(upload_folder, filename)
+                    attachment.save(save_path)
+                    attachment_paths.append(save_path)
+        else:
+            # Handle JSON request as before
+            input_data = request.get_json()
+            text = input_data.get("text", "")
+            ctxid = input_data.get("context", "")
+            message_id = input_data.get("message_id", None)
+            attachment_paths = []
 
-      # Now process the message
-      message = text
+        # Now process the message
+        message = text
 
-      # Obtain agent context
-      context = get_context(ctxid)
+        # Obtain agent context
+        context = get_context(ctxid)
 
-      # Store attachments in agent data
-      context.agent0.set_data('attachments', attachment_paths)
+        # Store attachments in agent data
+        context.agent0.set_data("attachments", attachment_paths)
 
-      # Prepare attachment filenames for logging
-      attachment_filenames = [os.path.basename(path) for path in attachment_paths] if attachment_paths else []
+        # Prepare attachment filenames for logging
+        attachment_filenames = (
+            [os.path.basename(path) for path in attachment_paths]
+            if attachment_paths
+            else []
+        )
 
-      # Print to console and log
-      PrintStyle(
-          background_color="#6C3483", font_color="white", bold=True, padding=True
-      ).print(f"User message:")
-      PrintStyle(font_color="white", padding=False).print(f"> {message}")
-      if attachment_filenames:
-          PrintStyle(font_color="white", padding=False).print("Attachments:")
-          for filename in attachment_filenames:
-              PrintStyle(font_color="white", padding=False).print(f"- {filename}")
+        # Print to console and log
+        PrintStyle(
+            background_color="#6C3483", font_color="white", bold=True, padding=True
+        ).print(f"User message:")
+        PrintStyle(font_color="white", padding=False).print(f"> {message}")
+        if attachment_filenames:
+            PrintStyle(font_color="white", padding=False).print("Attachments:")
+            for filename in attachment_filenames:
+                PrintStyle(font_color="white", padding=False).print(f"- {filename}")
 
-      # Log the message with message_id and attachments
-      context.log.log(type="user", heading="User message", content=message, kvps={'attachments': attachment_filenames}, id=message_id)
+        # Log the message with message_id and attachments
+        context.log.log(
+            type="user",
+            heading="User message",
+            content=message,
+            kvps={"attachments": attachment_filenames},
+            id=message_id,
+        )
 
-      if sync:
-          context.communicate(message)
-          result = await context.process.result()  # type: ignore
-          response = {
-              "ok": True,
-              "message": result,
-              "context": context.id,
-          }
-      else:
-          context.communicate(message)
-          response = {
-              "ok": True,
-              "message": "Message received.",
-              "context": context.id,
-          }
+        if sync:
+            context.communicate(message)
+            result = await context.process.result()  # type: ignore
+            response = {
+                "ok": True,
+                "message": result,
+                "context": context.id,
+            }
+        else:
+            context.communicate(message)
+            response = {
+                "ok": True,
+                "message": "Message received.",
+                "context": context.id,
+            }
 
-  except Exception as e:
-      response = {
-          "ok": False,
-          "message": str(e),
-      }
-      PrintStyle.error(str(e))
+    except Exception as e:
+        response = {
+            "ok": False,
+            "message": str(e),
+        }
+        PrintStyle.error(str(e))
 
-  # respond with json
-  return jsonify(response)
+    # respond with json
+    return jsonify(response)
 
 
 # pausing/unpausing the agent
 @app.route("/pause", methods=["POST"])
+@requires_auth
 async def pause():
     try:
 
@@ -340,6 +281,7 @@ async def pause():
 
 # load chats from json
 @app.route("/loadChats", methods=["POST"])
+@requires_auth
 async def load_chats():
     try:
         # data sent to the server
@@ -369,6 +311,7 @@ async def load_chats():
 
 # save chats to json
 @app.route("/exportChat", methods=["POST"])
+@requires_auth
 async def export_chat():
     try:
         # data sent to the server
@@ -400,6 +343,7 @@ async def export_chat():
 
 # restarting with new agent0
 @app.route("/reset", methods=["POST"])
+@requires_auth
 async def reset():
     try:
 
@@ -430,6 +374,7 @@ async def reset():
 
 # killing context
 @app.route("/remove", methods=["POST"])
+@requires_auth
 async def remove():
     try:
 
@@ -459,6 +404,7 @@ async def remove():
 
 # Web UI polling
 @app.route("/poll", methods=["POST"])
+@requires_auth
 async def poll():
     try:
 
@@ -513,6 +459,7 @@ async def poll():
 
 # get current settings
 @app.route("/getSettings", methods=["POST"])
+@requires_auth
 async def get_settings():
     try:
 
@@ -533,8 +480,10 @@ async def get_settings():
     # respond with json
     return jsonify(response)
 
+
 # set current settings
 @app.route("/setSettings", methods=["POST"])
+@requires_auth
 async def set_settings():
     try:
 
@@ -556,14 +505,50 @@ async def set_settings():
     # respond with json
     return jsonify(response)
 
+
+# transcribe audio
+@app.route("/transcribe", methods=["POST"])
+@requires_auth
+async def transcribe():
+    try:
+
+        # data sent to the server
+        input = request.get_json()
+        audio = input.get("audio")
+
+        # transcribe audio
+        result = await whisper.transcribe(audio)
+
+        response = {
+            "ok": True,
+            "text": result["text"],
+        }
+
+    except Exception as e:
+        response = {
+            "ok": False,
+            "message": str(e),
+        }
+        PrintStyle.error(str(e))
+
+    # respond with json
+    return jsonify(response)
+
+
+# remote function call
+@app.route("/rfc", methods=["POST"])
+@requires_auth
+async def handle_rfc():
+    # data sent to the server
+    input = json.loads(request.get_json())
+
+    # handle RFC call
+    result = await rfc.handle_rfc(input)
+    return jsonify(result)
+
+
 def run():
     print("Initializing framework...")
-
-    # load env vars
-    load_dotenv()
-
-    # initialize contexts from persisted chats
-    persist_chat.load_tmp_chats()
 
     # Suppress only request logs but keep the startup messages
     from werkzeug.serving import WSGIRequestHandler
@@ -572,20 +557,13 @@ def run():
         def log_request(self, code="-", size="-"):
             pass  # Override to suppress request logging
 
-    args, add_args = parser.parse_known_args()
-    #add_args to dict
-    glob_args = {}
-    for arg in add_args:
-        if "=" in arg:
-            key, value = arg.split("=", 1)
-            key = key.lstrip("-")
-            glob_args[key] = value
-    set_global_kwargs(**glob_args)
-
     # Get configuration from environment
-    port = args.port or int(os.environ.get("WEB_UI_PORT", 0)) or None
-    host = args.host or os.environ.get("WEB_UI_HOST") or None
-    use_cloudflare = os.environ.get("USE_CLOUDFLARE", "false").lower() == "true"
+    port = runtime.get_arg("port") or int(os.environ.get("WEB_UI_PORT", 0)) or None
+    host = runtime.get_arg("host") or os.environ.get("WEB_UI_HOST") or None
+    use_cloudflare = (
+        runtime.get_arg("cloudflare_tunnel")
+        or os.environ.get("USE_CLOUDFLARE", "false").lower() == "true"
+    )
 
     # Initialize and start Cloudflare tunnel if enabled
     tunnel = None
@@ -597,22 +575,21 @@ def run():
             print(f"Failed to start Cloudflare tunnel: {e}")
             print("Continuing without tunnel...")
 
+    # initialize contexts from persisted chats
+    persist_chat.load_tmp_chats()
+
     try:
         # Run Flask app
         app.run(
-            request_handler=NoRequestLoggingWSGIRequestHandler,
-            port=port,
-            host=host
+            request_handler=NoRequestLoggingWSGIRequestHandler, port=port, host=host
         )
     finally:
         # Clean up tunnel if it was started
         if tunnel:
             tunnel.stop()
 
+
 # run the internal server
 if __name__ == "__main__":
-
-    parser.add_argument("--port", type=int, default=0, help="Web UI port")
-    parser.add_argument("--host", type=str, default=0, help="Web UI host")
-
+    runtime.initialize()
     run()

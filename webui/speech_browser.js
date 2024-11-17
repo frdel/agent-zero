@@ -193,6 +193,7 @@ class MicrophoneInput {
         this.analyserNode.smoothingTimeConstant = 0.85;
         this.mediaStreamSource.connect(this.analyserNode);
     }
+    
 
     startAudioAnalysis() {
         const analyzeFrame = () => {
@@ -250,14 +251,15 @@ class MicrophoneInput {
             return;
         }
 
-        const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-        const base64 = await this.convertBlobToBase64Wav(audioBlob)
+        const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });        
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+
 
         try {
-
-            const result = await sendJsonData('/transcribe', { audio: base64 })
-
-
+            const samplingRate = 16000;
+            const audioData = await read_audio(audioUrl, samplingRate);
+            const result = await this.transcriber(audioData);
             const text = this.filterResult(result.text || "")
 
             if (text) {
@@ -268,27 +270,10 @@ class MicrophoneInput {
             console.error('Transcription error:', error);
             toast('Transcription failed.', 'error');
         } finally {
+            URL.revokeObjectURL(audioUrl);
             this.audioChunks = [];
             this.status = Status.LISTENING;
         }
-    }
-
-    convertBlobToBase64Wav(audioBlob) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-
-            // Read the Blob as a Data URL
-            reader.onloadend = () => {
-                const base64Data = reader.result.split(",")[1]; // Extract Base64 data
-                resolve(base64Data);
-            };
-
-            reader.onerror = (error) => {
-                reject(error);
-            };
-
-            reader.readAsDataURL(audioBlob); // Start reading the Blob
-        });
     }
 
     filterResult(text) {
@@ -388,43 +373,10 @@ class Speech {
 
         // Remove emojis and create a new utterance
         text = this.stripEmojis(text);
-        text = this.replaceURLs(text);
-        text = this.replaceGuids(text);
         this.utterance = new SpeechSynthesisUtterance(text);
 
         // Speak the new utterance
         this.synth.speak(this.utterance);
-    }
-
-    replaceURLs(text) {
-        const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])|(\b(www\.)[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])|(\b[-A-Z0-9+&@#\/%?=~_|!:,.;]*\.(?:[A-Z]{2,})[-A-Z0-9+&@#\/%?=~_|])/ig;        return text.replace(urlRegex, (url) => {
-            let text = url
-            // if contains ://, split by it
-            if (text.includes('://')) text = text.split('://')[1];
-            // if contains /, split by it
-            if (text.includes('/')) text = text.split('/')[0];
-
-            // if contains ., split by it
-            if (text.includes('.')) {
-                const doms = text.split('.')
-                //up to last two
-                return doms[doms.length - 2] + '.' + doms[doms.length - 1]
-            } else {
-                return text
-            }
-        });
-    }
-
-    replaceGuids(text) {
-        const guidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g;
-        return text.replace(guidRegex, '');
-    }
-
-    replaceNonText(text) {
-        const nonTextRegex = /\w[^\w\s]*\w(?=\s|$)|[^\w\s]+/g;
-        return text.replace(nonTextRegex, (match) => {
-            return ``;
-        });
     }
 
     stop() {

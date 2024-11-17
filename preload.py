@@ -1,3 +1,3 @@
-from python.helpers import whisper_oai
+from python.helpers import whisper
 
-whisper_oai.preload() # preload transcription model
+whisper.preload() # preload transcription model
