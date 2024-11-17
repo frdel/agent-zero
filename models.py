@@ -8,10 +8,15 @@ from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_google_genai import GoogleGenerativeAI, HarmBlockThreshold, HarmCategory
 from langchain_mistralai import ChatMistralAI
+import boto3
+from langchain_aws import ChatBedrock
 from pydantic.v1.types import SecretStr
 from python.helpers.dotenv import load_dotenv
 
-# environment variables
+# environment variables, clean out old AWS creds and use ones in .env
+for key in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"]:
+    if key in os.environ:
+        del os.environ[key]
 load_dotenv()
 
 # Configuration
@@ -88,3 +93,14 @@ def get_openrouter_embedding(model_name: str, api_key=get_api_key("openrouter"),
 def get_sambanova_chat(model_name: str, api_key=get_api_key("sambanova"), temperature=DEFAULT_TEMPERATURE, base_url=os.getenv("SAMBANOVA_BASE_URL") or "https://fast-api.snova.ai/v1", max_tokens=1024):
     return ChatOpenAI(api_key=api_key, model=model_name, temperature=temperature, base_url=base_url, max_tokens=max_tokens) # type: ignore
    
+# Bedrock models
+def get_bedrock_chat(model_id: str):
+    session = boto3.Session(
+        region_name = os.getenv("REGION_NAME")
+        aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID"), 
+        aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY"),
+        aws_session_token = os.getenv("AWS_SESSION_TOKEN")
+    )
+    bedrock_client = session.client(service_name="bedrock-runtime")
+
+    return ChatBedrock(client=bedrock_client, model_id=model_id)
