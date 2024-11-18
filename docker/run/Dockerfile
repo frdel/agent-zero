@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
 
 # Cleanup package list
 RUN rm -rf /var/lib/apt/lists/*
+RUN apt-get clean
 
 # Set up SSH
 RUN mkdir /var/run/sshd && \
@@ -29,11 +30,15 @@ RUN mkdir /var/run/sshd && \
 # Copy contents of the project to /a0
 COPY ./fs/ /
 
-# install a0
-RUN bash /ins/install_A0.sh
-
 # install additional software
 RUN bash /ins/install_searxng.sh
+
+# install a0 with caching
+RUN bash /ins/install_A0.sh
+
+# cleanup repo and install a0 without caching, this speeds up builds
+ARG CACHE_DATE=unknown
+RUN echo "cache buster $CACHE_DATE" && bash /ins/install_A02.sh
 
 # Expose ports
 # EXPOSE 22

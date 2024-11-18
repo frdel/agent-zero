@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  agent-zero:
+    container_name: agent-zero
+    image: frdel/agent-zero-run:testing
+    volumes:
+      - ./agent-zero:/a0
+    ports:
+      - "8080:80"
