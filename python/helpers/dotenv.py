@@ -27,13 +27,10 @@ def save_dotenv_value(key: str, value: str):
         found = False
         for i, line in enumerate(lines):
             if re.match(rf"^\s*{key}\s*=", line):
-                if value == "":
-                    del lines[i]
-                else:
-                    lines[i] = f"{key}={value}\n"
+                lines[i] = f"{key}={value}\n"
                 found = True
-        if not found and value != "":
-            lines.append(f"\n{key}={value}")
+        if not found:
+            lines.append(f"\n{key}={value}\n")
         f.seek(0)
         f.writelines(lines)
         f.truncate()

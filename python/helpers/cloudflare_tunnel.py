@@ -8,7 +8,7 @@ from python.helpers import files
 class CloudflareTunnel:
     def __init__(self, port: int):
         self.port = port
-        self.bin_dir = "bin"  # Relative path
+        self.bin_dir = "tmp"  # Relative path
         self.cloudflared_path = None
         self.tunnel_process = None
         self.tunnel_url = None
