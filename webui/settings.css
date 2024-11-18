@@ -38,6 +38,7 @@ select {
 
 .modal-header ul {
   margin-bottom: 0;
+  line-height: 2em;
 }
 
 .modal-content {

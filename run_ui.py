@@ -542,8 +542,8 @@ async def handle_rfc():
     # data sent to the server
     input = json.loads(request.get_json())
 
-    # handle RFC call
-    result = await rfc.handle_rfc(input)
+    # handle RFC
+    result = await runtime.handle_rfc(input)
     return jsonify(result)
 
 

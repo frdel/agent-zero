@@ -11,7 +11,10 @@ source /opt/venv/bin/activate
 # Ensure the virtual environment and pip setup
 pip install --upgrade pip ipython requests
 
-# Install A0 python packages
+# Install some packages in specific variants
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+# Install remaining A0 python packages
 pip install -r /a0/requirements.txt
 
 # Preload A0

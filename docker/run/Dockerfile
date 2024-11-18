@@ -36,7 +36,8 @@ RUN bash /ins/install_A0.sh
 RUN bash /ins/install_searxng.sh
 
 # Expose ports
-EXPOSE 22 80
+# EXPOSE 22
+EXPOSE 80
 
 # initialize runtime
 CMD ["/bin/bash", "/exe/initialize.sh"]

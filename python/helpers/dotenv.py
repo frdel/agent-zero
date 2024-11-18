@@ -5,6 +5,7 @@ from dotenv import load_dotenv as _load_dotenv
 
 KEY_AUTH_LOGIN = "AUTH_LOGIN"
 KEY_AUTH_PASSWORD = "AUTH_PASSWORD"
+KEY_RFC_PASSWORD = "RFC_PASSWORD"
 
 def load_dotenv():
     _load_dotenv(get_dotenv_file_path(), override=True)

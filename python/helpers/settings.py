@@ -34,6 +34,9 @@ class Settings(TypedDict):
     auth_login: str
     auth_password: str
 
+    rfc_url: str
+    rfc_password: str
+
 
 class PartialSettings(Settings, total=False):
     pass
@@ -357,6 +360,34 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "fields": agent_fields,
     }
 
+    dev_fields: list[SettingsField] = []
+
+    dev_fields.append(
+        {
+            "id": "rfc_url",
+            "title": "RFC Destination URL",
+            "description": "URL for remote function calls. RFCs are used to call functions on another A0 instance. You can develop and debug A0 natively on your local system while redirecting some functions to A0 instance in docker.",
+            "type": "input",
+            "value": settings["rfc_url"],
+        }
+    )
+
+    dev_fields.append(
+        {
+            "id": "rfc_password",
+            "title": "RFC Password",
+            "description": "Password for remote function calls. Passwords must match on both systems. RFCs can not be used with empty password.",
+            "type": "password",
+            "value": dotenv.get_dotenv_value(dotenv.KEY_RFC_PASSWORD),
+        }
+    )
+
+    dev_section: SettingsSection = {
+        "title": "Development",
+        "description": "Parameters for A0 framework development.",
+        "fields": dev_fields,
+    }
+
     result: SettingsOutput = {
         "sections": [
             agent_section,
@@ -365,6 +396,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             embed_model_section,
             api_keys_section,
             auth_section,
+            dev_section,
         ]
     }
     return result
@@ -476,6 +508,7 @@ def _remove_sensitive_settings(settings: Settings):
     settings["api_keys"] = {}
     settings["auth_login"] = ""
     settings["auth_password"] = ""
+    settings["rfc_password"] = ""
 
 
 def _write_sensitive_settings(settings: Settings):
@@ -483,6 +516,7 @@ def _write_sensitive_settings(settings: Settings):
         dotenv.save_dotenv_value(key.upper(), val)
     dotenv.save_dotenv_value(dotenv.KEY_AUTH_LOGIN, settings["auth_login"])
     dotenv.save_dotenv_value(dotenv.KEY_AUTH_PASSWORD, settings["auth_password"])
+    dotenv.save_dotenv_value(dotenv.KEY_RFC_PASSWORD, settings["rfc_password"])
 
 
 def _get_default_settings() -> Settings:
@@ -504,6 +538,8 @@ def _get_default_settings() -> Settings:
         agent_prompts_subdir="default",
         agent_memory_subdir="default",
         agent_knowledge_subdir="custom",
+        rfc_url="http://localhost:55080",
+        rfc_password="",
     )
 
 
