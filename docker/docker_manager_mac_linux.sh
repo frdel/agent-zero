@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Constants
-IMAGE_NAME="agent-zero-run"
+IMAGE_NAME="frdel/agent-zero-run"
 DEFAULT_CONTAINER_NAME="agent-zero"
 BASE_PORT=50080
 

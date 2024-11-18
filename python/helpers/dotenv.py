@@ -18,6 +18,8 @@ def get_dotenv_value(key: str):
     return os.getenv(key)
 
 def save_dotenv_value(key: str, value: str):
+    if value is None:
+        value = ""
     dotenv_path = get_dotenv_file_path()
     if not os.path.isfile(dotenv_path):
         with open(dotenv_path, "w") as f:
