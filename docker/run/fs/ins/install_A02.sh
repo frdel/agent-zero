@@ -1,21 +1,11 @@
 #!/bin/bash
 
-BRANCH="development"
+# cachebuster script, this helps speed up docker builds
+rm -rf /github/agent-zero
 
-git clone -b "$BRANCH" "https://github.com/frdel/agent-zero" "/a0"
+# run the original install script again
+bash /ins/install_A0.sh
 
-# Create and activate Python virtual environment
-python3 -m venv /opt/venv
+# remove python packages cache
 source /opt/venv/bin/activate
-
-# Ensure the virtual environment and pip setup
-pip install --upgrade pip ipython requests
-
-# Install some packages in specific variants
-pip install torch --index-url https://download.pytorch.org/whl/cpu
-
-# Install remaining A0 python packages
-pip install -r /a0/requirements.txt
-
-# Preload A0
-python /a0/preload.py
+pip cache purge
