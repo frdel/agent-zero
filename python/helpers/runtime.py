@@ -70,7 +70,7 @@ def _get_rfc_url() -> str:
     url = settings.get_settings()["rfc_url"]
     if not url.endswith("/"):
         url += "/"
-    url += "url"
+    url += "rfc"
     return url
     # if get_arg("rfc_url"):
     #     return str(get_arg("rfc_url"))

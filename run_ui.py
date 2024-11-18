@@ -530,7 +530,7 @@ async def transcribe():
             "message": str(e),
         }
         PrintStyle.error(str(e))
-
+        
     # respond with json
     return jsonify(response)
 
@@ -539,12 +539,26 @@ async def transcribe():
 @app.route("/rfc", methods=["POST"])
 @requires_auth
 async def handle_rfc():
-    # data sent to the server
-    input = json.loads(request.get_json())
+    try:
+        # data sent to the server
+        input = json.loads(request.get_json())
 
-    # handle RFC
-    result = await runtime.handle_rfc(input)
-    return jsonify(result)
+        # handle RFC
+        result = await runtime.handle_rfc(input)
+
+        response = {
+            "ok": True,
+            "result": result,
+        }
+        
+        return jsonify(response)
+    except Exception as e:
+        response = {
+            "ok": False,
+            "message": str(e),
+        }
+        PrintStyle.error(str(e))
+        return jsonify(response), 500
 
 
 def run():

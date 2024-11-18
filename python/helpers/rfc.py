@@ -74,7 +74,15 @@ async def _send_json_data(url: str, data: str):
             url,
             json=data,
         ) as response:
-            return await response.json()
+            if response.status == 200:
+                result = await response.json()
+                if result["ok"]:
+                    return result["result"]
+                else:
+                    raise Exception(result["message"])
+            else:
+                error = await response.text()
+                raise Exception(error)
 
 
 def hash_data(data: str, password: str):
