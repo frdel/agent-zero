@@ -3,7 +3,11 @@
 # clone SearXNG repo
 # git clone "https://github.com/searxng/searxng" \
 #                    "/usr/local/searxng/searxng-src"
-cp -r "/git/searxng" "/usr/local/searxng/searxng-src"
+
+# cp -r "/git/searxng" "/usr/local/searxng/searxng-src"
+
+git clone "https://github.com/searxng/searxng" \
+                   "/usr/local/searxng/searxng-src"
 
 # create virtualenv:
 python3 -m venv "/usr/local/searxng/searx-pyenv"

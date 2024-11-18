@@ -14,4 +14,4 @@ sudo -H mkdir "/usr/local/searxng"
 sudo -H chown -R "searxng:searxng" "/usr/local/searxng"
 
 # Start a new shell from new created user and clone SearXNG:
-sudo -H -u searxng -i bash /ins/install_searxng_user.sh
+sudo -H -u searxng -i bash /ins/install_searxng2.sh

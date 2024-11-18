@@ -26,11 +26,11 @@ while true; do
 
     setup_venv
 
-    # Copy repository files if target is empty
-    if [ -z "$(ls -A "$TARGET_DIR")" ]; then
-        echo "Copying files from $SOURCE_DIR to $TARGET_DIR..."
-        cp -rn --no-preserve=ownership,mode "$SOURCE_DIR/." "$TARGET_DIR"
-    fi
+    # # Copy repository files if target is empty
+    # if [ -z "$(ls -A "$TARGET_DIR")" ]; then
+    #     echo "Copying files from $SOURCE_DIR to $TARGET_DIR..."
+    #     cp -rn --no-preserve=ownership,mode "$SOURCE_DIR/." "$TARGET_DIR"
+    # fi
 
     echo "Starting A0..."
     python /a0/run_ui.py \
