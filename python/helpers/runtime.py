@@ -1,6 +1,7 @@
 import argparse
-from typing import Any, Callable, Coroutine
-from python.helpers import dotenv, rfc, docker, settings
+import inspect
+from typing import Any, Callable
+from python.helpers import dotenv, rfc, settings
 
 parser = argparse.ArgumentParser()
 args = {}
@@ -52,7 +53,10 @@ async def call_development_function(func: Callable, *args, **kwargs):
             kwargs=kwargs,
         )
     else:
-        return await func(*args, **kwargs)
+        if inspect.iscoroutinefunction(func):
+            return await func(*args, **kwargs)
+        else:
+            return func(*args, **kwargs)
 
 
 async def handle_rfc(rfc_call: rfc.RFCCall):
@@ -72,16 +76,3 @@ def _get_rfc_url() -> str:
         url += "/"
     url += "rfc"
     return url
-    # if get_arg("rfc_url"):
-    #     return str(get_arg("rfc_url"))
-    # global dockerman
-    # if dockerman is None:
-    #     dockerman = docker.DockerContainerManager(
-    #         image="agent-zero-run",
-    #         name="agent-zero-development",
-    #         ports={"55080": 80, "55022": 22},
-    #         volumes={},
-    #         logger=None,
-    #     )
-    # conts = dockerman.get_image_containers()
-    # return f"http://localhost:{conts[0]['web_port']}/rfc"
