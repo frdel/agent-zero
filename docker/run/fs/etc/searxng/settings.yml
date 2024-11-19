@@ -7,24 +7,24 @@ general:
   instance_name: "SearXNG"
 
 search:
-  safe_search: 2
-  autocomplete: 'duckduckgo'
+  safe_search: 0
+  # autocomplete: 'duckduckgo'
   formats:
-    - html
     - json
+    # - html
 
 server:
   # Is overwritten by ${SEARXNG_SECRET}
-  secret_key: "1e91dce279fdef87eb7b6f43029c206b"
-  limiter: true
-  image_proxy: true
+  secret_key: "dummy"
+  limiter: false
+  image_proxy: false
   # public URL of the instance, to ensure correct inbound links. Is overwritten
   # by ${SEARXNG_URL}.
   # base_url: http://example.com/location
 
-redis:
-  # URL to connect redis database. Is overwritten by ${SEARXNG_REDIS_URL}.
-  url: unix:///usr/local/searxng-redis/run/redis.sock?db=0
+# redis:
+#   # URL to connect redis database. Is overwritten by ${SEARXNG_REDIS_URL}.
+#   url: unix:///usr/local/searxng-redis/run/redis.sock?db=0
 
 ui:
   static_use_hash: true

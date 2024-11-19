@@ -422,9 +422,14 @@ class Speech {
 
     replaceNonText(text) {
         const nonTextRegex = /\w[^\w\s]*\w(?=\s|$)|[^\w\s]+/g;
-        return text.replace(nonTextRegex, (match) => {
+        text = text.replace(nonTextRegex, (match) => {
             return ``;
         });
+        const longStringRegex = /\S{25,}/g;
+        text = text.replace(longStringRegex, (match) => {
+            return ``;
+        });
+        return text
     }
 
     stop() {

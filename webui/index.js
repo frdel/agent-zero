@@ -372,7 +372,7 @@ async function poll() {
 }
 
 function afterMessagesUpdate(logs) {
-    if(localStorage.getItem('speech') == 'true') {
+    if (localStorage.getItem('speech') == 'true') {
         speakMessages(logs)
     }
 }
@@ -392,7 +392,14 @@ function speakMessages(logs) {
 }
 
 function updateProgress(progress) {
-    if (!progress) progress = "Waiting for input"
+    const defaultText = "Waiting for input"
+    if (!progress) progress = defaultText
+    
+    if (progress == defaultText) {
+        removeClassFromElement(progressBar, "shiny-text")
+    } else {
+        addClassToElement(progressBar, "shiny-text")
+    }
 
     if (progressBar.innerHTML != progress) {
         progressBar.innerHTML = progress
@@ -500,7 +507,7 @@ window.toggleDarkMode = function (isDark) {
 window.toggleSpeech = function (isOn) {
     console.log("Speech:", isOn);
     localStorage.setItem('speech', isOn);
-    if(!isOn) speech.stop()
+    if (!isOn) speech.stop()
 };
 
 // Modify this part
@@ -649,6 +656,14 @@ function readJsonFiles() {
             }
         };
     });
+}
+
+function addClassToElement(element, className) {
+    element.classList.add(className);
+}
+
+function removeClassFromElement(element, className) {
+    element.classList.remove(className);
 }
 
 

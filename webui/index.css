@@ -473,6 +473,27 @@ pre {
   margin-right: 1.2em;
 }
 
+.shiny-text {
+  background: linear-gradient(
+      to right,
+      var(--color-primary-dark) 20%,
+      var(--color-text) 40%,
+      var(--color-text) 60%,
+      var(--color-primary-dark) 60%
+  );
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shine 1s linear infinite;
+}
+
+@keyframes shine {
+  to {
+      background-position: -200% center;
+  }
+}
+
 #right-panel.expanded #logo-container {
   margin-left: 4.6rem;
 }
