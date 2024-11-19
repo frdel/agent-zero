@@ -165,7 +165,7 @@ def _deserialize_history(history: list[dict[str, Any]]):
 def _deserialize_log(data: dict[str, Any]) -> "Log":
     log = Log()
     log.guid = data.get("guid", str(uuid.uuid4()))
-    log.progress = data.get("progress", "")
+    log.progress = "" #data.get("progress", "")
     log.progress_no = data.get("progress_no", 0)
 
     # Deserialize the list of LogItem objects

@@ -1,7 +1,18 @@
 # local image with smart cache
-docker build -t agent-zero-run:local --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
+docker build -t agent-zero-run:local --build-arg BRANCH=development --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S)  .
 
-# dockerhub push with and without caching
+# local image without cache
+docker build -t agent-zero-run:local --build-arg BRANCH=development --no-cache  .
+
+# dockerhub push:
+
 docker login
-docker buildx build --platform linux/amd64,linux/arm64 -t frdel/agent-zero-run:testing --push --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
-docker buildx build --platform linux/amd64,linux/arm64 -t frdel/agent-zero-run:testing --push --no-cache .
+
+# development:
+docker buildx build --build-arg BRANCH=development -t frdel/agent-zero-run:development --platform linux/amd64,linux/arm64 --push --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
+
+# testing:
+docker buildx build --build-arg BRANCH=testing -t frdel/agent-zero-run:testing --platform linux/amd64,linux/arm64 --push --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
+
+# main
+docker buildx build --build-arg BRANCH=testing -t frdel/agent-zero-run:testing --platform linux/amd64,linux/arm64 --push --no-cache .

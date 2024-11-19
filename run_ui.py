@@ -8,7 +8,7 @@ from flask import Flask, request, jsonify, Response
 from flask_basicauth import BasicAuth
 from agent import AgentContext
 from initialize import initialize
-from python.helpers import files
+from python.helpers import files, git
 from python.helpers.files import get_abs_path
 from python.helpers.print_style import PrintStyle
 from python.helpers.dotenv import load_dotenv
@@ -48,12 +48,9 @@ def requires_auth(f):
     async def decorated(*args, **kwargs):
         user = dotenv.get_dotenv_value("AUTH_LOGIN")
         password = dotenv.get_dotenv_value("AUTH_PASSWORD")
-        if user and password:    
+        if user and password:
             auth = request.authorization
-            if not auth or not (
-                auth.username == user
-                and auth.password == password
-            ):
+            if not auth or not (auth.username == user and auth.password == password):
                 return Response(
                     "Could not verify your access level for that URL.\n"
                     "You have to login with proper credentials",
@@ -87,6 +84,8 @@ async def upload_file():
 
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "txt", "pdf", "csv", "html", "json", "md"}
+
+
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -131,17 +130,20 @@ async def browse_work_dir():
         )
 
 
-# handle default address, show demo html page from ./test_form.html
+# handle default address, load index
 @app.route("/", methods=["GET"])
 @requires_auth
-async def test_form():
-    return Path(get_abs_path("./webui/index.html")).read_text()
+async def serve_index():
+    gitinfo = git.get_git_info()
+    return files.read_file("./webui/index.html", version_no=gitinfo["version"])
 
 
 # simple health check, just return OK to see the server is running
 @app.route("/ok", methods=["GET", "POST"])
 async def health_check():
-    return "OK"
+    gitinfo = git.get_git_info()
+    return jsonify({"ok": True, "gitinfo": gitinfo})
+
 
 # send message to agent (async UI)
 @app.route("/msg", methods=["POST"])
@@ -530,7 +532,7 @@ async def transcribe():
             "message": str(e),
         }
         PrintStyle.error(str(e))
-        
+
     # respond with json
     return jsonify(response)
 
@@ -550,7 +552,7 @@ async def handle_rfc():
             "ok": True,
             "result": result,
         }
-        
+
         return jsonify(response)
     except Exception as e:
         response = {

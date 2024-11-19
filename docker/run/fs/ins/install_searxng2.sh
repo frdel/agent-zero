@@ -28,3 +28,6 @@ pip install -U pyyaml
 # jump to SearXNG's working tree and install SearXNG into virtualenv
 cd "/usr/local/searxng/searxng-src"
 pip install --use-pep517 --no-build-isolation -e .
+
+# cleanup cache
+pip cache purge

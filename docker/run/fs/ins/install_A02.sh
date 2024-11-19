@@ -4,7 +4,7 @@
 rm -rf /git/agent-zero
 
 # run the original install script again
-bash /ins/install_A0.sh
+bash /ins/install_A0.sh "$@"
 
 # remove python packages cache
 source /opt/venv/bin/activate
