@@ -26,8 +26,8 @@ while true; do
 
     setup_venv
 
-    # Copy repository files if target is empty
-    if [ -z "$(ls -A "$TARGET_DIR")" ]; then
+    # Copy repository files if run_ui.py is missing in /a0 (if the volume is mounted)
+    if [ ! -f "$TARGET_DIR/run_ui.py" ]; then
         echo "Copying files from $SOURCE_DIR to $TARGET_DIR..."
         cp -rn --no-preserve=ownership,mode "$SOURCE_DIR/." "$TARGET_DIR"
     fi

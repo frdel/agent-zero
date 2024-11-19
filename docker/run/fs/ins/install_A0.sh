@@ -15,7 +15,7 @@ pip install --upgrade pip ipython requests
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 
 # Install remaining A0 python packages
-pip install -r /github/agent-zero/requirements.txt
+pip install -r /git/agent-zero/requirements.txt
 
 # Preload A0
-python /github/agent-zero/preload.py
+python /git/agent-zero/preload.py
