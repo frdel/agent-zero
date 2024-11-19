@@ -135,7 +135,7 @@ async def browse_work_dir():
 @requires_auth
 async def serve_index():
     gitinfo = git.get_git_info()
-    return files.read_file("./webui/index.html", version_no=gitinfo["version"])
+    return files.read_file("./webui/index.html", version_no=gitinfo["version"], version_time=gitinfo["commit_time"])
 
 
 # simple health check, just return OK to see the server is running
