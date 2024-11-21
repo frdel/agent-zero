@@ -1,14 +1,1 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 27.9.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 19.3 23" style="enable-background:new 0 0 19.3 23;" xml:space="preserve">
-<style type="text/css">
-	.st0{fill:#A0A0A0;}
-</style>
-<g>
-	<path class="st0" d="M18,5.8h-3.6c-0.3,0-0.5-0.2-0.5-0.5V2.6c0-0.3-0.2-0.5-0.5-0.5s-0.5,0.2-0.5,0.5v2.6c0,0.9,0.7,1.6,1.6,1.6
-		h3.1v9.4v5.2c0,0.3-0.2,0.5-0.5,0.5H2.4c-0.3,0-0.5-0.2-0.5-0.5V1.6C1.8,1.3,2.1,1,2.4,1h11.3l4,3.5c0.2,0.2,0.5,0.2,0.7,0
-		s0.2-0.5,0-0.7l-4.2-3.7C14.1,0,14,0,13.9,0H2.4C1.5,0,0.8,0.7,0.8,1.6v19.9c0,0.8,0.7,1.5,1.6,1.5H17c0.9,0,1.6-0.7,1.6-1.6v-5.2
-		V6.3C18.6,6,18.3,5.8,18,5.8z"/>
-</g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 19.3 23"><path d="M18 5.8h-3.6c-.3 0-.5-.2-.5-.5V2.6c0-.3-.2-.5-.5-.5s-.5.2-.5.5v2.6c0 .9.7 1.6 1.6 1.6h3.1v14.6c0 .3-.2.5-.5.5H2.4c-.3 0-.5-.2-.5-.5V1.6c-.1-.3.2-.6.5-.6h11.3l4 3.5c.2.2.5.2.7 0s.2-.5 0-.7L14.2.1c-.1-.1-.2-.1-.3-.1H2.4C1.5 0 .8.7.8 1.6v19.9c0 .8.7 1.5 1.6 1.5H17c.9 0 1.6-.7 1.6-1.6V6.3c0-.3-.3-.5-.6-.5" style="fill:#a0a0a0"/></svg>
