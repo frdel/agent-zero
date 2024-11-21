@@ -4,20 +4,25 @@ const vm = require('vm');
 const path = require('path');
 const Module = require('module');
 
-// Enhance `require` to search CWD first, then globally
+ // Enhance `require` to search CWD and parent directories first, then globally
 function customRequire(moduleName) {
-  try {
-    // Try resolving from CWD's node_modules
-    const cwdPath = path.resolve(process.cwd(), 'node_modules', moduleName);
-    return require(cwdPath);
-  } catch (cwdErr) {
+  let currentDir = process.cwd();
+  const root = path.parse(currentDir).root;
+
+  do {
     try {
-      // Try resolving as a global module
-      return require(moduleName);
-    } catch (globalErr) {
-      console.error(`Cannot find module: ${moduleName}`);
-      throw globalErr;
+      const modulePath = path.join(currentDir, 'node_modules', moduleName);
+      return require(modulePath);
+    } catch (err) {
+      currentDir = path.dirname(currentDir);
     }
+  } while (currentDir !== root);
+
+  try {
+    return require(moduleName);
+  } catch (globalErr) {
+    console.error(`Cannot find module: ${moduleName}`);
+    throw globalErr;
   }
 }
 

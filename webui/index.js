@@ -114,7 +114,7 @@ export async function sendMessage() {
                     formData.append('attachments', attachments[i].file);
                 }
 
-                response = await fetch('/msg', {
+                response = await fetch('/message_async', {
                     method: 'POST',
                     body: formData
                 });
@@ -125,7 +125,7 @@ export async function sendMessage() {
                     context,
                     message_id: messageId
                 };
-                response = await fetch('/msg', {
+                response = await fetch('/message_async', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -138,13 +138,15 @@ export async function sendMessage() {
             const jsonResponse = await response.json();
             if (!jsonResponse) {
                 toast("No response returned.", "error");
-            } else if (!jsonResponse.ok) {
-                if (jsonResponse.message) {
-                    toast(jsonResponse.message, "error");
-                } else {
-                    toast("Undefined error.", "error");
-                }
-            } else {
+            }
+            // else if (!jsonResponse.ok) {
+            //     if (jsonResponse.message) {
+            //         toast(jsonResponse.message, "error");
+            //     } else {
+            //         toast("Undefined error.", "error");
+            //     }
+            // } 
+            else {
                 setContext(jsonResponse.context);
             }
 
@@ -257,10 +259,10 @@ window.loadKnowledge = async function () {
             body: formData,
         });
 
-        const data = await response.json();
-        if (!data.ok) {
-            toast(data.message, "error");
+        if (!response.ok) {
+            toast(await response.text(), "error");
         } else {
+            const data = await response.json();
             toast("Knowledge files imported: " + data.filenames.join(", "), "success");
         }
     };
@@ -274,7 +276,7 @@ function adjustTextareaHeight() {
     chatInput.style.height = (chatInput.scrollHeight) + 'px';
 }
 
-window.sendJsonData = async function (url, data) {
+export const sendJsonData = async function (url, data) {
     const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -284,11 +286,13 @@ window.sendJsonData = async function (url, data) {
     });
 
     if (!response.ok) {
-        throw new Error('Network response was not ok');
+        const error = await response.text();
+        throw new Error(error);
     }
     const jsonResponse = await response.json();
     return jsonResponse;
 }
+window.sendJsonData = sendJsonData
 
 function generateGUID() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -308,40 +312,35 @@ async function poll() {
         const response = await sendJsonData("/poll", { log_from: lastLogVersion, context });
         //console.log(response)
 
-        if (response.ok) {
+        if (!context) setContext(response.context)
+        if (response.context != context) return //skip late polls after context change
 
-            if (!context) setContext(response.context)
-            if (response.context != context) return //skip late polls after context change
-
-            if (lastLogGuid != response.log_guid) {
-                chatHistory.innerHTML = ""
-                lastLogVersion = 0
-            }
-
-            if (lastLogVersion != response.log_version) {
-                updated = true
-                for (const log of response.logs) {
-                    const messageId = log.id || log.no; // Use log.id if available
-                    setMessage(messageId, log.type, log.heading, log.content, log.temp, log.kvps);
-                }
-                afterMessagesUpdate(response.logs)
-            }
-
-            updateProgress(response.log_progress)
-
-            //set ui model vars from backend
-            const inputAD = Alpine.$data(inputSection);
-            inputAD.paused = response.paused;
-            const statusAD = Alpine.$data(statusSection);
-            statusAD.connected = response.ok;
-            const chatsAD = Alpine.$data(chatsSection);
-            chatsAD.contexts = response.contexts;
-
-            lastLogVersion = response.log_version;
-            lastLogGuid = response.log_guid;
-
-
+        if (lastLogGuid != response.log_guid) {
+            chatHistory.innerHTML = ""
+            lastLogVersion = 0
         }
+
+        if (lastLogVersion != response.log_version) {
+            updated = true
+            for (const log of response.logs) {
+                const messageId = log.id || log.no; // Use log.id if available
+                setMessage(messageId, log.type, log.heading, log.content, log.temp, log.kvps);
+            }
+            afterMessagesUpdate(response.logs)
+        }
+
+        updateProgress(response.log_progress)
+
+        //set ui model vars from backend
+        const inputAD = Alpine.$data(inputSection);
+        inputAD.paused = response.paused;
+        const statusAD = Alpine.$data(statusSection);
+        statusAD.connected = true;
+        const chatsAD = Alpine.$data(chatsSection);
+        chatsAD.contexts = response.contexts;
+
+        lastLogVersion = response.log_version;
+        lastLogGuid = response.log_guid;
 
     } catch (error) {
         console.error('Error:', error);
@@ -375,7 +374,7 @@ function speakMessages(logs) {
 function updateProgress(progress) {
     const defaultText = "Waiting for input"
     if (!progress) progress = defaultText
-    
+
     if (progress == defaultText) {
         removeClassFromElement(progressBar, "shiny-text")
     } else {
@@ -406,7 +405,7 @@ window.pauseAgent = async function (paused) {
 }
 
 window.resetChat = async function () {
-    const resp = await sendJsonData("/reset", { context });
+    const resp = await sendJsonData("/chat_reset", { context });
     updateAfterScroll()
 }
 
@@ -434,7 +433,7 @@ window.killChat = async function (id) {
         else setContext(generateGUID())
     }
 
-    if (found) sendJsonData("/remove", { context: id });
+    if (found) sendJsonData("/chat_remove", { context: id });
 
     updateAfterScroll()
 }
@@ -534,17 +533,19 @@ function toggleCssProperty(selector, property, value) {
 window.loadChats = async function () {
     try {
         const fileContents = await readJsonFiles();
-        const response = await sendJsonData("/loadChats", { chats: fileContents });
+        const response = await sendJsonData("/chat_load", { chats: fileContents });
 
         if (!response) {
             toast("No response returned.", "error")
-        } else if (!response.ok) {
-            if (response.message) {
-                toast(response.message, "error")
-            } else {
-                toast("Undefined error.", "error")
-            }
-        } else {
+        }
+        // else if (!response.ok) {
+        //     if (response.message) {
+        //         toast(response.message, "error")
+        //     } else {
+        //         toast("Undefined error.", "error")
+        //     }
+        // } 
+        else {
             setContext(response.ctxids[0])
             toast("Chats loaded.", "success")
         }
@@ -556,17 +557,19 @@ window.loadChats = async function () {
 
 window.saveChat = async function () {
     try {
-        const response = await sendJsonData("/exportChat", { ctxid: context });
+        const response = await sendJsonData("/chat_export", { ctxid: context });
 
         if (!response) {
             toast("No response returned.", "error")
-        } else if (!response.ok) {
-            if (response.message) {
-                toast(response.message, "error")
-            } else {
-                toast("Undefined error.", "error")
-            }
-        } else {
+        }
+        //  else if (!response.ok) {
+        //     if (response.message) {
+        //         toast(response.message, "error")
+        //     } else {
+        //         toast("Undefined error.", "error")
+        //     }
+        // }
+        else {
             downloadFile(response.ctxid + ".json", response.content)
             toast("Chat file downloaded.", "success")
         }

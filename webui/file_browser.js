@@ -17,16 +17,16 @@ const fileBrowserModalProxy = {
     async openModal() {
         const modalEl = document.getElementById('fileBrowserModal');
         const modalAD = Alpine.$data(modalEl);
-        
+
         modalAD.isOpen = true;
         modalAD.isLoading = true;
         modalAD.history = []; // reset history when opening modal
-        
+
         // Initialize currentPath to root if it's empty
         if (!modalAD.browser.currentPath) {
             modalAD.browser.currentPath = "";
         }
-        
+
         await modalAD.fetchFiles(modalAD.browser.currentPath);
     },
 
@@ -39,15 +39,15 @@ const fileBrowserModalProxy = {
     async fetchFiles(path = "") {
         this.isLoading = true;
         try {
-            const response = await fetch(`/getWorkDirFiles?path=${encodeURIComponent(path)}`);
-            const data = await response.json();
-            
-            if (data.ok) {
+            const response = await fetch(`/get_work_dir_files?path=${encodeURIComponent(path)}`);
+
+            if (response.ok) {
+                const data = await response.json();
                 this.browser.entries = data.data.entries;
                 this.browser.currentPath = data.data.current_path;
                 this.browser.parentPath = data.data.parent_path;
             } else {
-                console.error('Error fetching files:', data.message);
+                console.error('Error fetching files:', await response.text());
                 this.browser.entries = [];
             }
         } catch (error) {
@@ -108,7 +108,7 @@ const fileBrowserModalProxy = {
         if (!confirm(`Are you sure you want to delete ${file.name}?`)) {
             return;
         }
-    
+
         try {
             const response = await fetch('/deleteWorkDirFile', {
                 method: 'POST',
@@ -121,45 +121,46 @@ const fileBrowserModalProxy = {
                 })
             });
 
-            const data = await response.json();
-            if (data.ok) {
+            if (response.ok) {
+                const data = await response.json();
                 this.browser.entries = this.browser.entries.filter(entry => entry.path !== file.path);
                 alert('File deleted successfully.');
             } else {
-                alert(`Error deleting file: ${data.message}`);
+                alert(`Error deleting file: ${await response.text()}`);
             }
         } catch (error) {
             console.error('Error deleting file:', error);
             alert('Error deleting file');
         }
     },
-    
-    handleFileUpload(event) {
-        const files = event.target.files;
-        if (!files.length) return;
 
-        const formData = new FormData();
-        formData.append('path', this.browser.currentPath);
-        
-        for (let i = 0; i < files.length; i++) {
-            const ext = files[i].name.split('.').pop().toLowerCase();
-            if (!['zip', 'tar', 'gz', 'rar', '7z'].includes(ext)) {
-                if (files[i].size > 100 * 1024 * 1024) { // 100MB
-                    alert(`File ${files[i].name} exceeds the maximum allowed size of 100MB.`);
-                    continue;
+    async handleFileUpload(event) {
+        try {
+            const files = event.target.files;
+            if (!files.length) return;
+
+            const formData = new FormData();
+            formData.append('path', this.browser.currentPath);
+
+            for (let i = 0; i < files.length; i++) {
+                const ext = files[i].name.split('.').pop().toLowerCase();
+                if (!['zip', 'tar', 'gz', 'rar', '7z'].includes(ext)) {
+                    if (files[i].size > 100 * 1024 * 1024) { // 100MB
+                        alert(`File ${files[i].name} exceeds the maximum allowed size of 100MB.`);
+                        continue;
+                    }
                 }
+                formData.append('files[]', files[i]);
             }
-            formData.append('files[]', files[i]);
-        }
-    
-        // Proceed with upload after validation
-        fetch('/uploadWorkDirFiles', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.ok) {
+
+            // Proceed with upload after validation
+            const response = await fetch('/upload_work_dir_files', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
                 // Update the file list with new data
                 this.browser.entries = data.data.entries.map(entry => ({
                     ...entry,
@@ -167,48 +168,52 @@ const fileBrowserModalProxy = {
                 }));
                 this.browser.currentPath = data.data.current_path;
                 this.browser.parentPath = data.data.parent_path;
-                
+
                 // Show success message
                 if (data.failed && data.failed.length > 0) {
                     const failedFiles = data.failed.map(file => `${file.name}: ${file.error}`).join('\n');
                     alert(`Some files failed to upload:\n${failedFiles}`);
                 }
             } else {
+
                 alert(data.message);
             }
-        })
-        .catch(error => {
+
+        } catch (error) {
             console.error('Error uploading files:', error);
             alert('Error uploading files');
-        });
+        }
     },
 
-    downloadFile(file) {
+    async downloadFile(file) {
         if (file.is_dir) return;
-        
-        const downloadUrl = `/downloadWorkDirFile?path=${encodeURIComponent(file.path)}`;
-        
-        fetch(downloadUrl)
 
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.blob();
-            })
-            .then(blob => {
-                const link = document.createElement('a');
-                link.href = window.URL.createObjectURL(blob);
-                link.download = file.name;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(link.href);
-            })
-            .catch(error => {
-                console.error('Error downloading file:', error);
-                alert('Error downloading file');
-            });
+        try {
+
+            const downloadUrl = `/download_work_dir_file?path=${encodeURIComponent(file.path)}`;
+
+            const response = await fetch(downloadUrl)
+
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const blob = await response.blob();
+
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = file.name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(link.href);
+
+        } catch (error) {
+
+            console.error('Error downloading file:', error);
+            alert('Error downloading file');
+        }
     },
 
     // Helper Functions

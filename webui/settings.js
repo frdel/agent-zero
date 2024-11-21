@@ -10,7 +10,7 @@ const settingsModalProxy = {
         const modalAD = Alpine.$data(modalEl);
 
         //get settings from backend
-        const set = await sendJsonData("/getSettings", null);
+        const set = await sendJsonData("/settings_get", null);
 
         const settings = {
             "title": "Settings page",
@@ -43,7 +43,7 @@ const settingsModalProxy = {
 
             const modalEl = document.getElementById('settingsModal');
             const modalAD = Alpine.$data(modalEl);
-            resp = await window.sendJsonData("/setSettings", modalAD.settings);
+            resp = await window.sendJsonData("/settings_set", modalAD.settings);
 
             this.resolvePromise({
                 status: 'saved',
