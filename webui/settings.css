@@ -32,6 +32,7 @@ select {
 }
 
 .modal-header h2 {
+  color: var(--color-primary);
   font-size: 1.25rem;
   margin: 0;
 }
@@ -39,6 +40,10 @@ select {
 .modal-header ul {
   margin-bottom: 0;
   line-height: 2em;
+}
+
+#settings-title {
+  padding: 0.5rem 2rem 0.5rem 2rem;
 }
 
 .modal-content {
@@ -240,6 +245,10 @@ input[type="range"] {
   transition: background 0.3s ease-in-out;
 }
 
+.btn-ok > svg {
+  max-width: 20px;
+}
+
 .btn-ok:hover {
   background: #3265c0;
 }
@@ -310,6 +319,15 @@ nav ul li a {
 nav ul li a:hover {
   text-decoration: underline;
 }
+
+#settings-sections {
+  background-color: var(--color-secondary);
+  padding: 0.3rem 2rem;
+  line-height: 1.6rem;
+  font-size: var(--font-size-normal);
+  border-bottom: 1px solid var(--color-border);
+}
+
 
 @media (max-width: 768px) {
   .modal-header {

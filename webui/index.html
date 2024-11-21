@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="toast.css">
     <link rel="stylesheet" href="settings.css">
+    <link rel="stylesheet" href="file_browser.css">
     <link rel="stylesheet" href="speech.css">
 
     <script>
@@ -16,24 +17,27 @@
         }
     </script>
 
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>    
+
     <!-- KaTeX CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
 
     <!-- KaTeX javascript -->
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" crossorigin="anonymous"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
-        crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 
-    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
     <script type="module" src="index.js"></script>
     <script type="text/javascript" src="settings.js"></script>
+    <script type="text/javascript" src="file_browser.js"></script>
     <script type="module" src="speech.js"></script>
 
 </head>
 
 <body>
     <div class="container">
+        <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
         <div class="icons-section" id="hide-button" x-data="{ connected: true }">
             <!--Sidebar-->
             <!-- Sidebar Toggle Button -->
@@ -307,7 +311,7 @@
                                 d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5">
                             </path>
                         </svg>Import knowledge</button>
-                    <button class="text-button" @click="workDirModalProxy.openModal()">
+                        <button class="text-button" id="work_dir_browser" @click="fileBrowserModalProxy.openModal()">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 123.37 92.59">
                             <path
                                 d="m5.72,11.5l-3.93,8.73h119.77s-3.96-8.73-3.96-8.73h-60.03c-1.59,0-2.88-1.29-2.88-2.88V1.75H13.72v6.87c0,1.59-1.29,2.88-2.88,2.88h-5.12Z"
@@ -340,10 +344,13 @@
     </div>
     <div id="settingsModal" x-data="settingsModalProxy">
         <template x-teleport="body">
-            <div x-show="isOpen" class="modal-overlay" @click.self="handleCancel()" x-transition>
+            <div x-show="isOpen" class="modal-overlay" @click.self="handleCancel()" @keydown.escape.window="handleClose()" x-transition>
                 <div class="modal-container">
-                    <div class="modal-header">
+                    <div class="modal-header" id="settings-title">
                         <h2 x-text="settings.title"></h2>
+                        <button class="modal-close" @click="handleCancel()">&times;</button>
+                    </div>
+                    <div id="settings-sections">
                         <!-- Dynamically generated navigation -->
                         <nav>
                             <ul>
@@ -450,26 +457,113 @@
             </div>
         </template>
     </div>
+    
+    <!-- work_dir Browser Modal -->
 
-    <div id="workDirModal" x-data="workDirModalProxy">
+    <div id="fileBrowserModal" x-data="fileBrowserModalProxy">
         <template x-teleport="body">
-            <div x-show="isOpen" class="modal-overlay" @click.self="close()" x-transition>
+            <div x-show="isOpen" class="modal-overlay" @click.self="handleClose()" @keydown.escape.window="handleClose()" x-transition>
                 <div class="modal-container">
                     <div class="modal-header">
-                        <h2>Work Directory</h2>
+                        <h2 class="modal-title" x-text="browser.title"></h2>
+                        <button class="modal-close" @click="handleClose()">&times;</button>
                     </div>
                     <div class="modal-content">
-                        <ul>
-                            <template x-for="file in files" :key="file">
-                                <li x-text="file"></li>
-                            </template>
-                        </ul>
+                        <div x-show="isLoading" class="loading-spinner">
+                            Loading...
+                        </div>
+                        <div x-show="!isLoading">
+                            <div class="path-navigator">
+                                <!-- Up Button -->
+                                <button class="text-button back-button" 
+                                @click="navigateUp()" 
+                                aria-label="Navigate Up">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10.5 15">
+                                        <path d="m.75,5.25L5.25.75m0,0l4.5,4.5M5.25.75v13.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+                                    </svg>
+                                Up
+                                </button>
+                            
+                                <span class="current-path" x-text="browser.currentPath || 'Current Path: /'"></span>
+                            </div>
+                            
+                            <div class="files-list">
+                                <!-- Header -->
+                                <div class="file-header">
+                                    <div class="file-cell" @click="toggleSort('name')">
+                                        Name
+                                        <span x-show="browser.sortBy === 'name'" 
+                                            x-text="browser.sortDirection === 'asc' ? '↑' : '↓'">
+                                        </span>
+                                    </div>
+                                    <div class="file-cell-size" @click="toggleSort('size')">
+                                        Size
+                                        <span x-show="browser.sortBy === 'size'"
+                                            x-text="browser.sortDirection === 'asc' ? '↑' : '↓'">
+                                        </span>
+                                    </div>
+                                    <div class="file-cell-date" @click="toggleSort('date')">
+                                        Modified
+                                        <span x-show="browser.sortBy === 'date'"
+                                            x-text="browser.sortDirection === 'asc' ? '↑' : '↓'">
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <!-- File List -->
+                                <template x-if="browser.entries.length">
+                                    <template x-for="file in sortFiles(browser.entries)" :key="file.path">
+                                        <div class="file-item" :data-is-dir="file.is_dir">
+                                            <div class="file-name" @click="file.is_dir ? navigateToFolder(file.path) : downloadFile(file)">
+                                                <img :src="'/public/' + (file.type === 'unknown' ? 'file' : (isArchive(file.name) ? 'archive' : file.type)) + '.svg'" class="file-icon" :alt="file.type">
+                                                <span x-text="file.name"></span>
+                                            </div>
+                                            <div class="file-size" x-text="formatFileSize(file.size)"></div>
+                                            <div class="file-date" x-text="formatDate(file.modified)"></div>
+
+                                            <div class="file-actions">
+                                                <button class="action-button download-button" @click.stop="downloadFile(file)" x-show="!file.is_dir">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.5 19.5">
+                                                      <path d="m.75,14.25v2.25c0,1.24,1.01,2.25,2.25,2.25h13.5c1.24,0,2.25-1.01,2.25-2.25v-2.25m-4.5-4.5l-4.5,4.5m0,0l-4.5-4.5m4.5,4.5V.75" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+                                                    </svg>
+                                                </button>
+                                                <button class="delete-button" @click.stop="deleteFile(file)" x-show="!file.is_dir || (file.is_dir &amp;&amp; file.size === 0)">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15.03 22.53" fill="currentColor">
+                                                    <path d="m14.55,7.82H4.68L14.09,3.19c.83-.41,1.17-1.42.77-2.25-.41-.83-1.42-1.17-2.25-.77l-3.16,1.55-.15-.31c-.22-.44-.59-.76-1.05-.92-.46-.16-.96-.13-1.39.09l-2.08,1.02c-.9.44-1.28,1.54-.83,2.44l.15.31-3.16,1.55c-.83.41-1.17,1.42-.77,2.25.29.59.89.94,1.51.94.25,0,.5-.06.74-.17l.38-.19s.09.03.14.03h11.14v11.43c0,.76-.62,1.38-1.38,1.38h-.46v-11.28c0-.26-.21-.47-.47-.47s-.47.21-.47.47v11.28h-2.39v-11.28c0-.26-.21-.47-.47-.47s-.47.21-.47.47v11.28h-2.39v-11.28c0-.26-.21-.47-.47-.47s-.47.21-.47.47v11.28h-.46c-.76,0-1.38-.62-1.38-1.38v-9.9c0-.26-.21-.47-.47-.47s-.47.21-.47.47v9.9c0,1.28,1.04,2.32,2.32,2.32h8.55c1.28,0,2.32-1.04,2.32-2.32v-11.91c0-.26-.21-.47-.47-.47ZM5.19,2.46l2.08-1.02c.12-.06.25-.09.39-.09.09,0,.19.02.28.05.22.08.4.23.5.44l.15.31-.19.09-3.46,1.7-.15-.31c-.21-.43-.03-.96.4-1.17Zm-3.19,5.62c-.36.18-.8.03-.98-.33-.18-.36-.03-.8.33-.98l5.8-2.85,2.72-1.34,3.16-1.55c.1-.05.21-.07.32-.07.27,0,.53.15.66.41.09.17.1.37.04.56-.06.18-.19.33-.37.42L2,8.08Z" stroke-width="0"></path>
+                                                    </svg>
+                                            </button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </template>
+                                
+                                <!-- Empty State -->
+                                <template x-if="!browser.entries.length">
+                                    <div class="no-files">
+                                        No files found
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
-                        <button @click="close()">Close</button>
+                        <div id="buttons-container">
+                            <label class="btn btn-upload"><svg xmlns="http://www.w3.org/2000/svg"
+                                fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5">
+                                </path>
+                            </svg>
+                                Upload Files
+                                <input type="file" multiple="" 
+                                       accept="all" 
+                                       @change="handleFileUpload" 
+                                       style="display: none;">
+                            </label>
+                            <button class="btn btn-cancel" @click="handleClose()">Close Browser</button>
+                        </div>
                     </div>
                 </div>
-            </div>
         </template>
     </div>
 

@@ -684,7 +684,7 @@ font-size: var(--font-size-small)
   -webkit-font-optical-sizing: auto;
   font-size: 0.875rem;
   max-height: 7rem;
-  min-height: 2.7rem;
+  min-height: 2.8rem;
   padding: var(--spacing-xs) var(--spacing-sm);
   overflow-y: auto;
   scroll-behavior: smooth;
@@ -722,6 +722,7 @@ font-size: var(--font-size-small)
 #chat-input:focus {
   outline: 0.05rem solid rgba(155, 155, 155, 0.3);
   font-size: 0.955rem;
+  padding-top: 0.58rem;
   background-color: var(--color-input-focus);
 }
 
@@ -1033,7 +1034,7 @@ font-size: var(--font-size-small)
   flex-grow: 1;
   min-height: 2.7rem;
   padding: var(--spacing-sm) var(--spacing-sm);
-  padding-top: 0.70rem;
+  padding-top: 0.65rem;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   resize: none;
@@ -1539,6 +1540,23 @@ input:checked + .slider:before {
     -webkit-transition: all 0.3s ease;
   }
 }
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0);
+  opacity: 0;
+  z-index: 999;
+}
+
+.sidebar-overlay.visible {
+  display: block;
+}
+  
 
 @media (max-width: 768px) {
   #left-panel {

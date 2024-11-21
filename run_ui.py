@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import threading
 import uuid
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, send_file
 from flask_basicauth import BasicAuth
 from agent import AgentContext
 from initialize import initialize
@@ -16,6 +16,7 @@ from python.helpers import persist_chat, settings, whisper, rfc, runtime, dotenv
 import base64
 from werkzeug.utils import secure_filename
 from python.helpers.cloudflare_tunnel import CloudflareTunnel
+from python.helpers.file_browser import FileBrowser
 
 
 # initialize the internal Flask server
@@ -76,7 +77,7 @@ async def upload_file():
 
     for file in files:
         if file and allowed_file(file.filename):  # Check file type
-            filename = secure_filename(file.filename)
+            filename = secure_filename(file.filename) # type: ignore
             file.save(os.path.join(UPLOAD_FOLDER, filename))
             saved_filenames.append(filename)
 
@@ -103,7 +104,7 @@ async def import_knowledge():
 
     for file in files:
         if file:
-            filename = secure_filename(file.filename)
+            filename = secure_filename(file.filename) # type: ignore
             file.save(os.path.join(KNOWLEDGE_FOLDER, filename))
             saved_filenames.append(filename)
 
@@ -112,22 +113,135 @@ async def import_knowledge():
     )
 
 
-@app.route("/work_dir", methods=["GET"])  # Correct route
+@app.route("/getWorkDirFiles", methods=["GET"])
 @requires_auth
-async def browse_work_dir():
-    work_dir = os.path.join(os.getcwd(), "work_dir")
+async def get_work_dir_files():
     try:
-        files = [
-            f for f in os.listdir(work_dir) if os.path.isfile(os.path.join(work_dir, f))
-        ]
-        return jsonify({"ok": True, "files": files})
-    except FileNotFoundError:
-        return jsonify({"ok": False, "message": "work_dir not found"}), 404
+        current_path = request.args.get('path', '')
+        work_dir = files.get_abs_path("work_dir")
+        browser = FileBrowser(work_dir)
+        result = browser.get_files(current_path)
+        
+        response = {
+            "ok": True,
+            "data": result
+        }
+        
     except Exception as e:
-        return (
-            jsonify({"ok": False, "message": f"Error browsing work_dir: {str(e)}"}),
-            500,
-        )
+        response = {
+            "ok": False,
+            "message": str(e)
+        }
+        PrintStyle.error(str(e))
+
+    return jsonify(response)
+
+
+@app.route("/uploadWorkDirFiles", methods=["POST"])
+@requires_auth
+async def upload_work_dir_files():
+    try:
+        if "files[]" not in request.files:
+            return jsonify({"ok": False, "message": "No files uploaded"}), 400
+
+        current_path = request.form.get('path', '')
+        uploaded_files = request.files.getlist("files[]") 
+        
+        work_dir = files.get_abs_path("work_dir")
+        browser = FileBrowser(work_dir)
+        
+        successful, failed = browser.save_files(uploaded_files, current_path)
+        
+        if not successful and failed:
+            return jsonify({
+                "ok": False,
+                "message": "All uploads failed",
+                "failed": failed
+            }), 400
+            
+        result = browser.get_files(current_path)
+        
+        response = {
+            "ok": True,
+            "message": "Files uploaded successfully" if not failed else "Some files failed to upload",
+            "data": result,
+            "successful": successful,
+            "failed": failed
+        }
+        
+    except Exception as e:
+        response = {
+            "ok": False,
+            "message": str(e)
+        }
+        PrintStyle.error(str(e))
+
+    return jsonify(response)
+
+
+@app.route("/downloadWorkDirFile", methods=["GET"])
+@requires_auth
+async def download_work_dir_file():
+    try:
+        file_path = request.args.get('path', '')
+        if not file_path:
+            raise ValueError("No file path provided")
+            
+        work_dir = files.get_abs_path("work_dir")
+        browser = FileBrowser(work_dir)
+        
+        full_path = browser.get_file_path(file_path)
+        if full_path:
+            return send_file(
+                full_path, 
+                as_attachment=True,
+                download_name=os.path.basename(file_path)
+            )
+            
+        return jsonify({
+            "ok": False,
+            "message": "File not found"
+        }), 404
+            
+    except Exception as e:
+        return jsonify({
+            "ok": False,
+            "message": str(e)
+        }), 500
+
+
+@app.route("/deleteWorkDirFile", methods=["POST"])
+@requires_auth
+async def delete_work_dir_file():
+    try:
+        data = request.get_json()
+        file_path = data.get('path', '')
+        current_path = data.get('currentPath', '')
+        
+        work_dir = files.get_abs_path("work_dir")
+        browser = FileBrowser(work_dir)
+        
+        if browser.delete_file(file_path):
+            # Get updated file list
+            result = browser.get_files(current_path)
+            response = {
+                "ok": True,
+                "data": result
+            }
+        else:
+            response = {
+                "ok": False,
+                "message": "File not found or could not be deleted"
+            }
+            
+    except Exception as e:
+        response = {
+            "ok": False,
+            "message": str(e)
+        }
+        PrintStyle.error(str(e))
+
+    return jsonify(response)
 
 
 # handle default address, load index
@@ -174,6 +288,8 @@ async def handle_message(sync: bool):
             if attachments:
                 os.makedirs(upload_folder, exist_ok=True)
                 for attachment in attachments:
+                    if attachment.filename is None:
+                        continue
                     filename = secure_filename(attachment.filename)
                     save_path = files.get_abs_path(upload_folder, filename)
                     attachment.save(save_path)
