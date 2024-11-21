@@ -1,0 +1,363 @@
+/* Work Directory Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2002;
+}
+
+.modal-container {
+  background-color: var(--color-panel);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 4px 23px 0 rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  padding: 1rem 2rem;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-subheader {
+  padding: 0.7rem 1.5rem;
+  display: inline;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.modal-close {
+  background: none;
+  font-size: xx-large;
+  border: none;
+  color: var(--color-text);
+  opacity: 0.7;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: opacity 0.2s;
+}
+
+.modal-close:hover {
+  opacity: 1;
+}
+
+.modal-content {
+  padding: 0.5rem 1.5rem 0rem 1.5rem;
+  overflow-y: auto;
+  max-height: calc(80vh - 4rem);
+}
+
+.modal-footer {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+  background: var(--color-background);
+}
+
+h2 {
+  color: var(--color-primary);
+}
+
+/* File Browser Styles */
+.files-list {
+  width: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.file-header {
+  display: grid;
+  grid-template-columns: 2fr 0.6fr 1.0fr 80px;
+  background: var(--secondary-bg);
+  padding: 8px 0;
+  font-weight: bold;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.file-cell {
+  padding: 4px;
+  cursor: pointer;
+}
+
+.file-item {
+  display: grid;
+  grid-template-columns: 2fr 0.6fr 1.0fr 80px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid var(--color-border);
+  transition: background-color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.file-item:hover {
+  background-color: var(--hover-bg);
+  cursor: pointer;
+}
+
+.file-icon {
+  font-size: var(--font-size-sm);
+  width: 1.8rem;
+  height: 1.8rem;
+  vertical-align: middle;
+  margin-right: 1rem;
+}
+
+.file-name {
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    overflow: hidden;
+    margin-right: var(--spacing-sm);
+}
+
+.file-name > span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-size {
+  color: var(--text-secondary);
+}
+
+.file-date {
+  color: var(--text-secondary);
+}
+
+.no-files {
+  padding: 32px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* Light mode adjustments */
+.light-mode .modal-container {
+  background-color: var(--color-panel-light);
+}
+
+.light-mode .file-item {
+  background-color: var(--color-background-light);
+}
+
+.light-mode .file-item:hover {
+  background-color: var(--color-secondary-light);
+}
+
+/* Path Navigator */
+
+.path-navigator {
+  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background-color: var(--color-message-bg);
+  padding: 0.70rem var(--spacing-sm) 0.7rem var(--spacing-sm);
+  margin-bottom: 0.3rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.nav-button {
+  padding: 4px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-background);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.nav-button:hover {
+  background: var(--hover-bg);
+}
+
+.nav-button.back-button {
+  background-color: var(--color-secondary);
+  color: var(--color-text);
+}
+
+.nav-button.back-button:hover {
+  background-color: var(--color-secondary-dark);
+}
+
+.current-path {
+  color: var(--color-text);
+  font-family: monospace;
+}
+
+/* Update file-item for folders */
+.file-item[data-is-dir="true"] {
+  cursor: pointer;
+}
+
+.file-item[data-is-dir="true"]:hover {
+  background-color: var(--hover-bg);
+}
+
+/* Button Section */
+
+.upload-button {
+display: inline-block;
+padding: 8px 16px;
+background-color: var(--color-primary);
+color: white;
+border-radius: 4px;
+cursor: pointer;
+transition: background-color 0.2s;
+}
+
+.btn-upload {
+  background: #3270e2;
+  color: white;
+  display: flex;
+  transition: background 0.3s ease-in-out;
+  margin: 0 auto;
+  text-wrap: wrap;
+  gap: 0.5rem;
+  align-items:center;    
+}
+  
+  .btn-upload > svg {
+    width: 20px;
+  }
+
+.upload-button:hover {
+background-color: var(--color-primary-dark);
+}
+
+/* Delete Button */
+
+.delete-button {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  width: 32px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: opacity 0.2s, background-color 0.2s;}
+
+.delete-button:hover {
+  color: #ff7878
+}
+
+.delete-button:active {
+  opacity: 0.6;
+}
+
+.file-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  transition: opacity 0.2s;
+  }
+
+.action-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 32px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.download-button {
+  color: var(--color-primary);
+}
+
+.download-button:hover {
+  background-color: var(--color-primary-light);
+}
+
+.button-section {
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .file-header {
+    display: grid;
+    grid-template-columns: 1fr 0.5fr 80px;
+    background: var(--secondary-bg);
+    padding: 8px 0;
+    font-weight: bold;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .file-item {
+    display: grid;
+    grid-template-columns: 1fr 0.5fr 80px;
+    align-items: center;
+    padding: 8px 0;
+    border-top: 1px solid var(--color-border);
+    transition: background-color 0.2s;
+  }
+  .file-cell-date {
+    display: none;
+  }
+  .file-date {
+    display: none;
+  }
+}
+
+@media (max-width: 540px) {
+  .file-header {
+    display: grid;
+    grid-template-columns: 1fr 80px;
+    background: var(--secondary-bg);
+    padding: 8px 0;
+    font-weight: bold;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .file-item {
+    display: grid;
+    grid-template-columns: 1fr 80px;
+    align-items: center;
+    padding: 8px 0;
+    border-top: 1px solid var(--color-border);
+    transition: background-color 0.2s;
+  }
+  .file-cell-size {
+    display: none;
+  }
+  .file-size {
+    display: none;
+  }
+  .file-cell-date {
+    display: none;
+  }
+  .file-date {
+    display: none;
+  }
+
+  #buttons-container {
+    max-height: 50px;  
+  }
+  
+  .btn-upload {
+    margin: 0 auto;
+    text-wrap: wrap;
+    gap: 0.5rem;
+    align-items:center;    
+  }
+  
+  .btn-upload > svg {
+    width: 20px;
+  }
+}

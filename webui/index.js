@@ -23,23 +23,43 @@ function isMobile() {
     return window.innerWidth <= 768;
 }
 
-function toggleSidebar() {
-    leftPanel.classList.toggle('hidden');
-    rightPanel.classList.toggle('expanded');
+function toggleSidebar(show) {
+    const overlay = document.getElementById('sidebar-overlay');
+    if (typeof show === 'boolean') {
+        leftPanel.classList.toggle('hidden', !show);
+        rightPanel.classList.toggle('expanded', !show);
+        overlay.classList.toggle('visible', show);
+    } else {
+        leftPanel.classList.toggle('hidden');
+        rightPanel.classList.toggle('expanded');
+        overlay.classList.toggle('visible', !leftPanel.classList.contains('hidden'));
+    }
 }
 
 function handleResize() {
+    const overlay = document.getElementById('sidebar-overlay');
     if (isMobile()) {
         leftPanel.classList.add('hidden');
         rightPanel.classList.add('expanded');
+        overlay.classList.remove('visible');
     } else {
         leftPanel.classList.remove('hidden');
         rightPanel.classList.remove('expanded');
+        overlay.classList.remove('visible');
     }
 }
 
 window.addEventListener('load', handleResize);
 window.addEventListener('resize', handleResize);
+
+document.addEventListener('DOMContentLoaded', () => {
+    const overlay = document.getElementById('sidebar-overlay');
+    overlay.addEventListener('click', () => {
+        if (isMobile()) {
+            toggleSidebar(false);
+        }
+    });
+});
 
 function setupSidebarToggle() {
     const leftPanel = document.getElementById('left-panel');
@@ -247,45 +267,6 @@ window.loadKnowledge = async function () {
 
     input.click();
 }
-
-
-const workDirModalProxy = {
-    isOpen: false,
-    files: [],
-
-    async openModal() { // Define openModal
-        // Inside openModal, call the existing open method:
-        await this.open(); // Or directly include the fetching logic here
-    },
-
-    async open() {
-        const response = await sendJsonData('/work_dir');
-        if (response.ok) {
-            this.files = response.files;
-            this.isOpen = true;
-        } else {
-            toast(response.message, 'error');
-        }
-    },
-
-    close() {
-        this.isOpen = false;
-    }
-};
-
-// Make the proxy available globally
-window.workDirModalProxy = workDirModalProxy;
-
-// Ensure correct setup for Alpine.js x-data.
-window.workDirModal = function () {
-    return workDirModalProxy; // Returns the proxy object for the Work Dir modal
-}
-
-
-document.addEventListener('alpine:init', () => {
-    // Make workDirModalProxy available as an Alpine component/store
-    Alpine.data('workDirModal', workDirModal);
-});
 
 
 function adjustTextareaHeight() {
