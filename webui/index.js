@@ -1,5 +1,5 @@
-import * as msgs from "./messages.js";
-import { speech } from "./speech.js";
+import * as msgs from "./js/messages.js";
+import { speech } from "./js/speech.js";
 
 const leftPanel = document.getElementById('left-panel');
 const rightPanel = document.getElementById('right-panel');
@@ -334,8 +334,14 @@ async function poll() {
         //set ui model vars from backend
         const inputAD = Alpine.$data(inputSection);
         inputAD.paused = response.paused;
-        const statusAD = Alpine.$data(statusSection);
-        statusAD.connected = true;
+
+        // Update status icon state
+        const timeDate = document.getElementById('time-date-container');
+        if (timeDate) {
+        const statusIcon = Alpine.$data(timeDate.querySelector('.status-icon'));
+        statusIcon.connected = true;
+        }
+
         const chatsAD = Alpine.$data(chatsSection);
         chatsAD.contexts = response.contexts;
 
@@ -344,8 +350,11 @@ async function poll() {
 
     } catch (error) {
         console.error('Error:', error);
-        const statusAD = Alpine.$data(statusSection);
-        statusAD.connected = false;
+        const timeDate = document.getElementById('time-date-container');
+        if (timeDate) {
+            const statusIcon = Alpine.$data(timeDate.querySelector('.status-icon'));
+            statusIcon.connected = false;
+        }
     }
 
     return updated

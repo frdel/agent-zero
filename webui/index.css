@@ -59,6 +59,8 @@
   /* Other variables */
   --border-radius: 1.125rem;
   --transition-speed: 0.3s;
+  --svg-filter: brightness(0) saturate(100%) var(--color-primary-filter);
+  --color-primary-filter: invert(70%) sepia(12%) saturate(368%) hue-rotate(177deg) brightness(87%) contrast(85%);
 }
 
 /* Reset and Base Styles */
@@ -320,20 +322,43 @@ body,
   margin-left: 0;
 }
 
-#time-date {
-  color: var(--color-text);
+#time-date-container {
   position: fixed;
   right: 0;
-  font-size: var(--font-size-normal);
-  text-align: right;
-  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
   margin-right: var(--spacing-md);
   margin-top: var(--spacing-md);
-}
-
-#user-date {
+  }
+  
+  #time-date {
+  color: var(--color-text);
+  font-size: var(--font-size-normal);
+  text-align: right;
+  line-height: 1.1;
+  }
+  
+  #user-date {
   font-size: var(--font-size-small);
   opacity: 0.6;
+  }
+  
+
+  .status-icon {
+    margin-top: var(--spacing-xs);
+    width: 36px;
+    height: 36px;
+  }
+
+/* Update existing status icon styles */
+.status-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.cloud, .connected-symbol, .connected-line, .disconnected-symbol {
+  transition: all 0.3s ease;
 }
 
 /* Typography */
@@ -763,14 +788,15 @@ font-size: var(--font-size-small)
   display: inline;
   font-family: "Rubik", Arial, Helvetica, sans-serif;
   font-size: var(--font-size-small);
+  opacity: 0.8;
   margin-top: 0;
   margin-bottom: var(--spacing-xs);
   padding: var(--spacing-sm) 0.75rem;
   text-wrap: nowrap;
   background-color: var(--color-secondary);
   width: 48%;
-  -webkit-transition: background-color var(--transition-speed), transform 0.1s ease-in-out;
-  transition: background-color var(--transition-speed), transform 0.1s ease-in-out;
+  -webkit-transition: all var(--transition-speed), transform 0.1s ease-in-out;
+  transition: all var(--transition-speed), transform 0.1s ease-in-out;
 }
 
 .config-button:hover {
@@ -1478,18 +1504,38 @@ input:checked + .slider:before {
   display: block; /* or any style you want for visibility */
 }
 
-/* Update connected/disconnected status colors for dark mode */
+.status-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-icon {
+  width: 34px;
+  height: 34px;
+}
+
+.status-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.cloud, .connected-symbol, .connected-line, .disconnected-symbol {
+  transition: all 0.3s ease;
+}
+
 .connected {
-  color: #4caf50;
+  color: #00c340;
 }
 
 .disconnected {
-  color: #f44336;
+  color: #e40138;
 }
 
 .font-bold {
   font-weight: bold;
 }
+
 
 /* Math (KaTeX) */
 .katex {

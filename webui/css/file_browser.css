@@ -23,11 +23,11 @@
 }
 
 .modal-header {
-  padding: 1rem 2rem;
   border-bottom: 1px solid var(--color-border);
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 10fr 1fr;
   align-items: center;
+  justify-content:space-between;
 }
 
 .modal-subheader {
@@ -102,6 +102,7 @@ h2 {
   grid-template-columns: 2fr 0.6fr 1.0fr 80px;
   align-items: center;
   padding: 8px 0;
+  font-size: 0.875rem;
   border-top: 1px solid var(--color-border);
   transition: background-color 0.2s;
   white-space: nowrap;
@@ -109,7 +110,7 @@ h2 {
 }
 
 .file-item:hover {
-  background-color: var(--hover-bg);
+  background-color: var(--color-secondary);
   cursor: pointer;
 }
 
@@ -154,10 +155,6 @@ h2 {
   background-color: var(--color-panel-light);
 }
 
-.light-mode .file-item {
-  background-color: var(--color-background-light);
-}
-
 .light-mode .file-item:hover {
   background-color: var(--color-secondary-light);
 }
@@ -199,7 +196,6 @@ h2 {
 }
 
 .current-path {
-  color: var(--color-text);
   font-family: monospace;
 }
 
@@ -209,7 +205,7 @@ h2 {
 }
 
 .file-item[data-is-dir="true"]:hover {
-  background-color: var(--hover-bg);
+  background-color: var(--color-secondary);
 }
 
 /* Button Section */
@@ -287,6 +283,10 @@ background-color: var(--color-primary-dark);
   background-color: var(--color-primary-light);
 }
 
+.light-mode .download-button:hover {
+  background-color: #c6d4de;
+}
+
 .button-section {
   gap: 1rem;
 }
@@ -297,6 +297,7 @@ background-color: var(--color-primary-dark);
     grid-template-columns: 1fr 0.5fr 80px;
     background: var(--secondary-bg);
     padding: 8px 0;
+    align-items:center;
     font-weight: bold;
     border-bottom: 1px solid var(--border-color);
   }
@@ -349,10 +350,13 @@ background-color: var(--color-primary-dark);
   #buttons-container {
     max-height: 50px;  
   }
+
+  .btn {
+    text-wrap: wrap;
+  }
   
   .btn-upload {
     margin: 0 auto;
-    text-wrap: wrap;
     gap: 0.5rem;
     align-items:center;    
   }

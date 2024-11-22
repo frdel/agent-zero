@@ -42,8 +42,17 @@ select {
   line-height: 2em;
 }
 
+.modal-header > svg {
+  max-height: 30px !important;
+}
+
 #settings-title {
-  padding: 0.5rem 2rem 0.5rem 2rem;
+  padding: 0.75rem 1.3rem 0.5rem 2rem;
+  background-color: var(--color-background);
+}
+
+#settings-title > svg {
+  gap: 10rem;
 }
 
 .modal-content {
@@ -142,32 +151,57 @@ select {
 input[type="text"] {
   width: 100%;
   padding: 0.5rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-secondary);
   border-radius: 0.25rem;
+  background-color: var(--color-background);
+  outline: none;
+  opacity: 0.7;
+  color: var(--color-text);
   font-family: "Rubik", Arial, Helvetica, sans-serif;
+  transition: all 0.3s ease;
+}
+
+input[type="text"]:focus {
+  opacity: 1;
 }
 
 input[type="password"] {
   width: 100%;
   padding: 0.5rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-secondary);
   border-radius: 0.25rem;
+  background-color: var(--color-background);
+  outline: none;
+  opacity: 0.7;
+  color: var(--color-text);
   font-family: "Rubik", Arial, Helvetica, sans-serif;
+  transition: all 0.3s ease;
+}
+
+input[type="password"]:focus {
+  opacity: 1;
 }
 
 textarea {
   width: 100%;
   min-height: 100px;
   padding: 0.5rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-secondary);
   border-radius: 0.25rem;
   font-family: Roboto Mono;
+  background-color: var(--color-background);
+  color: var(--color-text);
   scroll-behavior: smooth;
   resize: none;
-  /*-/* scrollbar padding */
+  outline: none;
+  /* scrollbar padding */
   background-clip: border-box;
   border: 6px solid transparent;
   transition: all 0.3s ease;
+}
+
+textarea:focus {
+  background-color: #151515;
 }
 
 .toggle {
@@ -285,9 +319,10 @@ input[type="range"] {
 select {
   width: 100%;
   padding: 0.5rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-secondary);
   border-radius: 0.25rem;
-  background-color: white;
+  background-color: var(--color-background);
+  color: var(--color-primary);
   font-size: inherit;
   cursor: pointer;
   font-family: "Rubik", Arial, Helvetica, sans-serif;
@@ -299,33 +334,61 @@ select:disabled {
   cursor: not-allowed;
 }
 
-/* Style for navigation links */
+/* Styles for navigation links */
+
+#settings-sections {
+  padding-bottom: 1rem;
+}
+
 nav ul {
-  list-style-type: none;
+  list-style: none;
   padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
 }
 
 nav ul li {
-  display: inline;
-  margin-right: 1rem;
+  display: flex;
 }
 
 nav ul li a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
   text-decoration: none;
-  color: #2196f3;
-  font-weight: bold;
+  color: var(--color-primary);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1rem;
+  width: 100%;
+  transition: all 0.2s ease-in-out;
 }
 
 nav ul li a:hover {
-  text-decoration: underline;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  background-color: var(--color-secondary);
 }
 
-#settings-sections {
-  background-color: var(--color-secondary);
-  padding: 0.3rem 2rem;
-  line-height: 1.6rem;
-  font-size: var(--font-size-normal);
-  border-bottom: 1px solid var(--color-border);
+nav ul li a img {
+  width: 50px;
+  height: 50px;
+  margin-bottom: 0.5rem;
+  filter: var(--svg-filter);
+}
+
+/* Light mode adjustments */
+.light-mode nav ul li a {
+  background-color: var(--color-panel-light);
+}
+
+.light-mode nav ul li a:hover {
+  background-color: var(--color-secondary-light);
 }
 
 
@@ -374,5 +437,34 @@ nav ul li a:hover {
     padding-bottom: var(--spacing-xs);
     display: block;
     align-items: center;
+  }
+}
+
+@media (max-width: 480px) {
+  #settings-title {
+    display: flex;
+    text-wrap: nowrap;
+  }
+  nav ul {
+    grid-template-columns: repeat(2, 1.2fr);
+  }
+}
+
+@media (max-width: 380px) {
+  nav ul {
+    grid-template-columns: 1fr;
+  }
+  
+  nav ul li a {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  nav ul li a img {
+    margin-bottom: 0;
+    width: 30px;
+    height: 30px;
   }
 }

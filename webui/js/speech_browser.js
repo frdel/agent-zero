@@ -1,5 +1,5 @@
 import { pipeline, read_audio } from './transformers@3.0.2.js';
-import { updateChatInput, sendMessage } from './index.js';
+import { updateChatInput, sendMessage } from '../index.js';
 
 const microphoneButton = document.getElementById('microphone-button');
 let microphoneInput = null;

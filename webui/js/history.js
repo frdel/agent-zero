@@ -1,4 +1,4 @@
-import { getContext } from "./index.js";
+import { getContext } from "../index.js";
 
 export async function openHistoryModal() {
     const hist = await window.sendJsonData("/history_get", { context: getContext() });
