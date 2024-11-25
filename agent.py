@@ -539,10 +539,8 @@ class Agent:
             self.intervention_message = ""  # reset the intervention message
             if progress.strip():
                 await self.hist_add_ai_response(progress)
-            # format the user intervention template
-            user_msg = self.read_prompt("fw.intervention.md", user_message=msg)
             # append the intervention message
-            await self.hist_add_user_message(user_msg, intervention=True)
+            await self.hist_add_user_message(msg, intervention=True)
             raise InterventionException(msg)
 
     async def process_tools(self, msg: str):
