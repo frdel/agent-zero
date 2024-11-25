@@ -404,9 +404,11 @@ class Agent:
         ):  # if agent has custom folder, use it and use default as backup
             prompt_dir = files.get_abs_path("prompts", self.config.prompts_subdir)
             backup_dir.append(files.get_abs_path("prompts/default"))
-        return files.read_file(
+        prompt = files.read_file(
             files.get_abs_path(prompt_dir, file), _backup_dirs=backup_dir, **kwargs
         )
+        prompt = files.remove_code_fences(prompt)
+        return prompt
 
     def get_data(self, field: str):
         return self.data.get(field, None)

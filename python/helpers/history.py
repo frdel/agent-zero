@@ -145,7 +145,7 @@ class Topic(Record):
         for msg, tok, leng, out in large_msgs:
             trim_to_chars = leng * (msg_max_size / tok)
             trunc = messages.truncate_dict_by_ratio(
-                self.history.agent, out, trim_to_chars * 1.15, trim_to_chars * 0.85
+                self.history.agent, out["content"], trim_to_chars * 1.15, trim_to_chars * 0.85
             )
             msg.summary = trunc
 

@@ -11,7 +11,7 @@ export async function openCtxWindowModal() {
     const win = await window.sendJsonData("/ctx_window_get", { context: getContext() });
     const data = win.content
     const size = win.tokens
-    await showEditorModal(data, "text", `Context window ~${size} tokens`,"Data passed to the LLM during last interaction. Contains system message, conversation history and RAG.");
+    await showEditorModal(data, "markdown", `Context window ~${size} tokens`,"Data passed to the LLM during last interaction. Contains system message, conversation history and RAG.");
 }
 
 async function showEditorModal(data, type = "json", title, description="") {
@@ -33,6 +33,7 @@ async function showEditorModal(data, type = "json", title, description="") {
 
         editor.session.setMode("ace/mode/" + type);
         editor.setValue(data);
+        editor.clearSelection();
         // editor.session.$toggleFoldWidget(5, {})
     }
 }

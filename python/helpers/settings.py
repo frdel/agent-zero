@@ -114,22 +114,13 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     chat_model_fields.append(
         {
-            "id": "chat_model_kwargs",
-            "title": "Chat model additional parameters",
-            "description": "Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.",
-            "type": "textarea",
-            "value": _dict_to_env(settings["chat_model_kwargs"]),
-        }
-    )
-
-    chat_model_fields.append(
-        {
             "id": "chat_model_ctx_length",
             "title": "Chat model context length",
             "description": "Maximum number of tokens in the context window for LLM. System prompt, chat history, RAG and response all count towards this limit.",
             "type": "input",
             "value": settings["chat_model_ctx_length"],
-        })
+        }
+    )
 
     chat_model_fields.append(
         {
@@ -141,8 +132,18 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "max": 1,
             "step": 0.01,
             "value": settings["chat_model_ctx_history"],
-        })
-    
+        }
+    )
+
+    chat_model_fields.append(
+        {
+            "id": "chat_model_kwargs",
+            "title": "Chat model additional parameters",
+            "description": "Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.",
+            "type": "textarea",
+            "value": _dict_to_env(settings["chat_model_kwargs"]),
+        }
+    )
 
     chat_model_section: SettingsSection = {
         "title": "Chat Model",
@@ -481,7 +482,6 @@ def normalize_settings(settings: Settings) -> Settings:
             except (ValueError, TypeError):
                 pass
     return copy
-
 
 
 def get_chat_model(settings: Settings | None = None) -> BaseChatModel:
