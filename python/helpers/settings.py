@@ -286,7 +286,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "title": "Login",
             "description": "User name",
             "type": "input",
-            "value": dotenv.get_dotenv_value(dotenv.KEY_AUTH_LOGIN),
+            "value": dotenv.get_dotenv_value(dotenv.KEY_AUTH_LOGIN) or "",
         }
     )
 
@@ -296,7 +296,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "title": "Password",
             "description": "User password",
             "type": "password",
-            "value": dotenv.get_dotenv_value(dotenv.KEY_AUTH_PASSWORD),
+            "value": dotenv.get_dotenv_value(dotenv.KEY_AUTH_PASSWORD) or "",
         }
     )
 
@@ -402,7 +402,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "title": "RFC Password",
             "description": "Password for remote function calls. Passwords must match on both systems. RFCs can not be used with empty password.",
             "type": "password",
-            "value": dotenv.get_dotenv_value(dotenv.KEY_RFC_PASSWORD),
+            "value": dotenv.get_dotenv_value(dotenv.KEY_RFC_PASSWORD) or "",
         }
     )
 
