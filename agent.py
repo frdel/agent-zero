@@ -3,11 +3,10 @@ from dataclasses import dataclass, field
 import time, importlib, inspect, os, json
 from typing import Any, Optional, Dict, TypedDict
 import uuid
-from python.helpers import extract_tools, rate_limiter, files, errors
+from python.helpers import extract_tools, rate_limiter, files, errors, history, tokens
 from python.helpers.print_style import PrintStyle
-from langchain.schema import AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.embeddings import Embeddings
@@ -88,7 +87,7 @@ class AgentContext:
             while intervention_agent and broadcast_level != 0:
                 intervention_agent.intervention_message = msg
                 broadcast_level -= 1
-                intervention_agent = intervention_agent.data.get("superior", None)
+                intervention_agent = intervention_agent.data.get(Agent.DATA_NAME_SUPERIOR, None)
         else:
 
             # self.process = DeferredTask(current_agent.monologue, msg)
@@ -97,19 +96,17 @@ class AgentContext:
         return self.process
 
     # this wrapper ensures that superior agents are called back if the chat was loaded from file and original callstack is gone
-    async def _process_chain(self, agent: 'Agent', msg: str, user=True):
+    async def _process_chain(self, agent: "Agent", msg: str, user=True):
         try:
             msg_template = (
-                agent.read_prompt("fw.user_message.md", message=msg)
+                await agent.hist_add_user_message(msg)
                 if user
-                else agent.read_prompt(
-                    "fw.tool_response.md",
-                    tool_name="call_subordinate",
-                    tool_response=msg,
+                else await agent.hist_add_tool_result(
+                    tool_name="call_subordinate", tool_result=msg
                 )
             )
-            response = await agent.monologue(msg_template)
-            superior = agent.data.get("superior", None)
+            response = await agent.monologue()
+            superior = agent.data.get(Agent.DATA_NAME_SUPERIOR, None)
             if superior:
                 response = await self._process_chain(superior, response, False)
             return response
@@ -154,15 +151,18 @@ class AgentConfig:
     additional: Dict[str, Any] = field(default_factory=dict)
 
 
-
 class LoopData:
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.iteration = -1
         self.system = []
-        self.message = ""
-        self.history_from = 0
-        self.history = []
-        self.attachments = [] # Add attachments field
+        self.user_message: history.Message | None = None
+        self.history_output: list[history.OutputMessage] = []
+        self.last_response = ""
+        self.attachments = []  # Add attachments field
+
+        # override values with kwargs
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
 
 # intervention exception class - skips rest of message loop iteration
@@ -181,6 +181,10 @@ class HandledException(Exception):
 
 class Agent:
 
+    DATA_NAME_SUPERIOR = "_superior"
+    DATA_NAME_SUBORDINATE = "_subordinate"
+    DATA_NAME_CTX_WINDOW = "ctx_window"
+
     def __init__(
         self, number: int, config: AgentConfig, context: AgentContext | None = None
     ):
@@ -195,8 +199,8 @@ class Agent:
         self.number = number
         self.agent_name = f"Agent {self.number}"
 
-        self.history = []
-        self.last_message = ""
+        self.history = history.History(self)
+        self.last_user_message: history.Message | None = None
         self.intervention_message = ""
         self.rate_limiter = rate_limiter.RateLimiter(
             self.context.log,
@@ -207,59 +211,67 @@ class Agent:
         )
         self.data = {}  # free data object all the tools can use
 
-    async def monologue(self, msg: str):
+    async def monologue(self):
         while True:
             try:
                 # loop data dictionary to pass to extensions
-                loop_data = LoopData()
-                loop_data.message = msg
-                loop_data.history_from = len(self.history)
-
+                self.loop_data = LoopData(user_message=self.last_user_message)
                 # call monologue_start extensions
-                await self.call_extensions("monologue_start", loop_data=loop_data)
+                await self.call_extensions("monologue_start", loop_data=self.loop_data)
 
                 printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)
-                user_message = loop_data.message
 
-                # Include attachments in user message if available
-                if loop_data.attachments:
-                    user_message += "\n" + "\n".join(loop_data.attachments) # Add attachments to message
-                    loop_data.attachments = [] # Clear attachments after adding to message
+                # # Include attachments in user message if available
+                # if loop_data.attachments:
+                #     user_message += "\n" + "\n".join(
+                #         loop_data.attachments
+                #     )  # Add attachments to message
+                #     loop_data.attachments = (
+                #         []
+                #     )  # Clear attachments after adding to message
+                # TODO attachments to extension
 
-
-                await self.append_message(user_message, human=True)
+                # await self.hist_add_user_message(message=self.loop_data.message)
 
                 # let the agent run message loop until he stops it with a response tool
                 while True:
 
                     self.context.streaming_agent = self  # mark self as current streamer
                     agent_response = ""
-                    loop_data.iteration += 1
+                    self.loop_data.iteration += 1
 
                     try:
 
                         # set system prompt and message history
-                        loop_data.system = []
-                        loop_data.history = self.history
+                        self.loop_data.system = []
+                        self.loop_data.history_output = self.history.output()
 
                         # and allow extensions to edit them
                         await self.call_extensions(
-                            "message_loop_prompts", loop_data=loop_data
+                            "message_loop_prompts", loop_data=self.loop_data
                         )
 
                         # build chain from system prompt, message history and model
                         prompt = ChatPromptTemplate.from_messages(
                             [
-                                SystemMessage(content="\n\n".join(loop_data.system)),
+                                SystemMessage(
+                                    content="\n\n".join(self.loop_data.system)
+                                ),
                                 MessagesPlaceholder(variable_name="messages"),
                             ]
                         )
                         chain = prompt | self.config.chat_model
 
+                        # convert history to LLM format
+                        history_langchain = history.output_langchain(
+                            self.loop_data.history_output
+                        )
+
                         # rate limiter TODO - move to extension, make per-model
-                        formatted_inputs = prompt.format(messages=self.history)
-                        tokens = int(len(formatted_inputs) / 4)
-                        self.rate_limiter.limit_call_and_input(tokens)
+                        formatted_inputs = prompt.format(messages=history_langchain)
+                        self.set_data(self.DATA_NAME_CTX_WINDOW, formatted_inputs)
+                        token_count = tokens.approximate_tokens(formatted_inputs)
+                        self.rate_limiter.limit_call_and_input(token_count)
 
                         # output that the agent is starting
                         PrintStyle(
@@ -273,11 +285,10 @@ class Agent:
                         )
 
                         async for chunk in chain.astream(
-                            {"messages": loop_data.history}
+                            {"messages": history_langchain}
                         ):
-                            await self.handle_intervention(
-                                agent_response
-                            )  # wait for intervention and handle it, if paused
+                            # wait for intervention and handle it, if paused
+                            await self.handle_intervention(agent_response)
 
                             if isinstance(chunk, str):
                                 content = chunk
@@ -287,12 +298,10 @@ class Agent:
                                 content = str(chunk)
 
                             if content:
-                                printer.stream(
-                                    content
-                                )  # output the agent response stream
-                                agent_response += (
-                                    content  # concatenate stream into the response
-                                )
+                                # output the agent response stream
+                                printer.stream(content)
+                                # concatenate stream into the response
+                                agent_response += content
                                 self.log_from_stream(agent_response, log)
 
                         self.rate_limiter.set_output_tokens(
@@ -302,27 +311,23 @@ class Agent:
                         await self.handle_intervention(agent_response)
 
                         if (
-                            self.last_message == agent_response
+                            self.loop_data.last_response == agent_response
                         ):  # if assistant_response is the same as last message in history, let him know
-                            await self.append_message(
-                                agent_response
-                            )  # Append the assistant's response to the history
+                            # Append the assistant's response to the history
+                            await self.hist_add_ai_response(agent_response)
+                            # Append warning message to the history
                             warning_msg = self.read_prompt("fw.msg_repeat.md")
-                            await self.append_message(
-                                warning_msg, human=True
-                            )  # Append warning message to the history
+                            await self.hist_add_warning(message=warning_msg)
                             PrintStyle(font_color="orange", padding=True).print(
                                 warning_msg
                             )
                             self.context.log.log(type="warning", content=warning_msg)
 
                         else:  # otherwise proceed with tool
-                            await self.append_message(
-                                agent_response
-                            )  # Append the assistant's response to the history
-                            tools_result = await self.process_tools(
-                                agent_response
-                            )  # process tools requested in agent message
+                            # Append the assistant's response to the history
+                            await self.hist_add_ai_response(agent_response)
+                            # process tools requested in agent message
+                            tools_result = await self.process_tools(agent_response)
                             if tools_result:  # final response of message loop available
                                 return tools_result  # break the execution if the task is done
 
@@ -333,19 +338,16 @@ class Agent:
                         RepairableException
                     ) as e:  # Forward repairable errors to the LLM, maybe it can fix them
                         error_message = errors.format_error(e)
-                        msg_response = self.read_prompt(
-                            "fw.error.md", error=error_message
-                        )  # error message template
-                        await self.append_message(msg_response, human=True)
-                        PrintStyle(font_color="red", padding=True).print(msg_response)
-                        self.context.log.log(type="error", content=msg_response)
+                        await self.hist_add_warning(error_message)
+                        PrintStyle(font_color="red", padding=True).print(error_message)
+                        self.context.log.log(type="error", content=error_message)
                     except Exception as e:  # Other exception kill the loop
                         self.handle_critical_exception(e)
 
                     finally:
                         # call message_loop_end extensions
                         await self.call_extensions(
-                            "message_loop_end", loop_data=loop_data
+                            "message_loop_end", loop_data=self.loop_data
                         )
 
             # exceptions outside message loop:
@@ -356,7 +358,7 @@ class Agent:
             finally:
                 self.context.streaming_agent = None  # unset current streamer
                 # call monologue_end extensions
-                await self.call_extensions("monologue_end", loop_data=loop_data)  # type: ignore
+                await self.call_extensions("monologue_end", loop_data=self.loop_data)  # type: ignore
 
     def handle_critical_exception(self, exception: Exception):
         if isinstance(exception, HandledException):
@@ -376,6 +378,24 @@ class Agent:
             self.context.log.log(type="error", content=error_message)
             raise HandledException(exception)  # Re-raise the exception to kill the loop
 
+    def parse_prompt(self, file: str, **kwargs) -> tuple[list, dict]:
+        prompt_dir = files.get_abs_path("prompts/default")
+        backup_dir = []
+        if (
+            self.config.prompts_subdir
+        ):  # if agent has custom folder, use it and use default as backup
+            prompt_dir = files.get_abs_path("prompts", self.config.prompts_subdir)
+            backup_dir.append(files.get_abs_path("prompts/default"))
+        prompt = files.parse_file(
+            files.get_abs_path(prompt_dir, file), _backup_dirs=backup_dir, **kwargs
+        )
+        if isinstance(prompt, dict):
+            return [], prompt
+        elif isinstance(prompt, list):
+            return prompt, {}
+        else:
+            return [prompt], {}
+
     def read_prompt(self, file: str, **kwargs) -> str:
         prompt_dir = files.get_abs_path("prompts/default")
         backup_dir = []
@@ -385,7 +405,7 @@ class Agent:
             prompt_dir = files.get_abs_path("prompts", self.config.prompts_subdir)
             backup_dir.append(files.get_abs_path("prompts/default"))
         return files.read_file(
-            files.get_abs_path(prompt_dir, file), backup_dirs=backup_dir, **kwargs
+            files.get_abs_path(prompt_dir, file), _backup_dirs=backup_dir, **kwargs
         )
 
     def get_data(self, field: str):
@@ -394,23 +414,36 @@ class Agent:
     def set_data(self, field: str, value):
         self.data[field] = value
 
-    async def append_message(self, msg: str, human: bool = False):
-        message_type = "human" if human else "ai"
-        if self.history and self.history[-1].type == message_type:
-            self.history[-1].content += "\n\n" + msg
+    async def hist_add_user_message(self, message: str, intervention: bool = False):
+        self.history.new_topic()  # user message starts a new topic in history
+        if intervention:
+            args, kwargs = self.parse_prompt("fw.intervention.md", message=message)
+            msg = self.history.add_message(False, *args, **kwargs)
         else:
-            new_message = HumanMessage(content=msg) if human else AIMessage(content=msg)
-            self.history.append(new_message)
-            await self.cleanup_history(
-                self.config.msgs_keep_max,
-                self.config.msgs_keep_start,
-                self.config.msgs_keep_end,
-            )
-        if message_type == "ai":
-            self.last_message = msg
+            args, kwargs = self.parse_prompt("fw.user_message.md", message=message)
+            msg = self.history.add_message(False, *args, **kwargs)
+        self.last_user_message = msg
+        return msg
 
-    def concat_messages(self, messages):
-        return "\n".join([f"{msg.type}: {msg.content}" for msg in messages])
+    async def hist_add_ai_response(self, message: str):
+        self.loop_data.last_response = message
+        args, kwargs = self.parse_prompt("fw.ai_response.md", message=message)
+        return self.history.add_message(True, *args, **kwargs)
+
+    async def hist_add_warning(self, message: str):
+        args, kwargs = self.parse_prompt("fw.warning.md", message=message)
+        return self.history.add_message(False, *args, **kwargs)
+
+    async def hist_add_tool_result(self, tool_name: str, tool_result: str):
+        args, kwargs = self.parse_prompt(
+            "fw.tool_result.md", tool_name=tool_name, tool_result=tool_result
+        )
+        return self.history.add_message(False, *args, **kwargs)
+
+    def concat_messages(
+        self, messages
+    ):  # TODO add param for message range, topic, history
+        return self.history.output_text(human_label="user", ai_label="assistant")
 
     async def call_utility_llm(
         self, system: str, msg: str, callback: Callable[[str], None] | None = None
@@ -423,8 +456,8 @@ class Agent:
         response = ""
 
         formatted_inputs = prompt.format()
-        tokens = int(len(formatted_inputs) / 4)
-        self.rate_limiter.limit_call_and_input(tokens)
+        token_count = tokens.approximate_tokens(formatted_inputs)
+        self.rate_limiter.limit_call_and_input(token_count)
 
         async for chunk in chain.astream({}):
             await self.handle_intervention()  # wait for intervention and handle it, if paused
@@ -469,28 +502,28 @@ class Agent:
         return [new_human_message]
 
     async def cleanup_history(self, max: int, keep_start: int, keep_end: int):
-        if len(self.history) <= max:
-            return self.history
+        # if len(self.history) <= max:
+        #     return self.history
 
-        first_x = self.history[:keep_start]
-        last_y = self.history[-keep_end:]
+        # first_x = self.history[:keep_start]
+        # last_y = self.history[-keep_end:]
 
-        # Identify the middle part
-        middle_part = self.history[keep_start:-keep_end]
+        # # Identify the middle part
+        # middle_part = self.history[keep_start:-keep_end]
 
-        # Ensure the first message in the middle is "human", if not, move one message back
-        if middle_part and middle_part[0].type != "human":
-            if len(first_x) > 0:
-                middle_part.insert(0, first_x.pop())
+        # # Ensure the first message in the middle is "human", if not, move one message back
+        # if middle_part and middle_part[0].type != "human":
+        #     if len(first_x) > 0:
+        #         middle_part.insert(0, first_x.pop())
 
-        # Ensure the middle part has an odd number of messages
-        if len(middle_part) % 2 == 0:
-            middle_part = middle_part[:-1]
+        # # Ensure the middle part has an odd number of messages
+        # if len(middle_part) % 2 == 0:
+        #     middle_part = middle_part[:-1]
 
-        # Replace the middle part using the replacement function
-        new_middle_part = await self.replace_middle_messages(middle_part)
+        # # Replace the middle part using the replacement function
+        # new_middle_part = await self.replace_middle_messages(middle_part)
 
-        self.history = first_x + new_middle_part + last_y
+        # self.history = first_x + new_middle_part + last_y
 
         return self.history
 
@@ -503,15 +536,11 @@ class Agent:
             msg = self.intervention_message
             self.intervention_message = ""  # reset the intervention message
             if progress.strip():
-                await self.append_message(
-                    progress
-                )  # append the response generated so far
-            user_msg = self.read_prompt(
-                "fw.intervention.md", user_message=msg
-            )  # format the user intervention template
-            await self.append_message(
-                user_msg, human=True
-            )  # append the intervention message
+                await self.hist_add_ai_response(progress)
+            # format the user intervention template
+            user_msg = self.read_prompt("fw.intervention.md", user_message=msg)
+            # append the intervention message
+            await self.hist_add_user_message(user_msg, intervention=True)
             raise InterventionException(msg)
 
     async def process_tools(self, msg: str):
@@ -534,7 +563,7 @@ class Agent:
                 return response.message
         else:
             msg = self.read_prompt("fw.msg_misformat.md")
-            await self.append_message(msg, human=True)
+            await self.hist_add_warning(msg)
             PrintStyle(font_color="red", padding=True).print(msg)
             self.context.log.log(
                 type="error", content=f"{self.agent_name}: Message misformat"
@@ -546,9 +575,8 @@ class Agent:
                 return  # no reason to try
             response = DirtyJson.parse_string(stream)
             if isinstance(response, dict):
-                logItem.update(
-                    content=stream, kvps=response
-                )  # log if result is a dictionary already
+                # log if result is a dictionary already
+                logItem.update(content=stream, kvps=response)
         except Exception as e:
             pass
 

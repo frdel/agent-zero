@@ -1,24 +1,14 @@
-import json
 from functools import wraps
 import os
-from pathlib import Path
 import threading
-import uuid
-from flask import Flask, request, jsonify, Response, send_file
+from flask import Flask, request, Response
 from flask_basicauth import BasicAuth
-from agent import AgentContext
-from initialize import initialize
 from python.helpers import files, git
 from python.helpers.files import get_abs_path
-from python.helpers.print_style import PrintStyle
-from python.helpers.dotenv import load_dotenv
-from python.helpers import persist_chat, settings, whisper, rfc, runtime, dotenv
-import base64
-from werkzeug.utils import secure_filename
+from python.helpers import persist_chat, runtime, dotenv
 from python.helpers.cloudflare_tunnel import CloudflareTunnel
 from python.helpers.extract_tools import load_classes_from_folder
 from python.helpers.api import ApiHandler
-from python.helpers.file_browser import FileBrowser
 
 
 # initialize the internal Flask server

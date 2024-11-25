@@ -7,7 +7,7 @@ def handle_error(e: Exception):
     if isinstance(e, asyncio.CancelledError):
         raise e
     
-def format_error(e: Exception, max_entries=2):
+def format_error(e: Exception, max_entries=4):
     traceback_text = traceback.format_exc()
     # Split the traceback into lines
     lines = traceback_text.split('\n')

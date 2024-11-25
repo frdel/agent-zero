@@ -11,7 +11,6 @@ class ExportChat(ApiHandler):
 
         context = self.get_context(ctxid)
         content = persist_chat.export_json_chat(context)
-
         return {
             "message": "Chats exported.",
             "ctxid": context.id,

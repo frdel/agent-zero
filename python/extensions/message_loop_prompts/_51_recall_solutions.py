@@ -6,7 +6,7 @@ from agent import LoopData
 class RecallSolutions(Extension):
 
     INTERVAL = 3
-    HISTORY = 5
+    HISTORY = 5 # TODO cleanup
     SOLUTIONS_COUNT = 2
     INSTRUMENTS_COUNT = 2
     THRESHOLD = 0.6
@@ -32,9 +32,10 @@ class RecallSolutions(Extension):
         )
 
         # get system message and chat history for util llm
-        msgs_text = self.agent.concat_messages(
-            self.agent.history[-RecallSolutions.HISTORY :]
-        )  # only last X messages
+        # msgs_text = self.agent.concat_messages(
+        #     self.agent.history[-RecallSolutions.HISTORY :]
+        # )  # only last X messages
+        msgs_text = self.agent.history.current.output_text()
         system = self.agent.read_prompt(
             "memory.solutions_query.sys.md", history=msgs_text
         )
@@ -45,7 +46,7 @@ class RecallSolutions(Extension):
 
         # call util llm to summarize conversation
         query = await self.agent.call_utility_llm(
-            system=system, msg=loop_data.message, callback=log_callback
+            system=system, msg=loop_data.user_message.output_text() if loop_data.user_message else "", callback=log_callback
         )
 
         # get solutions database

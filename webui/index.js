@@ -443,7 +443,7 @@ window.selectChat = async function (id) {
     updateAfterScroll()
 }
 
-const setContext = function (id) {
+export const setContext = function (id) {
     if (id == context) return
     context = id
     lastLogGuid = ""
@@ -451,6 +451,10 @@ const setContext = function (id) {
     lastSpokenNo = 0
     const chatsAD = Alpine.$data(chatsSection);
     chatsAD.selected = id
+}
+
+export const getContext = function () {
+    return context
 }
 
 window.toggleAutoScroll = async function (_autoScroll) {

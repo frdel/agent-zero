@@ -15,6 +15,8 @@ class Settings(TypedDict):
     chat_model_name: str
     chat_model_temperature: float
     chat_model_kwargs: dict[str, str]
+    chat_model_ctx_length: int
+    chat_model_ctx_history: float
 
     util_model_provider: str
     util_model_name: str
@@ -119,6 +121,28 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "value": _dict_to_env(settings["chat_model_kwargs"]),
         }
     )
+
+    chat_model_fields.append(
+        {
+            "id": "chat_model_ctx_length",
+            "title": "Chat model context length",
+            "description": "Maximum number of tokens in the context window for LLM. System prompt, chat history, RAG and response all count towards this limit.",
+            "type": "input",
+            "value": settings["chat_model_ctx_length"],
+        })
+
+    chat_model_fields.append(
+        {
+            "id": "chat_model_ctx_history",
+            "title": "Context window space for chat history.",
+            "description": "Portion of context window dedicated to chat history visible to the agent. Chat history will automatically be optimized to fit. Smaller size will result in shorter and more summarized history. The remaining space will be used for system prompt, RAG and response.",
+            "type": "range",
+            "min": 0.01,
+            "max": 1,
+            "step": 0.01,
+            "value": settings["chat_model_ctx_history"],
+        })
+    
 
     chat_model_section: SettingsSection = {
         "title": "Chat Model",
@@ -434,7 +458,8 @@ def get_settings() -> Settings:
         _settings = _read_settings_file()
     if not _settings:
         _settings = _get_default_settings()
-    return _settings.copy()
+    norm = normalize_settings(_settings)
+    return norm
 
 
 def set_settings(settings: Settings):
@@ -450,7 +475,13 @@ def normalize_settings(settings: Settings) -> Settings:
     for key, value in default.items():
         if key not in copy:
             copy[key] = value
+        else:
+            try:
+                copy[key] = type(value)(copy[key])  # type: ignore
+            except (ValueError, TypeError):
+                pass
     return copy
+
 
 
 def get_chat_model(settings: Settings | None = None) -> BaseChatModel:
@@ -525,6 +556,8 @@ def _get_default_settings() -> Settings:
         chat_model_name="gpt-4o-mini",
         chat_model_temperature=0,
         chat_model_kwargs={},
+        chat_model_ctx_length=8192,
+        chat_model_ctx_history=0.65,
         util_model_provider=ModelProvider.OPENAI.name,
         util_model_name="gpt-4o-mini",
         util_model_temperature=0,
@@ -555,7 +588,7 @@ def _apply_settings():
             agent = ctx.agent0
             while agent:
                 agent.config = ctx.config
-                agent = agent.get_data("subordinate")
+                agent = agent.get_data(agent.DATA_NAME_SUBORDINATE)
 
 
 def _env_to_dict(data: str):

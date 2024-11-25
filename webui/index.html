@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="settings.css">
     <link rel="stylesheet" href="file_browser.css">
     <link rel="stylesheet" href="speech.css">
+    <link rel="stylesheet" href="history.css">
 
     <script>
         window.safeCall = function (name, ...args) {
@@ -19,6 +20,7 @@
 
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" type="text/javascript" charset="utf-8"></script>
 
     <!-- KaTeX CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
@@ -31,7 +33,9 @@
     <script type="module" src="index.js"></script>
     <script type="text/javascript" src="settings.js"></script>
     <script type="text/javascript" src="file_browser.js"></script>
+    <script type="text/javascript" src="modal.js"></script>
     <script type="module" src="speech.js"></script>
+    <script type="module" src="history.js"></script>
 
 </head>
 
@@ -305,21 +309,6 @@
 
                 <!-- Bottom row with text buttons -->
                 <div class="text-buttons-row">
-                    <button class="text-button" @click="loadKnowledge()"><svg xmlns="http://www.w3.org/2000/svg"
-                            fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5">
-                            </path>
-                        </svg>Import knowledge</button>
-                        <button class="text-button" id="work_dir_browser" @click="fileBrowserModalProxy.openModal()">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 123.37 92.59">
-                            <path
-                                d="m5.72,11.5l-3.93,8.73h119.77s-3.96-8.73-3.96-8.73h-60.03c-1.59,0-2.88-1.29-2.88-2.88V1.75H13.72v6.87c0,1.59-1.29,2.88-2.88,2.88h-5.12Z"
-                                fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="5"></path>
-                            <path
-                                d="m6.38,20.23H1.75l7.03,67.03c.11,1.07.55,2.02,1.2,2.69.55.55,1.28.89,2.11.89h97.1c.82,0,1.51-.33,2.05-.87.68-.68,1.13-1.67,1.28-2.79l9.1-66.94H6.38Z"
-                                fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="5"></path>
-                        </svg>work_dir Browser</button>
 
                     <button class="text-button" @click="pauseAgent(!paused)">
                         <!-- Dynamic path that switches between pause and play icons -->
@@ -338,6 +327,43 @@
                         </svg>
                         <span x-text="paused ? 'Resume Agent' : 'Pause Agent'"></span>
                     </button>
+
+                    <button class="text-button" @click="loadKnowledge()"><svg xmlns="http://www.w3.org/2000/svg"
+                            fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5">
+                            </path>
+                        </svg>Import knowledge</button>
+                        <button class="text-button" id="work_dir_browser" @click="fileBrowserModalProxy.openModal()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 123.37 92.59">
+                            <path
+                                d="m5.72,11.5l-3.93,8.73h119.77s-3.96-8.73-3.96-8.73h-60.03c-1.59,0-2.88-1.29-2.88-2.88V1.75H13.72v6.87c0,1.59-1.29,2.88-2.88,2.88h-5.12Z"
+                                fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="5"></path>
+                            <path
+                                d="m6.38,20.23H1.75l7.03,67.03c.11,1.07.55,2.02,1.2,2.69.55.55,1.28.89,2.11.89h97.1c.82,0,1.51-.33,2.05-.87.68-.68,1.13-1.67,1.28-2.79l9.1-66.94H6.38Z"
+                                fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="5"></path>
+                        </svg>work_dir Browser</button>                    
+
+                    <button class="text-button" id="history_inspect" @click="window.openHistoryModal()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 123.37 92.59">
+                            <path
+                                d="m5.72,11.5l-3.93,8.73h119.77s-3.96-8.73-3.96-8.73h-60.03c-1.59,0-2.88-1.29-2.88-2.88V1.75H13.72v6.87c0,1.59-1.29,2.88-2.88,2.88h-5.12Z"
+                                fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="5"></path>
+                            <path
+                                d="m6.38,20.23H1.75l7.03,67.03c.11,1.07.55,2.02,1.2,2.69.55.55,1.28.89,2.11.89h97.1c.82,0,1.51-.33,2.05-.87.68-.68,1.13-1.67,1.28-2.79l9.1-66.94H6.38Z"
+                                fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="5"></path>
+                        </svg>History</button>
+
+                        <button class="text-button" id="ctx_window" @click="window.openCtxWindowModal()">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 123.37 92.59">
+                                <path
+                                    d="m5.72,11.5l-3.93,8.73h119.77s-3.96-8.73-3.96-8.73h-60.03c-1.59,0-2.88-1.29-2.88-2.88V1.75H13.72v6.87c0,1.59-1.29,2.88-2.88,2.88h-5.12Z"
+                                    fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="5"></path>
+                                <path
+                                    d="m6.38,20.23H1.75l7.03,67.03c.11,1.07.55,2.02,1.2,2.69.55.55,1.28.89,2.11.89h97.1c.82,0,1.51-.33,2.05-.87.68-.68,1.13-1.67,1.28-2.79l9.1-66.94H6.38Z"
+                                    fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="5"></path>
+                            </svg>Context</button>
+
                 </div>
             </div>
         </div>
@@ -566,6 +592,29 @@
                 </div>
         </template>
     </div>
+
+<!-- generic modal -->
+
+<div id="genericModal" x-data="genericModalProxy">
+    <template x-teleport="body">
+        <div x-show="isOpen" class="modal-overlay" @click.self="handleClose()" @keydown.escape.window="handleClose()" x-transition>
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h2 class="modal-title" x-text="title"></h2>
+                    <button class="modal-close" @click="handleClose()">&times;</button>
+                </div>
+                <div class="modal-description" x-text="description"></div>
+                <div class="modal-content">
+                    <div class="html-pre" x-html="html"></div>
+                </div>
+                <!-- <div class="modal-footer">
+                    <div id="buttons-container">
+                        <button class="btn btn-cancel" @click="handleClose()">Close</button>
+                    </div>
+                </div> -->
+            </div>
+    </template>
+</div>
 
 </body>
 

@@ -72,10 +72,7 @@ class CodeExecution(Tool):
                 PrintStyle().print()
 
     async def after_execution(self, response, **kwargs):
-        msg_response = self.agent.read_prompt(
-            "fw.tool_response.md", tool_name=self.name, tool_response=response.message
-        )
-        await self.agent.append_message(msg_response, human=True)
+        await self.agent.hist_add_tool_result(self.name, response.message)
 
     async def prepare_state(self, reset=False):
         self.state = self.agent.get_data("cot_state")
