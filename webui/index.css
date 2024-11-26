@@ -343,23 +343,6 @@ body,
   font-size: var(--font-size-small);
   opacity: 0.6;
   }
-  
-
-  .status-icon {
-    margin-top: var(--spacing-xs);
-    width: 36px;
-    height: 36px;
-  }
-
-/* Update existing status icon styles */
-.status-icon svg {
-  width: 100%;
-  height: 100%;
-}
-
-.cloud, .connected-symbol, .connected-line, .disconnected-symbol {
-  transition: all 0.3s ease;
-}
 
 /* Typography */
 h2 {
@@ -1504,24 +1487,24 @@ input:checked + .slider:before {
   display: block; /* or any style you want for visibility */
 }
 
-.status-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .status-icon {
-  width: 34px;
-  height: 34px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
-
+  
 .status-icon svg {
-  width: 100%;
-  height: 100%;
+  width: 18px;
+  height: 18px;
 }
 
-.cloud, .connected-symbol, .connected-line, .disconnected-symbol {
+.connected-circle, .disconnected-circle {
   transition: all 0.3s ease;
+}
+
+.connected-circle {
+  animation: pulse 0.8s infinite;
+  transform-origin: center;
 }
 
 .connected {

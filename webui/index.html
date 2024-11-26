@@ -171,31 +171,21 @@
                 <div id="time-date"></div>
                 <div class="status-icon" x-data="{ connected: true }">
                     <svg viewBox="0 0 30 30">
-                        <!-- Cloud -->
-                        <path class="cloud" 
-                              x-bind:fill="connected ? '#00c340' : '#e40138'"
-                              d="m23.12,19.85c3.8,0,6.88-3.09,6.88-6.88,0-3.39-2.53-6.31-5.88-6.81l-.68-.1-.27-.63c-1.4-3.29-4.61-5.42-8.17-5.42s-6.77,2.13-8.17,5.42l-.27.63-.68.1c-3.35.49-5.87,3.42-5.87,6.81,0,3.8,3.09,6.88,6.88,6.88.44,0,.8-.36.8-.8s-.36-.8-.8-.8c-2.91,0-5.28-2.37-5.28-5.28s2.37-5.28,5.28-5.28h.29c.37,0,.69-.25.78-.6.84-3.23,3.74-5.48,7.05-5.48s6.21,2.25,7.05,5.48c.09.35.41.6.78.6h.29c2.91,0,5.28,2.37,5.28,5.28s-2.37,5.28-5.28,5.28c-.44,0-.8.36-.8.8s.36.8.8.8Z"/>
-              
-                        <!-- Connected Symbol -->
-                        <g class="symbol" transform="translate(9, 15)">
-                            <path class="connected-symbol" 
-                                  x-bind:fill="connected ? '#00c340' : '#e40138'"
-                                  x-bind:opacity="connected ? 1 : 0"
-                                  d="m.73,9.63c.23.02.48-.06.65-.21l3.63-3.28c.36-.32.58-.7.63-1.09.08-.56-.13-1.11-.57-1.5L1.61.42l-.24-.21C1.22.08,1.02,0,.8,0h-.1C.46.02.26.14.11.33-.08.6-.02.97.26,1.22l3.66,3.3c.08.08.13.18.13.29s-.05.22-.13.29L.31,8.36c-.3.27-.38.69-.18.95.15.19.35.3.6.32Z"/>
-                            <path class="connected-line" 
-                                  x-bind:fill="connected ? '#00c340' : '#e40138'"
-                                  x-bind:opacity="connected ? 1 : 0"
-                                  d="m11.16,7.94h-4.56c-.44,0-.8.36-.8.8s.36.8.8.8h4.56c.44,0,.8-.36.8-.8s-.36-.8-.8-.8Z"/>
-              
-                            <!-- Disconnected Symbol -->
-                            <path class="disconnected-symbol"
-                                  transform="translate(1, 0)"
-                                  x-bind:fill="connected ? '#00c340' : '#e40138'"
-                                  x-bind:opacity="connected ? 0 : 1"
-                                  d="m5.64,4.88l3.34-3.59c.29-.31.27-.79-.04-1.08-.31-.29-.79-.27-1.08.04l-3.27,3.51L1.33.24C1.04-.07.55-.08.24.21-.07.49-.08.98.21,1.29l3.34,3.59L.21,8.46c-.29.31-.27.79.04,1.08.15.14.34.21.52.21.21,0,.41-.08.56-.24l3.27-3.51,3.27,3.51c.15.16.36.24.56.24.19,0,.37-.07.52-.21.31-.29.33-.77.04-1.08l-3.34-3.59Z"/>
-                        </g>
+                        <!-- Connected State (filled circle) -->
+                        <circle class="connected-circle"
+                                cx="15" cy="15" r="12"
+                                x-bind:fill="connected ? '#00c340' : 'none'"
+                                x-bind:opacity="connected ? 1 : 0"/>
+                  
+                        <!-- Disconnected State (outline circle) -->
+                        <circle class="disconnected-circle"
+                                cx="15" cy="15" r="12"
+                                fill="none"
+                                stroke="#e40138"
+                                stroke-width="2"
+                                x-bind:opacity="connected ? 0 : 1"/>
                     </svg>
-                </div>
+                  </div>
               </div>
             <div id="chat-history">
             </div>
