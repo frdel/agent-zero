@@ -11,7 +11,12 @@ def initialize():
     # chat_llm = models.get_openrouter_chat(model_name="openai/o1-mini-2024-09-12")
     # chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o-mini", temperature=0)
     # chat_llm = models.get_anthropic_chat(model_name="claude-3-5-sonnet-20240620", temperature=0)
-    # chat_llm = models.get_google_chat(model_name="gemini-1.5-flash", temperature=0)
+    # chat_llm = models.get_google_chat(model_name="gemini-1.5-pro-002", temperature=0)
+    # chat_llm = models.get_google_chat(model_name="gemini-1.5-pro-exp-0827", temperature=0)
+    # chat_llm = models.get_google_chat(model_name="gemini-1.5-flash-002", temperature=0)
+    # chat_llm = models.get_google_chat(model_name="gemini-1.5-flash-exp-0827", temperature=0)
+    # chat_llm = models.get_google_chat(model_name="gemini-1.5-flash-8b-exp-0924", temperature=0)
+    # chat_llm = models.get_google_chat(model_name="gemini-1.5-flash-8b-exp-0827", temperature=0)
     # chat_llm = models.get_mistral_chat(model_name="mistral-small-latest", temperature=0)
     # chat_llm = models.get_groq_chat(model_name="llama-3.2-90b-text-preview", temperature=0)
     # chat_llm = models.get_sambanova_chat(model_name="Meta-Llama-3.1-70B-Instruct-8k", temperature=0)
@@ -24,6 +29,8 @@ def initialize():
     # embedding_llm = models.get_ollama_embedding(model_name="nomic-embed-text")
     # embedding_llm = models.get_huggingface_embedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
     # embedding_llm = models.get_lmstudio_embedding(model_name="nomic-ai/nomic-embed-text-v1.5-GGUF")
+    # embedding_llm = models.get_google_embedding(model_name="models/embedding-001")
+    embedding_llm = models.get_google_embedding(model_name="models/text-embedding-004")
 
     # agent configuration
     config = AgentConfig(
