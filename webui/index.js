@@ -395,22 +395,8 @@ function updateProgress(progress) {
     }
 }
 
-function updatePauseButtonState(isPaused) {
-    const pauseButton = document.getElementById('pause-button');
-    const unpauseButton = document.getElementById('unpause-button');
-
-    if (isPaused) {
-        pauseButton.style.display = 'none';
-        unpauseButton.style.display = 'flex';
-    } else {
-        pauseButton.style.display = 'flex';
-        unpauseButton.style.display = 'none';
-    }
-}
-
 window.pauseAgent = async function (paused) {
     const resp = await sendJsonData("/pause", { paused: paused, context });
-    updatePauseButtonState(paused);
 }
 
 window.resetChat = async function () {
