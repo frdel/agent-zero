@@ -15,8 +15,17 @@
 }
 
 .file-cell {
+  color: var(--color-primary);
   padding: 4px;
   cursor: pointer;
+}
+
+.file-cell-size {
+  color: var(--color-primary);
+}
+
+.file-cell-date {
+  color: var(--color-primary);
 }
 
 .file-item {
@@ -82,12 +91,11 @@
 /* Path Navigator */
 
 .path-navigator {
-  padding: 8px 0;
   display: flex;
   align-items: center;
   gap: 24px;
   background-color: var(--color-message-bg);
-  padding: 0.70rem var(--spacing-sm) 0.7rem var(--spacing-sm);
+  padding: 0.50rem var(--spacing-sm) 0.5rem var(--spacing-sm);
   margin-bottom: 0.3rem;
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -117,6 +125,7 @@
 
 .current-path {
   font-family: monospace;
+  opacity: 0.9;
 }
 
 /* Update file-item for folders */

@@ -60,7 +60,7 @@
   --border-radius: 1.125rem;
   --transition-speed: 0.3s;
   --svg-filter: brightness(0) saturate(100%) var(--color-primary-filter);
-  --color-primary-filter: invert(70%) sepia(12%) saturate(368%) hue-rotate(177deg) brightness(87%) contrast(85%);
+  --color-primary-filter: invert(73%) sepia(17%) saturate(360%) hue-rotate(177deg) brightness(87%) contrast(85%);
 }
 
 /* Reset and Base Styles */
@@ -260,6 +260,7 @@ body,
   flex-direction: column;
   min-height: 0;
   flex: 1;
+  margin-top: 1.5rem;
 }
 
 /* Preferences */
@@ -1219,6 +1220,7 @@ font-size: var(--font-size-small)
 
 .slider {
   background-color: #272727;
+  border: 1px solid #535353;
   border-radius: 1.15rem;
   bottom: 0;
   cursor: pointer;
@@ -1233,14 +1235,14 @@ font-size: var(--font-size-small)
 .slider:before {
   background-color: #b6b6b6;
   border-radius: 50%;
-  bottom: 0.15rem;
+  bottom: 0.134rem;
   content: "";
-  height: 0.85rem;
+  height: 0.8rem;
   left: 0.15rem;
   position: absolute;
   transition: 0.4s ease-in-out;
   -webkit-transition: 0.4s ease-in-out;
-  width: 0.85rem;
+  width: 0.8rem;
 }
 
 input:checked + .slider {
@@ -1248,8 +1250,8 @@ input:checked + .slider {
 }
 
 input:checked + .slider:before {
-  transform: translateX(1.05rem);
-  -webkit-transform: translateX(1.05rem);
+  transform: translateX(1.0rem);
+  -webkit-transform: translateX(1.0rem);
 }
 
 #chat-buttons-wrapper {
@@ -1260,7 +1262,7 @@ input:checked + .slider:before {
 
 /* Chat List Button */
 .chat-list-button {
-  color: inherit;
+  color: var(--color-text);
   cursor: pointer;
   text-decoration: none;
 }
@@ -1416,6 +1418,7 @@ input:checked + .slider:before {
 
 .light-mode .slider {
   background-color: #f1f1f1;
+  border: 1px solid #dddddd;
 }
 
 .light-mode .slider:before {
@@ -1503,10 +1506,8 @@ input:checked + .slider:before {
   font-weight: bold;
 }
 
-
 /* Math (KaTeX) */
 .katex {
-  font-family: Roboto Mono !important;
   line-height: 1rem !important;
   font-size: 3rem;
 }
@@ -1702,8 +1703,4 @@ input:checked + .slider:before {
     -webkit-text-size-adjust: none;
     text-size-adjust: none;
   }
-}
-
-.invisible{
-  visibility:hidden;
 }

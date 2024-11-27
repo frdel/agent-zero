@@ -17,11 +17,13 @@
 
 .field-title {
   font-weight: bold;
+  color: var(--color-primary);
 }
 
 .field-description {
-  color: #666;
+  color: var(--color-text);
   font-size: 0.875rem;
+  opacity: 0.8;
   margin-top: 0.25rem;
   margin-bottom: 0.5rem;
 }
@@ -179,6 +181,7 @@ nav ul {
 
 nav ul li {
   display: flex;
+  font-weight: 500;
 }
 
 nav ul li a {
@@ -187,7 +190,8 @@ nav ul li a {
   align-items: center;
   text-align: center;
   text-decoration: none;
-  color: var(--color-primary);
+  color: var(--color-text);
+  opacity: 0.8;
   background-color: var(--color-panel);
   border: 1px solid var(--color-border);
   border-radius: 8px;

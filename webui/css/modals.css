@@ -73,8 +73,7 @@
 }
 
 .modal-description {
-  background-color: var(--color-background);
-  padding: 1rem 2rem 1rem 2rem;
+  padding: 0.8rem 2rem 0rem 2rem;
   flex-grow: 1;
   transition: all 0.3s ease;
 }
@@ -82,7 +81,7 @@
 .modal-content {
   padding: 0.5rem 1.5rem 0rem 1.5rem;
   overflow-y: auto;
-  max-height: calc(80vh - 4rem);
+  height: calc(90vh);
   flex-grow: 1;
   background-clip: border-box;
   border: 6px solid transparent;
@@ -136,11 +135,12 @@
 .section-title {
   font-size: 1.25rem;
   font-weight: bold;
+  color: var(--color-primary);
   margin-bottom: 0.5rem;
 }
 
 .section-description {
-  color: #666;
+  color: var(--color-text);
   margin-bottom: 1rem;
 }
 
@@ -194,6 +194,16 @@
   color: var(--color-text);
 }
 
+.light-mode .btn-cancel:hover {
+  background: var(--color-accent);
+  color: var(--color-background);
+}
+
+.light-mode .btn-cancel:active {
+  background: #a94658;
+  color: var(--color-background);
+}
+
 .btn-field {
   background: #2196f3;
   color: white;
@@ -207,11 +217,6 @@
 
 h2 {
   color: var(--color-primary);
-}
-
-.ace_scrollbar-v {
-  overflow-y: auto;
-  scroll-behavior: smooth;
 }
 
 @media (max-width: 768px) {
