@@ -396,7 +396,7 @@
     <div id="settingsModal" x-data="settingsModalProxy">
         <template x-teleport="body">
             <div x-show="isOpen" class="modal-overlay" @click.self="handleCancel()"
-                @keydown.escape.window="handleClose()" x-transition>
+                @keydown.escape.window="handleCancel()" x-transition>
                 <div class="modal-container">
                     <div class="modal-header">
                         <h2 x-text="settings.title"></h2>

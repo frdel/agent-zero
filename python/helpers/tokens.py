@@ -3,6 +3,9 @@ import tiktoken
 APPROX_BUFFER = 1.1
 
 def count_tokens(text: str, encoding_name="cl100k_base") -> int:
+        if not text:
+            return 0
+    
         # Get the encoding
         encoding = tiktoken.get_encoding(encoding_name)
 
