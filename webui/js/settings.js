@@ -85,3 +85,16 @@ const settingsModalProxy = {
 //     Alpine.store('settingsModal', initSettingsModal());
 // });
 
+function getIconName(title) {
+  const iconMap = {
+    'Agent Config': 'agentconfig',
+    'Chat Model': 'chat-model',
+    'Utility model': 'utility-model',
+    'Embedding Model': 'embed-model',
+    'API Keys': 'api-keys',
+    'Authentication': 'auth',
+    'Development': 'dev'
+  };
+  return iconMap[title] || 'default';
+}
+

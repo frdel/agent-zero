@@ -1,81 +1,3 @@
-/* Work Directory Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.75);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2002;
-}
-
-.modal-container {
-  background-color: var(--color-panel);
-  border-radius: 12px;
-  width: 90%;
-  max-width: 800px;
-  max-height: 80vh;
-  overflow: hidden;
-  box-shadow: 0 4px 23px 0 rgba(0, 0, 0, 0.2);
-}
-
-.modal-header {
-  padding: 1rem 2rem;
-  border-bottom: 1px solid var(--color-border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-subheader {
-  padding: 0.7rem 1.5rem;
-  display: inline;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-title {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: var(--color-text);
-}
-
-.modal-close {
-  background: none;
-  font-size: xx-large;
-  border: none;
-  color: var(--color-text);
-  opacity: 0.7;
-  cursor: pointer;
-  padding: 0.5rem;
-  transition: opacity 0.2s;
-}
-
-.modal-close:hover {
-  opacity: 1;
-}
-
-.modal-content {
-  padding: 0.5rem 1.5rem 0rem 1.5rem;
-  overflow-y: auto;
-  max-height: calc(80vh - 4rem);
-}
-
-.modal-footer {
-  padding: var(--spacing-md);
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  justify-content: flex-end;
-  background: var(--color-background);
-}
-
-h2 {
-  color: var(--color-primary);
-}
-
 /* File Browser Styles */
 .files-list {
   width: 100%;
@@ -102,6 +24,7 @@ h2 {
   grid-template-columns: 2fr 0.6fr 1.0fr 80px;
   align-items: center;
   padding: 8px 0;
+  font-size: 0.875rem;
   border-top: 1px solid var(--color-border);
   transition: background-color 0.2s;
   white-space: nowrap;
@@ -109,7 +32,7 @@ h2 {
 }
 
 .file-item:hover {
-  background-color: var(--hover-bg);
+  background-color: var(--color-secondary);
   cursor: pointer;
 }
 
@@ -150,13 +73,6 @@ h2 {
 }
 
 /* Light mode adjustments */
-.light-mode .modal-container {
-  background-color: var(--color-panel-light);
-}
-
-.light-mode .file-item {
-  background-color: var(--color-background-light);
-}
 
 .light-mode .file-item:hover {
   background-color: var(--color-secondary-light);
@@ -199,7 +115,6 @@ h2 {
 }
 
 .current-path {
-  color: var(--color-text);
   font-family: monospace;
 }
 
@@ -209,7 +124,7 @@ h2 {
 }
 
 .file-item[data-is-dir="true"]:hover {
-  background-color: var(--hover-bg);
+  background-color: var(--color-secondary);
 }
 
 /* Button Section */
@@ -225,7 +140,7 @@ transition: background-color 0.2s;
 }
 
 .btn-upload {
-  background: #3270e2;
+  background: #4248f1;
   color: white;
   display: flex;
   transition: background 0.3s ease-in-out;
@@ -240,7 +155,11 @@ transition: background-color 0.2s;
   }
 
 .upload-button:hover {
-background-color: var(--color-primary-dark);
+background-color: #353bc5;
+}
+
+.upload-button:active {
+background-color: #2b309c;
 }
 
 /* Delete Button */
@@ -287,8 +206,8 @@ background-color: var(--color-primary-dark);
   background-color: var(--color-primary-light);
 }
 
-.button-section {
-  gap: 1rem;
+.light-mode .download-button:hover {
+  background-color: #c6d4de;
 }
 
 @media (max-width: 768px) {
@@ -297,6 +216,7 @@ background-color: var(--color-primary-dark);
     grid-template-columns: 1fr 0.5fr 80px;
     background: var(--secondary-bg);
     padding: 8px 0;
+    align-items:center;
     font-weight: bold;
     border-bottom: 1px solid var(--border-color);
   }
@@ -344,20 +264,5 @@ background-color: var(--color-primary-dark);
   }
   .file-date {
     display: none;
-  }
-
-  #buttons-container {
-    max-height: 50px;  
-  }
-  
-  .btn-upload {
-    margin: 0 auto;
-    text-wrap: wrap;
-    gap: 0.5rem;
-    align-items:center;    
-  }
-  
-  .btn-upload > svg {
-    width: 20px;
   }
 }
