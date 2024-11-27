@@ -41,6 +41,7 @@
   width: 1.8rem;
   height: 1.8rem;
   vertical-align: middle;
+  margin-left: 0.7rem;
   margin-right: 1rem;
 }
 
@@ -203,7 +204,7 @@ background-color: #2b309c;
 }
 
 .download-button:hover {
-  background-color: var(--color-primary-light);
+  background-color: var(--color-border);
 }
 
 .light-mode .download-button:hover {

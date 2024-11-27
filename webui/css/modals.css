@@ -17,7 +17,7 @@
   border-radius: 12px;
   width: 90%;
   max-width: 800px;
-  max-height: 80vh;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -33,8 +33,8 @@
   background-color: var(--color-background);
   color: var(--color-primary);
   display: grid;
-  grid-template-columns: 1fr 10fr 1fr;
-  padding: 0.75rem 1.3rem 0.5rem 2rem;
+  grid-template-columns: 40fr 0.5fr;
+  padding: 0.5rem 1.5rem 0.5rem 2rem;
   align-items: center;
   justify-content:space-between;
 }
@@ -57,12 +57,6 @@
   align-items: center;
 }
 
-.modal-title {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: var(--color-text);
-}
-
 .modal-close {
   background: none;
   font-size: xx-large;
@@ -70,7 +64,7 @@
   color: var(--color-text);
   opacity: 0.7;
   cursor: pointer;
-  padding: 0.5rem 0rem 0.7rem 1rem;
+  padding: 0;
   transition: opacity 0.2s;
 }
 
@@ -80,7 +74,7 @@
 
 .modal-description {
   background-color: var(--color-background);
-  padding: 1rem 1.5rem 1rem 1.5rem;
+  padding: 1rem 2rem 1rem 2rem;
   flex-grow: 1;
   transition: all 0.3s ease;
 }
@@ -118,8 +112,13 @@
   background-color: rgba(155, 155, 155, 0.7);
 }
 
+#buttons-container {
+    display: flex;
+    gap: 0.5rem !important;
+}
+
 .modal-footer {
-  padding: var(--spacing-md) 0 var(--spacing-md) 0;
+  padding: 0.6rem 2rem 0.6rem 0;
   border-top: 1px solid var(--color-border);
   display: flex;
   justify-content: flex-end;
@@ -146,14 +145,13 @@
 }
 
 #buttons-container {
-  padding-right: 2rem;
   display: flex;
-  align-content:flex-end;
   gap: 0.875rem;
 }
 
 .btn {
-  padding: 0.7rem 1.5rem;
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
   border-radius: 0.25rem;
   cursor: pointer;
   border: none;
@@ -180,17 +178,20 @@
 }
 
 .btn-cancel {
-  background: #ddd;
-  color: #333;
+  background: transparent;
+  color: var(--color-accent);
+  border: 0.15rem solid var(--color-accent);
   transition: background 0.3s ease-in-out;
 }
 
 .btn-cancel:hover {
-  background: #a6a6a6;
+  background: var(--color-accent);
+  color: var(--color-text);
 }
 
 .btn-cancel:active {
-  background: #808080;
+  background: #a94658;
+  color: var(--color-text);
 }
 
 .btn-field {
@@ -214,13 +215,13 @@ h2 {
 }
 
 @media (max-width: 768px) {
-  .modal-header h2 {
-      margin: 0;
-  }
   .modal-content {
       padding: 1rem;
       overflow-y: auto;
       flex-grow: 1;
+  }
+  .modal-footer {
+      padding: var(--spacing-md) 0rem var(--spacing-md) 0 !important;
   }
   .section {
       margin-bottom: 1.5rem;
@@ -228,30 +229,27 @@ h2 {
       border: 1px solid var(--color-border);
       border-radius: 0.5rem;
   }
+  #buttons-container {
+    margin: 0 auto;
+  }
 }
 
 @media (max-width: 540px) {
   .modal-header {
-      display: flex;
-      text-wrap: nowrap;
+    text-wrap: nowrap;
   }
   #buttons-container {
-      display: flex;
-      gap: 0.5rem !important;
-      max-height: 50px;  
-      padding-right: 0;
-      display: flex;
-      margin: 0 auto !important;
+    max-height: 50px;  
   }
   .btn {
-      text-wrap: wrap;
+    text-wrap: wrap;
   }
   .btn-upload {
-      margin: 0 auto;
-      gap: 0.5rem;
-      align-items:center;    
+    margin: 0 auto;
+    gap: 0.5rem;
+    align-items:center;    
   }  
   .btn-upload > svg {
-      width: 20px;
+    width: 20px;
   }
 }
