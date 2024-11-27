@@ -1,9 +1,19 @@
 /* MIC BUTTON */
-#microphone-button {
-  
+#microphone-button {  
 }
 
 #microphone-button:hover {
+  background-color: #636363;
+  transform: scale(1.05);
+  -webkit-transform: scale(1.05);
+  transform-origin: center;
+}
+
+#microphone-button:active {
+  background-color: #444444;
+  transform: scale(1);
+  -webkit-transform: scale(1);
+  transform-origin: center;
 }
 
 #microphone-button.recording {
@@ -52,4 +62,5 @@
 .mic-processing {
   background-color: darkcyan;
   animation: pulse 0.8s infinite;
+  transform-origin: center;
 }

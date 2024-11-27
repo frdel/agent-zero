@@ -22,7 +22,7 @@
   /* Light mode */
   --color-background-light: #e8e9e9;
   --color-text-light: #333333;
-  --color-primary-light: #273b4d;
+  --color-primary-light: #324d66;
   --color-secondary-light: #e8eaf6;
   --color-accent-light: #b00020;
   --color-message-bg-light: #ffffff;
@@ -181,10 +181,11 @@ body,
 .toggle-sidebar-button {
   height: 2.6rem;
   width: 2.6rem;
-  background-color: var(--color-secondary);
-  border: none;
+  background-color: var(--color-background);
+  border: 0.1rem solid var(--color-border);
   border-radius: var(--spacing-xs);
   color: var(--color-text);
+  opacity: 0.8;
   cursor: pointer;
   left: var(--spacing-md);
   padding: 0.47rem 0.56rem;
@@ -196,11 +197,12 @@ body,
 }
 
 .toggle-sidebar-button:hover {
-  background-color: #313131;
+  background-color: var(--color-secondary);
+  opacity: 1;
 }
 
 .toggle-sidebar-button:active {
-  background-color: #111;
+  opacity: 0.5;
 }
 
 #sidebar-hamburger-svg {
@@ -497,12 +499,6 @@ pre {
   animation: shine 1s linear infinite;
 }
 
-@keyframes shine {
-  to {
-      background-position: -200% center;
-  }
-}
-
 #right-panel.expanded #logo-container {
   margin-left: 4.6rem;
 }
@@ -764,8 +760,13 @@ font-size: var(--font-size-small)
   border-top: 0px;
 }
 
+#pref-list li {
+  opacity: 0.8;
+}
+
 .config-button {
-  border: none;
+  background-color: var(--color-background);
+  border: 0.1rem solid var(--color-border);
   border-radius: var(--spacing-xs);
   cursor: pointer;
   display: inline;
@@ -776,13 +777,15 @@ font-size: var(--font-size-small)
   margin-bottom: var(--spacing-xs);
   padding: var(--spacing-sm) 0.75rem;
   text-wrap: nowrap;
-  background-color: var(--color-secondary);
   width: 48%;
+  max-height: 2.3rem;
   -webkit-transition: all var(--transition-speed), transform 0.1s ease-in-out;
   transition: all var(--transition-speed), transform 0.1s ease-in-out;
 }
 
 .config-button:hover {
+  background-color: var(--color-secondary);
+  border: 0.1rem solid var(--color-border);
   opacity: 1;
 }
 
@@ -790,9 +793,14 @@ font-size: var(--font-size-small)
   opacity: 0.5;
 }
 
+#settings {
+  display: flex;
+  align-items: center;
+}
+
 .edit-button {
   background-color: transparent;
-  border: 1px solid var(--color-primary);
+  border: 1px solid var(--color-border);
   border-radius: 0.1875rem;
   color: var(--color-primary);
   cursor: pointer;
@@ -802,6 +810,7 @@ font-size: var(--font-size-small)
 }
 
 .edit-button:hover {
+  border: 1px solid var(--color-primary);
   background-color: #32455690;
 }
 
@@ -943,10 +952,6 @@ font-size: var(--font-size-small)
   transition: background-color 0.2s ease;
 }
 
-.preview-item:hover {
-  background: var(--color-secondary-dark);
-}
-
 .preview-item.image-preview img {
   max-height: 100px;
   object-fit: cover;
@@ -985,7 +990,6 @@ font-size: var(--font-size-small)
   top: -6px;
   right: -6px;
   background-color: var(--color-primary);
-  /* opacity: 0.6; */
   color: white;
   border: none;
   border-radius: 50%;
@@ -1056,14 +1060,12 @@ font-size: var(--font-size-small)
   white-space: nowrap;
 }
 
-/* Bottom row with text buttons */
+/* with text buttons */
 .text-buttons-row {
   width: 100%;
   display: flex;
   padding-top: var(--spacing-xs);
   margin-left: 0.7rem;
-  gap: var(--spacing-xs);
-  white-space: pre-wrap;
 }
 
 .text-button {
@@ -1078,7 +1080,7 @@ font-size: var(--font-size-small)
   transition: all 0.3s;
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs); /* Adds space between icon and text */
+  gap: var(--spacing-xs); /* space between icon and text */
 }
 
 .text-button:hover {
@@ -1210,7 +1212,7 @@ font-size: var(--font-size-small)
 }
 
 .slider {
-  background-color: #4a4a4a;
+  background-color: #272727;
   border-radius: 1.15rem;
   bottom: 0;
   cursor: pointer;
@@ -1223,7 +1225,7 @@ font-size: var(--font-size-small)
 }
 
 .slider:before {
-  background-color: white;
+  background-color: #b6b6b6;
   border-radius: 50%;
   bottom: 0.15rem;
   content: "";
@@ -1236,7 +1238,7 @@ font-size: var(--font-size-small)
 }
 
 input:checked + .slider {
-  background-color: var(--color-primary-light);
+  background-color: #3a3a3a;
 }
 
 input:checked + .slider:before {
@@ -1270,9 +1272,8 @@ input:checked + .slider:before {
   height: 2.525rem;
   margin-left: var(--spacing-xs);
   margin-right: 0.18rem;
-  transition: background-color var(--transition-speed), transform 0.1s ease-in-out;
-  transition: background-color var(--transition-speed), transform 0.1s ease-in-out;
-  -webkit-transition: background-color var(--transition-speed), transform 0.1s ease-in-out;
+  transition: all var(--transition-speed), transform 0.1s ease-in-out;
+  -webkit-transition: all var(--transition-speed), transform 0.1s ease-in-out;
   width: 2.525rem;
   flex-shrink: 0;
   flex-grow: 0;
@@ -1284,30 +1285,22 @@ input:checked + .slider:before {
   padding: 0;
 }
 
-.chat-button:active {
-  transform: scale(0.95);
-  -webkit-transform: scale(0.95);
-}
-
-.chat-button svg {
-  width: 1.5rem;
-  height: 1.5rem;
-}
-
 #send-button {
-  background-color: var(--color-primary);
+  background-color: #4248f1;
 }
 
 #send-button:hover {
-  background-color: var(--color-primary-light);
+  transform: scale(1.05);
+  -webkit-transform: scale(1.05);
+  transform-origin: center;
+  background-color: #353bc5;
 }
 
-.pause-button {
-  background-color: #3270e2;
-}
-
-.pause-button:hover {
-  background-color: #4382e8;
+#send-button:active {
+  transform: scale(1);
+  -webkit-transform: scale(1);
+  transform-origin: center;
+  background-color: #2b309c;
 }
 
 /* Light mode class */
@@ -1384,7 +1377,7 @@ input:checked + .slider:before {
 }
 
 .light-mode .config-button {
-  background-color: var(--color-secondary);
+  background-color: var(--color-background);
   color: #333333;
 }
 
@@ -1410,36 +1403,21 @@ input:checked + .slider:before {
   color: rgba(0, 0, 0, 0.35);
 }
 
-.light-mode #send-button {
-  background-color: var(--color-primary-light);
-}
-
-.light-mode #send-button:hover {
-  background-color: var(--color-primary-dark);
-}
-
-.light-mode .pause-button {
-  background-color: #4382e8;
-}
-
-.light-mode .pause-button:hover {
-  background-color: #3270e2;
+.light-mode #progress-bar-i {
+  color: var(--color-border-dark);
+  opacity: 0.5
 }
 
 .light-mode .slider {
-  background-color: #bdbdbd;
+  background-color: #f1f1f1;
+}
+
+.light-mode .slider:before {
+  background-color: #838383;
 }
 
 .light-mode input:checked + .slider {
-  background-color: var(--color-primary-dark);
-}
-
-.light-mode .toggle-sidebar-button:hover {
-  background-color: #d6dae8;
-}
-
-.light-mode .toggle-sidebar-button:active {
-  background-color: #bdc0cb;
+  background-color: #e6e6e6;
 }
 
 .light-mode #logo-container img {
@@ -1503,7 +1481,7 @@ input:checked + .slider:before {
 }
 
 .connected-circle {
-  animation: pulse 0.8s infinite;
+  animation: heartbeat 1.5s ease-in-out infinite;
   transform-origin: center;
 }
 
@@ -1551,13 +1529,47 @@ input:checked + .slider:before {
   }
 }
 
+@keyframes shine {
+  to {
+      background-position: -200% center;
+  }
+}
+
+@keyframes heartbeat {
+  0% {
+    transform: scale(1);
+  }
+  14% {
+    transform: scale(1.1);
+  }
+  28% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.08);
+  }
+  70% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 480px) {
+  .text-buttons-row {
+    display: table;
+  }
+  
+  .text-button {
+    max-height: 20px;
+  }
+}
 
 @media (max-width: 600px) {
   #chat-input {
     min-height: 5.3rem;
     align-content: start;
-  
-    
   }
 
   #chat-buttons-wrapper {
@@ -1569,24 +1581,23 @@ input:checked + .slider:before {
     transition: all 0.3s ease;
     -webkit-transition: all 0.3s ease;
   }
-}
 
-.sidebar-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0);
-  opacity: 0;
-  z-index: 999;
-}
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    opacity: 0;
+    z-index: 999;
+  }
 
-.sidebar-overlay.visible {
-  display: block;
-}
-  
+  .sidebar-overlay.visible {
+    display: block;
+  }
+}  
 
 @media (max-width: 768px) {
   #left-panel {
@@ -1632,9 +1643,11 @@ input:checked + .slider:before {
   gap: var(--spacing-xs);
   white-space: pre-wrap;
   }
+
   .text-button {
   text-align: left;
   }
+
   .text-button svg {
   width: 18px;
   height: 18px;
