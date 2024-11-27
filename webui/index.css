@@ -1069,8 +1069,9 @@ font-size: var(--font-size-small)
 }
 
 .text-button {
-  background: none;
+  background-color: transparent;
   border: none;
+  border-radius: 5px;
   color: var(--color-text);
   font-family: "Rubik", Arial, Helvetica, sans-serif;
   font-size: 0.7rem;
@@ -1097,6 +1098,11 @@ font-size: var(--font-size-small)
   width: 14px;
   height: 14px;
   flex-shrink: 0; /* prevents SVG from shrinking */
+}
+
+.text-button p {
+  margin-block-start: 0em;
+  margin-block-end: 0em;
 }
 
 /* Chat buttons (Send and Mic) */
@@ -1559,10 +1565,15 @@ input:checked + .slider:before {
 @media (max-width: 480px) {
   .text-buttons-row {
     display: table;
+    gap: 0.1rem !important;
   }
   
   .text-button {
-    max-height: 20px;
+    max-height: 25px;
+  }
+
+  .text-button p{
+    display: none;
   }
 }
 
@@ -1642,10 +1653,6 @@ input:checked + .slider:before {
   padding-top: var(--spacing-xs);
   gap: var(--spacing-xs);
   white-space: pre-wrap;
-  }
-
-  .text-button {
-  text-align: left;
   }
 
   .text-button svg {

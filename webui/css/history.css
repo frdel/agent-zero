@@ -3,3 +3,28 @@
     height: 60vh;
     overflow: auto;
 }
+
+#json-viewer-container::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+#json-viewer-container::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px 0;
+    border-radius: 6px;
+}
+
+#json-viewer-container::-webkit-scrollbar-thumb {
+    background-color: rgba(155, 155, 155, 0.5);
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+#json-viewer-container::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(155, 155, 155, 0.7);
+}
+
+#viewer {
+    overflow: hidden;
+}

@@ -1,119 +1,3 @@
-select {
-  transition: none;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2001;
-}
-
-.modal-container {
-  background: var(--color-panel);
-  color: var(--color-primary);
-  border-radius: 0.5rem;
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-header {
-  padding: 1em 1em;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.modal-header h2 {
-  color: var(--color-primary);
-  font-size: 1.25rem;
-  margin: 0;
-}
-
-.modal-header ul {
-  margin-bottom: 0;
-  line-height: 2em;
-}
-
-.modal-header > svg {
-  max-height: 30px !important;
-}
-
-#settings-title {
-  padding: 0.75rem 1.3rem 0.5rem 2rem;
-  background-color: var(--color-background);
-}
-
-#settings-title > svg {
-  gap: 10rem;
-}
-
-.modal-content {
-  padding: var(--spacing-sm);
-  overflow-y: auto;
-  flex-grow: 1;
-  background-clip: border-box;
-  border: 6px solid transparent;
-  transition: all 0.3s ease;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
-.modal-content::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.modal-content::-webkit-scrollbar-track {
-  background: transparent;
-  margin: 4px 0;
-  border-radius: 6px;
-}
-
-.modal-content::-webkit-scrollbar-thumb {
-  background-color: rgba(155, 155, 155, 0.5);
-  border-radius: 6px;
-  transition: background-color 0.2s ease;
-}
-
-.modal-content::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(155, 155, 155, 0.7);
-}
-
-.modal-footer {
-  padding: var(--spacing-sm);
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  background: var(--color-background);
-}
-
-.section {
-  margin-bottom: 2rem;
-  padding: 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
-}
-
-.section-title {
-  font-size: 1.25rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}
-
-.section-description {
-  color: #666;
-  margin-bottom: 1rem;
-}
-
 .field {
   display: grid;
   margin-block-start: 1rem;
@@ -259,63 +143,6 @@ input[type="range"] {
   text-align: right;
 }
 
-#buttons-container {
-  display: flex;
-  gap: 0.875rem;
-}
-
-.btn {
-  padding: 0.7rem 1.5rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  border: none;
-  font-size: 0.875rem;
-  font-family: "Rubik", Arial, Helvetica, sans-serif;
-}
-
-.btn-ok {
-  background: #3270e2;
-  color: white;
-  transition: background 0.3s ease-in-out;
-}
-
-.btn-ok > svg {
-  max-width: 20px;
-}
-
-.btn-ok:hover {
-  background: #3265c0;
-}
-
-.btn-ok:active {
-  background: #345693;
-}
-
-.btn-cancel {
-  background: #ddd;
-  color: #333;
-  transition: background 0.3s ease-in-out;
-}
-
-.btn-cancel:hover {
-  background: #a6a6a6;
-}
-
-.btn-cancel:active {
-  background: #808080;
-}
-
-.btn-field {
-  background: #2196f3;
-  color: white;
-  width: fit-content;
-}
-
-.btn-field:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
 select {
   width: 100%;
   padding: 0.5rem;
@@ -327,6 +154,7 @@ select {
   cursor: pointer;
   font-family: "Rubik", Arial, Helvetica, sans-serif;
   outline: none;
+  transition: none;
 }
 
 select:disabled {
@@ -391,41 +219,7 @@ nav ul li a img {
   background-color: var(--color-secondary-light);
 }
 
-
 @media (max-width: 768px) {
-  .modal-header {
-    padding: var(--spacing-sm);
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .modal-header h2 {
-    font-size: 1.25rem;
-    margin: 0;
-  }
-
-  .modal-content {
-    padding: 1rem;
-    overflow-y: auto;
-    flex-grow: 1;
-  }
-
-  .modal-footer {
-    padding: var(--spacing-sm);
-  }
-
-  #buttons-container {
-    display: flex;
-    gap: 1rem;
-    margin: 0 auto;
-  }
-
-  .section {
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
-  }
-
   .field-control {
     width: 100%;
   }
@@ -440,11 +234,7 @@ nav ul li a img {
   }
 }
 
-@media (max-width: 480px) {
-  #settings-title {
-    display: flex;
-    text-wrap: nowrap;
-  }
+@media (max-width: 480px) { 
   nav ul {
     grid-template-columns: repeat(2, 1.2fr);
   }
