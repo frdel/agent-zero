@@ -145,7 +145,7 @@ class Topic(Record):
         for msg, tok, leng, out in large_msgs:
             trim_to_chars = leng * (msg_max_size / tok)
             trunc = messages.truncate_dict_by_ratio(
-                self.history.agent, out["content"], trim_to_chars * 1.15, trim_to_chars * 0.85
+                self.history.agent, out[0]["content"], trim_to_chars * 1.15, trim_to_chars * 0.85
             )
             msg.summary = trunc
 
@@ -367,11 +367,15 @@ class History(Record):
         return True
 
     async def compress_bulks(self):
+        #merge bulks if possible
         compressed = await self.merge_bulks_by(BULK_MERGE_COUNT)
+        #remove oldest bulk if necessary
+        if not compressed:
+            self.bulks.pop(0)
         return compressed
 
     async def merge_bulks_by(self, count: int):
-        if len(self.bulks) < count:
+        if len(self.bulks) > 0:
             return False
         bulks = await asyncio.gather(
             *[
@@ -409,7 +413,10 @@ def serialize_output(output: OutputMessage, ai_label="ai", human_label="human"):
 def serialize_content(content: OutputType) -> str:
     if isinstance(content, str):
         return content
-    return json.dumps(content)
+    try:
+        return json.dumps(content)
+    except Exception as e:
+        raise e
 
 
 def group_outputs_abab(outputs: list[OutputMessage]) -> list[OutputMessage]:

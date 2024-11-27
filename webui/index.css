@@ -1703,3 +1703,7 @@ input:checked + .slider:before {
     text-size-adjust: none;
   }
 }
+
+.invisible{
+  visibility:hidden;
+}

@@ -4,7 +4,7 @@ export async function openHistoryModal() {
     const hist = await window.sendJsonData("/history_get", { context: getContext() });
     const data = JSON.stringify(hist.history, null, 4);
     const size = hist.tokens
-    await showEditorModal(data, "json", `History ~${size} tokens`,"Conversation history how the agent can see it. History is compressed to fit into the context window.");
+    await showEditorModal(data, "json", `History ~${size} tokens`,"Conversation history visible to the LLM. History is compressed to fit into the context window over time.");
 }
 
 export async function openCtxWindowModal() {
@@ -28,7 +28,9 @@ async function showEditorModal(data, type = "json", title, description="") {
 
         const dark = localStorage.getItem('darkMode')
         if (dark != "false") {
-            editor.setTheme("ace/theme/monokai");
+            editor.setTheme("ace/theme/github_dark");
+        }else{
+            editor.setTheme("ace/theme/tomorrow");
         }
 
         editor.session.setMode("ace/mode/" + type);

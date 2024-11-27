@@ -38,7 +38,7 @@ async def call_rfc(
     call = RFCCall(
         rfc_input=json.dumps(input), hash=hash_data(json.dumps(input), password)
     )
-    result = await _send_json_data(url, json.dumps(call))
+    result = await _send_json_data(url, call)
     return result
 
 
@@ -68,7 +68,7 @@ def _get_function(module: str, function_name: str):
     return func
 
 
-async def _send_json_data(url: str, data: str):
+async def _send_json_data(url: str, data):
     async with aiohttp.ClientSession() as session:
         async with session.post(
             url,
@@ -76,10 +76,7 @@ async def _send_json_data(url: str, data: str):
         ) as response:
             if response.status == 200:
                 result = await response.json()
-                if result["ok"]:
-                    return result["result"]
-                else:
-                    raise Exception(result["message"])
+                return result
             else:
                 error = await response.text()
                 raise Exception(error)
