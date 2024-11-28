@@ -35,15 +35,36 @@ class MicrophoneInput {
         this.hasStartedRecording = false;
         this.analysisFrame = null;
 
+        // Initialize with defaults
         this.options = {
             modelSize: 'tiny',
             language: 'en',
             silenceThreshold: 0.15,
             silenceDuration: 1000,
             waitingTimeout: 2000,
-            minSpeechDuration: 500,
-            ...options
+            minSpeechDuration: 500
         };
+        
+        // Fetch settings from server
+        this.loadSettings();
+    }
+
+    async loadSettings() {
+        try {
+            const response = await fetch('/settings_get');
+            const data = await response.json();
+            const sttSettings = data.settings.sections.find(s => s.title === 'Speech to Text');
+            
+            if (sttSettings) {
+                // Update options from server settings
+                sttSettings.fields.forEach(field => {
+                    const key = field.id.split('.')[1]; // speech_to_text.model_size -> model_size
+                    this.options[key] = field.value;
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load speech settings:', error);
+        }
     }
 
     get status() {
@@ -314,13 +335,6 @@ async function initializeMicrophoneInput() {
                     await sendMessage();
                 }
             }
-        },
-        {
-            modelSize: 'tiny',
-            language: 'en',
-            silenceThreshold: 0.07,
-            silenceDuration: 1000,
-            waitingTimeout: 1500
         }
     );
     microphoneInput.status = Status.ACTIVATING;
@@ -440,3 +454,10 @@ class Speech {
 
 export const speech = new Speech();
 window.speech = speech
+
+// Add event listener for settings changes
+document.addEventListener('settings-updated', async () => {
+    if (microphoneInput) {
+        await microphoneInput.loadSettings();
+    }
+});

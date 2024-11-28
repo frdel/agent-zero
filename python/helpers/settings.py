@@ -39,6 +39,13 @@ class Settings(TypedDict):
     rfc_url: str
     rfc_password: str
 
+    stt_model_size: str
+    stt_language: str
+    stt_silence_threshold: float
+    stt_silence_duration: int
+    stt_waiting_timeout: int
+    stt_min_speech_duration: int
+
 
 class PartialSettings(Settings, total=False):
     pass
@@ -413,12 +420,82 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "fields": dev_fields,
     }
 
+    # Speech to text section
+    stt_fields: list[SettingsField] = []
+    
+    stt_fields.append({
+        "id": "stt_model_size",
+        "title": "Model Size",
+        "description": "Select the speech recognition model size",
+        "type": "select",
+        "value": settings["stt_model_size"],
+        "options": [
+            {"value": "tiny", "label": "Tiny (39M, English)"},
+            {"value": "base", "label": "Base (74M, English)"},
+            {"value": "small", "label": "Small (244M, English)"},
+            {"value": "medium", "label": "Medium (769M, English)"},
+            {"value": "large", "label": "Large (1.5B, Multilingual)"},
+            {"value": "turbo", "label": "Turbo (Multilingual)"}
+        ]
+    })
+
+    stt_fields.append({
+        "id": "stt_language",
+        "title": "Language Code",
+        "description": "Language code (e.g. en, fr, it)",
+        "type": "input",
+        "value": settings["stt_language"]
+    })
+
+    stt_fields.append({
+        "id": "stt_silence_threshold",
+        "title": "Silence threshold",
+        "description": "Silence detection threshold. Lower values are more sensitive.",
+        "type": "range",
+        "min": 0,
+        "max": 1,
+        "step": 0.01,
+        "value": settings["stt_silence_threshold"]
+    })
+
+    stt_fields.append({
+        "id": "stt_silence_duration",
+        "title": "Silence duration (ms)",
+        "description": "Duration of silence before the server considers speaking to have ended.",
+        "type": "input",
+        "value": settings["stt_silence_duration"]
+    })
+
+    stt_fields.append({
+        "id": "stt_waiting_timeout",
+        "title": "Waiting timeout (ms)",
+        "description": "Duration before the server closes the microphone.",
+        "type": "input",
+        "value": settings["stt_waiting_timeout"]
+    })
+
+    stt_fields.append({
+        "id": "stt_min_speech_duration",
+        "title": "Prefix padding (ms)", 
+        "description": "Minimum duration of audio to be included in the stream before speech was recognized.",
+        "type": "input",
+        "value": settings["stt_min_speech_duration"]
+    })
+
+    stt_section: SettingsSection = {
+        "title": "Speech to Text",
+        "description": "Voice transcription preferences and server turn detection settings.",
+        "fields": stt_fields
+    }
+
+    # Add the section to the result
     result: SettingsOutput = {
         "sections": [
             agent_section,
             chat_model_section,
             util_model_section,
             embed_model_section,
+            stt_section,
             api_keys_section,
             auth_section,
             dev_section,
@@ -443,9 +520,7 @@ def convert_in(settings: dict) -> Settings:
         if "fields" in section:
             for field in section["fields"]:
                 if field["id"].endswith("_kwargs"):
-                    current[field["id"]] = _env_to_dict(
-                        field["value"]
-                    )  # parse KWARGS from env format
+                    current[field["id"]] = _env_to_dict(field["value"])
                 elif field["id"].startswith("api_key_"):
                     current["api_keys"][field["id"]] = field["value"]
                 else:
@@ -518,6 +593,11 @@ def get_embedding_model(settings: Settings | None = None) -> Embeddings:
         **settings["embed_model_kwargs"],
     )
 
+def get_speech_settings(settings: Settings | None = None) -> dict:
+    if not settings:
+        settings = get_settings()
+    return settings["speech_to_text"]
+
 
 def _read_settings_file() -> Settings | None:
     if os.path.exists(SETTINGS_FILE):
@@ -573,6 +653,12 @@ def _get_default_settings() -> Settings:
         agent_knowledge_subdir="custom",
         rfc_url="http://localhost:55080",
         rfc_password="",
+        stt_model_size="tiny",
+        stt_language="en",
+        stt_silence_threshold=0.15,
+        stt_silence_duration=1000,
+        stt_waiting_timeout=2000,
+        stt_min_speech_duration=500
     )
 
 
