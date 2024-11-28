@@ -110,7 +110,7 @@ const fileBrowserModalProxy = {
         }
 
         try {
-            const response = await fetch('/deleteWorkDirFile', {
+            const response = await fetch('/delete_work_dir_file', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -133,8 +133,16 @@ class FileBrowser:
             # Get parent directory path if not at root
             parent_path = ""
             if current_path:
-                parent = (Path(current_path).parent)
-                parent_path = str(parent) if parent != Path(".") else ""
+                try:
+                    # Get the absolute path of current directory
+                    current_abs = (self.base_dir / current_path).resolve()
+
+                    # parent_path is empty only if we're already at root
+                    if str(current_abs) != str(self.base_dir):
+                        parent_path = str(Path(current_path).parent)
+                    
+                except Exception as e:
+                    parent_path = ""
 
             return {
                 "entries": all_entries,
