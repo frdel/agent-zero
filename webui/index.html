@@ -195,7 +195,7 @@
             </div>
             <div id="toast" class="toast">
                 <div class="toast__message"></div>
-                <button class="toast__copy">Copy</button>
+                <button class="toast__copy" style="display: none;">Copy</button>
                 <button class="toast__close">Close</button>
             </div>
             <div id="progress-bar-box" x-data="{ isSpeaking: false }" x-init="
@@ -538,7 +538,9 @@
                                     Up
                                 </button>
 
-                                <span class="current-path" x-text="browser.currentPath || 'Current Path: /'"></span>
+                                <div id="current-path">
+                                    <span id="path-text" x-text="browser.currentPath"></span>
+                                </div>
                             </div>
 
                             <div class="files-list">

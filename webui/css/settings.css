@@ -223,6 +223,10 @@ nav ul li a img {
   background-color: var(--color-secondary-light);
 }
 
+.light-mode textarea:focus {
+  background-color: #dddddd;
+}
+
 @media (max-width: 768px) {
   .field-control {
     width: 100%;

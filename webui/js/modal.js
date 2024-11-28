@@ -1,6 +1,9 @@
 const genericModalProxy = {
     isOpen: false,
     isLoading: false,
+    title: '',
+    description: '',
+    html: '',
 
     async openModal(title, description, html) {
         const modalEl = document.getElementById('genericModal');

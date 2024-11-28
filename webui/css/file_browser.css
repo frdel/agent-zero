@@ -123,8 +123,14 @@
   background-color: var(--color-secondary-dark);
 }
 
-.current-path {
-  font-family: monospace;
+#current-path {
+  opacity: 0.9;
+}
+
+#path-text {
+  font-family: 'Roboto Mono', monospace;
+  font-optical-sizing: auto;
+  -webkit-font-optical-sizing: auto;
   opacity: 0.9;
 }
 
