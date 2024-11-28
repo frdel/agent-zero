@@ -581,7 +581,7 @@
 
                                             <div class="file-actions">
                                                 <button class="action-button download-button"
-                                                    @click.stop="downloadFile(file)" x-bind:class="{ 'invisible': file.is_dir }">
+                                                    @click.stop="downloadFile(file)">
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.5 19.5">
                                                         <path
                                                             d="m.75,14.25v2.25c0,1.24,1.01,2.25,2.25,2.25h13.5c1.24,0,2.25-1.01,2.25-2.25v-2.25m-4.5-4.5l-4.5,4.5m0,0l-4.5-4.5m4.5,4.5V.75"
@@ -589,8 +589,7 @@
                                                             stroke-linejoin="round" stroke-width="1.5"></path>
                                                     </svg>
                                                 </button>
-                                                <button class="delete-button" @click.stop="deleteFile(file)"
-                                                    x-bind:class="{ 'invisible': file.is_dir && file.size !== 0 }">
+                                                <button class="delete-button" @click.stop="deleteFile(file)">
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15.03 22.53"
                                                         fill="currentColor">
                                                         <path

@@ -186,7 +186,6 @@ const fileBrowserModalProxy = {
     },
 
     async downloadFile(file) {
-        if (file.is_dir) return;
 
         try {
 

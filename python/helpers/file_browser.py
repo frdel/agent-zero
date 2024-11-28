@@ -1,8 +1,13 @@
 import os
 from pathlib import Path
+import shutil
+import tempfile
 from typing import Dict, List, Tuple, Optional, Any
+import zipfile
 from werkzeug.utils import secure_filename
 from datetime import datetime
+
+from python.helpers import files
 
 class FileBrowser:
     ALLOWED_EXTENSIONS = {
@@ -69,10 +74,8 @@ class FileBrowser:
             if os.path.exists(full_path):
                 if os.path.isfile(full_path):
                     os.remove(full_path)
-                elif os.path.isdir(full_path) and not os.listdir(full_path):
-                    os.rmdir(full_path)
-                else:
-                    raise ValueError("Can only delete files or empty directories")
+                elif os.path.isdir(full_path):
+                    shutil.rmtree(full_path)
                 return True
                 
             return False
@@ -82,12 +85,14 @@ class FileBrowser:
             return False
 
     def _is_allowed_file(self, filename: str, file) -> bool:
-        if not filename:
-            return False
-        ext = self._get_file_extension(filename)
-        all_allowed = set().union(*self.ALLOWED_EXTENSIONS.values())
-        if ext not in all_allowed:
-            return False
+        # allow any file to be uploaded in file browser
+        
+        # if not filename:
+        #     return False
+        # ext = self._get_file_extension(filename)
+        # all_allowed = set().union(*self.ALLOWED_EXTENSIONS.values())
+        # if ext not in all_allowed:
+        #     return False
         
         return True  # Allow the file if it passes the checks
 
@@ -154,20 +159,12 @@ class FileBrowser:
             print(f"Error reading directory: {e}")
             return {"entries": [], "current_path": "", "parent_path": ""}
         
-    def get_file_path(self, file_path: str) -> Optional[Path]:
+    def get_full_path(self, file_path: str, allow_dir: bool = False) -> str:
         """Get full file path if it exists and is within base_dir"""
-        try:
-            full_path = (self.base_dir / file_path).resolve()
-            if not str(full_path).startswith(str(self.base_dir)):
-                raise ValueError("Invalid path")
-                
-            if os.path.isfile(full_path):
-                return full_path
-            return None
-            
-        except Exception as e:
-            print(f"Error accessing file {file_path}: {e}")
-            return None
+        full_path = files.get_abs_path(self.base_dir,file_path)
+        if not files.exists(full_path):
+            raise ValueError(f"File {file_path} not found")        
+        return full_path
         
     def _get_file_type(self, filename: str) -> str:
         ext = self._get_file_extension(filename)
@@ -175,4 +172,16 @@ class FileBrowser:
             if ext in extensions:
                 return file_type
         return 'unknown'
+
+    def zip_dir(self, dir_path: str):
+        full_path = self.get_full_path(dir_path, allow_dir=True)
+        zip_file_path = tempfile.NamedTemporaryFile(suffix='.zip', delete=False).name
+        base_name = os.path.basename(full_path)
+        with zipfile.ZipFile(zip_file_path, "w", compression=zipfile.ZIP_DEFLATED) as zip:
+            for root, _, files in os.walk(full_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(file_path, full_path)
+                    zip.write(file_path, os.path.join(base_name, rel_path))
+        return zip_file_path
         
