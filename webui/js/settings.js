@@ -91,6 +91,7 @@ function getIconName(title) {
     'Chat Model': 'chat-model',
     'Utility model': 'utility-model',
     'Embedding Model': 'embed-model',
+    'Speech to Text': 'voice',
     'API Keys': 'api-keys',
     'Authentication': 'auth',
     'Development': 'dev'
