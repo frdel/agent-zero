@@ -3,16 +3,20 @@ import base64
 import warnings
 import whisper
 import tempfile
-from python.helpers import runtime, rfc
+from python.helpers import runtime, rfc, settings
 
 # suppress FutureWarning from torch.load
 warnings.filterwarnings('ignore', category=FutureWarning)
 
 model = None
+model_name = ""
 
 def preload():
-    global model
-    model = whisper.load_model("base")
+    global model, model_name
+    set = settings.get_settings()
+    if not model or model_name != set["stt_model_size"]:
+        model = whisper.load_model(set["stt_model_size"])
+        model_name = set["stt_model_size"]
     return model
 
 async def transcribe(audio_bytes_b64: str):

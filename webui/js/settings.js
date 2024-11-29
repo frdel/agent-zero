@@ -44,7 +44,7 @@ const settingsModalProxy = {
             const modalEl = document.getElementById('settingsModal');
             const modalAD = Alpine.$data(modalEl);
             resp = await window.sendJsonData("/settings_set", modalAD.settings);
-
+            document.dispatchEvent(new CustomEvent('settings-updated', { detail: resp.settings }));
             this.resolvePromise({
                 status: 'saved',
                 data: resp.settings

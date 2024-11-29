@@ -4,6 +4,7 @@ import re
 from typing import Any, Literal, Optional, TypedDict
 
 import models
+from python.helpers import whisper
 from . import files, dotenv
 from models import get_model, ModelProvider, ModelType
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -44,7 +45,6 @@ class Settings(TypedDict):
     stt_silence_threshold: float
     stt_silence_duration: int
     stt_waiting_timeout: int
-    stt_min_speech_duration: int
 
 
 class PartialSettings(Settings, total=False):
@@ -474,14 +474,6 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "value": settings["stt_waiting_timeout"]
     })
 
-    stt_fields.append({
-        "id": "stt_min_speech_duration",
-        "title": "Prefix padding (ms)", 
-        "description": "Minimum duration of audio to be included in the stream before speech was recognized.",
-        "type": "input",
-        "value": settings["stt_min_speech_duration"]
-    })
-
     stt_section: SettingsSection = {
         "title": "Speech to Text",
         "description": "Voice transcription preferences and server turn detection settings.",
@@ -593,12 +585,6 @@ def get_embedding_model(settings: Settings | None = None) -> Embeddings:
         **settings["embed_model_kwargs"],
     )
 
-def get_speech_settings(settings: Settings | None = None) -> dict:
-    if not settings:
-        settings = get_settings()
-    return settings["speech_to_text"]
-
-
 def _read_settings_file() -> Settings | None:
     if os.path.exists(SETTINGS_FILE):
         content = files.read_file(SETTINGS_FILE)
@@ -653,12 +639,11 @@ def _get_default_settings() -> Settings:
         agent_knowledge_subdir="custom",
         rfc_url="http://localhost:55080",
         rfc_password="",
-        stt_model_size="tiny",
+        stt_model_size="base",
         stt_language="en",
-        stt_silence_threshold=0.15,
+        stt_silence_threshold=0.3,
         stt_silence_duration=1000,
         stt_waiting_timeout=2000,
-        stt_min_speech_duration=500
     )
 
 
@@ -676,6 +661,8 @@ def _apply_settings():
                 agent.config = ctx.config
                 agent = agent.get_data(agent.DATA_NAME_SUBORDINATE)
 
+    # reload whisper model if necessary
+    whisper.preload()
 
 def _env_to_dict(data: str):
     env_dict = {}
