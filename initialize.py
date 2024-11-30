@@ -9,21 +9,32 @@ def initialize():
 
     # main chat model used by agents (smarter, more accurate)
     # chat_llm = models.get_openai_chat(model_name="gpt-4o-mini", temperature=0)
+    # chat_llm = models.get_openai_chat(model_name="o1-mini-2024-09-12", temperature=0)
     # chat_llm = models.get_ollama_chat(model_name="llama3.2:3b-instruct-fp16", temperature=0)
-    # chat_llm = models.get_lmstudio_chat(model_name="lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF", temperature=0)
+    # chat_llm = models.get_lmstudio_chat(model_name="mathstral-7b-v0.1", temperature=0)
+    # chat_llm2 = models.get_lmstudio_chat(model_name="llama-3.2-8b-200k", temperature=0)
+    # chat_llm = models.get_lmstudio_chat(model_name="lmstudio-community/Tess-3-Mistral-Large-2-123B-GGUF", temperature=0)
+    # chat_llm = models.get_lmstudio_chat(model_name="deepseek-ai_-_deepseek-math-7b-rl", temperature=0)
+    chat_llm = models.get_lmstudio_chat(model_name="qwq-32b-preview", temperature=0)
+    # chat_llm = models.get_lmstudio_chat(model_name="aidc-ai-marco-o1", temperature=0)
+    # chat_llm = models.get_lmstudio_chat(model_name="aidc-ai-marco-o1@q5_k_m", temperature=0)
+    # chat_llm = models.get_lmstudio_chat(model_name="aidc-ai-marco-o1-mlx", temperature=0)
+    # chat_llm = models.get_lmstudio_chat(model_name="numinamath-7b-tir", temperature=0)
     # chat_llm = models.get_openrouter_chat(model_name="openai/o1-mini-2024-09-12")
+    # chat_llm = models.get_openrouter_chat(model_name="mistralai/mistral-large-2411")
     # chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o-mini", temperature=0)
     # chat_llm = models.get_anthropic_chat(model_name="claude-3-5-sonnet-20240620", temperature=0)
     # chat_llm = models.get_google_chat(model_name="gemini-1.5-flash", temperature=0)
     # chat_llm = models.get_mistral_chat(model_name="mistral-small-latest", temperature=0)
-    # chat_llm = models.get_groq_chat(model_name="llama-3.2-90b-text-preview", temperature=0)
+    # chat_llm2 = models.get_groq_chat(model_name="llama-3.2-90b-text-preview", temperature=0)
     # chat_llm = models.get_sambanova_chat(model_name="Meta-Llama-3.1-70B-Instruct-8k", temperature=0)
     chat_llm = settings.get_chat_model(
-        current_settings
-    )  # chat model from user settings
+            current_settings
+        )  # chat model from user settings
 
     # utility model used for helper functions (cheaper, faster)
     # utility_llm = chat_llm
+    # utility_llm = chat_llm2
     utility_llm = settings.get_utility_model(
         current_settings
     )  # utility model from user settings
