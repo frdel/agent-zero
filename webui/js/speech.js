@@ -14,38 +14,6 @@ const Status = {
     PROCESSING: 'processing'
 };
 
-const micSettings = {
-    stt_model_size: 'tiny',
-    stt_language: 'en',
-    stt_silence_threshold: 0.05,
-    stt_silence_duration: 1000,
-    stt_waiting_timeout: 2000,
-};
-window.micSettings = micSettings
-loadMicSettings()
-
-function densify(x) {
-    return Math.exp(-5 * (1 - x));
-}
-
-async function loadMicSettings() {
-    try {
-        const response = await fetch('/settings_get');
-        const data = await response.json();
-        const sttSettings = data.settings.sections.find(s => s.title === 'Speech to Text');
-        
-        if (sttSettings) {
-            // Update options from server settings
-            sttSettings.fields.forEach(field => {
-                const key = field.id //.split('.')[1]; // speech_to_text.model_size -> model_size
-                micSettings[key] = field.value;
-            });
-        }
-    } catch (error) {
-        console.error('Failed to load speech settings:', error);
-    }
-}
-
 class MicrophoneInput {
     constructor(updateCallback, options = {}) {
         this.mediaRecorder = null;
@@ -66,6 +34,37 @@ class MicrophoneInput {
         this.silenceStartTime = null;
         this.hasStartedRecording = false;
         this.analysisFrame = null;
+
+        // Initialize with defaults
+        this.options = {
+            modelSize: 'tiny',
+            language: 'en',
+            silenceThreshold: 0.15,
+            silenceDuration: 1000,
+            waitingTimeout: 2000,
+            minSpeechDuration: 500
+        };
+        
+        // Fetch settings from server
+        this.loadSettings();
+    }
+
+    async loadSettings() {
+        try {
+            const response = await fetch('/settings_get');
+            const data = await response.json();
+            const sttSettings = data.settings.sections.find(s => s.title === 'Speech to Text');
+            
+            if (sttSettings) {
+                // Update options from server settings
+                sttSettings.fields.forEach(field => {
+                    const key = field.id.split('.')[1]; // speech_to_text.model_size -> model_size
+                    this.options[key] = field.value;
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load speech settings:', error);
+        }
     }
 
     get status() {
@@ -149,7 +148,7 @@ class MicrophoneInput {
             if (this.status === Status.WAITING) {
                 this.status = Status.PROCESSING;
             }
-        }, micSettings.stt_waiting_timeout);
+        }, this.options.waitingTimeout);
     }
 
     handleProcessingState() {
@@ -229,7 +228,7 @@ class MicrophoneInput {
             const now = Date.now();
 
             // Update status based on audio level
-            if (rms > densify(micSettings.stt_silence_threshold)) {
+            if (rms > this.options.silenceThreshold) {
                 this.lastAudioTime = now;
                 this.silenceStartTime = null;
 
@@ -243,7 +242,7 @@ class MicrophoneInput {
                 }
 
                 const silenceDuration = now - this.silenceStartTime;
-                if (silenceDuration >= micSettings.stt_silence_duration) {
+                if (silenceDuration >= this.options.silenceDuration) {
                     this.status = Status.WAITING;
                 }
             }
@@ -327,7 +326,7 @@ class MicrophoneInput {
 
 // Initialize and handle click events
 async function initializeMicrophoneInput() {
-    window.microphoneInput = microphoneInput = new MicrophoneInput(
+    microphoneInput = new MicrophoneInput(
         async (text, isFinal) => {
             if (isFinal) {
                 updateChatInput(text);
@@ -457,4 +456,8 @@ export const speech = new Speech();
 window.speech = speech
 
 // Add event listener for settings changes
-document.addEventListener('settings-updated', loadMicSettings);
+document.addEventListener('settings-updated', async () => {
+    if (microphoneInput) {
+        await microphoneInput.loadSettings();
+    }
+});
