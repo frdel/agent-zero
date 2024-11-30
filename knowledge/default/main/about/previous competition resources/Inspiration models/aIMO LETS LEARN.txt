@@ -1,0 +1,2457 @@
+# Run this to enable CSS types
+from IPython.core.display import HTML
+
+# Font stuff
+font_to_use = "Lato" # "Verdana"
+fallback = "Verdana"
+font_import_str = f"""
+@import url('https://fonts.googleapis.com/css2?family={font_to_use.replace(' ', '+')}:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
+"""
+
+def css_styling(verbose=True):
+    styles = open("/kaggle/input/my-css-styles/kaggle_styles.css", "r").read().replace('Verdana', font_to_use) #+f", {fallback}")
+    html_str = "<style>"+font_import_str+styles+"</style>"
+    if verbose: print(html_str)
+    return HTML(html_str)
+
+css_styling(False)
+<br>
+
+<center><img src="https://aimoprize.com/logo-dark.png" width=50% style="padding: 0 0 !important; margin: 0 0 !important;"></center>
+
+<br style="margin: 15px;">
+
+<h2 style="text-align: center; font-size: 30px; font-style: normal; font-weight: 800; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">
+    <span style="text-decoration: underline;">
+        <font color=#799cb7>L</font>ET'S 
+        <font color=#799cb7>L</font>EARN 
+        <font color=#799cb7>T</font>OGETHER !
+    </span><br><br><br style="margin: 15px;">
+<span style="font-size: 22px; letter-spacing: 1px;">
+    <font color=#799cb7>U</font>NDERSTANDING    
+    <font color=#799cb7>T</font>HROUGH
+    <font color=#799cb7>E</font>XPLORATION
+</span><br style="margin: 15px;"></h2>
+
+<p style="text-align: center; font-size: 15px; font-style: normal; font-weight: bold; text-decoration: None; text-transform: none; letter-spacing: 1px; color: black; background-color: #ffffff;">CREATED BY: DARIEN SCHETTLER</p>
+
+<hr>
+
+<center><div class="alert alert-block alert-danger" style="margin: 2em; line-height: 1.7em;">
+    <b style="font-size: 18px;">🛑 &nbsp; WARNING:</b><br><br><b>THIS IS A WORK IN PROGRESS</b><br>
+</div></center>
+
+<center><div class="alert alert-block alert-warning" style="margin: 2em; line-height: 1.7em;">
+    <b style="font-size: 16px;">👏 &nbsp; IF YOU FORK THIS OR FIND THIS HELPFUL &nbsp; 👏</b><br><br><b style="font-size: 22px; color: darkorange">PLEASE UPVOTE!</b><br><br>This was a lot of work for me and while it may seem silly, it makes me feel appreciated when others like my work. 😅
+</div></center>
+
+<hr>
+<h1 style="font-size: 24px; font-style: normal; font-weight: bold; text-decoration: none; text-transform: none; letter-spacing: 3px; color: #192a51; background-color: #ffffff;">
+    CHANGELOG
+</h1>
+
+<i>Before version 12 this was not tracked rigorously and is a rough approximation. After version 11 it should be better.</i>
+
+<ul>
+    <li>
+        <b>Version 1-2</b>
+        <ul>
+            <li>Initial Version</li>
+            <li>Cells up to and including the visualization for Art of Problem Solving (AOPS) dataset</li>
+        </ul>
+    </li>
+    <li>
+        <b>Version 3-7</b>
+        <ul>
+            <li>This is me getting the submission to work</li>
+            <li>While the visualization and exploration of the other external datasets works here... I disable it for version 7 to work.</li>
+        </ul>
+    </li>
+    <li>
+        <b>Version 8-10</b>
+        <ul>
+            <li>Create my own dataset to prevent having to retrieve the answers in the external GSM8K and MATH datasets.</li>
+            <li>Cleanup markdown, structureand modify functions to be more understandable (to me)</li>
+            <li>Experimentation with various inference flows</li>
+        </ul>
+    </li>
+    <li>
+        <b>Version 11 – <font color="red">[LB: 12]</font></b>
+        <ul>
+            <li>Add a class structure to hold the inference code functionality... <b>I don't love it... may discard</b></li>
+            <li>Test inference with self-consistency, fallback if all -1 and more complex prompt.</li>
+            <li>Update aggregation logic and add test cases.</li>
+        </ul>
+    </li>
+    <li>
+        <b>Version 12 – <font color="red">[LB: 15]</font></b>
+        <ul>
+            <li>Disable quantization like all the popular kids...</li>
+            <li><b>Fix(?)</b> the way I'm passing the prompt (no apply_chat_template previously) and see if it improves performance</li>
+            <li>Add changelog</li>
+            <li>Increase repetition count for submission inference based on timing</li>
+            <li>Reenable the override of non-valid code scores with boxed scores</li>
+        </ul>
+    </li>
+    <li>
+        <b>Version 13 – <font color="red">[LB: N/A]</font></b>
+        <ul>
+            <li>Replace regular inference with vLLM inference. Thanks to <b><a href="https://www.kaggle.com/bsmit1659">Brian Smith</a></b>. Original <b><a href="https://www.kaggle.com/code/bsmit1659/aimo-vllm-accelerated-tot-sc-deepseekmath/input">Notebook Here</a></b></li>
+            <li>Add support for vLLM in a transformers like fashion (aka pipleine)</li>
+            <li>Remove pieces of functionality around falling back if 'complex' prompt or all fails.</li>
+            <li><s>Try to set tensor parallel to 2 to squeeze 2xT4. Note you have to reset ray ... this is a known issue.</s> <b>Still not working...</b></li>
+            <li>Increase number of repetitions in demo and remove different number for private/public</li>
+            <li>Remove complex tool instruction completely</li>
+        </ul>
+    </li>
+    <li>
+        <b>Version 14-21 – <font color="red">[LB: PENDING]</font></b>
+        <ul>
+            <li>Update submissions to support new submission API</li>
+            <li>Create debug class to mimic submission API</li>
+            <li>Update code to leverage 2xT4 with updated ray and grcpio libraries</li>
+        </ul>
+    </li>
+</ul>
+
+<br>
+<p id="toc"></p>
+
+<h1 style="font-size: 24px; font-style: normal; font-weight: bold; text-decoration: none; text-transform: none; letter-spacing: 3px; color: #192a51; background-color: #ffffff;">
+    TABLE OF CONTENTS
+</h1>
+
+<hr>
+
+<h3 style="text-indent: 10vw; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; background-color: #ffffff;"><a href="#introduction" style="text-decoration: none; color: #799cb7;">1&nbsp;&nbsp;&nbsp;&nbsp;INTRODUCTION & JUSTIFICATION</a></h3>
+
+<hr>
+
+<h3 style="text-indent: 10vw; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; background-color: #ffffff;"><a href="#background_information" style="text-decoration: none; color: #799cb7;">2&nbsp;&nbsp;&nbsp;&nbsp;BACKGROUND INFORMATION</a></h3>
+
+<hr>
+
+<h3 style="text-indent: 10vw; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; background-color: #ffffff;"><a href="#imports" style="text-decoration: none; color: #799cb7;">3&nbsp;&nbsp;&nbsp;&nbsp;IMPORTS</a></h3>
+
+<hr>
+
+<h3 style="text-indent: 10vw; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; background-color: #ffffff;"><a href="#setup" style="text-decoration: none; color: #799cb7;">4&nbsp;&nbsp;&nbsp;&nbsp;SETUP AND HELPER FUNCTIONS</a></h3>
+
+<hr>
+
+<h3 style="text-indent: 10vw; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; background-color: #ffffff;"><a href="#eda" style="text-decoration: none; color: #799cb7;">5&nbsp;&nbsp;&nbsp;&nbsp;EXPLORATORY DATA ANALYSIS</a></h3>
+
+<hr>
+
+<h3 style="text-indent: 10vw; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; background-color: #ffffff;"><a href="#baseline" style="text-decoration: none; color: #799cb7;">6&nbsp;&nbsp;&nbsp;&nbsp;BASELINE SUBMISSION</a></h3>
+
+<hr>
+
+<h3 style="text-indent: 10vw; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; background-color: #ffffff;"><a href="#cv" style="text-decoration: none; color: #799cb7;">7&nbsp;&nbsp;&nbsp;&nbsp;CROSS VALIDATION</a></h3>
+
+<hr>
+<br>
+
+<a id="introduction"></a>
+
+<h1 style="font-size: 24px; font-style: normal; font-weight: bold; text-decoration: none; text-transform: none; letter-spacing: 3px; background-color: #ffffff; color: #799cb7;" id="introduction">1&nbsp;&nbsp;INTRODUCTION & JUSTIFICATION&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none; color: #192a51;" href="#toc">&#10514;</a></h1>
+
+<br>
+
+<br>
+
+<h3 style="font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">1.1 <b>WHAT</b> IS THIS?</h3>
+<hr>
+
+<ul>
+    <li>This notebook will follow the authors learning path and highlight relevant terms, information, and useful content about the competition.</li>
+    <li>This notebook will conduct an <b>E</b>xploratory <b>D</b>ata <b>A</b>nalysis for the competition.</li>
+    <li>This notebook <i>may</i> propose an open-source baseline solution.</li>
+</ul>
+<br>
+
+<h3 style="font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">1.2 <b>WHY</b> IS THIS?</h3>
+<hr>
+
+<ul>
+    <li>Writing and sharing my learning path and the resulting exploratory data analysis can help improve my own understanding of the competition and the data.</li>
+    <li>Sharing my work may help others who are interested in the competition (or the data). This help may take the form of:
+        <ul>
+            <li>Better understanding the problem and potential common solutions (incl. my baseline).</li>
+            <li>Better understanding of the provided dataset.</li>
+            <li>Better understanding of the background information and research.</li>
+            <li>Better ability to hypothesize new solutions.</li>
+        </ul>
+    </li>
+    <li>Exploratory data analysis is a critical step in any data science project. Sharing my EDA might help others in the competition.</li>
+    <li>Writing and sharing my work is often a fun and rewarding experience! It not only allows me to explore and try different techniques, ideas, and visualizations but also encourages and supports other learners and participants.</li>
+</ul>
+<br>
+
+<h3 style="font-family: Verdana; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">1.3 <b>WHO</b> IS THIS FOR?</h3>
+<hr>
+
+
+<ul>
+    <li>The primary purpose of this notebook is to educate <b>MYSELF</b>, however, my review/learning might be beneficial to others:
+        <ul>
+            <li>Other Kagglers (aka. current and future competition participants).</li>
+            <li>Anyone interested in learning more about using artificial intelligence to tackle mathematics.</li>
+        </ul>
+    </li>
+</ul>
+<br>
+
+<h3 style="font-family: Verdana; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">1.4 <b>HOW</b> WILL THIS WORK?</h3>
+<hr>
+
+
+<p>I'm going to assemble some markdown cells (like this one) at the beginning of the notebook to go over some concepts/details/etc.</p>
+
+<p>Following this, I will attempt to walk through the data and understand it better prior to composing a baseline solution.</p>
+<br>
+
+<a id="background_information"></a>
+
+<h1 style="font-size: 24px; font-style: normal; font-weight: bold; text-decoration: none; text-transform: none; letter-spacing: 3px; background-color: #ffffff; color: #799cb7;" id="background_information">2&nbsp;&nbsp;BACKGROUND INFORMATION&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none; color: #192a51;" href="#toc">&#10514;</a></h1>
+
+<br>
+
+The <b><a href="https://www.imo-official.org/">International Mathematical Olympiad</a> (IMO)</b> is a prestigious global high school maths competition. Countries enter teams of six students, who each individually attempt six highly challenging problems over two days, under exam conditions. Answers are marked by an expert panel, which awards individual <b>gold, silver and bronze medals</b>
+
+A gold medal in the IMO is a benchmark for exceptional mathematical achievement and a strong predictor of future success. <b>IMO gold medallists are 50 times more likely to win a <a href="https://en.wikipedia.org/wiki/Fields_Medal">Fields Medal</a> than a typical Cambridge PhD graduate</b>. Indeed, half of all Fields medallists participated in the IMO in their youth.
+
+Building on these traditions, the <b><a href="https://aimoprize.com/">AIMO Prize</a></b> has been established to spur the open development of AI models that can reason mathematically to solve problems. This is a new frontier of knowledge and scientific discovery, for which the AIMO Prize could represent a new Turing Test.
+
+<b>The <a href="https://aimoprize.com/">AIMO Prize</a> is proposing three initial design principles:</b>
+
+<ol>
+    <li>AI models must consume <b><mark>problems in the same format as human contestants</mark></b> and must <b><mark>produce human readable solutions</mark></b> that <b><mark>can be graded by an expert panel, using standard Olympiad criteria.</mark></b></li>
+    <li>The grand prize will be awarded for performance in an AIMO approved competition that is at a <b><mark>standard equivalent to a gold medal in the IMO.</mark></b></li>
+    <li>To be eligible to win prizes, participants must have <b><mark>adhered to the AIMO public sharing protocol</mark></b> by the time the prize is awarded.</li>
+</ol>
+<br>
+
+<h3 style="font-family: Verdana; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">2.1 <b>UNDERSTANDING</b> THE <b>AIMO</b> PROGRESS PRIZE #1</h3>
+<hr>
+
+The First Progress Prize is designed to incentivise the achievement of key milestones towards the grand prize, and opened in April 2024. This prize will be for participation and performance in the Kaggle competition found <b><a href="https://www.kaggle.com/competitions/ai-mathematical-olympiad-prize">here</a></b>.
+
+The goal of this competition is to create algorithms and models that can <mark><b>solve tricky math problems</b></mark> written in <mark><b>LaTeX format</b></mark>.
+<br>
+
+<h3 style="font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">2.2 <b>COMPETITION OVERVIEW</b></h3>
+<hr>
+
+<br>
+
+<b style="text-decoration: underline; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; font-weight: 900;">PRIMARY TASK DESCRIPTION</b>
+<br>
+<br>
+Develop AI models capable of performing as well as top human participants in the International Mathematical Olympiad (IMO) on a dataset of 110 novel math problems. The Gemma 7B benchmark is 3/50 on public and private test sets.
+
+<br>
+
+<b style="text-decoration: underline; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; font-weight: 900;">HOST TASK DESCRIPTION</b>
+<br>
+<br>
+The goal of this competition is to create algorithms and models that can solve tricky math problems written in LaTeX format. Your participation will help to advance AI models’ mathematical reasoning skills and drive frontier knowledge.
+
+The AI Mathematical Olympiad (AIMO) Prize is a new <b>10mn</b> prize fund to spur the open development of AI models capable of performing as well as top human participants in the International Mathematical Olympiad (IMO).
+This competition includes 110 problems similar to an intermediate-level high school math challenge. The Gemma 7B benchmark for these problems is 3/50 on the public and private test sets.
+
+The assessment of AI models' mathematical reasoning skills faces a significant hurdle, the issue of train-test leakage. Models trained on Internet-scale datasets may inadvertently encounter test questions during training, skewing the evaluation process.
+
+To address this challenge, this competition uses a dataset of 110 novel math problems, created by an international team of problem solvers, recognizing the need for a transparent and fair evaluation framework. The dataset encompasses a range of difficulty levels, from simple arithmetic to algebraic thinking and geometric reasoning. This will help to strengthen the benchmarks for assessing AI models' mathematical reasoning skills, without the risk of contamination from training data.
+
+This competition offers an exciting opportunity to benchmark open AI models against each other and foster healthy competition and innovation in the field. By addressing this initial benchmarking problem, you will contribute to advancing AI capabilities and help to ensure that its potential benefits outweigh the risks.
+
+<br>
+
+<b style="text-decoration: underline; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; font-weight: 900;">PRIZE FUND (IT IS WORTH MENTIONING AGAIN)</b>
+<br>
+<br>
+The AIMO Prize offers a <b>10 million dollar (\$USD) prize</b> fund to spur open AI development in mathematical reasoning.
+
+* **Prizes for Top-Ranking Teams in this Competition**
+    * 1st Place: \$131,072
+    * 2nd Place: \$65,536
+    * 3rd Place: \$32,768
+    * 4th Place: \$16,384
+    * 5th Place: \$8,192
+* **Overall Progress Prize Winner:**
+    * The Overall Progress Prize Winner shall be the highest ranking team that achieves a score of at least 47/50 on both public and private test sets. 
+    * After any prizes for the five top-ranking teams have been awarded, the remainder of the total fund shall be awarded to the Overall Progress Prize Winner.
+    * If a team is named the Overall Progress Prize Winner in this competition, the prize will be at least \$794,624. 
+    * If no team is named the Overall Progress Prize Winner in this competition, the remainder of the total fund shall roll over to the next competition, where the same prize allocation will apply.
+* **Early Sharing Prize**: \$10,000. 
+    * An additional 10,000 dollar cash prize will be awarded for sharing high-scoring public notebooks early in the competition to encourage participants to share information earlier and help the community make more progress over the course of the competition.
+    * To be eligible for the Early Sharing Prize, you will need to:
+        * Be the first to publish a public notebook scoring at least 20/50 on the leaderboard before April 22, 2024 11:59PM UTC.
+        * Keep the notebooks and any datasets it uses publicly available until the prize is awarded at the end of the competition.
+
+<br>
+
+<b style="text-decoration: underline; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; font-weight: 900;">VISUAL TASK DESCRIPTION</b>
+<br>
+<br>
+Here is an example of what we have to do. This reasoning trace was generated by <b>Claude Opus</b>... we have to do something similar to get the final answer (integer between 0-1000) but using a much smaller (more tractable) model:
+
+<div style="background-color: #f5f5f5; border-radius: 10px; padding: 20px; margin: 20px;">
+    <b>PROBLEM:</b>
+    <br>
+    <br>
+    <br>
+    Let $k, l > 0$ be parameters.
+    <br>
+    The parabola $y = kx^2 - 2kx + l$ intersects the line $y = 4$ at two points $A$ and $B$.
+    <br>
+    These points are distance 6 apart. 
+    <br><br>
+    What is the sum of the squares of the distances from $A$ and $B$ to the origin?
+</div>
+
+<div style="background-color: #e9fce9; border-radius: 10px; padding: 20px; margin: 20px;">
+    <b>SOLUTION REASONING TRACE:</b>
+    <br>
+    <br>
+    <br>
+    <b>Problem Statement:</b>
+    <br>
+    <br>
+    Given a parabola defined by \( y = kx^2 - 2kx + l \) and a line \( y = 4 \), where \( k, l > 0 \), find the sum of the squares of the distances from the points of intersection, \( A \) and \( B \), to the origin. These points are known to be 6 units apart.
+    <br>
+    <br>
+    <br>
+    <b>Solution:</b>
+    <br>
+    <br>
+    <br>
+    1. <b>Set Up the Intersection Equation:</b>
+    <br>
+    <br>
+       Start by setting the parabola equal to the line to find the x-coordinates of points \( A \) and \( B \):
+       <br><br>
+       \[
+       kx^2 - 2kx + l = 4
+       \]
+       <br>
+       Rearrange to form a standard quadratic equation:
+       <br><br>
+       \[
+       kx^2 - 2kx + (l - 4) = 0
+       \]
+    <br>
+    <br>
+    <br>
+    2. <b>Solve the Quadratic Equation:</b>
+    <br>
+    <br>
+       Apply the quadratic formula \( x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} \) to solve for \( x \):
+    <br><br>
+       \[
+       x = \frac{2k \pm \sqrt{4k^2 - 4k(l - 4)}}{2k} = 1 \pm \sqrt{1 - \frac{l - 4}{k}}
+       \]
+    <br>
+       Let \( x_A = 1 + \sqrt{1 - \frac{l-4}{k}} \) and \( x_B = 1 - \sqrt{1 - \frac{l-4}{k}} \).
+    <br>
+    <br>
+    <br>
+    3. <b>Distance Between Points \( A \) and \( B \):</b>
+    <br>
+    <br>
+       Given \( |x_A - x_B| = 6 \), compute:
+    <br><br>
+       \[
+       \left|2\sqrt{1 - \frac{l - 4}{k}}\right| = 6 \implies \sqrt{1 - \frac{l - 4}{k}} = 3
+       \]
+    <br>
+       Solving for \( l \) and \( k \):
+    <br><br>
+       \[
+       1 - \frac{l - 4}{k} = 9 \implies \frac{l - 4}{k} = -8 \implies l - 4 = -8k \implies l = -8k + 4
+       \]
+    <br>
+    <br>
+    <br>
+    4. <b>Calculate Distances from Origin:</b>
+    <br>
+    <br>
+       Using the x-coordinates \( x_A = 4 \) and \( x_B = -2 \) and y-coordinate \( y = 4 \):
+    <br>
+    <br>
+       \[
+       d_A = \sqrt{x_A^2 + 4^2} = \sqrt{16 + 16} = \sqrt{32} = 4\sqrt{2}
+       \]
+    <br>
+       \[
+       d_B = \sqrt{x_B^2 + 4^2} = \sqrt{4 + 16} = \sqrt{20} = 2\sqrt{5}
+       \]
+    <br>
+    <br>
+    <br>
+    5. <b>Sum of Squares of Distances:</b>
+    <br>
+    <br>
+       Compute the sum of squares:
+    <br><br>
+       \[
+       d_A^2 + d_B^2 = (4\sqrt{2})^2 + (2\sqrt{5})^2 = 32 + 20 = 52
+       \]
+    <br>
+    <br>
+    <br>
+    <b>Conclusion:</b>
+    <br><br>
+    The sum of the squares of the distances from points \( A \) and \( B \) to the origin is \( 52 \).
+</div>
+
+<br>
+
+<b style="text-decoration: underline; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; font-weight: 900;">COMPETITION HOST(S)/CONTRIBUTOR(S)</b>
+    <br>
+
+<b><u>XTX Markets</u></b> is a leading algorithmic trading company and has over 200 employees based in London, Paris, New York, Mumbai, Yerevan and Singapore. XTX provides liquidity in the Equity, FX, Fixed Income and Commodity markets and trades over 250bn a day across markets.
+<br><br>
+XTX Markets' expansive research cluster contains 100,000 cores and 20,000 A/V100 GPUs and is growing. It also has 390 petabytes of usable storage and 7.5 petabytes of RAM. Alongside rich datasets and advanced technological infrastructure we are at the forefront of the crossover of finance and technology.
+<br><br>
+XTX Markets’ philanthropy focuses on maths and science education and research, alongside other areas such as academic sanctuaries, carbon removal and an employee matching programme. Since 2017, XTX Markets has donated over £100mn to charities and good causes, establishing it as a major donor in the UK and globally.
+<br>
+
+<h3 style="font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">2.3 <b>DATASET INFORMATION</b></h3>
+
+<hr>
+
+<br><b style="text-decoration: underline; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; font-weight: 900;">HIGH LEVEL DATA SUMMARY</b>
+
+The AI Mathematical Olympiad (AIMO) Prize competition is designed to enhance the mathematical reasoning capabilities of AI by engaging models in a set of 110 mathematics problems similar to those found in high school competitions like the AIME. The competition challenges AI to predict integer solutions to these problems, with solutions constrained to values between 0 and 999. This initiative provides a rigorous platform for assessing AI mathematical reasoning in a controlled environment, devoid of the typical train-test data leakage issues.
+
+<br><b style="text-decoration: underline; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; font-weight: 900;">DATA COMPOSITION</b>
+
+The dataset consists of 110 math problems divided across a training set of 10 problems and two test sets, each containing 50 unique problems. These problems span various mathematical subjects including arithmetic, algebra, and geometry, presented in text format with mathematical expressions formatted in LaTeX.
+
+<br><b style="text-decoration: underline; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; font-weight: 900;">DATA FILE DESCRIPTIONS</b>
+
+<b><code>train.csv</code>:</b>
+* Contains 10 problems used for training models. Each record includes:
+    - <b><code>id</code> (string):</b> A unique identifier for each problem.
+    - <b><code>problem</code> (string):</b> The text of the problem, including LaTeX for mathematical notation.
+    - <b><code>answer</code> (int):</b> The integer answer for the problem, between 0 and 999.
+
+<b><code>test.csv</code>:</b>
+* Contains 50 placeholder problems for submission trials; these will be replaced with the actual problems during the scoring phase. Each record contains:
+    - <b><code>id</code> (string):</b> A unique identifier corresponding to each problem.
+    - <b><code>problem</code> (string):</b> Placeholder text of the problem; not representative of the final test problems.
+
+<b><code>sample_submission.csv</code>:</b>
+* Provides a format template for submissions. Each record includes:
+    - <b><code>id</code> (string):</b> The problem identifier.
+    - <b><code>answer</code> (int):</b> Participants must fill in their predicted integer answer for each problem.
+
+<br><b style="text-decoration: underline; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; font-weight: 900;">UNIQUE ASPECTS OF THE DATASET</b>
+
+This dataset is specifically engineered to avoid overlap with publicly available data, thus eliminating the risk of train-test leakage. This clean separation ensures a fair evaluation of a model's capability to solve mathematical problems from scratch. Additionally, all responses must be reported modulo 1000, introducing a unique element of complexity to the answering process.
+
+<br><b style="text-decoration: underline; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; font-weight: 900;">DATASET CHALLENGES AND OPPORTUNITIES</b>
+
+The dataset's limited size poses a challenge for model training, requiring efficient generalization from minimal examples. The range of problem complexity, from basic arithmetic to advanced geometric reasoning without visual aids, demands robust textual and numerical interpretation capabilities from participating AI models. These challenges, however, provide valuable opportunities for breakthroughs in AI's mathematical reasoning and its applications in mathematically intensive fields.
+<a id="imports"></a>
+
+<h1 style="font-size: 24px; font-style: normal; font-weight: bold; text-decoration: none; text-transform: none; letter-spacing: 3px; background-color: #ffffff; color: #799cb7;" id="imports">3&nbsp;&nbsp;IMPORTS&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none; color: #192a51;" href="#toc">&#10514;</a></h1>
+
+<br>
+
+print("\n... PIP INSTALLS STARTING ...\n")
+!pip uninstall -y torch
+!pip install -U --no-index --find-links=/kaggle/input/vllm-whl -U vllm
+!pip install -U /kaggle/input/bitsandbytes-0-42-0-py3-none-any-whl/bitsandbytes-0.42.0-py3-none-any.whl
+!pip install -U --upgrade /kaggle/input/vllm-t4-fix/grpcio-1.62.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+!pip install -U --upgrade /kaggle/input/vllm-t4-fix/ray-2.11.0-cp310-cp310-manylinux2014_x86_64.whl
+print("\n... PIP INSTALLS COMPLETE ...\n")
+
+print("\n... IMPORTS STARTING ...\n")
+print("\n\tVERSION INFORMATION")
+# Competition Specific Imports from HF and torch
+from transformers import (
+    AutoModelForCausalLM, 
+    AutoTokenizer, 
+    BitsAndBytesConfig, 
+    AutoConfig,
+    pipeline,
+    set_seed as transformers_set_seed
+)
+from vllm import LLM, SamplingParams
+import torch; torch.backends.cuda.enable_mem_efficient_sdp(False)
+import aimo
+
+## Patch issue from https://github.com/vllm-project/vllm/issues/1116
+# if torch.cuda.device_count()>1:
+#     import ray
+#     ray.shutdown()
+#     ray.init(num_gpus=torch.cuda.device_count())
+
+import pandas as pd; pd.options.mode.chained_assignment = None; pd.set_option('display.max_columns', None);
+import numpy as np; print(f"\t\t– NUMPY VERSION: {np.__version__}");
+import sympy as sp; print(f"\t\t– SYMPY VERSION: {sp.__version__}");
+from sympy.parsing.latex import parse_latex
+import sklearn; print(f"\t\t– SKLEARN VERSION: {sklearn.__version__}");
+
+# Built-In Imports (mostly don't worry about these)
+from typing import Iterable, Any, Callable, Generator
+from kaggle_datasets import KaggleDatasets
+from dataclasses import dataclass
+from collections import Counter
+from datetime import datetime
+from zipfile import ZipFile
+from glob import glob
+import subprocess
+import warnings
+import requests
+import textwrap
+import hashlib
+import imageio
+import IPython
+import urllib
+import zipfile
+import pickle
+import random
+import shutil
+import string
+import json
+import copy
+import math
+import time
+import gzip
+import ast
+import sys
+import io
+import gc
+import re
+import os
+
+# Visualization Imports (overkill)
+from IPython.core.display import HTML, Markdown
+import matplotlib.pyplot as plt
+from tqdm.notebook import tqdm; tqdm.pandas();
+import plotly.express as px
+import seaborn as sns
+from PIL import Image, ImageEnhance; Image.MAX_IMAGE_PIXELS = 5_000_000_000;
+import matplotlib; print(f"\t\t– MATPLOTLIB VERSION: {matplotlib.__version__}");
+import plotly
+import PIL
+
+def seed_it_all(seed=7):
+    """ Attempt to be Reproducible """
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    # tf.random.set_seed(seed)
+    
+seed_it_all()
+
+print("\n\n... IMPORTS COMPLETE ...\n")
+<a id="setup"></a>
+
+<h1 style="font-family: Verdana; font-size: 24px; font-style: normal; font-weight: bold; text-decoration: none; text-transform: none; letter-spacing: 3px; background-color: #ffffff; color: #799cb7;" id="setup">4&nbsp;&nbsp;SETUP & HELPER FUNCTIONS&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none; color: #192a51;" href="#toc">&#10514;</a></h1>
+
+<br>
+<br>
+
+<h3 style="font-family: Verdana; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">4.0 FUNCTIONS FROM <b>OTHER KAGGLERS</b> 🩵</h3>
+<hr><br>
+
+**Give me time to populate this... I am using rewritten variants of quite a few functions and will update with acknowledgement later on... For now I will list a few notebooks to go give upvotes to**
+* https://www.kaggle.com/code/olyatsimboy/aimo-openmath-mistral-baseline
+* https://www.kaggle.com/code/aatiffraz/prompt-prediction-w-mixtral-mistral7b-gemma-llama
+* https://www.kaggle.com/code/thedrcat/aimo-mixtral-baseline
+* https://www.kaggle.com/code/bsmit1659/aimo-vllm-accelerated-tot-sc-deepseekmath/notebook
+
+<br>
+
+<b>Thanks to <a href="https://www.kaggle.com/olyatsimboy">Olga Tsymboi </a></b> for the information on how to run 2xT4 with vLLM</b>
+
+<br>
+<br>
+
+**DETAILS OF `sampling_params`**
+
+```
+n: Number of output sequences to return for the given prompt.
+
+best_of: Number of output sequences that are generated from the prompt.
+         From these `best_of` sequences, the top `n` sequences are returned.
+         `best_of` must be greater than or equal to `n`. This is treated as
+         the beam width when `use_beam_search` is True. By default, `best_of`
+         is set to `n`.
+
+presence_penalty: Float that penalizes new tokens based on whether they
+                  appear in the generated text so far. Values > 0 encourage the model
+                  to use new tokens, while values < 0 encourage the model to repeat
+                  tokens.
+
+frequency_penalty: Float that penalizes new tokens based on their
+                   frequency in the generated text so far. Values > 0 encourage the
+                   model to use new tokens, while values < 0 encourage the model to
+                   repeat tokens.
+
+repetition_penalty: Float that penalizes new tokens based on whether
+                    they appear in the prompt and the generated text so far. Values > 1
+                    encourage the model to use new tokens, while values < 1 encourage
+                    the model to repeat tokens.
+
+temperature: Float that controls the randomness of the sampling. Lower
+             values make the model more deterministic, while higher values make
+             the model more random. Zero means greedy sampling.
+
+top_p: Float that controls the cumulative probability of the top tokens
+       to consider. Must be in (0, 1]. Set to 1 to consider all tokens.
+
+top_k: Integer that controls the number of top tokens to consider. Set
+       to -1 to consider all tokens.
+
+min_p: Float that represents the minimum probability for a token to be
+       considered, relative to the probability of the most likely token.
+       Must be in [0, 1]. Set to 0 to disable this.
+
+seed: Random seed to use for the generation.
+
+use_beam_search: Whether to use beam search instead of sampling.
+
+length_penalty: Float that penalizes sequences based on their length.
+                Used in beam search.
+
+early_stopping: Controls the stopping condition for beam search. It
+                accepts the following values: `True`, where the generation stops as
+                soon as there are `best_of` complete candidates; `False`, where an
+                heuristic is applied and the generation stops when is it very
+                unlikely to find better candidates; `"never"`, where the beam search
+                procedure only stops when there cannot be better candidates
+                (canonical beam search algorithm).
+
+stop: List of strings that stop the generation when they are generated.
+      The returned output will not contain the stop strings.
+
+stop_token_ids: List of tokens that stop the generation when they are
+                generated. The returned output will contain the stop tokens unless
+                the stop tokens are special tokens.
+
+include_stop_str_in_output: Whether to include the stop strings in
+                            output text. Defaults to False.
+
+ignore_eos: Whether to ignore the EOS token and continue generating
+            tokens after the EOS token is generated.
+
+max_tokens: Maximum number of tokens to generate per output sequence.
+
+min_tokens: Minimum number of tokens to generate per output sequence
+            before EOS or stop_token_ids can be generated
+
+logprobs: Number of log probabilities to return per output token.
+          Note that the implementation follows the OpenAI API: The return
+          result includes the log probabilities on the `logprobs` most likely
+          tokens, as well the chosen tokens. The API will always return the
+          log probability of the sampled token, so there  may be up to
+          `logprobs+1` elements in the response.
+
+prompt_logprobs: Number of log probabilities to return per prompt token.
+
+detokenize: Whether to detokenize the output. Defaults to True.
+
+skip_special_tokens: Whether to skip special tokens in the output.
+
+spaces_between_special_tokens: Whether to add spaces between special
+                               tokens in the output.  Defaults to True.
+
+logits_processors: List of functions that modify logits based on
+                   previously generated tokens.
+
+truncate_prompt_tokens: If set to an integer k, will use only the last k
+                        tokens from the prompt (i.e., left truncation). Defaults to None
+                        (i.e., no truncation).
+```
+def load_vllm_model_and_tokenizer(
+    model_path: str, 
+    model_dtype: str = "half", 
+    enforce_eager: bool = True, 
+    gpu_memory_utilization: float = 0.999, 
+    swap_space: int = 4, 
+    max_model_len: int = 1024, 
+    kv_cache_dtype: str = "fp8_e5m2", 
+    tensor_parallel_size: int | str = "system",
+):
+    """Initializes and returns the specified language model and its associated tokenizer.
+    
+    This is primarily used in the context of this competition for the DeepSeek Math RL model.
+    
+    While the function and descriptions are mine, the underlying code comes from this notebook: 
+        https://www.kaggle.com/code/bsmit1659/aimo-vllm-accelerated-tot-sc-deepseekmath/notebook
+
+    Args:
+        model_path (str): 
+            The path to the pre-trained model's checkpoint file on the local filesystem.
+            This file contains the learned weights and parameters of the language model.
+        model_dtype (str, optional): 
+            The data type to use for the model's computations.
+            Defaults to "half" which represents 16-bit half-precision floating-point format.
+            This can help reduce memory usage and improve performance on GPUs.
+        enforce_eager (bool, optional): 
+            Whether to enforce eager execution mode for the model.
+            Eager execution allows for immediate evaluation of operations without building a computational graph.
+        gpu_memory_utilization (float, optional): 
+            The fraction of available GPU memory to allocate for the model.
+            This controls the trade-off between memory usage and performance. Higher values allocate more memory
+            to the model, potentially improving performance but limiting the available memory for other tasks.
+        swap_space (int, optional): 
+            The size of the swap space (in GB) to use for model loading.
+            Swap space is used when the model's memory requirements exceed the available GPU memory.
+            It allows the model to be loaded by swapping data between GPU memory and CPU memory.
+        max_model_len (int, optional): 
+            The maximum sequence length (in tokens) that the model can process.
+            This determines the maximum context size the model can handle in a single forward pass.
+            Longer sequences will be truncated to fit within this limit.
+        kv_cache_dtype (str, optional): 
+            The data type to use for the key-value cache in the model.
+            The key-value cache stores intermediate activations to speed up computation.
+            This can help reduce memory usage while maintaining acceptable precision.
+            Defaults to "fp8_e5m2" which represents:
+                - an 8-bit floating-point format 
+                - with exponent bias (5)
+                - and mantissa size (2)            
+        tensor_parallel_size (int | str, optional): 
+            The number of GPU devices to use for tensor parallelism.
+            Tensor parallelism splits the model across multiple GPUs to distribute the computation.
+            Defaults to 1, which means no tensor parallelism is used. Use 2 for 2xT4.
+            If set to "system" than torch.cuda.device_count() will be used.
+
+    Returns:
+        tuple: 
+            A tuple containing the initialized DeepSeek language model (LLM) and its associated tokenizer.
+                - llm (LLM): The initialized DeepSeek language model.
+                - tokenizer (Tokenizer): The tokenizer associated with the language model.
+    """
+    _llm = LLM(
+        model=model_path,
+        dtype=model_dtype,
+        enforce_eager=enforce_eager,
+        gpu_memory_utilization=gpu_memory_utilization,
+        swap_space=swap_space,
+        max_model_len=max_model_len,
+        kv_cache_dtype=kv_cache_dtype,
+        tensor_parallel_size=tensor_parallel_size if isinstance(tensor_parallel_size, int) else torch.cuda.device_count()
+    )
+    _tokenizer = _llm.get_tokenizer()
+    return _llm, _tokenizer
+
+
+# https://www.kaggle.com/code/simjeg/platypus2-70b-with-wikipedia-rag
+def clean_memory() -> None:
+    """Function to clean RAM & vRAM"""
+    gc.collect()
+    ctypes.CDLL("libc.so.6").malloc_trim(0)
+    torch.cuda.empty_cache()
+<br>
+
+<h3 style="font-family: Verdana; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">4.1 GENERIC HELPER FUNCTIONS</h3>
+<hr><br>
+
+These are some functions I carry around with me that I find commonly helpful.
+
+**There are also a few dataset loading functions included here just to ensure they fall before the setup cell**
+
+<br>
+def flatten_l_o_l(nested_list):
+    """ Flatten a list of lists into a single list.
+
+    Args:
+        nested_list (Iterable): 
+            – A list of lists (or iterables) to be flattened.
+
+    Returns:
+        A flattened list containing all items from the input list of lists.
+    """
+    return [item for sublist in nested_list for item in sublist]
+
+
+def print_ln(symbol="-", line_len=110, newline_before=False, newline_after=False):
+    """ Print a horizontal line of a specified length and symbol.
+
+    Args:
+        symbol (str, optional): 
+            – The symbol to use for the horizontal line
+        line_len (int, optional): 
+            – The length of the horizontal line in characters
+        newline_before (bool, optional): 
+            – Whether to print a newline character before the line
+        newline_after (bool, optional): 
+            – Whether to print a newline character after the line
+            
+    Returns:
+        None; A divider with pre/post new-lines (optional) is printed
+    """
+    if newline_before: print();
+    print(symbol * line_len)
+    if newline_after: print();
+        
+        
+def display_hr(newline_before=False, newline_after=False):
+    """ Renders a HTML <hr>
+
+    Args:
+        newline_before (bool, optional): 
+            – Whether to print a newline character before the line
+        newline_after (bool, optional): 
+            – Whether to print a newline character after the line
+            
+    Returns:
+        None; A divider with pre/post new-lines (optional) is printed
+    """
+    if newline_before: print();
+    display(HTML("<hr>"))
+    if newline_after: print();
+
+
+def wrap_text(text, width=88):
+    """Wrap text to a specified width.
+
+    Args:
+        text (str): 
+            - The text to wrap.
+        width (int): 
+            - The maximum width of a line. Default is 88.
+
+    Returns:
+        str: The wrapped text.
+    """
+    return textwrap.fill(text, width)
+
+
+def wrap_text_by_paragraphs(text, width=88):
+    """Wrap text by paragraphs to a specified width.
+
+    Args:
+        text (str): 
+            - The text containing multiple paragraphs to wrap.
+        width (int): 
+            - The maximum width of a line. Default is 88.
+
+    Returns:
+        str: The wrapped text with preserved paragraph separation.
+    """
+    paragraphs = text.split('\n')  # Assuming paragraphs are separated by newlines
+    wrapped_paragraphs = [textwrap.fill(paragraph, width) for paragraph in paragraphs]
+    return '\n\n'.join(wrapped_paragraphs)
+
+
+def hide_asy_text(text: str) -> tuple[str, dict[str, str]]:
+    """Replaces text within [asy]...[/asy] blocks with unique placeholders.
+
+    Args:
+        text (str): 
+            The original text containing blocks to be hidden.
+
+    Returns:
+        tuple[str, dict[str, str]]: 
+            A tuple containing the modified text with placeholders
+            and a dictionary mapping placeholders to the original text blocks.
+    """
+    pattern = r'\[asy\](.*?)\[/asy\]'
+    placeholders = {}
+
+    def _replacer(match: re.Match) -> tuple[str, dict[str, str]]:
+        """This function is used to replace the text within [asy]...[/asy] blocks.
+
+        It replaces the text with a unique placeholder and stores the original text.
+
+        Args:
+            match (re.Match): The matched object.
+
+        Returns:
+            str: The original text corresponding to the placeholder.
+        """
+        original = match.group(1)
+        placeholder = f"UNIQUE_STRING_{len(placeholders)}"
+        placeholders[placeholder] = original
+        return f"[asy]{placeholder}[/asy]"
+
+    modified_text = re.sub(pattern, _replacer, text)
+    return modified_text, placeholders
+
+
+def unhide_asy_text(text: str, placeholders: dict[str, str]) -> str:
+    """Restores the original text blocks within [asy]...[/asy] from the placeholders.
+
+    Args:
+        text (str):
+            The text with placeholders to be restored.
+        placeholders (dict[str, str]):
+            A dictionary mapping placeholders back to the original text.
+
+    Returns:
+        str: The text with all placeholders restored to their original content.
+    """
+    pattern = r'\[asy\](UNIQUE_STRING_\d+)\[/asy\]'
+
+    def _replacer(match: re.Match) -> str:
+        """This function is used to replace the placeholders with the original text.
+
+        Args:
+            match (re.Match): The matched object.
+
+        Returns:
+            str: The original text corresponding to the placeholder.
+        """
+        placeholder = match.group(1)
+        return f"[asy]{placeholders.get(placeholder, 'ERROR: Text not found')}[/asy]"
+
+    restored_text = re.sub(pattern, _replacer, text)
+    return restored_text
+
+
+def load_aops_dataset_as_df(
+        csv_path: str,
+        coerce_answers: bool = True,
+        drop_diagram_questions: bool = True,
+        remove_asy_blocks_from_solution: bool = True
+) -> pd.DataFrame:
+    """This will return a dataframe for the Art of Problem Solving Dataset based on various options.
+
+    Options include:
+        - Fixing the answer column by coercing values
+            - removing lfill 0s
+            - replacing periods added to the right side incorrectly
+            - removing commas
+        - Removing problems with Asymptote diagrams in problem description (as no diagrams are found in test set)
+        - Removing parts Asymptote diagrams from solution description (as no diagrams are found in test set)
+
+    Args:
+        csv_path (str): The path to the csv file
+        coerce_answers (bool): Whether to fix the answer column
+        drop_diagram_questions (bool): Whether to drop questions with Asymptote diagrams
+        remove_asy_blocks_from_solution (bool): Whether to remove Asymptote blocks from solution
+
+    Returns:
+        pd.DataFrame: The loaded dataset
+    """
+    _df = pd.read_csv(csv_path)
+    
+    if coerce_answers:
+        _df["answer"] = _df["answer"].apply(lambda x: x[:-1] if str(x)[-1]=="." else x)
+        _df["answer"] = _df["answer"].apply(lambda x: x.replace(",", ""))
+        _df["answer"] = _df["answer"].apply(lambda x: int(x) if str(x).startswith("0") and "." not in str(x) else x)
+    
+    if drop_diagram_questions:
+        _df = _df[_df.solution.str.lower().str.contains("[asy]")]
+    
+    if remove_asy_blocks_from_solution:
+        _df["solution"] = _df["solution"].apply(lambda text: re.sub(r'\[asy\](.*?)\[/asy\]', '', text))
+        
+    return _df.reset_index(drop=True)
+<br>
+
+<h3 style="font-family: Verdana; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">4.2 <b>LOAD</b> THE DATASET(S)</h3>
+<hr><br>
+
+We also define path information and other constants that are helpful in establishing early.
+
+<br>
+
+**SIDE NOTE:** `.asy` or `[asy]` refers to the <b><a href="https://asymptote.sourceforge.io/">Asymptote</a></b> vector plotting language. I couldn't figure out a way to plot it inline. We generally want to remove/ignore these questions anyway...
+# ROOT PATHS
+WORKING_DIR = "/kaggle/working"
+INPUT_DIR = "/kaggle/input"
+COMPETITION_DIR = os.path.join(INPUT_DIR, "ai-mathematical-olympiad-prize")
+EXT_DATASET_DIR = os.path.join(INPUT_DIR, "/kaggle/input/external-datasets-after-preprocessing-for-aimo")
+
+# COMPETITION FILE PATHS
+SS_CSV_PATH = os.path.join(COMPETITION_DIR, "sample_submission.csv")
+COMP_TRAIN_CSV_PATH = os.path.join(COMPETITION_DIR, "train.csv")
+COMP_TEST_CSV_PATH = os.path.join(COMPETITION_DIR, "test.csv")
+
+# DEFINE COMPETITION DATAFRAMES
+print("\n\n... SAMPLE SUBMISSION DATAFRAME ...\n")
+ss_df = pd.read_csv(SS_CSV_PATH)
+display(ss_df)
+
+print("\n\n... COMPETITION TRAIN DATAFRAME ...\n")
+comp_train_df = pd.read_csv(COMP_TRAIN_CSV_PATH)
+display(comp_train_df)
+
+if os.path.isfile(COMP_TEST_CSV_PATH):
+    print("\n\n... COMPETITION TEST DATAFRAME ...\n")
+    comp_test_df = pd.read_csv(COMP_TEST_CSV_PATH)
+    display(comp_test_df)
+else:
+    comp_test_df = comp_train_df.iloc[:1]
+    
+# DEFINE EXTERNAL DATASET PATHS
+
+EXT_AIMO_1 = os.path.join(INPUT_DIR, "aimo-external-dataset", "external_df.csv")  # GSM8K and MATH
+EXT_AIMO_2 = os.path.join(INPUT_DIR, "amio-parsed-art-of-problem-solving-website", "parsed_ArtOfProblemSolving.csv")  # Art of Problem Solving Website
+
+# DEFINE EXTERNAL DATASET DATAFRAMES
+print("\n\n... EXTERNAL DATASET 1 DATAFRAME - GSM8K and MATH ...\n")
+ext_aimo_1_df = pd.read_csv(EXT_AIMO_1)
+display(ext_aimo_1_df)
+
+print("\n\n... EXTERNAL DATASET 2 DATAFRAME - Art of Problem Solving Website ...\n")
+ext_aimo_2_df = load_aops_dataset_as_df(EXT_AIMO_2)
+display(ext_aimo_2_df)
+
+# DEFINE MODEL PATHS
+DEEPSEEK_PATH = os.path.join(INPUT_DIR, "deepseek-math")
+MISTRAL_PATH = os.path.join(INPUT_DIR, "open-math-mistral")
+<a id="eda"></a>
+
+<h1 style="font-family: Verdana; font-size: 24px; font-style: normal; font-weight: bold; text-decoration: none; text-transform: none; letter-spacing: 3px; background-color: #ffffff; color: #799cb7;" id="eda">5&nbsp;&nbsp;EXPLORATORY DATA ANALYSIS&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none; color: #192a51;" href="#toc">&#10514;</a></h1>
+
+<br>
+<br>
+
+<h3 style="font-family: Verdana; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">5.1 <b>EXPLORE</b> THE ART OF PROBLEM SOLVING EXTERNAL DATASET</h3>
+<hr><br>
+
+We also define some helpful functions along the way
+def get_problem(df: pd.DataFrame, problem_id: str = None, problem_str: str = None, problem_link: str = None) -> pd.DataFrame:
+    """This function will retrieve a dataframe subset of the aops_df that matches the desired problem.
+    
+    If no problem specifier is provided then a random problem will be retrieved.
+    
+    Args:
+        df (pd.DataFrame): The dataframe containing problem information.
+        problem_id (str, optional): The specific problem ID to filter by.
+        problem_str (str, optional): A substring of the problem text to filter by.
+        problem_link (str, optional): The specific problem link to filter by.
+    
+    Raises:
+        ValueError: If no criteria are provided and the dataframe is empty.
+    
+    Returns:
+        pd.DataFrame: A subset of `aops_df` based on the provided criteria or a single random problem if no criteria are provided.
+    """
+    # Create a copy to avoid modifying the original dataframe
+    _df = copy.deepcopy(df)
+    
+    # Check if any criteria is provided
+    if problem_id is not None:
+        _df = _df[_df['problem_id'] == problem_id]
+    if problem_str is not None:
+        _df = _df[_df['problem'].str.contains(problem_str, case=False, na=False)]
+    if problem_link is not None:
+        _df = _df[_df['link'] == problem_link]
+
+    # If no criteria is specified, select a random problem
+    if problem_id is None and problem_str is None and problem_link is None:
+        if _df.empty:
+            raise ValueError("The input dataframe is empty. Cannot select a random problem.")
+        _df = get_problem(_df, problem_id=_df.problem_id.sample(1).values[0])
+    return _df.reset_index(drop=True)
+
+
+def problem_to_html(
+    problem_str: str,
+    problem_link: str | None = None, 
+    problem_id: str | None = None,
+    bg_color: str = "#f5f5f5"
+) -> HTML:
+    """Generates an HTML representation of a problem description, optionally including a link.
+
+    Args:
+        problem_str (str): The text describing the problem.
+        problem_link (Optional[str]): A URL linking to further details about the problem, defaults to None.
+        bg_color (str): The background color for the HTML div element, defaults to "#f5f5f5".
+
+    Returns:
+        HTML: An HTML object suitable for display in IPython environments.
+    """
+    # Remove ASY text as we don't want to adjust it's formatting
+    problem_str, placeholders = hide_asy_text(problem_str)
+    
+    #  -- Prettify  --
+    _html_str = f'<div style="background-color: {bg_color}; border-radius: 10px; padding: 20px; margin: 20px;"> <b>PROBLEM:</b><br><br>{problem_str.replace("...", "...<br><br>").replace(".", ".<br><br>")}</div>'
+    if problem_link is not None and not pd.isna(problem_link):
+        _html_str = _html_str.replace("PROBLEM:", 'PROBLEM  <a href="'+problem_link+'">[LINK]</a>:')
+    if problem_id is not None:
+        _html_str = _html_str.replace("PROBLEM", f"PROBLEM ID: {problem_id}")
+    
+    # Put the ASY text back in
+    _html_str = unhide_asy_text(_html_str, placeholders)
+    
+    return HTML(_html_str)
+                
+                
+# Basic Hex Colour for Success is #e9fce9
+def solution_to_html(solution_str: str, solution_num: int | str | None = None, solution_value: int | float | str | None = None, bg_color: list[str] | str = "pastel"):
+    """Generates an HTML representation of a solution with dynamic background colors and optional details.
+
+    Args:
+        solution_str (str): 
+            The text describing the solution.
+        solution_num (int | str, optional): 
+            A number or identifier for the solution, defaults to None.
+        solution_value (int | float | str, optional): 
+            A value associated with the solution.
+        bg_color (list[str] | str, optional): 
+            The background color(s) for the HTML div element. 
+            This can be a hex color, a list of hex colors, or a seaborn palette name, defaults to "pastel".
+
+    Returns:
+        HTML: An HTML object suitable for display in IPython environments.
+
+    """
+    def get_colors(color_input: str | list[str]) -> list[str]:
+        """Resolves the background color input into a list of hexadecimal color codes.
+
+        Args:
+            color_input (str | list[str]): 
+                A hex color, a list of hex colors, or a seaborn palette name.
+
+        Returns:
+            list[str]: A list of hexadecimal color codes.
+        """
+        if isinstance(color_input, str) and color_input.startswith("#"):
+            return [color_input]
+        elif isinstance(color_input, list) and all(isinstance(item, str) for item in color_input):
+            return color_input
+        else:
+            return sns.color_palette(color_input).as_hex()
+    
+    # Remove ASY text as we don't want to adjust it's formatting
+    solution_str, placeholders = hide_asy_text(solution_str)
+    
+    # -- Prettify --
+    # Resolve background colors using the internal function
+    colors = get_colors(bg_color)
+    # Generate the main HTML string for the solution
+    color_index = solution_num % len(colors) if solution_num is not None else 0
+    _html_str = f'<div style="background-color: {colors[color_index]}; border-radius: 10px; padding: 20px; margin: 20px;"> <b>SOLUTION:</b><br><br>{solution_str.replace("...", "...<br><br>").replace(".", ".<br><br>")}</div>'
+    # Add solution number if specified
+    if solution_num is not None:
+        _html_str = _html_str.replace("SOLUTION:", f"SOLUTION #{solution_num}:")
+    if solution_value is not None:
+        _html_str=_html_str.replace("</div>", f'<br><br><b>SOLUTION VALUE: <font color="red">{solution_value}</font></b><br><br></div>')
+    
+    # Put the ASY text back in
+    _html_str = unhide_asy_text(_html_str, placeholders)
+    _html_str = _html_str.replace(r"\[", r"<br><br>\[").replace(r"\]", r"\]<br><br>")
+    return HTML(_html_str)
+
+
+def review_problem(df: pd.DataFrame, problem_id: str | None = None, show_all_solutions: bool = False):
+    """This function will retrieve a dataframe subset of the aops_df that matches the desired problem.
+    
+    It will then iterate over the provided solutions and display the example in an asthetically pleasing way.    
+    If no problem specifier is provided then a random problem will be retrieved.
+    
+    Args:
+        _df (pd.DataFrame): The dataframe containing problem information.
+        problem_id (str, optional): The specific problem ID to filter by.
+        show_all_solutions (bool, optional): Whether to show all or just the first solution
+        
+    Raises:
+        ValueError: If no criteria are provided and the dataframe is empty.
+    
+    Returns:
+        pd.DataFrame: A subset of `aops_df` based on the provided criteria or a single random problem if no criteria are provided.
+    """
+    _df = get_problem(df, problem_id=problem_id)
+    _df_link = _df.link[0] if "link" in _df.columns else None
+    display(problem_to_html(_df.problem[0], _df_link, _df.problem_id[0]))
+
+    for i, (_, row) in enumerate(_df.iterrows()):
+        display(solution_to_html(row.solution, i+1, row.answer))
+        if not show_all_solutions:
+            break
+    
+    return _df
+
+### Review a random problem
+# df = review_problem(ext_aimo_2_df)
+
+N_EX = 2
+print(f"\n... SHOWING {N_EX} RANDOM QUESTIONS (OUT OF A POSSIBLE {len(ext_aimo_2_df)}) FROM THE AMIO PARSED ART OF PROBLEM SOLVING DATASET ...\n")
+for i in range(N_EX):
+    df = review_problem(ext_aimo_2_df, show_all_solutions=False)
+    display(df)
+    display_hr(newline_after=True, newline_before=True)
+    print("\n\n")
+<br>
+
+<h3 style="font-family: Verdana; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">5.2 <b>EXPLORE</b> THE GSM8K+MATH EXTERNAL DATASET</h3>
+<hr><br>
+
+**NOTE: I am loading my version of the external aimo dataset in the cell below... I have left the commented out code showing how I generated it though**
+* If you run this code the `extract_and_evaluate_solution` will hang on example `4557`... I have to manually kill and continue after this... I discard it after this.
+
+def extract_and_evaluate_solution(text: str, re_pattern: str | None = r"\\boxed{((?:[^{}]+|{[^{}]*})*)}", verbose: bool=False) -> int | float | None:
+    """Extracts a LaTeX expression from a given text and evaluates it numerically.
+    
+    If a regex is provided but no match is found... the parsing will assume full text requires evaluation.
+    
+    Args:
+        text (str): 
+            The text containing the LaTeX expression.
+        re_pattern (str, optional): 
+            A regular expression pattern to extract the LaTeX expression enclosed in specific LaTeX commands like \\boxed{}. 
+            If None, evaluates the entire text as a LaTeX expression.
+
+    Returns:
+        int | float | None: The evaluated numerical result as an integer or float, or None if no expression is found or an error occurs in parsing.
+    """
+    # Use the provided regular expression pattern, or default to the entire text
+    latex_expression = text
+    if re_pattern:
+        match = re.search(re_pattern, text)
+        if match:
+            latex_expression = match.group(1)
+    else:
+        latex_expression = text
+    
+    try:
+        # Convert LaTeX to a sympy expression
+        sympy_expression = sp.sympify(parse_latex(latex_expression))
+
+        # Evaluate the expression to a numerical result and determine type
+        evaluated_expression = sympy_expression.evalf()
+        if evaluated_expression.is_Integer:
+            return int(evaluated_expression)
+        else:
+            return float(evaluated_expression)
+    except Exception as e:
+        if verbose:
+            print(f"Error parsing or evaluating the expression: {e}")
+        return -1.0
+    
+    
+# extract_and_evaluate_solution("\\frac{211}{243}")    
+
+######### THE FOLLOWING CODE IS HOW I PROCESSED THE ORIGINAL DATASET INTO MY CURRENT DATASET I LOAD FROM DIRECTLY #########
+# ext_aimo_1_df["answer"] = -1.0
+# ext_aimo_1_df.loc[ext_aimo_1_df["source"]=="GSM8K", "answer"] = ext_aimo_1_df.loc[ext_aimo_1_df["source"]=="GSM8K"]["solution"].apply(lambda x: float(x.rsplit("####", 1)[-1].replace(",", "").strip()))
+#
+# extracted_answers = []
+# _start_idx = _0
+# for i, x in enumerate(tqdm(ext_aimo_1_df.loc[ext_aimo_1_df["source"]=="MATH"]["solution"].values[_start_idx:])):
+#     _idx = _start_idx+i
+#     extracted_answers.append(extract_and_evaluate_solution(x.replace("pi", "3.14159")))
+#
+# ext_aimo_1_df.loc[ext_aimo_1_df["source"]=="MATH", "answer"] = extracted_answers
+# ext_aimo_1_df["answer"] = ext_aimo_1_df["answer"].apply(lambda x: int(x) if "." in str(x) and float(x)==float(int(x)) else float(x))
+# ext_aimo_1_df = ext_aimo_1_df[ext_aimo_1_df["answer"]!=-1].reset_index(drop=True)
+# ext_aimo_1_df.insert(0, "problem_id", pd.Series(ext_aimo_1_df.index.astype(str)).apply(lambda x: f"{x:>05}")+"_"+ext_aimo_1_df.source+"_"+ext_aimo_1_df.stage)
+#
+# ext_aimo_1_df.to_csv("ext_aimo_1_preprocessed.csv", index=False)
+# ext_aimo_2_df.to_csv("ext_aimo_2_preprocessed.csv", index=False)
+
+# ext_aimo_df = pd.concat([ext_aimo_2_df, ext_aimo_1_df])[["problem_id", "problem", "solution", "answer", "link", "source", "level", "type", "stage", "letter"]].reset_index(drop=True)
+# ext_aimo_df["source"] = ext_aimo_df["source"].fillna("AOPS")
+# ext_aimo_df["stage"] = ext_aimo_df["stage"].fillna("train")
+# ext_aimo_df.to_csv("ext_aimo_preprocessed.csv", index=False)
+#################################################################################################################
+
+ext_aimo_df = pd.read_csv(os.path.join(EXT_DATASET_DIR, "ext_aimo_preprocessed.csv"))
+ext_aimo_1_df = pd.read_csv(os.path.join(EXT_DATASET_DIR, "ext_aimo_1_preprocessed.csv"))
+ext_aimo_2_df = pd.read_csv(os.path.join(EXT_DATASET_DIR, "ext_aimo_2_preprocessed.csv"))
+                            
+display(ext_aimo_df)
+N_EX = 2
+print(f"\n... SHOWING {N_EX} RANDOM QUESTIONS (OUT OF A POSSIBLE {len(ext_aimo_1_df)}) FROM THE AMIO EXTERNAL DATASET (GSM8K AND MATH) ...\n")
+for i in range(N_EX):
+    df = review_problem(ext_aimo_1_df)
+    display(df)
+    display_hr(newline_after=True, newline_before=True)
+    print("\n\n")
+<br>
+
+<h3 style="font-family: Verdana; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">5.3 <b>FILTER</b> AND FIX THE EXTERNAL DATASETS</h3>
+<hr><br>
+
+We want to remove/improve examples that do not match the requirements as defined in this competition. Specifically:
+- Positive integer answer (drop offending rows)
+- Remove multiple choice selection (remove text including multiple choice problems - or drop rows for simplicity)
+- Remove [asy][/asy] from problems and solutions
+- Rewrite #### ANSWER as //boxed{ANSWER}
+
+We are only doing this on the joint dataset as that is what we plan to use.
+def remove_multiple_choice_options_in_problem(problem_str):
+    return problem_str.rsplit("$\\textbf{(A", 1)[0].rsplit("$\\text{(A", 1)[0].strip()
+
+def remove_asy_block(text):
+    if text.count("[asy]")>0:
+        text = text.split("[asy]", 1)[0]+text.split("[/asy]", 1)[-1]
+        remove_asy_block(text)
+    return text.strip()
+
+def fix_and_filter_external_data(df: pd.DataFrame, drop_non_pos_int_rows: bool = True):
+    """"""
+    _df = df.copy()
+    
+    # Drop rows with infinite values in answer
+    _df = _df[~_df["answer"].replace([np.inf, -np.inf], np.nan).isna()]
+    
+    # Force answer to be appropriate dtype (int or float)
+    _df["answer"] =_df["answer"].apply(lambda x: int(x) if float(int(x))==float(x) else float(x))
+    
+    # Remove multiple choices in problem string
+    _df.loc[~pd.isna(_df["letter"]), "problem"] = _df.loc[~pd.isna(_df["letter"]), "problem"].apply(remove_multiple_choice_options_in_problem)
+    
+    # Replace hashtag solutions with boxed
+    _df.loc[_df.solution.str.contains("#### "), "solution"] = _df.loc[_df.solution.str.contains("#### "), "solution"].apply(
+        lambda x: x.strip().rsplit("####", 1)[0]+"$\\boxed{"+x.strip().rsplit("####", 1)[-1].strip()+"}$"
+    )
+    
+    # Drop rows where the answer is less than 0 or non-int
+    if drop_non_pos_int_rows:
+        _df = _df[_df.answer.apply(lambda x: isinstance(x, int) and 0 <= x)]
+        
+    # Drop rows where there is 
+    
+    # Modulo the answer and store the original in a separate column
+    _df["original_answer"] = _df["answer"].copy()
+    _df["answer"] = _df["answer"].apply(lambda x: x%1000)
+    
+    return _df.reset_index(drop=True)
+   
+    
+def filter_by_consensus(df: pd.DataFrame, id_col: str = 'problem_id', answer_col: str = 'answer') -> pd.DataFrame:
+    """
+    Filters a DataFrame to retain only rows where the answer has the majority consensus 
+    for each unique problem identifier.
+
+    This function groups the DataFrame by a problem identifier and determines the most frequent 
+    answer for each group. Only rows where the answer matches the most frequent (mode) answer 
+    for their corresponding group are retained.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to filter.
+        id_col (str, optional): The column name in the DataFrame that contains the problem identifiers. 
+                                Defaults to 'problem_id'.
+        answer_col (str, optional): The column name in the DataFrame that contains the answers. 
+                                    Defaults to 'answer'.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing only the rows with the majority consensus answer 
+                      for each unique problem identifier.
+
+    Example:
+        >>> data = {'problem_id': ['1', '1', '1', '2', '2', '3'],
+        ...         'answer': [10, 10, 4, 150, 150, 3]}
+        >>> df = pd.DataFrame(data)
+        >>> filtered_df = filter_by_consensus(df)
+        >>> print(filtered_df)
+    """
+    _df = df.copy()
+    
+    # Calculate the mode of the answers for each problem_id
+    mode_df = _df.groupby(id_col)[answer_col].agg(lambda x: pd.Series.mode(x)[0]).reset_index()
+    mode_df.rename(columns={answer_col: 'mode_answer'}, inplace=True)
+
+    # Merge this back with the original DataFrame to filter
+    merged_df = _df.merge(mode_df, on=id_col)
+
+    # Keep only rows where the answer matches the mode answer
+    result_df = merged_df[merged_df[answer_col] == merged_df['mode_answer']]
+
+    # Remove the temporary mode_answer column
+    result_df = result_df.drop(columns=['mode_answer'])
+
+    return result_df.reset_index(drop=True)
+
+# Easy fixes
+ext_aimo_df = fix_and_filter_external_data(ext_aimo_df)
+# display(ext_aimo_df[ext_aimo_df.problem_id.isin(['00d3433e73bb281384e53ad5a87cdc86',
+#        '212e80b4f9896d94a6c128f3d1726d38',
+#        '33e99f18e99cdf0a415426283897830e',
+#        '8655d580c2215b683eea607ff11e39ea',
+#        '9194d5124ad28fd1ffc8b22d8930320e',
+#        '9277096b27e0f04586690475ea517d1d',
+#        '9958192892d058ab3cbc1ba71c827ac6',
+#        'd59714d615a1262fb813437141ed2c62',
+#        'ec2dbb5106882670665f78b963a6040c'])]
+# )
+# Consensus Fixes
+ext_aimo_df = filter_by_consensus(ext_aimo_df)
+
+display(ext_aimo_df)
+<a id="baseline"></a>
+
+<h1 style="font-family: Verdana; font-size: 24px; font-style: normal; font-weight: bold; text-decoration: none; text-transform: none; letter-spacing: 3px; background-color: #ffffff; color: #799cb7;" id="baseline">6&nbsp;&nbsp;BASELINE SOLUTION AND EVALUATION&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none; color: #192a51;" href="#toc">&#10514;</a></h1>
+
+<br>
+<br>
+
+<h3 style="font-family: Verdana; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">6.1 <b>DEFINE</b> THE REQUIRED FUNCTIONS TO HELP US</h3>
+<hr><br>
+
+I will attempt to attribute the base functions in the docstrings in coming versions... but please see my earlier mention of the notebooks that I used for help.
+def set_seed(seed: int = 42) -> None:
+    """Sets the seed for generating random numbers to ensure reproducibility.
+
+    Args:
+        seed (int): The seed number. Default is 42.
+    """
+    transformers_set_seed(seed)
+
+
+def create_quantization_config(load_in_4bit: bool = True, 
+                               quant_type: str = "nf4", 
+                               compute_dtype = torch.bfloat16, 
+                               use_double_quant: bool = True) -> BitsAndBytesConfig:
+    """Creates a configuration for model quantization to optimize model size and inference speed.
+
+    Args:
+        load_in_4bit (bool): Whether to load models in 4-bit precision.
+        quant_type (str): Type of quantization, 'nf4' for noise-free 4-bit.
+        compute_dtype: Data type for computation, typically torch.bfloat16 for mixed precision.
+        use_double_quant (bool): Whether to use double quantization.
+
+    Returns:
+        BitsAndBytesConfig: A configuration object for BitsAndBytes.
+    """
+    return BitsAndBytesConfig(
+        load_in_4bit=load_in_4bit,
+        bnb_4bit_quant_type=quant_type,
+        bnb_4bit_compute_dtype=compute_dtype,
+        bnb_4bit_use_double_quant=use_double_quant,
+    )
+
+def load_model_and_tokenizer(
+    model_path: str = "/kaggle/input/deepseek-math", 
+    quantization_config: BitsAndBytesConfig | None = None
+) -> tuple:
+    """Loads the tokenizer and model with specific quantization configurations.
+
+    Args:
+        model_path (str): Path to the model directory.
+        quantization_config (BitsAndBytesConfig): Quantization configuration for the model.
+
+    Returns:
+        tuple: A tuple containing the loaded model and tokenizer.
+    """
+    config = AutoConfig.from_pretrained(model_path)
+    config.gradient_checkpointing = True
+    
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        device_map="auto",
+        torch_dtype="auto",
+        trust_remote_code=True,
+        quantization_config=quantization_config,
+        config=config
+    )
+    
+    return model, tokenizer
+
+
+def initialize_pipeline(model, tokenizer) -> pipeline:
+    """Initializes a pipeline for text generation using the provided model and tokenizer.
+
+    Args:
+        model: The pre-trained model to be used for text generation.
+        tokenizer: The tokenizer for text preprocessing.
+
+    Returns:
+        pipeline: A configured pipeline for text generation.
+    """
+    return pipeline(
+        "text-generation",
+        model=model,
+        tokenizer=tokenizer,
+        torch_dtype='auto',
+        device_map="auto"
+    )
+
+
+def setup_torch_backend(enable_mem_efficient_sdp: bool = False) -> None:
+    """Configures PyTorch backend settings.
+
+    Args:
+        enable_mem_efficient_sdp (bool): Flag to enable memory efficient scatter-gather.
+                                        Default is False.
+    """
+    torch.backends.cuda.enable_mem_efficient_sdp(enable_mem_efficient_sdp)
+    
+def naive_parse(answer: str) -> str:
+    """Extracts the last contiguous sequence of digits from a given string.
+    
+    This function is based on the function that is floating around in the top scoring code notebooks.
+    I'm not sure who the original author was... but once I know I will attribute accordingly.
+
+    Args:
+        answer: A string from which to extract the digit sequence.
+
+    Returns:
+        A string containing the last sequence of digits found in the input string.
+        Returns an empty string if no digits are found.
+
+    Examples:
+        naive_parse("example123test456") returns "456"
+        naive_parse("no digits here!") returns ""
+    """
+    last_digits = ''
+    found_digit = False
+
+    for char in reversed(answer):
+        if char.isdigit():
+            last_digits += char
+            found_digit = True
+        elif found_digit:
+            # Break the loop once the first non-digit is found after finding digits
+            break
+    
+    # Reverse to correct the order of digits
+    return last_digits[::-1]  
+
+
+def postprocess_final_answer(expression: str, modulo: int = 1000) -> int:
+    """Postprocesses the final answer by returning the rounded/modulod value.
+
+    Args:
+        expression: The mathematical expression to evaluate as a string. (raw final answer)
+        modulo: The modulo value to use in the calculation.
+
+    Returns:
+        An integer result of the evaluated expression modulo the specified value.
+    """
+    try:
+        result = round(float(eval(expression)))
+        return result % modulo
+    except Exception as e:
+        print(f"Exception occured in `postprocess_final_answer`: {e}")
+        return -1
+
+def execute_code(code: str, timeout_seconds: int = 7, filename: str = 'code_to_execute.py', modulo: int = 1000, sympy_star_import: bool = True) -> int:
+    """Executes the given Python code snippet and processes the output.
+
+    Args:
+        code: The Python code to execute.
+        timeout_seconds: Maximum allowed time for code execution in seconds.
+        filename: The filename to which the code will be written before execution.
+        modulo: The modulo value to use for processing the output.
+        sympy_star_import: Whether to always import everything from sympy
+
+    Returns:
+        An integer result derived from the execution output or -1 if an error occurs.
+    """
+    try:
+        with open(filename, 'w') as fout:
+            fout.write(code if not sympy_star_import else 'from sympy import *\n'+code)
+
+        batcmd = f'timeout {timeout_seconds} {sys.executable} {filename}'
+        shell_output = subprocess.check_output(batcmd, shell=True).decode('utf8')
+        return postprocess_final_answer(shell_output, modulo)
+    except Exception as e:
+        print(f"Exception occured in `execute_code`: {e}")
+        return -1
+
+def extract_and_process_math(result: str, modulo: int = 1000) -> int:
+    """Extracts and evaluates the mathematical expression from the given string.
+
+    Args:
+        result: The string containing the expression in a LaTeX-like \\boxed{} format.
+        modulo: The modulo value to use for the final result.
+
+    Returns:
+        An integer result of the evaluated expression or -1 if an error occurs.
+    """
+    try:
+        result_output = re.findall(r'\\boxed\{(.*)\}', result)
+        if result_output:
+            expression = result_output[-1]
+        else:
+            expression = naive_parse(result)
+
+        if expression:
+            return postprocess_final_answer(expression, modulo)
+        return -1
+    except Exception as e:
+        print(f"Exception occured in `extract_and_process_math`: {e}")
+        return -1
+
+    
+def process_output(output: str, timeout_seconds: int = 7, filename: str = 'code_to_execute.py', modulo: int = 1000) -> tuple:
+    """Processes the provided output string to execute contained code and extract mathematical results.
+
+    Args:
+        output: The string that may contain Python code in triple backticks and/or a mathematical expression in \\boxed{}.
+        timeout_seconds: Maximum allowed time for code execution in seconds.
+        filename: The filename for saving and executing the Python code.
+        modulo: The modulo value to use for processing the outputs.
+
+    Returns:
+        A tuple (result_output, code_output) where each is an integer result of the processing or -1 if an error occurs.
+    """
+    code_output = -1
+    result_output = -1
+
+    # Extract and execute code from output
+    code_pattern = re.compile(r'```(?:\S*?\n)?(.*?)```', re.DOTALL)
+    code_match = code_pattern.search(output)
+    if code_match:
+        code = code_match.group(1)
+        code_output = execute_code(code, timeout_seconds, filename, modulo)
+        # print('CODE RESULTS', code_output)
+
+    # Extract and process mathematical result
+    result_output = extract_and_process_math(output, modulo)
+    # print('BOXED', result_output)
+
+    return result_output, code_output
+
+def prepare_problem_statement(problem: str, tool_instruction: str | None = None, tokenizer: Any = None, apply_chat_template: bool = True, use_simple: bool = False, ) -> str:
+    """Prepares the complete problem statement by appending the tool instruction to the problem text.
+
+    Args:
+        problem (str): 
+            The original problem text.
+        tool_instruction (str): 
+            Additional instructions or information to append to the problem.
+        tokenizer ():
+            The huggingface tokenizer
+        apply_chat_template (bool, optional):
+            Whether to apply the HF prompt template (requires )
+            If no tokenizer is provided apply_chat_template will not work.
+        use_simple (bool, optional):
+            Whether to do 0 prompt engineering.
+        
+        
+
+    Returns:
+        A complete problem statement ready for processing.
+    """
+    if not use_simple and tool_instruction is not None:
+        prompt_str = tool_instruction+f"\nQUESTION:\n{problem}\n\nYou must write out the logical solution in a step by step fashion before you write any python code to solve the problem.\n\nSOLUTION:\n"
+    else:
+        prompt_str = problem+"\nPlease integrate natural language reasoning with programs to solve the problem above, and put your final answer within \\boxed{}."
+    
+    if apply_chat_template:
+        return tokenizer.apply_chat_template(
+            [{"role": "user", "content": prompt_str}], 
+            tokenize=False
+        )
+    else:
+        return prompt_str
+    
+
+def aggregate_results(code_results: Iterable, boxed_results: Iterable, boxed_copies_over_code_fail: bool = True, use_code_and_boxed: bool = False) -> int:
+    """Aggregates the outputs, resolves errors, and determines the most common valid output.
+
+    Args:
+        code_results: List of code outputs.
+        boxed_results: List of mathematical result outputs.
+        boxed_copies_over_code_fail: Whether the non-error boxed results will copy over the failed code results
+        use_code_and_boxed: Whether to aggregate results from both code and boxed results initially
+
+    Returns:
+        The most common valid output among the provided answers or -1 if none are valid.
+    """
+    # So we can pop
+    code_results, boxed_results = list(code_results), list(boxed_results)
+    if all(x<0 for x in code_results):
+        boxed_copies_over_code_fail=True
+    
+    # Get the results array
+    if boxed_copies_over_code_fail and not use_code_and_boxed:
+        results = []
+        for i in range(len(code_results)-1, -1, -1):
+            if code_results[i]>0:
+                results.append(code_results[i])
+            else:
+                code_results.pop(i)
+                results.append(boxed_results.pop(i))
+        results = results[::-1]
+    elif not boxed_copies_over_code_fail and not use_code_and_boxed:
+        results = code_results
+    else:
+        results = code_results+boxed_results
+    results = np.array(results)
+    
+    # Handle negatives as invalid results and handle negatives in boxed_results if needed
+    results = np.where(results<0, -1, results)
+    boxed_results = np.where(np.array(boxed_results)<0, -1, np.array(boxed_results))
+    
+    # Get most common
+    most_common_results_w_counts = [x for x in Counter(results).most_common() if x[0]!=-1]
+    if len(most_common_results_w_counts)==0:
+        return 1
+    elif len(most_common_results_w_counts)==1:
+        return int(abs(most_common_results_w_counts[0][0]))
+    if most_common_results_w_counts[0][1]==most_common_results_w_counts[1][1] and not use_code_and_boxed:
+        most_common_results_w_counts = [x for x in Counter(np.concatenate((results, results, results, results, results, results, results, boxed_results))).most_common() if x[0]!=-1]
+    return int(abs(most_common_results_w_counts[0][0]))
+
+
+def run_pipeline(
+        model_pipeline: Callable, 
+        query_prompt: str, 
+        max_new_tokens: int = 2048,
+        temperature: float = 0.85, 
+        num_repetitions: int = 2,
+) -> list:
+    """Executes the text-generation pipeline multiple times and collects outputs.
+
+    Args:
+        model_pipeline: The initialized text generation pipeline.
+        query_prompt: Input text for the pipeline.
+        max_new_tokens: Maximum number of new tokens to generate.
+        temperature: Controls randomness in output generation.
+        num_repetitions: Number of times to run the pipeline for each input.
+
+    Returns:
+        A list of outputs from the pipeline.
+    """
+
+    # Initialize the empty results list for this particular query prompt
+    results = []
+
+    # For N repetitions we will repeatedly attempt the problem.
+    for _ in tqdm(range(num_repetitions)):
+        try:
+            raw_output = model_pipeline(
+                query_prompt,
+                max_new_tokens=max_new_tokens,
+                do_sample=True,
+                temperature=temperature,
+                return_full_text=False
+            )
+            results.append(raw_output[0]['generated_text'])
+            torch.cuda.empty_cache()
+            gc.collect()
+        except Exception as e:
+            print(f"Exception occured in `model_pipeline`: {e}")
+            results.append(None)
+    return results
+
+
+class VLLMPipeline:
+    def __init__(
+        self, 
+        model: object | None = None,
+        tokenizer: object | None = None,
+        stop_words: list[str] | None = None,
+        model_sampling_params: dict[str, Any] | None = None,
+        **kwargs,
+    ) -> None:
+        self.model = model
+        self.tokenizer = tokenizer
+        
+        # Set stop words and fallback
+        self.stop_words = stop_words
+        if stop_words is None:
+            self.stop_words = stop_words or [tokenizer.eos_token if tokenizer is not None and tokenizer.eos_token is not None else '</s>']        
+        self.model_sampling_params = model_sampling_params or {}
+        self.model_sampling_params["stop"] = self.stop_words
+        
+    def __call__(
+        self,
+        query_prompt: str | list[str],
+        max_new_tokens: int,
+        temperature: float,
+        do_sample: bool = True,
+        return_full_text: bool = False,
+        stop_word_overrides: list[str] | None = None,
+        n_repeats: int = 1,
+        sampling_kwargs: dict[str, Any] | None = None,
+        batch_style: str = "multiply",
+        do_cleanup: bool = False,
+    ):
+        # batch style is "multiply" or "sampling_param_n"
+        # Coerce into batch format
+        if isinstance(query_prompt, str):
+            query_prompt = [query_prompt]
+        
+        # Validate sampling is allowed and if not adjust temperature
+        temperature = 0.0000001 if not do_sample else temperature
+        
+        # Get sampling parameters and update with call specific params
+        sampling_params_kwargs = {**self.model_sampling_params}
+        sampling_params_kwargs.update(sampling_kwargs or {})
+        sampling_params_kwargs.update({"temperature": temperature, "max_tokens": max_new_tokens})
+        
+        # Parse input batch
+        if batch_style=="multiply" and len(query_prompt)==1:
+            query_prompt = query_prompt*n_repeats
+        elif batch_style=="sampling_param_n":
+            sampmling_params_kwargs.update({"n":n_repeats})
+            
+        # Finalize sampling params
+        _sampling_params = SamplingParams(**sampling_params_kwargs)
+        
+        # Do inference
+        model_output = model.generate(query_prompt, _sampling_params)
+        
+        # Parse output
+        if batch_style=="multiply":
+            model_output = [output.outputs[0].text for output in model_output]
+        elif batch_style=="sampling_param_n":
+            model_output = [output.text for output in model_output[0].outputs]
+        
+        # Cleanup
+        if do_cleanup:
+            torch.cuda.empty_cache()
+            gc.collect()
+        
+        return model_output
+        
+    
+def initialize_vllm_pipeline(
+    model, 
+    tokenizer, 
+    stop_words: list[str] | None = None,
+    model_sampling_params: dict[str, Any] | None = None,
+    **kwargs,
+) -> VLLMPipeline:
+    """Artificial pipeline construct so we can mimic the transformers workflow.
+
+    Args:
+        model: The pre-trained model to be used for text generation.
+        tokenizer: The tokenizer for text preprocessing.
+
+    Returns:
+        VLLMPipeline: A configured pipeline for text generation.
+    """
+    return VLLMPipeline(
+        model=model,
+        tokenizer=tokenizer,
+        stop_words=stop_words,
+        model_sampling_params=model_sampling_params,
+        **kwargs
+    )
+
+
+def run_vllm_pipeline(
+        model_pipeline: VLLMPipeline, 
+        query_prompt: str, 
+        max_new_tokens: int | None = None,
+        temperature: float = 0.85, 
+        num_repetitions: int = 2,
+        sampling_kwargs: dict[str, Any] | None = None
+) -> list:
+    """Executes the text-generation pipeline multiple times and collects outputs.
+
+    Args:
+        model_pipeline: The initialized text generation pipeline.
+        query_prompt: Input text for the pipeline.
+        max_new_tokens: Maximum number of new tokens to generate.
+        temperature: Controls randomness in output generation.
+        num_repetitions: Number of times to run the pipeline for each input.
+
+    Returns:
+        A list of outputs from the pipeline.
+    """
+    try:
+        model_results = model_pipeline(
+            query_prompt, 
+            max_new_tokens=max_new_tokens, 
+            temperature=temperature, 
+            n_repeats=num_repetitions,
+            sampling_kwargs=sampling_kwargs
+        )
+    except Exception as e:
+        print(f"Exception occured in `model_pipeline`: {e}")
+        model_results = ["",]*num_repetitions
+    
+    return model_results
+aggregate_test_cases = [{'case': 'Basic functionality, no ties', 'code_results': [1, 2, 2, 3], 'boxed_results': [1, 1, 2, 3], 'boxed_copies_over_code_fail': False, 'use_code_and_boxed': False, 'expected': 2}, {'case': 'Handling ties, no initial boxed inclusion, no easy break', 'code_results': [1, 1, 2, 2], 'boxed_results': [3, 3, 4, 4], 'boxed_copies_over_code_fail': False, 'use_code_and_boxed': False, 'expected': 1}, {'case': 'Handling ties, no initial boxed inclusion, has easy break', 'code_results': [1, 1, 2, 2], 'boxed_results': [3, 3, 4, 2], 'boxed_copies_over_code_fail': False, 'use_code_and_boxed': False, 'expected': 2}, {'case': 'Handling ties, initial boxed inclusion', 'code_results': [1, 1, 2, 2], 'boxed_results': [3, 3, 4, 4], 'boxed_copies_over_code_fail': False, 'use_code_and_boxed': True, 'expected': 1}, {'case': 'Negative values handling', 'code_results': [1, -1, 2, -1], 'boxed_results': [1, 2, 3, 4], 'boxed_copies_over_code_fail': True, 'use_code_and_boxed': False, 'expected': 2}, {'case': 'All inputs invalid', 'code_results': [-1, -1, -1, -1], 'boxed_results': [-1, -1, -1, -1], 'boxed_copies_over_code_fail': True, 'use_code_and_boxed': False, 'expected': 1}, {'case': 'Boxed copies over code results when code fails', 'code_results': [-1, 2, -1, 3], 'boxed_results': [6, 5, 6, 7], 'boxed_copies_over_code_fail': True, 'use_code_and_boxed': False, 'expected': 6}, {'case': 'Equal negative and positive with boxed copying', 'code_results': [1, -1, 4, -1], 'boxed_results': [2, 4, -3, -4], 'boxed_copies_over_code_fail': True, 'use_code_and_boxed': False, 'expected': 4}, {'case': 'All initial values negative', 'code_results': [-1, -1, -1, -1], 'boxed_results': [-2, -2, -2, -2], 'boxed_copies_over_code_fail': True, 'use_code_and_boxed': False, 'expected': 1}, {'case': 'Zero values handling', 'code_results': [0, 0, 0, 1], 'boxed_results': [0, 1, 2, 3], 'boxed_copies_over_code_fail': False, 'use_code_and_boxed': False, 'expected': 0}, {'case': 'Large array with a single valid result', 'code_results': [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2], 'boxed_results': [-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2], 'boxed_copies_over_code_fail': True, 'use_code_and_boxed': False, 'expected': 2}, {'case': 'Single element array', 'code_results': [1], 'boxed_results': [-1], 'boxed_copies_over_code_fail': True, 'use_code_and_boxed': False, 'expected': 1}, {'case': 'Multiple ties and boxed inclusion', 'code_results': [1, 1, 2, 2], 'boxed_results': [3, 3, 2, 2], 'boxed_copies_over_code_fail': False, 'use_code_and_boxed': False, 'expected': 2}, {'case': 'Boxed tries to overwhelm code', 'code_results': [1, 1, 2, 2, 4, 5, 3], 'boxed_results': [3, 3, 3, 3, 3, 3, 2], 'boxed_copies_over_code_fail': False, 'use_code_and_boxed': False, 'expected': 2}]
+for test_case in aggregate_test_cases:
+    display_hr(True, True)
+    print(f"\n... CASE DESCRIPTION ...\n\t --> {repr(test_case['case'])}")
+    print(f"\n... EXPECTED OUTPUT ...\n\t --> {repr(test_case['expected'])}")
+    print(f"\n... SETTINGS ...\n\tBOXED COPIES OVER CODE FAIL --> {test_case['boxed_copies_over_code_fail']}\n\tUSE CODE AND BOXED          --> {test_case['use_code_and_boxed']}")
+    print(f"\n... INPUTS ...\n\tCODE RESULTS  --> {test_case['code_results']}\n\tBOXED RESULTS --> {test_case['boxed_results']}")
+    display_hr(True, False)
+    print(f"... FUNCTION OUTPUT ...\n\t --> {repr(aggregate_results(**{k:v for k,v in test_case.items() if k not in ['case', 'expected']}))}")
+    display_hr(False, False)
+<br>
+
+<h3 style="font-family: Verdana; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">6.2 <b>LOAD</b> THE MODEL, DEFINE CONSTANTS, AND CREATE THE PIPELINE</h3>
+<hr>
+
+1. Set the seed for determinism
+2. Create a quantization config for double quantized 4 bit quantization with `bitsandbytes`
+3. Load the model/tokenizer with the specified quantization config
+4. Create a huggingfae pipeline for inferece
+5. Prepare the torch backend accordingly
+
+<br>
+# I guess we aren't doing this...
+USE_VLLM = True
+USE_QUANTIZATION = False
+MAX_NEW_TOKENS = 1024
+TEMPERATURE = 0.87654321
+N_REPETITIONS = 7
+OTHER_SAMPLING_KWARGS = {
+    "top_k": 30
+}
+
+# Set seed
+set_seed()
+
+if USE_VLLM:
+    model, tokenizer = load_vllm_model_and_tokenizer(DEEPSEEK_PATH, max_model_len=MAX_NEW_TOKENS)
+    text_gen_pipeline = initialize_vllm_pipeline(model, tokenizer, model_sampling_params=OTHER_SAMPLING_KWARGS)
+else:
+    model, tokenizer = load_model_and_tokenizer(
+        model_path=DEEPSEEK_PATH, 
+        quantization_config=create_quantization_config() if USE_QUANTIZATION else None
+    )
+    text_gen_pipeline = initialize_pipeline(model, tokenizer)
+    setup_torch_backend()
+<br>
+
+<h3 style="font-family: Verdana; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">6.3 <b>DEFINE</b> <s>COMPLEX</s> PROMPT</h3>
+<hr><br>
+
+**NOTE: I'm not using this in the vLLM versions of the notebook**
+
+The simple prompt is:
+
+```python
+... = problem + "\nPlease integrate natural language reasoning with programs to solve the problem above, and put your final answer within \\boxed{}."
+```
+# Defaults
+
+# As per https://github.com/deepseek-ai/DeepSeek-Math/tree/main/evaluation with my own engineered extra text
+# TOOL_INSTRUCTIONS = """Please integrate natural language reasoning with programs to solve mathematical problems, and put your final answer within \\boxed{}:
+
+# Any code you write must be placed within triple backticks like so:
+# ```python
+# # CODE TO SOLVE THE PROBLEM GOES HERE AND MUST BE EXECUTABLE AS A .py FILE
+# ```
+
+# Here is an example using a simple problem to show the basic structure you should follow:
+
+# ---
+
+# QUESTION: 
+# Solve $4 + x = 4$ for $x$.
+
+# You must write out the logical solution in a step by step fashion before you write any python code to solve the problem.
+
+# SOLUTION:
+# {step by step thoughts go here}
+
+# FINAL ANSWER:
+# {Final answer - a positive integer - goes here with the final answer in \\boxed{}}
+
+# ---
+
+# You are an expert in mathematics and problem solving and will do a great job solving these olympiad level problems. 
+# Remember, the final answer will be a positive integer.
+
+# Remember to integrate natural language reasoning with programs to solve the problem above, and put your final answer within \\boxed{}
+
+# ---
+# """
+# # print(f"TOOL_INSTRUCTIONS BY ITSELF:\n{TOOL_INSTRUCTIONS}\n\n")
+TOOL_INSTRUCTIONS = None
+
+print(f"\n\n\nFULL CHAT TEMPLATE:\n\n")
+print(prepare_problem_statement("What is $1+1=$", TOOL_INSTRUCTIONS, tokenizer))
+<br>
+
+<h3 style="font-family: Verdana; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">6.4 <b>DEMONSTRATE</b> THE INFERENCE FLOW</h3>
+<hr><br>
+
+**TO DO**
+* Clean this up
+def get_aimo_examples(df, num_of_examples: int = 1, source="AOPS", idx: int = None):
+    if idx is None:
+        return df[df.source==source].sample(num_of_examples)
+    else:
+        return df[df.source==source].reset_index().iloc[idx:idx+num_of_examples]
+
+# Define the demo information
+#   - Pick an id for our dataset (using AIMO external from AOPS)
+#   - Get the problem string
+#   - Get the answer value
+DEMO_IDX = 17
+DEMO_ROW = get_aimo_examples(ext_aimo_df, idx=DEMO_IDX)
+DEMO_PROBLEM_STR = DEMO_ROW["problem"].values[0]
+DEMO_ANSWER = DEMO_ROW["answer"].values[0]
+
+
+# For display
+review_problem(ext_aimo_df, DEMO_ROW["problem_id"].values[0])
+
+# Inference Flow
+#  1. Combine the tool instructs with the problem string to get the full input prompt
+#  2. Pass the full prompt, the pipeline itself, and chosen hyperparameters into the `run_pipeline` function.
+demo_full_prompt = prepare_problem_statement(DEMO_PROBLEM_STR, TOOL_INSTRUCTIONS, tokenizer)
+
+if USE_VLLM:
+    demo_results = run_vllm_pipeline(
+        model_pipeline=text_gen_pipeline, 
+        query_prompt=demo_full_prompt, 
+        num_repetitions=N_REPETITIONS, 
+        temperature=TEMPERATURE, 
+        max_new_tokens=MAX_NEW_TOKENS
+    )
+else:
+    demo_results = run_pipeline(
+        model_pipeline=text_gen_pipeline, 
+        query_prompt=demo_full_prompt, 
+        num_repetitions=N_REPETITIONS, 
+        temperature=TEMPERATURE, 
+        max_new_tokens=MAX_NEW_TOKENS
+    )
+
+print("\n\n\n... PIPELINE RAW RESULTS ...\n")
+for i, result in enumerate(demo_results):
+    display_hr(True, False)
+    display(HTML(f'<span style="font-weight: bold;">RESULT #{i+1}'))
+    display_hr(False, False)
+    display(Markdown(result))
+    display_hr(False, True)
+    
+# Inference Flow Continued
+#  3. Process the raw outputs: This detects any code blocks... executes them.. and then captures the code and NL boxed outputs as separate pythonic values (float/int)
+#  4. Pass the full prompt, the pipeline itself, and chosen hyperparameters into the `run_pipeline` function.
+#  5. Aggregate the results by overwriting failed code results with valid boxed results... in cases where both are valid we take the code results (this can be changed with parameter).
+processed_demo_results = [process_output(demo_result) for demo_result in demo_results if demo_result]
+demo_boxed_results, demo_code_results = zip(*processed_demo_results) if processed_demo_results else ([], [])
+demo_final_answer = aggregate_results(demo_code_results, demo_boxed_results, boxed_copies_over_code_fail=True)
+
+# Cleanup
+torch.cuda.empty_cache(); gc.collect(); gc.collect()
+
+print(f"\n... RAW CODE RESULTS        : {demo_code_results}")
+print(f"... RAW BOXED RESULTS       : {demo_boxed_results}")
+print(f"... AGGREGATED FINAL RESULT : {demo_final_answer}\n\n")
+<br>
+
+<h3 style="font-family: Verdana; font-size: 20px; font-style: normal; font-weight: normal; text-decoration: none; text-transform: none; letter-spacing: 2px; color: #192a51; background-color: #ffffff;">6.5 <b>INFER</b> ON THE TEST DATA</h3>
+<hr><br>
+
+<b>We instantiate the AIMO SUBMISSION API and update our solution code to accomodate</b><br><br>
+
+---
+
+```python
+# Set up the evaluation API
+import aimo
+aimo_env = aimo.make_env()
+AIMO_ITER_TEST = aimo_env.iter_test()
+```
+
+<i>Note that this public version of the API does not randomize the order in which problems are served. The API used when your submission is scored will randomize the order.</i>
+
+Example on how to use:
+
+```python
+# Iterate through the test set and use the model make predictions
+for test_ex_df, submission_ex_df in AIMO_ITER_TEST:
+    submission_ex_df['answer'] = model.predict(test_ex_df['problem'])
+    env.predict(submission_ex_df)
+```
+
+---
+class DebugSubmissionAPI:
+    """API to manage and process problem and sample submission data for debugging purposes.
+    
+    Attributes:
+        - source_problem_df (pd.DataFrame): The updated, internal, problem DataFrame
+            - columns are 'id' and 'problem'
+        - source_sample_submission_df (pd.DataFrame): The created, internal, submission DataFrame
+        - submission_csv_path (str): The path to save the final .csv object to.
+    """
+
+    source_problem_df: pd.DataFrame
+    source_sample_submission_df: pd.DataFrame
+    submission_csv_path: str
+    
+    def __init__(self, source_problem_df: pd.DataFrame, submission_csv_path: str = "debug_submission.csv") -> None:
+        """Initializes the DebugSubmissionAPI.
+        
+        Sets up the problem DataFrame and initializes the sample submission DataFrame.
+
+        Args:
+            problem_df (pd.DataFrame): The initial problem DataFrame.
+        """
+        # Rename the problem_id column to id
+        self.source_problem_df = source_problem_df.rename(columns={"problem_id": "id"})
+        # Create a sample submission DataFrame with id and default answer '0'
+        self.source_sample_submission_df = pd.DataFrame({'id': self.source_problem_df['id'], 'answer': 0})
+        self.submission_csv_path = submission_csv_path
+    
+    @classmethod
+    def make_env(cls, problem_df: pd.DataFrame) -> 'DebugSubmissionAPI':
+        """Sets up the environment with the problem DataFrame.
+
+        Args:
+            problem_df (pd.DataFrame): The problem DataFrame.
+
+        Returns:
+            DebugSubmissionAPI: The instance of this class.
+        """
+        if "problem_id" not in problem_df.columns or "problem" not in problem_df:
+            raise ValueError("You must initialize the DebugSubmissionAPI with a source problem dataframe containing columns for 'problem_id' and 'problem'.")
+        return cls(source_problem_df=problem_df)
+
+    def iter_test(self) -> Generator[tuple[pd.DataFrame, pd.DataFrame], None, None]:
+        """Generates test and sample submission DataFrames for each row in the problem DataFrame.
+
+        Yields:
+            Generator[tuple[pd.DataFrame, pd.DataFrame], None, None]: 
+                Tuples of test and sample submission DataFrames.
+        """
+        if self.source_problem_df is None or self.source_sample_submission_df is None:
+            raise ValueError("Source dataframes are not initialized.")
+        
+        for i, row in self.source_problem_df.iterrows():
+            # Create a single-row DataFrame for the current test problem
+            test = pd.DataFrame([row])
+            # Get the corresponding row from the sample submission DataFrame
+            sample_submission = self.source_sample_submission_df.iloc[[i]].copy()
+            yield test, sample_submission
+            
+    def predict(self, sample_submission: pd.DataFrame):
+        # Update the internal sample submission DataFrame with the modified row
+        self.source_sample_submission_df.update(sample_submission)
+
+    def __len__(self) -> int:
+        """Returns the number of problems in the problem DataFrame.
+
+        Returns:
+            int: The number of problems.
+        """
+        return len(self.source_problem_df) if self.source_problem_df is not None else 0
+
+    def __repr__(self) -> str:
+        """Returns the string representation of the DebugSubmissionAPI instance.
+
+        Returns:
+            str: The string representation.
+        """
+        return f"<DebugSubmissionAPI with {len(self)} problems>"
+    
+    def __enter__(self) -> 'DebugSubmissionAPI':
+        """Enter the runtime context related to this object."""
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """Exit the runtime context related to this object."""
+        # Save the final submission when the context is exited
+        print(f"\n... Testing Complete - Saving Submission Dataframe to\n\t--> {self.submission_csv_path}")
+        self.source_sample_submission_df.to_csv(self.submission_csv_path, index=False)
+# Handle debug[public]/serverside[private] run
+IS_DEBUG = len(comp_test_df)==3
+
+# Forcing so we can make sure this works as expected... no save will be generated
+FORCE_NON_DEBUG = True
+
+# How many to show during debug... if not forcing (if forcing it will show all)
+N_TO_SHOW_DURING_DEBUG = 3
+
+if (IS_DEBUG and FORCE_NON_DEBUG==False):
+    # Create the debug submission API iterable object
+    aimo_env = DebugSubmissionAPI.make_env(
+        problem_df = get_aimo_examples(
+            ext_aimo_df, 
+            num_of_examples=N_TO_SHOW_DURING_DEBUG
+        )[["problem_id", "problem"]].reset_index(drop=True)
+    )
+else:
+    # Create the submission API iterable object
+    aimo_env = aimo.make_env()
+
+# Create the generator
+AIMO_ITER_TEST = aimo_env.iter_test()
+
+# Iterate over and make predictions
+final_answers = []
+for test_ex_df, submission_ex_df in AIMO_ITER_TEST:
+    # This is for just in case....
+    backup_submission_ex_df = submission_ex_df.copy()
+
+    try:
+        if (IS_DEBUG and FORCE_NON_DEBUG==False):
+            _ = review_problem(df=ext_aimo_df, problem_id=str(test_ex_df["id"].values[0]))
+
+        full_prompt = prepare_problem_statement(
+            problem=str(test_ex_df["problem"].values[0]), 
+            tool_instruction=TOOL_INSTRUCTIONS, 
+            tokenizer=tokenizer, 
+            use_simple=True
+        )
+
+        if USE_VLLM:
+            results = run_vllm_pipeline(
+                model_pipeline=text_gen_pipeline, 
+                query_prompt=full_prompt, 
+                num_repetitions=N_REPETITIONS, 
+                temperature=TEMPERATURE, 
+                max_new_tokens=MAX_NEW_TOKENS
+            )
+        else:
+            results = run_pipeline(
+                model_pipeline=text_gen_pipeline, 
+                query_prompt=full_prompt, 
+                num_repetitions=N_REPETITIONS, 
+                temperature=TEMPERATURE, 
+                max_new_tokens=MAX_NEW_TOKENS
+            )   
+
+        if IS_DEBUG:
+            print("\n\n\n... PIPELINE RAW RESULTS [SIMPLE] ...\n")
+            for i, result in enumerate(results):
+                display_hr(True, False)
+                display(HTML(f'<span style="font-weight: bold;">RESULT #{i+1}'))
+                display_hr(False, False)
+                display(Markdown(result))
+                display_hr(False, True)
+
+        processed_outputs = [process_output(output) for output in results if output]
+        boxed_results, code_results = zip(*processed_outputs) if processed_outputs else ([], [])
+        final_answer = aggregate_results(code_results, boxed_results)
+        final_answers.append(final_answer)
+
+        if IS_DEBUG:
+            print(f"\n... RAW CODE RESULTS        : {code_results}")
+            print(f"... RAW BOXED RESULTS       : {boxed_results}")
+            print(f"... AGGREGATED FINAL RESULT : {final_answer}\n\n")
+
+        submission_ex_df["answer"] = final_answer
+        aimo_env.predict(submission_ex_df)
+    except:
+        backup_submission_ex_df["answer"] = 1
+        aimo_env.predict(backup_submission_ex_df)
+
+# Show final dataframe (one that was saved)
+if IS_DEBUG and not FORCE_NON_DEBUG:
+    display(aimo_env.source_sample_submission_df)
+# class InferenceHandler:
+#     def __init__(
+#         self,
+#         model_path: str, 
+#         tool_instructions: str | None = None,
+#         max_new_tokens: int = 1536, 
+#         temperature: float = 0.654321, 
+#         n_repetitions: int = 3, 
+#         use_simple_instruction: bool = True, 
+#         boxed_copies_over_code_fail: bool = False,
+#         try_again_condition: str = "all",
+#         simple_to_complex_repetition_ratio: int = 5,
+#         minimum_complex_repetitions: int = 1
+#     ):
+#         """Initializes the InferenceHandler with the necessary configurations.
+
+#         Args:
+#             model_path (str): Path to the model directory.
+#             tool_instructions (str): Additional instructions or information to append to the problem.
+#             max_new_tokens (int): Maximum number of new tokens to generate.
+#             temperature (float): Controls randomness in output generation.
+#             n_repetitions (int): Number of times to run the pipeline for each input.
+#             use_simple_instruction (bool): Whether to use simple problem statements.
+#             boxed_copies_over_code_fail (bool): Whether non-error boxed results will copy over failed code results.
+#             try_again_condition (str, optional): What condition to try again on. One of ['all' | 'boxed' | 'code' | None]
+#             simple_to_complex_repetition_ratio (int): How many simple instructions run before 1 complex instruction runs. Ignored if tool_instructions is None (simple only used)
+#             minimum_complex_repetitions (int): Minimum number of complex repetitions. Ignored if tool_instructions is None (simple only used)
+#         """
+#         set_seed()
+#         quant_config = create_quantization_config()
+#         self.model, self.tokenizer = load_model_and_tokenizer(model_path, quant_config)
+#         self.pipeline = initialize_pipeline(self.model, self.tokenizer)
+#         setup_torch_backend()
+        
+#         self.simple_to_complex_repetition_ratio = 5
+#         if tool_instructions is None and use_simple_instruction==False:
+#             raise ValueError
+#         self.tool_instructions = tool_instructions
+#         self.max_new_tokens = max_new_tokens
+#         self.temperature = temperature
+#         self.n_repetitions = n_repetitions
+#         self.use_simple_instruction = use_simple_instruction
+#         self.boxed_copies_over_code_fail = boxed_copies_over_code_fail
+#         self.try_again_condition = try_again_condition
+        
+#         if tool_instructions is None:
+#             self.simple_n_repetitions = self.n_repetitions
+#             self.complex_n_repetitions = 0
+#         else:
+#             self.complex_n_repetitions = max(self.n_repetitions//simple_to_complex_repetition_ratio, minimum_complex_repetitions)
+#             self.simple_n_repetitions = self.n_repetitions-self.complex_n_repetitions
+            
+#     def run_inference(self, problem: str, use_simple_instruction: bool = None, temperature: float = None) -> tuple:
+#         """Runs inference on a given problem and returns the processed outputs.
+
+#         Args:
+#             problem (str): The problem text to infer on.
+#             use_simple_instruction (bool): Whether to use simple problem statements.
+#             temperature (float, optional): An optional override value for temperature
+
+#         Returns:
+#             tuple: A tuple containing the raw results, the boxed_results and the code_results.
+#         """
+#         # Handle number of repetitions
+#         if self.use_simple_instruction:
+#             n_repetitions = self.simple_n_repetitions if use_simple_instruction else self.complex_n_repetitions
+#         else:
+#             n_repetitions = self.n_repetitions
+            
+#         full_prompt = prepare_problem_statement(problem, self.tool_instructions, use_simple_instruction)
+#         results = run_pipeline(self.pipeline, full_prompt, self.max_new_tokens, temperature or self.temperature, n_repetitions)
+#         processed_outputs = [process_output(output) for output in results if output]
+#         boxed_results, code_results = zip(*processed_outputs) if processed_outputs else ([], [])
+#         return results, boxed_results, code_results
+    
+#     def get_try_again_flag(self, boxed_results: tuple, code_results: tuple) -> bool:
+#         """Whether or not we meet the conditions to try again
+        
+#         Args:
+#             boxed_results (tuple): The results from the textual output
+#             code_results (tuple): The results from the code output
+            
+#         Returns:
+#             bool indicating whether or not we try again
+#         """
+#         # try again condition capture
+#         try_again_flag = False
+#         if self.try_again_condition=="all":
+#             try_again_flag = all(x == -1 for x in (list(boxed_results) + list(code_results))) or len((list(boxed_results) + list(code_results))) == 0
+#         elif "code" in self.try_again_condition:
+#             try_again_flag = all(x == -1 for x in list(code_results)) or len(list(code_results)) == 0
+#         elif "boxed" in self.try_again_condition:
+#             try_again_flag = all(x == -1 for x in list(boxed_results)) or len(list(boxed_results)) == 0
+#         return try_again_flag
+    
+    
+#     def infer(self, problem: str) -> int:
+#         """Performs inference on a given problem and returns the final answer.
+
+#         Args:
+#             problem (str): The problem text to infer on.
+
+#         Returns:
+#             int: The final answer obtained from inference.
+#         """
+#         # Get the results
+#         results, boxed_results, code_results = self.run_inference(problem, use_simple_instruction=True)
+        
+#         # If try again condition is met... here we go
+#         if self.get_try_again_flag(boxed_results, code_results):
+#             # Get the retried results with slightly higher temp
+#             results, boxed_results, code_results = self.run_inference(problem, use_simple_instruction=True, temperature=self.temperature*1.1)
+        
+#         # Get complex fragment
+#         if self.use_simple_instruction and self.complex_n_repetitions>0:
+#             _results, _boxed_results, _code_results = self.run_inference(problem, use_simple_instruction=False, temperature=self.temperature*0.9)
+#             boxed_results, code_results = list(boxed_results)+list(_boxed_results), list(code_results)+list(_code_results)
+        
+#         # Get final answer
+#         final_answer = aggregate_results(boxed_results, code_results, self.boxed_copies_over_code_fail)
+#         return final_answer
+
+#     def infer_on_dataframe(
+#         self, df: pd.DataFrame, 
+#         id_col: str = "id", 
+#         problem_col: str = "problem", 
+#         answer_col: str = "answer", 
+#         output_csv: str = "submission.csv"
+#     ) -> pd.DataFrame:
+#         """
+#         Performs inference on a DataFrame containing problems and saves the results to a CSV file.
+
+#         Args:
+#             df (pd.DataFrame): The DataFrame containing the problems.
+#             id_col (str): The name of the column containing problem IDs. Default is "id".
+#             problem_col (str): The name of the column containing problem texts. Default is "problem".
+#             answer_col (str): The name of the column to store the inferred answers. Default is "answer".
+#             output_csv (str): The path to save the output CSV file. Default is "submission.csv".
+
+#         Returns:
+#             pd.DataFrame: The DataFrame with the inferred answers.
+#         """
+#         final_answers = []
+#         for _, row in tqdm(df.iterrows()):
+#             try:
+#                 final_answer = self.infer(row[problem_col])
+#             except:
+#                 final_answer = -1
+#             final_answers.append(final_answer)
+        
+#         df[answer_col] = final_answers
+#         df[[id_col, answer_col]].to_csv(output_csv, index=False)
+#         return df
+    
+# demo_df = get_aimo_examples(ext_aimo_df, num_of_examples=3)[["problem_id", "problem"]].reset_index(drop=True)
+# display(demo_df)
+
+# inference_handler = InferenceHandler(
+#     model_path=DEEPSEEK_PATH,
+#     tool_instructions=TOOL_INSTRUCTIONS,
+#     max_new_tokens=MAX_NEW_TOKENS,
+#     temperature=TEMPERATURE,
+#     n_repetitions=N_REPETITIONS,
+#     use_simple_instruction=True,
+#     boxed_copies_over_code_fail=False,
+#     try_again_condition = "code",
+#     simple_to_complex_repetition_ratio = 4,
+# )
+
+# review_problem(ext_aimo_df, demo_df["problem_id"][0])
+# inference_handler.infer(demo_df["problem"][0])
+# Just in case...
+try:
+    if os.path.isfile("code_to_execute.py"):
+        os.remove("code_to_execute.py")
+except:
+    !rm -rf ./code_to_execute.py
+<a id="cv"></a>
+
+<h1 style="font-family: Verdana; font-size: 24px; font-style: normal; font-weight: bold; text-decoration: none; text-transform: none; letter-spacing: 3px; background-color: #ffffff; color: #799cb7;" id="cv">7&nbsp;&nbsp;CROSS VALIDATION&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none; color: #192a51;" href="#toc">&#10514;</a></h1>
+
+<br>
+
+All of our cross validation will happen within a block that only runs if we are debugging.
+# N_SUBSET = 50
+# if IS_DEBUG:
+#     cv_df = get_aimo_examples(ext_aimo_df, num_of_examples=N_SUBSET)
+#     cv_results = []
+    
+#     for _, row in tqdm(cv_df.iterrows(), total=N_SUBSET):
+#         row_result = {"problem_id": row.problem_id, "problem": row.problem, "gt_result": row.answer, "gt_result_solution": row.solution}
+#         full_prompt = prepare_problem_statement(row["problem"], TOOL_INSTRUCTIONS, tokenizer, use_simple=True)
+
+#         if USE_VLLM:
+#             results = run_vllm_pipeline(
+#                 model_pipeline=text_gen_pipeline, 
+#                 query_prompt=full_prompt, 
+#                 num_repetitions=N_REPETITIONS, 
+#                 temperature=TEMPERATURE, 
+#                 max_new_tokens=MAX_NEW_TOKENS
+#             )
+#         else:
+#             results = run_pipeline(
+#                 model_pipeline=text_gen_pipeline, 
+#                 query_prompt=full_prompt, 
+#                 num_repetitions=N_REPETITIONS, 
+#                 temperature=TEMPERATURE, 
+#                 max_new_tokens=MAX_NEW_TOKENS
+#             )   
+
+#         processed_outputs = [process_output(output) for output in results if output]
+#         boxed_results, code_results = zip(*processed_outputs) if processed_outputs else ([], [])
+#         final_answer = aggregate_results(code_results, boxed_results)
+        
+#         row_result["pred_result"] = final_answer
+#         row_result["pred_result_solutions"] = results
+#         row_result["pred_code_results"] = code_results
+#         row_result["pred_boxed_results"] = code_results
+        
+#         cv_results.append(row_result)
+
+# try:
+#     cv_results_df = pd.DataFrame(cv_results)
+    
+# except:
+#     print("try again")
+
+# # 12/50
+# cv_results_df[cv_results_df.gt_result==cv_results_df.pred_result]
+
+# # TBD
+# cv_results_df.to_csv("cv_results.csv", index=False)
+# cv_results_df
+

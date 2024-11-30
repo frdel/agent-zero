@@ -1,0 +1,229 @@
+(Transcribed by TurboScribe.ai. Go Unlimited to remove this message.)
+
+So, the previous week, we were supposed to clean, or, yeah, we splitted the two datasets. I cleaned and filtered, making sure the latex format is correct and the answers are Modulo 1000. Then, after that I tested the agent, sort of to give us a rough understanding of where we are at.
+
+So, what I did on Kaggle, there's reference questions under the data section, like reference questions, solution steps and answers. So, I gave the agent, I gave it this, but before I go in-depth into this, I'll go back into how does the agent understand stuff. It can obviously see PDF, HTML, TXT, Markdown, what else, and CSV, I think I've said it.
+
+So, it can see the mass part of knowledge, but now the question would be how good is it at extracting a particular question. And, let's just say question, then answer. So, the reason I'm asking that is because for the submissions, we'll need to, or the submission, as I can see GPT said, it's better to have it, do it sort of like a batch processing.
+
+So, you'd be given like the test dataset in full, whether it's as a CSV, most likely a CSV, or some way you'd be given the test dataset. Even though it's private, so we only see it after we have submitted the model. So, the model will receive the CSV somehow, so we need to understand how it will receive it, then how will it be processed.
+
+Even though the agent can run code, we've got to sort of, we'll try it out with the first submission. But, the reason I'm bringing this up is because now, as we try to connect the data, because the reason we're cleaning it is so that we now connect it to the agent. How will we connect it, and now that would be the next week's task, or this week's task, to connect it and see how good is it at extracting a question from a CSV, and working on the question, and giving an answer, and printing it back to the same CSV, or having a CSV ready that's... Connecting our test data? Yeah, the test data will be given, but we need to test how... You mean the train, I mean the test data. 
+
+What about the train data? It's what we have. You already know how to... That's what we have. I know.
+
+Yeah, that's what I mean. Whether it's test or train, it doesn't matter. Mm-hmm.
+
+Because, if we do it through train, we'll know how it works. So, it needs to figure out how to connect with a CSV to get the questions out, and then process them. Yeah, so there's different ways. 
+
+There is giving it as copied information, or you give it as a knowledge base, but now with the knowledge base, the problem would be, in terms of filtering, it might filter differently, because it's based on re-ranking like a rag process, rather than... Let's say if I say the first question, it won't just go and pick the first question. So, that might be a thing to note. So, that might need... It might end up needing a script to... Or a tool that it can use to sort of import CSV or something like that, but for now, that's going to be now this week's task.
+
+But now, going back to... But basically, that's how the submission works. You'd develop a script that reads the test set, processes each problem, and generates the corresponding answer. Then, it just has to be quick in terms of how it does it, but that's done. 
+
+We'll do that over the process. Let's see here, man. Oh, what else? Big boy.
+
+So, the next thing is... What's the next thing? Oh, the testing that I did. So, the testing would just create a chart, then give it... Let's see if I can get to this stuff. Motherfucker.
+
+So, what I would do is create a prompt with O1, the general O1. So, this would be the prompt. This is for a different case.
+
+But the process I did for testing, it was first time, tried just the question, try just get an answer out and reasoning steps, save that in memory. Maybe one thing I noted, it wasn't as good because what it does, it basically saves... If I was to use it for absolutely anything, it's going to save that in memory. It doesn't know what to differentiate as things to save in memory.
+
+So, I think they called it auto-memory. It just saves it according to what it thinks is best, though maybe not everything is best. So, that was one thing I noted.
+
+The other thing was the questions. So, the first time, it just started itself. Second time would be give it the question and a hint of the solution steps, then try and recreate the answer.
+
+Then also save that in memory. Then after that, the last thing would be question, solution steps, now the actual solution steps and the answer. Then have it critique.
+
+Or with the hints, we now cross-check that. Cross-check the answers with the actual answer, see where it got correct. Then this would be saved as correct steps.
+
+The last part would be with the answer and solution steps, have it critique the previous processes, see which ones were correct. And now sort of like note, okay, these were the problems I came across. So, if it was like, I think there was one called combinatrix or something to do about combinations and stuff.
+
+It did really wrong and it was like, it would like try a question over multiple minutes, but it's still like trying the same solution. It's like if I was to go to 4.0 and try to do one question, it just keeps on speeding up the same thing. So, that was one key problem.
+
+So, yeah, so this was the basic steps I had to test it. But this, I was just doing it to see the general overview of how the model works. And this is just assuming we had an 8 billion model, we had one mini or we had whatever model it is as the main one, which is not like fine-tuned formats.
+
+So, now this coming week, it should be ideally connected to a local model. Then test, let's see, let me check the pipeline. See if I'm ideally.
+
+Okay, so we got, so this part, so yeah, the first part was this connecting it to the training set. See how it's able to extract the question or whether this would need a tool. Then now the next part is the core processing.
+
+So, in terms of core processing, now this, even before this, now test it with a fine-tuned model. I don't know how fine-tuned, I think if you fine-tune, like, let's say if it's a JAMA model, fine-tuned formats, it still think it's able to converse as a chart model, right? It's not just purely math. Of course, yeah.
+
+Okay, then that's fine. It's just trained on the methods. Yeah.
+
+Then that would be the next part, test it for, with a fine-tuned model, see how that improves. Because that would be the difference. If we choose like Nomina, Nomina was the winning model last year, might do really well.
+
+But now, that. There is already some models that are specialized for us. Yeah.
+
+If you look them on LM Studios, try those. We will try those. Yeah, but I think the only thing is, the only thing I'm thinking of is, I might check the discussions page.
+
+Because there is, obviously, you can always go for the easier method, but I don't know how these guys do it. Let's see. Like, for example, if you go to models, we might see, okay, we can see DeepSigma, that's a really good one.
+
+We can see Cohen. We can see lots of Cohen, DeepSigma again, and Germa. But where else can we go? Oh, discussion.
+
+So, maybe that we might think of it later on, is what specific model would work. Maybe, yeah, most likely we'll discover this along the line. Because maybe if we do, we might start off like, if we get our starting model as Cohen is really good, then the next step would be adding reasoning tools.
+
+It might be harder tool calling or tool choosing, something like that. For some reason, we might not know. So, it might be, we might end up choosing a different model, which might still be good at math and still good at tool calling, something like that.
+
+So, for now, we'll just try anything really, any math fine tune model. Then let's go back to the, what do you call it? The baseline model. Yeah, I'm also thinking we can do the, after we test this, depending on the best method, the reason I want to do like more than just two things, those are just easy.
+
+Because it's fine, the testing took me yesterday and today, roughly, roughly, let's say roughly six hours or four hours, if we remove the breaks. So, roughly four hours for the testing. So, testing for fine tuned, another maybe four or six hours.
+
+For this one, this is like maybe an hour, 30 minutes. So, the next thing is after we discover which, where, if it's able to get CSVs correctly, if we give it a CSV in knowledge, is it able to get a question? If it's able to get a question in knowledge, then we don't need a tool. If it's not able to, and when I mean specific question, it's like number four, number five, whatever that case.
+
+Yeah, but let's say even if it can grab a question just randomly, then it's fine. Because if submission time, it just gets a list of questions, we might create a tool to reorder it, something of the sort. The output has to be in the same order, in the right order.
+
+Yeah. That's the questions, that's how they compare them. So, yeah, we need to reorder them.
+
+We'll figure it out how to. So, that's the main task? Yeah, so if it's good with the knowledge one, we will need to create a tool. If it's bad, we'll need to create an input tool.
+
+So, that would be the first tool we create before we get to the reasoning stuff. Then obviously now cleaning the other data set. Then I think also we can start the research now.
+
+Yeah. Or do we finish this? Because the research was only to be able to help us for the full model, not necessarily this one. Okay, let's not start the research.
+
+Because that might lead to a rabbit hole of trying different tools and strategies for this one. Well, that's good to be honest. But the base model is supposed to be simple.
+
+It's just like, you see when we test, see how good it is. Like now I can tell you we need a fine-tuned model. Now that's something I concluded.
+
+We figured like the next step, if we now give it our data, see how it performs. The next thing would be now the reasoning, like a reasoning tool. Reasoning, the module is just to redirect to different parts.
+
+But the tool itself, now if we test it, we might end up now creating a reasoning tool specifically for that. But for now, if we were to do the research, we'll try and implement one or two. But I don't think this should be just deductive rather than informed.
+
+I think that's the best way I can put it. Then the full model, since it's more detailed, we know exactly where a particular tool would be of use. Then now the research more or less comes to help build the tool rather than add the tool in itself.
+
+The full model captures that in mind. So instead of research, I think the next thing would be if we have test, CSV, and here test with fine-tuned. Next thing would be, I just want three things.
+
+So let's do test with the data. Okay, I can't do that. Test with fine-tuned.
+
+So test. I have like 3,000 questions. Yeah, I think it's fine.
+
+Even if it's like 100, it's fine. Just test out with the data we have. I'll see how I'll do it.
+
+Maybe I might filter out the questions topic-wise and do it topic-wise, like 10, 10 each. So yeah, I think that's the three things we'll do. Data, check the CSV, and whether you can get it from memory or it needs a tool.
+
+Then this part is put in a fine-tuned model. Even try different ones, two or three is fine. See how better it performs and whether it can still call to different tools, even if it's fine-tuned.
+
+Then after that, use the fine-tuned model. If you do use different models, different models one after the other. Like one model that's like really good at interpreting the problem itself.
+
+Then we leave one model that's like really good at doing the maths. And we put them together. Like the first one just gets you the method.
+
+And the second one does the maths itself using the method. Yeah, I was thinking of that. Like a chain.
+
+I was thinking of that. The only thing, that's why I was asking you just a few minutes ago, is how good is a fine-tuned model. Because if it can do tool calling and it can do interpretation, that's why you might find like Nomina one last year.
+
+If you use just one model. One model might not be as good. So I don't feel like one model might be as good as both maths and interpreting.
+
+Because usually what you'll see is some models are not really as good at maths. Like even GPT is not that good at maths to be honest. There are some models that are really fine-tuned.
+
+In the maths, not really. Nomina model. Yeah, you can just use that just for maths part.
+
+Yeah but we don't know how good it is at problem solving. The testing is there. Exactly.
+
+So the person who does that should now give us like, I created a report of what I did. Now they'll just create like a report saying it would be better to try like a different model or a different tool for reasoning. Yeah.
+
+That could be already fine-tuned or we'll fine-tune it ourselves. After we test it. Yeah.
+
+So we need some sort of like metrics for evaluating it. The performance of that thing. The fine-tuned? Yeah.
+
+Yeah, let's do it. Now? Yeah. Now it's just metrics.
+
+My eyes are closing. It's just metrics, like things we can mention. Things we can test.
+
+Yeah. Reasoning steps, that's what I used. Like solution steps.
+
+So how do you test them? We have reference. Okay, if we, you see the test data set we have. Uh-huh.
+
+Is this my one? Yeah. No, bro, it's dirty as fuck. Are you sure you didn't switch it with yours? Mine's in the back.
+
+When did we switch? Mm-hmm. You're weird. Yeah, we got solution steps.
+
+Oh, nice. So when we test it, ideally, like when I did it, I just gave it the question first time, see how good the model is on itself. Then after that, give it a hint, see if it can pick up hints.
+
+Then that would mean like a simple reasoning model that just hints on the previous things it tried, rather than necessarily giving out the solution. Mm-hmm. Then after you give it hints, you now give it problem, actual solution, and answer, because the hint would try to get the correct answer.
+
+So if it was correct, it means the reasoning steps it came up with were correct, hence answered the question correctly. But if we give it a question and it failed, you might get a different answer. So how we test it is seeing the reasoning steps, whether it can pick up on hints.
+
+Hints would be like, let's say if a solution chose to do a logarithm of example. Instead of doing it, if it was a big multiplication, instead of doing it roughly, like actually, you'd do the log version. If it's big numbers, something like that, you might find hint is use logs.
+
+So I think reasoning steps, that's definitely one. Tool calling, that's definitely one. By tool calling, I just mean if you try and use agent zero in the week.
+
+Yeah, I'll try. It's also true. I've done it.
+
+It's tough, though, bro. They're trying to push more work on me, man. Work? Yeah, bro.
+
+Dude is like, you ain't got nothing to do at uni, so I'll give you more work. It depends if you're free. You're the one who knows. 
+
+How does he know you're not working? You told him, bro. That's now your problem, you see? He just pushes work on me now. I just wanted to relax or do some other shit, man.
+
+They don't even pay me. Next time, think about that. You cooked yourself. 
+
+Kittens. So, let's say, go to memory and get, let's say, something like that. This? This? So, basically... What APIs are you using? Here? He's just GPT.
+
+Which GPT? 01. You have APIs? Yeah, yeah. I put some down, but... How much? $18.
+
+I need them. Take it out. Bro, your lunch today, bro. 
+
+20 pound of wings. That's all you. Me? What? That's all you.
+
+Here, here. Half was mine. So, like, call subordinate is like a tool.
+
+So, if the fine-tuned model can't do it, even though their framework has been made to always do this, that model might strain, strain might be, you might see, like, false here when it called subordinate, or even here, it might show an error, like a red error. That means there's a problem with the code itself. If it's, like, an error from terminal, it's going to print it somewhere here.
+
+You just play around with it, you'll see. Like, knowledge tool has web search, and the documents you give it, those are its knowledge. So, depending on how good this is, that would be the second metric.
+
+So, two calling, let me go to, where was I, was it github, I think. OmniMath, that was checking. So, this, I think those two, two calling, and this other one, what are the metrics? Planning, in general.
+
+Because reasoning is reasoning through the actual problem, but planning is prior planning. Even this, I don't think it was really good planning. It just depends, I don't know how fast they set it up to, even though it's using O1 Mini, I don't know how they set it up, or how quick it works, API-wise.
+
+I've not used it before. Let me see. It's in initialize.py. Oh, it's GPT-4.
+
+Okay, okay. Now it makes sense. Makes, yeah, makes sense.
+
+I thought it was O1. But yeah, those three things, I'll write it somewhere. So, depending on, oh wait, I'm here.
+
+Six, okay. Okay. Let's just save that for now.
+
+Those are the metrics we'll use. So, maybe, yeah, use CSV or something. So the way you test them is that you're going to compare all of them with the actual answer.
+
+For all of them, you're going to just compare it with the actual final answer. No, no, it's going to be based on what you're testing, or what you're looking for. So, if you're looking at tool calling, you'd be looking at the actual responses.
+
+So, for example. What are you talking about, what metrics? We have four metrics. Yeah.
+
+Let me open it. Since we have four metrics, which is tool calling, reasoning, planning, accuracy. If you're checking accuracy, that means you're checking accuracy of the answer.
+
+What about the other two then? If it's planning, then you'd have to check what the steps the agent took. Even if it's like a few, it doesn't need to be all questions. Because you might be testing 100 questions, or 50, let's say 50.
+
+You can't check all 50, just check in general how many. You could synthesize data. You create a new column for the data that you already have, using some model.
+
+You generate, according to the solution that we have. We tell it, use this solution and make an exact copy. Not copy, but like an inferred plan using that solution.
+
+So, they already has a breakdown of how to do the thing. Now, it just needs to write in the bullet points or steps. That's much easier for it to do.
+
+That's how we synthesize the plan data, plan column. Now we use our model. That's going to go with the question itself, only.
+
+And it's going to create the plan. And now we're going to compare the plan made by the model with the one that we have, the actual one. That's how we test it. 
+
+We test similarity. For planning. I would say, that's more or less calm.
+
+Let me show you the full model again. It's just the difference between full and base. So, for the full... We could have done this over FaceTime.
+
+What are you doing? Let's say... Let's say somewhere here, like where the reasoning tool comes in. Hmm... Let's say even here, problem analysis and representation. That would be the planning phase.
+
+Or more or less. It could be here or here. It doesn't matter.
+
+The reason the base... The base... Let me now show you the base. Yeah, but we wouldn't know whether the planning was good or not. Yeah, the base... The reason for the base model is just to have it there.
+
+This is not our final submission. This is to ensure we can submit something. That's simple enough.
+
+And by simple, I mean... We could... The reason we're just testing is... We could, once we send this model to Cargo... It might be able to make a submission that's good. So that means we might not need to do the full model. And we'll just improve this one.
+
+But if it's not as good, that means we can now go to the full model. And with the full model, we can work on that. It's just like this version, but improved.
+
+So, like, the planning is already accounted for that. In this part, it's just like seeing how... It's just testing how good it is. We're not trying to improve it.
+
+We're just trying to see how good it is. Then this will help us. Because the reason the metrics are here in the first place... Is because you asked how will we know which model to choose... In terms of fine-tuned and all of that.
+
+Yeah. Because that's the next step we're at here. Yeah.
+
+Maybe you'll find that some of them are better.
+
+(This file is longer than 30 minutes. Go Unlimited at TurboScribe.ai to transcribe files up to 10 hours long.)

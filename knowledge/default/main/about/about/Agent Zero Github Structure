@@ -1,0 +1,206 @@
+Directory Structure:
+
+└── ./
+    ├── .vscode
+    │   ├── extensions.json
+    │   ├── launch.json
+    │   └── settings.json
+    ├── bundle
+    │   ├── mac_pkg_scripts
+    │   │   └── postinstall
+    │   ├── bundle.py
+    │   ├── macos_bundle.sh
+    │   ├── requirements.txt
+    │   └── windows_bundle.bat
+    ├── docker
+    │   ├── exe
+    │   │   ├── fs
+    │   │   │   ├── exe
+    │   │   │   │   └── node_eval.js
+    │   │   │   └── root
+    │   │   │       ├── .bashrc
+    │   │   │       └── .profile
+    │   │   ├── build.txt
+    │   │   ├── Dockerfile
+    │   │   └── initialize.sh
+    │   └── run
+    │       ├── .bashrc
+    │       ├── build.txt
+    │       ├── Dockerfile
+    │       └── initialize.sh
+    ├── docs
+    │   ├── res
+    │   │   └── a0-vector-graphics
+    │   │       └── a0LogoVector.ai
+    │   ├── architecture.md
+    │   ├── contribution.md
+    │   ├── installation.md
+    │   ├── quickstart.md
+    │   ├── README.md
+    │   ├── troubleshooting.md
+    │   └── usage.md
+    ├── instruments
+    │   ├── custom
+    │   │   └── .gitkeep
+    │   └── default
+    │       ├── yt_download
+    │       │   ├── yt_download.md
+    │       │   └── yt_download.sh
+    │       └── .gitkeep
+    ├── knowledge
+    │   ├── custom
+    │   │   ├── main
+    │   │   │   └── .gitkeep
+    │   │   ├── solutions
+    │   │   │   └── .gitkeep
+    │   │   └── .gitkeep
+    │   ├── default
+    │   │   ├── main
+    │   │   │   ├── about
+    │   │   │   │   ├── github_readme.md
+    │   │   │   │   └── installation.md
+    │   │   │   └── .gitkeep
+    │   │   ├── solutions
+    │   │   │   ├── .gitkeep
+    │   │   │   └── get_current_time.md
+    │   │   └── .gitkeep
+    │   └── .gitkeep
+    ├── logs
+    │   └── .gitkeep
+    ├── memory
+    │   └── .gitkeep
+    ├── prompts
+    │   ├── default
+    │   │   ├── agent.system.instruments.md
+    │   │   ├── agent.system.main.communication.md
+    │   │   ├── agent.system.main.md
+    │   │   ├── agent.system.main.role.md
+    │   │   ├── agent.system.main.solving.md
+    │   │   ├── agent.system.main.tips.md
+    │   │   ├── agent.system.memories.md
+    │   │   ├── agent.system.solutions.md
+    │   │   ├── agent.system.tool.call_sub.md
+    │   │   ├── agent.system.tool.code_exe.md
+    │   │   ├── agent.system.tool.knowledge.md
+    │   │   ├── agent.system.tool.memory.md
+    │   │   ├── agent.system.tool.response.md
+    │   │   ├── agent.system.tool.web.md
+    │   │   ├── agent.system.tools.md
+    │   │   ├── fw.code_no_output.md
+    │   │   ├── fw.code_reset.md
+    │   │   ├── fw.code_runtime_wrong.md
+    │   │   ├── fw.error.md
+    │   │   ├── fw.intervention.md
+    │   │   ├── fw.memories_deleted.md
+    │   │   ├── fw.memories_not_found.md
+    │   │   ├── fw.memory_saved.md
+    │   │   ├── fw.memory.hist_suc.sys.md
+    │   │   ├── fw.memory.hist_sum.sys.md
+    │   │   ├── fw.msg_cleanup.md
+    │   │   ├── fw.msg_from_subordinate.md
+    │   │   ├── fw.msg_misformat.md
+    │   │   ├── fw.msg_repeat.md
+    │   │   ├── fw.msg_timeout.md
+    │   │   ├── fw.msg_truncated.md
+    │   │   ├── fw.tool_not_found.md
+    │   │   ├── fw.tool_response.md
+    │   │   ├── fw.user_message.md
+    │   │   ├── memory.memories_query.sys.md
+    │   │   ├── memory.memories_sum.sys.md
+    │   │   ├── memory.solutions_query.sys.md
+    │   │   ├── memory.solutions_sum.sys.md
+    │   │   ├── msg.memory_cleanup.md
+    │   │   └── tool.knowledge.response.md
+    │   ├── dianoia-small
+    │   │   ├── agent.system.main.communication.md
+    │   │   ├── agent.system.main.solving.md
+    │   │   ├── agent.system.main.tips.md
+    │   │   ├── agent.system.tool.call_sub.md
+    │   │   ├── agent.system.tool.code_exe.md
+    │   │   ├── agent.system.tool.knowledge.md
+    │   │   └── agent.system.tool.response.md
+    │   └── dianoia-xl
+    │       ├── agent.system.main.communication.md
+    │       ├── agent.system.main.role.md
+    │       ├── agent.system.main.solving.md
+    │       ├── agent.system.main.tips.md
+    │       ├── agent.system.tool.call_sub.md
+    │       └── agent.system.tool.response.md
+    ├── python
+    │   ├── extensions
+    │   │   ├── message_loop_end
+    │   │   │   ├── _90_save_chat.py
+    │   │   │   └── .gitkeep
+    │   │   ├── message_loop_prompts
+    │   │   │   ├── _10_system_prompt.py
+    │   │   │   ├── _50_recall_memories.py
+    │   │   │   └── _51_recall_solutions.py
+    │   │   ├── monologue_end
+    │   │   │   ├── _50_memorize_fragments.py
+    │   │   │   ├── _51_memorize_solutions.py
+    │   │   │   └── _90_waiting_for_input_msg.py
+    │   │   └── monologue_start
+    │   │       └── .gitkeep
+    │   ├── helpers
+    │   │   ├── defer.py
+    │   │   ├── dirty_json.py
+    │   │   ├── docker.py
+    │   │   ├── dotenv.py
+    │   │   ├── duckduckgo_search.py
+    │   │   ├── errors.py
+    │   │   ├── extension.py
+    │   │   ├── extract_tools.py
+    │   │   ├── files.py
+    │   │   ├── knowledge_import.py
+    │   │   ├── log.py
+    │   │   ├── memory.py
+    │   │   ├── messages.py
+    │   │   ├── perplexity_search.py
+    │   │   ├── persist_chat.py
+    │   │   ├── print_style.py
+    │   │   ├── rate_limiter.py
+    │   │   ├── shell_local.py
+    │   │   ├── shell_ssh.py
+    │   │   ├── strings.py
+    │   │   ├── timed_input.py
+    │   │   └── tool.py
+    │   ├── tools
+    │   │   ├── call_subordinate.py
+    │   │   ├── code_execution_tool.py
+    │   │   ├── knowledge_tool.py
+    │   │   ├── memory_delete.py
+    │   │   ├── memory_forget.py
+    │   │   ├── memory_load.py
+    │   │   ├── memory_save.py
+    │   │   ├── response.py
+    │   │   ├── task_done.py
+    │   │   ├── unknown.py
+    │   │   └── webpage_content_tool.py
+    │   └── __init__.py
+    ├── tests
+    │   ├── helpers
+    │   │   ├── __init__.py
+    │   │   └── test_json_parse_dirty.py
+    │   └── __init__.py
+    ├── tmp
+    │   └── .gitkeep
+    ├── webui
+    │   ├── index.css
+    │   ├── index.html
+    │   ├── index.js
+    │   ├── messages.js
+    │   └── toast.css
+    ├── work_dir
+    │   └── .gitkeep
+    ├── .gitattributes
+    ├── .gitignore
+    ├── agent.py
+    ├── example.env
+    ├── initialize.py
+    ├── LICENSE
+    ├── models.py
+    ├── README.md
+    ├── requirements.txt
+    ├── run_bundle.py
+    ├── run_cli.py
+    └── run_ui.py

@@ -1,0 +1,348 @@
+Skip to
+content
+Kaggle
+
+Create
+Home
+
+Competitions
+
+Datasets
+
+Models
+
+Code
+
+Discussions
+
+Learn
+
+More
+
+Your Work
+
+
+Viewed
+
+AI Mathematical Olympiad - Progress Prize 2
+
+
+ARC Prize 2024
+
+
+Iris Flower Dataset
+
+
+AI Mathematical Olympiad - Progress Prize 1
+
+
+Numina 1st Place Solution
+
+
+Edited
+
+Exercise: Explore Your Data
+
+
+BARBAH GAMES Website Chatbot-RAG2.ipynb
+
+
+BARBAH GAMES Website Chatbot-RAG Data Prep.ipynb
+
+
+BARBAH GAMES Website Chatbot-RAG.ipynb
+
+
+Data_Filterer_SigmaDolphin
+
+
+Bookmarks
+
+ARC Prize 2024
+
+
+Data_Filterer_SigmaDolphin
+
+
+NFL Big Data Bowl 2024
+
+
+View Active Events
+
+Search
+
+Kaggle uses cookies from Google to deliver and enhance the quality of its services and to analyze traffic.
+Learn more
+OK, Got it.
+AI|MO · Featured Code Competition · 5 months to go
+
+Submit Prediction
+AI Mathematical Olympiad - Progress Prize 2
+Solve national-level math challenges using artificial intelligence models
+
+
+You have accepted the rules for this competition. Good luck!
+Competition Rules
+One account per participant
+You cannot sign up to Kaggle from multiple accounts and therefore you cannot submit from multiple accounts.
+
+No private sharing outside teams
+Privately sharing code or data outside of teams is not permitted. It is acceptable to share code privately or outside of the Team only if the code is also made available to all participants on the forums at the same time.
+
+Team Mergers
+Team mergers are allowed and can be performed by the team leader. In order to merge, the combined team must have a total submission count less than or equal to the maximum allowed as of the Team Merger Deadline. The maximum allowed is the number of submissions per day multiplied by the number of days the competition has been running.
+
+Team Limits
+The maximum Team size is 7.
+
+Submission Limits
+You may submit a maximum of 1 entry per day.
+
+You may select up to 2 final submissions for judging.
+
+Competition Timeline
+Competition Timeline dates (including Entry Deadline, Final Submission Deadline, Start Date, and Team Merger Deadline, as applicable) are reflected on the competition’s Overview > Timeline page.
+
+COMPETITION-SPECIFIC TERMS
+COMPETITION TITLE: AI Mathematical Olympiad - Progress Prize 2
+
+COMPETITION SPONSOR: XTX Investments Limited
+
+COMPETITION SPONSOR ADDRESS: R7, 14-18 Handyside Street, London N1C 4DN, UK
+
+COMPETITION WEBSITE: https://www.kaggle.com/c/ai-mathematical-olympiad-progress-prize-2
+
+TOTAL FUND FOR THIS PROGRESS PRIZE: $2,117,152
+
+Prizes for Top-Ranking Teams:
+1st Place: $262,144
+2nd Place: $131,072
+3rd Place: $65,536
+4th Place: $32,768
+5th Place: $16,384
+
+Overall Progress Prize Winner: The Overall Progress Prize Winner shall be the highest ranking team that first achieves a score of at least 47/50 on both public and private test sets. After any prizes for the five top-ranking teams have been awarded, the remainder of the total fund shall be awarded to the Overall Progress Prize Winner.
+
+If a team is named the Overall Progress Prize Winner in this competition, the prize will be at least $1,589,248. If no team is named the Overall Progress Prize Winner in this competition, the remainder of the total fund shall roll over to the next competition, where the same prize allocation will apply.
+
+Early Sharing Prize: An additional $20,000 cash prize will be awarded for the sharing of a high-scoring public notebook early in the competition to encourage participants to share information earlier and help the community make more progress over the course of the competition.
+
+To be eligible for the Early Sharing Prize, you will need to:
+
+1) Be the first to publish a public notebook scoring at least 20/50 on the leaderboard before January 1st, 2025, 11:59 PM UTC.
+
+2) Out of all participants or Teams who have submitted notebooks scoring at least 20/50, be the first to make your notebook public. The public notebook needs to adhere to the same requirements and restrictions regarding licensing, reproducibility, and documentation to which winning the Submission is subject (see, in particular, Sections A.1, A.2, and A.3).
+
+3) Keep the notebooks and any datasets they use publicly available until the final Progress prizes are awarded to the winning Teams at the end of the competition.
+
+The Competition Sponsor will, after 1 January 2025, 11:59 PM UTC, assess all Submissions that are eligible for the Early Sharing Prize in the order in which Submissions were made. If it is discovered that such a Submissions that scored more than 20 points has no or incomplete documentation, incompatible licensing, or is in any other way incompatible with the rules to which the winning Submission is subjected, it will not be considered towards the Early Sharing Prize and the next Submissions will be assessed.
+
+WINNER LICENSE TYPE: Open Source
+
+DATA ACCESS AND USE: Competition Use Only
+
+Competitions are open to residents of the United States and worldwide, except that if you are a resident of Crimea, so-called Donetsk People's Republic (DNR) or Luhansk People's Republic (LNR), Cuba, Iran, Syria, North Korea, or are subject to U.S. export controls or US, U.K or European Union sanctions, you may not enter the Competition. In addition, this competition is not offered in any jurisdiction where the offer is in breach of applicable law or where registration of the Competition is required. Other local rules and regulations may apply to you, so please check your local laws to ensure that you are eligible to participate in skills-based competitions. Competition winners will also be required to provide whatever information that the Competition Sponsor requires in order to meet its AML/KYC requirements. The Competition Sponsor reserves the right to award alternative Prizes where needed to comply with local laws.
+
+ENTRY IN THIS COMPETITION CONSTITUTES YOUR ACCEPTANCE OF THESE OFFICIAL COMPETITION RULES.
+
+The Competition named above is a skills-based competition to promote and further the field of data science. You must register via the Competition Website to enter. Your competition submissions ("Submissions") must conform to the requirements stated on the Competition Website. Your Submissions will be scored based on the evaluation metric described on the Competition Website. Subject to compliance with the Competition Rules, Prizes, if any, will be awarded to participants with the best scores, based on the merits of the data science models submitted. See below for the complete Competition Rules.
+
+A. COMPETITION-SPECIFIC RULES
+In addition to the provisions of the General Competition Rules below, you understand and agree to these Competition-Specific Rules required by the Competition Sponsor:
+
+1. WINNER LICENSE.
+Under Section 11 (Winners Obligations) of the General Rules below, you hereby grant and will grant Competition Sponsor the following license(s) with respect to your Submission if you are a Competition winner:
+
+Open Source: You hereby license and will license your winning Submission and the source code used to generate the Submission, including all artifacts needed to generate your Submissions (such as dataset), under an Open Source Initiative-approved license (see www.opensource.org) that in no event limits commercial use of such code or model containing or depending on such code. Furthermore, your license must be sufficiently permissive to allow full reproducibility of your Submission by any third party (see Section A.2). To the extent your Submission makes use of generally commercially available software not owned by you that you used to generate your submission but that can be procured by the Competition Sponsor, you do not grant the license in the preceding sentence to that software. Such commercially available software must be procured without undue expense.
+
+If your winning Submission uses software or data that are subject to a license (e.g., open-weight LLMs, code libraries, datasets), you must provide a list of each such software or data used, as well as its corresponding license (see Section A.3). The description should also include a link to a code repository with complete and detailed instructions so that the results obtained can be reproduced without undue effort.
+
+If commercial platforms are used at any stage within the pipeline or process that was set up to generate the final Submission (e.g., using https://www.tonic.ai/ to work with software and data at an intermediate stage that leads to the creation of the final model used in the Submission), you must ensure that the outputs generated by that commercial platform are covered by a license that allows sharing that output without any commercial restrictions.
+Whether a submission meets the eligibility criteria outlined above or not shall be determined by the Competition Sponsor, whose decision shall be final.
+
+By entering and participating in the Competition, you warrant that your Submission and the models and/or source code used to generate it are your own original work or that it is used with permission from the owner.
+
+2. TOOLS AND PRE-TRAINED MODELS.
+Individual participants and Teams may use automated machine learning tool(s) (“AMLT”) (e.g., Google AutoML, H2O Driverless AI, etc.) to create a Submission, provided that the participant or Team ensures that they have an appropriate license to the AMLT such that they are able to comply with the Competition Rules.
+
+We consider two types of tools, subject to distinct rules, outlined below:
+
+1) “Automated Machine Learning Tools” (“AMLTs”), which denotes any prior software, not devised by the participant or Team, that essentially makes use of statistics to perform its function (e.g., all machine learning models, in particular, LLMs such as GPT-4, Claude, Gemini, Mistral, DeepSeekMath, LLaMA, as well as hybrid systems, such as AlphaGeometry).
+
+2) “Automated Deterministic Tools” (“ADTs”): which denote any other prior software, not devised by the participant or Team (e.g., Lean, Python runtimes used to execute code that an LLM may produce, etc.).
+
+The participant or Team may either directly use any of these tools at runtime when the code is run to generate the output (direct modifications of AMLTs, such as fine-tuning an LLM, count as that AMLT being used at runtime), or may indirectly use any of these tools at some intermediate step in the pipeline or process necessary to generate the Submission (e.g., using GPT4 to generate data, which is subsequently used to fine-tune a different open-weight model that makes up the Submission), under the following conditions:
+
+The way tools are incorporated must be compatible with the open source license of the final model (e.g., if you use a commercial tool that generates an output at some intermediate stage, which is further processed, you must ensure that you retain appropriate rights for that output)
+If a submission makes essential use of an AMLT at runtime (e.g., using a finetuned version of an existing LLM on data generated by the participant or Team), we mandate that the AMLT be at least open-weight (e.g. DeepSeekMath may be used within a pipeline that outputs solutions to the problems, but GPT-4 may not)
+All AMLTs you want to use at runtime need to have been released prior to 1st October 2024 (e.g., if an open-weight LLaMA4 model is released in November 2024 you are not allowed to use it). We reserve the right to subsequently whitelist selected AMLTs. Any such whitelisted tool will be publicly announced in the Kaggle Discussion.
+No time restriction is specified for AMLTs that are not used at runtime (e.g., you can use commercial LLMs to generate data that are released beyond October 1st).
+You are allowed to modify any tools you use (e.g., fine-tune an open-weight model) as long as these modifications are documented (see Section A.3) and fall within the specifications outlined by this document. In the case of ADTs, participants or Teams may only use open-source tools with appropriate licenses.
+The essential criterion the Submission model must satisfy is that both running the model, as well as the process of arriving at the model must both be fully reproducible: This reproduction must be possible without undue costs and without access restrictions (in case commercial platforms were involved at intermediate steps towards the final Submission model).
+
+The following provision is added to the end of Section A.3 of the General Competition Rules below: “Individual participants and Teams who create a Submission using an AMLT may win a Prize. However, for clarity, the potential winner’s Submission must still meet the requirements of these Rules, including but not limited to Section A.1 (Winners License), Section A.3 (Winners Obligations), and Section B.17 (Warranty, Indemnity, and Release).”
+
+3. WINNERS OBLIGATIONS
+The following supersedes Section B.11 "WINNERS OBLIGATIONS" below.
+
+As a condition to being awarded a Prize, a Prize winner must fulfill the following obligations:
+
+(a) Delivery and Communication: deliver to the Competition Sponsor the final model's software code as used to generate the winning Submission, as well as any artifacts (including, but not limited to, data, weights, and tools) used in the pipeline or process of arriving at the model’s software code. Running the Submission, as well as the process of arriving at the model, must be fully reproducible and clearly documented (using an automatic pipeline, Tensorflow TLX, to build the Submissions is preferred but not necessary).
+
+Supply the Competition Sponsor with all information he may request in relation to the model and its composition, such as training data (or the procedure used to construct the training data), training script, and the architecture and corresponding weights of the model. The delivered software code should follow these Kaggle documentation guidelines and must be capable of generating the winning Submission by running, as a Jupyter Notebook, on the computing instance offered by Kaggle without any change required compared to the code at submission.
+
+If your winning Submission uses software or data that are subject to a license (e.g., open-weight LLMs, code libraries, datasets), you must provide a list of each such software or data used, as well as its corresponding license (see Section A.3). The description should also include a link to a code repository with complete and detailed instructions so that the results obtained can be reproduced without undue effort.
+
+(b) Documentation: In addition to the previously mentioned documentation guidelines, the participant or Team also provides documentation that contains a description of computational resources required to build and/or run the final Submission of executable code successfully, as well as detailed documentation consisting of (but not limited to) around the design choices of the code, and potential dataset creation.
+
+The pipeline that leads to the final model might depend on human work. If the Submission directly uses human work:
+
+a precise description of where human work was used in the pipeline or process of creating the submission (e.g., data preprocessing, dataset creation, etc.) needs to be given;
+a clear outline of the amount of person-hours that were spent during the creation of the dataset needs to be provided;
+information on whether remuneration (and to what extent) was given to carry out the work needs to be included; and
+a general description of the persons who were involved needs to be supplied.
+If commercial platforms are used at any point in the pipeline towards creating the final model that is used in the final Submission, a precise description of the incurred costs must be provided, as well as instructions for how that platform is to be used, to ensure full reproducibility of the entire pipeline. If the commercial platform is Kaggle, HuggingFace Endpoints, or Google Colab, no additional usage instructions need to be provided
+
+(c) Hosting: The participant or Team agrees to host the final model, on which his/her final Submission is based on, unchanged, either on Huggingface, enabling the model to be run on one of the deployment services (e.g., dedicated Inference Endpoint), or on Ollama Hub, enabling the model to be used from within the Ollama library, or both..
+
+(d) License: The participant or Team agrees to grant to the Competition Sponsor the license to the winning Submission stated in the Competition Specific Rules above, and represent that they have the unrestricted right to grant that license.
+
+(e) AML/KYC checks: sign and return all Prize acceptance documents as may be required by Competition Sponsor or Kaggle and provide all information the Competition Sponsor may require to meet its AML/KYC checks, including without limitation: (i) eligibility certifications; (ii) identity documentation such as passport or driving license and proof of address; (iii) licenses, releases and other agreements required under the Rules; and (iv) U.S. tax forms (such as IRS Form W-9 if U.S. resident, IRS Form W-8BEN if foreign resident, or future equivalents).
+
+B. GENERAL COMPETITION RULES
+1. BINDING AGREEMENT.
+To enter the Competition, you must agree to these Official Competition Rules, which incorporate by reference the provisions and content of the Competition Website and any Specific Competition Rules above (collectively, the "Rules"). Please read these Rules carefully before entry to ensure you understand and agree. You further agree that submission of an entry in the Competition constitutes agreement to these Rules. You may not submit an entry to the Competition and are not eligible to receive the prizes associated with this Competition (“Prizes”) unless you agree to these Rules. These Rules form a binding legal agreement between you and the Competition Sponsor with respect to the Competition.
+
+2. ELIGIBILITY.
+A. To be eligible to enter the Competition, you must be:
+(i) a registered account holder at Kaggle.com;
+(ii) the older of 18 years old or the age of majority in your jurisdiction of residence (unless otherwise agreed to by Competition Sponsor and appropriate parental/guardian consents have been obtained by Competition Sponsor);
+(iii) not a resident of Crimea, so-called Donetsk People's Republic (DNR) or Luhansk People's Republic (LNR), Cuba, Iran, Syria, or North Korea;
+(iv) not a person or representative of an entity under U.S. export controls or sanctions (see https://www.treasury.gov/resource-center/sanctions/Programs/Pages/Programs.aspx); and
+(v) not a person or representative of an entity that is subject to UK sanctions (see https://www.gov.uk/government/publications/the-uk-sanctions-list) or European Union sanctions (https://data.europa.eu/apps/eusanctionstracker/individuals/);
+
+Any prize winners will also have to pass any AML/KYC checks conducted by the Competition Sponsor and shall provide all information to the Competition Sponsor, as it requests in its sole discretion.
+
+If you are entering as a representative of a company, educational institution or other legal entity, or on behalf of your employer, these rules are binding on you, individually, and the entity you represent or are an employee. If you are acting within the scope of your employment, as an employee, contractor, or agent of another party, you warrant that such party has full knowledge of your actions and has consented thereto, including your potential receipt of a Prize. You further warrant that your actions do not violate your employer's or entity's policies and procedures.
+
+You warrant that you are legally permitted to enter into the Competition and that your entry into the Competition does not violate applicable law, regulation or any policies or agreements that you are subject to with any third party, including any employer, academic institution or public body.
+
+The Competition Sponsor has discretion in determining eligibility and reserves the right to verify eligibility and to adjudicate on any dispute at any time. If you provide any false information relating to the Competition concerning your identity, residency, mailing address, telephone number, email address, ownership of right, or information required for entering the Competition, you may be immediately disqualified from the Competition.
+
+B. Unless otherwise stated in the Specific Competition Rules above or prohibited by internal policies of the Competition Entities, employees, interns, contractors, officers and directors of Competition Entities may enter and participate in the Competition, but are not eligible to win any Prizes. Individuals or entities who were engaged, employed or contracted by the Competition Sponsor or its affiliates to advise on the Competition are prohibited from entering the Competition. "Competition Entities" means the Competition Sponsor, Kaggle Inc., and their respective parent companies, subsidiaries and affiliates. If you are such a participant from a Competition Entity, you are subject to all applicable internal policies of your employer with respect to your participation.
+
+3. SPONSOR AND HOSTING PLATFORM.
+The Competition is sponsored by Competition Sponsor named above. The Competition is hosted on behalf of Competition Sponsor by Kaggle Inc. ("Kaggle"). Kaggle is an independent contractor of Competition Sponsor, and is not a party to this or any agreement between you and Competition Sponsor. You understand that Kaggle has no responsibility with respect to selecting the potential Competition winner(s) or awarding any Prizes. Kaggle will perform certain administrative functions relating to hosting the Competition, and you agree to abide by the provisions relating to Kaggle under these Rules. As a Kaggle.com account holder and user of the Kaggle competition platform, remember you have accepted and are subject to the Kaggle Terms of Service at www.kaggle.com/terms in addition to these Rules.
+
+4. COMPETITION PERIOD.
+For the purposes of Prizes, the Competition will run from the Start Date and time to the Final Submission Deadline (such duration the “Competition Period”). The Competition Timeline is subject to change, and Competition Sponsor may introduce additional hurdle deadlines during the Competition Period. Any updated or additional deadlines will be publicized on the Competition Website. It is your responsibility to check the Competition Website regularly to stay informed of any deadline changes. YOU ARE RESPONSIBLE FOR DETERMINING THE CORRESPONDING TIME ZONE IN YOUR LOCATION.
+
+5. COMPETITION ENTRY.
+NO PURCHASE NECESSARY TO ENTER OR WIN. To enter the Competition, you must register on the Competition Website prior to the Entry Deadline, and follow the instructions for developing and entering your Submission through the Competition Website. Your Submissions must be made in the manner and format, and in compliance with all other requirements, stated on the Competition Website (the "Requirements"). Submissions must be received before any Submission deadlines stated on the Competition Website. Submissions not received by the stated deadlines will not be eligible to receive a Prize.
+
+Submissions may not use or incorporate information from hand labeling or human prediction of the validation dataset or test data records.
+
+If the Competition is a multi-stage competition with temporally separate training and/or test data, one or more valid Submissions may be required during each Competition stage in the manner described on the Competition Website in order for the Submissions to be Prize eligible.
+
+Submissions are void if they are in whole or part illegible, incomplete, damaged, altered, counterfeit, obtained through fraud, or late. Competition Sponsor reserves the right to disqualify any entrant who does not follow these Rules, including making a Submission that does not meet the Requirements.
+
+6. INDIVIDUALS AND TEAMS.
+A. Individual Account. You may make Submissions only under one, unique Kaggle.com account. You will be disqualified if you make Submissions through more than one Kaggle account, or attempt to falsify an account to act as your proxy. You may submit up to the maximum number of Submissions per day as specified on the Competition Website.
+
+B. Teams. If permitted under the Competition Website guidelines, multiple individuals may collaborate as a team (a "Team"); however, you may join or form only one Team. Each Team member must be a single individual with a separate Kaggle account. You must register individually for the Competition before joining a Team. You must confirm your Team membership to make it official by responding to the Team notification message sent to your Kaggle account. Team membership may not exceed the Maximum Team Size stated on the Competition Website.
+
+C. Team Merger. Teams may request to merge via the Competition Website. Team mergers may be allowed provided that: (i) the combined Team does not exceed the Maximum Team Size; (ii) the number of Submissions made by the merging Teams does not exceed the number of Submissions permissible for one Team at the date of the merger request; (iii) the merger is completed before the earlier of: any merger deadline or the Competition deadline; and (iv) the proposed combined Team otherwise meets all the requirements of these Rules.
+
+7. COMPETITION DATA.
+"Competition Data" means the data or datasets available from the Competition Website for the purpose of use in the Competition, including any prototype or executable code provided on the Competition Website. The Competition Data will contain private and public test sets. Which data belongs to which set will not be made available to participants.
+
+A. Data Access and Use.
+You may access and use the Competition Data only for participating in the Competition and on Kaggle.com forums. The Competition Sponsor reserves the right to disqualify any participant who uses the Competition Data other than as permitted by the Competition Website and these Rules.
+
+B. Data Security. You agree to use reasonable and suitable measures to prevent persons who have not formally agreed to these Rules from gaining access to the Competition Data. You agree not to transmit, duplicate, publish, redistribute or otherwise provide or make available the Competition Data to any party not participating in the Competition. You agree to notify Kaggle immediately upon learning of any possible unauthorized transmission of or unauthorized access to the Competition Data and agree to work with Kaggle to rectify any unauthorized transmission or access.
+
+C. External Data. You may use data other than the Competition Data (“External Data”) to develop and test your Submissions. However, you will ensure the External Data is publicly available and equally accessible to use by all participants of the Competition for purposes of the competition at no cost to the other participants. The ability to use External Data under this Section 7.C (External Data) does not limit your other obligations under these Competition Rules, including but not limited to Section 11 (Winners Obligations).
+
+8. SUBMISSION CODE REQUIREMENTS.
+A. Private Code Sharing. Unless otherwise specifically permitted under the Competition Website or Competition Specific Rules above, during the Competition Period, you are not allowed to privately share source or executable code developed in connection with or based upon the Competition Data or other source or executable code relevant to the Competition (“Competition Code”). This prohibition includes sharing Competition Code between separate Teams, unless a Team merger occurs. Any such sharing of Competition Code is a breach of these Competition Rules and may result in disqualification.
+
+B. Public Code Sharing. You are permitted to publicly share Competition Code, provided that such public sharing does not violate the intellectual property rights of any third party. If you do choose to share Competition Code or other such code, you are required to share it on Kaggle.com on the discussion forum or notebooks associated specifically with the Competition for the benefit of all competitors. By so sharing, you are deemed to have licensed the shared code under an Open Source Initiative-approved license (see www.opensource.org) that in no event limits commercial use of such Competition Code or model containing or depending on such Competition Code.
+
+C. Use of Open Source. Unless otherwise stated in the Specific Competition Rules above, if open source code is used in the model to generate the Submission, then you must only use open source code licensed under an Open Source Initiative-approved license (see www.opensource.org) that in no event limits commercial use of such code or model containing or depending on such code.
+
+9. DETERMINING WINNERS.
+Each Submission will be scored and ranked by the evaluation metric stated on the Competition Website. During the Competition Period, the current ranking will be visible on the Competition Website's public leaderboard. The potential winner(s) are determined solely by the leaderboard ranking on the private leaderboard, subject to compliance with these Rules. The public leaderboard will be based on the public test set and the private leaderboard will be based on the private test set.
+
+In the event of a tie on the final score, we will declare that selected submission from the tie to be the winner that was entered first into the Competition, as per regulations laid out in Kaggle site documentation. In the event a potential winner is disqualified for any reason, the Submission that received the next highest score rank will be chosen as the potential winner.
+
+10. NOTIFICATION OF WINNERS & DISQUALIFICATION.
+The potential winner(s) will be notified by email.
+
+If a potential winner (i) does not respond to the notification attempt within one (1) week from the first notification attempt or (ii) notifies Kaggle within one week after the Final Submission Deadline that the potential winner does not want to be nominated as a winner or does not want to receive a Prize, then, in each case (i) and (ii) such potential winner will not receive any Prize, and an alternate potential winner will be selected from among all eligible entries received based on the Competition’s judging criteria.
+
+In case (i) and (ii) above Kaggle may disqualify the participant. However, in case (ii) above, if requested by Kaggle, such potential winner may provide code and documentation to verify the participant’s compliance with these Rules. If the potential winner provides code and documentation to the satisfaction of Kaggle, the participant will not be disqualified pursuant to this paragraph.
+
+Competition Sponsor reserves the right to disqualify any participant from the Competition if (i) the Competition Sponsor reasonably believes that the participant has attempted to undermine the legitimate operation of the Competition by cheating, deception, or other unfair playing practices or abuses, threatens or harasses any other participants, Competition Sponsor or Kaggle; (ii) if the participant is acting contrary to the spirit of intention of the Competition including, but not limited to, any breach, or purported breach, of the Rules, inadequate or inaccurate information has been provided, or you have made inappropriate public comments or statements relating to the Competition Sponsor or the Competition.
+
+A disqualified participant may be removed from the Competition leaderboard, at Kaggle's sole discretion. If a Participant is removed from the Competition Leaderboard, additional winning features associated with the Kaggle competition platform, for example Kaggle points or medals, may also not be awarded.
+
+The final leaderboard list will be publicly displayed at Kaggle.com. Determinations of Competition Sponsor are final and binding and there is no obligation on the Competition Sponsor to enter into any discussion or correspondence in respect of any decision.
+
+11. WINNERS OBLIGATIONS.
+As a condition to being awarded a Prize, a Prize winner must fulfill the following obligations:
+
+(a) deliver to the Competition Sponsor the final model's software code as used to generate the winning Submission and associated documentation and any other information the Competition Sponsor may request in relation to the model and its composition such as training data (or the procedure used to construct the training data), training script and the architecture and corresponding weights of the model. . The delivered software code should follow these documentation guidelines, must be capable of generating the winning Submission, and contain a description of resources required to build and/or run the executable code successfully. To the extent that the final model’s software code includes generally commercially available software that is not owned by you, but that can be procured by the Competition Sponsor without undue expense, then instead of delivering the code for that software to the Competition Sponsor, you must identify that software, method for procuring it, and any parameters or other information necessary to replicate the winning Submission;
+
+(b) grant to the Competition Sponsor the license to the winning Submission stated in the Competition Specific Rules above, and represent that you have the unrestricted right to grant that license; and
+
+(c) sign and return all Prize acceptance documents as may be required by Competition Sponsor or Kaggle and provide all information the Competition Sponsor may require to meet its AML/KYC checks, including without limitation: (i) eligibility certifications; (ii) identity documentation such as passport or driving license and proof of address; (iii) licenses, releases and other agreements required under the Rules; and (iv) U.S. tax forms (such as IRS Form W-9 if U.S. resident, IRS Form W-8BEN if foreign resident, or future equivalents).
+
+12. PRIZES.
+Prize(s) are as described on the Competition Website and are only available for winning during the time period described on the Competition Website. The odds of winning any Prize depends on the number of eligible Submissions received during the Competition Period and the skill of the participants.
+
+All Prizes are subject to Competition Sponsor's review and verification of the participant’s eligibility and compliance with these Rules, and the compliance of the winning Submissions with the Submissions Requirements. In the event that the Submission demonstrates non-compliance with these Competition Rules, Competition Sponsor may at its discretion take either of the following actions: (i) disqualify the Submission(s); or (ii) require the potential winner to remediate within one week after notice all issues identified in the Submission(s) (including, without limitation, the resolution of license conflicts, the fulfillment of all obligations required by software licenses, and the removal of any software that violates the software restrictions).
+
+A potential winner may decline to be nominated as a Competition winner in accordance with Section 10.
+
+Potential winners must return all required Prize acceptance documents within two (2) weeks following notification of such required documents, or such potential winner will be deemed to have forfeited the prize and another potential winner will be selected. Prize(s) will be awarded within approximately 30 days after receipt by Competition Sponsor or Kaggle of the required Prize acceptance documents. Transfer or assignment of a Prize is not allowed.
+
+You are not eligible to receive any Prize if you do not meet the Eligibility requirements in Section 2 above or comply with the Winner’s Obligations in Section 11.
+
+If a Team wins a monetary Prize, the Prize money will be allocated in even shares between the eligible Team members, unless the Team unanimously opts for a different Prize split and notifies Kaggle before Prizes are issued.
+
+13. TAXES.
+ALL TAXES IMPOSED ON PRIZES ARE THE SOLE RESPONSIBILITY OF THE WINNERS. Payments to potential winners are subject to the express requirement that they submit all documentation requested by Competition Sponsor or Kaggle for compliance with applicable state, federal, local and foreign (including provincial) tax reporting and withholding requirements. Prizes will be net of any taxes that Competition Sponsor is required by law to withhold. If a potential winner fails to provide any required documentation or comply with applicable laws, the Prize may be forfeited and Competition Sponsor may select an alternative potential winner. Any winners who are U.S. residents will receive an IRS Form-1099 in the amount of their Prize.
+
+14. GENERAL CONDITIONS.
+All federal, state, provincial and local laws and regulations apply.
+
+15. PUBLICITY.
+You agree that Competition Sponsor, Kaggle and its affiliates may use your name and likeness for advertising and promotional purposes without additional compensation, unless prohibited by law.
+
+16. PRIVACY.
+You acknowledge and agree that Competition Sponsor and Kaggle may collect, store, share and otherwise use personally identifiable information provided by you during the Kaggle account registration process and the Competition, including but not limited to, name, mailing address, phone number, and email address (“Personal Information”). Kaggle acts as an independent controller with regard to its collection, storage, sharing, and other use of this Personal Information, and will use this Personal Information in accordance with its Privacy Policy <www.kaggle.com/privacy>, including for administering the Competition. As a Kaggle.com account holder, you have the right to request access to, review, rectification, portability or deletion of any personal data held by Kaggle about you by logging into your account and/or contacting Kaggle Support at <www.kaggle.com/contact>.
+
+As part of Competition Sponsor performing this contract between you and the Competition Sponsor, Kaggle will transfer your Personal Information to Competition Sponsor, which acts as an independent controller with regard to this Personal Information. As a controller of such Personal Information, Competition Sponsor agrees to manage your personal information in accordance with the UK implementation of the General Data Protection Regulation 2018. Please refer to the privacy policy on its website on how the Competition Sponsor applies with applicable data protection obligations (https://aimoprize.com/)Kaggle will transfer your Personal Information to Competition Sponsor in the country specified in the Competition Sponsor Address listed above, which may be a country outside the country of your residence. Such country may not have privacy laws and regulations similar to those of the country of your residence.
+
+17. WARRANTY, INDEMNITY AND RELEASE.
+You warrant that your Submission is your own original work and, as such, you are the sole and exclusive owner and rights holder of the Submission, and you have the right to make the Submission and grant all required licenses. You agree not to make any Submission that: (i) infringes any third party proprietary rights, intellectual property rights, industrial property rights, personal or moral rights or any other rights, including without limitation, copyright, trademark, patent, trade secret, privacy, publicity or confidentiality obligations, or defames any person; or (ii) otherwise violates any applicable law.
+
+To the maximum extent permitted by law, you indemnify and agree to keep indemnified Competition Entities at all times from and against any liability, claims, demands, losses, damages, costs and expenses resulting from any of your acts, defaults or omissions and/or a breach of any warranty set forth herein. To the maximum extent permitted by law, you agree to defend, indemnify and hold harmless the Competition Entities from and against any and all claims, actions, suits or proceedings, as well as any and all losses, liabilities, damages, costs and expenses (including reasonable attorneys fees) arising out of or accruing from: (a) your Submission or other material uploaded or otherwise provided by you that infringes any third party proprietary rights, intellectual property rights, industrial property rights, personal or moral rights or any other rights, including without limitation, copyright, trademark, patent, trade secret, privacy, publicity or confidentiality obligations, or defames any person; (b) any misrepresentation made by you in connection with the Competition; (c) any non-compliance by you with these Rules or any applicable law; (d) claims brought by persons or entities other than the parties to these Rules arising from or related to your involvement with the Competition; and (e) your acceptance, possession, misuse or use of any Prize, or your participation in the Competition and any Competition-related activity.
+
+You hereby release Competition Entities from any liability associated with: (a) any malfunction or other problem with the Competition Website; (b) any error in the collection, processing, or retention of any Submission; or (c) any typographical or other error in the printing, offering or announcement of any Prize or winners.
+
+Except in the case of fraud, or criminal act, or where liability cannot be disallowed under applicable law, the Competition Sponsor is not liable to you or to any other person for any losses that you, or they (the other person), may incur as a result of your participation in the Competition.
+
+18. INTERNET.
+Competition Entities are not responsible for any malfunction of the Competition Website or any late, lost, damaged, misdirected, incomplete, illegible, undeliverable, or destroyed Submissions or entry materials due to system errors, failed, incomplete or garbled computer or other telecommunication transmission malfunctions, hardware or software failures of any kind, lost or unavailable network connections, typographical or system/human errors and failures, technical malfunction(s) of any telephone network or lines, cable connections, satellite transmissions, servers or providers, or computer equipment, traffic congestion on the Internet or at the Competition Website, or any combination thereof, which may limit a participant’s ability to participate.
+
+19. RIGHT TO CANCEL, MODIFY OR DISQUALIFY.
+If for any reason the Competition is not capable of running as planned, including infection by computer virus, bugs, tampering, unauthorized intervention, fraud, technical failures, or any other causes which corrupt or affect the administration, security, fairness, integrity, or proper conduct of the Competition, Competition Sponsor reserves the right to cancel, terminate, modify or suspend the Competition. Competition Sponsor further reserves the right to disqualify any participant who tampers with the submission process or any other part of the Competition or Competition Website. Any attempt by a participant to deliberately damage any website, including the Competition Website, or undermine the legitimate operation of the Competition is a violation of criminal and civil laws. Should such an attempt be made, Competition Sponsor and Kaggle each reserves the right to seek damages from any such participant to the fullest extent of the applicable law.
+
+20. NOT AN OFFER OR CONTRACT OF EMPLOYMENT.
+Under no circumstances will the entry of a Submission, the awarding of a Prize, or anything in these Rules be construed as an offer or contract of employment with Competition Sponsor or any of the Competition Entities. You acknowledge that you have submitted your Submission voluntarily and not in confidence or in trust. You acknowledge that no confidential, fiduciary, agency, employment or other similar relationship is created between you and Competition Sponsor or any of the Competition Entities by your acceptance of these Rules or your entry of your Submission.
+
+21. GOVERNING LAW.
+Unless otherwise provided in the Competition Specific Rules above, all claims arising out of or relating to these Rules (including any non-contractual obligations) will be governed by English law and will be litigated exclusively in English courts. The parties consent to personal jurisdiction in those courts. If any provision of these Rules is held to be invalid or unenforceable, all remaining provisions of the Rules will remain in full force and effect.
+
+Rules

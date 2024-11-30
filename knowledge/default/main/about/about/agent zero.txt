@@ -1,0 +1,251 @@
+# **Agent Zero Comprehensive Documentation**
+
+## **Table of Contents**
+1. [Introduction](#introduction)
+2. [Architecture Overview](#architecture-overview)
+3. [Core Components](#core-components)
+    - [System Prompts (@prompts)](#system-prompts-prompts)
+    - [Tools (@prompts/default/agent.system.tools.md)](#tools-promptsdefaultagentsystemtoolsmd)
+    - [Memory Management (@memory)](#memory-management-memory)
+    - [Instruments (@instruments)](#instruments-instruments)
+    - [Knowledge Base (@knowledge)](#knowledge-base-knowledge)
+    - [Logging (@logs)](#logging-logs)
+    - [Work Directory (@work_dir)](#work-directory-work_dir)
+    - [Temporary Files (@tmp)](#temporary-files-tmp)
+4. [Installation Guide](#installation-guide)
+5. [Usage Guide](#usage-guide)
+6. [Troubleshooting and FAQ](#troubleshooting-and-faq)
+7. [Contributing](#contributing)
+8. [Additional Resources](#additional-resources)
+9. [Appendix](#appendix)
+10. [Next Steps and Recommendations](#next-steps-and-recommendations)
+
+---
+
+## **Introduction**
+
+**Agent Zero** is an autonomous JSON AI task-solving agent designed to execute complex tasks using a hierarchical multi-agent system. Enhanced with a suite of knowledge and execution tools, Agent Zero operates by receiving tasks from a superior agent and delegating subtasks to subordinate agents, ensuring efficient and effective problem-solving.
+
+---
+
+## **Architecture Overview**
+
+Agent Zero is built on a modular and flexible architecture that emphasizes extensibility and customization. The system is organized into several key components and directories, each responsible for specific functionalities:
+
+- **@work_dir**: Contains the main scripts and operational files required for Agent Zero's execution.
+- **@memory**: Manages the agent's long-term and short-term memories, handling storage and retrieval of information.
+- **@prompts**: Houses all system prompts, including role definitions, communication protocols, tool specifications, and instructions for problem-solving.
+- **@logs**: Stores logs related to the agent's activities, including execution details, errors, and system warnings.
+- **@tmp**: Utilized for temporary files and caches during task execution.
+- **@docs**: Contains comprehensive documentation, guides, and tutorials for users and contributors.
+- **@instruments**: Stores predefined actions or workflows that Agent Zero can invoke without increasing the system prompt's token count.
+- **@knowledge**: Maintains the knowledge base, including custom knowledge files, documentation, and external sources accessible to the agent.
+
+**Architecture Diagram:**
+![Agent Zero Architecture](res/arch-01.svg)
+
+*Figure: Simplified Architecture Diagram of Agent Zero*
+
+---
+
+## **Core Components**
+
+### **System Prompts (@prompts)**
+
+System prompts are the foundational instructions that define Agent Zero's behavior, communication structure, and interaction with tools. They are organized within the `prompts/default` directory and include:
+
+- **agent.system.main.md**: Consolidates various system role and communication prompts.
+- **agent.system.main.role.md**: Defines the agent's identity, autonomy, and operational directives.
+- **agent.system.main.communication.md**: Specifies the JSON structure for agent responses, including fields like `thoughts`, `tool_name`, and `tool_args`.
+- **agent.system.main.solving.md**: Provides a step-by-step problem-solving instruction manual.
+- **agent.system.main.tips.md**: Offers general operation guidelines, cooperation strategies, and usage tips.
+- **agent.system.memories.md** & **agent.system.solutions.md**: Manage and reference the agent's memories and past solutions.
+- **agent.system.tool.\*.md**: Define various tools available to the agent, such as `code_execution_tool`, `knowledge_tool`, etc.
+- **fw.\*.md**: Handle system warnings, errors, and interventions related to tool executions.
+
+### **Tools (@prompts/default/agent.system.tools.md)**
+
+Agent Zero leverages a variety of tools to perform tasks effectively. Each tool is defined in its respective markdown file within the `prompts/default` directory. Key tools include:
+
+1. **Code Execution Tool (`code_execution_tool`)**
+    - **Function**: Executes terminal commands, Python code, or Node.js scripts.
+    - **Usage**: Requires specifying the `code` and selecting the appropriate `runtime` (`terminal`, `python`, `nodejs`).
+    - **Examples & Use-Cases**:
+        - **Basic Execution**:
+          ```json
+          {
+              "tool_name": "code_execution_tool",
+              "tool_args": {
+                  "runtime": "python",
+                  "code": "print('Hello, World!')"
+              }
+          }
+          ```
+        - **Installing Packages**:
+          ```json
+          {
+              "tool_name": "code_execution_tool",
+              "tool_args": {
+                  "runtime": "terminal",
+                  "code": "pip install requests"
+              }
+          }
+          ```
+        - **Running a Script**:
+          ```json
+          {
+              "tool_name": "code_execution_tool",
+              "tool_args": {
+                  "runtime": "python",
+                  "code": "import os\nprint(os.listdir('.'))"
+              }
+          }
+          ```
+
+2. **Knowledge Tool (`knowledge_tool`)**
+    - **Function**: Fetches information from online sources and the agent's memory.
+    - **Usage**: Provide a `question` to retrieve relevant data.
+    - **Examples & Use-Cases**:
+        - **Simple Query**:
+          ```json
+          {
+              "tool_name": "knowledge_tool",
+              "tool_args": {
+                  "question": "What is the capital of France?"
+              }
+          }
+          ```
+        - **Technical Inquiry**:
+          ```json
+          {
+              "tool_name": "knowledge_tool",
+              "tool_args": {
+                  "question": "How does the QuickSort algorithm work?"
+              }
+          }
+          ```
+        - **Latest News**:
+          ```json
+          {
+              "tool_name": "knowledge_tool",
+              "tool_args": {
+                  "question": "What are the latest advancements in AI as of 2024?"
+              }
+          }
+          ```
+
+3. **Memory Tools (`memory_load`, `memory_save`, `memory_forget`)**
+    - **Function**: Manage the agent's memories by loading, saving, or forgetting information based on queries and relevancy thresholds.
+    - **Usage**: Specify queries and parameters like `threshold`, `limit`, and `filter`.
+    - **Examples & Use-Cases**:
+        - **Loading Memories**:
+          ```json
+          {
+              "tool_name": "memory_load",
+              "tool_args": {
+                  "query": "machine learning",
+                  "limit": 5
+              }
+          }
+          ```
+        - **Saving a Memory**:
+          ```json
+          {
+              "tool_name": "memory_save",
+              "tool_args": {
+                  "memory_id": "ml_concepts_2024",
+                  "content": "Deep learning advancements in neural network architectures."
+              }
+          }
+          ```
+        - **Forgetting a Memory**:
+          ```json
+          {
+              "tool_name": "memory_forget",
+              "tool_args": {
+                  "query": "obsolete_project",
+                  "threshold": 0.75
+              }
+          }
+          ```
+
+4. **Response Tool (`response`)**
+    - **Function**: Forms the final response to the user, concluding the task processing.
+    - **Usage**: Provide the `text` argument with the desired output.
+    - **Examples & Use-Cases**:
+        - **Simple Response**:
+          ```json
+          {
+              "tool_name": "response",
+              "tool_args": {
+                  "text": "Task completed successfully."
+              }
+          }
+          ```
+        - **Detailed Feedback**:
+          ```json
+          {
+              "tool_name": "response",
+              "tool_args": {
+                  "text": "The analysis is complete. Please review the attached report for detailed insights."
+              }
+          }
+          ```
+
+5. **Webpage Content Tool (`webpage_content_tool`)**
+    - **Function**: Retrieves and parses the main content from specified webpages.
+    - **Usage**: Provide a valid `url`.
+    - **Examples & Use-Cases**:
+        - **Fetching Article Content**:
+          ```json
+          {
+              "tool_name": "webpage_content_tool",
+              "tool_args": {
+                  "url": "https://en.wikipedia.org/wiki/Artificial_intelligence"
+              }
+          }
+          ```
+        - **Scraping News Headlines**:
+          ```json
+          {
+              "tool_name": "webpage_content_tool",
+              "tool_args": {
+                  "url": "https://www.bbc.com/news"
+              }
+          }
+          ```
+
+6. **Call Subordinate Tool (`call_subordinate`)**
+    - **Function**: Delegates subtasks to subordinate agents with specific roles and instructions.
+    - **Usage**: Provide a `message` detailing the subordinate's role and task, and set the `reset` flag.
+    - **Examples & Use-Cases**:
+        - **Delegating Data Analysis**:
+          ```json
+          {
+              "tool_name": "call_subordinate",
+              "tool_args": {
+                  "message": "You are a data scientist tasked with analyzing sales data for Q1 2024. Please generate a comprehensive report.",
+                  "reset": "false"
+              }
+          }
+          ```
+        - **Assigning Documentation Writing**:
+          ```json
+          {
+              "tool_name": "call_subordinate",
+              "tool_args": {
+                  "message": "You are a technical writer assigned to create user manuals for the new software release.",
+                  "reset": "true"
+              }
+          }
+          ```
+
+### **Memory Management (@memory)**
+
+The `@memory` directory handles all aspects related to Agent Zero's memory, ensuring efficient storage, retrieval, and management of information. Key functionalities include:
+
+- **Loading Memories**: Retrieve relevant memories based on queries with specified relevancy thresholds.
+- **Saving Memories**: Store new information or findings during task execution for future reference.
+- **Forgetting Memories**: Remove outdated or irrelevant memories based on defined criteria.
+
+**Memory Prompt (`prompts/default/agent.system.memories.md`):**

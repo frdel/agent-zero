@@ -1,0 +1,49 @@
+We split our data to 7000 that we have into half. 
+
+So first, in the first half, we just keep trying the same shit that you said like first you give it a question and then you get the answer. 
+
+The reasoning plus the answer and then you reuse the reasoning for the other things. 
+
+For the one it used. For the next answers. 
+
+For the next questions. Okay. First of the 50. 
+
+For the first 50. I do get it. Sort of like train and test. 
+
+Train would be the fast 50 do it yourself. 
+
+Yeah and then the next ones only use the ones that are available. 
+
+Only the ones that are available. Yeah. The one that I came up with in the first half. Or the answers. Yeah. 
+
+It got correct. Yes. And the reasoning only. There's no need for the answers along as long as we have a reasoning. 
+
+You can generalize them. Yeah. Rather than make them question specific. The reasonings. 
+
+Because ideally, I was thinking for the second part. You see that fast 50 did it alone. The second 50 now we give it its solution. 
+
+Such that it can go back, check where in the previous ones maybe what did I go wrong. 
+
+Then it's able to critique that. Then as well as in this part. It's able to learn different patterns since it has a solution. Reasoning and the answer. 
+
+So it's sort of like hitting two goals. Okay. But that will most likely have to call that ourselves. Yeah. Yeah. Yeah. Sorry. We can try that. Okay. 
+
+So that would be the reasoning tool. Split 50, 50. Fast 50 does itself track the reasoning under logs. 
+
+And solutions see which ones are correct, which ones are not. Then in the next 50 we give it the solution and the reasoning behind it. 
+
+Then half the system or the tool critique the previous 50 or the fast 50, which are which reasoning steps are correct. Then after that for the second 50 track the particular patterns that were followed and save that in memory. Okay. 
+
+The second half instead of coming up with new ones, you would specifically try to improve the ones that have already stored. Yep. Specifically try to do that. While in the first half we will do both. Like in case there isn't one that's already been made then we'll create one. 
+
+But if there is one that can be improved and it will improve that one. Yep. Okay. Maybe the question can be the best reasoning also. Question in mind is though we'll figure that out. Could it be a tool or a model because it could either be a script that we that it can run. 
+
+Then basically that's how it does it or it could be a fine tune model that does that. But since it's base model maybe we could just go for a basic tool. Then that's finished. I don't know. I'll watch the videos on agents yours too. Yeah. I don't know what the tools are. Then for the accuracy tool. 
+
+Accuracy tool I think that just checks if it's correct. But now since if this was to go to the cargo submission it would ignore if it's correct. Maybe here in instead of accuracy half it has checks pattern recognition. Yep. So such that it can search in memory for the pattern stored. 
+
+Then then if it even if it's sent to to cargo you can check any patterns that was stored. Recognize any then use that to solve the question that it's given at that current time. Maybe it hasn't seen any of that kind. Then that would be the validation. But yeah I think that's okay. 
+
+Okay so first step finish the data thing then do the tools. Yep. Come off with the possible tools to find them like specifically. Here? And then try to build them. No that's these types. Not here. Yeah. First we've got to define them properly before we get into them. Just like a normal project we've got to make the SRS first. 
+
+Just to be exactly what we're working on. You can be changed later on but you can have something to work with. Like a plan. Good plan. Not just theoretical but like in terms of the tools in share. For the other one. For this one it's the goal was make it simple but still yeah we'll need the plan. 

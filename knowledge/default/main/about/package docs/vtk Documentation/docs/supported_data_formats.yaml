@@ -1,0 +1,390 @@
+---
+# Description of the readers and writers available in VTK. Note that for the
+# same extension it could be more than one matching reader/writer since the same
+# extensions are often used across different formats e.g. '.dat'.
+# The description field can hold any text in markdown format.
+
+- extensions: [.xmf, .xdmf, .xmf2, .xdmf2]
+  description: "[XDMF](https://www.xdmf.org) (eXtensible Data Model and Format)"
+  reader_class: vtkXdmfReader
+  writer_class: vtkXdmfWriter
+  vtk_module: VTK::IOXdmf2
+
+- extensions: [.xmf, .xdmf, .xmf3, .xdmf3]
+  description: "[XDMF](https://www.xdmf.org) (eXtensible Data Model and Format)"
+  reader_class: vtkXdmf3Reader
+  writer_class: vtkXdmf3Writer
+  vtk_module: VTK::IOXdmf3
+
+- extensions: [.step, .iges]
+  description: "VTK Reader for STEP and IGES files using OpenCASCADE"
+  reader_class: vtkOCCTReader
+  writer_class: null
+  vtk_module: VTK::IOOCCT
+
+- extensions: [.vpc]
+  description: "[VPIC](https://github.com/lanl/vpic)"
+  reader_class: vtkVPCIReader
+  writer_class: null
+  vtk_module: VTK::IOVPIC
+
+- extensions: [.h5]
+  description: "[VERAout-tools](https://github.com/palmtag/VERAout-tools)"
+  reader_class: vtkVeraOutReader
+  writer_class: null
+  vtk_module: VTK::IOVeraOut
+
+- extensions: [.hdf5, .h5]
+  description: "GE TRUCHAS format"
+  reader_class: vtkTRUCHASReader
+  writer_class: null
+  vtk_module: VTK::IOTRUCHAS
+
+- extensions: [.dat, .DAT]
+  description: "Tabulat data in Tecplot ascii format"
+  reader_class: vtkTecplotTableReader
+  writer_class: null
+  vtk_module: VTK::IOTecplotTable
+
+- extensions: [.sgy, .segy]
+  description: "[SEG-Y](https://en.wikipedia.org/wiki/SEG-Y)"
+  reader_class: vtkSegYReader
+  writer_class: null
+  vtk_module: VTK::IOSegY
+
+- extensions: [.ply]
+  description: "Stanford University PLY format"
+  reader_class: vtkPLYReader
+  writer_class: vtkPLYWriter
+  vtk_module: VTK::IOPLY
+
+- extensions: [.pio]
+  description: "PIO (Parallel Input Output) data files"
+  reader_class: vtkPIOReader
+  writer_class: null
+  vtk_module: VTK::IOPIO
+
+- extensions: [.bin, .bpf, .csd, .csv, .greyhound, .gpkg, .icebride, .las, .laz, .mat, .nitf, .nsf, .ntf, .pcd, .ply, .pts, .qi, .rxp, .sbet, .sqlite, .sid, .tindex, .txt, .h5]
+  description: "LIDAR data using [PDAL](https://pdal.io/en/latest/stages/readers.html)"
+  reader_class: vtkPDALReader
+  writer_class: null
+  vtk_module: VTK::IOPDAL
+
+- extensions: [.vdb]
+  description: "[OpenVDB](https://www.openvdb.org/)"
+  reader_class: vtkOpenVDBReader
+  writer_class: vtkOpenVDBWriter
+  vtk_module: VTK::IOOpenVDB
+
+- extensions: [.omf]
+  description: "[OMF](https://omf.readthedocs.io/en/stable/index.html)"
+  reader_class: vtkOMRReader
+  writer_class: null
+  vtk_module: VTK::IOOMF
+
+- extensions: [.ogv]
+  description: "[OggTheora](https://www.theora.org/)"
+  reader_class: null
+  writer_class: vtkOggTheoraWriter
+  vtk_module: VTK::IOOggTheora
+
+- extensions: [.nc, .ncdf]
+  description: "[NetCDF UGRID file](https://ugrid-conventions.github.io/ugrid-conventions)"
+  reader_class: vtkNetCDFUGRIDReader
+  writer_class: null
+  vtk_module: VTK::IONetCDF
+
+- extensions: [.ncdf, .netcdf]
+  description: "Particle data file used at [SLAC](https://ugrid-conventions.github.io/ugrid-conventions)"
+  reader_class: vtkSLACParticleReader
+  writer_class: null
+  vtk_module: VTK::IONetCDF
+
+- extensions: [.nc, .ncdf]
+  description: "CAM NetCDF (Unstructured)"
+  reader_class: vtkNetCDFCAMReader
+  writer_class: null
+  vtk_module: VTK::IONetCDF
+
+- extensions: [.pop.ncdf .pop.nc]
+  description: "POP Ocean NetCDF (Rectilinear)"
+  reader_class: vtkNetCDFPOPReader
+  writer_class: null
+  vtk_module: VTK::IONetCDF
+
+- extensions: [.nc, .ncdf]
+  description: "netCDF files generic and CF conventions"
+  reader_class: vtkNetCDFReader
+  writer_class: vtkNetCDFCFWriter
+  vtk_module: VTK::IONetCDF
+
+- extensions: [.nc, .ncdf]
+  description: "UGRID NetCDF (Unstructured)"
+  reader_class: vtkNetCDFUGRIDReader
+  writer_class: null
+  vtk_module: VTK::IONetCDF
+
+- extensions: [.nc, .ncdf]
+  description: "MPAS NetCDF (Unstructured)"
+  reader_class: vtkMPASReader
+  writer_class: null
+  vtk_module: VTK::IONetCDF
+
+- extensions: [.nc, .ncdf]
+  description: "[SLAC](https://www6.slac.stanford.edu) Data Reader"
+  reader_class: vtkSLACReader
+  writer_class: null
+  vtk_module: VTK::IONetCDF
+
+- extensions: [.mp4]
+  description: "H.264-encoded MP4 files (Windows only)"
+  reader_class: null
+  writer_class: vtkMP4Writer
+  vtk_module: VTK::IOMovie
+
+- extensions: [.avi]
+  description: "AVI video files (Windows only)"
+  reader_class: null
+  writer_class: vtkAVIWriter
+  vtk_module: VTK::IOMovie
+
+- extensions: [.cfg]
+  description: "MotionFX motion definitions cfg files"
+  reader_class: vtkMotionFXCFGReader
+  writer_class: null
+  vtk_module: VTK::IOMotionFX
+
+- extensions: [.mnc]
+  description: "NetCDF-based medical image developed at [BIC"
+  reader_class: vtkMINCImageReader
+  writer_class: vtkMINCImageWriter
+  vtk_module: VTK::IOMINC
+
+- extensions: [.obj]
+  description: "[MNI](https://github.com/BIC-MNI) surface mesh files"
+  reader_class: vtkMNIObjectReader
+  writer_class: vtkMNIObjectWriter
+  vtk_module: VTK::IOMINC
+
+- extensions: [.tag]
+  description: "[MNI](https://github.com/BIC-MNI) tag files"
+  reader_class: vtkMNITagPointReader
+  writer_class: vtkMNITagPointWriter
+  vtk_module: VTK::IOMINC
+
+- extensions: [.xfm]
+  description: "[MNI](https://github.com/BIC-MNI) transformation files"
+  reader_class: vtkMNITransformReader
+  writer_class: vtkMNITransformWriter
+  vtk_module: VTK::IOMINC
+
+- extensions: [.d3plot]
+  description: "[LS-Dyna](https://www.oasys-software.com/dyna/) databases"
+  reader_class: vtkLSDynaReader
+  writer_class: null
+  vtk_module: VTK::IOLSDyna
+
+- extensions: [.las]
+  description: "LIDAR data in LAS format"
+  reader_class: vtkLASReader
+  writer_class: null
+  vtk_module: VTK::IOLAS
+
+- extensions:
+    [.g .e .h .gc .ex2 .ex2v2 .exo .gen .par .exoII .exii .ex-timeseries .cgns]
+  description: "IOSS (Sierra IO System), writer supports only Exodus files"
+  reader_class: vtkIOSSReader
+  writer_class: vtkIOSSWriter
+  vtk_module: VTK::IOIOSS
+
+- extensions: [.exdg]
+  description: "IOSS (Sierra IO System) files as cell-grids"
+  reader_class: vtkIOSSCellGridReader
+  writer_class: null
+  vtk_module: VTK::IOIOSS
+
+- extensions: [.bmp]
+  description: "Windows BMP file"
+  reader_class: vtkBMPReader
+  writer_class: vtkBMPWriter
+  vtk_module: VTK::IOImage
+
+- extensions: [.dem]
+  description: "Digital Elevation Map File"
+  reader_class: vtkDEMReader
+  writer_class: null
+  vtk_module: VTK::IOImage
+
+- extensions: [.dcm]
+  description: "DICOM medical images"
+  reader_class: vtkDICOMImageReader
+  writer_class: null
+  vtk_module: VTK::IOImage
+
+- extensions: [.ximg]
+  description: "GE Signa ximg files"
+  reader_class: vtkGESignaReader
+  writer_class: null
+  vtk_module: VTK::IOImage
+
+- extensions: [.hdr]
+  description: "Radiance HDR file"
+  reader_class: vtkHDRReader
+  writer_class: null
+  vtk_module: VTK::IOImage
+
+- extensions: [.jpg, .jpeg]
+  description: "JPEG Files"
+  reader_class: vtkJPEGReader
+  writer_class: vtkJPEGWriter
+  vtk_module: VTK::IOImage
+
+- extensions: [.mrc, .ali, .st, .rec]
+  description: "[MRC](http://bio3d.colorado.edu/imod/doc/mrc_format.txt) Image Files"
+  reader_class: vtkMRCReader
+  writer_class: null
+  vtk_module: VTK::IOImage
+
+- extensions: [.nii, .img, .hdr]
+  description: "NIfTI-1 and NIfTI-2 medical [image](https://nifti.nimh.nih.gov/) files"
+  reader_class: vtkNIFTIImageReader
+  writer_class: vtkNIFTIImageWriter
+  vtk_module: VTK::IOImage
+
+- extensions: [.nrrd, .nhdr]
+  description: "Nrrd Raw Image Files"
+  reader_class: vtkNrrdReader
+  writer_class: null
+  vtk_module: VTK::IOImage
+
+- extensions: [.ome.tif, .ome.tiff]
+  description: "[OME](https://docs.openmicroscopy.org/ome-model/5.6.3/ome-tiff/specification.html#ome-tiff-specification) TIFF files"
+  reader_class: vtkOMETIFFReader
+  writer_class: null
+  vtk_module: VTK::IOImage
+
+- extensions: [.png]
+  description: "PNG file"
+  reader_class: vtkPNGReader
+  writer_class: vtkPNGWriter
+  vtk_module: VTK::IOImage
+
+- extensions: [.pnm, .pgm, .ppm]
+  description: "pnm (i.e., portable anymap) file"
+  reader_class: vtkPNMReader
+  writer_class: vtkPNMWriter
+  vtk_module: VTK::IOImage
+
+- extensions: [.ps]
+  description: "PostScript file"
+  reader_class: null
+  writer_class: vtkPostScriptWriter
+  vtk_module: VTK::IOImage
+
+- extensions: [.H]
+  description: "Stanford Exploration Project files reader"
+  reader_class: vtkSEPReader
+  writer_class: null
+  vtk_module: VTK::IOImage
+
+- extensions: [.slc]
+  description: "SLC volume file"
+  reader_class: vtkSLCReader
+  writer_class: null
+  vtk_module: VTK::IOImage
+
+- extensions: [.tga]
+  description: "[Targa](https://en.wikipedia.org/wiki/Truevision_TGA) files"
+  reader_class: vtkTGAReader
+  writer_class: null
+  vtk_module: VTK::IOImage
+
+- extensions: [.tif, .tiff]
+  description: "Tiff image format"
+  reader_class: vtkTIFFReader
+  writer_class: vtkTIFFWriter
+  vtk_module: VTK::IOImage
+
+- extensions: [.mhd, .mha]
+  description: "binary UNC meta image data"
+  reader_class: vtkMetaImageReader
+  writer_class: vtkMetaImageWriter
+  vtk_module: VTK::IOImage
+
+- extensions: [.h5rage]
+  description: "hdf files generated from xRage, a LANL physics code"
+  reader_class: vtkH5RageReader
+  writer_class: null
+  vtk_module: VTK::IOH5Rage
+
+- extensions: [.h5part]
+  description: "H5Part particle files"
+  reader_class: vtkH5PartReader
+  writer_class: null
+  vtk_module: VTK::IOH5Part
+
+- extensions: [.inp]
+  description: "AVS UCD Binary/ASCII Files"
+  reader_class: vtkAVSucdReader
+  writer_class: null
+  vtk_module: VTK::IOGeometry
+
+- extensions: [.g]
+  description: "Movie.BYU files"
+  reader_class: vtkBYUReader
+  writer_class: vtkBYUWriter
+  vtk_module: VTK::IOGeometry
+
+- extensions: [.cgm]
+  description: "Computer Graphics Metafile"
+  reader_class: null
+  writer_class: vtkCGMWriter
+  vtk_module: VTK::IOGeometry
+
+- extensions: [.graph, .coords]
+  description: "Chaco graph partitioning output files"
+  reader_class: vtkChacoReader
+  writer_class: null
+  vtk_module: VTK::IOGeometry
+
+- extensions: [.dat.h5, .cas.h5]
+  description: "FLUENT CFF format"
+  reader_class: vtkFLUENTCFFReader
+  writer_class: null
+  vtk_module: VTK::IOFLUENTCFF
+
+- extensions: [.cas, .dat]
+  description: "FLUENT native format"
+  reader_class: vtkFLUENTReader
+  writer_class: null
+  vtk_module: VTK::IOGeometry
+
+- extensions: [.neu]
+  description: "GAMBIT GAMBIT ASCII format"
+  reader_class: vtkGAMBITReader
+  writer_class: null
+  vtk_module: VTK::IOGeometry
+
+- extensions: [.h5]
+  description: "[CONVERGE CFD](https://convergecfd.com) format"
+  reader_class: vtkCONVERGECFDReader
+  writer_class: null
+  vtk_module: VTK::IOCONVERGECFD
+
+- extensions: [.cgns]
+  description: "[CONVERGE CFD](https://convergecfd.com) CGNS format"
+  reader_class: vtkCONVERGECFDCGNSReader
+  writer_class: null
+  vtk_module: VTK::IOCGNSReader
+
+- extensions: [.cgns]
+  description: "[CGNS](https://cgns.github.io/cgns-modern.github.io/index.html) format"
+  reader_class: vtkCGNSReader
+  writer_class: null
+  vtk_module: VTK::IOCGNSReader
+
+- extensions: [.abc]
+  description: "[Alembic](http://www.alembic.io/) scene format"
+  reader_class: null
+  writer_class: vtkAlembicExporter
+  vtk_module: VTK::IOAlembic

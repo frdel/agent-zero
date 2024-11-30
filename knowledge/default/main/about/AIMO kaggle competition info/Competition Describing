@@ -1,0 +1,156 @@
+Skip to
+content
+Kaggle
+
+Create
+Home
+
+Competitions
+
+Datasets
+
+Models
+
+Code
+
+Discussions
+
+Learn
+
+More
+
+Your Work
+
+
+Viewed
+
+AI Mathematical Olympiad - Progress Prize 2
+
+
+ARC Prize 2024
+
+
+Iris Flower Dataset
+
+
+AI Mathematical Olympiad - Progress Prize 1
+
+
+Numina 1st Place Solution
+
+
+Edited
+
+Exercise: Explore Your Data
+
+
+BARBAH GAMES Website Chatbot-RAG2.ipynb
+
+
+BARBAH GAMES Website Chatbot-RAG Data Prep.ipynb
+
+
+BARBAH GAMES Website Chatbot-RAG.ipynb
+
+
+Data_Filterer_SigmaDolphin
+
+
+Bookmarks
+
+ARC Prize 2024
+
+
+Data_Filterer_SigmaDolphin
+
+
+NFL Big Data Bowl 2024
+
+
+View Active Events
+
+Search
+
+Kaggle uses cookies from Google to deliver and enhance the quality of its services and to analyze traffic.
+Learn more
+OK, Got it.
+AI|MO · Featured Code Competition · 5 months to go
+
+Submit Prediction
+AI Mathematical Olympiad - Progress Prize 2
+Solve national-level math challenges using artificial intelligence models
+
+
+Dataset Description
+The competition data comprises 110 mathematics problems similar in style to those of the AIME.
+
+The answer to each problem is a non-negative integer between 0 and 999. You should arrive at this number by taking the problem solution modulo 1000. If, for instance, you believe the solution to a problem is 2034, your predicted answer should be 34.
+
+You should expect the difficulty of the problems to be roughly at the level of a national Olympiad, although some problems are slightly easier and some are slightly harder.
+
+All problems are text-only with mathematical notation in LaTeX. Please see the Overview, Section Note on Language and Notation for details on the notational conventions used.
+
+Although some problems may involve geometry, diagrams are not used in any problem.
+
+The public test set comprises exactly 50 problems, and the private test set comprises a further distinct set of 50 problems. We also provide a selection of 10 problems for use as reference, called "reference data". A pdf with full solutions to the problems from the reference data can be found below. The problems in the private and public sets have been selected to balance both difficulty and subject area. Their difficulty and subject distribution is similar.
+
+Competition Data
+Please note that this is a Code Competition. You must submit to this competition using the provided Python evaluation API, which serves the test set question by question in random order. To use the API, follow the example in this notebook: AIMO 2 Submission Demo.
+
+We give a few placeholder problems in the publicly visible test.csv file to help you author your submissions. These problems are not meant to be representative of the problems in the actual test set.
+
+When your submission is scored, this placeholder test data will be replaced with the actual test data.
+
+Because of the limited number of problems available, we are taking special precautions to secure the test set against probing. Among other things, during the submission period, the test set will comprise only the 50 public set problems. Once the competition ends, we will rerun all model submissions on the 50 private set problems. You should attempt to make sure your submission will complete successfully on the 50 new private set problems. This may mean ensuring your submission is robust to unexpected inputs, or managing runtime and memory usage.
+
+Files
+reference.csv - Contains 10 problems for use as reference data.
+test.csv - Contains 50 problems. Please note that the problems visible here are only placeholders. Your submission will have access to the full set of problems during scoring.
+sample_submission.csv - A sample submission file in the correct format. See the Evaluation page for more information on the submission format.
+Fields
+id - A unique identifier for each problem.
+problem - A LaTeX statement of the problem to be solved.
+answer - An integer from 0 to 999.
+Files
+15 files
+
+Size
+283.06 kB
+
+Type
+py, csv, pdf + 1 other
+
+License
+Subject to Competition Rules
+
+AIMO_Progress_Prize_2_Reference_Problems_Solutions.pdf(236.47 kB)
+About this file
+10 reference problems (statements and solutions) in PDF format
+
+
+Data Explorer
+283.06 kB
+
+kaggle_evaluation
+
+AIMO_Progress_Prize_2_Reference_Problems_Solutions.pdf
+
+reference.csv
+
+sample_submission.csv
+
+test.csv
+
+Summary
+15 files
+
+7 columns
+
+
+Download All
+kaggle competitions download -c ai-mathematical-olympiad-progress-prize-2
+Download data
+
+Metadata
+License
+Subject to Competition Rules

@@ -1,0 +1,64 @@
+flowchart TD
+    A[Start] --> B[Data Ingestion & Preprocessing]
+    B --> C["Problem Analysis & Representation"]
+    
+    %% Problem Analysis Branch
+    C --> C1["Pattern Recognition"]
+    C1 --> C2["Tool Selection Logic"]
+    C2 --> D[Agent Zero Core Processing]
+    
+    %% Main Processing Flow
+    D --> E["Reasoning & Problem-Solving"]
+    E --> F["Multi-Layer Validation"]
+    
+    %% Validation Branch
+    F --> G{"Is Solution Valid?"}
+    G -- Yes --> V["Pattern Storage"]
+    V --> H["Prepare Submission"]
+    G -- No --> I{"Need Improvement?"}
+    
+    %% Improvement Loops
+    I -- "Yes: Strategy 1" --> E1["Adjust Reasoning"]
+    I -- "Yes: Strategy 2" --> E2["Try Different Tools"]
+    E1 --> E
+    E2 --> E
+    I -- No --> H
+    
+    %% Submission & Feedback
+    H --> J["Submit to Kaggle"]
+    J --> K["Process External Feedback"]
+    
+    %% Learning Loop
+    K --> L{"Update System?"}
+    L -- Yes --> M["Memory Update"]
+    M --> N["Tool Performance Analysis"]
+    N --> O["Strategy Optimization"]
+    O --> P["Model Refinement"]
+    P -.-> C1
+    L -- No --> Q[End]
+    
+    %% Tool Integration
+    D <-.-> T1["Mathematical\nReasoning Tools"]
+    D <-.-> T2["Symbolic\nComputation"]
+    E <-.-> T3["Proof Generation"]
+    F <-.-> T4["Solution\nValidation"]
+    
+    %% Memory System
+    subgraph Memory["Agent Zero Memory System"]
+        M1["Pattern Store"]
+        M2["Tool Performance"]
+        M3["Solution History"]
+        M1 <--> M2
+        M2 <--> M3
+        M3 <--> M1
+    end
+    
+    C1 -.-> Memory
+    V -.-> Memory
+    N -.-> Memory
+    
+    %% Styling
+    classDef memoryClass fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef toolClass fill:#bbf,stroke:#333,stroke-width:2px;
+    class M1,M2,M3 memoryClass;
+    class T1,T2,T3,T4 toolClass;

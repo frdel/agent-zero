@@ -1,0 +1,333 @@
+Skip to
+content
+Kaggle
+
+Create
+Home
+
+Competitions
+
+Datasets
+
+Models
+
+Code
+
+Discussions
+
+Learn
+
+More
+
+Your Work
+
+
+Viewed
+
+AI Mathematical Olympiad - Progress Prize 2
+
+
+ARC Prize 2024
+
+
+Iris Flower Dataset
+
+
+AI Mathematical Olympiad - Progress Prize 1
+
+
+Numina 1st Place Solution
+
+
+Edited
+
+Exercise: Explore Your Data
+
+
+BARBAH GAMES Website Chatbot-RAG2.ipynb
+
+
+BARBAH GAMES Website Chatbot-RAG Data Prep.ipynb
+
+
+BARBAH GAMES Website Chatbot-RAG.ipynb
+
+
+Data_Filterer_SigmaDolphin
+
+
+Bookmarks
+
+ARC Prize 2024
+
+
+Data_Filterer_SigmaDolphin
+
+
+NFL Big Data Bowl 2024
+
+
+View Active Events
+
+Search
+
+Kaggle uses cookies from Google to deliver and enhance the quality of its services and to analyze traffic.
+Learn more
+OK, Got it.
+AI|MO · Featured Code Competition · 5 months to go
+
+Submit Prediction
+AI Mathematical Olympiad - Progress Prize 2
+Solve national-level math challenges using artificial intelligence models
+
+
+Overview
+The goal of this competition is to create algorithms and models that can solve tricky math problems written in LaTeX format. Your participation will help to advance AI models’ mathematical reasoning skills and drive frontier knowledge.
+
+Start
+
+19 days ago
+Close
+5 months to go
+Merger & Entry
+Description
+Note: This is the second AIMO Progress Prize competition. It builds upon the first AIMO Progress Prize competition, which was won in July 2024 by Project Numina. This second competition has an increased prize pool, a new dataset of problems, increased compute for participants and updated rules for using open-source LLMs.
+
+The ability to reason mathematically is a critical milestone for AI. Mathematical reasoning is the foundation for solving many complex problems, from engineering marvels to intricate financial models. However, current AI capabilities are limited in this area.
+
+The AI Mathematical Olympiad (AIMO) Prize is a $10mn fund to spur the open development of AI models capable of performing as well as top human participants in the International Mathematical Olympiad (IMO).
+
+This second AIMO Progress Prize competition has 110 math problems in algebra, combinatorics, geometry and number theory. The difficulty has been increased from the first competition, and the problems are now around the National Olympiad level. The problems have also been designed to be 'AI hard' in terms of the mathematical reasoning required, which was tested against current open LLMs' capabilities.
+
+To address the challenge of train-test leakage, the competition uses novel math problems created by an international team of problem solvers. Using this transparent and fair evaluation framework, the competition will help to strengthen the benchmarks for assessing AI models' mathematical reasoning skills, without the risk of contamination from training data.
+This latest AIMO Progress Prize competition offers an exciting opportunity to drive innovation in the field of AI for Math, while also fostering healthy competition and supporting open science.
+
+Join us as we work towards a future where AI models’ mathematical reasoning skills are accurately and reliably assessed, driving progress and innovation.
+
+Evaluation
+Submissions are evaluated on the accuracy between their predicted labels and the ground-truth labels. In other words, submissions are ranked by the fraction of predicted labels that exactly match the ground-truth labels.
+
+In this competition, every ground-truth label is an integer between 0 and 999, inclusive.
+
+You should arrive at this number by taking the problem solution modulo 1000. If, for instance, you believe the solution to a problem is 65521 should be reported as 521 and -900 should be reported as 100. To be clear, for positive integers larger than 1000, this means: report the last three digits, discarding any initial zero(s). Thus 1009 should be reported as 9.
+
+If a question asks for an answer 𝑎
+ to be calculated modulo 𝑚
+ where 𝑚
+ is specified (not all questions are of this type), then calculate the residue 𝑎
+ modulo 𝑚
+ which is 𝑎′
+ with 0≤𝑎′<𝑚
+ and then report this answer modulo 1000
+. For example, if asked to calculate the positive integer 2025
+ modulo 999
+, the final answer should be 27
+. However, if asked to calculate 2025
+ modulo 1013
+, the final answer should be 12
+.
+
+Answers may require basic computations, e.g., ⌊1002‾√⌋=141
+.
+
+Submitting
+You must submit to this competition using the provided Python evaluation API, which serves test set instances one-by-one in random order. To use the API, follow the template in this notebook.
+
+Prizes
+TOTAL FUND FOR PROGRESS PRIZE 2: $2,117,152
+
+Prizes for Top-Ranking Teams in this Competition:
+1st Place: $262,144
+2nd Place: $131,072
+3rd Place: $65,536
+4th Place: $32,768
+5th Place: $16,384
+
+Overall Progress Prize Winner: The Overall Progress Prize Winner shall be the highest ranking team that achieves a score of at least 47/50 on both public and private test sets. After any prizes for the five top-ranking teams have been awarded, the remainder of the total fund shall be awarded to the Overall Progress Prize Winner.
+
+If a team is named the Overall Progress Prize Winner in this competition, the prize will be at least $1,589,248. If no team is named the Overall Progress Prize Winner in this competition, the remainder of the total fund shall roll over to the next competition, where the same prize allocation will apply.
+
+Early Sharing Prize: $20,000. An additional $20,000 cash prize will be awarded for sharing high-scoring public notebooks early in the competition to encourage participants to share information earlier and help the community make more progress over the course of the competition.
+
+To be eligible for the Early Sharing Prize, you will need to:
+
+1) Be the first to publish a public notebook scoring at least 20/50 on the leaderboard before January 1st, 2025, 11:59 PM UTC.
+
+2) Out of all participants or Teams who have submitted notebooks scoring at least 20/50, be the first to make your notebook public. The public notebook needs to adhere to the same requirements and restrictions regarding licensing, reproducibility, and documentation to which the winning Submission is subject (see Competition Rules).
+
+3) Keep the notebooks and any datasets they use publicly available until the final Progress Prizes are awarded to the winning Teams at the end of the competition.
+
+The Competition Sponsor will, after 1 January 2025, 11:59 PM UTC, assess all Submissions that are eligible for the Early Sharing Prize in the order in which Submissions were made. If it is discovered that such a Submissions that scored more than 20 points has no or incomplete documentation, incompatible licensing, or is in any other way incompatible with the rules to which the winning Submission is subject, it will not be considered towards the Early Sharing Prize and the next Submissions will be assessed.
+
+Timeline
+October 17, 2024 - Start Date.
+March 25, 2025 - Entry Deadline. You must accept the competition rules before this date in order to compete.
+March 25, 2025 - Team Merger Deadline. This is the last day participants may join or merge teams.
+April 1, 2025 - Final Submission Deadline.
+All deadlines are at 11:59 PM UTC on the corresponding day unless otherwise noted. The competition organizers reserve the right to update the contest timeline if they deem it necessary.
+
+Code Requirements
+
+
+Submissions to this competition must be made through Notebooks. In order for the "Submit" button to be active after a commit, the following conditions must be met:
+
+CPU Notebook <= 9 hours run-time
+GPU Notebook <= 5 hours run-time
+Internet access disabled
+Freely & publicly available external data is allowed, including pre-trained models
+Submission file must be generated by the API.
+Submission runtimes have been obfuscated. If you repeat the exact same submission you will see up to 30 minutes of variance in the time before you receive your score.
+
+Please see the Code Competition FAQ for more information on how to submit. And review the code debugging doc if you are encountering submission errors.
+
+Note on Language and Notation
+All problems are text-only with mathematical notation in LaTeX. The following conventions are observed:
+
+𝚊𝚖𝚜𝚜𝚢𝚖𝚋
+, 𝚊𝚖𝚜𝚖𝚊𝚝𝚑
+ and 𝚎𝚗𝚞𝚖𝚒𝚝𝚎𝚖
+ packages are used. No other package is assumed.
+Variable names are given in math mode e.g. 𝑎
+, 𝑥
+, 𝑦
+.
+Integers such as 1, 2 can be outside of math mode or inside. Large integers such as 1050
+ are in math mode.
+𝚒𝚝𝚎𝚖𝚒𝚣𝚎
+ and 𝚎𝚗𝚞𝚖𝚎𝚛𝚊𝚝𝚎
+ environments may be used (with the latter using the conventions from the 𝚎𝚗𝚞𝚖𝚒𝚝𝚎𝚖
+ package).
+Other environments such as \𝚋𝚎𝚐𝚒𝚗{𝚎𝚚𝚞𝚊𝚝𝚒𝚘𝚗}
+ are not used.
+$…$
+, \ (…\ )
+, \[…\]
+ may all be used for equations.
+\𝚕𝚍𝚘𝚝𝚜
+, \𝚌𝚍𝚘𝚝𝚜
+, …
+ can be used to continue a finite sequence or infinite.
+Multiplication can be represented by simple adjacency 2𝑥
+ or using LaTeX \𝚌𝚍𝚘𝚝
+ command for 𝑥⋅𝑦
+ or LaTeX \𝚝𝚒𝚖𝚎𝚜
+ command for 𝑥×𝑦
+.
+𝑛!
+ for an integer represents the factorial function 𝑛!=𝑛⋅(𝑛−1)⋅(𝑛−2)⋯2⋅1
+.
+log
+, sin
+, cos
+ are generally in math mode.
+Fractions may be represented using 𝑎𝑏
+ or inline using 𝑎/𝑏
+.
+|𝑥|
+ represents the absolute value of 𝑥
+, eg, |−2|=2
+.
+Standard geometric notation is used such as the triangle △𝐴𝐵𝐶
+ with sides 𝐴𝐵
+, 𝐵𝐶
+, and 𝐴𝐶
+. Standard notation is also used for angles, eg, ∠𝐴𝐵𝐶
+. Angles may be specified in degrees ∠𝐴𝐵𝐶=60∘
+.
+Standard trigonometric operators including sin
+, cos
+, tan
+ may be used.
+Sets are denoted using standard curly bracket notation, eg, {1,2,3}
+.
+⌊𝑥⌋
+ represents the integer part of the real number 𝑥
+ ie the greatest integer less than or equal to 𝑥
+. ⌈𝑥⌉
+ represents the smallest integer greater than or equal to 𝑥
+. {𝑥}
+ for a single value 𝑥
+ refers to the fractional part of the real number 𝑥
+ ie 𝑥−⌊𝑥⌋
+.
+\𝚕𝚎𝚏𝚝
+ and \𝚛𝚒𝚐𝚑𝚝
+ may be used in conjunction with other LaTeX commands eg \𝚕𝚎𝚏𝚝 \𝚕𝚌𝚎𝚒𝚕 \𝚏𝚛𝚊𝚌{𝚡}{𝟸}\𝚛𝚒𝚐𝚑𝚝\𝚛𝚌𝚎𝚒𝚕
+ producing ⌈𝑥2⌉
+.
+Overline notation 𝑎𝑏𝑐𝑑⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+ represents the integer formed by the digits 𝑎
+,𝑏
+,𝑐
+,𝑑∈{0,1,…,9}
+ with 𝑎≠0
+ eg with 𝑎=1
+, 𝑏=2
+: 𝑎𝑏⎯⎯⎯⎯⎯⎯=12
+ and 𝑏𝑎𝑏⎯⎯⎯⎯⎯⎯⎯⎯⎯=212
+.
+(𝑎𝑏)
+ is interpreted as the binomial coefficient, representing the number of ways of choosing 𝑏
+ elements from a set of size 𝑎
+.
+ℕ,ℤ,ℚ
+, and ℝ
+ are used to denote the set of positive integers, integers, rational numbers, and real numbers, respectively (where positive means >0
+).
+We allow informal probability language such as: a point is chosen uniformly at random in the interval [0,1]
+.
+The sum over the empty set is 0
+, and the product over the empty set is 1
+.
+For integers 𝑙
+, 𝑚
+, and 𝑛
+, 𝑙𝑚𝑛
+ denotes 𝑙(𝑚𝑛)
+.
+British or American versions of English can be used. Thus ''highest common factor'' means the same as ''greatest common divisor''.
+A prefix or subscript may be used to indicate features of a triangle associated with vertices. Thus triangle 𝐴𝐵𝐶
+ has three altitudes, and the one dropped from 𝐴
+ could be denoted the altitude through 𝐴
+, the 𝐴
+-altitude or the altitude ℎ𝑎
+. Similarly, for median lines.
+:=
+ means 'is defined to be equal to'.
+Note on taxonomy: An equilateral triangle is a specific type of isosceles triangle, a square is a specific type of rectangle, and a rectangle is a specific type of parallelogram, among other similar relationships.
+The word trapezium can mean different things in different countries. For the purposes of this competition, a trapezium is a quadrilateral with at least one pair of parallel opposite sides.
+About the Hosts
+XTX Markets is a leading algorithmic trading company and has over 200 employees based in London, Paris, New York, Mumbai, Yerevan and Singapore. XTX provides liquidity in the Equity, FX, Fixed Income and Commodity markets and trades over $250bn a day across markets.
+
+XTX Markets' expansive research cluster contains 100,000 cores and 20,000 A/V100 GPUs and is growing. It also has 390 petabytes of usable storage and 7.5 petabytes of RAM. Alongside rich datasets and advanced technological infrastructure we are at the forefront of the crossover of finance and technology.
+
+XTX Markets’ philanthropy focuses on maths and science education and research, alongside other areas such as academic sanctuaries, carbon removal and an employee matching programme. Since 2017, XTX Markets has donated over £100mn to charities and good causes, establishing it as a major donor in the UK and globally.
+
+Citation
+Simon Frieder, Sam Bealing, Arsenii Nikolaiev, Geoff C. Smith, Kevin Buzzard, Timothy Gowers, Peter J. Liu, Po-Shen Loh, Lester Mackey, Leonardo de Moura, Dan Roberts, D. Sculley, Terence Tao, David Balduzzi, Simon Coyle, Alex Gerko, Ryan Holbrook, Addison Howard, and XTX Markets. AI Mathematical Olympiad - Progress Prize 2. https://kaggle.com/competitions/ai-mathematical-olympiad-progress-prize-2, 2024. Kaggle.
+
+
+Cite
+Competition Host
+AI|MO
+
+Prizes & Awards
+$2,117,152
+
+Awards Points & Medals
+
+Participation
+4,842 Entrants
+
+356 Participants
+
+337 Teams
+
+1,496 Submissions
+
+Tags
+NLP
+Mathematics
+
+Accuracy Score
+Table of Contents

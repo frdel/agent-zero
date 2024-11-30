@@ -1,0 +1,147 @@
+**Testing Session: Mathematical Problem Solving with Delegation**
+
+**Objective:**
+
+You will be presented with a set of 10 mathematical problems. Your task is to coordinate the solving of these problems by delegating each one to a separate sub-agent. Additionally, if a problem requires visualization, the respective sub-agent should further delegate to create sub-agents responsible for visualization and interpretation of the visuals. This exercise aims to assess your ability to manage tasks through delegation, coordinate among sub-agents, and solve complex problems effectively.
+
+---
+
+**Instructions:**
+
+1. **Task Delegation:**
+
+   - **Main Agent Responsibilities:**
+     - For each of the 10 problems, create a **separate sub-agent** responsible for solving that problem.
+     - Provide each sub-agent with the **problem statement** and any relevant **instructions**.
+     - Monitor the progress of sub-agents and coordinate as necessary.
+     - Ensure that all sub-agents adhere to the overall guidelines and time constraints.
+
+   - **Sub-Agent Responsibilities:**
+     - Each sub-agent is tasked with **solving their assigned problem** thoroughly.
+     - If the problem requires visualization:
+       - The sub-agent should create a **Visualization Sub-Agent** to handle the creation of visual aids.
+       - Additionally, an **Interpretation Sub-Agent** can be created to analyze and explain the visuals.
+     - Sub-agents should **integrate** the work of any subordinate agents into their final solution.
+
+2. **Problem Solving Process:**
+
+   - **Sub-Agents:**
+     - For their assigned problem, sub-agents should:
+       - **Read carefully** to understand what is being asked.
+       - **Analyze** the problem, identifying key information and relevant mathematical concepts.
+       - **Develop a solution plan**, outlining the steps they will take to solve the problem.
+       - **Execute** the solution, showing all calculations and justifications for each step.
+       - **Verify** the final answer for correctness and consistency.
+       - **Present** the solution in a clear, organized manner, using appropriate mathematical notation.
+
+   - **Visualization Sub-Agents (if needed):**
+     - **Visualization Agent:**
+       - Create necessary **visual aids or diagrams** to support the problem-solving process.
+       - Since images cannot be included in the final output, **describe the visuals in detail**, specifying shapes, relationships, and any relevant measurements.
+     - **Interpretation Agent:**
+       - **Analyze** the visualizations provided by the Visualization Agent.
+       - **Explain** how the visuals contribute to understanding and solving the problem.
+       - Integrate their insights into the main solution.
+
+3. **Communication and Coordination:**
+
+   - **Sub-Agents** should communicate effectively with their subordinates and the Main Agent.
+   - Provide **regular updates** on progress and any challenges encountered.
+   - Ensure that all parts of the solution are **integrated smoothly**.
+   - **Main Agent** should oversee the entire process, ensuring that delegation is effective and timelines are met.
+
+4. **Format:**
+
+   - **Each problem's solution** should be presented separately.
+   - Begin with the **Problem Statement**, followed by the **Solution**.
+   - Include any **Visual Descriptions** provided by Visualization Sub-Agents.
+   - Conclude with a clear **Final Answer**.
+   - Use **numbered steps** or **paragraphs** to structure the solution logically.
+
+5. **Reflection:**
+
+   - After solving each problem, **Sub-Agents** should provide a brief **reflection** on the strategies used.
+   - Note any **challenges** encountered and how they were overcome.
+   - Mention if the problem reminded them of any **previous problems** solved.
+
+6. **Final Assessment:**
+
+   - **Main Agent** should compile all solutions and provide a **summary** of the overall performance.
+   - Reflect on the effectiveness of **delegation** and **coordination** among agents.
+   - Suggest strategies for improving **task management** and **problem-solving** skills in the future.
+
+---
+
+**The 10 Problems:**
+
+1. **Problem 1:**
+
+   Three airline companies operate flights from Dodola island. Each company has a different schedule of departures. The first company departs every 100 days, the second every 120 days, and the third every 150 days. What is the greatest positive integer \( d \) for which it is true that there will be \( d \) consecutive days without a flight from Dodola island, regardless of the departure times of the various airlines?
+
+2. **Problem 2:**
+
+   Let triangle \( ABC \) have sides \( BC = 108 \), \( CA = 126 \), and \( AB = 39 \). Point \( X \) lies on segment \( AC \) such that \( BX \) bisects angle \( \angle CBA \). Let \( \omega \) be the circumcircle of triangle \( ABX \). Let \( Y \) be a point on \( \omega \) different from \( X \) such that \( CX = CY \). Line \( XY \) meets \( BC \) at \( E \). The length of segment \( BE \) can be written as \( \frac{m}{n} \), where \( m \) and \( n \) are coprime positive integers. Find \( m + n \).
+
+3. **Problem 3:**
+
+   Triangle \( ABC \) has side length \( AB = 120 \) and circumradius \( R = 100 \). Let \( D \) be the foot of the perpendicular from \( C \) to the line \( AB \). What is the greatest possible length of segment \( CD \)?
+
+4. **Problem 4:**
+
+   Find the three-digit number \( n \) such that writing any other three-digit number \( 10^{2024} \) times in a row and \( 10^{2024} + 2 \) times in a row results in two numbers divisible by \( n \).
+
+5. **Problem 5:**
+
+   Alice writes all positive integers from \( 1 \) to \( n \) on the board for some positive integer \( n \geq 11 \). Bob then erases ten of them. The mean of the remaining numbers is \( \frac{3000}{37} \). The sum of the numbers Bob erased is \( S \). What is the remainder when \( n \times S \) is divided by \( 997 \)?
+
+6. **Problem 6:**
+
+   For positive integers \( x_1, x_2, \dots, x_n \), define \( G(x_1, x_2, \dots, x_n) \) to be the sum of their \( \frac{n(n - 1)}{2} \) pairwise greatest common divisors. We say that an integer \( n \geq 2 \) is **artificial** if there exist \( n \) different positive integers \( a_1, a_2, \dots, a_n \) such that
+   \[
+   a_1 + a_2 + \dots + a_n = G(a_1, a_2, \dots, a_n) + 1.
+   \]
+   Find the sum of all artificial integers \( m \) in the range \( 2 \leq m \leq 40 \).
+
+7. **Problem 7:**
+
+   We call a sequence \( a_1, a_2, \dots \) of non-negative integers **delightful** if there exists a positive integer \( N \) such that for all \( n > N \), \( a_n = 0 \), and for all \( i \geq 1 \), \( a_i \) counts the number of multiples of \( i \) in \( a_1, a_2, \dots, a_N \). How many delightful sequences of non-negative integers are there?
+
+8. **Problem 8:**
+
+   Fred and George take part in a tennis tournament with 4046 other players. In each round, the players are paired into 2024 matches. How many ways are there to arrange the first round such that Fred and George do not have to play each other? (Two arrangements for the first round are different if there is a player with a different opponent in the two arrangements.)
+
+9. **Problem 9:**
+
+   For a positive integer \( n \), let \( S(n) \) denote the sum of the digits of \( n \) in base 10. Compute \( S(S(1) + S(2) + \dots + S(N)) \) with \( N = 10^{100} - 2 \).
+
+10. **Problem 10:**
+
+    The Fibonacci numbers are defined as follows: \( F_0 = 0 \), \( F_1 = 1 \), and \( F_{n+1} = F_n + F_{n-1} \) for \( n \geq 1 \). There are \( N \) positive integers \( n \) strictly less than \( 10^{101} \) such that \( n^2 + (n + 1)^2 \) is a multiple of 5 but \( F_{n-1}^2 + F_n^2 \) is not. How many prime factors does \( N \) have, counted with multiplicity?
+
+---
+
+**Additional Instructions:**
+
+- **Time Management:**
+  - Ensure that each sub-agent allocates appropriate time to their assigned problem.
+  - The Main Agent should oversee the overall timeline and intervene if necessary.
+
+- **Integrity:**
+  - Sub-agents should work independently and rely on their own knowledge and reasoning abilities.
+  - Do not access external resources or prior solutions during this exercise.
+
+- **Attention to Detail:**
+  - Use appropriate mathematical notation throughout the solutions.
+  - Since images cannot be included, visual descriptions must be detailed and precise.
+
+---
+
+**Final Note:**
+
+- This exercise is an opportunity to demonstrate effective **task delegation**, **coordination**, and **mathematical problem-solving** skills.
+- Focus on clear communication and thorough explanations to ensure that solutions are comprehensive and understandable.
+
+---
+
+By following this updated prompt, you will effectively test the agent's ability to delegate tasks, manage sub-agents, and solve complex problems through coordinated efforts. The use of sub-agents for each problem and additional sub-agents for visualization will help assess the agent's capacity for hierarchical task management and collaboration.
+

@@ -1,0 +1,10 @@
+astroid==3.0.1
+furo==2023.9.10
+myst-parser[linkify]==2.0.0
+Sphinx==7.2.6
+sphinx-autodoc2==0.5.0
+sphinx-copybutton==0.5.2
+sphinx_design==0.5.0
+sphinxcontrib-moderncmakedomain==3.27.0
+Pygments==2.17.2
+pyparsing==3.1.1

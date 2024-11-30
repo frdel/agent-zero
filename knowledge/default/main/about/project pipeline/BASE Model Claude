@@ -1,0 +1,23 @@
+flowchart TD
+    A[Start] --> B[Data Ingestion & Preprocessing]
+    B --> C[Agent Zero Core Processing]
+    C --> D[Basic Reasoning Module]
+    D --> E[Basic Validation]
+    E --> F{Solution Ready?}
+    F -- Yes --> G[Prepare Submission]
+    F -- No --> D
+    G --> H[Submit to Kaggle]
+    H --> I[Receive Feedback]
+    I --> J[End]
+
+    %% Extension Points
+    subgraph Future_Extensions[Future Extension Points]
+        T1[Advanced Reasoning Tools]
+        T2[Memory Enhancement]
+        T3[Accuracy Tools]
+    end
+
+    %% Connection points for future extensions
+    C -.-> T1
+    D -.-> T2
+    E -.-> T3

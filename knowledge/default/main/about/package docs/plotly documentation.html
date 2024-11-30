@@ -1,0 +1,3221 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- This page was last built at 2024-11-11 16:52 -->
+
+  <meta charset="utf-8" />
+
+  <link rel="canonical" href="https://plotly.com/python/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@1,500&display=swap" rel="stylesheet" />
+
+  <!-- Media query magic - http://stackoverflow.com/questions/19945658/my-iphone-thinks-its-980px-wide -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="/all_static/javascripts/algolia/instantsearch.js"></script>
+  <script src="/all_static/javascripts/algolia/polyfill.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+
+  <script>
+    const theme = localStorage.getItem('theme');
+    if (theme === "dark-mode") {
+      var root = document.getElementsByTagName('html')[0]; // '0' to assign the first (and only `HTML` tag)
+      root.setAttribute('class', 'dark-mode');
+    }
+
+  </script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" crossorigin="anonymous">
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" crossorigin="anonymous"></script>
+
+  <link href="https://esm.sh/@markprompt/css@0.18.0?css" rel="stylesheet" />
+  <link href="/all_static/css/markprompt.css" rel="stylesheet" />
+  
+  <!--
+      //// Stylesheets
+      -->
+
+   
+
+  <!-- Fonts -->
+  <link href="//fonts.googleapis.com/css?family=Open+Sans:400,300,300italic,400italic,600,600italic,700,700italic,800,800italic|Ubuntu+Mono:400,700|Asap" rel="stylesheet" type="text/css" />
+
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+
+  <!-- Main Stylesheets -->
+  <link rel="stylesheet" type="text/css" href="/all_static/css/main.css?version=false" />
+  <link rel="stylesheet" type="text/css" href="/all_static/css/improve.css?version=2024-11-11-16-52">
+
+  <!-- LOCAL DEV STYLESHEET -->
+  <!--<link rel="stylesheet" type="text/css" href="http://api.plotly.dev/all_static/css/main.css">-->
+
+  <!-- Icon -->
+  <link rel="shortcut icon" href="https://dash.plotly.com/assets/favicon.ico" />
+
+  <!-- Google Tags-->
+  <!-- Google Tag Manager Tag -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-N6T2RXG');</script>
+
+
+  <!-- META TAGS -->
+  <!-- Capture language -->
+
+<!-- Create a title -->
+
+<!-- Count number of plots on the page -->
+
+
+
+
+
+
+
+<!-- SEO Tags - title, meta_description -->
+<title>
+    Plotly Python Graphing Library
+    
+</title>
+<meta name="description" content=Plotly's Python graphing library makes interactive, publication-quality graphs. Examples of how to make line plots, scatter plots, area charts, bar charts, error bars, box plots, histograms, heatmaps, subplots, multiple-axes, polar charts, and bubble charts.>
+
+<!-- Bing tags -->
+    <meta name="msvalidate.01" content="D319859A832F9F1D15A7646E2A42150A" />
+<!-- Facebook tags -->
+    <meta property="og:title" content=
+    Plotly Python Graphing Library
+    
+/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:image" content="https://help.plot.ly/images/twitter-default.png">
+    <meta property="og:description" content=Plotly's Python graphing library makes interactive, publication-quality graphs. Examples of how to make line plots, scatter plots, area charts, bar charts, error bars, box plots, histograms, heatmaps, subplots, multiple-axes, polar charts, and bubble charts./>
+    <meta property="og:url" />
+    <meta property="fb:admins" content="1123751525"/>
+    <meta property="fb:admins" content="22418"/>
+
+<!-- twitter tags -->
+    <meta name="twitter:card" content="photo" />
+    <meta name="twitter:title" content=
+    Plotly Python Graphing Library
+    
+/>
+    <meta name="twitter:url" content="https://plotly.com//python/"/>
+    <meta name="twitter:description" content=Plotly's Python graphing library makes interactive, publication-quality graphs. Examples of how to make line plots, scatter plots, area charts, bar charts, error bars, box plots, histograms, heatmaps, subplots, multiple-axes, polar charts, and bubble charts./>
+    <meta name="twitter:image" content="https://help.plot.ly/images/twitter-default.png">
+    <meta name="twitter:site" content="@plotlygraphs"/>
+
+
+</head>
+
+
+<body class="darkmode">
+    <!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N6T2RXG"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+
+    <div class="menu-mobile">
+    <div class="switch-mode">
+        <div class="icon-dark"></div>
+        <div class="switch"></div>
+        <div class="icon-light"></div>
+    </div>
+    <div class="close-menu"></div>
+    <ul>
+        <li><a style="font-weight: bold;"
+                href="https://community.plotly.com/c/plotly-python/5">Forum</a>
+        </li>
+        <li><a style="font-weight: bold;" href="https://plotly.com/get-pricing/">Pricing</a></li>
+        <li><a style="font-weight: bold;" href="https://dash.plotly.com">Dash</a></li>
+        <!--<li><a style="font-weight: bold;" href="http://plotly.cloud">Dash Cloud</a></li>-->
+
+    </ul>
+</div>
+<div class="header-container">
+    <header class="header-main --default">
+        <div class="--wrap">
+            <div class="--wrap-left">
+                <div class="-identity">
+                    <a href="https://plotly.com/"><img src="/all_static/images/graphing_library_dark.svg"
+                            style="height: 30px;" class="logo-dark"></a>
+                    <a href="/graphing-libraries/"><img src="/all_static/images/graphing_library.svg"
+                            style="height: 30px;" class="logo-white"></a>
+
+
+                </div>
+            </div>
+            <div class="--wrap-right">
+                <nav class="--nav-meta" role="navigation">
+                    <ul>
+                        <li class="languages">
+                            
+                            
+                            <a class="python">
+                                <div class="icon"></div>
+                                Python (v5.24.1)
+                            </a>
+
+                            
+
+                            <ul>
+                                <li>
+                                    <a href="https://plotly.com/python/" class="python">
+                                        <div class="icon"></div>Python (v5.24.1)
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="https://plotly.com/r/" class="r">
+                                        <div class="icon"></div>R
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="https://plotly.com/julia/" class="julia">
+                                        <div class="icon"></div>Julia
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="https://plotly.com/javascript/" class="plotly_js">
+                                        <div class="icon"></div>Javascript (v2.35.2)
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="https://plotly.com/ggplot2/" class="ggplot2">
+                                        <div class="icon"></div>ggplot2
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="https://plotly.com/matlab/" class="matlab">
+                                        <div class="icon"></div>MATLAB
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="https://plotly.com/fsharp/" class="fsharp">
+                                        <div class="icon"></div>F#
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="https://dash.plotly.com/" class="dash">
+                                        <div class="icon"></div>Dash
+                                    </a>
+                                </li>
+                            </ul>
+
+                        </li>
+                        <li><a style="font-weight: bold;"
+                                href="https://community.plotly.com/c/plotly-python/5">Forum</a>
+                        </li>
+                        <li><a style="font-weight: bold;" href="https://plotly.com/get-pricing/">Pricing</a></li>
+                        <li><a style="font-weight: bold;" href="https://dash.plotly.com">Dash</a></li>
+                        <!--<li><a style="font-weight: bold;" href="http://plotly.cloud">Dash Cloud</a></li>-->
+
+                        
+                        <iframe style="padding-top: 5px;"
+                            src="https://ghbtns.com/github-btn.html?user=plotly&repo=plotly.py&type=star&count=true&size=large"
+                            frameborder="0" scrolling="0" width="160px" height="40px"></iframe>
+                        
+                    </ul>
+                    <div class="switch-mode">
+                        <div class="icon-dark"></div>
+                        <div class="switch"></div>
+                        <div class="icon-light"></div>
+                    </div>
+                </nav>
+            </div>
+            <div class="menu-icon">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    </header>
+</div>
+
+
+    <main class="--page page--single --index">
+
+        <div class="--wrap">
+            <!-- aside - Main Sidebar-->
+
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- START OF GGPLOT CUSTOM LAYOUT -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- START OF GGPLOT CUSTOM LAYOUT -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- START OF GGPLOT CUSTOM LAYOUT -->
+
+
+
+
+
+<!-- START OF GGPLOT CUSTOM LAYOUT -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- START OF GGPLOT CUSTOM LAYOUT -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<aside class="--sidebar-container">
+    <div class="--sidebar-fixed reference" data-spy="affix" id="where">
+        <div class="brand">
+            <a href="/graphing-libraries/"><img src="/all_static/images/graphing_library.svg" style="height: 30px;"></a>
+        </div>
+        
+        <button id="modal-button" type="button" data-toggle="modal" data-target="#myModal">
+            <input id="modal-input" style="border-radius: 5px; width: 100%;" type="text" placeholder="   Search..."
+                readonly />
+        </button>
+        
+
+        
+
+        <details style="color: white;margin-top: 20px;"  open >
+            <summary>Quick Reference</summary>
+            <nav class="--sidebar-body watch" id="where">
+                <ul class="--sidebar-list" style="margin-left: 15px;">
+                    <!-- Getting Started -->
+                    <li class="--sidebar-item">
+                        <a href="/python/getting-started" class="js-splash--navigation-item">Getting Started</a>
+                    </li>
+
+                    
+                    <li class="--sidebar-item">
+                        <a href="/python/is-plotly-free" class="js-splash--navigation-item">Is Plotly Free?</a>
+                    </li>
+                    
+
+                    <!-- Reference Pages -->
+                    
+                    <li class="--sidebar-item">
+                        <a href="/python/reference/index/" class="js-splash--navigation-item">Figure Reference</a>
+                    </li>
+                    
+
+                    <!-- Python Specific -->
+
+                    
+                    <li class="--sidebar-item">
+                        <a href="/python-api-reference" class="js-splash--navigation-item">API Reference</a>
+                    </li>
+                    <li class="--sidebar-item">
+                        <a href="https://dash.plotly.com/tutorial" class="js-splash--navigation-item">Dash</a>
+                    </li>
+                    
+
+                    <!-- JS Specific -->
+                    
+
+                    <!-- R Specific -->
+                    
+
+                    <!-- Python/v3 Index Page Specific -->
+                    
+
+                    <!-- User Guides -->
+                    
+
+                    <!-- Github Links -->
+
+                    
+                    <li class="--sidebar-item">
+                        <a target="_blank" href="https://github.com/plotly/plotly.py"
+                            class="js-splash--navigation-item">GitHub</a>
+                    </li>
+
+                    
+                    <li class="--sidebar-item">
+                        <a target="_blank" href="http://community.plotly.com/"
+                            class="js-splash--navigation-item">community.plotly.com</a>
+                    </li>
+
+                </ul>
+            </nav>
+        </details>
+
+        
+
+        <!-- Examples start -->
+        <details style="color: white;margin-top: 20px;" open>
+            <summary>Examples</summary>
+            <nav class="--sidebar-body watch" id="where">
+                <ul class="--sidebar-list" style="margin-left: 15px;">
+                    
+                    <li class="--sidebar-item">
+                        <a href="/python/plotly-fundamentals/" class="js-splash--navigation-item">Fundamentals</a>
+                    </li>
+                    
+
+                    
+                    <li class="--sidebar-item">
+                        <a href="/python/basic-charts/" class="js-splash--navigation-item">Basic Charts</a>
+                    </li>
+                    
+
+                    
+                    <li class="--sidebar-item">
+                        <a href="/python/statistical-charts/" class="js-splash--navigation-item">Statistical
+                            Charts</a>
+                    </li>
+                    
+
+                    
+                    <li class="--sidebar-item">
+                        <a href="/python/scientific-charts/" class="js-splash--navigation-item">Scientific
+                            Charts</a>
+                    </li>
+                    
+
+                    
+                    <li class="--sidebar-item">
+                        <a href="/python/financial-charts/" class="js-splash--navigation-item">Financial Charts</a>
+                    </li>
+                    
+
+                    
+                    <li class="--sidebar-item">
+                        <a href="/python/maps/" class="js-splash--navigation-item">Maps</a>
+                    </li>
+                    
+
+                    
+                    <li class="--sidebar-item">
+                        <a href="/python/ai-ml/" class="js-splash--navigation-item">AI and ML</a>
+                    </li>
+                    
+
+                    
+                    <li class="--sidebar-item">
+                        <a href="/python/bio/" class="js-splash--navigation-item">Visualizing Biological Data</a>
+                    </li>
+                    
+
+                    
+                    <li class="--sidebar-item">
+                        <a href="/python/3d-charts/" class="js-splash--navigation-item">3D Charts</a>
+                    </li>
+                    
+
+                    
+                    <li class="--sidebar-item">
+                        <a href="/python/subplot-charts/" class="js-splash--navigation-item">Subplots</a>
+                    </li>
+                    
+
+                    
+
+                    
+                    <li class="--sidebar-item">
+                        <a href="/python/#animations" class="js-splash--navigation-item">Animations</a>
+                    </li>
+                    
+
+                    
+                    <li class="--sidebar-item">
+                        <a href="/python/#advanced-options" class="js-splash--navigation-item">Advanced</a>
+                    </li>
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+
+                    <!-- START OF GGPLOT CUSTOM LAYOUT -->
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+                    <!-- END OF GGPLOT CUSTOM LAYOUT -->
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+
+                    
+                    
+
+                    
+                </ul>
+            </nav>
+        </details>
+        
+        
+    </div>
+
+    
+    <a href="https://go.plotly.com/cox-automotive-dash-enterprise?utm_source=Webinar:%20Cox%20Automotive%2011/19/24&utm_medium=graphing_libraries&utm_content=sidebar" target="_blank">
+      <img src="https://images.prismic.io/plotly-marketing-website-2/ZyJjH68jQArT0CLD_CoxAuto_square_ads.jpg?auto=format,compress"
+      style="width: 200px; height: 200px; position: fixed; bottom: 10px; left: 50px" alt="Leaders in Data Apps: Action Heroes of Data and AI">
+    </a>
+
+</aside>
+
+
+            <!-- Main-->
+            <section class="--page-body --tutorial-index">
+                <div class="nav-breadcrumb-container">
+    <div>
+        <div class="breadcrumb-nav">
+            
+
+            
+
+            
+
+            
+            
+            
+        </div>
+    </div>
+    
+</div>
+
+                <!-- Start pulling content -->
+                <header class="--welcome">
+  <div class="--welcome-body">
+    <!--div.--wrap-inner-->
+    <div class="--title">
+      <div class="--body">
+        <h1>Plotly Open Source Graphing Library for Python</h1>
+        <p>
+          Plotly's Python graphing library makes interactive, publication-quality graphs. Examples of how to make line plots, scatter plots, area charts, bar charts, error bars, box plots, histograms, heatmaps, subplots, multiple-axes, polar charts, and bubble charts. <br />Plotly.py is
+          <a href="/python/is-plotly-free">free and open source</a> and you can
+          <a target="_blank" href="https://github.com/plotly/plotly.py"
+            >view the source, report issues or contribute on GitHub</a
+          >.
+        </p>
+        <br />
+        
+<div class="dash-plug">
+  <p>Deploy Python AI Dash apps on private Kubernetes clusters: 
+    <a href="/get-pricing/">Pricing</a>
+    &nbsp;|&nbsp;
+    <a href="/get-demo/">Demo</a>
+    &nbsp;|&nbsp;
+    <a href="/dash/">Overview</a>
+    &nbsp;|&nbsp;
+    <a href="/consulting-and-oem/">AI App Services</a>
+  </p>
+</div>
+
+
+
+      </div>
+    </div>
+  </div>
+</header>
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section class="--tutorial-section">
+    <header class="--section-header">
+        <a href="#fundamentals" name="fundamentals" id="fundamentals">Fundamentals</a>
+
+        
+        <a href="/python/plotly-fundamentals" class="langindexlink">More Fundamentals &raquo;</a>
+        
+    </header>
+    <section class="--grid">
+        <ul class="--grid-list">
+
+            
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/violin.jpg);" class="--grid-item">
+    <a href="/python/figure-structure/">
+        <div class="--item-meta"><span>The Figure Data Structure</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/violin.jpg" alt="The Figure Data Structure">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/creating-and-updating-figures.png);" class="--grid-item">
+    <a href="/python/creating-and-updating-figures/">
+        <div class="--item-meta"><span>Creating and Updating Figures</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/creating-and-updating-figures.png" alt="Creating and Updating Figures">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/displaying-figures.png);" class="--grid-item">
+    <a href="/python/renderers/">
+        <div class="--item-meta"><span>Displaying Figures</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/displaying-figures.png" alt="Displaying Figures">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/plotly-express.png);" class="--grid-item">
+    <a href="/python/plotly-express/">
+        <div class="--item-meta"><span>Plotly Express</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/plotly-express.png" alt="Plotly Express">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/dash_apps.png);" class="--grid-item">
+    <a href="https://dash.plotly.com/">
+        <div class="--item-meta"><span>Analytical Apps with Dash</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/dash_apps.png" alt="Analytical Apps with Dash">
+        </div>
+    </a>
+</li>
+
+                </ul>
+    </section>
+</section>
+
+
+
+
+
+
+
+
+<section class="--tutorial-section">
+    <header class="--section-header">
+        <a href="#basic-charts" id="basic-charts">Basic Charts</a>
+
+        
+        <a href="/python/basic-charts/" class="langindexlink">More Basic Charts &raquo;</a>
+        
+    </header>
+    <section class="--grid">
+        <ul class="--grid-list">
+
+            
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/line-and-scatter.jpg);" class="--grid-item">
+    <a href="/python/line-and-scatter/">
+        <div class="--item-meta"><span>Scatter Plots</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/line-and-scatter.jpg" alt="Scatter Plots">
+        </div>
+    </a>
+</li>
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/line-plot.jpg);" class="--grid-item">
+    <a href="/python/line-charts/">
+        <div class="--item-meta"><span>Line Charts</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/line-plot.jpg" alt="Line Charts">
+        </div>
+    </a>
+</li>
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/bar.jpg);" class="--grid-item">
+    <a href="/python/bar-charts/">
+        <div class="--item-meta"><span>Bar Charts</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/bar.jpg" alt="Bar Charts">
+        </div>
+    </a>
+</li>
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/pie-chart.jpg);" class="--grid-item">
+    <a href="/python/pie-charts/">
+        <div class="--item-meta"><span>Pie Charts</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/pie-chart.jpg" alt="Pie Charts">
+        </div>
+    </a>
+</li>
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/bubble.jpg);" class="--grid-item">
+    <a href="/python/bubble-charts/">
+        <div class="--item-meta"><span>Bubble Charts</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/bubble.jpg" alt="Bubble Charts">
+        </div>
+    </a>
+</li>
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                
+
+                </ul>
+    </section>
+</section>
+
+
+
+<section class="--tutorial-section">
+    <header class="--section-header">
+        <a href="#statistical-charts" id="statistical-charts">Statistical Charts</a>
+
+        
+        <a href="/python/statistical-charts/" class="langindexlink">More Statistical Charts &raquo;</a>
+        
+    </header>
+    <section class="--grid">
+        <ul class="--grid-list">
+
+            
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/error-bar.jpg);" class="--grid-item">
+    <a href="/python/error-bars/">
+        <div class="--item-meta"><span>Error Bars</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/error-bar.jpg" alt="Error Bars">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/box.jpg);" class="--grid-item">
+    <a href="/python/box-plots/">
+        <div class="--item-meta"><span>Box Plots</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/box.jpg" alt="Box Plots">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/histogram.jpg);" class="--grid-item">
+    <a href="/python/histograms/">
+        <div class="--item-meta"><span>Histograms</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/histogram.jpg" alt="Histograms">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/distplot.jpg);" class="--grid-item">
+    <a href="/python/distplot/">
+        <div class="--item-meta"><span>Distplots</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/distplot.jpg" alt="Distplots">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/histogram2d.jpg);" class="--grid-item">
+    <a href="/python/2D-Histogram/">
+        <div class="--item-meta"><span>2D Histograms</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/histogram2d.jpg" alt="2D Histograms">
+        </div>
+    </a>
+</li>
+
+                </ul>
+    </section>
+</section>
+
+
+
+<section class="--tutorial-section" id="scientific-charts">
+    <header class="--section-header">
+        <a href="#scientific-charts">Scientific Charts</a>
+
+        
+        <a href="/python/scientific-charts/" class="langindexlink">More Scientific Charts &raquo;</a>
+        
+    </header>
+    <section class="--grid">
+        <ul class="--grid-list">
+
+            
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/contour.jpg);" class="--grid-item">
+    <a href="/python/contour-plots/">
+        <div class="--item-meta"><span>Contour Plots</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/contour.jpg" alt="Contour Plots">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/heatmap.jpg);" class="--grid-item">
+    <a href="/python/heatmaps/">
+        <div class="--item-meta"><span>Heatmaps</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/heatmap.jpg" alt="Heatmaps">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/imshow.jpg);" class="--grid-item">
+    <a href="/python/imshow/">
+        <div class="--item-meta"><span>Imshow</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/imshow.jpg" alt="Imshow">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/v4-migration.png);" class="--grid-item">
+    <a href="/python/ternary-plots/">
+        <div class="--item-meta"><span>Ternary Plots</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/v4-migration.png" alt="Ternary Plots">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/log.jpg);" class="--grid-item">
+    <a href="/python/log-plot/">
+        <div class="--item-meta"><span>Log Plots</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/log.jpg" alt="Log Plots">
+        </div>
+    </a>
+</li>
+
+                </ul>
+    </section>
+</section>
+
+
+
+<section class="--tutorial-section" id="financial-charts">
+    <header class="--section-header">
+        <a href="#financial-charts">Financial Charts</a>
+
+        
+        <a href="/python/financial-charts/" class="langindexlink">More Financial Charts &raquo;</a>
+        
+    </header>
+    <section class="--grid">
+        <ul class="--grid-list">
+
+            
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/time-series.jpg);" class="--grid-item">
+    <a href="/python/time-series/">
+        <div class="--item-meta"><span>Time Series and Date Axes</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/time-series.jpg" alt="Time Series and Date Axes">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/candlestick.jpg);" class="--grid-item">
+    <a href="/python/candlestick-charts/">
+        <div class="--item-meta"><span>Candlestick Charts</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/candlestick.jpg" alt="Candlestick Charts">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/waterfall-charts.jpg);" class="--grid-item">
+    <a href="/python/waterfall-charts/">
+        <div class="--item-meta"><span>Waterfall Charts</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/waterfall-charts.jpg" alt="Waterfall Charts">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/funnel.jpg);" class="--grid-item">
+    <a href="/python/funnel-charts/">
+        <div class="--item-meta"><span>Funnel Chart</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/funnel.jpg" alt="Funnel Chart">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/ohlc.jpg);" class="--grid-item">
+    <a href="/python/ohlc-charts/">
+        <div class="--item-meta"><span>OHLC Charts</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/ohlc.jpg" alt="OHLC Charts">
+        </div>
+    </a>
+</li>
+
+                </ul>
+    </section>
+</section>
+
+
+
+<section class="--tutorial-section" id="maps">
+    <header class="--section-header">
+        <a href="#maps">Maps</a>
+
+        
+        <a href="/python/maps/" class="langindexlink">More Maps &raquo;</a>
+        
+    </header>
+    <section class="--grid">
+        <ul class="--grid-list">
+
+            
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/mapbox-layers.png);" class="--grid-item">
+    <a href="/python/mapbox-to-maplibre/">
+        <div class="--item-meta"><span>MapLibre Migration</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/mapbox-layers.png" alt="MapLibre Migration">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/mapbox-choropleth.png);" class="--grid-item">
+    <a href="/python/tile-county-choropleth/">
+        <div class="--item-meta"><span>Tile Choropleth Maps</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/mapbox-choropleth.png" alt="Tile Choropleth Maps">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/line_mapbox.jpg);" class="--grid-item">
+    <a href="/python/lines-on-tile-maps/">
+        <div class="--item-meta"><span>Lines on Tile Maps</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/line_mapbox.jpg" alt="Lines on Tile Maps">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/area.jpg);" class="--grid-item">
+    <a href="/python/filled-area-tile-maps/">
+        <div class="--item-meta"><span>Filled Area on Tile Maps</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/area.jpg" alt="Filled Area on Tile Maps">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/bubble-map.jpg);" class="--grid-item">
+    <a href="/python/bubble-maps/">
+        <div class="--item-meta"><span>Bubble Maps</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/bubble-map.jpg" alt="Bubble Maps">
+        </div>
+    </a>
+</li>
+
+                </ul>
+    </section>
+</section>
+
+
+
+<section class="--tutorial-section">
+    <header class="--section-header">
+        <a href="#ai_ml" name="ai_ml" id="ai_ml">Artificial Intelligence and Machine Learning</a>
+
+        
+        <a href="/python/ai-ml/" class="langindexlink">More AI and ML &raquo;</a>
+        
+    </header>
+    <section class="--grid">
+        <ul class="--grid-list">
+
+            
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/ml-regression.png);" class="--grid-item">
+    <a href="/python/ml-regression/">
+        <div class="--item-meta"><span>ML Regression</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/ml-regression.png" alt="ML Regression">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/knn-classification.png);" class="--grid-item">
+    <a href="/python/knn-classification/">
+        <div class="--item-meta"><span>kNN Classification</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/knn-classification.png" alt="kNN Classification">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/ml-roc-pr.png);" class="--grid-item">
+    <a href="/python/roc-and-pr-curves/">
+        <div class="--item-meta"><span>ROC and PR Curves</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/ml-roc-pr.png" alt="ROC and PR Curves">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/ml-pca.png);" class="--grid-item">
+    <a href="/python/pca-visualization/">
+        <div class="--item-meta"><span>PCA Visualization</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/ml-pca.png" alt="PCA Visualization">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/ml_apps.png);" class="--grid-item">
+    <a href="https://plotly.com/building-machine-learning-web-apps-in-python/">
+        <div class="--item-meta"><span>AI/ML Apps with Dash</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/ml_apps.png" alt="AI/ML Apps with Dash">
+        </div>
+    </a>
+</li>
+
+                </ul>
+    </section>
+</section>
+
+
+
+
+
+<section class="--tutorial-section">
+    <header class="--section-header"><a href="#bio" name="bio" id="bio">Bioinformatics</a>
+        <a href="/python/bio/" class="langindexlink">More Bioinformatics &raquo;</a>
+    </header>
+    <section class="--grid">
+        <ul class="--grid-list">
+
+
+            
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/volcano_plot.png);" class="--grid-item">
+    <a href="/python/volcano-plot/">
+        <div class="--item-meta"><span>Volcano Plot</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/volcano_plot.png" alt="Volcano Plot">
+        </div>
+    </a>
+</li>
+
+            
+
+
+            
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/manhattan_plot.png);" class="--grid-item">
+    <a href="/python/manhattan-plot/">
+        <div class="--item-meta"><span>Manhattan Plot</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/manhattan_plot.png" alt="Manhattan Plot">
+        </div>
+    </a>
+</li>
+
+            
+
+
+            
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/clustergram.png);" class="--grid-item">
+    <a href="/python/clustergram/">
+        <div class="--item-meta"><span>Clustergram</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/clustergram.png" alt="Clustergram">
+        </div>
+    </a>
+</li>
+
+            
+
+
+            
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/alignment_chart.png);" class="--grid-item">
+    <a href="/python/alignment-chart/">
+        <div class="--item-meta"><span>Alignment Chart</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/alignment_chart.png" alt="Alignment Chart">
+        </div>
+    </a>
+</li>
+
+            </ul>
+        <a href="/python/bio/" class="langindexlink-mobile">More Bioinformatics &raquo;</a>
+    </section>
+</section>
+
+
+<section class="--tutorial-section" id="3d-charts">
+    <header class="--section-header">
+        <a href="#3d-charts">3D Charts</a>
+
+        
+        <a href="/python/3d-charts/" class="langindexlink">More 3D Charts &raquo;</a>
+        
+    </header>
+    <section class="--grid">
+        <ul class="--grid-list">
+
+            
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/3d-axes.png);" class="--grid-item">
+    <a href="/python/3d-axes/">
+        <div class="--item-meta"><span>3D Axes</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/3d-axes.png" alt="3D Axes">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/3d-scatter.jpg);" class="--grid-item">
+    <a href="/python/3d-scatter-plots/">
+        <div class="--item-meta"><span>3D Scatter Plots</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/3d-scatter.jpg" alt="3D Scatter Plots">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/3d-surface.jpg);" class="--grid-item">
+    <a href="/python/3d-surface-plots/">
+        <div class="--item-meta"><span>3D Surface Plots</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/3d-surface.jpg" alt="3D Surface Plots">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/3d-subplots.jpg);" class="--grid-item">
+    <a href="/python/3d-subplots/">
+        <div class="--item-meta"><span>3D Subplots</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/3d-subplots.jpg" alt="3D Subplots">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/3d-camera-controls.jpg);" class="--grid-item">
+    <a href="/python/3d-camera-controls/">
+        <div class="--item-meta"><span>3D Camera Controls</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/3d-camera-controls.jpg" alt="3D Camera Controls">
+        </div>
+    </a>
+</li>
+
+                </ul>
+    </section>
+</section>
+
+
+
+<section class="--tutorial-section" id="multiple-axes-subplots-and-insets">
+    <header class="--section-header">
+        <a href="#subplot-charts" name="subplot-charts" id="subplot-charts">Subplots</a>
+
+        
+    </header>
+    <section class="--grid">
+        <ul class="--grid-list">
+
+            
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/mixed_subplot.JPG);" class="--grid-item">
+    <a href="/python/mixed-subplots/">
+        <div class="--item-meta"><span>Mixed Subplots</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/mixed_subplot.JPG" alt="Mixed Subplots">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/map-subplots.jpg);" class="--grid-item">
+    <a href="/python/map-subplots-and-small-multiples/">
+        <div class="--item-meta"><span>Map Subplots</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/map-subplots.jpg" alt="Map Subplots">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/table_subplots.jpg);" class="--grid-item">
+    <a href="/python/table-subplots/">
+        <div class="--item-meta"><span>Table and Chart Subplots</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/table_subplots.jpg" alt="Table and Chart Subplots">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/ff-subplots.jpg);" class="--grid-item">
+    <a href="/python/figure-factory-subplots/">
+        <div class="--item-meta"><span>Figure Factory Subplots</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/ff-subplots.jpg" alt="Figure Factory Subplots">
+        </div>
+    </a>
+</li>
+
+                </ul>
+    </section>
+</section>
+
+
+
+<section class="--tutorial-section" id="chart-events">
+    <header class="--section-header">
+        <a href="#jupyter-widgets" id="jupyter-widgets">Jupyter Widgets Interaction</a>
+
+        
+    </header>
+    <section class="--grid">
+        <ul class="--grid-list">
+
+            
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/figurewidget-overview.gif);" class="--grid-item">
+    <a href="/python/figurewidget/">
+        <div class="--item-meta"><span>Plotly FigureWidget Overview</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/figurewidget-overview.gif" alt="Plotly FigureWidget Overview">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/figurewidget-jupyterlab.png);" class="--grid-item">
+    <a href="/python/jupyter-lab-tools/">
+        <div class="--item-meta"><span>Jupyter Lab with FigureWidget</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/figurewidget-jupyterlab.png" alt="Jupyter Lab with FigureWidget">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/multi-widget.jpg);" class="--grid-item">
+    <a href="/python/figurewidget-app/">
+        <div class="--item-meta"><span>Interactive Data Analysis with FigureWidget ipywidgets</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/multi-widget.jpg" alt="Interactive Data Analysis with FigureWidget ipywidgets">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/figurewidget-click-events.gif);" class="--grid-item">
+    <a href="/python/click-events/">
+        <div class="--item-meta"><span>Click Events</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/figurewidget-click-events.gif" alt="Click Events">
+        </div>
+    </a>
+</li>
+
+                </ul>
+    </section>
+</section>
+
+
+
+
+
+
+
+<section class="--tutorial-section">
+    <header class="--section-header">
+        <a href="#transforms" name="transforms" id="transforms">Transforms</a>
+
+        
+    </header>
+    <section class="--grid">
+        <ul class="--grid-list">
+
+            
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/filter.jpg);" class="--grid-item">
+    <a href="/python/filter/">
+        <div class="--item-meta"><span>Filter</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/filter.jpg" alt="Filter">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/groupby.jpg);" class="--grid-item">
+    <a href="/python/group-by/">
+        <div class="--item-meta"><span>Group By</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/groupby.jpg" alt="Group By">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/aggregations.jpg);" class="--grid-item">
+    <a href="/python/aggregations/">
+        <div class="--item-meta"><span>Aggregations</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/aggregations.jpg" alt="Aggregations">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/multiple-transforms.jpg);" class="--grid-item">
+    <a href="/python/multiple-transforms/">
+        <div class="--item-meta"><span>Multiple Transforms</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/multiple-transforms.jpg" alt="Multiple Transforms">
+        </div>
+    </a>
+</li>
+
+                </ul>
+    </section>
+</section>
+
+
+
+<section class="--tutorial-section" id="controls">
+    <header class="--section-header">
+        <a href="#controls">Add Custom Controls</a>
+
+        
+    </header>
+    <section class="--grid">
+        <ul class="--grid-list">
+
+            
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/custom-buttons.jpg);" class="--grid-item">
+    <a href="/python/custom-buttons/">
+        <div class="--item-meta"><span>Custom Buttons</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/custom-buttons.jpg" alt="Custom Buttons">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/slider2017.gif);" class="--grid-item">
+    <a href="/python/sliders/">
+        <div class="--item-meta"><span>Sliders</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/slider2017.gif" alt="Sliders">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/dropdown.jpg);" class="--grid-item">
+    <a href="/python/dropdowns/">
+        <div class="--item-meta"><span>Dropdown Menus</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/dropdown.jpg" alt="Dropdown Menus">
+        </div>
+    </a>
+</li>
+
+                
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/sliders.jpg);" class="--grid-item">
+    <a href="/python/range-slider/">
+        <div class="--item-meta"><span>Range Slider and Selector</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/sliders.jpg" alt="Range Slider and Selector">
+        </div>
+    </a>
+</li>
+
+                </ul>
+    </section>
+</section>
+
+
+
+<section class="--tutorial-section" id="animations">
+    <header class="--section-header">
+        <a href="#animations">Animations</a>
+
+        
+    </header>
+    <section class="--grid">
+        <ul class="--grid-list">
+
+            
+                    
+                    
+<li style="background-image: url(https://images.plot.ly/plotly-documentation/thumbnail/animations.gif);" class="--grid-item">
+    <a href="/python/animations/">
+        <div class="--item-meta"><span>Intro to Animations</span></div>
+        <div class="--item-image">
+            <span>View Tutorial</span>
+            <img src="https://images.plot.ly/plotly-documentation/thumbnail/animations.gif" alt="Intro to Animations">
+        </div>
+    </a>
+</li>
+
+                </ul>
+    </section>
+</section>
+
+
+
+
+
+<section class="--tutorial-section no-image" id="advanced-options">
+    <header class="--section-header">
+        <a href="#advanced-options">Advanced</a>
+    </header>
+    <section class="--grid">
+        <ul class="--grid-list">
+
+            
+                    
+                    <li class="--grid-item">
+                        <a href="/python/plot-data-from-csv/">
+                            <div class="--item-meta"><span>Plot CSV Data</span></div>
+                        </a>
+                    </li>
+                
+                    
+                    <li class="--grid-item">
+                        <a href="/python/random-walk/">
+                            <div class="--item-meta"><span>Random Walk</span></div>
+                        </a>
+                    </li>
+                
+                    
+                    <li class="--grid-item">
+                        <a href="/python/peak-finding/">
+                            <div class="--item-meta"><span>Peak Finding</span></div>
+                        </a>
+                    </li>
+                
+                    
+                    <li class="--grid-item">
+                        <a href="/python/smoothing/">
+                            <div class="--item-meta"><span>Smoothing</span></div>
+                        </a>
+                    </li>
+                
+                    
+                    <li class="--grid-item">
+                        <a href="/python/LaTeX/">
+                            <div class="--item-meta"><span>LaTeX</span></div>
+                        </a>
+                    </li>
+                </ul>
+    </section>
+</section>
+
+
+
+
+
+
+
+                <!--End content -->
+                
+                
+
+                <a href="https://dash.plotly.com/tutorial?utm_medium=graphing_libraries&utm_content=python_footer"><img width="100%" style="margin-top: 20px;"
+                        src="/all_static/images/dash_2023.png" /></a>
+
+                
+                
+            </section>
+        </div>
+
+    </main>
+
+    <footer class="--footer-main">
+  <section class="--footer-top">
+    <div class="--wrap">
+      <ul class="--footer-body">
+        <li class="--footer-column">
+          <h6 style="color:#119dff" class="--footer-heading">JOIN OUR MAILING LIST</h6>&#x9;&#x9;&#x9;
+          <ul>
+            &#x9;&#x9;&#x9;&#x9;
+            <li>
+              <p class="subscribe-text"> Sign up to stay in the loop with all things Plotly — from Dash Club to product
+                updates, webinars, and more!</p>
+              <a href="https://go.plot.ly/subscription" class="subscribe-button" target="_blank">
+                Subscribe
+              </a>
+            </li>
+          </ul>
+        </li>
+        &#x9;&#x9;
+        <li class="--footer-column">
+          <h6 style="color:#e763fa" class="--footer-heading">Products</h6>&#x9;&#x9;&#x9;
+          <ul>
+            <li><a href="https://plotly.com/dash/" target="_self">Dash</a></li>
+            &#x9;&#x9;&#x9;&#x9;
+            &#x9;&#x9;&#x9;&#x9;
+            <li><a href="https://plotly.com/consulting-and-oem/" target="_self">Consulting and Training</a></li>
+          </ul>
+        </li>
+        &#x9;&#x9;
+        <li class="--footer-column">
+          <h6 style="color:#636efa" class="--footer-heading">Pricing</h6>&#x9;&#x9;&#x9;
+          <ul>
+            <li><a href="https://plotly.com/get-pricing/" target="_self">Enterprise Pricing</a></li>
+            &#x9;&#x9;&#x9;&#x9;
+          </ul>
+        </li>
+        &#x9;&#x9;
+        <li class="--footer-column">
+          <h6 style="color:#00cc96" class="--footer-heading">About Us</h6>&#x9;&#x9;&#x9;
+          <ul>
+            <li><a href="https://plotly.com/careers" target="_self">Careers</a></li>
+            &#x9;&#x9;&#x9;&#x9;
+            <li><a href="https://plotly.com/resources/" target="_self">Resources</a></li>
+            &#x9;&#x9;&#x9;&#x9;
+            <li><a href="https://medium.com/@plotlygraphs" target="_self">Blog</a></li>
+            &#x9;&#x9;&#x9;&#x9;
+          </ul>
+        </li>
+        &#x9;&#x9;
+        <li class="--footer-column">
+          <h6 style="color:#EF553B" class="--footer-heading">Support</h6>&#x9;&#x9;&#x9;
+          <ul>
+            <li><a href="https://community.plot.ly/" target="_self">Community Support</a></li>
+            &#x9;&#x9;&#x9;&#x9;
+            <li><a href="https://plotly.com/graphing-libraries" target="_self">Documentation</a></li>
+            &#x9;&#x9;&#x9;&#x9;
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </section>
+  <section class="--footer-meta">
+    <div class="--wrap">
+      <div class="left">
+        <article class="--copyright">Copyright &copy; 2024 Plotly. All rights reserved.</article>
+      </div>
+      <div class="right">
+        <article class="--tos"><a href="https://community.plotly.com/tos" target="_blank">Terms of Service</a>
+        </article>
+        <article class="--privacy"><a href="https://plotly.com/privacy/" target="_blank">Privacy Policy</a>
+        </article>
+      </div>
+    </div>
+    <div id="markprompt" />
+  </section>
+</footer>
+
+
+
+<div class="modal" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content" id="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <span style="float: left; padding-top:13px; padding-right:10px;"><i class="fa fa-search fa-lg"></i></span>
+        <input id="search-input" class="search-input" type="text" placeholder="" />
+      </div>
+      <div class="modal-body" id="modal-body">
+        <div id="search-results" class="search-results">
+          <div id="primary-search-results" class="primary-search-results"></div>
+          <div id="schema-search-results" class="schema-search-results"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  window.plotly_doc_language = "python";
+
+</script>
+<!-- ALGOLIA SEARCH -->
+
+<script>
+  window.ALGOLIA_CONFIG = {
+    'applicationId': '7EK9KHJW8M',
+    'indexName': 'python_docs',
+    'apiKey': '4dae07ded6a721de73bde7356eec9280',
+    'baseurl': '/'
+  }
+
+</script>
+
+<script id="algolia__template" type="text/template">
+  
+    <div class="algolia__result">
+      <a class="algolia__result-link" onClick="$('#myModal').modal('toggle')" href="/{{ permalink }}">{{{ _highlightResult.name.value }}}</a>
+      <div class="algolia__result-text">{{{ _highlightResult.description.value }}}</div>
+    </div>
+  
+</script>
+<script id="algolia__secondary-template" type="text/template">
+  
+    <div class="algolia__secondary-result">
+      <a class="algolia__result-link" onClick="$('#myModal').modal('toggle')" href="/{{ permalink }}">{{{ _highlightResult.name.value }}}</a>
+      <div class="algolia__result-text">{{{ _highlightResult.description.value }}}</div>
+    </div>
+  
+</script>
+<script id="algolia__template--no-results" type="text/template">No results found.</script>
+<script src="//cdn.jsdelivr.net/hogan.js/3.0.2/hogan.min.js"></script>
+<script src="/all_static/javascripts/algolia/algolia.js"></script>
+
+<!-- Hash offset Script -->
+<script src="/all_static//javascripts/hash_offset.js"></script>
+<!-- Image Hover Script -->
+<script src="/all_static/javascripts/imghover.js"></script>
+<script src="/all_static/javascripts/improve.js?version=2024-11-11-16-52"></script>
+<!-- code highlighting -->
+
+<!--<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+<script src="/all_static/javascripts/highlight.line-numbers.js"></script>-->
+<script src="/all_static/javascripts/highlight/highlight.min.js"></script>
+<script src="/all_static/javascripts/highlight/julia.min.js"></script>
+<script src="/all_static/javascripts/highlight.line-numbers.js"></script>
+
+
+
+
+<script src="/all_static/javascripts/chatbot.js" type="module"></script>
+<script type="module" src="https://esm.sh/@markprompt/web@0.24.0/init"></script>
+
+
+
+
+
+</body>
+
+</html>
