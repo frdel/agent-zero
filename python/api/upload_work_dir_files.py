@@ -16,8 +16,7 @@ class UploadWorkDirFiles(ApiHandler):
         current_path = request.form.get('path', '')
         uploaded_files = request.files.getlist("files[]") 
         
-        work_dir = files.get_abs_path("work_dir")
-        browser = FileBrowser(work_dir)
+        browser = FileBrowser()
         
         successful, failed = browser.save_files(uploaded_files, current_path)
         

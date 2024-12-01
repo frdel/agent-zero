@@ -6,9 +6,9 @@ from python.helpers import files, memory
 
 class BehaviourPrompt(Extension):
 
-    async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
+    async def execute(self, system_prompt: list[str]=[], loop_data: LoopData = LoopData(), **kwargs):
         prompt = read_rules(self.agent)
-        loop_data.system.insert(0, prompt) #.append(prompt)
+        system_prompt.insert(0, prompt) #.append(prompt)
 
 def get_custom_rules_file(agent: Agent):
     return memory.get_memory_subdir_abs(agent) + f"/behaviour.md"

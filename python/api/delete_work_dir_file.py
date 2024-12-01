@@ -10,8 +10,7 @@ class DeleteWorkDirFile(ApiHandler):
         file_path = input.get('path', '')
         current_path = input.get('currentPath', '')
         
-        work_dir = files.get_abs_path("work_dir")
-        browser = FileBrowser(work_dir)
+        browser = FileBrowser()
         
         if browser.delete_file(file_path):
             # Get updated file list

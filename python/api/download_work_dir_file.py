@@ -12,8 +12,7 @@ class DownloadWorkDirFile(ApiHandler):
         if not file_path:
             raise ValueError("No file path provided")
 
-        work_dir = files.get_abs_path("work_dir")
-        browser = FileBrowser(work_dir)
+        browser = FileBrowser()
 
         full_path = browser.get_full_path(file_path, True)
         if os.path.isdir(full_path):

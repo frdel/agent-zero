@@ -1,5 +1,6 @@
 ```json
 {
-  "user_intervention": {{message}}
+  "user_intervention": {{message}},
+  "attachments": {{attachments}}
 }
 ```

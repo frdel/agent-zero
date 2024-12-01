@@ -42,8 +42,7 @@ RUN rm -rf /var/lib/apt/lists/*
 RUN apt-get clean
 
 # Expose ports
-# EXPOSE 22
-EXPOSE 80
+EXPOSE 22 80
 
 # initialize runtime
-CMD ["/bin/bash", "/exe/initialize.sh"]
+CMD ["/bin/bash", "/exe/initialize.sh", "$BRANCH"]

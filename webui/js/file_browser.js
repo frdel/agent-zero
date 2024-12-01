@@ -3,7 +3,7 @@ const fileBrowserModalProxy = {
     isLoading: false,
 
     browser: {
-        title: "Work Directory Browser",
+        title: "File Browser",
         currentPath: "",
         entries: [],
         parentPath: "",
@@ -24,7 +24,7 @@ const fileBrowserModalProxy = {
 
         // Initialize currentPath to root if it's empty
         if (!modalAD.browser.currentPath) {
-            modalAD.browser.currentPath = "";
+            modalAD.browser.currentPath = "$WORK_DIR";
         }
 
         await modalAD.fetchFiles(modalAD.browser.currentPath);

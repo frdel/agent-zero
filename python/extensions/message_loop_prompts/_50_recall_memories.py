@@ -18,6 +18,12 @@ class RecallMemories(Extension):
             await self.search_memories(loop_data=loop_data, **kwargs)
 
     async def search_memories(self, loop_data: LoopData, **kwargs):
+
+        #cleanup
+        extras = loop_data.extras_temporary
+        if "memories" in extras:
+            del extras["memories"]
+        
         # try:
         # show temp info message
         self.agent.context.log.log(
@@ -79,13 +85,13 @@ class RecallMemories(Extension):
         log_item.update(memories=memories_text)
 
         # place to prompt
-        memories_prompt = self.agent.read_prompt(
+        memories_prompt = self.agent.parse_prompt(
             "agent.system.memories.md", memories=memories_text
         )
 
-        # append to system message
-        loop_data.system.append(memories_prompt)
-
+        # append to prompt
+        extras["memories"] = memories_prompt
+        
     # except Exception as e:
     #     err = errors.format_error(e)
     #     self.agent.context.log.log(

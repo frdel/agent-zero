@@ -46,7 +46,6 @@ class Settings(TypedDict):
     stt_silence_duration: int
     stt_waiting_timeout: int
 
-
 class PartialSettings(Settings, total=False):
     pass
 
@@ -132,7 +131,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     chat_model_fields.append(
         {
             "id": "chat_model_ctx_history",
-            "title": "Context window space for chat history.",
+            "title": "Context window space for chat history",
             "description": "Portion of context window dedicated to chat history visible to the agent. Chat history will automatically be optimized to fit. Smaller size will result in shorter and more summarized history. The remaining space will be used for system prompt, RAG and response.",
             "type": "range",
             "min": 0.01,

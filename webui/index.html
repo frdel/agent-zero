@@ -216,17 +216,17 @@
                 
                 handleFileUpload(event) {
                     const files = event.target.files;
-                    if (files.length + this.attachments.length > 4) {
-                        alert('Maximum 4 attachments allowed');
-                        return;
-                    }
+                    //if (files.length + this.attachments.length > 4) {
+                    //    alert('Maximum 4 attachments allowed');
+                    //    return;
+                    //}
     
                     Array.from(files).forEach(file => {
                         const ext = file.name.split('.').pop().toLowerCase();
                         const allowedExts = new Set(['jpg', 'jpeg', 'png', 'bmp', 'md', 'py', 'js', 'sh', 
                                                     'html', 'css', 'pdf', 'txt', 'csv', 'json']);
                         
-                        if (allowedExts.has(ext)) {
+                        //if (allowedExts.has(ext)) {
                             const isImage = ['jpg', 'jpeg', 'png', 'bmp'].includes(ext);
                             
                             if (isImage) {
@@ -253,7 +253,7 @@
                                 });
                                 this.hasAttachments = true;
                             }
-                        }
+                        //}
                     });
                 }
             }">
@@ -294,7 +294,7 @@
                             multiple style="display: none" @change="handleFileUpload($event)">
 
                         <div x-show="showTooltip" class="tooltip">
-                            Limit: 4 attachments per message
+                            Add attachments to the message
                         </div>
                     </div>
 
@@ -361,7 +361,7 @@
                                 d="m6.38,20.23H1.75l7.03,67.03c.11,1.07.55,2.02,1.2,2.69.55.55,1.28.89,2.11.89h97.1c.82,0,1.51-.33,2.05-.87.68-.68,1.13-1.67,1.28-2.79l9.1-66.94H6.38Z"
                                 fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="8"></path>
                         </svg>
-                        <p>work_dir Browser</p>
+                        <p>Files</p>
                     </button>
 
                     <button class="text-button" id="history_inspect" @click="window.openHistoryModal()">

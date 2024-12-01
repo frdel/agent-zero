@@ -1,4 +1,5 @@
 import asyncio
+from collections import OrderedDict
 from dataclasses import dataclass, field
 import time, importlib, inspect, os, json
 from typing import Any, Optional, Dict, TypedDict
@@ -73,7 +74,7 @@ class AgentContext:
         self.streaming_agent = None
         self.paused = False
 
-    def communicate(self, msg: str, broadcast_level: int = 1):
+    def communicate(self, msg: "UserMessage", broadcast_level: int = 1):
         self.paused = False  # unpause if paused
 
         if self.streaming_agent:
@@ -85,9 +86,11 @@ class AgentContext:
             # set intervention messages to agent(s):
             intervention_agent = current_agent
             while intervention_agent and broadcast_level != 0:
-                intervention_agent.intervention_message = msg
+                intervention_agent.intervention = msg
                 broadcast_level -= 1
-                intervention_agent = intervention_agent.data.get(Agent.DATA_NAME_SUPERIOR, None)
+                intervention_agent = intervention_agent.data.get(
+                    Agent.DATA_NAME_SUPERIOR, None
+                )
         else:
 
             # self.process = DeferredTask(current_agent.monologue, msg)
@@ -96,13 +99,13 @@ class AgentContext:
         return self.process
 
     # this wrapper ensures that superior agents are called back if the chat was loaded from file and original callstack is gone
-    async def _process_chain(self, agent: "Agent", msg: str, user=True):
+    async def _process_chain(self, agent: "Agent", msg: "UserMessage|str", user=True):
         try:
             msg_template = (
-                await agent.hist_add_user_message(msg)
+                await agent.hist_add_user_message(msg)  # type: ignore
                 if user
                 else await agent.hist_add_tool_result(
-                    tool_name="call_subordinate", tool_result=msg
+                    tool_name="call_subordinate", tool_result=msg  # type: ignore
                 )
             )
             response = await agent.monologue()
@@ -132,23 +135,29 @@ class AgentConfig:
     response_timeout_seconds: int = 60
     max_tool_response_length: int = 3000
     code_exec_docker_enabled: bool = True
-    code_exec_docker_name: str = "agent-zero-exe"
-    code_exec_docker_image: str = "frdel/agent-zero-exe:latest"
+    code_exec_docker_name: str = "agent-zero-dev"
+    code_exec_docker_image: str = "frdel/agent-zero-run:development"
     code_exec_docker_ports: dict[str, int] = field(
-        default_factory=lambda: {"22/tcp": 50022}
+        default_factory=lambda: {"22/tcp": 55022, "80/tcp": 55080}
     )
     code_exec_docker_volumes: dict[str, dict[str, str]] = field(
         default_factory=lambda: {
+            files.get_base_dir(): {"bind": "/a0", "mode": "rw"},
             files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"},
-            files.get_abs_path("instruments"): {"bind": "/instruments", "mode": "rw"},
         }
     )
     code_exec_ssh_enabled: bool = True
     code_exec_ssh_addr: str = "localhost"
-    code_exec_ssh_port: int = 50022
+    code_exec_ssh_port: int = 55022
     code_exec_ssh_user: str = "root"
     code_exec_ssh_pass: str = "toor"
     additional: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class UserMessage:
+    message: str
+    attachments: list[str]
 
 
 class LoopData:
@@ -157,8 +166,9 @@ class LoopData:
         self.system = []
         self.user_message: history.Message | None = None
         self.history_output: list[history.OutputMessage] = []
+        self.extras_temporary: OrderedDict[str, history.MessageContent] = OrderedDict()
+        self.extras_persistent: OrderedDict[str, history.MessageContent] = OrderedDict()
         self.last_response = ""
-        self.attachments = []  # Add attachments field
 
         # override values with kwargs
         for key, value in kwargs.items():
@@ -201,7 +211,7 @@ class Agent:
 
         self.history = history.History(self)
         self.last_user_message: history.Message | None = None
-        self.intervention_message = ""
+        self.intervention: UserMessage | None = None
         self.rate_limiter = rate_limiter.RateLimiter(
             self.context.log,
             max_calls=self.config.rate_limit_requests,
@@ -221,18 +231,6 @@ class Agent:
 
                 printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)
 
-                # # Include attachments in user message if available
-                # if loop_data.attachments:
-                #     user_message += "\n" + "\n".join(
-                #         loop_data.attachments
-                #     )  # Add attachments to message
-                #     loop_data.attachments = (
-                #         []
-                #     )  # Clear attachments after adding to message
-                # TODO attachments to extension
-
-                # await self.hist_add_user_message(message=self.loop_data.message)
-
                 # let the agent run message loop until he stops it with a response tool
                 while True:
 
@@ -241,34 +239,13 @@ class Agent:
                     self.loop_data.iteration += 1
 
                     try:
-
-                        # set system prompt and message history
-                        self.loop_data.system = []
-                        self.loop_data.history_output = self.history.output()
-
-                        # and allow extensions to edit them
-                        await self.call_extensions(
-                            "message_loop_prompts", loop_data=self.loop_data
-                        )
-
-                        # build chain from system prompt, message history and model
-                        prompt = ChatPromptTemplate.from_messages(
-                            [
-                                SystemMessage(
-                                    content="\n\n".join(self.loop_data.system)
-                                ),
-                                MessagesPlaceholder(variable_name="messages"),
-                            ]
-                        )
-                        chain = prompt | self.config.chat_model
-
-                        # convert history to LLM format
-                        history_langchain = history.output_langchain(
-                            self.loop_data.history_output
+                        # prepare LLM chain (model, system, history)
+                        chain, prompt = await self.prepare_chain(
+                            loop_data=self.loop_data
                         )
 
                         # rate limiter TODO - move to extension, make per-model
-                        formatted_inputs = prompt.format(messages=history_langchain)
+                        formatted_inputs = prompt.format()
                         self.set_data(self.DATA_NAME_CTX_WINDOW, formatted_inputs)
                         token_count = tokens.approximate_tokens(formatted_inputs)
                         self.rate_limiter.limit_call_and_input(token_count)
@@ -284,9 +261,7 @@ class Agent:
                             type="agent", heading=f"{self.agent_name}: Generating"
                         )
 
-                        async for chunk in chain.astream(
-                            {"messages": history_langchain}
-                        ):
+                        async for chunk in chain.astream({}):
                             # wait for intervention and handle it, if paused
                             await self.handle_intervention(agent_response)
 
@@ -360,6 +335,40 @@ class Agent:
                 # call monologue_end extensions
                 await self.call_extensions("monologue_end", loop_data=self.loop_data)  # type: ignore
 
+    async def prepare_chain(self, loop_data: LoopData):
+        # set system prompt and message history
+        loop_data.system = await self.get_system_prompt(self.loop_data)
+        loop_data.history_output = self.history.output()
+
+        # and allow extensions to edit them
+        await self.call_extensions("message_loop_prompts", loop_data=loop_data)
+
+        # extras (memory etc.)
+        extras: list[history.OutputMessage] = []
+        for extra in loop_data.extras_persistent.values():
+            extras += history.Message(False, content=extra).output()
+        for extra in loop_data.extras_temporary.values():
+            extras += history.Message(False, content=extra).output()
+        loop_data.extras_temporary.clear()
+
+        # combine history and extras
+        history_combined = history.group_outputs_abab(loop_data.history_output + extras)
+
+        # convert history to LLM format
+        history_langchain = history.output_langchain(history_combined)
+
+        # build chain from system prompt, message history and model
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                SystemMessage(content="\n\n".join(loop_data.system)),
+                *history_langchain,
+            ]
+        )
+
+        # return callable chain
+        chain = prompt | self.config.chat_model
+        return chain, prompt
+
     def handle_critical_exception(self, exception: Exception):
         if isinstance(exception, HandledException):
             raise exception  # Re-raise the exception to kill the loop
@@ -378,7 +387,14 @@ class Agent:
             self.context.log.log(type="error", content=error_message)
             raise HandledException(exception)  # Re-raise the exception to kill the loop
 
-    def parse_prompt(self, file: str, **kwargs) -> tuple[list, dict]:
+    async def get_system_prompt(self, loop_data: LoopData) -> list[str]:
+        system_prompt = []
+        await self.call_extensions(
+            "system_prompt", system_prompt=system_prompt, loop_data=loop_data
+        )
+        return system_prompt
+
+    def parse_prompt(self, file: str, **kwargs):
         prompt_dir = files.get_abs_path("prompts/default")
         backup_dir = []
         if (
@@ -389,12 +405,7 @@ class Agent:
         prompt = files.parse_file(
             files.get_abs_path(prompt_dir, file), _backup_dirs=backup_dir, **kwargs
         )
-        if isinstance(prompt, dict):
-            return [], prompt
-        elif isinstance(prompt, list):
-            return prompt, {}
-        else:
-            return [prompt], {}
+        return prompt
 
     def read_prompt(self, file: str, **kwargs) -> str:
         prompt_dir = files.get_abs_path("prompts/default")
@@ -416,31 +427,55 @@ class Agent:
     def set_data(self, field: str, value):
         self.data[field] = value
 
-    async def hist_add_user_message(self, message: str, intervention: bool = False):
+    def hist_add_message(self, ai: bool, content: history.MessageContent):
+        return self.history.add_message(ai=ai, content=content)
+
+    async def hist_add_user_message(
+        self, message: UserMessage, intervention: bool = False
+    ):
         self.history.new_topic()  # user message starts a new topic in history
+
+        # load message template based on intervention
         if intervention:
-            args, kwargs = self.parse_prompt("fw.intervention.md", message=message)
-            msg = self.history.add_message(False, *args, **kwargs)
+            content = self.parse_prompt(
+                "fw.intervention.md",
+                message=message.message,
+                attachments=message.attachments,
+            )
         else:
-            args, kwargs = self.parse_prompt("fw.user_message.md", message=message)
-            msg = self.history.add_message(False, *args, **kwargs)
+            content = self.parse_prompt(
+                "fw.user_message.md",
+                message=message.message,
+                attachments=message.attachments,
+            )
+
+        # remove empty attachments from template
+        if (
+            isinstance(content, dict)
+            and "attachments" in content
+            and not content["attachments"]
+        ):
+            del content["attachments"]
+
+        # add to history
+        msg = self.hist_add_message(False, content=content)  # type: ignore
         self.last_user_message = msg
         return msg
 
     async def hist_add_ai_response(self, message: str):
         self.loop_data.last_response = message
-        args, kwargs = self.parse_prompt("fw.ai_response.md", message=message)
-        return self.history.add_message(True, *args, **kwargs)
+        content = self.parse_prompt("fw.ai_response.md", message=message)
+        return self.hist_add_message(True, content=content)
 
-    async def hist_add_warning(self, message: str):
-        args, kwargs = self.parse_prompt("fw.warning.md", message=message)
-        return self.history.add_message(False, *args, **kwargs)
+    async def hist_add_warning(self, message: history.MessageContent):
+        content = self.parse_prompt("fw.warning.md", message=message)
+        return self.hist_add_message(False, content=content)
 
     async def hist_add_tool_result(self, tool_name: str, tool_result: str):
-        args, kwargs = self.parse_prompt(
+        content = self.parse_prompt(
             "fw.tool_result.md", tool_name=tool_name, tool_result=tool_result
         )
-        return self.history.add_message(False, *args, **kwargs)
+        return self.hist_add_message(False, content=content)
 
     def concat_messages(
         self, messages
@@ -480,63 +515,14 @@ class Agent:
 
         return response
 
-    async def replace_middle_messages(self, middle_messages):
-        cleanup_prompt = self.read_prompt("fw.msg_cleanup.md")
-        log_item = self.context.log.log(
-            type="util", heading="Mid messages cleanup summary"
-        )
-
-        PrintStyle(
-            bold=True, font_color="orange", padding=True, background_color="white"
-        ).print(f"{self.agent_name}: Mid messages cleanup summary")
-        printer = PrintStyle(italic=True, font_color="orange", padding=False)
-
-        def log_callback(content):
-            printer.stream(content)
-            log_item.stream(content=content)
-
-        summary = await self.call_utility_llm(
-            system=cleanup_prompt,
-            msg=self.concat_messages(middle_messages),
-            callback=log_callback,
-        )
-        new_human_message = HumanMessage(content=summary)
-        return [new_human_message]
-
-    async def cleanup_history(self, max: int, keep_start: int, keep_end: int):
-        # if len(self.history) <= max:
-        #     return self.history
-
-        # first_x = self.history[:keep_start]
-        # last_y = self.history[-keep_end:]
-
-        # # Identify the middle part
-        # middle_part = self.history[keep_start:-keep_end]
-
-        # # Ensure the first message in the middle is "human", if not, move one message back
-        # if middle_part and middle_part[0].type != "human":
-        #     if len(first_x) > 0:
-        #         middle_part.insert(0, first_x.pop())
-
-        # # Ensure the middle part has an odd number of messages
-        # if len(middle_part) % 2 == 0:
-        #     middle_part = middle_part[:-1]
-
-        # # Replace the middle part using the replacement function
-        # new_middle_part = await self.replace_middle_messages(middle_part)
-
-        # self.history = first_x + new_middle_part + last_y
-
-        return self.history
-
     async def handle_intervention(self, progress: str = ""):
         while self.context.paused:
             await asyncio.sleep(0.1)  # wait if paused
         if (
-            self.intervention_message
+            self.intervention
         ):  # if there is an intervention message, but not yet processed
-            msg = self.intervention_message
-            self.intervention_message = ""  # reset the intervention message
+            msg = self.intervention
+            self.intervention = None  # reset the intervention message
             if progress.strip():
                 await self.hist_add_ai_response(progress)
             # append the intervention message

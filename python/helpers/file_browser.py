@@ -7,7 +7,7 @@ import zipfile
 from werkzeug.utils import secure_filename
 from datetime import datetime
 
-from python.helpers import files
+from python.helpers import files, runtime
 
 class FileBrowser:
     ALLOWED_EXTENSIONS = {
@@ -18,8 +18,12 @@ class FileBrowser:
 
     MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
 
-    def __init__(self, base_dir: str):
-        self.base_dir = Path(base_dir).resolve()
+    def __init__(self):
+        if runtime.is_development():
+            base_dir = files.get_base_dir()
+        else:
+            base_dir = "/"
+        self.base_dir = Path(base_dir)
       
     def _check_file_size(self, file) -> bool:
         try:

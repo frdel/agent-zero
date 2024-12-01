@@ -16,10 +16,10 @@ HISTORY_BULK_RATIO = 0.2
 TOPIC_COMPRESS_RATIO = 0.65
 LARGE_MESSAGE_TO_TOPIC_RATIO = 0.25
 
-OutputType = (
-    list["OutputType"]
-    | OrderedDict[str, "OutputType"]
-    | list[OrderedDict[str, "OutputType"]]
+MessageContent = (
+    list["MessageContent"]
+    | OrderedDict[str, "MessageContent"]
+    | list[OrderedDict[str, "MessageContent"]]
     | str
     | list[str]
 )
@@ -27,7 +27,7 @@ OutputType = (
 
 class OutputMessage(TypedDict):
     ai: bool
-    content: OutputType
+    content: MessageContent
 
 
 class Record:
@@ -67,19 +67,16 @@ class Record:
 
 
 class Message(Record):
-    def __init__(self, ai: bool, text: str | None = None, **kwargs: OutputType):
+    def __init__(self, ai: bool, content: MessageContent):
         self.ai = ai
-        self.text = text
-        self.kwargs: OrderedDict[str, OutputType] = OrderedDict(**kwargs)
-        self.summary: OutputType = ""
+        self.content = content
+        self.summary: MessageContent = ""
 
     async def compress(self):
         return False
 
     def output(self):
-        return [
-            OutputMessage(ai=self.ai, content=self.summary or self.text or self.kwargs)
-        ]
+        return [OutputMessage(ai=self.ai, content=self.summary or self.content)]
 
     def output_langchain(self):
         return output_langchain(self.output())
@@ -91,15 +88,14 @@ class Message(Record):
         return {
             "_cls": "Message",
             "ai": self.ai,
-            "text": self.text,
-            "kwargs": self.kwargs,
+            "content": self.content,
             "summary": self.summary,
         }
 
     @staticmethod
     def from_dict(data: dict, history: "History"):
-        msg = Message(ai=data["ai"], text=data["text"], **data["kwargs"])
-        msg.summary = data["summary"]
+        msg = Message(ai=data["ai"], content=data.get("content", "Content lost"))
+        msg.summary = data.get("summary", "")
         return msg
 
 
@@ -109,8 +105,8 @@ class Topic(Record):
         self.summary: str = ""
         self.messages: list[Message] = []
 
-    def add_message(self, ai: bool, text: str | None = None, **kwargs):
-        msg = Message(ai=ai, text=text, **kwargs)
+    def add_message(self, ai: bool, content: MessageContent):
+        msg = Message(ai=ai, content=content)
         self.messages.append(msg)
         return msg
 
@@ -145,7 +141,10 @@ class Topic(Record):
         for msg, tok, leng, out in large_msgs:
             trim_to_chars = leng * (msg_max_size / tok)
             trunc = messages.truncate_dict_by_ratio(
-                self.history.agent, out[0]["content"], trim_to_chars * 1.15, trim_to_chars * 0.85
+                self.history.agent,
+                out[0]["content"],
+                trim_to_chars * 1.15,
+                trim_to_chars * 0.85,
             )
             msg.summary = trunc
 
@@ -164,10 +163,10 @@ class Topic(Record):
             cnt_to_sum = math.ceil((len(self.messages) - 2) * TOPIC_COMPRESS_RATIO)
             msg_to_sum = self.messages[1 : cnt_to_sum + 1]
             summary = await self.summarize_messages(msg_to_sum)
-            sum_msg_args, sum_msg_kwargs = self.history.agent.parse_prompt(
+            sum_msg_content = self.history.agent.parse_prompt(
                 "fw.msg_summary.md", summary=summary
             )
-            sum_msg = Message(False, *sum_msg_args, **sum_msg_kwargs)
+            sum_msg = Message(False, sum_msg_content)
             self.messages[1 : cnt_to_sum + 1] = [sum_msg]
             return True
         return False
@@ -274,8 +273,8 @@ class History(Record):
             + self.get_current_topic_tokens()
         )
 
-    def add_message(self, ai: bool, text: str | None = None, **kwargs: OutputType):
-        return self.current.add_message(ai, text=text, **kwargs)
+    def add_message(self, ai: bool, content: MessageContent):
+        return self.current.add_message(ai, content=content)
 
     def new_topic(self):
         if self.current.messages:
@@ -367,9 +366,9 @@ class History(Record):
         return True
 
     async def compress_bulks(self):
-        #merge bulks if possible
+        # merge bulks if possible
         compressed = await self.merge_bulks_by(BULK_MERGE_COUNT)
-        #remove oldest bulk if necessary
+        # remove oldest bulk if necessary
         if not compressed:
             self.bulks.pop(0)
         return compressed
@@ -395,7 +394,7 @@ class History(Record):
 
 def deserialize_history(json_data: str, agent) -> History:
     history = History(agent=agent)
-    if json_data: 
+    if json_data:
         data = json.loads(json_data)
         history = History.from_dict(data, history=history)
     return history
@@ -410,7 +409,7 @@ def serialize_output(output: OutputMessage, ai_label="ai", human_label="human"):
     return f'{ai_label if output["ai"] else human_label}: {serialize_content(output["content"])}'
 
 
-def serialize_content(content: OutputType) -> str:
+def serialize_content(content: MessageContent) -> str:
     if isinstance(content, str):
         return content
     try:
@@ -446,7 +445,7 @@ def output_text(messages: list[OutputMessage], ai_label="ai", human_label="human
     return "\n".join(serialize_output(o, ai_label, human_label) for o in messages)
 
 
-def merge_outputs(a: OutputType, b: OutputType) -> OutputType:
+def merge_outputs(a: MessageContent, b: MessageContent) -> MessageContent:
     if not isinstance(a, list):
         a = [a]
     if not isinstance(b, list):
@@ -455,7 +454,7 @@ def merge_outputs(a: OutputType, b: OutputType) -> OutputType:
     # return merge_properties(a, b)
 
 
-def merge_properties(a: OutputType, b: OutputType) -> OutputType:
+def merge_properties(a: MessageContent, b: MessageContent) -> MessageContent:
     if isinstance(a, list):
         if isinstance(b, list):
             return a + b  # type: ignore

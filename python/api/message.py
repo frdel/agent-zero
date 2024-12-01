@@ -1,4 +1,4 @@
-from agent import AgentContext
+from agent import AgentContext, UserMessage
 from python.helpers.api import ApiHandler
 from flask import Request, Response
 
@@ -30,17 +30,18 @@ class Message(ApiHandler):
             attachments = request.files.getlist("attachments")
             attachment_paths = []
 
-            upload_folder = files.get_abs_path("work_dir/uploads")
+            upload_folder_int = "/a0/tmp/uploads"
+            upload_folder_ext = files.get_abs_path("tmp/uploads")
 
             if attachments:
-                os.makedirs(upload_folder, exist_ok=True)
+                os.makedirs(upload_folder_ext, exist_ok=True)
                 for attachment in attachments:
                     if attachment.filename is None:
                         continue
                     filename = secure_filename(attachment.filename)
-                    save_path = files.get_abs_path(upload_folder, filename)
+                    save_path = files.get_abs_path(upload_folder_ext, filename)
                     attachment.save(save_path)
-                    attachment_paths.append(save_path)
+                    attachment_paths.append(os.path.join(upload_folder_int, filename))
         else:
             # Handle JSON request as before
             input_data = request.get_json()
@@ -56,7 +57,7 @@ class Message(ApiHandler):
         context = self.get_context(ctxid)
 
         # Store attachments in agent data
-        context.agent0.set_data("attachments", attachment_paths)
+        # context.agent0.set_data("attachments", attachment_paths)
 
         # Prepare attachment filenames for logging
         attachment_filenames = (
@@ -84,4 +85,4 @@ class Message(ApiHandler):
             id=message_id,
         )
 
-        return context.communicate(message), context
+        return context.communicate(UserMessage(message, attachment_paths)), context

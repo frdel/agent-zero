@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# branch from parameter
+if [ -z "$1" ]; then
+    echo "Error: Branch parameter is empty. Please provide a valid branch name."
+    exit 1
+fi
+BRANCH="$1"
+
 # Copy all contents from persistent /per to root directory (/) without overwriting
 cp -r --no-preserve=ownership,mode /per/* /
 
@@ -11,7 +18,11 @@ chmod 444 /root/.profile
 apt-get update &
 
 # Start SSH service in background
-/usr/sbin/sshd -D &
+if [ "$BRANCH" != "development" ]; then
+    /usr/sbin/sshd -D -o ListenAddress=127.0.0.1 &
+else
+    /usr/sbin/sshd -D &
+fi
 
 # Start searxng server in background
 sudo -H -u searxng -i bash /exe/run_searxng.sh &

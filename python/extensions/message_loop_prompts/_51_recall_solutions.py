@@ -19,6 +19,12 @@ class RecallSolutions(Extension):
             await self.search_solutions(loop_data=loop_data, **kwargs)
 
     async def search_solutions(self, loop_data: LoopData, **kwargs):
+
+        #cleanup
+        extras = loop_data.extras_temporary
+        if "solutions" in extras:
+            del extras["solutions"]
+        
         # try:
         # show temp info message
         self.agent.context.log.log(
@@ -86,10 +92,12 @@ class RecallSolutions(Extension):
                 solutions_text += solution.page_content + "\n\n"
             solutions_text = solutions_text.strip()
             log_item.update(solutions=solutions_text)
-            solutions_prompt = self.agent.read_prompt(
+            solutions_prompt = self.agent.parse_prompt(
                 "agent.system.solutions.md", solutions=solutions_text
             )
-            loop_data.system.append(solutions_prompt)
+
+            # append to prompt
+            extras["solutions"] = solutions_prompt
 
     # except Exception as e:
     #     err = errors.format_error(e)

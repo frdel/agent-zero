@@ -5,12 +5,12 @@ from agent import Agent, LoopData
 
 class SystemPrompt(Extension):
 
-    async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
+    async def execute(self, system_prompt: list[str]=[], loop_data: LoopData = LoopData(), **kwargs):
         # append main system prompt and tools
         main = get_main_prompt(self.agent)
         tools = get_tools_prompt(self.agent)
-        loop_data.system.append(main)
-        loop_data.system.append(tools)
+        system_prompt.append(main)
+        system_prompt.append(tools)
 
 def get_main_prompt(agent: Agent):
     return get_prompt("agent.system.main.md", agent)
