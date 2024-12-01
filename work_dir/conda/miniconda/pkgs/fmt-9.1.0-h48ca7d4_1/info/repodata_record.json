@@ -1,0 +1,19 @@
+{
+  "build": "h48ca7d4_1",
+  "build_number": 1,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "libcxx >=14.0.6"
+  ],
+  "fn": "fmt-9.1.0-h48ca7d4_1.conda",
+  "license": "MIT",
+  "md5": "ad5d3c1c7e09ec799f1741078b658042",
+  "name": "fmt",
+  "sha256": "23f24972e04c099738b417499e47b715ccdc70fb69825f92739c54fb71ba04f0",
+  "size": 183514,
+  "subdir": "osx-arm64",
+  "timestamp": 1714483273000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/fmt-9.1.0-h48ca7d4_1.conda",
+  "version": "9.1.0"
+}

@@ -1,0 +1,17 @@
+{
+  "build": "h313beb8_2",
+  "build_number": 2,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [],
+  "fn": "reproc-14.2.4-h313beb8_2.conda",
+  "license": "MIT",
+  "md5": "91a2f6f75e6c6614f43ddc8ac2b3e0aa",
+  "name": "reproc",
+  "sha256": "c762e27a07ece0e9977ae96f454ed40c4bef396d9f0c0fe3e7fb8059945b6d4d",
+  "size": 28562,
+  "subdir": "osx-arm64",
+  "timestamp": 1714680923000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/reproc-14.2.4-h313beb8_2.conda",
+  "version": "14.2.4"
+}

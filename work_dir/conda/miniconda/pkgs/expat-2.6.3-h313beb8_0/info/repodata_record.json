@@ -1,0 +1,19 @@
+{
+  "build": "h313beb8_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "libcxx >=14.0.6"
+  ],
+  "fn": "expat-2.6.3-h313beb8_0.conda",
+  "license": "MIT",
+  "md5": "0719eb0ba6fb427f1ebb39b51eceb5b4",
+  "name": "expat",
+  "sha256": "0aec51c604dd4081fba3d58c556c51d87bb9e8d55f3afe374fe806d3d7384b31",
+  "size": 157453,
+  "subdir": "osx-arm64",
+  "timestamp": 1725543352000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/expat-2.6.3-h313beb8_0.conda",
+  "version": "2.6.3"
+}

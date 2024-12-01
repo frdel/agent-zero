@@ -1,0 +1,2 @@
+[conda]
+conda-libmamba-solver = conda_libmamba_solver.plugin

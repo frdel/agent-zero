@@ -1,0 +1,21 @@
+{
+  "build": "pyhd3eb1b0_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/noarch",
+  "constrains": [],
+  "depends": [
+    "python"
+  ],
+  "fn": "jsonpointer-2.1-pyhd3eb1b0_0.conda",
+  "license": "BSD 3-Clause",
+  "md5": "298ff809e733cb04366e4e629c65aa8d",
+  "name": "jsonpointer",
+  "noarch": "python",
+  "package_type": "noarch_python",
+  "sha256": "739af990230fb811bc0c03a7393ccb361d371d85246c4ef1d5185e7e0a1c2810",
+  "size": 9495,
+  "subdir": "noarch",
+  "timestamp": 1615660585000,
+  "url": "https://repo.anaconda.com/pkgs/main/noarch/jsonpointer-2.1-pyhd3eb1b0_0.conda",
+  "version": "2.1"
+}

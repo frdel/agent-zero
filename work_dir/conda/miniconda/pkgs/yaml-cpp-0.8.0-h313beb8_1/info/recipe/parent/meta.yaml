@@ -1,0 +1,88 @@
+{% set version = "0.8.0" %}
+
+package:
+  name: yaml-cpp-split
+  version: {{ version }}
+
+source:
+  url: https://github.com/jbeder/yaml-cpp/archive/refs/tags/{{ version }}.tar.gz
+  sha256: fbe74bbdcee21d656715688706da3c8becfd946d92cd44705cc6098bb23b3a16
+  patches:                                    # [linux and (aarch64 or ppc64le or s390x)]
+    # TODO: Remove on the next update since this patch is already on master.
+    - patches/0001-fix-narrowing-error.patch  # [linux and (aarch64 or ppc64le or s390x)]
+
+build:
+  number: 1
+
+requirements:
+  build:
+    - patch  # [linux and (aarch64 or ppc64le or s390x)]
+
+outputs:
+  - name: yaml-cpp
+    script: build_shared.sh  # [not win]
+    script: bld_shared.bat   # [win]
+    build:
+      run_exports:
+        - {{ pin_subpackage('yaml-cpp', max_pin='x.x') }}
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - {{ compiler('cxx') }}
+        - cmake
+        - ninja
+    test:
+      # NOTE: Author's tests are run from the build scripts in all architectures.
+      files:
+        - test
+      requires:
+        - {{ compiler('c') }}
+        - {{ compiler('cxx') }}
+        - cmake
+        - ninja
+      commands:
+        # These tests ensure the library is in its expected location.
+        - test -f $PREFIX/lib/libyaml-cpp.so              # [not (osx or win)]
+        - test -f $PREFIX/lib/libyaml-cpp.dylib           # [osx]
+        - if not exist %LIBRARY_BIN%\\yaml-cpp.dll exit 1 # [win]
+        # These tests ensure a simple program can be built using the
+        # library. They are not altogether necessary, though they are
+        # nice to have.
+        - test/test.sh   # [not win]
+        - test/test.bat  # [win]
+
+  - name: yaml-cpp-static
+    script: build_static.sh  # [not win]
+    build:
+      skip: true  # [win]
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - {{ compiler('cxx') }}
+        - cmake
+        - ninja
+      host:
+        - {{ pin_subpackage('yaml-cpp', exact=True) }}
+      run:
+        - {{ pin_subpackage('yaml-cpp', exact=True) }}
+    test:
+      commands:
+        - test -f $PREFIX/lib/libyaml-cpp.a  # [not win]
+
+about:
+  home: https://github.com/jbeder/yaml-cpp
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: yaml-cpp is a YAML parser and emitter in C++ matching the YAML 1.2 spec.
+  description: yaml-cpp is a YAML parser and emitter in C++ matching the YAML 1.2 spec.
+  dev_url: https://github.com/jbeder/yaml-cpp
+  doc_url: https://github.com/jbeder/yaml-cpp.wiki.git
+
+extra:
+  recipe-maintainers:
+    - allanleal
+    - marcelotrevisani
+    - tadeu
+    - seanyen
+    - wolfv

@@ -1,0 +1,73 @@
+{
+  "build": "py312hca03da5_1",
+  "build_number": 1,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "cryptography >=41",
+    "python >=3.12,<3.13.0a0"
+  ],
+  "extracted_package_dir": "/tmp/miniconda_temp/pkgs/conda-content-trust-0.2.0-py312hca03da5_1",
+  "files": [
+    "bin/conda-content-trust",
+    "lib/python3.12/site-packages/conda_content_trust-0.2.0.dist-info/INSTALLER",
+    "lib/python3.12/site-packages/conda_content_trust-0.2.0.dist-info/METADATA",
+    "lib/python3.12/site-packages/conda_content_trust-0.2.0.dist-info/RECORD",
+    "lib/python3.12/site-packages/conda_content_trust-0.2.0.dist-info/REQUESTED",
+    "lib/python3.12/site-packages/conda_content_trust-0.2.0.dist-info/WHEEL",
+    "lib/python3.12/site-packages/conda_content_trust-0.2.0.dist-info/direct_url.json",
+    "lib/python3.12/site-packages/conda_content_trust-0.2.0.dist-info/entry_points.txt",
+    "lib/python3.12/site-packages/conda_content_trust-0.2.0.dist-info/licenses/AUTHORS.md",
+    "lib/python3.12/site-packages/conda_content_trust-0.2.0.dist-info/licenses/LICENSE",
+    "lib/python3.12/site-packages/conda_content_trust/__init__.py",
+    "lib/python3.12/site-packages/conda_content_trust/__main__.py",
+    "lib/python3.12/site-packages/conda_content_trust/__pycache__/__init__.cpython-312.pyc",
+    "lib/python3.12/site-packages/conda_content_trust/__pycache__/__main__.cpython-312.pyc",
+    "lib/python3.12/site-packages/conda_content_trust/__pycache__/__version__.cpython-312.pyc",
+    "lib/python3.12/site-packages/conda_content_trust/__pycache__/authentication.cpython-312.pyc",
+    "lib/python3.12/site-packages/conda_content_trust/__pycache__/cli.cpython-312.pyc",
+    "lib/python3.12/site-packages/conda_content_trust/__pycache__/common.cpython-312.pyc",
+    "lib/python3.12/site-packages/conda_content_trust/__pycache__/metadata_construction.cpython-312.pyc",
+    "lib/python3.12/site-packages/conda_content_trust/__pycache__/plugin.cpython-312.pyc",
+    "lib/python3.12/site-packages/conda_content_trust/__pycache__/root_signing.cpython-312.pyc",
+    "lib/python3.12/site-packages/conda_content_trust/__pycache__/signing.cpython-312.pyc",
+    "lib/python3.12/site-packages/conda_content_trust/__version__.py",
+    "lib/python3.12/site-packages/conda_content_trust/authentication.py",
+    "lib/python3.12/site-packages/conda_content_trust/cli.py",
+    "lib/python3.12/site-packages/conda_content_trust/common.py",
+    "lib/python3.12/site-packages/conda_content_trust/metadata_construction.py",
+    "lib/python3.12/site-packages/conda_content_trust/plugin.py",
+    "lib/python3.12/site-packages/conda_content_trust/root_signing.py",
+    "lib/python3.12/site-packages/conda_content_trust/signing.py"
+  ],
+  "fn": "conda-content-trust-0.2.0-py312hca03da5_1.conda",
+  "license": "BSD-3-Clause",
+  "link": {
+    "source": "/tmp/miniconda_temp/pkgs/conda-content-trust-0.2.0-py312hca03da5_1",
+    "type": 1
+  },
+  "md5": "ce54501b1f952773c2a244fb1d6e3d52",
+  "name": "conda-content-trust",
+  "package_tarball_full_path": "/tmp/miniconda_temp/pkgs/conda-content-trust-0.2.0-py312hca03da5_1.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/conda-content-trust",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_9fusbfzixa/croot/conda-content-trust_1714483157715/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac",
+        "sha256": "c939b6aa8692a406014028030374baa34ab60266a6ea63eaeb2a20b3b63e4b07",
+        "sha256_in_prefix": "64028a61510873eba44904cfb3b52fd178ae9e716f234b1ddda26d20f2355e25",
+        "size_in_bytes": 474
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "defaults/osx-arm64::conda-content-trust==0.2.0=py312hca03da5_1[md5=ce54501b1f952773c2a244fb1d6e3d52]",
+  "sha256": "85ad367f93c0e5364562cd9577a7406af195cc1bc331e8f7dfcd92959324d3e7",
+  "size": 64513,
+  "subdir": "osx-arm64",
+  "timestamp": 1714483238000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/conda-content-trust-0.2.0-py312hca03da5_1.conda",
+  "version": "0.2.0"
+}

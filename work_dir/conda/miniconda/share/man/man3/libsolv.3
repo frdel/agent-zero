@@ -1,0 +1,64 @@
+'\" t
+.\"     Title: Libsolv
+.\"    Author: [see the "Author" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 03/02/2022
+.\"    Manual: LIBSOLV
+.\"    Source: libsolv
+.\"  Language: English
+.\"
+.TH "LIBSOLV" "3" "03/02/2022" "libsolv" "LIBSOLV"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+libsolv \- package dependency solver library using a satisfiability algorithm
+.SH "DOCUMENTATION"
+.sp
+The libsolv documentation is split into multiple parts:
+.PP
+\fBlibsolv\-history\fR
+.RS 4
+how the libsolv library came into existence
+.RE
+.PP
+\fBlibsolv\-constantids\fR
+.RS 4
+fixed Ids for often used strings
+.RE
+.PP
+\fBlibsolv\-bindings\fR
+.RS 4
+access libsolv from perl/python/ruby
+.RE
+.PP
+\fBlibsolv\-pool\fR
+.RS 4
+libsolv\(cqs pool object
+.RE
+.SH "POINTER VALIDITY"
+.sp
+Note that all pointers to objects that have an Id have only a limited validity period, with the exception of Repo pointers\&. They are only guaranteed to be valid until a new object of that type is added or an object of that type is removed\&. Thus pointers to Solvable objects are only valid until another solvable is created, because adding a Solvable may relocate the Pool\(cqs Solvable array\&. This is also true for Pool strings, you should use solv_strdup() to create a copy of the string if you want to use it at some later time\&. You should use the Ids in the code and not the pointers, except for short times where you know that the pointer is safe\&.
+.sp
+Note also that the data lookup functions or the dataiterator also return values with limited lifetime, this is especially true for data stored in the paged data segment of solv files\&. This is normally data that consists of big strings like package descriptions or is not often needed like package checksums\&. Thus looking up a description of a solvable and then looking up the description of a different solvable or even the checksum of the same solvable may invalidate the first result\&. (The dataiterator supports a dataiterator_strdup() function to create a safe copy\&.)
+.sp
+The language bindings already deal with pointer validity, so you do not have to worry about this issue when using the bindings\&.
+.SH "AUTHOR"
+.sp
+Michael Schroeder <mls@suse\&.de>

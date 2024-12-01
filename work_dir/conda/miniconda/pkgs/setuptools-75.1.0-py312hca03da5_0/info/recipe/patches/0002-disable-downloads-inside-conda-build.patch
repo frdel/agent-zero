@@ -1,0 +1,23 @@
+From cd5d122b364d4a4e719d2da200b73c87fcb507cf Mon Sep 17 00:00:00 2001
+From: Jonathan Helmus <jjhelmus@gmail.com>
+Date: Mon, 30 Jul 2018 16:33:26 -0500
+Subject: [PATCH 2/2] disable downloads inside conda build
+
+---
+ setuptools/package_index.py | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/setuptools/package_index.py b/setuptools/package_index.py
+--- a/setuptools/package_index.py	2022-03-28 00:12:42.000000000 +0300
++++ b/setuptools/package_index.py	2022-04-04 13:47:11.310851515 +0300
+@@ -328,6 +328,10 @@
+     # FIXME: 'PackageIndex.process_url' is too complex (14)
+     def process_url(self, url, retrieve=False):  # noqa: C901
+         """Evaluate a URL as a possible download, and maybe retrieve it"""
++        if os.getenv("CONDA_BUILD"):
++            raise RuntimeError("Setuptools downloading is disabled in conda build. "
++                               "Be sure to add all dependencies in the meta.yaml  url=%s" % url)
++
+         if url in self.scanned_urls and not retrieve:
+             return
+         self.scanned_urls[url] = True

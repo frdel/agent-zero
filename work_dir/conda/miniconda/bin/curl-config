@@ -1,0 +1,195 @@
+#!/bin/sh
+#***************************************************************************
+#                                  _   _ ____  _
+#  Project                     ___| | | |  _ \| |
+#                             / __| | | | |_) | |
+#                            | (__| |_| |  _ <| |___
+#                             \___|\___/|_| \_\_____|
+#
+# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution. The terms
+# are also available at https://curl.se/docs/copyright.html.
+#
+# You may opt to use, copy, modify, merge, publish, distribute and/or sell
+# copies of the Software, and permit persons to whom the Software is
+# furnished to do so, under the terms of the COPYING file.
+#
+# This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
+# KIND, either express or implied.
+#
+# SPDX-License-Identifier: curl
+#
+###########################################################################
+
+# shellcheck disable=SC2006
+
+prefix="/tmp/miniconda_temp"
+# Used in ${exec_prefix}/lib
+# shellcheck disable=SC2034
+exec_prefix=${prefix}
+# shellcheck disable=SC2034
+includedir=${prefix}/include
+cppflag_curl_staticlib=
+
+usage()
+{
+  cat <<EOF
+Usage: curl-config [OPTION]
+
+Available values for OPTION include:
+
+  --built-shared says 'yes' if libcurl was built shared
+  --ca                  CA bundle install path
+  --cc                  compiler
+  --cflags              preprocessor and compiler flags
+  --checkfor [version]  check for (lib)curl of the specified version
+  --configure           the arguments given to configure when building curl
+  --features            newline separated list of enabled features
+  --help                display this help and exit
+  --libs                library linking information
+  --prefix              curl install prefix
+  --protocols           newline separated list of enabled protocols
+  --ssl-backends        output the SSL backends libcurl was built to support
+  --static-libs         static libcurl library linking information
+  --version             output version information
+  --vernum              output version as a hexadecimal number
+EOF
+
+  exit "$1"
+}
+
+if test "$#" -eq 0; then
+  usage 1
+fi
+
+while test "$#" -gt 0; do
+  case "$1" in
+  --built-shared)
+    echo 'yes'
+    ;;
+
+  --ca)
+    echo '"/tmp/miniconda_temp/ssl/cacert.pem"'
+    ;;
+
+  --cc)
+    echo 'arm64-apple-darwin20.0.0-clang'
+    ;;
+
+  --prefix)
+    echo "$prefix"
+    ;;
+
+  --feature|--features)
+    for feature in alt-svc AsynchDNS GSS-API HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz NTLM SPNEGO SSL threadsafe TLS-SRP UnixSockets ""; do
+      test -n "$feature" && echo "$feature"
+    done
+    ;;
+
+  --protocols)
+    # shellcheck disable=SC2043
+    for protocol in DICT FILE FTP FTPS GOPHER GOPHERS HTTP HTTPS IMAP IMAPS IPFS IPNS MQTT POP3 POP3S RTSP SCP SFTP SMB SMBS SMTP SMTPS TELNET TFTP; do
+      echo "$protocol"
+    done
+    ;;
+
+  --version)
+    echo 'libcurl 8.9.1'
+    exit 0
+    ;;
+
+  --checkfor)
+    checkfor=$2
+    cmajor=`echo "$checkfor" | cut -d. -f1`
+    cminor=`echo "$checkfor" | cut -d. -f2`
+    # when extracting the patch part we strip off everything after a
+    # dash as that's used for things like version 1.2.3-pre1
+    cpatch=`echo "$checkfor" | cut -d. -f3 | cut -d- -f1`
+
+    vmajor=`echo '8.9.1' | cut -d. -f1`
+    vminor=`echo '8.9.1' | cut -d. -f2`
+    # when extracting the patch part we strip off everything after a
+    # dash as that's used for things like version 1.2.3-pre1
+    vpatch=`echo '8.9.1' | cut -d. -f3 | cut -d- -f1`
+
+    if test "$vmajor" -gt "$cmajor"; then
+      exit 0
+    fi
+    if test "$vmajor" -eq "$cmajor"; then
+      if test "$vminor" -gt "$cminor"; then
+        exit 0
+      fi
+      if test "$vminor" -eq "$cminor"; then
+        if test "$cpatch" -le "$vpatch"; then
+          exit 0
+        fi
+      fi
+    fi
+
+    echo "requested version $checkfor is newer than existing 8.9.1"
+    exit 1
+    ;;
+
+  --vernum)
+    echo '080901'
+    exit 0
+    ;;
+
+  --help)
+    usage 0
+    ;;
+
+  --cflags)
+    if test "X$cppflag_curl_staticlib" = "X-DCURL_STATICLIB"; then
+      CPPFLAG_CURL_STATICLIB="-DCURL_STATICLIB "
+    else
+      CPPFLAG_CURL_STATICLIB=""
+    fi
+    if test "X${prefix}/include" = "X/usr/include"; then
+      echo "${CPPFLAG_CURL_STATICLIB}"
+    else
+      echo "${CPPFLAG_CURL_STATICLIB}-I${prefix}/include"
+    fi
+    ;;
+
+  --libs)
+    if test "X${exec_prefix}/lib" != "X/usr/lib" -a "X${exec_prefix}/lib" != "X/usr/lib64"; then
+      CURLLIBDIR="-L${exec_prefix}/lib "
+    else
+      CURLLIBDIR=""
+    fi
+    if test "Xyes" = "Xno"; then
+      echo "${CURLLIBDIR}-lcurl -lnghttp2 -lssh2 -lssh2 -lssl -lcrypto -lssl -lcrypto -lgssapi_krb5 -lresolv -lz"
+    else
+      echo "${CURLLIBDIR}-lcurl"
+    fi
+    ;;
+
+  --ssl-backends)
+    echo 'OpenSSL v3+'
+    ;;
+
+  --static-libs)
+    if test "Xyes" != "Xno" ; then
+      echo "${exec_prefix}/lib/libcurl.a" -Wl,-pie -Wl,-headerpad_max_install_names -Wl,-dead_strip_dylibs -Wl,-rpath,/tmp/miniconda_temp/lib -L/tmp/miniconda_temp/lib -L/tmp/miniconda_temp/lib -L/tmp/miniconda_temp/lib -L/tmp/miniconda_temp/lib -L/tmp/miniconda_temp/lib -framework CoreFoundation -framework CoreServices -framework SystemConfiguration -lnghttp2 -lssh2 -lssh2 -lssl -lcrypto -lssl -lcrypto -lgssapi_krb5 -lresolv -lz
+    else
+      echo 'curl was built with static libraries disabled' >&2
+      exit 1
+    fi
+    ;;
+
+  --configure)
+    echo " '--prefix=/tmp/miniconda_temp' '--host=arm64-apple-darwin20.0.0' '--disable-ldap' '--disable-manual' '--with-ca-bundle=/tmp/miniconda_temp/ssl/cacert.pem' '--with-ssl=/tmp/miniconda_temp' '--with-zlib=/tmp/miniconda_temp' '--with-gssapi=/tmp/miniconda_temp' '--with-libssh2=/tmp/miniconda_temp' '--with-nghttp2=/tmp/miniconda_temp' 'build_alias=arm64-apple-darwin20.0.0' 'host_alias=arm64-apple-darwin20.0.0' 'CC=arm64-apple-darwin20.0.0-clang' 'CFLAGS=-ftree-vectorize -fPIC -fPIE -fstack-protector-strong -O2 -pipe -isystem /tmp/miniconda_temp/include -fdebug-prefix-map=/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_f3ugubs5jz/croot/curl_split_recipe_1725033277430/work=/usr/local/src/conda/curl_split_recipe-8.9.1 -fdebug-prefix-map=/tmp/miniconda_temp=/usr/local/src/conda-prefix -D_FORTIFY_SOURCE=2 -isystem /tmp/miniconda_temp/include -mmacosx-version-min=11.1' 'LDFLAGS=-Wl,-pie -Wl,-headerpad_max_install_names -Wl,-dead_strip_dylibs -Wl,-rpath,/tmp/miniconda_temp/lib -L/tmp/miniconda_temp/lib' 'CPPFLAGS=-D_FORTIFY_SOURCE=2 -isystem /tmp/miniconda_temp/include -mmacosx-version-min=11.1'"
+    ;;
+
+  *)
+    echo "unknown option: $1"
+    usage 1
+    ;;
+  esac
+  shift
+done
+
+exit 0

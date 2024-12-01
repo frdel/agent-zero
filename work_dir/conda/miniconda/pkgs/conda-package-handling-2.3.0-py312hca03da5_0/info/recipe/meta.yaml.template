@@ -1,0 +1,68 @@
+{% set name = "conda-package-handling" %}
+{% set version = "2.3.0" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  url: https://github.com/conda/conda-package-handling/archive/{{ version }}.tar.gz
+  sha256: e26e42b5dc1280237491c025a7e6f23634126463abeace67655c725020d705fb
+
+build:
+  number: 0
+  skip: True  # [py<38]
+  script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
+  entry_points:
+    - cph = conda_package_handling.cli:main
+
+requirements:
+  # Use this build section with python to avoid an Unexpected conda error on CI
+  build:
+    - python
+  host:
+    - python
+    - pip
+    - setuptools
+    - wheel
+  run:
+    - python
+    - zstandard >=0.15
+    - conda-package-streaming >=0.9.0
+
+test:
+  source_files:
+    - tests
+  requires:
+    - mock
+    - pip
+    - pytest
+    - pytest-cov
+    - pytest-mock
+    - requests  # optional, here to please pip check
+  imports:
+    - conda_package_handling
+    - conda_package_handling.api
+  commands:
+    - pip check
+    - pytest -v --cov=conda_package_handling --color=yes tests/
+
+about:
+  home: https://github.com/conda/conda-package-handling
+  dev_url: https://github.com/conda/conda-package-handling
+  doc_url: https://conda.github.io/conda-package-handling/
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: LICENSE
+  summary: Create and extract conda packages of various formats.
+  description: |
+    `conda` and `conda-build` use `conda_package_handling.api` to create and extract
+    conda packages. This package also provides the `cph` command line tool to
+    extract, create, and convert between formats.
+
+extra:
+  recipe-maintainers:
+    - beckermr
+    - dbast
+    - dholth
+    - jezdez

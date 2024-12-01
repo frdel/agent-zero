@@ -43,3 +43,6 @@ instruments/**
 
 # Global rule to include .gitkeep files anywhere
 !**/.gitkeep
+
+# Allow conda environment in work_dir
+!work_dir/conda/

@@ -1,0 +1,51 @@
+{% set name = "conda-content-trust" %}
+{% set version = "0.2.0" %}
+{% set sha256 = "ded769f69a0491bd1e002ce949a332ae5a47a60ce733adb8a724802c8fdfe02b" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  fn: {{ name|lower }}-{{ version }}.tar.gz
+  url: https://github.com/conda/{{ name }}/archive/{{ version }}.tar.gz
+  sha256: {{ sha256 }}
+
+build:
+  number: 1
+  skip: true  # [py<38]
+  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+  entry_points:
+    - conda-content-trust = conda_content_trust.cli:cli
+
+requirements:
+  host:
+    - python
+    - pip
+    - hatchling >=1.12.2
+    - hatch-vcs >=0.2.0
+  run:
+    - python
+    - cryptography >=41
+
+test:
+  imports:
+    - conda_content_trust
+    - conda_content_trust.authentication
+    - conda_content_trust.common
+    - conda_content_trust.root_signing
+    - conda_content_trust.signing
+  requires:
+    - pip
+  commands:
+    - pip check
+    - conda-content-trust --help
+
+about:
+  home: https://github.com/conda/conda-content-trust
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: LICENSE
+  summary: Signing and verification tools for conda
+  dev_url: https://github.com/conda/conda-content-trust
+  doc_url: https://github.com/conda/conda-content-trust/blob/main/README.md

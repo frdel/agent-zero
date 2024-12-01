@@ -1,0 +1,21 @@
+{
+  "build": "pyhd3eb1b0_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/noarch",
+  "constrains": [],
+  "depends": [
+    "python >=3.6"
+  ],
+  "fn": "pycparser-2.21-pyhd3eb1b0_0.conda",
+  "license": "BSD-3-clause",
+  "md5": "135a72ff2a31150a3a3ff0b1edd41ca9",
+  "name": "pycparser",
+  "noarch": "python",
+  "package_type": "noarch_python",
+  "sha256": "4405b5aeff26863972c82e8b54d09f88cd084f70e01e4343107b2676ffbeab57",
+  "size": 96617,
+  "subdir": "noarch",
+  "timestamp": 1636541382000,
+  "url": "https://repo.anaconda.com/pkgs/main/noarch/pycparser-2.21-pyhd3eb1b0_0.conda",
+  "version": "2.21"
+}

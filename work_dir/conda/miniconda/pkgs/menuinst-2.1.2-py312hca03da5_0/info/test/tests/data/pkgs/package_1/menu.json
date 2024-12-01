@@ -1,0 +1,53 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema",
+    "$id": "https://schemas.conda.io/menuinst-1.schema.json",
+    "menu_name": "Package 1",
+    "menu_items": [
+        {
+            "name": "A",
+            "description": "This will echo environment variables for test purposes",
+            "icon": null,
+            "command": [
+                "echo",
+                "${CONDA_PREFIX:-N/A}"
+            ],
+            "platforms": {
+                "win": {
+                    "terminal": true,
+                    "command": [
+                        "cmd",
+                        "/V:ON",
+                        "/C",
+                        "echo",
+                        "!CONDA_PREFIX!"
+                    ]
+                },
+                "linux": {},
+                "osx": {}
+            }
+        },
+        {
+            "name": "B",
+            "description": "This one does not preactivate the environment",
+            "icon": null,
+            "command": [
+                "echo",
+                "${CONDA_PREFIX:-N/A}"
+            ],
+            "activate": false,
+            "platforms": {
+                "win": {
+                    "command": [
+                        "cmd",
+                        "/V:ON",
+                        "/C",
+                        "echo",
+                        "!CONDA_PREFIX!"
+                    ]
+                },
+                "linux": {},
+                "osx": {}
+            }
+        }
+    ]
+}

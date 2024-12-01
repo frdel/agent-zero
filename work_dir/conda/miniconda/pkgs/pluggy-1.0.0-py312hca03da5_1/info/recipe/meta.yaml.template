@@ -1,0 +1,51 @@
+{% set name = "pluggy" %}
+{% set version = "1.0.0" %}
+{% set sha256 = "4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  fn: {{ name }}-{{ version }}.tar.gz
+  url: https://pypi.io/packages/source/{{ name [0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  sha256: {{ sha256 }}
+
+build:
+  number: 1
+  skip: True  # [py<36]
+  script: python -m pip install . --no-deps --ignore-installed
+
+requirements:
+  host:
+    - python 
+    - pip
+    - setuptools
+    - setuptools_scm
+    - wheel
+
+  run:
+    - python
+    - importlib_metadata >=0.12  # [py<38]
+
+test:
+  imports:
+    - pluggy
+  requires:
+    - pip
+  command:
+    - pip check
+
+about:
+  home: https://github.com/pytest-dev/pluggy
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: 'Plugin registration and hook calling for Python'
+  doc_url: https://pluggy.readthedocs.io/en/latest/
+  dev_url: https://github.com/pytest-dev/pluggy/
+
+extra:
+  recipe-maintainers:
+    - JohnGreeley
+    - nicoddemus

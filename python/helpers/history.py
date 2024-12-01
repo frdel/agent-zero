@@ -1,12 +1,15 @@
 from abc import abstractmethod
 import asyncio
 from collections import OrderedDict
+import sys
 import json
 import math
 from typing import Coroutine, Literal, TypedDict, cast
 from python.helpers import messages, tokens, settings, call_llm
 from enum import Enum
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+
+sys.setrecursionlimit(10000)
 
 BULK_MERGE_COUNT = 3
 TOPICS_KEEP_COUNT = 3
@@ -309,43 +312,53 @@ class History(Record):
         data = self.to_dict()
         return json.dumps(data)
 
+
     async def compress(self):
-        curr, hist, bulk = (
-            self.get_current_topic_tokens(),
-            self.get_topics_tokens(),
-            self.get_bulks_tokens(),
-        )
-        total = get_ctx_size_for_history()
-        compressed = False
+        # Add recursion guard
+        if hasattr(self, '_compressing'):
+            return False
+        self._compressing = True
+        
+        try:
+            curr, hist, bulk = (
+                self.get_current_topic_tokens(),
+                self.get_topics_tokens(),
+                self.get_bulks_tokens(),
+            )
+            total = get_ctx_size_for_history()
+            compressed = False
 
-        # calculate ratios of individual parts
-        ratios = [
-            (curr, CURRENT_TOPIC_RATIO, "current_topic"),
-            (hist, HISTORY_TOPIC_RATIO, "history_topic"),
-            (bulk, HISTORY_BULK_RATIO, "history_bulk"),
-        ]
-        # start from the most oversized part and compress it
-        ratios = sorted(ratios, key=lambda x: (x[0] / total) / x[1], reverse=True)
-        for ratio in ratios:
-            if ratio[0] > ratio[1] * total:
-                over_part = ratio[2]
-                if over_part == "current_topic":
-                    compressed = await self.current.compress()
-                elif over_part == "history_topic":
-                    compressed = await self.compress_topics()
+            # calculate ratios of individual parts
+            ratios = [
+                (curr, CURRENT_TOPIC_RATIO, "current_topic"),
+                (hist, HISTORY_TOPIC_RATIO, "history_topic"),
+                (bulk, HISTORY_BULK_RATIO, "history_bulk"),
+            ]
+            # start from the most oversized part and compress it
+            ratios = sorted(ratios, key=lambda x: (x[0] / total) / x[1], reverse=True)
+            for ratio in ratios:
+                if ratio[0] > ratio[1] * total:
+                    over_part = ratio[2]
+                    if over_part == "current_topic":
+                        compressed = await self.current.compress()
+                    elif over_part == "history_topic":
+                        compressed = await self.compress_topics()
+                    else:
+                        compressed = await self.compress_bulks()
+                    # if part was compressed, stop the loop and try the whole function again
+                    if compressed:
+                        break
                 else:
-                    compressed = await self.compress_bulks()
-                # if part was compressed, stop the loop and try the whole function again, maybe no more compression is necessary
-                if compressed:
                     break
-            else:
-                break
 
-        # try the whole function again to see if there is still a need for compression
-        if compressed:
-            await self.compress()
+            # try the whole function again to see if there is still a need for compression
+            if compressed:
+                await self.compress()
 
-        return compressed
+            return compressed
+            
+        finally:
+            delattr(self, '_compressing')
 
     async def compress_topics(self) -> bool:
         # summarize topics one by one

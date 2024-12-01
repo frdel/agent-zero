@@ -1,0 +1,123 @@
+{% set version = "8.6.14" %}
+{% set maj_min = ".".join(version.split(".")[:2]) %}
+
+package:
+  name: tk
+  version: {{ version }}
+
+source:
+  - url: https://altushost-swe.dl.sourceforge.net/project/tcl/Tcl/{{ version }}/tcl{{ version }}-src.tar.gz
+    folder: tcl{{ version }}
+    sha256: 5880225babf7954c58d4fb0f5cf6279104ce1cd6aa9b71e9a6322540e1c4de66
+    patches:                          # [win]
+      - 0002-win-unvendor-zlib.patch  # [win]
+  - url: https://altushost-swe.dl.sourceforge.net/project/tcl/Tcl/{{ version }}/tk{{ version }}-src.tar.gz
+    folder: tk{{ version }}
+    sha256: 8ffdb720f47a6ca6107eac2dd877e30b0ef7fac14f3a84ebbd0b3612cee41a94
+    patches:                  # [osx and x86_64]
+      - 0001-osx-lt-11.patch  # [osx and x86_64]
+
+build:
+  number: 0
+  detect_binary_files_with_prefix: true
+  run_exports:
+    # pin to major.minor because library names have that info in them
+    - {{ pin_subpackage('tk', max_pin='x.x') }}
+  missing_dso_whitelist:            # [linux and not ppc64le]
+    - $RPATH/lib*                   # [linux and not ppc64le]
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ cdt('xorg-x11-proto-devel') }}  # [linux]
+    - {{ cdt('libx11-devel') }}          # [linux]
+    - {{ cdt('libxcb') }}                # [linux]
+    - {{ cdt('libxau') }}                # [linux]
+    - make                               # [linux]
+    - patch                              # [osx and x86_64]
+    - m2-patch                           # [win]
+  host:
+    - zlib {{ zlib }}
+  run:
+    - zlib # pin through run_exports
+
+test:
+
+  files:
+    - hello.tcl
+
+  commands:
+    # Check for binaries.
+    {% for ver_suffix in ["", maj_min] %}
+    - test -f "${PREFIX}/bin/tclsh{{ ver_suffix }}"                                            # [unix]
+    - test -f "${PREFIX}/bin/wish{{ ver_suffix }}"                                             # [unix]
+    - if not exist %LIBRARY_PREFIX%\\bin\\wish{{ ver_suffix.replace(".", "") }}.exe exit 1     # [win]
+    - if not exist %LIBRARY_PREFIX%\\bin\\tclsh{{ ver_suffix.replace(".", "") }}.exe exit 1    # [win]
+    {% endfor %}
+
+    # Check for includes.
+    {% set tcl_tk_includes = [
+            "tcl",
+            "tclDecls",
+            "tclPlatDecls",
+            "tclPlatDecls",
+            "tclTomMathDecls",
+            "tclTomMath",
+            "tk",
+            "tkDecls",
+            "tkPlatDecls"
+    ] %}
+    {% for each_tcl_tk_include in tcl_tk_includes %}
+    - test -f "${PREFIX}/include/{{ each_tcl_tk_include }}.h"                        # [unix]
+    - if not exist %LIBRARY_PREFIX%\\include\\{{ each_tcl_tk_include }}.h exit 1     # [win]
+    {% endfor %}
+
+    # Check for libraries.
+    # Library naming note: t means "full thread support" in Windows
+    #    https://sourceforge.net/p/tcl/mailman/tcl-bugs/thread/From_noreply@sourceforge.net_Mon_Jul_23_11:46:16_2012/
+    {% set tcl_tk_libs = [
+            "tcl",
+            "tk"
+    ] %}
+    {% for each_tcl_tk_lib in tcl_tk_libs %}
+    - test -f "${PREFIX}/lib/lib{{ each_tcl_tk_lib }}{{ maj_min }}.dylib"                                        # [osx]
+    - test -f "${PREFIX}/lib/lib{{ each_tcl_tk_lib }}{{ maj_min }}.so"                                           # [linux]
+    - test -f "${PREFIX}/lib/lib{{ each_tcl_tk_lib }}stub{{ maj_min }}.a"                                        # [unix]
+    - if not exist %LIBRARY_PREFIX%\\lib\\{{ each_tcl_tk_lib }}{{ maj_min.replace(".", "") }}t.lib exit 1         # [win]
+    - if not exist %LIBRARY_PREFIX%\\bin\\{{ each_tcl_tk_lib }}{{ maj_min.replace(".", "") }}t.dll exit 1         # [win]
+    - if not exist %LIBRARY_PREFIX%\\lib\\{{ each_tcl_tk_lib }}stub{{ maj_min.replace(".", "") }}.lib exit 1     # [win]
+    {% endfor %}
+
+    # Check commands work and run a simple program.
+    - tclsh hello.tcl
+    - tclsh{{ maj_min }} hello.tcl                       # [unix]
+    - tclsh{{ maj_min.replace(".", "") }} hello.tcl      # [win]
+    - wish hello.tcl
+    - wish{{ maj_min }} hello.tcl                        # [unix]
+    - wish{{ maj_min.replace(".", "") }}t hello.tcl      # [win]
+
+about:
+  home: https://www.tcl.tk/
+  license: TCL
+  license_family: BSD
+  license_file: tcl{{ version }}/license.terms
+  summary: A dynamic programming language with GUI support. Bundles Tcl and Tk.
+  description: |
+    Tcl (Tool Command Language) is a very powerful but easy to learn dynamic programming language, 
+    suitable for a very wide range of uses, including web and desktop applications, networking, 
+    administration, testing and many more. Open source and business-friendly, 
+    Tcl is a mature yet evolving language that is truly cross platform, easily deployed and highly extensible.
+    Tk is a graphical user interface toolkit that takes developing desktop applications to a higher level than 
+    conventional approaches. Tk is the standard GUI not only for Tcl, but for many other dynamic languages, 
+    and can produce rich, native applications that run unchanged across Windows, Mac OS X, Linux and more.
+  dev_url: https://core.tcl-lang.org/tk/home
+  doc_url: https://www.tcl.tk/man/tcl8.6/index.html
+
+extra:
+  recipe-maintainers:
+    - jakirkham
+    - jjhelmus
+    - msarahan
+    - pelson
+    - ocefpaf
+    - mingwandroid

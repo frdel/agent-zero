@@ -1,0 +1,48 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema",
+    "$id": "https://schemas.conda.io/menuinst-1.schema.json",
+    "menu_name": "Example with file custom URL association",
+    "menu_items": [
+        {
+            "name": "CustomURLAssociation",
+            "description": "Testing OS integrations with file types and custom URLs",
+            "icon": null,
+            "command": [
+                "{{ PYTHON }}",
+                "-c",
+                "import sys, pathlib as p; p.Path(r'__OUTPUT_FILE__').write_text(sys.argv[1])"
+            ],
+            "platforms": {
+                "win": {
+                    "command": [
+                        "{{ PYTHON }}",
+                        "-c",
+                        "import sys, pathlib as p; p.Path(r'__OUTPUT_FILE__').write_text(r'%1')"
+                    ],
+                    "url_protocols": ["menuinst"]
+                },
+                "linux": {
+                    "command": [
+                        "{{ PYTHON }}",
+                        "-c",
+                        "import sys, pathlib as p; p.Path(r'__OUTPUT_FILE__').write_text(r'%u')"
+                    ],
+                    "MimeType": ["x-scheme-handler/menuinst"]
+                },
+                "osx": {
+                    "command": [
+                        "bash", "-c", "nc -l 40256 > __OUTPUT_FILE__"
+                    ],
+                    "event_handler": "for i in 1 2 3 4 5; do echo \"$*\" | nc 127.0.0.1 40256 && break || sleep 1; done",
+                    "CFBundleURLTypes": [
+                        {
+                            "CFBundleURLName": "my-protocol-handler.menuinst",
+                            "CFBundleURLSchemes": ["menuinst"]
+                        }
+                    ],
+                    "CFBundleIdentifier": "org.conda.menuinst.url-protocol-example"
+                }
+            }
+        }
+    ]
+}

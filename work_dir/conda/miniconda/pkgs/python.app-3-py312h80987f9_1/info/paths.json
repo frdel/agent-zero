@@ -1,0 +1,75 @@
+{
+  "paths": [
+    {
+      "_path": "bin/.python.app-post-link.sh",
+      "path_type": "hardlink",
+      "sha256": "dce1903127bdb06be8d8871c52600e87d8e9e017c5ebc548b234bc924ea57871",
+      "size_in_bytes": 139
+    },
+    {
+      "_path": "bin/.python.app-pre-unlink.sh",
+      "path_type": "hardlink",
+      "sha256": "af02758a7a0e05e1db94ae9ded6d59ca3188bf18caa923d50739c392c035462f",
+      "size_in_bytes": 38
+    },
+    {
+      "_path": "bin/python.app",
+      "file_mode": "text",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_40zr0_kae7/croot/python.app_1725023270148/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pla",
+      "sha256": "5ee2554005ec9f6cb3304ae5c94da0282cd0a1b24f27c2f4b363e1119217a3f4",
+      "size_in_bytes": 597
+    },
+    {
+      "_path": "bin/pythonw",
+      "file_mode": "text",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_40zr0_kae7/croot/python.app_1725023270148/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pla",
+      "sha256": "5ee2554005ec9f6cb3304ae5c94da0282cd0a1b24f27c2f4b363e1119217a3f4",
+      "size_in_bytes": 597
+    },
+    {
+      "_path": "pythonapp/Contents/Info.plist",
+      "path_type": "hardlink",
+      "sha256": "985abc266f6e0b016272ebdc19a242f6f0f738bc571853a5b06c914b5a15c967",
+      "size_in_bytes": 750
+    },
+    {
+      "_path": "pythonapp/Contents/MacOS/python",
+      "path_type": "softlink",
+      "sha256": "6f4436215d6a3e76f5d74dedd94d1da2e16d28dc851f0150c9ba9e171853c4b1",
+      "size_in_bytes": 6768736
+    },
+    {
+      "_path": "pythonapp/Contents/PkgInfo",
+      "path_type": "hardlink",
+      "sha256": "7e50a30efad50208a173203ced60818d693bb61266b75aa10927d1a2adce80cb",
+      "size_in_bytes": 9
+    },
+    {
+      "_path": "pythonapp/Contents/Resources/empty.lproj",
+      "path_type": "hardlink",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_in_bytes": 0
+    },
+    {
+      "_path": "pythonapp/Contents/Resources/qt_menu.nib/classes.nib",
+      "path_type": "hardlink",
+      "sha256": "6325392a064a875eaafd12468929b49c1c666a318d2d424e360c47100a553184",
+      "size_in_bytes": 1451
+    },
+    {
+      "_path": "pythonapp/Contents/Resources/qt_menu.nib/info.nib",
+      "path_type": "hardlink",
+      "sha256": "485ca0b6f016d9cb124a2062ca8cf48c11bba5771f09f2d953de7762215a7ad8",
+      "size_in_bytes": 472
+    },
+    {
+      "_path": "pythonapp/Contents/Resources/qt_menu.nib/keyedobjects.nib",
+      "path_type": "hardlink",
+      "sha256": "d20f36026f673d87732583c7eb477ccae31c7ed453bd64c771c553e0993a2f8b",
+      "size_in_bytes": 5560
+    }
+  ],
+  "paths_version": 1
+}

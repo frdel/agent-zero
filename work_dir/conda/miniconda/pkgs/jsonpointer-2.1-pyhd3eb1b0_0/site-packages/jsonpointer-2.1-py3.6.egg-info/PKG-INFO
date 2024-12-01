@@ -1,0 +1,52 @@
+Metadata-Version: 2.1
+Name: jsonpointer
+Version: 2.1
+Summary:  Identify specific nodes in a JSON document (RFC 6901) 
+Home-page: https://github.com/stefankoegl/python-json-pointer
+Author: Stefan Kögl
+Author-email: stefan@skoegl.net
+License: Modified BSD License
+Description: python-json-pointer
+        ===================
+        
+        [![PyPI version](https://img.shields.io/pypi/v/jsonpointer.svg)](https://pypi.python.org/pypi/jsonpointer/)
+        [![Supported Python versions](https://img.shields.io/pypi/pyversions/jsonpointer.svg)](https://pypi.python.org/pypi/jsonpointer/)
+        [![Build Status](https://travis-ci.org/stefankoegl/python-json-pointer.svg?branch=master)](https://travis-ci.org/stefankoegl/python-json-pointer)
+        [![Coverage Status](https://coveralls.io/repos/stefankoegl/python-json-pointer/badge.svg?branch=master)](https://coveralls.io/r/stefankoegl/python-json-pointer?branch=master)
+        
+        
+        Resolve JSON Pointers in Python
+        -------------------------------
+        
+        Library to resolve JSON Pointers according to
+        [RFC 6901](http://tools.ietf.org/html/rfc6901)
+        
+        See source code for examples
+        * Website: https://github.com/stefankoegl/python-json-pointer
+        * Repository: https://github.com/stefankoegl/python-json-pointer.git
+        * Documentation: https://python-json-pointer.readthedocs.org/
+        * PyPI: https://pypi.python.org/pypi/jsonpointer
+        * Travis CI: https://travis-ci.org/stefankoegl/python-json-pointer
+        * Coveralls: https://coveralls.io/r/stefankoegl/python-json-pointer
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Utilities
+Requires-Python: >=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*
+Description-Content-Type: text/markdown

@@ -1,0 +1,24 @@
+diff --git a/ext/repo_conda.c b/ext/repo_conda.c
+index 9211cbe..c471039 100644
+--- a/ext/repo_conda.c
++++ b/ext/repo_conda.c
+@@ -314,8 +314,7 @@ parse_package(struct parsedata *pd, struct solv_jsonparser *jp, char *kfn, char
+   /* if we have a global subdir make sure that it matches */
+   if (subdir && pd->subdir && strcmp(subdir, pd->subdir) != 0)
+     {
+-      pd->error = "subdir mismatch";
+-      return JP_ERROR;
++      printf("subdir mismatch\n");
+     }
+ 
+   if (fn || kfn)
+@@ -402,8 +401,7 @@ parse_info(struct parsedata *pd, struct solv_jsonparser *jp)
+ 	    pd->subdir = strdup(jp->value);
+ 	  else if (strcmp(pd->subdir, jp->value))
+ 	    {
+-	      pd->error = "subdir mismatch";
+-	      return JP_ERROR;
++	      printf("warning: subdir mismatch\n");
+ 	    }
+ 	}
+     }

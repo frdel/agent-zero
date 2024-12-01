@@ -1,0 +1,72 @@
+# This file created by conda-build 24.3.0
+# meta.yaml template originally from:
+# /var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_83k9wi2k8i/clone/recipe, last modified Tue Apr 30 08:24:25 2024
+# ------------------------------------------------
+
+package:
+  name: libiconv
+  version: '1.16'
+source:
+  - patches: null
+    sha256: e6a1b1b589654277ee790cce3734f07876ac4ccfaecbee8afa0b649cf529cc04
+    url: https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz
+build:
+  number: '3'
+  run_exports:
+    - libiconv >=1.16,<2.0a0
+  string: h80987f9_3
+requirements:
+  build:
+    - cctools_osx-arm64 949.0.1 h332cad3_25
+    - clang 14.0.6 hca03da5_1
+    - clang-14 14.0.6 default_h1b80db6_1
+    - clang_osx-arm64 14.0.6 h9ff6fda_0
+    - clangxx 14.0.6 default_h1b80db6_1
+    - compiler-rt 14.0.6 h4ccfd99_0
+    - compiler-rt_osx-arm64 14.0.6 h4fb70ea_0
+    - ld64_osx-arm64 530 h001ce53_25
+    - ldid 2.1.5 h20b2a84_3
+    - libclang-cpp14 14.0.6 default_h1b80db6_1
+    - libcxx 14.0.6 h848a8c0_0
+    - libffi 3.4.4 hca03da5_0
+    - libllvm14 14.0.6 h7ec7a93_3
+    - libtool 2.4.6 h313beb8_1009
+    - llvm-tools 14.0.6 hfd8c8a6_3
+    - make 4.3 h620ffc9_1
+    - patch 2.7.6 h1a28f6b_1001
+    - tapi 1100.0.11 h8754e6a_1
+    - zlib 1.2.13 h5a0b063_0
+  host: []
+  run: []
+test:
+  commands:
+    - iconv --help
+about:
+  description: 'This library provides an iconv() implementation, for use on systems
+    which don''t have one,
+
+    or whose implementation cannot convert from/to Unicode.
+
+    '
+  dev_url: https://git.savannah.gnu.org/cgit/libiconv.git/tree/
+  doc_url: https://www.gnu.org/savannah-checkouts/gnu/libiconv/documentation/libiconv-1.16/iconv.1.html
+  home: https://www.gnu.org/software/libiconv/
+  license: GPL-3.0-or-later
+  license_family: GPL3
+  license_file:
+    - COPYING
+    - COPYING.LIB
+  summary: Provides iconv for systems which don't have one (or that cannot convert
+    from/to Unicode.)
+extra:
+  copy_test_source_files: true
+  final: true
+  flow_run_id: 839b8449-f3c4-4f01-bfe7-d06f640b6182
+  recipe-maintainers:
+    - jakirkham
+    - jhamman
+    - mingwandroid
+    - ocefpaf
+    - scopatz
+  remote_url: git@github.com:AnacondaRecipes/libiconv-feedstock.git
+  sha: 0838f2a565363f832c7d63c086327e86238dd02b

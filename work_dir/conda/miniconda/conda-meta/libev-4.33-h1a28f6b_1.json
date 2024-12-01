@@ -1,0 +1,35 @@
+{
+  "build": "h1a28f6b_1",
+  "build_number": 1,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [],
+  "extracted_package_dir": "/tmp/miniconda_temp/pkgs/libev-4.33-h1a28f6b_1",
+  "files": [
+    "include/ev++.h",
+    "include/ev.h",
+    "lib/libev.4.dylib",
+    "lib/libev.dylib",
+    "share/man/man3/ev.3"
+  ],
+  "fn": "libev-4.33-h1a28f6b_1.conda",
+  "license": "BSD-2-Clause",
+  "link": {
+    "source": "/tmp/miniconda_temp/pkgs/libev-4.33-h1a28f6b_1",
+    "type": 1
+  },
+  "md5": "00cac99189c361c3b2cbf506ae6cc718",
+  "name": "libev",
+  "package_tarball_full_path": "/tmp/miniconda_temp/pkgs/libev-4.33-h1a28f6b_1.conda",
+  "paths_data": {
+    "paths": [],
+    "paths_version": 1
+  },
+  "requested_spec": "defaults/osx-arm64::libev==4.33=h1a28f6b_1[md5=00cac99189c361c3b2cbf506ae6cc718]",
+  "sha256": "553d09ddd69a6efb5bcf6cc225ef27c573f5df27199dd03ecbcf006ec844beaa",
+  "size": 106490,
+  "subdir": "osx-arm64",
+  "timestamp": 1628961869000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/libev-4.33-h1a28f6b_1.conda",
+  "version": "4.33"
+}

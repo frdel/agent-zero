@@ -1,0 +1,83 @@
+{% set name = "pcre2" %}
+{% set version = "10.42" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  url: https://github.com/PCRE2Project/{{ name }}/archive/refs/tags/{{ name }}-{{ version }}.tar.gz
+  sha256: a8e52a9bd1bca8f51c5c24823adc2a99acb12288e289a6507090c1a4a4815010
+
+build:
+  number: 1
+  run_exports:
+    # https://abi-laboratory.pro/index.php?view=timeline&l=pcre2
+    - {{ pin_subpackage("pcre2", max_pin="x.x") }}
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - cmake
+    - ninja
+    - posix  # [win]
+    - m2-sed  # [win]
+  host:
+    - bzip2
+    - zlib
+
+test:
+  commands:
+    - pcre2test --version
+    - pcre2grep --version
+
+    - pcre2-config --version                                  # [not win]
+    - test -f ${PREFIX}/include/pcre2.h                       # [not win]
+    - test -f ${PREFIX}/include/pcre2posix.h                  # [not win]
+    - test -f ${PREFIX}/lib/libpcre2-posix${SHLIB_EXT}        # [not win]
+    - test -f ${PREFIX}/lib/libpcre2-posix.3${SHLIB_EXT}      # [osx]
+    - test -f ${PREFIX}/lib/libpcre2-posix${SHLIB_EXT}.3      # [linux]
+    - test -f ${PREFIX}/lib/libpcre2-posix${SHLIB_EXT}.3.0.4  # [linux]
+    - test -f ${PREFIX}/lib/libpcre2-8${SHLIB_EXT}            # [not win]
+    - test -f ${PREFIX}/lib/libpcre2-8.0${SHLIB_EXT}          # [osx]
+    - test -f ${PREFIX}/lib/libpcre2-8${SHLIB_EXT}.0          # [linux]
+    - test -f ${PREFIX}/lib/libpcre2-8${SHLIB_EXT}.0.11.2      # [linux]
+    - test -f ${PREFIX}/lib/libpcre2-16${SHLIB_EXT}            # [not win]
+    - test -f ${PREFIX}/lib/libpcre2-16.0${SHLIB_EXT}          # [osx]
+    - test -f ${PREFIX}/lib/libpcre2-16${SHLIB_EXT}.0          # [linux]
+    - test -f ${PREFIX}/lib/libpcre2-16${SHLIB_EXT}.0.11.2      # [linux]
+    - test -f ${PREFIX}/lib/libpcre2-32${SHLIB_EXT}            # [not win]
+    - test -f ${PREFIX}/lib/libpcre2-32.0${SHLIB_EXT}          # [osx]
+    - test -f ${PREFIX}/lib/libpcre2-32${SHLIB_EXT}.0          # [linux]
+    - test -f ${PREFIX}/lib/libpcre2-32${SHLIB_EXT}.0.11.2      # [linux]
+    - test -f ${PREFIX}/lib/pkgconfig/libpcre2-8.pc           # [not win]
+    - test -f ${PREFIX}/lib/pkgconfig/libpcre2-16.pc           # [not win]
+    - test -f ${PREFIX}/lib/pkgconfig/libpcre2-32.pc           # [not win]
+    - test -f ${PREFIX}/lib/pkgconfig/libpcre2-posix.pc       # [not win]
+
+    - if not exist %LIBRARY_INC%\\pcre2.h exit 1                              # [win]
+    - if not exist %LIBRARY_INC%\\pcre2posix.h exit 1                         # [win]
+    - if not exist %LIBRARY_BIN%\\pcre2-8.dll exit 1                          # [win]
+    - if not exist %LIBRARY_BIN%\\pcre2-posix.dll exit 1                      # [win]
+    - if not exist %LIBRARY_PREFIX%\\lib\\pkgconfig\\libpcre2-posix.pc exit 1  # [win]
+    - if not exist %LIBRARY_PREFIX%\\lib\\pkgconfig\\libpcre2-8.pc exit 1      # [win]
+
+about:
+  home: https://www.pcre.org/
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: LICENCE
+  summary: Regular expression pattern matching using Perl 5 syntax and semantics.
+  description: |
+    The PCRE library is a set of functions that implement regular expression pattern matching
+    using the same syntax and semantics as Perl 5. PCRE has its own native API, as well as a set of
+    wrapper functions that correspond to the POSIX regular expression API. The PCRE library is
+    free, even for building proprietary software.
+  dev_url: https://github.com/PCRE2Project/pcre2
+  doc_url: https://www.pcre.org/current/doc/html/
+
+extra:
+  recipe-maintainers:
+    - dfornika
+    - mariusvniekerk
+    - xhochy

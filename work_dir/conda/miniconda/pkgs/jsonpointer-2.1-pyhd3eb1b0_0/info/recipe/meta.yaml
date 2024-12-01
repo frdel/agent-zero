@@ -1,0 +1,55 @@
+# This file created by conda-build 3.21.4
+# meta.yaml template originally from:
+# /tmp/build/80754af9/combined_recipe, last modified Sat Mar 13 18:35:28 2021
+# ------------------------------------------------
+
+package:
+  name: jsonpointer
+  version: '2.1'
+source:
+  fn: jsonpointer-2.1.tar.gz
+  sha256: 5a34b698db1eb79ceac454159d3f7c12a451a91f6334a4f638454327b7a89962
+  url: https://pypi.org/packages/source/j/jsonpointer/jsonpointer-2.1.tar.gz
+build:
+  noarch: python
+  number: '0'
+  script: python setup.py install --single-version-externally-managed --record=record.txt
+  string: pyhd3eb1b0_0
+requirements:
+  build:
+    - _libgcc_mutex 0.1 main
+    - ca-certificates 2021.1.19 h06a4308_1
+    - certifi 2020.12.5 py36h06a4308_0
+    - ld_impl_linux-64 2.33.1 h53a641e_7
+    - libedit 3.1.20191231 h14c3975_1
+    - libffi 3.3 he6710b0_2
+    - libgcc-ng 9.1.0 hdf63c60_0
+    - libstdcxx-ng 9.1.0 hdf63c60_0
+    - ncurses 6.2 he6710b0_1
+    - openssl 1.1.1j h27cfd23_0
+    - python 3.6.13 hdb3f193_0
+    - readline 8.1 h27cfd23_0
+    - setuptools 52.0.0 py36h06a4308_0
+    - sqlite 3.33.0 h62c20be_0
+    - tk 8.6.10 hbc83047_0
+    - xz 5.2.5 h7b6447c_0
+    - zlib 1.2.11 h7b6447c_3
+  run:
+    - python
+test:
+  imports:
+    - jsonpointer
+about:
+  dev_url: https://github.com/stefankoegl/python-json-pointer
+  doc_url: https://python-json-pointer.readthedocs.io/en/latest/
+  home: https://github.com/stefankoegl/python-json-pointer
+  license: BSD 3-Clause
+  license_family: BSD
+  license_file: LICENSE.txt
+  summary: Identify specific nodes in a JSON document (RFC 6901)
+extra:
+  copy_test_source_files: true
+  final: true
+  recipe-maintainers:
+    - anguslees
+    - pmlandwehr

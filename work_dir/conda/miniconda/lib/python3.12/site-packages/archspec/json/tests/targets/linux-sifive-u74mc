@@ -1,0 +1,5 @@
+processor       : 0
+hart            : 4
+isa             : rv64imafdc
+mmu             : sv39
+uarch           : sifive,u74-mc

@@ -1,0 +1,44 @@
+--- work.orig/libarchive/archive_cryptor_private.h	2018-04-22 06:33:58.205352500 -0500
++++ work/libarchive/archive_cryptor_private.h	2018-04-22 07:01:39.353981900 -0500
+@@ -64,12 +64,7 @@
+ } archive_crypto_ctx;
+ 
+ #elif defined(_WIN32) && !defined(__CYGWIN__) && defined(HAVE_BCRYPT_H)
+-#include <bcrypt.h>
+-
+-/* Common in other bcrypt implementations, but missing from VS2008. */
+-#ifndef BCRYPT_SUCCESS
+-#define BCRYPT_SUCCESS(r) ((NTSTATUS)(r) == STATUS_SUCCESS)
+-#endif
++#include "bcrypt_with_vs2008.h"
+ 
+ #define AES_MAX_KEY_SIZE 32
+ #define AES_BLOCK_SIZE 16
+--- work.orig/libarchive/archive_hmac_private.h	2018-04-22 06:33:58.565158400 -0500
++++ work/libarchive/archive_hmac_private.h	2018-04-22 07:01:16.915110000 -0500
+@@ -64,7 +64,7 @@
+ } archive_crypto_ctx;
+ 
+ #elif defined(_WIN32) && !defined(__CYGWIN__) && defined(HAVE_BCRYPT_H)
+-#include <bcrypt.h>
++#include "bcrypt_with_vs2008.h"
+ 
+ /* Common in other bcrypt implementations, but missing from VS2008. */
+ #ifndef BCRYPT_SUCCESS
+--- work.orig/libarchive/bcrypt_with_vs2008.h	2018-04-22 07:33:12.000000000 -0500
++++ work/libarchive/bcrypt_with_vs2008.h	2018-04-22 07:01:13.212019900 -0500
+@@ -0,0 +1,14 @@
++#if !defined(BCRYPT_WITH_VS2008)
++#define BCRYPT_WITH_VS2008
++#include <bcrypt.h>
++
++/* Common in other bcrypt implementations, but missing from VS2008. */
++#ifndef BCRYPT_SUCCESS
++#ifndef NT_SUCCESS
++#define NT_SUCCESS(x) ((x)>=0)
++#define STATUS_SUCCESS ((NTSTATUS)0)
++#endif
++#define BCRYPT_SUCCESS(r) ((NTSTATUS)(r) == STATUS_SUCCESS)
++#endif
++
++#endif /* BCRYPT_WITH_VS2008 */

@@ -1,0 +1,42 @@
+{
+  "build": "py312hca03da5_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [
+    "conda-build >=3.27",
+    "conda-env >=2.6",
+    "conda-content-trust >=0.1.1"
+  ],
+  "depends": [
+    "archspec >=0.2.3",
+    "boltons >=23.0.0",
+    "charset-normalizer",
+    "conda-libmamba-solver >=23.11.0",
+    "conda-package-handling >=2.2.0",
+    "distro >=1.5.0",
+    "frozendict >=2.4.2",
+    "jsonpatch >=1.32",
+    "menuinst >=2",
+    "packaging >=23.0",
+    "platformdirs >=3.10.0",
+    "pluggy >=1.0.0",
+    "pycosat >=0.6.3",
+    "python >=3.12,<3.13.0a0",
+    "requests >=2.28.0,<3",
+    "ruamel.yaml >=0.11.14,<0.19",
+    "setuptools >=60.0.0",
+    "tqdm >=4",
+    "truststore >=0.8.0",
+    "zstandard >=0.19.0"
+  ],
+  "fn": "conda-24.9.2-py312hca03da5_0.conda",
+  "license": "BSD-3-Clause",
+  "md5": "282e9c55c63e4b757db5408929e4ad17",
+  "name": "conda",
+  "sha256": "659836ec003256710082ba4824aef3a345c4158a5ce758e1a48be43c977fdbc6",
+  "size": 1195709,
+  "subdir": "osx-arm64",
+  "timestamp": 1729194075000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/conda-24.9.2-py312hca03da5_0.conda",
+  "version": "24.9.2"
+}

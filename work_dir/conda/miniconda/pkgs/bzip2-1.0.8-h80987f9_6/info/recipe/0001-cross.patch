@@ -1,0 +1,52 @@
+diff --git a/Makefile b/Makefile
+index 9754ddf..b5512de 100644
+--- a/Makefile
++++ b/Makefile
+@@ -15,16 +15,16 @@
+ SHELL=/bin/sh
+
+ # To assist in cross-compiling
+-CC=gcc
+-AR=ar
+-RANLIB=ranlib
+-LDFLAGS=
++CC?=gcc
++AR?=ar
++RANLIB?=ranlib
+
+ BIGFILES=-D_FILE_OFFSET_BITS=64
+-CFLAGS=-Wall -Winline -O2 -g $(BIGFILES)
++CFLAGS?=-Wall -Winline -O2 -g
++CFLAGS=$(CFLAGS) $(BIGFILES)
+
+ # Where you want it installed when you do 'make install'
+-PREFIX=/usr/local
++PREFIX=$PREFIX
+
+
+ OBJS= blocksort.o  \
+diff --git a/Makefile-libbz2_so b/Makefile-libbz2_so
+index e58791b..f4b9fa2 100644
+--- a/Makefile-libbz2_so
++++ b/Makefile-libbz2_so
+@@ -22,9 +22,18 @@
+
+
+ SHELL=/bin/sh
+-CC=gcc
++
++# To assist in cross-compiling
++CC?=gcc
++AR?=ar
++RANLIB?=ranlib
++
+ BIGFILES=-D_FILE_OFFSET_BITS=64
+-CFLAGS=-fpic -fPIC -Wall -Winline -O2 -g $(BIGFILES)
++CFLAGS?=-Wall -Winline -O2 -g
++CFLAGS=$(CFLAGS) $(BIGFILES)
++
++# Where you want it installed when you do 'make install'
++PREFIX=$PREFIX
+
+ OBJS= blocksort.o  \
+       huffman.o    \

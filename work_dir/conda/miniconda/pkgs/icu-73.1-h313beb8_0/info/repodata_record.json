@@ -1,0 +1,19 @@
+{
+  "build": "h313beb8_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "libcxx >=14.0.6"
+  ],
+  "fn": "icu-73.1-h313beb8_0.conda",
+  "license": "MIT",
+  "md5": "0549586b2838067c209114998ed312ed",
+  "name": "icu",
+  "sha256": "1fa9139c79ab8e4e6fd1ae5451f494081721b274fb0af8c5f600a4059135cbc2",
+  "size": 26609848,
+  "subdir": "osx-arm64",
+  "timestamp": 1692293207000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/icu-73.1-h313beb8_0.conda",
+  "version": "73.1"
+}

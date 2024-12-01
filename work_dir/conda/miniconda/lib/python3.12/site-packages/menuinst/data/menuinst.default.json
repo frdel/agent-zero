@@ -1,0 +1,68 @@
+{
+  "id_": "https://schemas.conda.io/menuinst-1.schema.json",
+  "schema_": "https://json-schema.org/draft-07/schema",
+  "menu_name": "REQUIRED",
+  "menu_items": [
+    {
+      "name": "REQUIRED",
+      "description": "REQUIRED",
+      "command": [
+        "REQUIRED"
+      ],
+      "icon": null,
+      "precommand": null,
+      "precreate": null,
+      "working_dir": null,
+      "activate": true,
+      "terminal": false,
+      "platforms": {
+        "linux": {
+          "Categories": null,
+          "DBusActivatable": null,
+          "GenericName": null,
+          "Hidden": null,
+          "Implements": null,
+          "Keywords": null,
+          "MimeType": null,
+          "NoDisplay": null,
+          "NotShowIn": null,
+          "OnlyShowIn": null,
+          "PrefersNonDefaultGPU": null,
+          "StartupNotify": null,
+          "StartupWMClass": null,
+          "TryExec": null,
+          "glob_patterns": null
+        },
+        "osx": {
+          "CFBundleDisplayName": null,
+          "CFBundleIdentifier": null,
+          "CFBundleName": null,
+          "CFBundleSpokenName": null,
+          "CFBundleVersion": null,
+          "CFBundleURLTypes": null,
+          "CFBundleDocumentTypes": null,
+          "LSApplicationCategoryType": null,
+          "LSBackgroundOnly": null,
+          "LSEnvironment": null,
+          "LSMinimumSystemVersion": null,
+          "LSMultipleInstancesProhibited": null,
+          "LSRequiresNativeExecution": null,
+          "NSSupportsAutomaticGraphicsSwitching": null,
+          "UTExportedTypeDeclarations": null,
+          "UTImportedTypeDeclarations": null,
+          "entitlements": null,
+          "link_in_bundle": null,
+          "event_handler": null
+        },
+        "win": {
+          "desktop": true,
+          "quicklaunch": true,
+          "terminal_profile": null,
+          "url_protocols": null,
+          "file_extensions": null,
+          "app_user_model_id": null
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "paths": [
+    {
+      "_path": "bin/bunzip2",
+      "path_type": "hardlink",
+      "sha256": "9c12e5999fb312e26377e2c263835edb09818dde844e388bced63e04d2700348",
+      "size_in_bytes": 147328
+    },
+    {
+      "_path": "bin/bzcat",
+      "path_type": "hardlink",
+      "sha256": "9049fe22e61aba5a28f75daf9f0863c0f75138d497c4ede9e780b43c95e6178c",
+      "size_in_bytes": 147328
+    },
+    {
+      "_path": "bin/bzcmp",
+      "path_type": "softlink",
+      "sha256": "1c1f96193cdf14b85ea65f140a7557a07ece8783a53ec5ba6b5c30644a9d3012",
+      "size_in_bytes": 2140
+    },
+    {
+      "_path": "bin/bzdiff",
+      "path_type": "hardlink",
+      "sha256": "1c1f96193cdf14b85ea65f140a7557a07ece8783a53ec5ba6b5c30644a9d3012",
+      "size_in_bytes": 2140
+    },
+    {
+      "_path": "bin/bzegrep",
+      "path_type": "softlink",
+      "sha256": "a8e368a31766c7862b8d0feeffe274c3bb43b969e3ccb4f9e77d13bfa447a5c9",
+      "size_in_bytes": 2054
+    },
+    {
+      "_path": "bin/bzfgrep",
+      "path_type": "softlink",
+      "sha256": "a8e368a31766c7862b8d0feeffe274c3bb43b969e3ccb4f9e77d13bfa447a5c9",
+      "size_in_bytes": 2054
+    },
+    {
+      "_path": "bin/bzgrep",
+      "path_type": "hardlink",
+      "sha256": "a8e368a31766c7862b8d0feeffe274c3bb43b969e3ccb4f9e77d13bfa447a5c9",
+      "size_in_bytes": 2054
+    },
+    {
+      "_path": "bin/bzip2",
+      "path_type": "hardlink",
+      "sha256": "bcaec8cbfb2c2a4658339aa83211fbb2b6118b82ffb55f10d177f55cb48459fa",
+      "size_in_bytes": 147328
+    },
+    {
+      "_path": "bin/bzip2recover",
+      "path_type": "hardlink",
+      "sha256": "600d63ec33a5f4ad1c847a9297cafdaa3d6688ee63faed16c15142b9df961565",
+      "size_in_bytes": 69344
+    },
+    {
+      "_path": "bin/bzless",
+      "path_type": "softlink",
+      "sha256": "836536d4c7469788c730355d59f8ae8d16ba07cb0754174878d99ed90f04448d",
+      "size_in_bytes": 1259
+    },
+    {
+      "_path": "bin/bzmore",
+      "path_type": "hardlink",
+      "sha256": "836536d4c7469788c730355d59f8ae8d16ba07cb0754174878d99ed90f04448d",
+      "size_in_bytes": 1259
+    },
+    {
+      "_path": "include/bzlib.h",
+      "path_type": "hardlink",
+      "sha256": "6ac62e811669598ee30c9e1c379b9e627f6ff17a5a3dc1e0b4fa8b8ea75e580d",
+      "size_in_bytes": 6240
+    },
+    {
+      "_path": "lib/libbz2.1.0.8.dylib",
+      "path_type": "hardlink",
+      "sha256": "e5835aa485d6c868c129b4a6b52004dee313828a10c44626d20d99c3669ad882",
+      "size_in_bytes": 125200
+    },
+    {
+      "_path": "lib/libbz2.a",
+      "path_type": "hardlink",
+      "sha256": "8fa0f8b52e457212bfdb1d89ccdd818f51244693cb4d3107d94de7d7078491a7",
+      "size_in_bytes": 202304
+    },
+    {
+      "_path": "lib/libbz2.dylib",
+      "path_type": "softlink",
+      "sha256": "e5835aa485d6c868c129b4a6b52004dee313828a10c44626d20d99c3669ad882",
+      "size_in_bytes": 125200
+    },
+    {
+      "_path": "man/man1/bzcmp.1",
+      "path_type": "hardlink",
+      "sha256": "172cde42c47a6d50c244e39d993097dcd3882427d57303078643849cf10a81c4",
+      "size_in_bytes": 18
+    },
+    {
+      "_path": "man/man1/bzdiff.1",
+      "path_type": "hardlink",
+      "sha256": "32d1a7cd115430398e58537532584ef2ab76343c9f094dcd1253d9c4c0f705bf",
+      "size_in_bytes": 897
+    },
+    {
+      "_path": "man/man1/bzegrep.1",
+      "path_type": "hardlink",
+      "sha256": "cf1c98d3fa055506c8af2f8bba4da9c17d367c6409c6ad83a2bc67ccb6630182",
+      "size_in_bytes": 18
+    },
+    {
+      "_path": "man/man1/bzfgrep.1",
+      "path_type": "hardlink",
+      "sha256": "cf1c98d3fa055506c8af2f8bba4da9c17d367c6409c6ad83a2bc67ccb6630182",
+      "size_in_bytes": 18
+    },
+    {
+      "_path": "man/man1/bzgrep.1",
+      "path_type": "hardlink",
+      "sha256": "924aa4a7c7c1467400181e4c0ee1b527db142b6399a717171f2351b72b5899df",
+      "size_in_bytes": 1297
+    },
+    {
+      "_path": "man/man1/bzip2.1",
+      "path_type": "hardlink",
+      "sha256": "27b984bb2e8bbee2651d11cda87449cfc4138d2e479b9eaa77b8f60fa5d0bf5d",
+      "size_in_bytes": 16266
+    },
+    {
+      "_path": "man/man1/bzless.1",
+      "path_type": "hardlink",
+      "sha256": "216898f9b8acf61eeb471ecf23e47c1452dfd648f7f38d7d3bf48627072dc52c",
+      "size_in_bytes": 18
+    },
+    {
+      "_path": "man/man1/bzmore.1",
+      "path_type": "hardlink",
+      "sha256": "ccfcf3f995e11adae3035e287252091bb72d165da21e0c385a4965d17c9051c7",
+      "size_in_bytes": 4310
+    }
+  ],
+  "paths_version": 1
+}

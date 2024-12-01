@@ -1,0 +1,61 @@
+{% set version = "24.2" %}
+
+# make sure to set CONDA_ADD_PIP_AS_PYTHON_DEPENDENCY=0 environ-variable before building it
+
+package:
+  name: pip
+  version: {{ version }}
+
+source:
+  url: https://pypi.io/packages/source/p/pip/pip-{{ version }}.tar.gz
+  sha256: 5b5e490b5e9cb275c879595064adce9ebd31b854e3e803740b72f9ccf34a45b8
+
+build:
+  number: 0
+  disable_pip: true
+  skip: True  # [py<38]
+  entry_points:
+    - pip = pip._internal.cli.main:main
+    - pip3 = pip._internal.cli.main:main
+
+requirements:
+  host:
+    - python
+    - setuptools >=67.6.1
+    - wheel
+  run:
+    - python
+    - setuptools
+    - wheel
+
+test:
+  commands:
+    - pip -h
+    - pip list
+  imports:
+    - pip
+
+about:
+  home: https://pip.pypa.io
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE.txt
+  summary: PyPA recommended tool for installing Python packages
+  description: |
+    pip is the package installer for Python. 
+    You can use pip to install packages from the Python Package 
+    Index and other indexes.
+  doc_url: https://pip.pypa.io
+  dev_url: https://github.com/pypa/pip
+
+extra:
+  recipe-maintainers:
+    - jakirkham
+    - msarahan
+    - pelson
+    - ocefpaf
+    - mingwandroid
+  skip-lints:
+    - uses_setup_py
+    - python_build_tool_in_run
+    - missing_pip_check

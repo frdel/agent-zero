@@ -1,0 +1,91 @@
+{% set name = "libev" %}
+{% set version = "4.33" %}
+{% set sha256 = "507eb7b8d1015fbec5b935f34ebed15bf346bed04a11ab82b8eee848c4205aea" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  fn: {{ name }}-{{ version }}.tar.gz
+  url: http://dist.schmorp.de/libev/Attic/{{ name }}-{{ version }}.tar.gz
+  sha256: {{ sha256 }}
+
+build:
+  number: 1
+  skip: true  # [win]
+  run_exports:
+    - {{ pin_subpackage(name, max_pin='x.x') }}
+
+requirements:
+  build:
+    - libtool
+    - make  # [unix]
+    - libtool  # [unix]
+    - {{ compiler('c') }}
+  host:
+
+outputs:
+  - name: libev
+    script: install.sh  # [unix]
+    test:
+      commands:
+        # Check for headers.
+        - test -f "${PREFIX}/include/ev.h"
+        - test -f "${PREFIX}/include/ev++.h"
+        - test ! -f "${PREFIX}/include/event.h"
+        - test ! -f "${PREFIX}/lib/libev.a"
+        - test -f "${PREFIX}/lib/libev${SHLIBEXT}"  # [unix]
+
+  - name: libev-static
+    script: install.sh  # [unix]
+    requirements:
+      build:
+        - libtool
+        - make  # [unix]
+        - {{ compiler('c') }}
+      host:
+        - {{ pin_subpackage('libev', exact=True) }}
+      run:
+        - {{ pin_subpackage('libev', exact=True) }}
+    test:
+      commands:
+        - test ! -f "${PREFIX}/include/event.h"
+        - test -f "${PREFIX}/lib/libev.a"
+      host:
+        - {{ pin_subpackage('libev', exact=True) }}
+      run:
+        - {{ pin_subpackage('libev', exact=True) }}
+
+  # Compatibility wrapper to enable programs which use the libevent event loop to link against libev
+  # Split into a separate package to prevent clobbering libevent
+  - name: libev-libevent
+    script: install.sh  # [unix]
+    requirements:
+      build:
+        - libtool
+        - make  # [unix]
+        - {{ compiler('c') }}
+      host:
+        - {{ pin_subpackage('libev', exact=True) }}
+      run:
+        - {{ pin_subpackage('libev', exact=True) }}
+      run_constrained:
+        - libevent ==9999999999
+    test:
+      commands:
+        - test -f "${PREFIX}/include/event.h"
+
+
+about:
+  home: http://software.schmorp.de/pkg/libev.html
+  license: BSD-2-Clause
+  license_family: BSD
+  license_file: LICENSE
+  summary: A full-featured and high-performance event loop that is loosely modeled after libevent, but without its limitations and bugs.
+
+extra:
+  recipe-maintainers:
+    - petercable
+    - carlodri
+    - wolfv

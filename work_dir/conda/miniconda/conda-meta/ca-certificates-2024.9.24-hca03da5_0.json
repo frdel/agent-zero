@@ -1,0 +1,32 @@
+{
+  "build": "hca03da5_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [],
+  "extracted_package_dir": "/tmp/miniconda_temp/pkgs/ca-certificates-2024.9.24-hca03da5_0",
+  "files": [
+    "ssl/cacert.pem",
+    "ssl/cert.pem"
+  ],
+  "fn": "ca-certificates-2024.9.24-hca03da5_0.conda",
+  "license": "MPL-2.0",
+  "link": {
+    "source": "/tmp/miniconda_temp/pkgs/ca-certificates-2024.9.24-hca03da5_0",
+    "type": 1
+  },
+  "md5": "accbdf441cd91948aa9df966f0fd5106",
+  "name": "ca-certificates",
+  "package_tarball_full_path": "/tmp/miniconda_temp/pkgs/ca-certificates-2024.9.24-hca03da5_0.conda",
+  "paths_data": {
+    "paths": [],
+    "paths_version": 1
+  },
+  "requested_spec": "defaults/osx-arm64::ca-certificates==2024.9.24=hca03da5_0[md5=accbdf441cd91948aa9df966f0fd5106]",
+  "sha256": "2876be84db4578805ecedfc233efc0b3c66b624ff6eb8601750e69b084991e0c",
+  "size": 134187,
+  "subdir": "osx-arm64",
+  "timestamp": 1727794860000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/ca-certificates-2024.9.24-hca03da5_0.conda",
+  "version": "2024.9.24"
+}

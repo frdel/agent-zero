@@ -1,0 +1,67 @@
+{
+  "build": "hfb09047_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "lz4-c >=1.9.4,<1.10.0a0",
+    "xz >=5.4.6,<6.0a0",
+    "zlib >=1.2.13,<1.3.0a0"
+  ],
+  "extracted_package_dir": "/tmp/miniconda_temp/pkgs/zstd-1.5.6-hfb09047_0",
+  "files": [
+    "bin/unzstd",
+    "bin/zstd",
+    "bin/zstdcat",
+    "bin/zstdgrep",
+    "bin/zstdless",
+    "bin/zstdmt",
+    "include/zdict.h",
+    "include/zstd.h",
+    "include/zstd_errors.h",
+    "lib/cmake/zstd/zstdConfig.cmake",
+    "lib/cmake/zstd/zstdConfigVersion.cmake",
+    "lib/cmake/zstd/zstdTargets-release.cmake",
+    "lib/cmake/zstd/zstdTargets.cmake",
+    "lib/libzstd.1.5.6.dylib",
+    "lib/libzstd.1.dylib",
+    "lib/libzstd.a",
+    "lib/libzstd.dylib",
+    "lib/pkgconfig/libzstd.pc",
+    "share/man/man1/unzstd.1",
+    "share/man/man1/zstd.1",
+    "share/man/man1/zstdcat.1",
+    "share/man/man1/zstdgrep.1",
+    "share/man/man1/zstdless.1"
+  ],
+  "fn": "zstd-1.5.6-hfb09047_0.conda",
+  "license": "BSD-3-Clause AND GPL-2.0-or-later",
+  "link": {
+    "source": "/tmp/miniconda_temp/pkgs/zstd-1.5.6-hfb09047_0",
+    "type": 1
+  },
+  "md5": "94c4de9ee706e85c3558444bd8516f76",
+  "name": "zstd",
+  "package_tarball_full_path": "/tmp/miniconda_temp/pkgs/zstd-1.5.6-hfb09047_0.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "lib/pkgconfig/libzstd.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_2fwl36f6cv/croot/zstd_1728486951822/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold",
+        "sha256": "389d48f13fd7795d31c36f96063135b6f0ca1cbf7d75aef3796cb3f7d8665a8f",
+        "sha256_in_prefix": "542d72c15b240100597b721e39df99a0bbd588d03cdf3f9650c6efac4bfe9637",
+        "size_in_bytes": 699
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "defaults/osx-arm64::zstd==1.5.6=hfb09047_0[md5=94c4de9ee706e85c3558444bd8516f76]",
+  "sha256": "e166c47cd97400896b02b007b646bab64ded5df938f4ad339d8ad18f1d96cb59",
+  "size": 530063,
+  "subdir": "osx-arm64",
+  "timestamp": 1728486986000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/zstd-1.5.6-hfb09047_0.conda",
+  "version": "1.5.6"
+}

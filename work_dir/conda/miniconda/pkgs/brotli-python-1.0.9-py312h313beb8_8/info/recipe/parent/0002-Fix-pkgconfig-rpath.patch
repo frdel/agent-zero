@@ -1,0 +1,47 @@
+From 092446fafb4bfb81738853b7c7f76b293cd92a80 Mon Sep 17 00:00:00 2001
+From: Evgenii Kliuchnikov <eustas.ru@gmail.com>
+Date: Wed, 2 Sep 2020 10:49:49 +0200
+Subject: [PATCH] Revert "Add runtime linker path to pkg-config files (#740)"
+
+This reverts commit 31754d4ffce14153b5c2addf7a11019ec23f51c1.
+---
+ scripts/libbrotlicommon.pc.in | 2 +-
+ scripts/libbrotlidec.pc.in    | 2 +-
+ scripts/libbrotlienc.pc.in    | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/scripts/libbrotlicommon.pc.in b/scripts/libbrotlicommon.pc.in
+index 10ca969e..2a8cf7a3 100644
+--- a/scripts/libbrotlicommon.pc.in
++++ b/scripts/libbrotlicommon.pc.in
+@@ -7,5 +7,5 @@ Name: libbrotlicommon
+ URL: https://github.com/google/brotli
+ Description: Brotli common dictionary library
+ Version: @PACKAGE_VERSION@
+-Libs: -L${libdir} -R${libdir} -lbrotlicommon
++Libs: -L${libdir} -lbrotlicommon
+ Cflags: -I${includedir}
+diff --git a/scripts/libbrotlidec.pc.in b/scripts/libbrotlidec.pc.in
+index e7c3124f..6f8ef2e4 100644
+--- a/scripts/libbrotlidec.pc.in
++++ b/scripts/libbrotlidec.pc.in
+@@ -7,6 +7,6 @@ Name: libbrotlidec
+ URL: https://github.com/google/brotli
+ Description: Brotli decoder library
+ Version: @PACKAGE_VERSION@
+-Libs: -L${libdir} -R${libdir} -lbrotlidec
++Libs: -L${libdir} -lbrotlidec
+ Requires.private: libbrotlicommon >= 1.0.2
+ Cflags: -I${includedir}
+diff --git a/scripts/libbrotlienc.pc.in b/scripts/libbrotlienc.pc.in
+index 4dd0811b..2098afe2 100644
+--- a/scripts/libbrotlienc.pc.in
++++ b/scripts/libbrotlienc.pc.in
+@@ -7,6 +7,6 @@ Name: libbrotlienc
+ URL: https://github.com/google/brotli
+ Description: Brotli encoder library
+ Version: @PACKAGE_VERSION@
+-Libs: -L${libdir} -R${libdir} -lbrotlienc
++Libs: -L${libdir} -lbrotlienc
+ Requires.private: libbrotlicommon >= 1.0.2
+ Cflags: -I${includedir}

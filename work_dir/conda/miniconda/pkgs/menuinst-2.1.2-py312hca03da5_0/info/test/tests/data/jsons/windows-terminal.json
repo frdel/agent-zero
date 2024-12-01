@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$id": "https://schemas.conda.io/menuinst-1.schema.json",
+  "menu_name": "Package",
+  "menu_items": [
+    {
+      "name": "A",
+      "description": "Package A",
+      "icon": null,
+      "command": [
+        "testcommand_a.exe"
+      ],
+      "platforms": {
+        "win": {
+          "desktop": false,
+          "quicklaunch": false,
+          "terminal_profile": "A Terminal"
+        }
+      }
+    },
+    {
+      "name": "B",
+      "description": "Package B",
+      "icon": null,
+      "command": [
+        "testcommand_b.exe"
+      ],
+      "platforms": {
+        "win": {
+          "desktop": false,
+          "quicklaunch": false
+        }
+      }
+    }
+  ]
+}

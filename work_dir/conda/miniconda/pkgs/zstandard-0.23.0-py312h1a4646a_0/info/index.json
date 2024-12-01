@@ -1,0 +1,18 @@
+{
+  "arch": "arm64",
+  "build": "py312h1a4646a_0",
+  "build_number": 0,
+  "depends": [
+    "cffi >=1.11",
+    "python >=3.12,<3.13.0a0",
+    "zstd >=1.5.6,<1.5.7.0a0",
+    "zstd >=1.5.6,<1.6.0a0"
+  ],
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "name": "zstandard",
+  "platform": "osx",
+  "subdir": "osx-arm64",
+  "timestamp": 1728569240181,
+  "version": "0.23.0"
+}

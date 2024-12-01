@@ -1,0 +1,76 @@
+# This file created by conda-build 3.25.0
+# ------------------------------------------------
+
+package:
+  name: c-ares
+  version: 1.19.1
+source:
+  sha256: 321700399b72ed0e037d0074c629e7741f6b2ec2dda92956abe3e9671d3e268e
+  url: https://c-ares.org/download/c-ares-1.19.1.tar.gz
+build:
+  number: 0
+  run_exports:
+    - c-ares >=1.19.1,<2.0a0
+  string: h80987f9_0
+requirements:
+  build:
+    - bzip2 1.0.8 h620ffc9_4
+    - ca-certificates 2023.05.30 hca03da5_0
+    - cctools_osx-arm64 949.0.1 h332cad3_25
+    - clang 14.0.6 hca03da5_1
+    - clang-14 14.0.6 default_h1b80db6_1
+    - clang_osx-arm64 14.0.6 h9ff6fda_0
+    - clangxx 14.0.6 default_h1b80db6_1
+    - cmake-no-system 3.25.3 h313beb8_0
+    - compiler-rt 14.0.6 h4ccfd99_0
+    - compiler-rt_osx-arm64 14.0.6 h4fb70ea_0
+    - ld64_osx-arm64 530 h001ce53_25
+    - ldid 2.1.5 h20b2a84_3
+    - libclang-cpp14 14.0.6 default_h1b80db6_1
+    - libcxx 14.0.6 h848a8c0_0
+    - libffi 3.4.4 hca03da5_0
+    - libllvm14 14.0.6 h7ec7a93_3
+    - llvm-tools 14.0.6 hfd8c8a6_3
+    - ncurses 6.4 h313beb8_0
+    - ninja 1.10.2 hca03da5_5
+    - ninja-base 1.10.2 h525c30c_5
+    - openssl 3.0.10 h1a28f6b_2
+    - python 3.11.4 hb885b13_0
+    - readline 8.2 h1a28f6b_0
+    - sqlite 3.41.2 h80987f9_0
+    - tapi 1100.0.11 h8754e6a_1
+    - tk 8.6.12 hb8d0fd4_0
+    - tzdata 2023c h04d1e81_0
+    - xz 5.4.2 h80987f9_0
+    - zlib 1.2.13 h5a0b063_0
+  run: []
+  run_constraint:
+    - c-ares-static <0a0
+test:
+  commands:
+    - test -f ${PREFIX}/include/ares.h
+    - test -f ${PREFIX}/lib/libcares${SHLIB_EXT}
+    - test ! -f ${PREFIX}/lib/libcares.a
+    - test ! -f ${PREFIX}/lib/libcares_static.a
+about:
+  description: 'c-ares is a C library for asynchronous DNS requests (including name
+    resolves).
+
+    '
+  dev_url: https://github.com/c-ares/c-ares
+  doc_url: https://c-ares.org/docs.html
+  home: https://c-ares.org/
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE.md
+  summary: This is c-ares, an asynchronous resolver library
+extra:
+  copy_test_source_files: true
+  final: true
+  flow_run_id: 85e501ef-afa9-4076-92cf-776ace1366c4
+  recipe-maintainers:
+    - ocefpaf
+    - wesm
+    - xhochy
+  remote_url: git@github.com:AnacondaRecipes/c-ares-feedstock.git
+  sha: ad2761d18574c8f2dbc14f4e4c3c82bd5fe1d62a

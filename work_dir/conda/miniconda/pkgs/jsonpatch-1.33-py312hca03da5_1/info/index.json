@@ -1,0 +1,16 @@
+{
+  "arch": "arm64",
+  "build": "py312hca03da5_1",
+  "build_number": 1,
+  "depends": [
+    "jsonpointer >=1.9",
+    "python >=3.12,<3.13.0a0"
+  ],
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "name": "jsonpatch",
+  "platform": "osx",
+  "subdir": "osx-arm64",
+  "timestamp": 1714483382820,
+  "version": "1.33"
+}

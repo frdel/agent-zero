@@ -1,0 +1,44 @@
+{
+  "build": "py312h80987f9_1",
+  "build_number": 1,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "python >=3.12,<3.13.0a0"
+  ],
+  "extracted_package_dir": "/tmp/miniconda_temp/pkgs/pycosat-0.6.6-py312h80987f9_1",
+  "files": [
+    "lib/python3.12/site-packages/__pycache__/test_pycosat.cpython-312.pyc",
+    "lib/python3.12/site-packages/pycosat-0.6.6.dist-info/AUTHORS.md",
+    "lib/python3.12/site-packages/pycosat-0.6.6.dist-info/INSTALLER",
+    "lib/python3.12/site-packages/pycosat-0.6.6.dist-info/LICENSE",
+    "lib/python3.12/site-packages/pycosat-0.6.6.dist-info/METADATA",
+    "lib/python3.12/site-packages/pycosat-0.6.6.dist-info/RECORD",
+    "lib/python3.12/site-packages/pycosat-0.6.6.dist-info/REQUESTED",
+    "lib/python3.12/site-packages/pycosat-0.6.6.dist-info/WHEEL",
+    "lib/python3.12/site-packages/pycosat-0.6.6.dist-info/direct_url.json",
+    "lib/python3.12/site-packages/pycosat-0.6.6.dist-info/top_level.txt",
+    "lib/python3.12/site-packages/pycosat.cpython-312-darwin.so",
+    "lib/python3.12/site-packages/test_pycosat.py"
+  ],
+  "fn": "pycosat-0.6.6-py312h80987f9_1.conda",
+  "license": "MIT",
+  "link": {
+    "source": "/tmp/miniconda_temp/pkgs/pycosat-0.6.6-py312h80987f9_1",
+    "type": 1
+  },
+  "md5": "fc0da04b978398971a1e0b21bdd2c3cd",
+  "name": "pycosat",
+  "package_tarball_full_path": "/tmp/miniconda_temp/pkgs/pycosat-0.6.6-py312h80987f9_1.conda",
+  "paths_data": {
+    "paths": [],
+    "paths_version": 1
+  },
+  "requested_spec": "defaults/osx-arm64::pycosat==0.6.6=py312h80987f9_1[md5=fc0da04b978398971a1e0b21bdd2c3cd]",
+  "sha256": "29f878e8ce1871cfb41c2f3c52a8212059905b8d4a465a5bfbff473d76de0cc7",
+  "size": 89912,
+  "subdir": "osx-arm64",
+  "timestamp": 1714510965000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/pycosat-0.6.6-py312h80987f9_1.conda",
+  "version": "0.6.6"
+}

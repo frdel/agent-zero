@@ -1,0 +1,28 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema",
+    "$id": "https://schemas.conda.io/menuinst-1.schema.json",
+    "menu_name": "Example with entitlements",
+    "menu_items": [
+        {
+            "name": "Example with entitlements on macOS",
+            "description": "This examples include entitlements on macOS, which require code signing.",
+            "icon": null,
+            "command": [
+                "echo",
+                "entitlements"
+            ],
+            "platforms": {
+                "osx": {
+                    "CFBundleName": "Entitlements",
+                    "CFBundleDisplayName": "My Example with entitlements on macOS",
+                    "entitlements": [
+                        "com.apple.security.files.user-selected.read-write"
+                    ],
+                    "LSEnvironment": {
+                        "example_var": "example_value"
+                    }
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,6 @@
+package:
+  name: cph_test_data
+  version: 0.0.1
+
+build:
+  noarch: generic

@@ -1,0 +1,5 @@
+{
+  "channel_targets": "defaults",
+  "target_platform": "osx-arm64",
+  "variant": "plugin"
+}

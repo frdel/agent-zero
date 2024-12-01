@@ -1,0 +1,21 @@
+{
+  "build": "py312hd6b623d_100",
+  "build_number": 100,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [
+    "conda >=23.7"
+  ],
+  "depends": [
+    "python >=3.12,<3.13.0a0"
+  ],
+  "fn": "anaconda-anon-usage-0.4.4-py312hd6b623d_100.conda",
+  "license": "BSD-3-Clause",
+  "md5": "44b1ade4ac8291f5749dc3b92eebdfde",
+  "name": "anaconda-anon-usage",
+  "sha256": "1bc0119f471e134dd3cf808291d90927deb717623a7eced33e61ec3af9430b6f",
+  "size": 29782,
+  "subdir": "osx-arm64",
+  "timestamp": 1710965305000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/anaconda-anon-usage-0.4.4-py312hd6b623d_100.conda",
+  "version": "0.4.4"
+}

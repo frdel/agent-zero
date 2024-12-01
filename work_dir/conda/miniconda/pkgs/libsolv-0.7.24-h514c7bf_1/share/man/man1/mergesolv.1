@@ -1,0 +1,45 @@
+'\" t
+.\"     Title: mergesolv
+.\"    Author: [see the "Author" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/14/2018
+.\"    Manual: LIBSOLV
+.\"    Source: libsolv
+.\"  Language: English
+.\"
+.TH "MERGESOLV" "1" "09/14/2018" "libsolv" "LIBSOLV"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+mergesolv \- merge multiple files in solv format into a single one
+.SH "SYNOPSIS"
+.sp
+\fBmergesolv\fR [\fIOPTIONS\fR] \fIFILE1\&.solv\fR \fIFILE2\&.solv\fR \&...
+.SH "DESCRIPTION"
+.sp
+The mergesolv tool reads all solv files specified on the command line, and writes a merged version to standard output\&.
+.PP
+\fB\-X\fR
+.RS 4
+Autoexpand SUSE pattern and product provides into packages\&.
+.RE
+.SH "AUTHOR"
+.sp
+Michael Schroeder <mls@suse\&.de>

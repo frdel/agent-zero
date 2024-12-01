@@ -1,0 +1,62 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema",
+    "$id": "https://schemas.conda.io/menuinst-1.schema.json",
+    "menu_name": "Example with file type association",
+    "menu_items": [
+        {
+            "name": "FileTypeAssociation",
+            "description": "Testing file type association",
+            "icon": null,
+            "command": [
+                "{{ PYTHON }}",
+                "-c",
+                "import sys, pathlib as p; p.Path(r'__OUTPUT_FILE__').write_text(sys.argv[1])"
+            ],
+            "platforms": {
+                "win": {
+                    "icon": "doesnotexistbutitsok.{{ ICON_EXT }}",
+                    "command": [
+                        "{{ PYTHON }}",
+                        "-c",
+                        "import sys, pathlib as p; p.Path(r'__OUTPUT_FILE__').write_text(r'%1')"
+                    ],
+                    "file_extensions": [".menuinst"]
+                },
+                "linux": {
+                    "command": [
+                        "{{ PYTHON }}",
+                        "-c",
+                        "import sys, pathlib as p; p.Path(r'__OUTPUT_FILE__').write_text(r'%f')"
+                    ],
+                    "MimeType": ["application/x-menuinst"],
+                    "glob_patterns": {
+                        "application/x-menuinst": "*.menuinst"
+                    }
+                },
+                "osx": {
+                    "command": [
+                        "bash", "-c", "nc -l 40257 > __OUTPUT_FILE__"
+                    ],
+                    "event_handler": "for i in 1 2 3 4 5; do echo \"$*\" | nc 127.0.0.1 40257 && break || sleep 1; done",
+                    "CFBundleDocumentTypes": [
+                        {
+                            "CFBundleTypeName": "org.conda.menuinst.filetype-example",
+                            "CFBundleTypeRole": "Viewer",
+                            "LSItemContentTypes": ["org.conda.menuinst.main-file-uti"],
+                            "LSHandlerRank": "Default"
+                        }
+                    ],
+                    "UTExportedTypeDeclarations": [
+                        {
+                            "UTTypeConformsTo": ["public.data", "public.content"],
+                            "UTTypeIdentifier": "org.conda.menuinst.main-file-uti",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": ["menuinst"]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

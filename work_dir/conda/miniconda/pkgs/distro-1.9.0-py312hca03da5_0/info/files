@@ -1,0 +1,17 @@
+bin/distro
+lib/python3.12/site-packages/distro-1.9.0.dist-info/INSTALLER
+lib/python3.12/site-packages/distro-1.9.0.dist-info/LICENSE
+lib/python3.12/site-packages/distro-1.9.0.dist-info/METADATA
+lib/python3.12/site-packages/distro-1.9.0.dist-info/RECORD
+lib/python3.12/site-packages/distro-1.9.0.dist-info/REQUESTED
+lib/python3.12/site-packages/distro-1.9.0.dist-info/WHEEL
+lib/python3.12/site-packages/distro-1.9.0.dist-info/direct_url.json
+lib/python3.12/site-packages/distro-1.9.0.dist-info/entry_points.txt
+lib/python3.12/site-packages/distro-1.9.0.dist-info/top_level.txt
+lib/python3.12/site-packages/distro/__init__.py
+lib/python3.12/site-packages/distro/__main__.py
+lib/python3.12/site-packages/distro/__pycache__/__init__.cpython-312.pyc
+lib/python3.12/site-packages/distro/__pycache__/__main__.cpython-312.pyc
+lib/python3.12/site-packages/distro/__pycache__/distro.cpython-312.pyc
+lib/python3.12/site-packages/distro/distro.py
+lib/python3.12/site-packages/distro/py.typed

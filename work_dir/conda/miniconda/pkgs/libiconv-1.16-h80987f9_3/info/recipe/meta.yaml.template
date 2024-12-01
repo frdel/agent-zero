@@ -1,0 +1,60 @@
+{% set version = "1.16" %}
+
+package:
+  name: libiconv
+  version: {{ version }}
+
+source:
+  - url: https://ftp.gnu.org/pub/gnu/libiconv/libiconv-{{ version }}.tar.gz
+    sha256: e6a1b1b589654277ee790cce3734f07876ac4ccfaecbee8afa0b649cf529cc04
+    patches:
+      - glibc.patch  # [linux]
+      - CMakeLists.txt.patch  # [win]
+      - config.h.patch  # [win]
+      - configure.cmake.patch  # [win]
+
+build:
+  number: 3
+  run_exports:
+    # Pretty good recently, let's trust them.
+    #   https://abi-laboratory.pro/tracker/timeline/libiconv/
+    - {{ pin_subpackage('libiconv') }}
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - cmake     # [win]
+    - ninja     # [win]
+    - m2-gcc-libs  # [win]
+    - make  # [unix]
+    - libtool  # [unix]
+    - m2-patch  # [win]
+    - patch     # [not win]
+  host:
+
+test:
+  commands:
+    - iconv --help  # [not win]
+
+about:
+  home: https://www.gnu.org/software/libiconv/
+  license: GPL-3.0-or-later
+  license_file: 
+    - COPYING
+    - COPYING.LIB
+  license_family: GPL3
+  summary: "Provides iconv for systems which don't have one (or that cannot convert from/to Unicode.)"
+
+  description: |
+    This library provides an iconv() implementation, for use on systems which don't have one,
+    or whose implementation cannot convert from/to Unicode.
+  doc_url: https://www.gnu.org/savannah-checkouts/gnu/libiconv/documentation/libiconv-{{ version }}/iconv.1.html
+  dev_url: https://git.savannah.gnu.org/cgit/libiconv.git/tree/
+
+extra:
+  recipe-maintainers:
+    - ocefpaf
+    - jakirkham
+    - jhamman
+    - mingwandroid
+    - scopatz

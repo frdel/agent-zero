@@ -1,0 +1,18 @@
+{
+  "arch": "arm64",
+  "build": "py312hd6b623d_100",
+  "build_number": 100,
+  "constrains": [
+    "conda >=23.7"
+  ],
+  "depends": [
+    "python >=3.12,<3.13.0a0"
+  ],
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "name": "anaconda-anon-usage",
+  "platform": "osx",
+  "subdir": "osx-arm64",
+  "timestamp": 1710965305642,
+  "version": "0.4.4"
+}

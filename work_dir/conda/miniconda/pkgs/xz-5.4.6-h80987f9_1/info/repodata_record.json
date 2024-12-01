@@ -1,0 +1,17 @@
+{
+  "build": "h80987f9_1",
+  "build_number": 1,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [],
+  "fn": "xz-5.4.6-h80987f9_1.conda",
+  "license": "LGPL-2.1-or-later and GPL-2.0-or-later and 0BSD",
+  "md5": "054c438a7814dc516a1bb61787050945",
+  "name": "xz",
+  "sha256": "199f0cba11ca263e08c8b8d642f49051b37b098e9ca084bf15fa58d185119625",
+  "size": 380212,
+  "subdir": "osx-arm64",
+  "timestamp": 1714510992000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/xz-5.4.6-h80987f9_1.conda",
+  "version": "5.4.6"
+}

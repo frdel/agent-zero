@@ -1,0 +1,54 @@
+{
+  "build": "py312hca03da5_1",
+  "build_number": 1,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "python >=3.12,<3.13.0a0"
+  ],
+  "extracted_package_dir": "/tmp/miniconda_temp/pkgs/pluggy-1.0.0-py312hca03da5_1",
+  "files": [
+    "lib/python3.12/site-packages/pluggy-1.0.0.dist-info/INSTALLER",
+    "lib/python3.12/site-packages/pluggy-1.0.0.dist-info/LICENSE",
+    "lib/python3.12/site-packages/pluggy-1.0.0.dist-info/METADATA",
+    "lib/python3.12/site-packages/pluggy-1.0.0.dist-info/RECORD",
+    "lib/python3.12/site-packages/pluggy-1.0.0.dist-info/REQUESTED",
+    "lib/python3.12/site-packages/pluggy-1.0.0.dist-info/WHEEL",
+    "lib/python3.12/site-packages/pluggy-1.0.0.dist-info/direct_url.json",
+    "lib/python3.12/site-packages/pluggy-1.0.0.dist-info/top_level.txt",
+    "lib/python3.12/site-packages/pluggy/__init__.py",
+    "lib/python3.12/site-packages/pluggy/__pycache__/__init__.cpython-312.pyc",
+    "lib/python3.12/site-packages/pluggy/__pycache__/_callers.cpython-312.pyc",
+    "lib/python3.12/site-packages/pluggy/__pycache__/_hooks.cpython-312.pyc",
+    "lib/python3.12/site-packages/pluggy/__pycache__/_manager.cpython-312.pyc",
+    "lib/python3.12/site-packages/pluggy/__pycache__/_result.cpython-312.pyc",
+    "lib/python3.12/site-packages/pluggy/__pycache__/_tracing.cpython-312.pyc",
+    "lib/python3.12/site-packages/pluggy/__pycache__/_version.cpython-312.pyc",
+    "lib/python3.12/site-packages/pluggy/_callers.py",
+    "lib/python3.12/site-packages/pluggy/_hooks.py",
+    "lib/python3.12/site-packages/pluggy/_manager.py",
+    "lib/python3.12/site-packages/pluggy/_result.py",
+    "lib/python3.12/site-packages/pluggy/_tracing.py",
+    "lib/python3.12/site-packages/pluggy/_version.py"
+  ],
+  "fn": "pluggy-1.0.0-py312hca03da5_1.conda",
+  "license": "MIT",
+  "link": {
+    "source": "/tmp/miniconda_temp/pkgs/pluggy-1.0.0-py312hca03da5_1",
+    "type": 1
+  },
+  "md5": "3707a7b7e5983bbc71e6a1bef2b1b360",
+  "name": "pluggy",
+  "package_tarball_full_path": "/tmp/miniconda_temp/pkgs/pluggy-1.0.0-py312hca03da5_1.conda",
+  "paths_data": {
+    "paths": [],
+    "paths_version": 1
+  },
+  "requested_spec": "defaults/osx-arm64::pluggy==1.0.0=py312hca03da5_1[md5=3707a7b7e5983bbc71e6a1bef2b1b360]",
+  "sha256": "358db39f41ecf0e97236935af7b7522c5f21183ecbff18b6b10e3ce868d3a98e",
+  "size": 32525,
+  "subdir": "osx-arm64",
+  "timestamp": 1699237256000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/pluggy-1.0.0-py312hca03da5_1.conda",
+  "version": "1.0.0"
+}

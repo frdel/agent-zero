@@ -1,0 +1,11 @@
+--- source/config/Makefile.inc.in.orig	2012-11-26 11:59:38 +0400
++++ source/config/Makefile.inc.in	2012-11-26 12:08:56 +0400
+@@ -41,7 +41,7 @@
+ # The prefix for ICU libraries, normally 'icu'
+ ICUPREFIX = icu
+ PACKAGE = @PACKAGE@
+-LIBICU = lib$(ICUPREFIX)
++LIBICU = $(ICUPREFIX)
+ 
+ # Static library prefix and file extension
+ STATIC_PREFIX = s

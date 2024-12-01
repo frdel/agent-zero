@@ -1,0 +1,112 @@
+{% set version = "3.7.4" %}
+
+package:
+  name: libarchive
+  version: {{ version }}
+
+source:
+  url: https://github.com/libarchive/libarchive/releases/download/v{{ version }}/libarchive-{{ version }}.tar.gz
+  sha256: 7875d49596286055b52439ed42f044bd8ad426aa4cc5aabd96bfe7abb971d5e8
+  patches:
+    - patches/0001-Add-lib-to-CMAKE_FIND_LIBRARY_PREFIXES-for-lzma.patch
+    - patches/0003-VC9-compatibility-test-for-BCryptDeriveKeyPBKDF2.patch
+    - patches/0004-VC9-compatibility-define-BCRYPT_SUCCESS.patch
+    - patches/0006-VC-openssl-define-inline-as-__inline.patch
+    # These warnings are errors when compiling lz-4 support
+    - patches/0007-CMake-VC9-compatibility-ignore-some-warnings.patch
+    - patches/0008-VC9-compatibility-remove-C99.patch
+    - patches/0009-CMake-Force-Multi-threaded-DLL-runtime.patch
+build:
+  number: 0
+  #skip: true  # [win and vc<14]
+  run_exports:
+    # https://abi-laboratory.pro/index.php?view=timeline&l=libarchive
+    - {{ pin_subpackage('libarchive', max_pin='x.x') }}
+  # macOS' native crypto gets used here, but the headers are needed
+  ignore_run_exports:  # [osx]
+    - openssl  # [osx]
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - cmake
+    - ninja-base
+    - patch       # [not win]
+    - m2-patch    # [win]
+  host:
+    - msinttypes  # [win and vc<14]
+    - bzip2
+    - libiconv    # [not linux]
+    - lz4-c
+    - xz
+    # This is GPL-v2+, the libarchive authors explicitly ask that
+    # people do not link to this (and if we do, this would need to
+    # also be released as GPL-v2+, and that is against their wishes
+    # and it is not clear if that is even possible)
+    # https://github.com/libarchive/libarchive/releases/tag/v3.3.2
+    # "Linking libarchive against liblzo violates LZO GPL licence.
+    #  Please don't distribute binary packages of libarchive linked
+    #  against liblzo."
+    # - lzo
+    - openssl {{ openssl }} # [not osx]
+    - libxml2 {{ libxml2 }}
+    - zlib {{ zlib }}
+    - zstd {{ zstd }}
+  run:
+    - openssl  # [not osx]
+
+test:
+  requires:
+    - ripgrep
+  files:
+    - test-archives/hello_world.xar
+    - test-archives/archive.7z
+    - test-archives/hello_world.tar.zst
+  commands:
+    # Verify pkg-config file is in place.
+    - test -f "${PREFIX}/lib/pkgconfig/libarchive.pc"  # [unix]
+
+    # Verify headers are in place.
+    - test -f "${PREFIX}/include/archive.h"            # [unix]
+    - test -f "${PREFIX}/include/archive_entry.h"      # [unix]
+
+    # Verify libraries are in place.
+    - test -f "${PREFIX}/lib/libarchive.a"             # [unix]
+    - test -f "${PREFIX}/lib/libarchive${SHLIB_EXT}"   # [unix]
+
+    # Check for commands
+    - if not exist "%LIBRARY_BIN%\\bsdcat.exe" exit 1   # [win32]
+    - if not exist "%LIBRARY_BIN%\\bsdcpio.exe" exit 1  # [win32]
+    - bsdcat --version      # [unix or win64]
+    - bsdcpio --version     # [unix or win64]
+    - bsdtar --version      # [unix or win64]
+    - pushd test-archives   # [unix or win64]
+    -   bsdtar -vxf hello_world.xar 2>&1 | rg "x hello_world"   # [unix or win64]
+    -   bsdtar -vxf archive.7z 2>&1 | rg "x 7zip-archive"       # [unix or win64]
+    -   bsdtar -vxf hello_world.tar.zst 2>&1 | rg "greets"      # [unix or win64]
+    - popd   # [unix or win64]
+
+about:
+  home: https://libarchive.org/
+  license: BSD-2-Clause
+  license_file: COPYING
+  license_family: BSD
+  summary: Multi-format archive and compression library
+  description: |
+    Libarchive is an open-source BSD-licensed C programming library that provides streaming access 
+    to a variety of different archive formats, including tar, cpio, pax, Zip, and ISO9660 images. 
+    The distribution also includes bsdtar and bsdcpio, full-featured implementations of tar and cpio 
+    that use libarchive.
+    When reading archives, libarchive uses a robust automatic format detector that can automatically handle archives 
+    that have been compressed with gzip, bzip2, xz, lzip, and several other popular compression algorithms.
+  dev_url: https://github.com/libarchive/libarchive
+  doc_url: https://github.com/libarchive/libarchive/wiki
+
+extra:
+  recipe-maintainers:
+    - jakirkham
+    - mingwandroid
+    - ocefpaf
+  skip-lints:
+    - missing_tests
+    - host_section_needs_exact_pinnings

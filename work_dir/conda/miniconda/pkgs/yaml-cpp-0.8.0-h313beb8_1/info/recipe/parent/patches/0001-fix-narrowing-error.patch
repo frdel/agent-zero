@@ -1,0 +1,30 @@
+From fcbb8193b94921e058be7b563aea053531e5b2d9 Mon Sep 17 00:00:00 2001
+From: Gianfranco Costamagna <costamagnagianfranco@yahoo.it>
+Date: Sat, 19 Aug 2023 21:36:16 +0200
+Subject: [PATCH] Fix testsuite with gcc-13 (#1216)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+cd /<<PKGBUILDDIR>>/build-static/test && /usr/bin/c++ -DYAML_CPP_STATIC_DEFINE -I/<<PKGBUILDDIR>>/test/integration -I/<<PKGBUILDDIR>>/test -I/<<PKGBUILDDIR>>/src -I/<<PKGBUILDDIR>>/include -isystem /usr/src/googletest/googlemock/include -isystem /usr/src/googletest/googlemock -isystem /usr/src/googletest/googletest/include -isystem /usr/src/googletest/googletest -g -O2 -ffile-prefix-map=/<<PKGBUILDDIR>>=. -flto=auto -ffat-lto-objects -fstack-protector-strong -Wformat -Werror=format-security -fdebug-prefix-map=/<<PKGBUILDDIR>>=/usr/src/yaml-cpp-0.8.0+dfsg-1~build1 -Wdate-time -D_FORTIFY_SOURCE=2 -std=gnu++14 -Wno-variadic-macros -Wno-sign-compare -DGTEST_HAS_PTHREAD=1 -MD -MT test/CMakeFiles/yaml-cpp-tests.dir/binary_test.cpp.o -MF CMakeFiles/yaml-cpp-tests.dir/binary_test.cpp.o.d -o CMakeFiles/yaml-cpp-tests.dir/binary_test.cpp.o -c /<<PKGBUILDDIR>>/test/binary_test.cpp
+/<<PKGBUILDDIR>>/test/binary_test.cpp: In member function ‘virtual void BinaryTest_DecodingNoCrashOnNegative_Test::TestBody()’:
+/<<PKGBUILDDIR>>/test/binary_test.cpp:11:38: error: narrowing conversion of ‘-58’ from ‘int’ to ‘char’ [-Wnarrowing]
+   11 |   std::string input{-58, -1, -99, 109};
+      |                                      ^
+---
+ test/CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/test/CMakeLists.txt b/test/CMakeLists.txt
+index 351b03f81..c9e7f041b 100644
+--- a/test/CMakeLists.txt
++++ b/test/CMakeLists.txt
+@@ -33,7 +33,7 @@ target_include_directories(yaml-cpp-tests
+ target_compile_options(yaml-cpp-tests
+   PRIVATE
+     $<$<CXX_COMPILER_ID:Clang>:-Wno-c99-extensions -Wno-variadic-macros -Wno-sign-compare>
+-    $<$<CXX_COMPILER_ID:GNU>:-Wno-variadic-macros -Wno-sign-compare>)
++    $<$<CXX_COMPILER_ID:GNU>:-Wno-variadic-macros -Wno-sign-compare -Wno-narrowing>)
+ target_link_libraries(yaml-cpp-tests
+   PRIVATE
+     Threads::Threads

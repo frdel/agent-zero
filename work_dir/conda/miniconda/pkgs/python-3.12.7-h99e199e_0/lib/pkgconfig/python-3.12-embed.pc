@@ -1,0 +1,13 @@
+# See: man pkg-config
+prefix=/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_b8i1j7z6w5/croot/python-split_1728047644694/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: Python
+Description: Embed Python into an application
+Requires:
+Version: 3.12
+Libs.private: -ldl  -framework CoreFoundation
+Libs: -L${libdir} -lpython3.12
+Cflags: -I${includedir}/python3.12

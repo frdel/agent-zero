@@ -1,0 +1,559 @@
+{
+  "paths": [
+    {
+      "_path": "bin/mamba-package",
+      "path_type": "hardlink",
+      "sha256": "0ce392ace42e6963928a5d0297f28f8c45db45cdb5a008967771a4ecdec2860b",
+      "size_in_bytes": 444288
+    },
+    {
+      "_path": "include/mamba/api/c_api.h",
+      "path_type": "hardlink",
+      "sha256": "60e7f79c4369fb3d64b0c43bcbfbba0be4eee962a7165830a1760cad122deace",
+      "size_in_bytes": 1285
+    },
+    {
+      "_path": "include/mamba/api/channel_loader.hpp",
+      "path_type": "hardlink",
+      "sha256": "1981145d36e2c1869466818cc84d67a6cd189737a78e31ce20e638bb4dba6613",
+      "size_in_bytes": 235
+    },
+    {
+      "_path": "include/mamba/api/clean.hpp",
+      "path_type": "hardlink",
+      "sha256": "4b08f45451582f1088bcda50c4980af995819651acee8f56837ef2c5213ca73b",
+      "size_in_bytes": 668
+    },
+    {
+      "_path": "include/mamba/api/config.hpp",
+      "path_type": "hardlink",
+      "sha256": "636af7f29a6b68574fb03159500b03780e065f9eab2158da13b66b39b3752773",
+      "size_in_bytes": 458
+    },
+    {
+      "_path": "include/mamba/api/configuration.hpp",
+      "path_type": "hardlink",
+      "sha256": "5a1332fe3af2e3103a4b885ddb07ca903ce8e808e9e24ce9b0eafb2abdbc7d53",
+      "size_in_bytes": 30099
+    },
+    {
+      "_path": "include/mamba/api/configuration_impl.hpp",
+      "path_type": "hardlink",
+      "sha256": "9c395d2161922187b35e79901bee27f15df9715469876a380766018f1a7bb391",
+      "size_in_bytes": 9229
+    },
+    {
+      "_path": "include/mamba/api/constants.hpp",
+      "path_type": "hardlink",
+      "sha256": "ebcf51757391895ea721b82387f737329312e183e7c938888b0beb54957f64e8",
+      "size_in_bytes": 817
+    },
+    {
+      "_path": "include/mamba/api/create.hpp",
+      "path_type": "hardlink",
+      "sha256": "9c6f59c67d7e8e944c2cb1a3668127655e1f5a0c0f33169095265150951e1f28",
+      "size_in_bytes": 611
+    },
+    {
+      "_path": "include/mamba/api/info.hpp",
+      "path_type": "hardlink",
+      "sha256": "3f307e30461b9db7a90df5c150025edea58167178a75adc0e19b1cd49eaa0fea",
+      "size_in_bytes": 559
+    },
+    {
+      "_path": "include/mamba/api/install.hpp",
+      "path_type": "hardlink",
+      "sha256": "04c32cb1eb23325102923c2a12ad4fc11220ffcaf7b8ffee3527a279dac82818",
+      "size_in_bytes": 3174
+    },
+    {
+      "_path": "include/mamba/api/list.hpp",
+      "path_type": "hardlink",
+      "sha256": "83d5be06c86ad685e6a731dff312cc685af2dd24a5b21bbb5f2b79757c58cab1",
+      "size_in_bytes": 649
+    },
+    {
+      "_path": "include/mamba/api/remove.hpp",
+      "path_type": "hardlink",
+      "sha256": "1f00786b561398572e0ae9dead07e8f67703c3d3bf3f4527ac3750dad431f8e0",
+      "size_in_bytes": 674
+    },
+    {
+      "_path": "include/mamba/api/repoquery.hpp",
+      "path_type": "hardlink",
+      "sha256": "8c14b9431dde273f52fdf8215525b28d066919e4b5068fbd46a9487032a1940d",
+      "size_in_bytes": 426
+    },
+    {
+      "_path": "include/mamba/api/shell.hpp",
+      "path_type": "hardlink",
+      "sha256": "5b0a42f04e09c1e158eb33a353addc4bb3ed5aeb951f4be617e8323c086b0c5c",
+      "size_in_bytes": 875
+    },
+    {
+      "_path": "include/mamba/api/update.hpp",
+      "path_type": "hardlink",
+      "sha256": "234a702c17d12cb1271e5ba2f358226d6e777a8ed917094ad503a78d19882781",
+      "size_in_bytes": 478
+    },
+    {
+      "_path": "include/mamba/core/activation.hpp",
+      "path_type": "hardlink",
+      "sha256": "1a945fcc805bb981cd6b3aecb7f2b41f2feff5614d3a60f020e7c539d9a44b1b",
+      "size_in_bytes": 6714
+    },
+    {
+      "_path": "include/mamba/core/channel.hpp",
+      "path_type": "hardlink",
+      "sha256": "86cb46492c8aee7e775a5ad3ff461c7a9342e46f9a723e47e57bc8aa05c723e7",
+      "size_in_bytes": 4545
+    },
+    {
+      "_path": "include/mamba/core/common_types.hpp",
+      "path_type": "hardlink",
+      "sha256": "71926bd155e1ed2436160ea9443fab6089039266bdebb3543fbd3f3817ed633e",
+      "size_in_bytes": 440
+    },
+    {
+      "_path": "include/mamba/core/context.hpp",
+      "path_type": "hardlink",
+      "sha256": "8baaf83f11e3471dd3cbb39f725e7896b13f1131dcf50451f8e25094f7c83fb8",
+      "size_in_bytes": 7964
+    },
+    {
+      "_path": "include/mamba/core/download.hpp",
+      "path_type": "hardlink",
+      "sha256": "ab93406c815ff28b73f9e6f3d9883d6c874c20887c470cc02de728c622c44164",
+      "size_in_bytes": 3102
+    },
+    {
+      "_path": "include/mamba/core/env_lockfile.hpp",
+      "path_type": "hardlink",
+      "sha256": "c646b8185ff95ade48d5297745bf47783020cf8f0ec7f733c6f33ee2a39e8c89",
+      "size_in_bytes": 3719
+    },
+    {
+      "_path": "include/mamba/core/environment.hpp",
+      "path_type": "hardlink",
+      "sha256": "d4ee63e5d7a59b7b887e1cc51ea46ceb3e7d315dc179a6c66046d4d3647531bf",
+      "size_in_bytes": 1513
+    },
+    {
+      "_path": "include/mamba/core/environments_manager.hpp",
+      "path_type": "hardlink",
+      "sha256": "295dfc7104c97abaed66ac8e68a607e11ccf48e21540e651c28cdeeefea6ce37",
+      "size_in_bytes": 997
+    },
+    {
+      "_path": "include/mamba/core/error_handling.hpp",
+      "path_type": "hardlink",
+      "sha256": "81022e80d42d45ca7a9211a7c4ef7b598f6a2731ad2c8be2889eb6603aae248f",
+      "size_in_bytes": 9651
+    },
+    {
+      "_path": "include/mamba/core/execution.hpp",
+      "path_type": "hardlink",
+      "sha256": "39b7dfbd27686baac0ef1fe7ac05c35ec1899a9f57744e9759da8fc6316ad8a3",
+      "size_in_bytes": 5936
+    },
+    {
+      "_path": "include/mamba/core/fetch.hpp",
+      "path_type": "hardlink",
+      "sha256": "4e15067758f7e1f390943026228db6359b8c6fed259b5275e0c9ac66709a8336",
+      "size_in_bytes": 5109
+    },
+    {
+      "_path": "include/mamba/core/fsutil.hpp",
+      "path_type": "hardlink",
+      "sha256": "b262ac1b516aa95a8cf2151142aba1cf835c293d3e5c0eaa5a6ef8eec8da86e8",
+      "size_in_bytes": 1556
+    },
+    {
+      "_path": "include/mamba/core/history.hpp",
+      "path_type": "hardlink",
+      "sha256": "2958df0d51647f3445628ee0bea9469ea04fbfab9790ce68d03f399af7f1e533",
+      "size_in_bytes": 1577
+    },
+    {
+      "_path": "include/mamba/core/invoke.hpp",
+      "path_type": "hardlink",
+      "sha256": "024f8df5dfe524eafe7eb1a17829a99cd261a03b2e7b18d940d2c9fa84ac832e",
+      "size_in_bytes": 1414
+    },
+    {
+      "_path": "include/mamba/core/link.hpp",
+      "path_type": "hardlink",
+      "sha256": "07a104e1f22e5a3d0979b7190a5660e8167ba1f23efe2ce68cd6e34770a7b70d",
+      "size_in_bytes": 3026
+    },
+    {
+      "_path": "include/mamba/core/mamba_fs.hpp",
+      "path_type": "hardlink",
+      "sha256": "fbb74e3c89af8e421e769212ce30e836312d245759a251d4aa66899194423c2f",
+      "size_in_bytes": 46004
+    },
+    {
+      "_path": "include/mamba/core/match_spec.hpp",
+      "path_type": "hardlink",
+      "sha256": "c2e7b105ee35cf8b5f6e8cf790b205863f3b8d400ba29489b1785bad7e481f77",
+      "size_in_bytes": 1307
+    },
+    {
+      "_path": "include/mamba/core/menuinst.hpp",
+      "path_type": "hardlink",
+      "sha256": "d6b6ee73297fdc5769e038277d053ae7927f1370f7510df3709e330ecfa23397",
+      "size_in_bytes": 366
+    },
+    {
+      "_path": "include/mamba/core/output.hpp",
+      "path_type": "hardlink",
+      "sha256": "c1c574c3e4271b2f1eb3a64074ec1d232aa24fd149cd70ddfef77dd623caa8b5",
+      "size_in_bytes": 5369
+    },
+    {
+      "_path": "include/mamba/core/package_cache.hpp",
+      "path_type": "hardlink",
+      "sha256": "98d23673a117d0d38d439bddfd145c92f5327f031144374032a7781008d37066",
+      "size_in_bytes": 2062
+    },
+    {
+      "_path": "include/mamba/core/package_download.hpp",
+      "path_type": "hardlink",
+      "sha256": "70d1f511e08989ad2979adf37572212fbfa91e9ad3576e6f9870e5da31364439",
+      "size_in_bytes": 2444
+    },
+    {
+      "_path": "include/mamba/core/package_handling.hpp",
+      "path_type": "hardlink",
+      "sha256": "5b51237d86f4c57928f233cf45a7e35f91c8c6b05ae6462b32b80acb139459fb",
+      "size_in_bytes": 1610
+    },
+    {
+      "_path": "include/mamba/core/package_info.hpp",
+      "path_type": "hardlink",
+      "sha256": "0e07df6be26870c9e30a902fccb98c3ada8636579a35e4418e4a63fd58129081",
+      "size_in_bytes": 2134
+    },
+    {
+      "_path": "include/mamba/core/package_paths.hpp",
+      "path_type": "hardlink",
+      "sha256": "020d08531a1b3cc6587c19b068b10aaaf7ac06c682cd72430ae98c84fb6c205d",
+      "size_in_bytes": 1712
+    },
+    {
+      "_path": "include/mamba/core/palette.hpp",
+      "path_type": "hardlink",
+      "sha256": "46115cd3ca1eb4aab08756ffc895667a4a201f94a65f8ee14ae6b77e2105dcbf",
+      "size_in_bytes": 2906
+    },
+    {
+      "_path": "include/mamba/core/pinning.hpp",
+      "path_type": "hardlink",
+      "sha256": "73d0757152fdb6ddd73ab2e3f9a48209ead1fff327d84b0f22a757d58367f2b5",
+      "size_in_bytes": 514
+    },
+    {
+      "_path": "include/mamba/core/pool.hpp",
+      "path_type": "hardlink",
+      "sha256": "774cd25ca205c90d038a75a29487647de007cf919a3b4ffbee719e626f3b64e4",
+      "size_in_bytes": 2581
+    },
+    {
+      "_path": "include/mamba/core/prefix_data.hpp",
+      "path_type": "hardlink",
+      "sha256": "632c3e66861a23161de9082844faafcbc0b395d383d9d9d66d9e574e0adbe095",
+      "size_in_bytes": 1361
+    },
+    {
+      "_path": "include/mamba/core/progress_bar.hpp",
+      "path_type": "hardlink",
+      "sha256": "ae7c900188ad9d81980669d703761bdc0fdfe6740cb2726abcade3c2f4751430",
+      "size_in_bytes": 3087
+    },
+    {
+      "_path": "include/mamba/core/query.hpp",
+      "path_type": "hardlink",
+      "sha256": "9998a4b691bc51d1c068cefec2a81d37468650e90e6860a43073864268d68bf4",
+      "size_in_bytes": 2982
+    },
+    {
+      "_path": "include/mamba/core/repo.hpp",
+      "path_type": "hardlink",
+      "sha256": "3f62608c407dda6e0e3bcb483d6d01dfac4264d84ee342dfe4a5864b79529610",
+      "size_in_bytes": 3106
+    },
+    {
+      "_path": "include/mamba/core/run.hpp",
+      "path_type": "hardlink",
+      "sha256": "d00ec0a39e8b2e30c9c44e2db5c72f4182d9f89d2a0b1a7ae33edccb8aeb8bb1",
+      "size_in_bytes": 1580
+    },
+    {
+      "_path": "include/mamba/core/satisfiability_error.hpp",
+      "path_type": "hardlink",
+      "sha256": "07eaf48b117ba1db6fb227078e3e852dd030abe674b2b650de401b0b4e000047",
+      "size_in_bytes": 10919
+    },
+    {
+      "_path": "include/mamba/core/shell_init.hpp",
+      "path_type": "hardlink",
+      "sha256": "7ca1303cf83f1be4df9fe560de4fa22d699e3532115d689a8b0bf19872016601",
+      "size_in_bytes": 2555
+    },
+    {
+      "_path": "include/mamba/core/solution.hpp",
+      "path_type": "hardlink",
+      "sha256": "587e3d8666b8fd468c478d0136cc639e3cc623ea0c157eb542c026772aca85f6",
+      "size_in_bytes": 6354
+    },
+    {
+      "_path": "include/mamba/core/solver.hpp",
+      "path_type": "hardlink",
+      "sha256": "7cf02e1124d28682bfd0d967d9e11924e28325989073e8acdbf6c3b84aa04660",
+      "size_in_bytes": 4354
+    },
+    {
+      "_path": "include/mamba/core/subdirdata.hpp",
+      "path_type": "hardlink",
+      "sha256": "8a43b45b4bf47d5f8347fb678423c150eef2137e2c5041e5e2e562d228bbb374",
+      "size_in_bytes": 5196
+    },
+    {
+      "_path": "include/mamba/core/tasksync.hpp",
+      "path_type": "hardlink",
+      "sha256": "a6a35c1b77cf12cebcdddd45bdaeafa5b8d83898233c94148367a2afdd2876a8",
+      "size_in_bytes": 7693
+    },
+    {
+      "_path": "include/mamba/core/thread_utils.hpp",
+      "path_type": "hardlink",
+      "sha256": "dcaf283313a1d93b0cdfe0cafdff6be8f86fa932f52bef293c8a39cb8602ab15",
+      "size_in_bytes": 5522
+    },
+    {
+      "_path": "include/mamba/core/timeref.hpp",
+      "path_type": "hardlink",
+      "sha256": "a2d4e95542478e0decf9bb7ac932823522b1913604bdc748bfca85cf390dd5b1",
+      "size_in_bytes": 595
+    },
+    {
+      "_path": "include/mamba/core/transaction.hpp",
+      "path_type": "hardlink",
+      "sha256": "92729a2a8803351e66062dcf5190362513787f16d1907429e044f9f9011401c3",
+      "size_in_bytes": 2953
+    },
+    {
+      "_path": "include/mamba/core/transaction_context.hpp",
+      "path_type": "hardlink",
+      "sha256": "aadfccb544dc1358f4648af1ceca9afd80b94fa59c1d8736245c5e2bd22db012",
+      "size_in_bytes": 2571
+    },
+    {
+      "_path": "include/mamba/core/util.hpp",
+      "path_type": "hardlink",
+      "sha256": "6ca350314d4ad40fae7ec96d28129284db33e03f6d2ac5331e67ecd9f97a40e8",
+      "size_in_bytes": 12553
+    },
+    {
+      "_path": "include/mamba/core/util_os.hpp",
+      "path_type": "hardlink",
+      "sha256": "3ac56af4d6437b443a2fe5e48b902a494de410afde93f9dbac4b2cefa418560a",
+      "size_in_bytes": 1746
+    },
+    {
+      "_path": "include/mamba/core/util_random.hpp",
+      "path_type": "hardlink",
+      "sha256": "70cdb5f129ec7133b32bea43d7d8799a5c0e06d9cb171e20907ffcbe2b28a5ca",
+      "size_in_bytes": 1976
+    },
+    {
+      "_path": "include/mamba/core/util_scope.hpp",
+      "path_type": "hardlink",
+      "sha256": "9ba06fd71a078e230b2842ec9f2015ca74d31676391b9418d90d2050f3a241c0",
+      "size_in_bytes": 1066
+    },
+    {
+      "_path": "include/mamba/core/validate.hpp",
+      "path_type": "hardlink",
+      "sha256": "a72ff4cd5948b0dbe1a07d5f85472c4ae541ceadc9763f3fdaed035987931fb1",
+      "size_in_bytes": 23128
+    },
+    {
+      "_path": "include/mamba/core/virtual_packages.hpp",
+      "path_type": "hardlink",
+      "sha256": "b9164bfde5e33be93f80813752b8f7d2757787974cbba36b6f1bcdfee591f1bc",
+      "size_in_bytes": 777
+    },
+    {
+      "_path": "include/mamba/specs/archive.hpp",
+      "path_type": "hardlink",
+      "sha256": "6c5fdd4f33f8206a1f55a02136b7260f2715f2056a4de6fd48ea1cd9e056e0a4",
+      "size_in_bytes": 1980
+    },
+    {
+      "_path": "include/mamba/specs/platform.hpp",
+      "path_type": "hardlink",
+      "sha256": "7a8230e110c1d3a4c3c38b40c7fb5fb4f209c3832e7c8f87ed149df5f9b1007e",
+      "size_in_bytes": 1380
+    },
+    {
+      "_path": "include/mamba/specs/repo_data.hpp",
+      "path_type": "hardlink",
+      "sha256": "552c73c06666a989bc43bb29e262a0e78c565ac42bf77d35a9f693b61e19e5c8",
+      "size_in_bytes": 8392
+    },
+    {
+      "_path": "include/mamba/specs/version.hpp",
+      "path_type": "hardlink",
+      "sha256": "4997c405a7d90c788fec8f44856f67e604e9ac2c00e25d354e1ee5509cd48baa",
+      "size_in_bytes": 7906
+    },
+    {
+      "_path": "include/mamba/specs/version_spec.hpp",
+      "path_type": "hardlink",
+      "sha256": "6f9a63998ae618a3fda82df2950e445d171075127afcf19f87b0115beeb96d2c",
+      "size_in_bytes": 5064
+    },
+    {
+      "_path": "include/mamba/util/build.hpp",
+      "path_type": "hardlink",
+      "sha256": "ac424aaebaf9118290990573049a23bd3bbc84467d0052d94b28ddd25ddb9da0",
+      "size_in_bytes": 838
+    },
+    {
+      "_path": "include/mamba/util/cast.hpp",
+      "path_type": "hardlink",
+      "sha256": "63e4b8e0d9a21df48c7e2727c159ed061a629b9d7c367860c5c6d344d8778447",
+      "size_in_bytes": 3545
+    },
+    {
+      "_path": "include/mamba/util/compare.hpp",
+      "path_type": "hardlink",
+      "sha256": "08f20fe84cbfa0ce62e9c6ff48e9cc9f14ab411d662682a17d9a154ae110dda0",
+      "size_in_bytes": 2105
+    },
+    {
+      "_path": "include/mamba/util/deprecation.hpp",
+      "path_type": "hardlink",
+      "sha256": "e49432e92db4e37679a0ac4504a83bdf86eacd5aba9426d9824437fefe73c921",
+      "size_in_bytes": 612
+    },
+    {
+      "_path": "include/mamba/util/flat_binary_tree.hpp",
+      "path_type": "hardlink",
+      "sha256": "10ed44dd85142c7e3adc7467da23b161700976382e5bebdfe9fbc96092634829",
+      "size_in_bytes": 7745
+    },
+    {
+      "_path": "include/mamba/util/flat_bool_expr_tree.hpp",
+      "path_type": "hardlink",
+      "sha256": "4b1894f1748cfe4ebc1c5ceb45bedbbe7d11fd725cbe8f5abc0b2d4543533c20",
+      "size_in_bytes": 16626
+    },
+    {
+      "_path": "include/mamba/util/flat_set.hpp",
+      "path_type": "hardlink",
+      "sha256": "b85dfad98590122ee8e25952993863a9a90948232e4ed1aceb817204d883d4f2",
+      "size_in_bytes": 10973
+    },
+    {
+      "_path": "include/mamba/util/functional.hpp",
+      "path_type": "hardlink",
+      "sha256": "0d324c3ca6412c479724516401451e7e79340b807333caee21c8dafbd57e46d3",
+      "size_in_bytes": 770
+    },
+    {
+      "_path": "include/mamba/util/graph.hpp",
+      "path_type": "hardlink",
+      "sha256": "58e6f764373b8a401e7df15b2a0b4ed913a17fe385d52055c474425da8a5f1b7",
+      "size_in_bytes": 24043
+    },
+    {
+      "_path": "include/mamba/util/iterator.hpp",
+      "path_type": "hardlink",
+      "sha256": "f2cf4335813fb0f426fe635a0c273f511eed915ff733f2821322cc5ab920f06f",
+      "size_in_bytes": 13922
+    },
+    {
+      "_path": "include/mamba/util/path_manip.hpp",
+      "path_type": "hardlink",
+      "sha256": "89dc4990307e55676dc7c1848b4e27c905405e31455fd9420728b99bc228a997",
+      "size_in_bytes": 1244
+    },
+    {
+      "_path": "include/mamba/util/string.hpp",
+      "path_type": "hardlink",
+      "sha256": "9f9c7a72e1488a226f3e768975c4fad255dc3c4079fa81fdda8c02fde123b4e0",
+      "size_in_bytes": 24329
+    },
+    {
+      "_path": "include/mamba/util/type_traits.hpp",
+      "path_type": "hardlink",
+      "sha256": "ba13023bfe30d1f0aa044a0c0e7fc207912fba6832095f486eb1de4a4e219b08",
+      "size_in_bytes": 1489
+    },
+    {
+      "_path": "include/mamba/util/url.hpp",
+      "path_type": "hardlink",
+      "sha256": "6788268c15afeb6e69a3df82b208a3999cc57379c8c8762daed796edea1032e8",
+      "size_in_bytes": 6009
+    },
+    {
+      "_path": "include/mamba/util/url_manip.hpp",
+      "path_type": "hardlink",
+      "sha256": "4a40e401098ac61a58bc9d658bf1bc57362f6ba821a319cee31b6970b1f12cda",
+      "size_in_bytes": 4519
+    },
+    {
+      "_path": "include/mamba/version.hpp",
+      "path_type": "hardlink",
+      "sha256": "cdc9458680cc64e0d03b4164cff0ecf90b1340e0ea170e7c6dbd3d009caaa71f",
+      "size_in_bytes": 1208
+    },
+    {
+      "_path": "lib/cmake/libmamba/libmambaConfig.cmake",
+      "path_type": "hardlink",
+      "sha256": "b4ec9d04b944182b229b3b7ec4be36d5e106cccf4dfe192306528ed30371620e",
+      "size_in_bytes": 2685
+    },
+    {
+      "_path": "lib/cmake/libmamba/libmambaConfigVersion.cmake",
+      "path_type": "hardlink",
+      "sha256": "b819b011076ec5141e094b0506483f19c882916ecca4b0d22ebdac0514e6dee5",
+      "size_in_bytes": 1861
+    },
+    {
+      "_path": "lib/cmake/libmamba/libmambaTargets-release.cmake",
+      "path_type": "hardlink",
+      "sha256": "d2a09959eb89c1bb84c92b40ea8b11e2aa1e3b4dc472ef65b08551820917c3d0",
+      "size_in_bytes": 833
+    },
+    {
+      "_path": "lib/cmake/libmamba/libmambaTargets.cmake",
+      "file_mode": "text",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_14wu5sk1ap/croot/mamba-split_1725563369022/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+      "sha256": "1942a6ee7a833a3b48eabaa5809fd322708eeb3fc5968903a910d80642f406ae",
+      "size_in_bytes": 5899
+    },
+    {
+      "_path": "lib/libmamba.2.0.0.dylib",
+      "path_type": "hardlink",
+      "sha256": "edcd5a1c22ce523be98677e4390a070f2fe9f3c1883c13b0f3d90ddb5259f0f8",
+      "size_in_bytes": 3931440
+    },
+    {
+      "_path": "lib/libmamba.2.dylib",
+      "path_type": "softlink",
+      "sha256": "edcd5a1c22ce523be98677e4390a070f2fe9f3c1883c13b0f3d90ddb5259f0f8",
+      "size_in_bytes": 3931440
+    },
+    {
+      "_path": "lib/libmamba.dylib",
+      "path_type": "softlink",
+      "sha256": "edcd5a1c22ce523be98677e4390a070f2fe9f3c1883c13b0f3d90ddb5259f0f8",
+      "size_in_bytes": 3931440
+    }
+  ],
+  "paths_version": 1
+}

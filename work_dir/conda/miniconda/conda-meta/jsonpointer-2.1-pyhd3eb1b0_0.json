@@ -1,0 +1,55 @@
+{
+  "build": "pyhd3eb1b0_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/noarch",
+  "constrains": [],
+  "depends": [
+    "python"
+  ],
+  "extracted_package_dir": "/tmp/miniconda_temp/pkgs/jsonpointer-2.1-pyhd3eb1b0_0",
+  "files": [
+    "bin/jsonpointer",
+    "lib/python3.12/site-packages/jsonpointer-2.1-py3.6.egg-info/PKG-INFO",
+    "lib/python3.12/site-packages/jsonpointer-2.1-py3.6.egg-info/SOURCES.txt",
+    "lib/python3.12/site-packages/jsonpointer-2.1-py3.6.egg-info/dependency_links.txt",
+    "lib/python3.12/site-packages/jsonpointer-2.1-py3.6.egg-info/top_level.txt",
+    "lib/python3.12/site-packages/jsonpointer.py",
+    "lib/python3.12/site-packages/__pycache__/jsonpointer.cpython-312.pyc"
+  ],
+  "fn": "jsonpointer-2.1-pyhd3eb1b0_0.conda",
+  "license": "BSD 3-Clause",
+  "link": {
+    "source": "/tmp/miniconda_temp/pkgs/jsonpointer-2.1-pyhd3eb1b0_0",
+    "type": 1
+  },
+  "md5": "298ff809e733cb04366e4e629c65aa8d",
+  "name": "jsonpointer",
+  "noarch": "python",
+  "package_tarball_full_path": "/tmp/miniconda_temp/pkgs/jsonpointer-2.1-pyhd3eb1b0_0.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "python-scripts/jsonpointer",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/tmp/build/80754af9/jsonpointer_1615660556387/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "67c40790083f55d0128220565b66fa320e9d12fec90993f0974f72ee4722c8c7",
+        "sha256_in_prefix": "1b31b52d16e452a429542d380fa09dd89724a93116ca855225f0734de83e6963",
+        "size_in_bytes": 2087
+      },
+      {
+        "_path": "lib/python3.12/site-packages/__pycache__/jsonpointer.cpython-312.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "defaults/noarch::jsonpointer==2.1=pyhd3eb1b0_0[md5=298ff809e733cb04366e4e629c65aa8d]",
+  "sha256": "739af990230fb811bc0c03a7393ccb361d371d85246c4ef1d5185e7e0a1c2810",
+  "size": 9495,
+  "subdir": "noarch",
+  "timestamp": 1615660585000,
+  "url": "https://repo.anaconda.com/pkgs/main/noarch/jsonpointer-2.1-pyhd3eb1b0_0.conda",
+  "version": "2.1"
+}

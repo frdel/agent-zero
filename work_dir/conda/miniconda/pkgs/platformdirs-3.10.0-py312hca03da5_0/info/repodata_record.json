@@ -1,0 +1,19 @@
+{
+  "build": "py312hca03da5_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "python >=3.12,<3.13.0a0"
+  ],
+  "fn": "platformdirs-3.10.0-py312hca03da5_0.conda",
+  "license": "MIT",
+  "md5": "c4e538a15f937d148b4377fd1266b510",
+  "name": "platformdirs",
+  "sha256": "505c0e73db04bf951cd235027320137baff44e7815d6a4bb4d6c691337ac63f2",
+  "size": 37670,
+  "subdir": "osx-arm64",
+  "timestamp": 1701803031000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/platformdirs-3.10.0-py312hca03da5_0.conda",
+  "version": "3.10.0"
+}

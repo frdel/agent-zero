@@ -1,0 +1,5 @@
+[console_scripts]
+conda-content-trust = conda_content_trust.cli:cli
+
+[conda]
+conda-content-trust = conda_content_trust.plugin

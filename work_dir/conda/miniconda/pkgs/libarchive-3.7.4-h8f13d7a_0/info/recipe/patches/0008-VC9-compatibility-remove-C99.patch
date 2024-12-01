@@ -1,0 +1,98 @@
+diff -Naur libarchive-3.4.3.orig/libarchive/archive_read_support_filter_lz4.c libarchive-3.4.3/libarchive/archive_read_support_filter_lz4.c
+--- libarchive-3.4.3.orig/libarchive/archive_read_support_filter_lz4.c	2020-05-19 20:48:25.000000000 -0300
++++ libarchive-3.4.3/libarchive/archive_read_support_filter_lz4.c	2020-09-24 17:23:41.060308214 -0300
+@@ -336,6 +336,7 @@
+ 
+ 	while (state->stage == SELECT_STREAM) {
+ 		const char *read_buf;
++		uint32_t number;
+ 
+ 		/* Read a magic number. */
+ 		read_buf = __archive_read_filter_ahead(self->upstream, 4,
+@@ -345,13 +346,14 @@
+ 			*p = NULL;
+ 			return (0);
+ 		}
+-		uint32_t number = archive_le32dec(read_buf);
++		number = archive_le32dec(read_buf); 
+ 		__archive_read_filter_consume(self->upstream, 4);
+ 		if (number == LZ4_MAGICNUMBER)
+ 			return lz4_filter_read_default_stream(self, p);
+ 		else if (number == LZ4_LEGACY)
+ 			return lz4_filter_read_legacy_stream(self, p);
+ 		else if ((number & ~0xF) == LZ4_SKIPPABLED) {
++			uint32_t skip_bytes;
+ 			read_buf = __archive_read_filter_ahead(
+ 				self->upstream, 4, NULL);
+ 			if (read_buf == NULL) {
+@@ -361,7 +363,7 @@
+ 				    "Malformed lz4 data");
+ 				return (ARCHIVE_FATAL);
+ 			}
+-			uint32_t skip_bytes = archive_le32dec(read_buf);
++			skip_bytes = archive_le32dec(read_buf);
+ 			__archive_read_filter_consume(self->upstream,
+ 				4 + skip_bytes);
+ 		} else {
+diff --git a/libarchive/archive_write_disk_windows.c b/libarchive/archive_write_disk_windows.c
+index 1b12a299..d637bcbb 100644
+--- a/libarchive/archive_write_disk_windows.c
++++ b/libarchive/archive_write_disk_windows.c
+@@ -1660,7 +1660,7 @@ create_filesystem_object(struct archive_write_disk *a)
+ 	/* Since link(2) and symlink(2) don't handle modes, we're done here. */
+ 	linkname = archive_entry_hardlink_w(a->entry);
+ 	if (linkname != NULL) {
+-		wchar_t *linksanitized, *linkfull, *namefull;
++		wchar_t const *linksanitized, *linkfull, *namefull;
+ 		size_t l = (wcslen(linkname) + 1) * sizeof(wchar_t);
+ 		linksanitized = malloc(l);
+ 		if (linksanitized == NULL) {
+diff -Naur libarchive-3.4.3.orig/libarchive/test/test_sparse_basic.c libarchive-3.4.3/libarchive/test/test_sparse_basic.c
+--- libarchive-3.4.3.orig/libarchive/test/test_sparse_basic.c	2020-05-19 20:48:25.000000000 -0300
++++ libarchive-3.4.3/libarchive/test/test_sparse_basic.c	2020-09-24 17:30:31.541246375 -0300
+@@ -117,6 +117,7 @@
+ 	char buff[1024];
+ 	HANDLE handle;
+ 	DWORD dmy;
++	size_t offsetSoFar = 0;
+ 
+ 	memset(buff, ' ', sizeof(buff));
+ 
+@@ -127,20 +128,19 @@
+ 	assert(DeviceIoControl(handle, FSCTL_SET_SPARSE, NULL, 0,
+ 	    NULL, 0, &dmy, NULL) != 0);
+ 
+-	uint64_t offsetSoFar = 0;
+ 
+ 	while (s->type != END) {
+ 		if (s->type == HOLE) {
+ 			LARGE_INTEGER fileOffset, beyondOffset, distanceToMove;
++			FILE_ZERO_DATA_INFORMATION zeroInformation;
++			DWORD bytesReturned;
+ 			fileOffset.QuadPart = offsetSoFar;
+ 			beyondOffset.QuadPart = offsetSoFar + s->size;
+ 			distanceToMove.QuadPart = s->size;
+ 
+-			FILE_ZERO_DATA_INFORMATION zeroInformation;
+ 			zeroInformation.FileOffset = fileOffset;
+ 			zeroInformation.BeyondFinalZero = beyondOffset;
+ 
+-			DWORD bytesReturned;
+ 			assert(SetFilePointerEx(handle, distanceToMove,
+ 				NULL, FILE_CURRENT) != 0);
+ 			assert(SetEndOfFile(handle) != 0);
+diff -Naur libarchive-3.4.3.orig/tar/test/test_option_C_mtree.c libarchive-3.4.3/tar/test/test_option_C_mtree.c
+--- libarchive-3.4.3.orig/tar/test/test_option_C_mtree.c	2020-05-19 20:48:25.000000000 -0300
++++ libarchive-3.4.3/tar/test/test_option_C_mtree.c	2020-09-24 17:32:02.218171935 -0300
+@@ -30,10 +30,9 @@
+ 
+ DEFINE_TEST(test_option_C_mtree)
+ {
+-	char *p0;
++	char *p0 = NULL;
+ 	size_t s;
+ 	int r;
+-	p0 = NULL;
+ 	char *content = "./foo type=file uname=root gname=root mode=0755\n";
+ 	char *filename = "output.tar";
+ #if defined(_WIN32) && !defined(CYGWIN)

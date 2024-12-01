@@ -1,0 +1,17 @@
+{
+  "build": "h18a0788_1",
+  "build_number": 1,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [],
+  "fn": "zlib-1.2.13-h18a0788_1.conda",
+  "license": "Zlib",
+  "md5": "0e0f66908c52256a41c02b757e24705a",
+  "name": "zlib",
+  "sha256": "a24fd52061df9ed53ea5c26b453effeb68ae72628761d9f7434b7a2395274072",
+  "size": 92869,
+  "subdir": "osx-arm64",
+  "timestamp": 1714510936000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/zlib-1.2.13-h18a0788_1.conda",
+  "version": "1.2.13"
+}

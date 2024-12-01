@@ -1,0 +1,31 @@
+From df46059d1fc10d6aad6daf751cdc47d84e3aee2a Mon Sep 17 00:00:00 2001
+From: Jonathan Helmus <jjhelmus@gmail.com>
+Date: Thu, 18 Jun 2020 15:25:33 -0500
+Subject: [PATCH] prefer tinfo over curses and termcap
+
+Prefer the tinfo library over curses or termcap. This is supported by
+newer ncurses libraries.
+---
+ configure.ac | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 6aaac0f..472900b 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -47,9 +47,9 @@ AC_PROG_AWK
+ EL_MANTYPE
+ 
+ AC_CHECK_LIB(ncurses, tgetent,,
+-  [AC_CHECK_LIB(curses, tgetent,,
+-    [AC_CHECK_LIB(termcap, tgetent,,
+-      [AC_CHECK_LIB(tinfo, tgetent,,
++  [AC_CHECK_LIB(tinfo, tgetent,,
++    [AC_CHECK_LIB(curses, tgetent,,
++      [AC_CHECK_LIB(termcap, tgetent,,
+         [AC_MSG_ERROR([libncurses, libcurses, libtermcap or libtinfo is required!])]
+       )]
+     )]
+-- 
+2.23.0
+

@@ -1,0 +1,55 @@
+# This file created by conda-build 3.27.0
+# meta.yaml template originally from:
+# /Users/builder/cbouss/perseverance-python-buildout/aggregate/pysocks-feedstock/recipe, last modified Sun Nov  5 19:44:36 2023
+# ------------------------------------------------
+
+package:
+  name: pysocks
+  version: 1.7.1
+source:
+  sha256: 3f8804571ebe159c380ac6de37643bb4685970655d3bba243530d6558b799aa0
+  url: https://pypi.io/packages/source/P/PySocks/PySocks-1.7.1.tar.gz
+build:
+  number: '0'
+  script: /Users/builder/cbouss/perseverance-python-buildout/croot/pysocks_1699237568675/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold/bin/python
+    -m pip install . --no-deps -vv
+  string: py312hca03da5_0
+requirements:
+  host:
+    - bzip2 1.0.8 h620ffc9_4
+    - ca-certificates 2023.08.22 hca03da5_0
+    - expat 2.5.0 h313beb8_0
+    - libcxx 14.0.6 h848a8c0_0
+    - libffi 3.4.4 hca03da5_0
+    - ncurses 6.4 h313beb8_0
+    - openssl 3.0.12 h1a28f6b_0
+    - pip 23.3 py312hca03da5_0
+    - python 3.12.0 h99e199e_0
+    - readline 8.2 h1a28f6b_0
+    - setuptools 68.0.0 py312hca03da5_0
+    - sqlite 3.41.2 h80987f9_0
+    - tk 8.6.12 hb8d0fd4_0
+    - tzdata 2023c h04d1e81_0
+    - wheel 0.41.2 py312hca03da5_0
+    - xz 5.4.2 h80987f9_0
+    - zlib 1.2.13 h5a0b063_0
+  run:
+    - python >=3.12,<3.13.0a0
+test:
+  imports:
+    - socks
+about:
+  dev_url: https://github.com/Anorov/PySocks
+  doc_url: https://github.com/Anorov/PySocks/blob/master/README.md
+  home: https://github.com/Anorov/PySocks
+  license: BSD 3-Clause
+  license_family: BSD
+  license_file: LICENSE
+  summary: A Python SOCKS client module. See https://github.com/Anorov/PySocks for
+    more information.
+extra:
+  copy_test_source_files: true
+  final: true
+  recipe-maintainers:
+    - ocefpaf
+    - pmlandwehr

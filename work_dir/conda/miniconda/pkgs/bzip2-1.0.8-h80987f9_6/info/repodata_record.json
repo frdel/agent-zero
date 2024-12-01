@@ -1,0 +1,17 @@
+{
+  "build": "h80987f9_6",
+  "build_number": 6,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [],
+  "fn": "bzip2-1.0.8-h80987f9_6.conda",
+  "license": "bzip2-1.0.8",
+  "md5": "27a1ffbd30ff6427c112a733410e2f57",
+  "name": "bzip2",
+  "sha256": "a99e7ae89274837bfa706a7f8bcb970520d909a84b9fa1d63ddce1305d96121c",
+  "size": 132212,
+  "subdir": "osx-arm64",
+  "timestamp": 1714510571000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/bzip2-1.0.8-h80987f9_6.conda",
+  "version": "1.0.8"
+}

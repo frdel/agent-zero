@@ -1,0 +1,209 @@
+{% set name = "mamba" %}
+{% set libmamba_version = "1.5.8" %}
+{% set libmambapy_version = "1.5.8" %}
+{% set mamba_version = "1.5.8" %}
+{% set release = "2024.03.25" %}
+{% set build_mamba = "false" %}
+
+package:
+  name: mamba-split
+
+source:
+  url: https://github.com/{{ name }}-org/{{ name }}/archive/refs/tags/{{ release }}.tar.gz
+  sha256: 6ddaf4b0758eb7ca1250f427bc40c2c3ede43257a60bac54e4320a4de66759a6
+
+build:
+  number: 3
+
+outputs:
+  - name: libmamba
+    version: {{ libmamba_version }}
+    script: build_mamba.sh                       # [unix]
+    script: build_mamba.bat                      # [win]
+    build:
+      run_exports:
+        - {{ pin_subpackage('libmamba', max_pin='x.x') }}
+      ignore_run_exports:
+        - spdlog
+        - python    # [win]
+      missing_dso_whitelist:  # [s390x]
+        - $RPATH/ld64.so.1    # [s390x] Known s390x `ld64.so` issue.
+    requirements:
+      build:
+        - {{ compiler('cxx') }}
+        - cmake
+        - ninja
+        - python            # [win]
+      host:
+        - libsolv 0.7.24
+        - libcurl
+        - openssl {{ openssl }}
+        - libarchive
+        - nlohmann_json
+        - cpp-expected
+        - reproc-cpp
+        - reproc
+        - spdlog
+        - yaml-cpp >=0.8.0
+        - fmt
+        - winreg  # [win]
+        - zstd {{ zstd }}
+        - bzip2 {{ bzip2 }}
+        - cli11
+      run:
+        - libsolv >=0.7.24,<0.8.0a0
+        - reproc-cpp
+        - reproc
+    test:
+      commands:
+        - test -d ${PREFIX}/include/mamba                                   # [unix]
+        - test -f ${PREFIX}/include/mamba/version.hpp                       # [unix]
+        - test -f ${PREFIX}/lib/cmake/libmamba/libmambaConfig.cmake         # [unix]
+        - test -f ${PREFIX}/lib/cmake/libmamba/libmambaConfigVersion.cmake  # [unix]
+        - test -e ${PREFIX}/lib/libmamba${SHLIB_EXT}                        # [unix]
+        - if not exist %LIBRARY_PREFIX%\include\mamba\version.hpp (exit 1)                       # [win]
+        - if not exist %LIBRARY_PREFIX%\lib\cmake\libmamba\libmambaConfig.cmake (exit 1)         # [win]
+        - if not exist %LIBRARY_PREFIX%\lib\cmake\libmamba\libmambaConfigVersion.cmake (exit 1)  # [win]
+        - if not exist %LIBRARY_PREFIX%\bin\libmamba.dll (exit 1)                                # [win]
+        - if not exist %LIBRARY_PREFIX%\lib\libmamba.lib (exit 1)                                # [win]
+        {% set libmamba_version_split = libmamba_version.split('.') %}
+        - cat $PREFIX/include/mamba/version.hpp | grep "LIBMAMBA_VERSION_MAJOR {{ libmamba_version_split[0] }}"  # [unix]
+        - cat $PREFIX/include/mamba/version.hpp | grep "LIBMAMBA_VERSION_MINOR {{ libmamba_version_split[1] }}"  # [unix]
+        - cat $PREFIX/include/mamba/version.hpp | grep "LIBMAMBA_VERSION_PATCH {{ libmamba_version_split[2] }}"  # [unix]
+
+  - name: libmambapy
+    version: {{ libmambapy_version }}
+    script: build_mamba.sh                       # [unix]
+    script: build_mamba.bat                      # [win]
+    build:
+      skip: true  # [py<37]
+      string: py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+      run_exports:
+        - {{ pin_subpackage('libmambapy', max_pin='x.x') }}
+      ignore_run_exports:
+        - spdlog
+    requirements:
+      build:
+        - {{ compiler('cxx') }}
+        - cmake
+        - ninja
+      host:
+        - python
+        - pip
+        - setuptools
+        - wheel
+        - pybind11
+        - pybind11-abi
+        - openssl
+        - yaml-cpp >=0.8.0
+        - cpp-expected
+        - spdlog
+        - fmt
+        - nlohmann_json
+        - {{ pin_subpackage('libmamba', exact=True) }}
+      run:
+        - python
+        - {{ pin_subpackage('libmamba', exact=True) }}
+
+    test:
+      imports:
+        - libmambapy
+        - libmambapy.bindings
+      commands:
+        - python -c "import libmambapy._version; assert libmambapy._version.__version__ == '{{ libmambapy_version }}'"
+
+{% if build_mamba == "true" %}
+  # we don't intend to support mamba on Anaconda's defaults, therefore
+  # we disable it, but still trying to share recipe in most parts with
+  # conda-forge.
+  - name: mamba
+    version: {{ mamba_version }}
+    script: build_mamba.sh                       # [unix]
+    script: build_mamba.bat                      # [win]
+    build:
+      skip: true  # [py<37]
+      string: py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+      entry_points:
+        - mamba = mamba.mamba:main
+    requirements:
+      host:
+        - python
+        - pip
+        - setuptools
+        - wheel
+        - openssl {{ openssl }}
+        - {{ pin_subpackage('libmambapy', exact=True) }}
+      run:
+        - python
+        - conda >=23.11,<24.0a0
+        - {{ pin_subpackage('libmambapy', exact=True) }}
+
+    test:
+      imports:
+        - mamba
+      requires:
+        - pip
+      commands:
+        - mamba --help
+        - if exist %PREFIX%\condabin\mamba.bat (exit 0) else (exit 1)  # [win]
+        - test -f ${PREFIX}/etc/profile.d/mamba.sh  # [linux]
+        # these tests work when run on win, but for some reason not during conda build
+        - mamba create -n test_py2 python=2.7 --dry-run  # [linux and (x86_64 or ppc64le)]
+        - mamba install xtensor xsimd -c conda-forge --dry-run  # [linux and x86_64]
+        # for some reason tqdm doesn't have a proper colorama dependency so pip check fails
+        # but that's completely unrelated to mamba
+        - python -c "import mamba._version; assert mamba._version.__version__ == '{{ mamba_version }}'"
+        - test -f ${PREFIX}/condabin/mamba  # [unix]
+{% endif %}
+
+about:
+  home: https://github.com/mamba-org/mamba
+  license: BSD-3-Clause
+  license_file: LICENSE
+  license_family: BSD
+  summary: A fast drop-in alternative to conda, using libsolv for dependency resolution
+  description: |
+    # Mamba, the Fast Cross-Platform Package Manager
+
+    [![Build Status](https://github.com/mamba-org/mamba/workflows/CI/badge.svg)](https://github.com/mamba-org/mamba/actions)
+    [![Join the Gitter Chat](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mamba-org/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+    [![docs](https://readthedocs.org/projects/mamba/badge/?version=latest&style=flat)](https://mamba.readthedocs.io/en/latest)
+
+    `mamba` is a reimplementation of the conda package manager in C++.
+
+    - parallel downloading of repository data and package files using multi-threading
+    - libsolv for much faster dependency solving, a state of the art library used in the RPM package manager of Red Hat, Fedora and OpenSUSE
+    - core parts of `mamba` are implemented in C++ for maximum efficiency
+
+    At the same time, `mamba` utilizes the same command line parser, package installation and deinstallation code and transaction verification routines as `conda` to stay as compatible as possible.
+
+    Mamba is part of a bigger ecosystem to make scientific packaging more sustainable. You can read our [announcement blog post](https://medium.com/@QuantStack/open-software-packaging-for-science-61cecee7fc23).
+    The ecosystem also consists of `quetz`, an open source `conda` package server and `boa`, a fast `conda` package builder.
+
+    ### Installation
+
+    Please refer to the [`mamba` and `micromamba` installation guide](https://mamba.readthedocs.io/en/latest/installation.html) in the documentation.
+
+    ### Additional features in Mamba and Micromamba
+
+    `mamba` and `micromamba` come with features on top of stock `conda`.
+
+    ### `repoquery`
+
+    To efficiently query repositories and query package dependencies you can use `mamba repoquery` or `micromamba repoquery`.
+    See the [repoquery documentation](https://mamba.readthedocs.io/en/latest/user_guide/mamba.html#repoquery) for details.
+
+    ### Installing lock files
+
+    `micromamba` can be used to install lock files generated by [conda-lock](https://conda-incubator.github.io/conda-lock/) without having to install `conda-lock`. Simply invoke e.g. `micromamba create -n my-env -f conda-lock.yml` with an environment lockfile named `*-lock.yml` or `*-lock.yaml`.
+
+  dev_url: https://github.com/mamba-org/mamba
+  doc_url: https://mamba.readthedocs.io/
+
+extra:
+  recipe-maintainers:
+    - adriendelsalle
+    - SylvainCorlay
+    - JohanMabille
+    - wolfv
+    - ericmjl

@@ -1,0 +1,42 @@
+Metadata-Version: 2.3
+Name: BeagleVote
+Version: 1.0a2
+Platform: ObscureUnix
+Platform: RareDOS
+Supported-Platform: RedHat 7.2
+Supported-Platform: i386-win32-2791
+Summary: A module for collecting votes from beagles.
+Description-Content-Type: text/markdown; charset=UTF-8; variant=GFM
+Keywords: dog,puppy,voting,election
+Home-page: http://www.example.com/~cschultz/bvote/
+Download-URL: …/BeagleVote-0.45.tgz
+Author: C. Schultz, Universal Features Syndicate,
+        Los Angeles, CA <cschultz@peanuts.example.com>
+Author-email: "C. Schultz" <cschultz@example.com>
+Maintainer: C. Schultz, Universal Features Syndicate,
+        Los Angeles, CA <cschultz@peanuts.example.com>
+Maintainer-email: "C. Schultz" <cschultz@example.com>
+License: This software may only be obtained by sending the
+        author a postcard, and then the user promises not
+        to redistribute it.
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Console (Text Based)
+Provides-Extra: pdf
+Requires-Dist: reportlab; extra == 'pdf'
+Requires-Dist: pkginfo
+Requires-Dist: PasteDeploy
+Requires-Dist: zope.interface (>3.5.0)
+Requires-Dist: pywin32 >1.0; sys_platform == 'win32'
+Requires-Python: >=3
+Requires-External: C
+Requires-External: libpng (>=1.5)
+Requires-External: make; sys_platform != "win32"
+Project-URL: Bug Tracker, http://bitbucket.org/tarek/distribute/issues/
+Project-URL: Documentation, https://example.com/BeagleVote
+Provides-Dist: OtherProject
+Provides-Dist: AnotherProject (3.4)
+Provides-Dist: virtual_package; python_version >= "3.4"
+Dynamic: Obsoletes-Dist
+ThisIsNotReal: Hello!
+
+This description intentionally left blank.

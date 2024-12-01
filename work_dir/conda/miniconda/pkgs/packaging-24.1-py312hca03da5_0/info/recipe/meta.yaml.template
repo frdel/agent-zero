@@ -1,0 +1,58 @@
+{% set name = "packaging" %}
+{% set version = "24.1" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  sha256: 026ed72c8ed3fcce5bf8950572258698927fd1dbda10a5e981cdf0ac37f4f002
+
+build:
+  number: 0
+  skip: True  # [py<38]
+  script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
+
+requirements:
+  host:
+    - python
+    - flit-core >=3.3
+    - pip
+  run:
+    - python
+
+test:
+  imports:
+    - packaging
+  requires:
+    - pip
+    - pytest >=6.2.0
+    - pretend
+  source_files:
+    - tests
+  commands:
+    - pip check
+    - pytest -v tests
+
+about:
+  home: https://github.com/pypa/packaging
+  license: Apache-2.0 or BSD-2-Clause
+  license_file: LICENSE
+  license_family: Apache
+  summary: Core utilities for Python packages
+  description: |
+    Reusable core utilities for various Python Packaging interoperability specifications.
+    This library provides utilities that implement the interoperability specifications 
+    which have clearly one correct behaviour (eg: PEP 440) or benefit greatly from having 
+    a single shared implementation (eg: PEP 425).
+  doc_url: https://packaging.pypa.io
+  dev_url: https://github.com/pypa/packaging
+
+extra:
+  recipe-maintainers:
+    - jakirkham
+    - nicoddemus
+    - mingwandroid
+  skip-lints:
+    - missing_wheel

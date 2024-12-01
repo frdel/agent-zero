@@ -1,0 +1,71 @@
+{% set name = "anaconda-anon-usage" %}
+{% set version = "0.4.4" %}
+{% set sha256 = "7c771b42a7c377d9c872929da986926869c433839ad5d3a793d02b9ee340b24c" %}
+{% set number = 0 %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  url: https://github.com/anaconda/{{ name }}/archive/refs/tags/{{ version }}.tar.gz
+  sha256: {{ sha256 }}
+
+build:
+  # Use a build number difference to ensure that the plugin
+  # variant is slightly preferred by conda's solver.
+  number: {{ number + 100 }}  # [variant=="plugin"]
+  number: {{ number }}        # [variant=="patch"]
+  skip: True # [py<=36 or variant=="patch" and py>311]
+  script_env:
+   - NEED_SCRIPTS=no   # [variant=="plugin"]
+   - NEED_SCRIPTS=yes  # [variant=="patch"]
+
+requirements:
+  host:
+    - python
+    - setuptools
+    - wheel
+    - pip
+  run:
+    - python
+  run_constrained:
+    - conda >=23.7  # [variant=="plugin"]
+    - conda >=4.11,<23.7   # [variant=="patch"]
+
+test:
+  requires:
+    - conda >=23.7  # [variant=="plugin"]
+    - conda >=4.11,<23.7   # [variant=="patch"]
+    - pytest
+    - pytest-cov
+  source_files:
+    - tests
+  imports:
+    - anaconda_anon_usage
+  commands:
+    - export ANACONDA_ANON_USAGE_DEBUG=1  # [unix]
+    - export PYTHONUNBUFFERED=1  # [unix]
+    - set ANACONDA_ANON_USAGE_DEBUG=1  # [win]
+    - set PYTHONUNBUFFERED=1 # [win]
+    - conda create -n testchild1 --yes
+    - conda create -n testchild2 --yes
+    - conda info
+    - conda info --envs
+    - python -m anaconda_anon_usage.install --expect  # [variant=="patch"]
+    - pytest -v tests/unit
+    - python tests/integration/test_config.py
+
+about:
+  home: https://github.com/anaconda/anaconda-anon-usage
+  summary: basic anonymous telemetry for conda clients
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: LICENSE
+  dev_url: https://github.com/anaconda/anaconda-anon-usage/
+  doc_url: https://github.com/anaconda/anaconda-anon-usage/
+  description: |
+        This package augments the request header data that conda delivers
+        to package servers during index and package requests. Specifically,
+        three randomly generated tokens are appended to the "user agent"
+        that Conda already sends with each request.

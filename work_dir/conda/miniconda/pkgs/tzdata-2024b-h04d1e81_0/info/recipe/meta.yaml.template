@@ -1,0 +1,56 @@
+{% set version = "2024b" %}
+
+package:
+  name: tzdata
+  version: {{ version }}
+
+source:
+  - url: https://data.iana.org/time-zones/releases/tzdata{{ version }}.tar.gz
+    sha256: 70e754db126a8d0db3d16d6b4cb5f7ec1e04d5f261255e4558a67fe92d39e550
+  - url: https://data.iana.org/time-zones/releases/tzcode{{ version }}.tar.gz
+    sha256: 5e438fc449624906af16a18ff4573739f0cda9862e5ec28d3bcb19cbaed0f672
+
+build:
+  number: 0
+  noarch: generic
+  # This package needs to be noarch because it uses POSIX system APIs.
+  # The Windows build will be skipped when built to avoid Prefect failures.
+  # There is no Windows port available and porting to Windows is not trivial.
+  # However, the compiled package can be used on Windows.
+  # Tzdata is utilizing system header files which is not
+  # compatible with macOS.
+  # Since we are using using a noarch build, we can
+  # simply focus linux as our main build
+
+  skip: True  # [not (linux and x86_64)]
+  ignore_run_exports:
+    - libgcc-ng
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - make
+  host:
+  run:
+
+about:
+  home: https://www.iana.org/time-zones
+  dev_url: https://github.com/eggert/tz
+  doc_url: https://data.iana.org/time-zones/tz-link.html
+  license: CC-PDDC OR BSD-3-Clause
+  license_file: LICENSE
+  license_family: BSD
+  summary: The Time Zone Database (called tz, tzdb or zoneinfo)
+
+  description: |
+    The Time Zone Database (called tz, tzdb or zoneinfo) contains code and
+    data that represent the history of local time for many representative
+    locations around the globe.  It is updated periodically to reflect
+    changes made by political bodies to time zone boundaries, UTC offsets,
+    and daylight-saving rules.
+
+extra:
+  recipe-maintainers:
+    - ocefpaf
+    - mbargull
+    - pganssle

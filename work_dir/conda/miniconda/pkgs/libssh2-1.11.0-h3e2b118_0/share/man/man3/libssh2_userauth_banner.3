@@ -1,0 +1,31 @@
+.TH libssh2_userauth_banner 3 "1 Jun 2021" "libssh2 1.9.0" "libssh2"
+.SH NAME
+libssh2_userauth_banner - get the server's userauth banner message
+.SH SYNOPSIS
+.nf
+#include <libssh2.h>
+
+int
+libssh2_userauth_banner(LIBSSH2_SESSION *session, char **banner);
+.fi
+.SH DESCRIPTION
+\fIsession\fP - Session instance as returned by
+.BR libssh2_session_init_ex(3)
+
+\fIbanner\fP - Should point to a pointer that gets filled with banner message.
+
+After an authentication has been attempted, such as a
+\fBSSH_USERAUTH_NONE\fP request sent by
+.BR libssh2_userauth_list(3) ,
+this function can be called to retrieve the userauth banner sent by
+the server. If no such banner is sent, or if an authentication has not
+yet been attempted, returns LIBSSH2_ERROR_MISSING_USERAUTH_BANNER.
+.SH RETURN VALUE
+On success returns 0 and an UTF-8 NUL-terminated string is stored in the
+\fIbanner\fP. This string is internally managed by libssh2 and will be
+deallocated upon session termination.
+On failure returns
+LIBSSH2_ERROR_MISSING_USERAUTH_BANNER.
+.SH SEE ALSO
+.BR libssh2_session_init_ex(3),
+.BR libssh2_userauth_list(3)

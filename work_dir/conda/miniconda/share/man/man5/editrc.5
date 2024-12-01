@@ -1,0 +1,142 @@
+.TH EDITRC 5 "May 22, 2016" ""
+.SH NAME
+\fBeditrc\fP
+\- configuration file for editline library
+.SH SYNOPSIS
+.br
+\fBeditrc\fP
+.SH DESCRIPTION
+The
+\fBeditrc\fP
+file defines various settings to be used by the
+\fBeditline\fP(3)
+library.
+
+The format of each line is:
+is one of the
+builtin commands.
+Refer to
+for more information.
+is the program name string that a program defines when it calls
+to set up
+which is usually
+will be executed for any program which matches
+may also be a
+style
+regular expression, in which case
+will be executed for any program that matches the regular expression.
+
+If
+is absent,
+is executed for all programs.
+The
+library has some builtin commands, which affect the way
+that the line editing and history functions operate.
+These are based on similar named builtins present in the
+shell.
+
+The following builtin commands are available:
+Without options and arguments, list all bound keys and macros, and
+the editor command or input string to which each one is bound.
+If only
+is supplied, show the binding for that key or macro.
+If
+is supplied, bind the editor
+to that key or macro.
+
+The options are as follows:
+List or change key bindings in the
+mode alternate (command mode) key map.
+Bind all keys to the standard
+Emacs-like bindings.
+is interpreted as a symbolic arrow key name, which may be one of
+or
+List all editor commands and a short description of each.
+Remove the binding of the key or macro
+Define a keyboard macro rather than a key binding or command macro:
+is taken as a literal string and appended to the input queue whenever
+is typed.
+Bound keys and macros in
+are themselves reinterpreted, and this continues for ten levels of
+interpretation.
+Bind all keys to the standard
+bindings.
+
+The
+manual documents all editor commands and contains more information
+about macros and the input queue.
+and
+can contain control characters of the form
+e.g.\&
+and the following backslashed escape sequences:
+Bell
+Backspace
+Escape
+Formfeed
+Newline
+Carriage return
+Horizontal tab
+Vertical tab
+The
+character corresponding to the octal number
+nullifies the special meaning of the following character,
+if it has any, notably
+and
+Exercise terminal capabilities given in
+If
+is
+or
+the value of that capability is printed, with
+or
+indicating that the terminal does or does not have that capability.
+returns an empty string for non-existent capabilities, rather than
+causing an error.
+causes messages to be verbose.
+Enable or disable the
+functionality in a program.
+The
+command lists all entries in the history.
+The
+command sets the history size to
+entries.
+The
+command controls if history should keep duplicate entries.
+If
+is non zero, only keep unique history entries.
+If
+is zero, then keep all entries (the default).
+Set the terminal capability
+to
+as defined in
+No sanity checking is done.
+Oo Fl Ar mode Oc Oo Ar mode Oc Oo Ar char\| Ns Ic = Ns Ar c Oc
+Control which tty modes that
+won't allow the user to change.
+or
+tells
+to act on the
+or
+set of tty modes respectively; defaulting to
+
+Without other arguments,
+lists the modes in the chosen set which are fixed on
+or off
+lists all tty modes in the chosen set regardless of the setting.
+With
+or
+fixes
+on or off or removes control of
+in the chosen set.
+can also be used to set tty characters to particular values using
+If
+is empty
+then the character is set to
+List the values of all the terminal capabilities (see
+Names the default configuration file for the
+library.
+Last resort user configuration file for the
+library if no other file is specified.
+The
+library was written by
+and this manual was written by
+with some sections inspired by

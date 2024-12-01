@@ -1,0 +1,102 @@
+'\" t
+.\"     Title: solv
+.\"    Author: [see the "Author" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 10/22/2018
+.\"    Manual: LIBSOLV
+.\"    Source: libsolv
+.\"  Language: English
+.\"
+.TH "SOLV" "1" "10/22/2018" "libsolv" "LIBSOLV"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+solv \- example package manager based on libsolv
+.SH "SYNOPSIS"
+.sp
+\fBsolv\fR install [OPTIONS] PKG\&...
+.sp
+\fBsolv\fR erase [OPTIONS] PKG\&...
+.sp
+\fBsolv\fR list [OPTIONS] PKG\&...
+.sp
+\fBsolv\fR info [OPTIONS] PKG\&...
+.sp
+\fBsolv\fR search [OPTIONS] STRING\&...
+.sp
+\fBsolv\fR verify [OPTIONS] PKG\&...
+.sp
+\fBsolv\fR update [OPTIONS] PKG\&...
+.sp
+\fBsolv\fR dist\-upgrade [OPTIONS] PKG\&...
+.sp
+\fBsolv\fR repolist [OPTIONS]
+.SH "DESCRIPTION"
+.sp
+The solv tool demos some features of the libsolv library\&. It is not meant to replace a real package manager, for example it does not cache downloaded packages\&.
+.PP
+\fB\-\-root\fR \fIROOTDIR\fR
+.RS 4
+Install packages using
+\fIROOTDIR\fR
+as root of the filesystem\&. This also means that the package database of
+\fIROOTDIR\fR
+will be used\&.
+.RE
+.PP
+\fB\-\-clean\fR
+.RS 4
+Also get rid of no longer needed packages when erasing, like libraries that have been used by the erased packages\&.
+.RE
+.PP
+\fB\-\-best\fR
+.RS 4
+Force usage of the best package (normally the one with the highest version) for install and update operations\&.
+.RE
+.PP
+\fB\-\-testcase\fR
+.RS 4
+Write a testcase after dependency solving\&.
+.RE
+.sp
+The following options can be used to filter the packages\&. If the same option is used multiple times, the result is ORed together\&.
+.PP
+\fB\-i\fR
+.RS 4
+Limit the packages to installed ones\&.
+.RE
+.PP
+\fB\-r\fR \fIREPO\fR
+.RS 4
+Limit the packages to the specified repository\&.
+.RE
+.PP
+\fB\-\-arch\fR \fIARCHITECTURE\fR
+.RS 4
+Limit the packages to the specified package architecture\&.
+.RE
+.PP
+\fB\-\-type\fR \fITYPE\fR
+.RS 4
+Limit the packages to the specified package type\&.
+.RE
+.SH "AUTHOR"
+.sp
+Michael Schroeder <mls@suse\&.de>

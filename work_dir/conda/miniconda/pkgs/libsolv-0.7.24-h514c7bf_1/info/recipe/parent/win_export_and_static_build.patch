@@ -1,0 +1,108 @@
+diff --git a/ext/CMakeLists.txt b/ext/CMakeLists.txt
+index f01c0238..48bdd1a1 100644
+--- a/ext/CMakeLists.txt
++++ b/ext/CMakeLists.txt
+@@ -162,6 +162,9 @@ IF (WIN32)
+ ENDIF ()
+ 
+ SET_TARGET_PROPERTIES(libsolvext PROPERTIES OUTPUT_NAME "solvext")
++if (MSVC AND DISABLE_SHARED AND ENABLE_STATIC)
++    SET_TARGET_PROPERTIES(libsolvext PROPERTIES OUTPUT_NAME "solvext_static")
++endif()
+ SET_TARGET_PROPERTIES(libsolvext PROPERTIES SOVERSION ${LIBSOLVEXT_SOVERSION})
+ 
+ INSTALL (FILES ${libsolvext_HEADERS} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/solv")
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index bbf30bac..17b65eb3 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -62,6 +62,10 @@ IF (WIN32)
+ ENDIF (WIN32)
+ 
+ SET_TARGET_PROPERTIES(libsolv PROPERTIES OUTPUT_NAME "solv")
++if (MSVC AND DISABLE_SHARED AND ENABLE_STATIC)
++    SET_TARGET_PROPERTIES(libsolv PROPERTIES OUTPUT_NAME "solv_static")
++endif()
++
+ SET_TARGET_PROPERTIES(libsolv PROPERTIES SOVERSION ${LIBSOLV_SOVERSION})
+ 
+ INSTALL (FILES ${libsolv_HEADERS} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/solv")
+diff --git a/src/repo_write.c b/src/repo_write.c
+index a73eebff..9e0622e3 100644
+--- a/src/repo_write.c
++++ b/src/repo_write.c
+@@ -188,7 +188,7 @@ write_compressed_blob(Repodata *data, void *blob, int len)
+ 	  write_u8(data, clen);
+ 	  write_blob(data, cpage, clen);
+ 	}
+-      blob += chunk;
++      blob = (char*) blob + chunk;
+       len -= chunk;
+     }
+ }
+diff --git a/src/solvversion.c b/src/solvversion.c
+index 51d57a63..608d813b 100644
+--- a/src/solvversion.c
++++ b/src/solvversion.c
+@@ -7,8 +7,8 @@
+ 
+ #include "solvversion.h"
+ 
+-const char solv_version[] = LIBSOLV_VERSION_STRING;
+-int solv_version_major = LIBSOLV_VERSION_MAJOR;
+-int solv_version_minor = LIBSOLV_VERSION_MINOR;
+-int solv_version_patch = LIBSOLV_VERSION_PATCH;
+-const char solv_toolversion[] = LIBSOLV_TOOLVERSION;
++SOLV_API const char solv_version[] = LIBSOLV_VERSION_STRING;
++SOLV_API int solv_version_major = LIBSOLV_VERSION_MAJOR;
++SOLV_API int solv_version_minor = LIBSOLV_VERSION_MINOR;
++SOLV_API int solv_version_patch = LIBSOLV_VERSION_PATCH;
++SOLV_API const char solv_toolversion[] = LIBSOLV_TOOLVERSION;
+diff --git a/src/solvversion.h.in b/src/solvversion.h.in
+index da0ad743..23026626 100644
+--- a/src/solvversion.h.in
++++ b/src/solvversion.h.in
+@@ -19,11 +19,18 @@
+ #define LIBSOLV_VERSION_PATCH @LIBSOLV_PATCH@
+ #define LIBSOLV_VERSION (LIBSOLV_VERSION_MAJOR * 10000 + LIBSOLV_VERSION_MINOR * 100 + LIBSOLV_VERSION_PATCH)
+ 
+-extern const char solv_version[];
+-extern int solv_version_major;
+-extern int solv_version_minor;
+-extern int solv_version_patch;
+-extern const char solv_toolversion[];
++#ifdef _WIN32
++// include win32/config.h for SOLV_API
++#include "config.h"
++#else
++#define SOLV_API
++#endif
++
++SOLV_API extern const char solv_version[];
++SOLV_API extern int solv_version_major;
++SOLV_API extern int solv_version_minor;
++SOLV_API extern int solv_version_patch;
++SOLV_API extern const char solv_toolversion[];
+ 
+ #cmakedefine LIBSOLV_FEATURE_LINKED_PKGS
+ #cmakedefine LIBSOLV_FEATURE_COMPLEX_DEPS
+diff --git a/win32/CMakeLists.txt b/win32/CMakeLists.txt
+index 9a87af7b..161f0725 100644
+--- a/win32/CMakeLists.txt
++++ b/win32/CMakeLists.txt
+@@ -1,4 +1,5 @@
+ INCLUDE_DIRECTORIES (${PROJECT_SOURCE_DIR}/win32)
++
+ SET (WIN32_COMPAT_SOURCES
+   ${PROJECT_SOURCE_DIR}/win32/fnmatch.c
+   ${PROJECT_SOURCE_DIR}/win32/getopt.c
+@@ -6,4 +7,6 @@ SET (WIN32_COMPAT_SOURCES
+   ${PROJECT_SOURCE_DIR}/win32/regexec.c
+   ${PROJECT_SOURCE_DIR}/win32/strfncs.c
+   ${PROJECT_SOURCE_DIR}/win32/tre-mem.c
+-)
+\ No newline at end of file
++)
++
++INSTALL (FILES ${PROJECT_SOURCE_DIR}/win32/config.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/solv")
+\ No newline at end of file

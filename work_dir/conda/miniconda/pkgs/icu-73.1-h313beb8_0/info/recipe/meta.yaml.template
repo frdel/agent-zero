@@ -1,0 +1,103 @@
+{% set version = "73.1" %}
+{% set version_under = version.replace(".", "_") %}
+{% set version_hyphen = version.replace(".", "-") %}
+
+package:
+  name: icu
+  version: {{ version }}
+
+source:
+  - url: https://github.com/unicode-org/icu/releases/download/release-{{ version_hyphen }}/icu4c-{{ version_under }}-src.tgz
+    sha256: a457431de164b4aa7eca00ed134d00dfbf88a77c6986a10ae7774fc076bb8c45
+    patches:
+      # Include an extra header when using mingw.
+      - icu4c-4_9_1-mingw-w64-mkdir-compatibility.patch  # [win]
+      # Omit lib prefix on libraries.
+      - icu-config.patch  # [win]
+      - mach-port-t.patch  # [osx]
+      # patch for ICU-22356, required by qt
+      - icu-22356.patch
+
+  - url: https://github.com/unicode-org/icu/releases/download/release-{{ version_hyphen }}/icu4c-{{ version_under }}-data.zip
+    sha256: 07d7557efb30fc2e9b74652f1525603b3209a4539d2d345d704e3df3bf9b957e
+    folder: source/data
+
+build:
+  number: 0
+  run_exports:
+    # icu changes their file extension with each major rev.  Default pin OK.
+    - {{ pin_subpackage('icu') }}
+  skip: True  # [win and vc>14]
+  missing_dso_whitelist:  # [s390x]
+    - $RPATH/ld64.so.1    # [s390x]
+
+requirements:
+  build:
+    - m2-base  # [win]
+    - m2-make  # [win]
+    - libtool  # [unix]
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - make     # [unix]
+    - python   # [win]
+    - posix    # [win]
+    - patch       # [not win]
+    - m2-patch    # [win]
+  host:
+  run:
+
+test:
+  files:
+    # From http://source.icu-project.org/repos/icu/data/trunk/charset/data/ucm/gb-18030-2000.ucm
+    - gb-18030-2000.ucm
+    # From ICU's data folder.
+    - de.txt
+  commands:
+    # Libraries
+    {% set libs = [
+       "libicudata",
+       "libicui18n",
+       "libicuio",
+       "libicutest",
+       "libicutu",
+       "libicuuc"
+     ] %}
+    {% for each_lib in libs %}
+    - test -f $PREFIX/lib/{{ each_lib }}.a  # [not win]
+    - test -f $PREFIX/lib/{{ each_lib }}.{{ version }}.dylib   # [osx]
+    - test -f $PREFIX/lib/{{ each_lib }}.so.{{ version }}  # [linux]
+    {% endfor %}
+
+    # CLI tests
+    - genbrk --help
+    - gencfu --help
+    - gencnval --help
+    - gendict --help
+    - icuinfo --help
+    - icu-config --help  # [not win]
+    - makeconv gb-18030-2000.ucm
+    - genrb de.txt  # [not win]
+    - echo "de.res" > list.txt  # [not win]
+    - pkgdata -p mybundle list.txt  # [not win]
+
+about:
+  home: https://icu.unicode.org/
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: 'International Components for Unicode.'
+  description: |
+    ICU is a mature, widely used set of C/C++ and Java libraries providing
+    Unicode and Globalization support for software applications. ICU is
+    widely portable and gives applications the same results on all platforms
+    and between C/C++ and Java software.
+  doc_url: https://unicode-org.github.io/icu/
+  dev_url: https://github.com/unicode-org/icu
+
+extra:
+  recipe-maintainers:
+    - ccordoba12
+    - jakirkham
+    - msarahan
+    - ocefpaf
+    - xhochy

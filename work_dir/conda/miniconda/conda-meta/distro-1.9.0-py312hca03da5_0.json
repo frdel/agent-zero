@@ -1,0 +1,59 @@
+{
+  "build": "py312hca03da5_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "python >=3.12,<3.13.0a0"
+  ],
+  "extracted_package_dir": "/tmp/miniconda_temp/pkgs/distro-1.9.0-py312hca03da5_0",
+  "files": [
+    "bin/distro",
+    "lib/python3.12/site-packages/distro-1.9.0.dist-info/INSTALLER",
+    "lib/python3.12/site-packages/distro-1.9.0.dist-info/LICENSE",
+    "lib/python3.12/site-packages/distro-1.9.0.dist-info/METADATA",
+    "lib/python3.12/site-packages/distro-1.9.0.dist-info/RECORD",
+    "lib/python3.12/site-packages/distro-1.9.0.dist-info/REQUESTED",
+    "lib/python3.12/site-packages/distro-1.9.0.dist-info/WHEEL",
+    "lib/python3.12/site-packages/distro-1.9.0.dist-info/direct_url.json",
+    "lib/python3.12/site-packages/distro-1.9.0.dist-info/entry_points.txt",
+    "lib/python3.12/site-packages/distro-1.9.0.dist-info/top_level.txt",
+    "lib/python3.12/site-packages/distro/__init__.py",
+    "lib/python3.12/site-packages/distro/__main__.py",
+    "lib/python3.12/site-packages/distro/__pycache__/__init__.cpython-312.pyc",
+    "lib/python3.12/site-packages/distro/__pycache__/__main__.cpython-312.pyc",
+    "lib/python3.12/site-packages/distro/__pycache__/distro.cpython-312.pyc",
+    "lib/python3.12/site-packages/distro/distro.py",
+    "lib/python3.12/site-packages/distro/py.typed"
+  ],
+  "fn": "distro-1.9.0-py312hca03da5_0.conda",
+  "license": "Apache-2.0",
+  "link": {
+    "source": "/tmp/miniconda_temp/pkgs/distro-1.9.0-py312hca03da5_0",
+    "type": 1
+  },
+  "md5": "d43e476943835f450bc887870d928678",
+  "name": "distro",
+  "package_tarball_full_path": "/tmp/miniconda_temp/pkgs/distro-1.9.0-py312hca03da5_0.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/distro",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_ddkyz0575y/croot/distro_1714488254309/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeho",
+        "sha256": "61568a36b24f0edfab3e82e7547a218ff9f5a11dcba0a351a34da2108b81a53f",
+        "sha256_in_prefix": "7a769b03195b8e43c12523ce8524175af288ace51afd694d52f7cd794a208979",
+        "size_in_bytes": 466
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "defaults/osx-arm64::distro==1.9.0=py312hca03da5_0[md5=d43e476943835f450bc887870d928678]",
+  "sha256": "575bec8b68a2e29379297f7dc34c46fdaf15c3a4176a6fb1fa567e417948b50d",
+  "size": 37926,
+  "subdir": "osx-arm64",
+  "timestamp": 1714488322000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/distro-1.9.0-py312hca03da5_0.conda",
+  "version": "1.9.0"
+}

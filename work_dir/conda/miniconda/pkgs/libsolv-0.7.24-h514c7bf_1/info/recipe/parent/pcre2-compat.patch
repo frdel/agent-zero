@@ -1,0 +1,132 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3541f496..a2ec792c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -33,6 +33,7 @@ OPTION (ENABLE_APPDATA "Build with AppStream appdata support?" OFF)
+ 
+ OPTION (MULTI_SEMANTICS "Build with support for multiple distribution types?" OFF)
+ 
++OPTION (ENABLE_PCRE2 "Build with PCRE2 as the regex engine" OFF)
+ OPTION (ENABLE_LZMA_COMPRESSION "Build with lzma/xz compression support?" OFF)
+ OPTION (ENABLE_BZIP2_COMPRESSION "Build with bzip2 compression support?" OFF)
+ OPTION (ENABLE_ZSTD_COMPRESSION "Build with zstd compression support?" OFF)
+@@ -203,6 +204,13 @@ IF (MULTI_SEMANTICS)
+ MESSAGE (STATUS "Enabling multi dist support")
+ ENDIF (MULTI_SEMANTICS)
+ 
++IF (ENABLE_PCRE2)
++  MESSAGE (STATUS "Enabling PCRE2 regex engine")
++  FIND_PACKAGE (PkgConfig REQUIRED)
++  PKG_CHECK_MODULES (PCRE2 REQUIRED libpcre2-posix)
++  INCLUDE_DIRECTORIES (${PCRE2_INCLUDE_DIRS})
++ENDIF (ENABLE_PCRE2)
++
+ IF (ENABLE_RPMDB)
+ SET (ENABLE_RPMPKG ON)
+ ENDIF (ENABLE_RPMDB)
+@@ -313,7 +321,7 @@ FOREACH (VAR
+   ENABLE_HELIXREPO ENABLE_MDKREPO ENABLE_ARCHREPO ENABLE_DEBIAN ENABLE_HAIKU
+   ENABLE_ZLIB_COMPRESSION ENABLE_LZMA_COMPRESSION ENABLE_BZIP2_COMPRESSION
+   ENABLE_ZSTD_COMPRESSION ENABLE_ZCHUNK_COMPRESSION ENABLE_PGPVRFY ENABLE_APPDATA
+-  WITH_SYSTEM_ZCHUNK)
++  WITH_SYSTEM_ZCHUNK ENABLE_PCRE2)
+   IF(${VAR})
+     ADD_DEFINITIONS (-D${VAR}=1)
+     SET (SWIG_FLAGS ${SWIG_FLAGS} -D${VAR})
+@@ -411,6 +419,9 @@ SET (SYSTEM_LIBRARIES ${SYSTEM_LIBRARIES} ${EXPAT_LIBRARY})
+ ENDIF (WITH_LIBXML2 )
+ 
+ ENDIF (ENABLE_RPMMD OR ENABLE_SUSEREPO OR ENABLE_APPDATA OR ENABLE_COMPS OR ENABLE_HELIXREPO OR ENABLE_MDKREPO)
++IF (ENABLE_PCRE2)
++  SET (SYSTEM_LIBRARIES ${SYSTEM_LIBRARIES} ${PCRE2_LINK_LIBRARIES})
++ENDIF (ENABLE_PCRE2)
+ IF (ENABLE_ZLIB_COMPRESSION)
+ SET (SYSTEM_LIBRARIES ${SYSTEM_LIBRARIES} ${ZLIB_LIBRARY})
+ ENDIF (ENABLE_ZLIB_COMPRESSION)
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index bbf30bac..9a429fe4 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -49,8 +49,10 @@ ENDIF (HAVE_LINKER_VERSION_SCRIPT)
+ 
+ IF (DISABLE_SHARED)
+     ADD_LIBRARY (libsolv STATIC ${libsolv_SRCS})
++    TARGET_LINK_LIBRARIES(libsolv ${SYSTEM_LIBRARIES})
+ ELSE (DISABLE_SHARED)
+     ADD_LIBRARY (libsolv SHARED ${libsolv_SRCS})
++    TARGET_LINK_LIBRARIES(libsolv ${SYSTEM_LIBRARIES})
+ ENDIF (DISABLE_SHARED)
+ 
+ IF (WIN32)
+diff --git a/src/conda.c b/src/conda.c
+index 6f6a65a6..ff91e13a 100644
+--- a/src/conda.c
++++ b/src/conda.c
+@@ -17,7 +17,14 @@
+ #include <unistd.h>
+ #include <string.h>
+ #include <sys/types.h>
++#ifdef ENABLE_PCRE2
++#include <pcre2posix.h>
++#define regcomp pcre2_regcomp
++#define regexec pcre2_regexec
++#define regfree pcre2_regfree
++#else
+ #include <regex.h>
++#endif
+ 
+ #include "pool.h"
+ #include "repo.h"
+@@ -574,7 +581,7 @@ pool_conda_matchspec(Pool *pool, const char *name)
+   int haveglob = 0;
+ 
+   /* ignore channel and namespace for now */
+-  if ((p2 = strrchr(name, ':')))
++  if ((p2 = strrchr(name, ':')) && (p2 < strchr(name, ' ')))
+     name = p2 + 1;
+   name2 = solv_strdup(name);
+   /* find end of name */
+@@ -619,10 +626,10 @@ pool_conda_matchspec(Pool *pool, const char *name)
+       if (p <= version + 1 || (p[-1] != ' ' && p[-1] != '='))
+ 	break;		/* no build */
+       /* check char before delimiter */
+-      if (p[-2] == '=' || p[-2] == '!' || p[-2] == '|' || p[-2] == ',' || p[-2] == '<' || p[-2] == '>' || p[-2] == '~')
++      if (p[-2] == '=' || p[-2] == '!' || p[-2] == '|' || p[-2] == ',' || p[-2] == '<' || p[-2] == '>' || p[-2] == '~' || p[-2] == '?')
+ 	{
+ 	  /* illegal combination */
+-	  if (p[-1] == ' ')
++	  if (p[-1] == ' '  || (p[-1] == '=' && p[-2] == '?'))
+ 	    {
+ 	      p--;
+ 	      continue;	/* special case space: it may be in the build */
+diff --git a/src/repodata.c b/src/repodata.c
+index 72f03d48..24167170 100644
+--- a/src/repodata.c
++++ b/src/repodata.c
+@@ -22,7 +22,14 @@
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <assert.h>
++#ifdef ENABLE_PCRE2
++#include <pcre2posix.h>
++#define regcomp pcre2_regcomp
++#define regexec pcre2_regexec
++#define regfree pcre2_regfree
++#else
+ #include <regex.h>
++#endif
+ 
+ #include "repo.h"
+ #include "pool.h"
+diff --git a/src/solvversion.h.in b/src/solvversion.h.in
+index da0ad743..35d33b92 100644
+--- a/src/solvversion.h.in
++++ b/src/solvversion.h.in
+@@ -30,6 +30,7 @@ extern const char solv_toolversion[];
+ #cmakedefine LIBSOLV_FEATURE_MULTI_SEMANTICS
+ #cmakedefine LIBSOLV_FEATURE_CONDA
+ 
++#cmakedefine LIBSOLVEXT_FEATURE_PCRE2
+ #cmakedefine LIBSOLVEXT_FEATURE_RPMPKG
+ #cmakedefine LIBSOLVEXT_FEATURE_RPMDB
+ #cmakedefine LIBSOLVEXT_FEATURE_RPMDB_BYRPMHEADER

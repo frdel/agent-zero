@@ -1,0 +1,27 @@
+package:
+  name: package_1
+  version: "0.1"
+
+source:
+  path: "."
+
+build:
+  noarch: generic
+  number: 0
+  script:
+    - mkdir {{ PREFIX }}/Menu                                            # [unix]
+    - cp {{ RECIPE_DIR }}/menu.json {{ PREFIX }}/Menu/package_1.json     # [unix]
+
+requirements:
+  host:
+    - xz
+test:
+  commands:
+    - test -f ${CONDA_PREFIX}/Menu/package_1.json             # [unix]
+
+about:
+  home: http://github.com/conda/menuinst
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: LICENSE
+  summary: a test package for menuinst

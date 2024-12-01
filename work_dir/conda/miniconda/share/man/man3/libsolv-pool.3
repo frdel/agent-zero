@@ -1,0 +1,1337 @@
+'\" t
+.\"     Title: Libsolv-Pool
+.\"    Author: [see the "Author" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 03/02/2022
+.\"    Manual: LIBSOLV
+.\"    Source: libsolv
+.\"  Language: English
+.\"
+.TH "LIBSOLV\-POOL" "3" "03/02/2022" "libsolv" "LIBSOLV"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+libsolv-pool \- Libsolv\*(Aqs pool object
+.SH "PUBLIC ATTRIBUTES"
+.PP
+\fBvoid *appdata\fR
+.RS 4
+A no\-purpose pointer free to use for the library user\&. Freeing the pool simply discards the pointer\&.
+.RE
+.PP
+\fBStringpool ss\fR
+.RS 4
+The pool of unified strings\&.
+.RE
+.PP
+\fBReldep *rels\fR
+.RS 4
+The pool of unified relation dependencies\&.
+.RE
+.PP
+\fBint nrels\fR
+.RS 4
+Number of allocated relation dependencies\&.
+.RE
+.PP
+\fBRepo **repos\fR
+.RS 4
+The array of repository pointers, indexed by repository Id\&.
+.RE
+.PP
+\fBint nrepos\fR
+.RS 4
+Number of allocated repository array elements, i\&.e\&. the size of the repos array\&.
+.RE
+.PP
+\fBint urepos\fR
+.RS 4
+Number of used (i\&.e\&. non\-zero) repository array elements\&.
+.RE
+.PP
+\fBRepo *installed\fR
+.RS 4
+Pointer to the repo holding the installed packages\&. You are free to read this attribute, but you should use pool_set_installed() if you want to change it\&.
+.RE
+.PP
+\fBSolvable *solvables\fR
+.RS 4
+The array of Solvable objects\&.
+.RE
+.PP
+\fBint nsolvables\fR
+.RS 4
+Number of Solvable objects, i\&.e\&. the size of the solvables array\&. Note that the array may contain freed solvables, in that case the repo pointer of the solvable will be zero\&.
+.RE
+.PP
+\fBint disttype\fR
+.RS 4
+The distribution type of your system, e\&.g\&. DISTTYPE_DEB\&. You are free to read this attribute, but you should use pool_setdisttype() if you want to change it\&.
+.RE
+.PP
+\fBId *whatprovidesdata\fR
+.RS 4
+Multi\-purpose Id storage holding zero terminated arrays of Ids\&. pool_whatprovides() returns an offset into this data\&.
+.RE
+.PP
+\fBMap *considered\fR
+.RS 4
+Optional bitmap that can make the library ignore solvables\&. If a bitmap is set, only solvables that have a set bit in the bitmap at their Id are considered usable\&.
+.RE
+.PP
+\fBint debugmask\fR
+.RS 4
+A mask that defines which debug events should be reported\&. pool_setdebuglevel() sets this mask\&.
+.RE
+.PP
+\fBDatapos pos\fR
+.RS 4
+An object storing some position in the repository data\&. Functions like dataiterator_set_pos() set this object, accessing data with a pseudo solvable Id of SOLVID_POS uses it\&.
+.RE
+.PP
+\fBQueue pooljobs\fR
+.RS 4
+A queue where fixed solver jobs can be stored\&. This jobs are automatically added when solver_solve() is called, they are useful to store configuration data like which packages should be multiversion installed\&.
+.RE
+.SH "CREATION AND DESTRUCTION"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBPool *pool_create()\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Create a new instance of a pool\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_free(Pool *\fR\fIpool\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Free a pool and all of the data it contains, e\&.g\&. the solvables, repositories, strings\&.
+.SH "DEBUGGING AND ERROR REPORTING"
+.SS "Constants"
+.PP
+\fBSOLV_FATAL\fR
+.RS 4
+Report the error and call \(lqexit(1)\(rq afterwards\&. You cannot mask this level\&. Reports to stderr instead of stdout\&.
+.RE
+.PP
+\fBSOLV_ERROR\fR
+.RS 4
+Used to report errors\&. Reports to stderr instead of stdout\&.
+.RE
+.PP
+\fBSOLV_WARN\fR
+.RS 4
+Used to report warnings\&.
+.RE
+.PP
+\fBSOLV_DEBUG_STATS\fR
+.RS 4
+Used to report statistical data\&.
+.RE
+.PP
+\fBSOLV_DEBUG_RULE_CREATION\fR
+.RS 4
+Used to report information about the solver\(cqs creation of rules\&.
+.RE
+.PP
+\fBSOLV_DEBUG_PROPAGATE\fR
+.RS 4
+Used to report information about the solver\(cqs unit rule propagation process\&.
+.RE
+.PP
+\fBSOLV_DEBUG_ANALYZE\fR
+.RS 4
+Used to report information about the solver\(cqs learnt rule generation mechanism\&.
+.RE
+.PP
+\fBSOLV_DEBUG_UNSOLVABLE\fR
+.RS 4
+Used to report information about the solver dealing with conflicting rules\&.
+.RE
+.PP
+\fBSOLV_DEBUG_SOLUTIONS\fR
+.RS 4
+Used to report information about the solver creating solutions to solve problems\&.
+.RE
+.PP
+\fBSOLV_DEBUG_POLICY\fR
+.RS 4
+Used to report information about the solver searching for an optimal solution\&.
+.RE
+.PP
+\fBSOLV_DEBUG_RESULT\fR
+.RS 4
+Used by the debug functions to output results\&.
+.RE
+.PP
+\fBSOLV_DEBUG_JOB\fR
+.RS 4
+Used to report information about the job rule generation process\&.
+.RE
+.PP
+\fBSOLV_DEBUG_SOLVER\fR
+.RS 4
+Used to report information about what the solver is currently doing\&.
+.RE
+.PP
+\fBSOLV_DEBUG_TRANSACTION\fR
+.RS 4
+Used to report information about the transaction generation and ordering process\&.
+.RE
+.PP
+\fBSOLV_DEBUG_TO_STDERR\fR
+.RS 4
+Write debug messages to stderr instead of stdout\&.
+.RE
+.SS "Functions"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_debug(Pool *\fR\fIpool\fR\fB, int\fR \fItype\fR\fB, const char *\fR\fIformat\fR\fB, \&.\&.\&.)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Report a message of the type \fItype\fR\&. You can filter debug messages by setting a debug mask\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_setdebuglevel(Pool *\fR\fIpool\fR\fB, int\fR \fIlevel\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Set a predefined debug mask\&. A higher level generally means more bits in the mask are set, thus more messages are printed\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_setdebugmask(Pool *\fR\fIpool\fR\fB, int\fR \fImask\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Set the debug mask to filter debug messages\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBint pool_error(Pool *\fR\fIpool\fR\fB, int\fR \fIret\fR\fB, const char *\fR\fIformat\fR\fB, \&.\&.\&.)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Set the pool\(cqs error string\&. The \fIret\fR value is simply used as a return value of the function so that you can write code like return pool_error(\&...);\&. If the debug mask contains the \fBSOLV_ERROR\fR bit, pool_debug() is also called with the message and type \fBSOLV_ERROR\fR\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBextern char *pool_errstr(Pool *\fR\fIpool\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Return the current error string stored in the pool\&. Like with the libc\(cqs errno value, the string is only meaningful after a function returned an error\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_setdebugcallback(Pool *\fR\fIpool\fR\fB, void (*\fR\fIdebugcallback\fR\fB)(Pool *, void *\fR\fIdata\fR\fB, int\fR \fItype\fR\fB, const char *\fR\fIstr\fR\fB), void *\fR\fIdebugcallbackdata\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Set a custom debug callback function\&. Instead of writing to stdout or stderr, the callback function will be called\&.
+.SH "POOL CONFIGURATION"
+.SS "Constants"
+.PP
+\fBDISTTYPE_RPM\fR
+.RS 4
+Used for systems which use rpm as low level package manager\&.
+.RE
+.PP
+\fBDISTTYPE_DEB\fR
+.RS 4
+Used for systems which use dpkg as low level package manager\&.
+.RE
+.PP
+\fBDISTTYPE_ARCH\fR
+.RS 4
+Used for systems which use the arch linux package manager\&.
+.RE
+.PP
+\fBDISTTYPE_HAIKU\fR
+.RS 4
+Used for systems which use haiku packages\&.
+.RE
+.PP
+\fBPOOL_FLAG_PROMOTEEPOCH\fR
+.RS 4
+Promote the epoch of the providing dependency to the requesting dependency if it does not contain an epoch\&. Used at some time in old rpm versions, modern systems should never need this\&.
+.RE
+.PP
+\fBPOOL_FLAG_FORBIDSELFCONFLICTS\fR
+.RS 4
+Disallow the installation of packages that conflict with themselves\&. Debian always allows self\-conflicting packages, rpm used to forbid them but switched to also allowing them recently\&.
+.RE
+.PP
+\fBPOOL_FLAG_OBSOLETEUSESPROVIDES\fR
+.RS 4
+Make obsolete type dependency match against provides instead of just the name and version of packages\&. Very old versions of rpm used the name/version, then it got switched to provides and later switched back again to just name/version\&.
+.RE
+.PP
+\fBPOOL_FLAG_IMPLICITOBSOLETEUSESPROVIDES\fR
+.RS 4
+An implicit obsoletes is the internal mechanism to remove the old package on an update\&. The default is to remove all packages with the same name, rpm\-5 switched to also removing packages providing the same name\&.
+.RE
+.PP
+\fBPOOL_FLAG_OBSOLETEUSESCOLORS\fR
+.RS 4
+Rpm\(cqs multilib implementation (used in RedHat and Fedora) distinguishes between 32bit and 64bit packages (the terminology is that they have a different color)\&. If obsoleteusescolors is set, packages with different colors will not obsolete each other\&.
+.RE
+.PP
+\fBPOOL_FLAG_IMPLICITOBSOLETEUSESCOLORS\fR
+.RS 4
+Same as POOL_FLAG_OBSOLETEUSESCOLORS, but used to find out if packages of the same name can be installed in parallel\&. For current Fedora systems, POOL_FLAG_OBSOLETEUSESCOLORS should be false and POOL_FLAG_IMPLICITOBSOLETEUSESCOLORS should be true (this is the default if FEDORA is defined when libsolv is compiled)\&.
+.RE
+.PP
+\fBPOOL_FLAG_NOINSTALLEDOBSOLETES\fR
+.RS 4
+New versions of rpm consider the obsoletes of installed packages when checking for dependency, thus you may not install a package that is obsoleted by some other installed package, unless you also erase the other package\&.
+.RE
+.PP
+\fBPOOL_FLAG_HAVEDISTEPOCH\fR
+.RS 4
+Mandriva added a new field called distepoch that gets checked in version comparison if the epoch/version/release of two packages are the same\&.
+.RE
+.PP
+\fBPOOL_FLAG_NOOBSOLETESMULTIVERSION\fR
+.RS 4
+If a package is installed in multiversionmode, rpm used to ignore both the implicit obsoletes and the obsolete dependency of a package\&. This was changed to ignoring just the implicit obsoletes, thus you may install multiple versions of the same name, but obsoleted packages still get removed\&.
+.RE
+.PP
+\fBPOOL_FLAG_ADDFILEPROVIDESFILTERED\fR
+.RS 4
+Make the addfileprovides method only add files from the standard locations (i\&.e\&. the \(lqbin\(rq and \(lqetc\(rq directories)\&. This is useful if you have only few packages that use non\-standard file dependencies, but you still want the fast speed that addfileprovides() generates\&.
+.RE
+.SS "Functions"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBint pool_setdisttype(Pool *\fR\fIpool\fR\fB, int\fR \fIdisttype\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Set the package type of your system\&. The disttype is used for example to define package comparison semantics\&. Libsolv\(cqs default disttype should match the package manager of your system, so you only need to use this function if you want to use the library to solve packaging problems for different systems\&. The Function returns the old disttype on success, and \-1 if the new disttype is not supported\&. Note that any pool_setarch and pool_setarchpolicy calls need to come after the pool_setdisttype call, as they make use of the noarch/any/all architecture id\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBint pool_set_flag(Pool *\fR\fIpool\fR\fB, int\fR \fIflag\fR\fB, int\fR \fIvalue\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Set a flag to a new value\&. Returns the old value of the flag\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBint pool_get_flag(Pool *\fR\fIpool\fR\fB, int\fR \fIflag\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Get the value of a pool flag\&. See the constants section about the meaning of the flags\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_set_rootdir(Pool *\fR\fIpool\fR\fB, const char *\fR\fIrootdir\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Set a specific root directory\&. Some library functions support a flag that tells the function to prepend the rootdir to file and directory names\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBconst char *pool_get_rootdir(Pool *\fR\fIpool\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Return the current value of the root directory\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBchar *pool_prepend_rootdir(Pool *\fR\fIpool\fR\fB, const char *\fR\fIdir\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Prepend the root directory to the \fIdir\fR argument string\&. The returned string has been newly allocated and needs to be freed after use\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBchar *pool_prepend_rootdir_tmp(Pool *\fR\fIpool\fR\fB, const char *\fR\fIdir\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Same as pool_prepend_rootdir, but uses the pool\(cqs temporary space for allocation\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_set_installed(Pool *\fR\fIpool\fR\fB, Repo *\fR\fIrepo\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Set which repository should be treated as the \(lqinstalled\(rq repository, i\&.e\&. the one that holds information about the installed packages\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_set_languages(Pool *\fR\fIpool\fR\fB, const char **\fR\fIlanguages\fR\fB, int\fR \fInlanguages\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Set the language of your system\&. The library provides lookup functions that return localized strings, for example for package descriptions\&. You can set an array of languages to provide a fallback mechanism if one language is not available\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_setarch(Pool *\fR\fIpool\fR\fB, const char *\fR\fIarch\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Set the architecture of your system\&. The architecture is used to determine which packages are installable and which packages cannot be installed\&. The \fIarch\fR argument is normally the \(lqmachine\(rq value of the \(lquname\(rq system call\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_setarchpolicy(Pool *, const char *)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Set the architecture policy for your system\&. This is the general version of pool_setarch (in fact pool_setarch calls pool_setarchpolicy internally)\&. See the section about architecture policies for more information\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_addvendorclass(Pool *\fR\fIpool\fR\fB, const char **\fR\fIvendorclass\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Add a new vendor equivalence class to the system\&. A vendor equivalence class defines if an installed package of one vendor can be replaced by a package coming from a different vendor\&. The \fIvendorclass\fR argument must be a NULL terminated array of strings\&. See the section about vendor policies for more information\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_setvendorclasses(Pool *\fR\fIpool\fR\fB, const char **\fR\fIvendorclasses\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Set all allowed vendor equivalences\&. The vendorclasses argument must be an NULL terminated array consisting of all allowed classes concatenated\&. Each class itself must be NULL terminated, thus the last class ends with two NULL elements, one to finish the class and one to finish the list of classes\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_set_custom_vendorcheck(Pool *\fR\fIpool\fR\fB, int (*\fR\fIvendorcheck\fR\fB)(Pool *, Solvable *, Solvable *))\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Define a custom vendor check mechanism\&. You can use this if libsolv\(cqs internal vendor equivalence class mechanism does not match your needs\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_setloadcallback(Pool *\fR\fIpool\fR\fB, int (*\fR\fIcb\fR\fB)(Pool *, Repodata *, void *), void *\fR\fIloadcbdata\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Define a callback function that gets called when repository metadata needs to be loaded on demand\&. See the section about on demand loading in the libsolv\-repodata manual\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_setnamespacecallback(Pool *\fR\fIpool\fR\fB, Id (*\fR\fIcb\fR\fB)(Pool *, void *,\fR \fIId\fR\fB,\fR \fIId\fR\fB), void *\fR\fInscbdata\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Define a callback function to implement custom namespace support\&. See the section about namespace dependencies\&.
+.SH "ID POOL MANAGEMENT"
+.SS "Constants"
+.PP
+\fBID_EMPTY\fR
+.RS 4
+The Id of the empty string, it is always Id 1\&.
+.RE
+.PP
+\fBREL_LT\fR
+.RS 4
+Represents a \(lq<\(rq relation\&.
+.RE
+.PP
+\fBREL_EQ\fR
+.RS 4
+Represents a \(lq=\(rq relation\&.
+.RE
+.PP
+\fBREL_GT\fR
+.RS 4
+Represents a \(lq>\(rq relation\&. You can use combinations of REL_GT, REL_EQ, and REL_LT or\-ed together to create any relation you like\&.
+.RE
+.PP
+\fBREL_AND\fR
+.RS 4
+A boolean AND operation, the \(lqname\(rq and \(lqevr\(rq parts of the relation can be two sub\-dependencies\&. Packages must match both parts of the dependency\&.
+.RE
+.PP
+\fBREL_OR\fR
+.RS 4
+A boolean OR operation, the \(lqname\(rq and \(lqevr\(rq parts of the relation can be two sub\-dependencies\&. Packages can match any part of the dependency\&.
+.RE
+.PP
+\fBREL_WITH\fR
+.RS 4
+Like REL_AND, but packages must match both dependencies simultaneously\&. See the section about boolean dependencies about more information\&.
+.RE
+.PP
+\fBREL_NAMESPACE\fR
+.RS 4
+A special namespace relation\&. See the section about namespace dependencies for more information\&.
+.RE
+.PP
+\fBREL_ARCH\fR
+.RS 4
+An architecture filter dependency\&. The \(lqname\(rq part of the relation is a sub\-dependency, the \(lqevr\(rq part is the Id of an architecture that the matching packages must have (note that this is an exact match ignoring architecture policies)\&.
+.RE
+.PP
+\fBREL_FILECONFLICT\fR
+.RS 4
+An internal file conflict dependency used to represent file conflicts\&. See the pool_add_fileconflicts_deps() function\&.
+.RE
+.PP
+\fBREL_COND\fR
+.RS 4
+A conditional dependency, the \(lqname\(rq sub\-dependency is only considered if the \(lqevr\(rq sub\-dependency is fulfilled\&. See the section about boolean dependencies about more information\&.
+.RE
+.PP
+\fBREL_UNLESS\fR
+.RS 4
+A conditional dependency, the \(lqname\(rq sub\-dependency is only considered if the \(lqevr\(rq sub\-dependency is not fulfilled\&. See the section about boolean dependencies about more information\&.
+.RE
+.PP
+\fBREL_COMPAT\fR
+.RS 4
+A compat dependency used in Haiku to represent version ranges\&. The \(lqname\(rq part is the actual version, the \(lqevr\(rq part is the backwards compatibility version\&.
+.RE
+.PP
+\fBREL_KIND\fR
+.RS 4
+A pseudo dependency that limits the solvables to a specific kind\&. The kind is expected to be a prefix of the solvable name, e\&.g\&. \(lqpatch:foo\(rq would be of kind \(lqpatch\(rq\&. \(lqREL_KIND\(rq is only supported in the selection functions\&.
+.RE
+.PP
+\fBREL_MULTIARCH\fR
+.RS 4
+A debian multiarch annotation\&. The most common value for the \(lqevr\(rq part is \(lqany\(rq\&.
+.RE
+.PP
+\fBREL_ELSE\fR
+.RS 4
+The else part of a \(lqREL_COND\(rq or \(lqREL_UNLESS\(rq dependency\&. See the section about boolean dependencies\&.
+.RE
+.PP
+\fBREL_ERROR\fR
+.RS 4
+An illegal dependency\&. This is useful to encode dependency parse errors\&.
+.RE
+.SS "Functions"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBId pool_str2id(Pool *\fR\fIpool\fR\fB, const char *\fR\fIstr\fR\fB, int\fR \fIcreate\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Add a string to the pool of unified strings, returning the Id of the string\&. If \fIcreate\fR is zero, new strings will not be added to the pool, instead Id 0 is returned\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBId pool_strn2id(Pool *\fR\fIpool\fR\fB, const char *\fR\fIstr\fR\fB, unsigned int\fR \fIlen\fR\fB, int\fR \fIcreate\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Same as pool_str2id, but only \fIlen\fR characters of the string are used\&. This can be used to add substrings to the pool\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBId pool_rel2id(Pool *\fR\fIpool\fR\fB, Id\fR \fIname\fR\fB, Id\fR \fIevr\fR\fB, int\fR \fIflags\fR\fB, int\fR \fIcreate\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Create a relational dependency from to other dependencies, \fIname\fR and \fIevr\fR, and a \fIflag\fR\&. See the \fBREL_\fR constants for the supported flags\&. As with pool_str2id, \fIcreate\fR defines if new dependencies will get added or Id zero will be returned instead\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBId pool_id2langid(Pool *\fR\fIpool\fR\fB, Id\fR \fIid\fR\fB, const char *\fR\fIlang\fR\fB, int\fR \fIcreate\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Attach a language suffix to a string Id\&. This function can be used to create language keyname Ids from keynames, it is functional equivalent to converting the \fIid\fR argument to a string, adding a \(lq:\(rq character and the \fIlang\fR argument to the string and then converting the result back into an Id\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBconst char *pool_id2str(const Pool *\fR\fIpool\fR\fB, Id\fR \fIid\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Convert an Id back into a string\&. If the Id is a relational Id, the \(lqname\(rq part will be converted instead\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBconst char *pool_id2rel(const Pool *\fR\fIpool\fR\fB, Id\fR \fIid\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Return the relation string of a relational Id\&. Returns an empty string if the passed Id is not a relation\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBconst char *pool_id2evr(const Pool *\fR\fIpool\fR\fB, Id\fR \fIid\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Return the \(lqevr\(rq part of a relational Id as string\&. Returns an empty string if the passed Id is not a relation\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBconst char *pool_dep2str(Pool *\fR\fIpool\fR\fB, Id\fR \fIid\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Convert an Id back into a string\&. If the passed Id belongs to a relation, a string representing the relation is returned\&. Note that in that case the string is allocated on the pool\(cqs temporary space\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_freeidhashes(Pool *\fR\fIpool\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Free the hashes used to unify strings and relations\&. You can use this function to save memory if you know that you will no longer create new strings and relations\&.
+.SH "SOLVABLE FUNCTIONS"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBSolvable *pool_id2solvable(const Pool *\fR\fIpool\fR\fB, Id\fR \fIp\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Convert a solvable Id into a pointer to the solvable data\&. Note that the pointer may become invalid if new solvables are created or old solvables deleted, because the array storing all solvables may get reallocated\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBId pool_solvable2id(const Pool *\fR\fIpool\fR\fB, Solvable *\fR\fIs\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Convert a pointer to the solvable data into a solvable Id\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBconst char *pool_solvid2str(Pool *\fR\fIpool\fR\fB, Id\fR \fIp\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Return a string representing the solvable with the Id \fIp\fR\&. The string will be some canonical representation of the solvable, usually a combination of the name, the version, and the architecture\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBconst char *pool_solvable2str(Pool *\fR\fIpool\fR\fB, Solvable *\fR\fIs\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Same as pool_solvid2str, but instead of the Id, a pointer to the solvable is passed\&.
+.SH "DEPENDENCY MATCHING"
+.SS "Constants"
+.PP
+\fBEVRCMP_COMPARE\fR
+.RS 4
+Compare all parts of the version, treat missing parts as empty strings\&.
+.RE
+.PP
+\fBEVRCMP_MATCH_RELEASE\fR
+.RS 4
+A special mode for rpm version string matching\&. If a version misses a release part, it matches all releases\&. In that case the special values \(lq\-2\(rq and \(lq2\(rq are returned, depending on which of the two versions did not have a release part\&.
+.RE
+.PP
+\fBEVRCMP_MATCH\fR
+.RS 4
+A generic match, missing parts always match\&.
+.RE
+.PP
+\fBEVRCMP_COMPARE_EVONLY\fR
+.RS 4
+Only compare the epoch and the version parts, ignore the release part\&.
+.RE
+.SS "Functions"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBint pool_evrcmp(const Pool *\fR\fIpool\fR\fB, Id\fR \fIevr1id\fR\fB, Id\fR \fIevr2id\fR\fB, int\fR \fImode\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Compare two version Ids, return \-1 if the first version is less than the second version, 0 if they are identical, and 1 if the first version is bigger than the second one\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBint pool_evrcmp_str(const Pool *\fR\fIpool\fR\fB, const char *\fR\fIevr1\fR\fB, const char *\fR\fIevr2\fR\fB, int\fR \fImode\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Same as pool_evrcmp(), but uses strings instead of Ids\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBint pool_evrmatch(const Pool *\fR\fIpool\fR\fB, Id\fR \fIevrid\fR\fB, const char *\fR\fIepoch\fR\fB, const char *\fR\fIversion\fR\fB, const char *\fR\fIrelease\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Match a version Id against an epoch, a version and a release string\&. Passing NULL means that the part should match everything\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBint pool_match_dep(Pool *\fR\fIpool\fR\fB, Id\fR \fId1\fR\fB, Id\fR \fId2\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Returns \(lq1\(rq if the dependency \fId1\fR (the provider) is matched by the dependency \fId2\fR, otherwise \(lq0\(rq is returned\&. For two dependencies to match, both the \(lqname\(rq parts must match and the version range described by the \(lqevr\(rq parts must overlap\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBint pool_match_nevr(Pool *\fR\fIpool\fR\fB, Solvable *\fR\fIs\fR\fB, Id\fR \fId\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Like pool_match_dep, but the provider is the "self\-provides" dependency of the Solvable \fIs\fR, i\&.e\&. the dependency \(lqs→name = s→evr\(rq\&.
+.SH "WHATPROVIDES INDEX"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_createwhatprovides(Pool *\fR\fIpool\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Create an index that maps dependency Ids to sets of packages that provide the dependency\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_freewhatprovides(Pool *\fR\fIpool\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Free the whatprovides index to save memory\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBId pool_whatprovides(Pool *\fR\fIpool\fR\fB, Id\fR \fId\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Return an offset into the Pool\(cqs whatprovidesdata array\&. The solvables with the Ids stored starting at that offset provide the dependency \fId\fR\&. The solvable list is zero terminated\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBId *pool_whatprovides_ptr(Pool *\fR\fIpool\fR\fB, Id\fR \fId\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Instead of returning the offset, return the pointer to the Ids stored at that offset\&. Note that this pointer has a very limit validity time, as any call that adds new values to the whatprovidesdata area may reallocate the array\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBId pool_queuetowhatprovides(Pool *\fR\fIpool\fR\fB, Queue *\fR\fIq\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Add the contents of the Queue \fIq\fR to the end of the whatprovidesdata array, returning the offset into the array\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_addfileprovides(Pool *\fR\fIpool\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Some package managers like rpm allow dependencies on files contained in other packages\&. To allow libsolv to deal with those dependencies in an efficient way, you need to call the addfileprovides method after creating and reading all repositories\&. This method will scan all dependency for file names and then scan all packages for matching files\&. If a filename has been matched, it will be added to the provides list of the corresponding package\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_addfileprovides_queue(Pool *\fR\fIpool\fR\fB, Queue *\fR\fIidq\fR\fB, Queue *\fR\fIidqinst\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Same as pool_addfileprovides, but the added Ids are returned in two Queues, \fIidq\fR for all repositories except the one containing the \(lqinstalled\(rq packages, \fIidqinst\fR for the latter one\&. This information can be stored in the meta section of the repositories to speed up the next time the repository is loaded and addfileprovides is called
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_set_whatprovides(\fR\fIpool\fR\fB, Id\fR \fIid\fR\fB, Id\fR \fIoffset\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Manually set an entry in the whatprovides index\&. You\(cqll never do this for package dependencies, as those entries are created by calling the pool_createwhatprovides() function\&. But this function is useful for namespace provides if you do not want to use a namespace callback to lazily set the provides\&. The offset argument is a offset in the whatprovides array, thus you can use \(lq1\(rq as a false value and \(lq2\(rq as true value\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_flush_namespaceproviders(Pool *\fR\fIpool\fR\fB, Id\fR \fIns\fR\fB, Id\fR \fIevr\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Clear the cache of the providers for namespace dependencies matching namespace \fIns\fR\&. If the \fIevr\fR argument is non\-zero, the namespace dependency for exactly that dependency is cleared, otherwise all matching namespace dependencies are cleared\&. See the section about Namespace dependencies for further information\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_add_fileconflicts_deps(Pool *\fR\fIpool\fR\fB, Queue *\fR\fIconflicts\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Some package managers like rpm report conflicts when a package installation overwrites a file of another installed package with different content\&. As file content information is not stored in the repository metadata, those conflicts can only be detected after the packages are downloaded\&. Libsolv provides a function to check for such conflicts, pool_findfileconflicts()\&. If conflicts are found, they can be added as special \fBREL_FILECONFLICT\fR provides dependencies, so that the solver will know about the conflict when it is re\-run\&.
+.SH "UTILITY FUNCTIONS"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBchar *pool_alloctmpspace(Pool *\fR\fIpool\fR\fB, int\fR \fIlen\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Allocate space on the pool\(cqs temporary space area\&. This space has a limited lifetime, it will be automatically freed after a fixed amount (currently 16) of other pool_alloctmpspace() calls are done\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_freetmpspace(Pool *\fR\fIpool\fR\fB, const char *\fR\fIspace\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Give the space allocated with pool_alloctmpspace back to the system\&. You do not have to use this function, as the space is automatically reclaimed, but it can be useful to extend the lifetime of other pointers to the pool\(cqs temporary space area\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBconst char *pool_bin2hex(Pool *\fR\fIpool\fR\fB, const unsigned char *\fR\fIbuf\fR\fB, int\fR \fIlen\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Convert some binary data to hexadecimal, returning a string allocated in the pool\(cqs temporary space area\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBchar *pool_tmpjoin(Pool *\fR\fIpool\fR\fB, const char *\fR\fIstr1\fR\fB, const char *\fR\fIstr2\fR\fB, const char *\fR\fIstr3\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Join three strings and return the result in the pool\(cqs temporary space area\&. You can use NULL arguments if you just want to join less strings\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBchar *pool_tmpappend(Pool *\fR\fIpool\fR\fB, const char *\fR\fIstr1\fR\fB, const char *\fR\fIstr2\fR\fB, const char *\fR\fIstr3\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Like pool_tmpjoin(), but if the first argument is the last allocated space in the pool\(cqs temporary space area, it will be replaced with the result of the join and no new temporary space slot will be used\&. Thus you can join more than three strings by a combination of one pool_tmpjoin() and multiple pool_tmpappend() calls\&. Note that the \fIstr1\fR pointer is no longer usable after the call\&.
+.SH "DATA LOOKUP"
+.SS "Constants"
+.PP
+\fBSOLVID_POS\fR
+.RS 4
+Use the data position stored in the pool for the lookup instead of looking up the data of a solvable\&.
+.RE
+.PP
+\fBSOLVID_META\fR
+.RS 4
+Use the data stored in the meta section of a repository (or repodata area) instead of looking up the data of a solvable\&. This constant does not work for the pool\(cqs lookup functions, use it for the repo\(cqs or repodata\(cqs lookup functions instead\&. It\(cqs just listed for completeness\&.
+.RE
+.SS "Functions"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBconst char *pool_lookup_str(Pool *\fR\fIpool\fR\fB, Id\fR \fIsolvid\fR\fB, Id\fR \fIkeyname\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Return the string value stored under the attribute \fIkeyname\fR in solvable \fIsolvid\fR\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBunsigned long long pool_lookup_num(Pool *\fR\fIpool\fR\fB, Id\fR \fIsolvid\fR\fB, Id\fR \fIkeyname\fR\fB, unsigned long long\fR \fInotfound\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Return the 64bit unsigned number stored under the attribute \fIkeyname\fR in solvable \fIsolvid\fR\&. If no such number is found, the value of the \fInotfound\fR argument is returned instead\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBId pool_lookup_id(Pool *\fR\fIpool\fR\fB, Id\fR \fIsolvid\fR\fB, Id\fR \fIkeyname\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Return the Id stored under the attribute \fIkeyname\fR in solvable \fIsolvid\fR\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBint pool_lookup_idarray(Pool *\fR\fIpool\fR\fB, Id\fR \fIsolvid\fR\fB, Id\fR \fIkeyname\fR\fB, Queue *\fR\fIq\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Fill the queue \fIq\fR with the content of the Id array stored under the attribute \fIkeyname\fR in solvable \fIsolvid\fR\&. Returns \(lq1\(rq if an array was found, otherwise the queue will be empty and \(lq0\(rq will be returned\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBint pool_lookup_void(Pool *\fR\fIpool\fR\fB, Id\fR \fIsolvid\fR\fB, Id\fR \fIkeyname\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Returns \(lq1\(rq if a void value is stored under the attribute \fIkeyname\fR in solvable \fIsolvid\fR, otherwise \(lq0\(rq\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBconst char *pool_lookup_checksum(Pool *\fR\fIpool\fR\fB, Id\fR \fIsolvid\fR\fB, Id\fR \fIkeyname\fR\fB, Id *\fR\fItypep\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Return the checksum that is stored under the attribute \fIkeyname\fR in solvable \fIsolvid\fR\&. The type of the checksum will be returned over the \fItypep\fR pointer\&. If no such checksum is found, NULL will be returned and the type will be set to zero\&. Note that the result is stored in the Pool\(cqs temporary space area\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBconst unsigned char *pool_lookup_bin_checksum(Pool *\fR\fIpool\fR\fB, Id\fR \fIsolvid\fR\fB, Id\fR \fIkeyname\fR\fB, Id *\fR\fItypep\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Return the checksum that is stored under the attribute \fIkeyname\fR in solvable \fIsolvid\fR\&. Returns the checksum as binary data, you can use the returned type to calculate the length of the checksum\&. No temporary space area is needed\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBconst char *pool_lookup_deltalocation(Pool *\fR\fIpool\fR\fB, Id\fR \fIsolvid\fR\fB, unsigned int *\fR\fImedianrp\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This is a utility lookup function to return the delta location for a delta rpm\&. As solvables cannot store deltas, you have to use SOLVID_POS as argument and set the Pool\(cqs datapos pointer to point to valid delta rpm data\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_search(Pool *\fR\fIpool\fR\fB, Id\fR \fIsolvid\fR\fB, Id\fR \fIkeyname\fR\fB, const char *\fR\fImatch\fR\fB, int\fR \fIflags\fR\fB, int (*\fR\fIcallback\fR\fB)(void *\fR\fIcbdata\fR\fB, Solvable *\fR\fIs\fR\fB, Repodata *\fR\fIdata\fR\fB, Repokey *\fR\fIkey\fR\fB, KeyValue *\fR\fIkv\fR\fB), void *\fR\fIcbdata\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Perform a search on all data stored in the pool\&. You can limit the search area by using the \fIsolvid\fR and \fIkeyname\fR arguments\&. The values can be optionally matched against the \fImatch\fR argument, use NULL if you do not want this matching\&. See the Dataiterator manpage about the possible matches modes and the \fIflags\fR argument\&. For all (matching) values, the callback function is called with the \fIcbdata\fR callback argument and the data describing the value\&.
+.SH "JOB AND SELECTION FUNCTIONS"
+.sp
+A Job consists of two Ids, \fIhow\fR and \fIwhat\fR\&. The \fIhow\fR part describes the action, the job flags, and the selection method while the \fIwhat\fR part is in input for the selection\&. A Selection is a queue consisting of multiple jobs (thus the number of elements in the queue must be a multiple of two)\&. See the Solver manpage for more information about jobs\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBconst char *pool_job2str(Pool *\fR\fIpool\fR\fB, Id\fR \fIhow\fR\fB, Id\fR \fIwhat\fR\fB, Id\fR \fIflagmask\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Convert a job into a string\&. Useful for debugging purposes\&. The \fIflagmask\fR can be used to mask the flags of the job, use \(lq0\(rq if you do not want to see such flags, \(lq\-1\(rq to see all flags, or a combination of the flags you want to see\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_job2solvables(Pool *\fR\fIpool\fR\fB, Queue *\fR\fIpkgs\fR\fB, Id\fR \fIhow\fR\fB, Id\fR \fIwhat\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Return a list of solvables that the specified job selects\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBint pool_isemptyupdatejob(Pool *\fR\fIpool\fR\fB, Id\fR \fIhow\fR\fB, Id\fR \fIwhat\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Return \(lq1\(rq if the job is an update job that does not work with any installed package, i\&.e\&. the job is basically a no\-op\&. You can use this to turn no\-op update jobs into install jobs (as done by package managers like \(lqzypper\(rq)\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBconst char *pool_selection2str(Pool *\fR\fIpool\fR\fB, Queue *\fR\fIselection\fR\fB, Id\fR \fIflagmask\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Convert a selection into a string\&. Useful for debugging purposes\&. See the pool_job2str() function for the \fIflagmask\fR argument\&.
+.SH "ODDS AND ENDS"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_freeallrepos(Pool *\fR\fIpool\fR\fB, int\fR \fIreuseids\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Free all repos from the pool (including all solvables)\&. If \fIreuseids\fR is true, all Ids of the solvables are free to be reused the next time solvables are created\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBvoid pool_clear_pos(Pool *\fR\fIpool\fR\fB)\fR;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Clear the data position stored in the pool\&.
+.SH "ARCHITECTURE POLICIES"
+.sp
+An architecture policy defines a list of architectures that can be installed on the system, and also the relationship between them (i\&.e\&. the ordering)\&. Architectures can be delimited with three different characters:
+.PP
+\fB\*(Aq:\*(Aq\fR
+.RS 4
+No relationship between the architectures\&. A package of one architecture can not be replaced with one of the other architecture\&.
+.RE
+.PP
+\fB\*(Aq>\*(Aq\fR
+.RS 4
+The first architecture is better than the second one\&. An installed package of the second architecture may be replaced with one from the first architecture and vice versa\&. The solver will select the better architecture if the versions are the same\&.
+.RE
+.PP
+\fB\*(Aq=\*(Aq\fR
+.RS 4
+The two architectures are freely exchangeable\&. Used to define aliases for architectures\&.
+.RE
+.sp
+An example would be \*(Aqx86_64:i686=athlon>i586\*(Aq\&. This means that x86_64 packages can only be replaced by other x86_64 packages, i686 packages can be replaced by i686 and i586 packages (but i686 packages will be preferred) and athlon is another name for the i686 architecture\&.
+.sp
+You can turn off the architecture replacement checks with the Solver\(cqs SOLVER_FLAG_ALLOW_ARCHCHANGE flag\&.
+.SH "VENDOR POLICIES"
+.sp
+Different vendors often compile packages with different features, so Libsolv only replace installed packages of one vendor with packages coming from the same vendor\&. Also, while the version of a package is normally defined by the upstream project, the release part of the version is set by the vendor\(cqs package maintainer, so it\(cqs not meaningful to do version comparisons for packages coming from different vendors\&.
+.sp
+Vendor in this case means the SOLVABLE_VENDOR string stored in each solvable\&. Sometimes a vendor changes names, or multiple vendors form a group that coordinate their package building, so libsolv offers a way to define that a group of vendors are compatible\&. You do that be defining vendor equivalence classes, packages from a vendor from one class may be replaced with packages from all the other vendors in the class\&.
+.sp
+There can be multiple equivalence classes, the set of allowed vendor changes for an installed package is calculated by building the union of all of the equivalence classes the vendor of the installed package is part of\&.
+.sp
+You can turn off the vendor replacement checks with the Solver\(cqs SOLVER_FLAG_ALLOW_VENDORCHANGE flag\&.
+.SH "BOOLEAN DEPENDENCIES"
+.sp
+Boolean Dependencies allow to build complex expressions from simple dependencies\&. Note that depending on the package manager only a subset of those may be useful\&. For example, debian currently only allows an "OR" expression\&.
+.PP
+\fBREL_OR\fR
+.RS 4
+The expression is true if either the first dependency or the second one is true\&. This is useful for package dependencies like \(lqRequires\(rq, where you can specify that either one of the packages need to be installed\&.
+.RE
+.PP
+\fBREL_AND\fR
+.RS 4
+The expression is true if both dependencies are true\&. The packages fulfilling the dependencies may be different, i\&.e\&. \(lqSupplements: perl REL_AND python\(rq is true if both a package providing perl and a package providing python are installed\&.
+.RE
+.PP
+\fBREL_WITH\fR
+.RS 4
+The expression is true if both dependencies are true and are fulfilled by the same package\&. Thus \(lqSupplements: perl REL_WITH python\(rq would only be true if a package is installed that provides both dependencies (some kind of multi\-language interpreter)\&.
+.RE
+.PP
+\fBREL_COND\fR
+.RS 4
+The expression is true if the first dependency is true or the second dependency is false\&. \(lqA REL_COND B\(rq is equivalent to \(lqA REL_OR (NOT B)\(rq (except that libsolv does not expose \(lqNOT\(rq)\&.
+.RE
+.PP
+\fBREL_UNLESS\fR
+.RS 4
+The expression is true if the first dependency is true and the second dependency is false\&. \(lqA REL_UNLESS B\(rq is equivalent to \(lqA REL_AND (NOT B)\(rq (except that libsolv does not expose \(lqNOT\(rq)\&.
+.RE
+.PP
+\fBREL_ELSE\fR
+.RS 4
+The \(lqelse\(rq part of a \(lqREL_COND\(rq or \(lqREL_UNLESS\(rq dependency\&. It has to be directly in the evr part of the condition, e\&.g\&. \(lqfoo REL_COND (bar REL_ELSE baz)\(rq\&. For \(lqREL_COND\(rq this is equivalent to writing \(lq(foo REL_COND bar) REL_AND (bar REL_OR baz)\(rq\&. For \(lqREL_UNLESS\(rq this is equivalent to writing \(lq(foo REL_UNLESS bar) REL_OR (bar REL_AND baz)\(rq\&.
+.RE
+.sp
+Each sub\-dependency of a boolean dependency can in turn be a boolean dependency, so you can chain them to create complex dependencies\&.
+.SH "NAMESPACE DEPENDENCIES"
+.sp
+Namespace dependencies can be used to implement dependencies on attributes external to libsolv\&. An example would be a dependency on the language set by the user\&. This types of dependencies are usually only used for \(lqConflicts\(rq or \(lqSupplements\(rq dependencies, as the underlying package manager does not know how to deal with them\&.
+.sp
+If the library needs to evaluate a namespace dependency, it calls the namespace callback function set in the pool\&. The callback function can return a set of packages that \(lqprovide\(rq the dependency\&. If the dependency is provided by the system, the returned set should consist of just the system solvable (Solvable Id 1)\&.
+.sp
+The returned set of packages must be returned as offset into the whatprovidesdata array\&. You can use the pool_queuetowhatprovides function to convert a queue into such an offset\&. To ease programming the callback function, the return values \(lq0\(rq and \(lq1\(rq are not interpreted as an offset\&. \(lq0\(rq means that no package is in the return set, \(lq1\(rq means that just the system solvable is in the set\&.
+.sp
+The returned set is cached, so that for each namespace dependency the callback is just called once\&. If you need to flush the cache (maybe because the user has selected a different language), use the pool_flush_namespaceproviders() function\&.
+.SH "AUTHOR"
+.sp
+Michael Schroeder <mls@suse\&.de>

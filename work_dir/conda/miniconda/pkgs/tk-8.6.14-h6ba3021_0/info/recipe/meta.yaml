@@ -1,0 +1,110 @@
+# This file created by conda-build 24.3.0
+# meta.yaml template originally from:
+# /var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_c2tv246l1c/clone/recipe, last modified Fri May  3 16:09:08 2024
+# ------------------------------------------------
+
+package:
+  name: tk
+  version: 8.6.14
+source:
+  - folder: tcl8.6.14
+    sha256: 5880225babf7954c58d4fb0f5cf6279104ce1cd6aa9b71e9a6322540e1c4de66
+    url: https://altushost-swe.dl.sourceforge.net/project/tcl/Tcl/8.6.14/tcl8.6.14-src.tar.gz
+  - folder: tk8.6.14
+    sha256: 8ffdb720f47a6ca6107eac2dd877e30b0ef7fac14f3a84ebbd0b3612cee41a94
+    url: https://altushost-swe.dl.sourceforge.net/project/tcl/Tcl/8.6.14/tk8.6.14-src.tar.gz
+build:
+  detect_binary_files_with_prefix: true
+  number: '0'
+  run_exports:
+    - tk >=8.6.14,<8.7.0a0
+  string: h6ba3021_0
+requirements:
+  build:
+    - cctools_osx-arm64 949.0.1 h332cad3_25
+    - clang 14.0.6 hca03da5_1
+    - clang-14 14.0.6 default_h1b80db6_1
+    - clang_osx-arm64 14.0.6 h9ff6fda_0
+    - clangxx 14.0.6 default_h1b80db6_1
+    - compiler-rt 14.0.6 h4ccfd99_0
+    - compiler-rt_osx-arm64 14.0.6 h4fb70ea_0
+    - ld64_osx-arm64 530 h001ce53_25
+    - ldid 2.1.5 h20b2a84_3
+    - libclang-cpp14 14.0.6 default_h1b80db6_1
+    - libcxx 14.0.6 h848a8c0_0
+    - libffi 3.4.4 hca03da5_1
+    - libllvm14 14.0.6 h7ec7a93_3
+    - llvm-tools 14.0.6 hfd8c8a6_3
+    - tapi 1100.0.11 h8754e6a_1
+    - zlib 1.2.13 h18a0788_1
+  host:
+    - zlib 1.2.13 h18a0788_1
+  run:
+    - zlib >=1.2.13,<1.3.0a0
+test:
+  commands:
+    - test -f "${PREFIX}/bin/tclsh"
+    - test -f "${PREFIX}/bin/wish"
+    - test -f "${PREFIX}/bin/tclsh8.6"
+    - test -f "${PREFIX}/bin/wish8.6"
+    - test -f "${PREFIX}/include/tcl.h"
+    - test -f "${PREFIX}/include/tclDecls.h"
+    - test -f "${PREFIX}/include/tclPlatDecls.h"
+    - test -f "${PREFIX}/include/tclPlatDecls.h"
+    - test -f "${PREFIX}/include/tclTomMathDecls.h"
+    - test -f "${PREFIX}/include/tclTomMath.h"
+    - test -f "${PREFIX}/include/tk.h"
+    - test -f "${PREFIX}/include/tkDecls.h"
+    - test -f "${PREFIX}/include/tkPlatDecls.h"
+    - test -f "${PREFIX}/lib/libtcl8.6.dylib"
+    - test -f "${PREFIX}/lib/libtclstub8.6.a"
+    - test -f "${PREFIX}/lib/libtk8.6.dylib"
+    - test -f "${PREFIX}/lib/libtkstub8.6.a"
+    - tclsh hello.tcl
+    - tclsh8.6 hello.tcl
+    - wish hello.tcl
+    - wish8.6 hello.tcl
+  files:
+    - hello.tcl
+about:
+  description: 'Tcl (Tool Command Language) is a very powerful but easy to learn dynamic
+    programming language,
+
+    suitable for a very wide range of uses, including web and desktop applications,
+    networking,
+
+    administration, testing and many more. Open source and business-friendly,
+
+    Tcl is a mature yet evolving language that is truly cross platform, easily deployed
+    and highly extensible.
+
+    Tk is a graphical user interface toolkit that takes developing desktop applications
+    to a higher level than
+
+    conventional approaches. Tk is the standard GUI not only for Tcl, but for many
+    other dynamic languages,
+
+    and can produce rich, native applications that run unchanged across Windows, Mac
+    OS X, Linux and more.
+
+    '
+  dev_url: https://core.tcl-lang.org/tk/home
+  doc_url: https://www.tcl.tk/man/tcl8.6/index.html
+  home: https://www.tcl.tk/
+  license: TCL
+  license_family: BSD
+  license_file: tcl8.6.14/license.terms
+  summary: A dynamic programming language with GUI support. Bundles Tcl and Tk.
+extra:
+  copy_test_source_files: true
+  final: true
+  flow_run_id: c24a3990-5214-4aa4-bd95-b5e3836a9797
+  recipe-maintainers:
+    - jakirkham
+    - jjhelmus
+    - mingwandroid
+    - msarahan
+    - ocefpaf
+    - pelson
+  remote_url: git@github.com:AnacondaRecipes/tk-feedstock.git
+  sha: 7e6bf85c7160a89134e176b5ddd1ead57e12cade

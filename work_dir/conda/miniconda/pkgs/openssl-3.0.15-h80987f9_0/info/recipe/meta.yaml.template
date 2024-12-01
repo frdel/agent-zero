@@ -1,0 +1,78 @@
+{% set name = "openssl" %}
+{% set version = "3.0.15" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://github.com/openssl/openssl/releases/download/openssl-{{ version }}/openssl-{{ version }}.tar.gz
+  sha256: 23c666d0edf20f14249b3d8f0368acaee9ab585b09e1de82107c66e1f3ec9533
+build:
+  number: 0
+  no_link: lib/libcrypto.so.3.0        # [linux]
+  no_link: lib/libcrypto.3.0.dylib     # [osx]
+  has_prefix_files:                      # [unix]
+    - bin/c_rehash                       # [unix]
+    - lib/pkgconfig/libcrypto.pc         # [unix]
+    - lib/pkgconfig/libssl.pc            # [unix]
+    - lib/pkgconfig/openssl.pc           # [unix]
+  run_exports:
+    # openssl's versioning of starting with 3.0 is X.Y.Z  (1.x was X.Y.Z(rev)
+    # https://www.openssl.org/policies/general/versioning-policy.html#minor-release
+    #    This pin allows the patch release to be >= the build-time openssl version.
+    - {{ pin_subpackage('openssl', max_pin='x') }}
+  detect_binary_files_with_prefix: True
+  binary_has_prefix_files:
+    - lib/libcrypto.so.3.0  # [linux]
+    - lib/libcrypto.3.0.dylib  # [osx]
+    - lib/libcrypto.a  # [unix]
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - nasm               # [win]
+    - make               # [unix]
+    - perl
+  run:
+    - ca-certificates
+
+test:
+  requires:
+    - python 3.8
+    - pkg-config
+  commands:
+    - copy NUL checksum.txt        # [win]
+    - touch checksum.txt           # [unix]
+    - openssl sha256 checksum.txt
+    - openssl ecparam -name prime256v1
+    - if "%SSL_CERT_FILE%"=="" exit 1  # [win]
+    - if not exist "%SSL_CERT_FILE%" exit 1  # [win]
+    - python -c "import urllib.request; urllib.request.urlopen('https://pypi.org')"
+    # test pkgconfig metadata
+    - pkg-config --print-errors --exact-version "{{ version }}" openssl
+
+about:
+  home: https://www.openssl.org/
+  license_file: LICENSE.txt
+  license: Apache-2.0
+  license_family: Apache
+  summary: OpenSSL is an open-source implementation of the SSL and TLS protocols
+  description: |
+    OpenSSL is a robust, commercial-grade, full-featured Open Source Toolkit
+    for the Transport Layer Security (TLS) protocol formerly known as the
+    Secure Sockets Layer (SSL) protocol. The protocol implementation is based
+    on a full-strength general purpose cryptographic library, which can also
+    be used stand-alone.
+  dev_url: https://github.com/openssl/openssl
+  doc_url: https://www.openssl.org/docs/man3.0/
+
+extra:
+  recipe-maintainers:
+    - jakirkham
+    - jjhelmus
+    - msarahan
+    - ocefpaf
+    - pelson
+    - carlodri
+    - chenghlee

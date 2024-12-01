@@ -1,0 +1,906 @@
+'\" t
+.\"     Title: Libsolv-Constantids
+.\"    Author: [see the "Author" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 03/02/2022
+.\"    Manual: LIBSOLV
+.\"    Source: libsolv
+.\"  Language: English
+.\"
+.TH "LIBSOLV\-CONSTANTIDS" "3" "03/02/2022" "libsolv" "LIBSOLV"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+libsolv-constantids \- fixed Ids for often used strings
+.SH "DESCRIPTION"
+.sp
+Constant Ids are Ids of strings that are often needed\&. They are defined to ease programming and reduce the number of pool_str2id calls\&. The constant Ids are part of the binary ABI of libsolv, a minor version update will only add new constants and not change existing Ids to maintain compatibility\&. The on\-disk solv format does not use the fixed Ids, but instead references the strings, so solv files can still be read when the ABI is broken\&.
+.SH "SPECIAL STRINGS"
+.PP
+\fBID_EMPTY ""\fR
+.RS 4
+The empty string\&. It will always have Id 1\&.
+.RE
+.PP
+\fBSYSTEM_SYSTEM "system:system"\fR
+.RS 4
+The name of the always installed "system" solvable\&.
+.RE
+.SH "SOLVABLE ATTRIBUTES"
+.sp
+These are Ids for keynames of attributes\&. They can be used in the lookup and storage functions to select the correct attribute in the solvable\&. The descriptions below describe the intended semantics of the values stored in the attribute with the keyname\&.
+.PP
+\fBSOLVABLE_NAME "solvable:name"\fR
+.RS 4
+The name of the package\&.
+.RE
+.PP
+\fBSOLVABLE_ARCH "solvable:arch"\fR
+.RS 4
+The architecture of the package\&. See the Solvable Architecture section for predefined architecture Id values\&.
+.RE
+.PP
+\fBSOLVABLE_EVR "solvable:evr"\fR
+.RS 4
+The version of the package\&. It usually consists of some combination of the Epoch, the Version, and the Release of the solvable\&.
+.RE
+.PP
+\fBSOLVABLE_VENDOR "solvable:vendor"\fR
+.RS 4
+A vendor string\&. Usually the company or group that created the binary package\&.
+.RE
+.PP
+\fBSOLVABLE_PROVIDES "solvable:provides"\fR
+.RS 4
+Stores an array of dependency Ids that describe the capabilities that the package provides\&.
+.RE
+.PP
+\fBSOLVABLE_OBSOLETES "solvable:obsoletes"\fR
+.RS 4
+Stores an array of dependency Ids that describe the packages that this package replaces\&.
+.RE
+.PP
+\fBSOLVABLE_CONFLICTS "solvable:conflicts"\fR
+.RS 4
+Stores an array of dependency Ids that describe the capabilities that this package conflicts with, i\&.e\&. that can\(cqt be installed together with this package\&.
+.RE
+.PP
+\fBSOLVABLE_REQUIRES "solvable:requires"\fR
+.RS 4
+Stores an array of dependency Ids that describe the capabilities that also must be installed when this package is installed\&.
+.RE
+.PP
+\fBSOLVABLE_RECOMMENDS "solvable:recommends"\fR
+.RS 4
+Stores an array of dependency Ids that describe the capabilities that also should be installed when this package is installed\&. It\(cqs not an error if not all capabilities can be met\&.
+.RE
+.PP
+\fBSOLVABLE_SUGGESTS "solvable:suggests"\fR
+.RS 4
+Stores an array of dependency Ids that describe the capabilities that also useful to have installed when this package is installed\&. This is intended to provide a hint to the user about other packages\&.
+.RE
+.PP
+\fBSOLVABLE_SUPPLEMENTS "solvable:supplements"\fR
+.RS 4
+Stores an array of dependency Ids that define that this package should be installed if one of the capabilities is met\&. This is like the recommends attribute, but works in the reverse way\&.
+.RE
+.PP
+\fBSOLVABLE_ENHANCES "solvable:enhances"\fR
+.RS 4
+Stores an array of dependency Ids that define that this package is useful to have installed if one of the capabilities is met\&. This is like the suggests attribute, but works in the reverse way\&.
+.RE
+.PP
+\fBSOLVABLE_SUMMARY "solvable:summary"\fR
+.RS 4
+The summary should be a short string without any newlines that describes what a package does\&.
+.RE
+.PP
+\fBSOLVABLE_DESCRIPTION "solvable:description"\fR
+.RS 4
+The description should be a more verbose description about what a package does\&. It may consist of multiple lines\&.
+.RE
+.PP
+\fBSOLVABLE_DISTRIBUTION "solvable:distribution"\fR
+.RS 4
+The distribution is a short string that describes the OS and OS version this package is built for\&.
+.RE
+.PP
+\fBSOLVABLE_AUTHORS "solvable:authors"\fR
+.RS 4
+A list of authors of this package\&. This attribute was used in SUSE packages\&.
+.RE
+.PP
+\fBSOLVABLE_PACKAGER "solvable:packager"\fR
+.RS 4
+The person who created the binary package, see also the vendor attribute\&.
+.RE
+.PP
+\fBSOLVABLE_GROUP "solvable:group"\fR
+.RS 4
+The package group that this package belongs to\&. See also the keywords attribute\&.
+.RE
+.PP
+\fBSOLVABLE_URL "solvable:url"\fR
+.RS 4
+An URL that points to more information about the package\&.
+.RE
+.PP
+\fBSOLVABLE_KEYWORDS "solvable:keywords"\fR
+.RS 4
+list of keyword string IDs used for tagging this package\&.
+.RE
+.PP
+\fBSOLVABLE_LICENSE "solvable:license"\fR
+.RS 4
+The license(s) of this package\&.
+.RE
+.PP
+\fBSOLVABLE_BUILDTIME "solvable:buildtime"\fR
+.RS 4
+The seconds since the unix epoch when the binary package was created\&.
+.RE
+.PP
+\fBSOLVABLE_BUILDHOST "solvable:buildhost"\fR
+.RS 4
+The name of the host on which the binary package was created\&.
+.RE
+.PP
+\fBSOLVABLE_EULA "solvable:eula"\fR
+.RS 4
+If this attribute is present the user should be asked to accept the end user license agreement before the package gets installed\&.
+.RE
+.PP
+\fBSOLVABLE_CPEID "solvable:cpeid"\fR
+.RS 4
+A Common Platform Enumeration string describes the platform this package is intended for\&. See also the distribution attribute\&.
+.RE
+.PP
+\fBSOLVABLE_MESSAGEINS "solvable:messageins"\fR
+.RS 4
+A message that should be displayed to the user when the package gets installed\&.
+.RE
+.PP
+\fBSOLVABLE_MESSAGEDEL "solvable:messagedel"\fR
+.RS 4
+A message that should be displayed to the user when the package gets erased\&.
+.RE
+.PP
+\fBSOLVABLE_INSTALLSIZE "solvable:installsize"\fR
+.RS 4
+The disk space in bytes needed when installing the package\&.
+.RE
+.PP
+\fBSOLVABLE_DISKUSAGE "solvable:diskusage"\fR
+.RS 4
+A SUSE extension that stores for each directory the needed amount of disk space in kilobytes and inodes\&.
+.RE
+.PP
+\fBSOLVABLE_FILELIST "solvable:filelist"\fR
+.RS 4
+A list of files that the package contains\&.
+.RE
+.PP
+\fBSOLVABLE_INSTALLTIME "solvable:installtime"\fR
+.RS 4
+The seconds since the unix epoch when the binary package was installed on the system\&.
+.RE
+.PP
+\fBSOLVABLE_MEDIADIR "solvable:mediadir"\fR
+.RS 4
+The directory on the repository that contains the package\&. If this attribute is set to void, the package architecture is used as directory\&.
+.RE
+.PP
+\fBSOLVABLE_MEDIAFILE "solvable:mediafile"\fR
+.RS 4
+The filename on the repository that contains the package\&. If this attribute is set to void, the canonical file name of the package is used (i\&.e\&. a combination of the name, version, architecture)\&.
+.RE
+.PP
+\fBSOLVABLE_MEDIANR "solvable:medianr"\fR
+.RS 4
+The media number\&. This is an integer describing on which of a multi\-part media set this package is on\&.
+.RE
+.PP
+\fBSOLVABLE_MEDIABASE "solvable:mediabase"\fR
+.RS 4
+This attribute can be used to overwrite the repositories base url\&.
+.RE
+.PP
+\fBSOLVABLE_DOWNLOADSIZE "solvable:downloadsize"\fR
+.RS 4
+The size of the binary package in bytes\&.
+.RE
+.PP
+\fBSOLVABLE_SOURCEARCH "solvable:sourcearch"\fR
+.RS 4
+The architecture of the source package that this package belongs to\&.
+.RE
+.PP
+\fBSOLVABLE_SOURCENAME "solvable:sourcename"\fR
+.RS 4
+The name of the source package that this package belongs to\&. If set to void, the package name attribute is used instead\&.
+.RE
+.PP
+\fBSOLVABLE_SOURCEEVR "solvable:sourceevr"\fR
+.RS 4
+The version of the source package that this package belongs to\&. If set to void, the package version attribute is used instead\&.
+.RE
+.PP
+\fBSOLVABLE_TRIGGERS "solvable:triggers"\fR
+.RS 4
+A list of package triggers for this package\&. Used in the transaction ordering code\&.
+.RE
+.PP
+\fBSOLVABLE_CHECKSUM "solvable:checksum"\fR
+.RS 4
+The checksum of the binary package\&. See the Data Types section for a list of supported algorithms\&.
+.RE
+.PP
+\fBSOLVABLE_PKGID "solvable:pkgid"\fR
+.RS 4
+A string identifying a package\&. For rpm packages, this is the md5sum over the package header and the payload\&.
+.RE
+.PP
+\fBSOLVABLE_HDRID "solvable:hdrid"\fR
+.RS 4
+A string identifying a package\&. For rpm packages, this is the sha1sum over just the package header\&.
+.RE
+.PP
+\fBSOLVABLE_LEADSIGID "solvable:leadsigid"\fR
+.RS 4
+A string identifying the signature part of a package\&. For rpm packages, this is the md5sum from the start of the file up to the package header (i\&.e\&. it includes the lead, the signature header, and the padding)\&.
+.RE
+.PP
+\fBSOLVABLE_HEADEREND "solvable:headerend"\fR
+.RS 4
+The offset of the payload in rpm binary packages\&. You can use this information to download just the header if you want to display information not included in the repository metadata\&.
+.RE
+.PP
+\fBSOLVABLE_CHANGELOG "solvable:changelog"\fR
+.RS 4
+The array containing all the changelog structures\&.
+.RE
+.PP
+\fBSOLVABLE_CHANGELOG_AUTHOR "solvable:changelog:author"\fR
+.RS 4
+The author of a changelog entry\&.
+.RE
+.PP
+\fBSOLVABLE_CHANGELOG_TIME "solvable:changelog:time"\fR
+.RS 4
+The seconds since the unix epoch when the changelog entry was written\&.
+.RE
+.PP
+\fBSOLVABLE_CHANGELOG_TEXT "solvable:changelog:text"\fR
+.RS 4
+The text of a changelog entry\&.
+.RE
+.SH "SPECIAL SOLVABLE ATTRIBUTES"
+.PP
+\fBRPM_RPMDBID "rpm:dbid"\fR
+.RS 4
+The rpm database id of this (installed) package\&. Usually a small integer number\&.
+.RE
+.PP
+\fBSOLVABLE_PATCHCATEGORY "solvable:patchcategory"\fR
+.RS 4
+The category field for patch solvables\&. Should be named \(lqupdate:category\(rq instead\&.
+.RE
+.PP
+\fBUPDATE_REBOOT "update:reboot"\fR
+.RS 4
+If this attribute is present the system should be rebooted after the update is installed\&.
+.RE
+.PP
+\fBUPDATE_RESTART "update:restart"\fR
+.RS 4
+If this attribute is present the software manager should be run again after the update is installed\&.
+.RE
+.PP
+\fBUPDATE_RELOGIN "update:relogin"\fR
+.RS 4
+If this attribute is present the user should log off and on again after the update is installed\&.
+.RE
+.PP
+\fBUPDATE_MESSAGE "update:message"\fR
+.RS 4
+A message that should be shown to the user to warn him about anything non\-standard\&.
+.RE
+.PP
+\fBUPDATE_SEVERITY "update:severity"\fR
+.RS 4
+The severity of the update\&.
+.RE
+.PP
+\fBUPDATE_RIGHTS "update:rights"\fR
+.RS 4
+Any legal or other rights of the update\&.
+.RE
+.PP
+\fBUPDATE_COLLECTION "update:collection"\fR
+.RS 4
+The array containing the package list of the update\&.
+.RE
+.PP
+\fBUPDATE_COLLECTION_NAME "update:collection:name"\fR
+.RS 4
+The name of the updated package\&.
+.RE
+.PP
+\fBUPDATE_COLLECTION_EVR "update:collection:evr"\fR
+.RS 4
+The version of the updated package\&.
+.RE
+.PP
+\fBUPDATE_COLLECTION_ARCH "update:collection:arch"\fR
+.RS 4
+The architecture of the updated package\&.
+.RE
+.PP
+\fBUPDATE_COLLECTION_FILENAME "update:collection:filename"\fR
+.RS 4
+The file name of the updated package\&.
+.RE
+.PP
+\fBUPDATE_REFERENCE "update:reference"\fR
+.RS 4
+The array containing the reference list of the update\&.
+.RE
+.PP
+\fBUPDATE_REFERENCE_TYPE "update:reference:type"\fR
+.RS 4
+The type of the reference, e\&.g\&. bugzilla\&.
+.RE
+.PP
+\fBUPDATE_REFERENCE_HREF "update:reference:href"\fR
+.RS 4
+The URL of the reference\&.
+.RE
+.PP
+\fBUPDATE_REFERENCE_ID "update:reference:id"\fR
+.RS 4
+The identification string of the reference, e\&.g\&. the bug number\&.
+.RE
+.PP
+\fBUPDATE_REFERENCE_TITLE "update:reference:title"\fR
+.RS 4
+The title of the reference, e\&.g\&. the bug summary\&.
+.RE
+.PP
+\fBPRODUCT_REFERENCEFILE "product:referencefile"\fR
+.RS 4
+The basename of the product file in the package\&.
+.RE
+.PP
+\fBPRODUCT_SHORTLABEL "product:shortlabel"\fR
+.RS 4
+An identification string of the product\&.
+.RE
+.PP
+\fBPRODUCT_DISTPRODUCT "product:distproduct"\fR
+.RS 4
+Obsolete, do not use\&. Was a SUSE Code\-10 product name\&.
+.RE
+.PP
+\fBPRODUCT_DISTVERSION "product:distversion"\fR
+.RS 4
+Obsolete, do not use\&. Was a SUSE Code\-10 product version\&.
+.RE
+.PP
+\fBPRODUCT_TYPE "product:type"\fR
+.RS 4
+The type of the product, e\&.g\&. \(lqbase\(rq\&.
+.RE
+.PP
+\fBPRODUCT_URL "product:url"\fR
+.RS 4
+An array of product URLs\&.
+.RE
+.PP
+\fBPRODUCT_URL_TYPE "product:url:type"\fR
+.RS 4
+An array of product URL types\&.
+.RE
+.PP
+\fBPRODUCT_FLAGS "product:flags"\fR
+.RS 4
+An array of product flags\&.
+.RE
+.PP
+\fBPRODUCT_PRODUCTLINE "product:productline"\fR
+.RS 4
+A product line string used for product registering\&.
+.RE
+.PP
+\fBPRODUCT_REGISTER_TARGET "product:regtarget"\fR
+.RS 4
+A target for product registering\&.
+.RE
+.PP
+\fBPRODUCT_REGISTER_RELEASE "product:regrelease"\fR
+.RS 4
+A release string for product registering\&.
+.RE
+.PP
+\fBPUBKEY_KEYID "pubkey:keyid"\fR
+.RS 4
+The keyid of a pubkey, consisting of 8 bytes in hex\&.
+.RE
+.PP
+\fBPUBKEY_FINGERPRINT "pubkey:fingerprint"\fR
+.RS 4
+The fingerprint of a pubkey, usually a sha1sum in hex\&. Old V3 RSA keys use a md5sum instead\&.
+.RE
+.PP
+\fBPUBKEY_EXPIRES "pubkey:expires"\fR
+.RS 4
+The seconds since the unix epoch when the pubkey expires\&.
+.RE
+.PP
+\fBPUBKEY_SUBKEYOF "pubkey:subkeyof"\fR
+.RS 4
+The keyid of the master pubkey for subkeys\&.
+.RE
+.PP
+\fBPUBKEY_DATA "pubkey:data"\fR
+.RS 4
+The MPI data of the pubkey\&.
+.RE
+.PP
+\fBSOLVABLE_ISVISIBLE "solvable:isvisible"\fR
+.RS 4
+An attribute describing if the package should be listed to the user or not\&. Used for SUSE patterns\&.
+.RE
+.PP
+\fBSOLVABLE_CATEGORY "solvable:category"\fR
+.RS 4
+The category of a pattern\&.
+.RE
+.PP
+\fBSOLVABLE_INCLUDES "solvable:includes"\fR
+.RS 4
+A list of other patterns that this pattern includes\&.
+.RE
+.PP
+\fBSOLVABLE_EXTENDS "solvable:extends"\fR
+.RS 4
+A list of other patterns that this pattern extends\&.
+.RE
+.PP
+\fBSOLVABLE_ICON "solvable:icon"\fR
+.RS 4
+The icon name of a pattern\&.
+.RE
+.PP
+\fBSOLVABLE_ORDER "solvable:order"\fR
+.RS 4
+An ordering clue of a pattern\&.
+.RE
+.PP
+\fBSUSETAGS_SHARE_NAME "susetags:share:name"\fR
+.RS 4
+Internal attribute to implement susetags shared records\&. Holds the name of the solvable used for sharing attributes\&.
+.RE
+.PP
+\fBSUSETAGS_SHARE_EVR "susetags:share:evr"\fR
+.RS 4
+Internal attribute to implement susetags shared records\&. Holds the version of the solvable used for sharing attributes\&.
+.RE
+.PP
+\fBSUSETAGS_SHARE_ARCH "susetags:share:arch"\fR
+.RS 4
+Internal attribute to implement susetags shared records\&. Holds the architecture of the solvable used for sharing attributes\&.
+.RE
+.SH "SOLVABLE ARCHITECTURES"
+.sp
+Predefined architecture values for commonly used architectures\&.
+.PP
+\fBARCH_SRC "src"\fR
+.RS 4
+Used for binary packages that contain the package sources\&.
+.RE
+.PP
+\fBARCH_NOSRC "nosrc"\fR
+.RS 4
+Used for binary packages that contain some of the package sources, but not all files (because of restrictions)\&.
+.RE
+.PP
+\fBARCH_NOARCH "noarch"\fR
+.RS 4
+This package can be installed on any architecture\&. Used for rpm\&.
+.RE
+.PP
+\fBARCH_ALL "all"\fR
+.RS 4
+This package can be installed on any architecture\&. Used for Debian\&.
+.RE
+.PP
+\fBARCH_ANY "any"\fR
+.RS 4
+This package can be installed on any architecture\&. Used for Archlinux and Haiku\&.
+.RE
+.SH "DEPENDENCY IDS"
+.sp
+Namespaces are special modifiers that change the meaning of a dependency\&. Namespace dependencies are created with the REL_NAMESPACE flag\&. To make custom namespaces work you have to implement a namespace callback function\&.
+.sp
+The dependency markers partition the dependency array in two parts with different semantics\&.
+.PP
+\fBNAMESPACE_MODALIAS "namespace:modalias"\fR
+.RS 4
+The dependency is a special modalias dependency that matches installed hardware\&.
+.RE
+.PP
+\fBNAMESPACE_SPLITPROVIDES "namespace:splitprovides"\fR
+.RS 4
+The dependency is a special splitprovides dependency used to implement updates that include a package split\&. A splitprovides dependency contains a filename and a package name, it is matched if a package with the provided package name is installed that contains the filename\&. This namespace is implemented in libsolv, so you do not need a callback\&.
+.RE
+.PP
+\fBNAMESPACE_LANGUAGE "namespace:language"\fR
+.RS 4
+The dependency describes a language\&. The callback should return true if the language was selected by the user\&.
+.RE
+.PP
+\fBNAMESPACE_FILESYSTEM "namespace:filesystem"\fR
+.RS 4
+The dependency describes a filesystem\&. The callback should return true if the filesystem is needed\&.
+.RE
+.PP
+\fBNAMESPACE_OTHERPROVIDERS "namespace:otherproviders"\fR
+.RS 4
+This is a hack to allow self\-conflicting packages\&. It is not needed with current rpm version, so do not use this namespace\&.
+.RE
+.PP
+\fBSOLVABLE_PREREQMARKER "solvable:prereqmarker"\fR
+.RS 4
+This marker partitions the normal require dependencies from the prerequires\&. It is not needed for dependency solving, but it is used by the transaction ordering algorithm when a dependency cycle needs to be broken (non\-prereq deps get broken first)\&.
+.RE
+.PP
+\fBSOLVABLE_FILEMARKER "solvable:filemarker"\fR
+.RS 4
+This marker partitions the package provides dependencies from the synthetic file provides dependencies added by pool_addfileprovides()\&.
+.RE
+.SH "DATA TYPES"
+.sp
+Each attribute data is stored with a type, so that the lookup functions know how to interpret the data\&. The following types are available:
+.PP
+\fBREPOKEY_TYPE_VOID "repokey:type:void"\fR
+.RS 4
+No data is stored with this attribute\&. Thus you can only test if the attribute exists or not\&. Useful to store boolean values\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_CONSTANT "repokey:type:constant"\fR
+.RS 4
+The data is a constant 32bit number\&. The number is stored in the key area, so using it does not cost extra storage space (but you need the extra key space)\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_CONSTANTID "repokey:type:constantid"\fR
+.RS 4
+The data is a constant Id\&. The Id is stored in the key area, so using it does not cost extra storage space (but you need the extra key space)\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_ID "repokey:type:id"\fR
+.RS 4
+The data is an Id\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_NUM "repokey:type:num"\fR
+.RS 4
+The data is an unsigned 64bit number\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_U32 "repokey:type:num32"\fR
+.RS 4
+The data is an unsigned 32bit number\&. Obsolete, do not use\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_DIR "repokey:type:dir"\fR
+.RS 4
+The data is an Id of a directory\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_STR "repokey:type:str"\fR
+.RS 4
+The data is a regular string\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_BINARY "repokey:type:binary"\fR
+.RS 4
+The data is a binary blob\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_IDARRAY "repokey:type:idarray"\fR
+.RS 4
+The data is an array of non\-zero Ids\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_REL_IDARRAY "repokey:type:relidarray"\fR
+.RS 4
+The data is an array of non\-zero Ids ordered so that it needs less space\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_DIRSTRARRAY "repokey:type:dirstrarray"\fR
+.RS 4
+The data is a tuple consisting of a directory Id and a basename\&. Used to store file names\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_DIRNUMNUMARRAY "repokey:type:dirnumnumarray"\fR
+.RS 4
+The data is a triple consisting of a directory Id and two 32bit unsigned integers\&. Used to store disk usage information\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_MD5 "repokey:type:md5"\fR
+.RS 4
+The data is a binary md5sum\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_SHA1 "repokey:type:sha1"\fR
+.RS 4
+The data is a binary sha1sum\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_SHA256 "repokey:type:sha256"\fR
+.RS 4
+The data is a binary sha256sum\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_FIXARRAY "repokey:type:fixarray"\fR
+.RS 4
+The data is an array of structures that have all the same layout (i\&.e\&. the same keynames and keytypes in the same order)\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_FLEXARRAY "repokey:type:flexarray"\fR
+.RS 4
+The data is an array of structures that have a different layout\&.
+.RE
+.PP
+\fBREPOKEY_TYPE_DELETED "repokey:type:deleted"\fR
+.RS 4
+The data does not exist\&. Used to mark an attribute that was deleted\&.
+.RE
+.SH "REPOSITORY METADATA"
+.sp
+This attributes contain meta information about the repository\&.
+.PP
+\fBREPOSITORY_SOLVABLES "repository:solvables"\fR
+.RS 4
+This attribute holds the array including all of the solvables\&. It is only used in the on\-disk solv files, internally the solvables are stored in the pool\(cqs solvable array for fast access\&.
+.RE
+.PP
+\fBREPOSITORY_DELTAINFO "repository:deltainfo"\fR
+.RS 4
+This attribute holds the array including all of the delta packages\&.
+.RE
+.PP
+\fBREPOSITORY_EXTERNAL "repository:external"\fR
+.RS 4
+This attribute holds the array including all of the data to construct stub repodata areas to support on\-demand loading of metadata\&.
+.RE
+.PP
+\fBREPOSITORY_KEYS "repository:keys"\fR
+.RS 4
+This should really be named "repository:external:keys", it contains an array if Ids that consists of (keyname, keytype) pairs that describe the keys of the stub\&.
+.RE
+.PP
+\fBREPOSITORY_LOCATION "repository:location"\fR
+.RS 4
+This is used to provide a file name in the stub\&.
+.RE
+.PP
+\fBREPOSITORY_ADDEDFILEPROVIDES "repository:addedfileprovides"\fR
+.RS 4
+This attribute holds an array of filename Ids, that tell the library, that all of the Ids were already added to the solvable provides\&.
+.RE
+.PP
+\fBREPOSITORY_RPMDBCOOKIE "repository:rpmdbcookie"\fR
+.RS 4
+An attribute that stores a sha256sum over the file stats of the Packages database\&. It\(cqs used to detect rebuilds of the database, as in that case the database Ids of every package are newly distributed\&.
+.RE
+.PP
+\fBREPOSITORY_TIMESTAMP "repository:timestamp"\fR
+.RS 4
+The seconds since the unix epoch when the repository was created\&.
+.RE
+.PP
+\fBREPOSITORY_EXPIRE "repository:expire"\fR
+.RS 4
+The seconds after the timestamp when the repository will expire\&.
+.RE
+.PP
+\fBREPOSITORY_UPDATES "repository:updates"\fR
+.RS 4
+An array of structures describing what this repository updates\&.
+.RE
+.PP
+\fBREPOSITORY_DISTROS "repository:distros"\fR
+.RS 4
+Also an array of structures describing what this repository updates\&. Seems to be the newer name of REPOSITORY_UPDATES\&.
+.RE
+.PP
+\fBREPOSITORY_PRODUCT_LABEL "repository:product:label"\fR
+.RS 4
+Should really be called "repository:updates:label"\&. What distribution is updated with this repository\&.
+.RE
+.PP
+\fBREPOSITORY_PRODUCT_CPEID "repository:product:cpeid"\fR
+.RS 4
+The cpeid of the platform updated by this repository\&. Is both used in REPOSITORY_UPDATES and REPOSITORY_DISTROS to maximize confusion\&.
+.RE
+.PP
+\fBREPOSITORY_REPOID "repository:repoid"\fR
+.RS 4
+An array of Id strings describing keywords/tags about the repository itself\&.
+.RE
+.PP
+\fBREPOSITORY_KEYWORDS "repository:keywords"\fR
+.RS 4
+An array of Id strings describing keywords/tags about the content of the repository\&.
+.RE
+.PP
+\fBREPOSITORY_REVISION "repository:revision"\fR
+.RS 4
+An arbitrary string describing the revision of the repository\&.
+.RE
+.PP
+\fBREPOSITORY_TOOLVERSION "repository:toolversion"\fR
+.RS 4
+Some string describing somewhat the version of libsolv used to create the solv file\&.
+.RE
+.SH "REPOSITORY METADATA FOR SUSETAGS REPOS"
+.sp
+Attributes describing repository files in a susetags repository\&. \fBSUSETAGS_DATADIR "susetags:datadir"\fR:: The directory that contains the packages\&.
+.PP
+\fBSUSETAGS_DESCRDIR "susetags:descrdir"\fR
+.RS 4
+The directory that contains the repository file resources\&.
+.RE
+.PP
+\fBSUSETAGS_DEFAULTVENDOR "susetags:defaultvendor"\fR
+.RS 4
+The default vendor used when a package does not specify a vendor\&.
+.RE
+.PP
+\fBSUSETAGS_FILE "susetags:file"\fR
+.RS 4
+An array of file resources of the repository\&.
+.RE
+.PP
+\fBSUSETAGS_FILE_NAME "susetags:file:name"\fR
+.RS 4
+The filename of the resource\&.
+.RE
+.PP
+\fBSUSETAGS_FILE_TYPE "susetags:file:type"\fR
+.RS 4
+The type of the resource, e\&.g\&. \(lqMETA\(rq\&.
+.RE
+.PP
+\fBSUSETAGS_FILE_CHECKSUM "susetags:file:checksum"\fR
+.RS 4
+The file checksum of the resource\&.
+.RE
+.SH "REPOSITORY METADATA FOR RPMMD REPOS"
+.PP
+\fBREPOSITORY_REPOMD "repository:repomd"\fR
+.RS 4
+An array of file resources of the repository\&.
+.RE
+.PP
+\fBREPOSITORY_REPOMD_TYPE "repository:repomd:type"\fR
+.RS 4
+The type of the resource, e\&.g\&. \(lqprimary\(rq\&.
+.RE
+.PP
+\fBREPOSITORY_REPOMD_LOCATION "repository:repomd:location"\fR
+.RS 4
+The location (aka filename) of the resource
+.RE
+.PP
+\fBREPOSITORY_REPOMD_TIMESTAMP "repository:repomd:timestamp"\fR
+.RS 4
+The seconds since the unix epoch when the resource was created\&.
+.RE
+.PP
+\fBREPOSITORY_REPOMD_CHECKSUM "repository:repomd:checksum"\fR
+.RS 4
+The file checksum of the resource\&.
+.RE
+.PP
+\fBREPOSITORY_REPOMD_OPENCHECKSUM "repository:repomd:openchecksum"\fR
+.RS 4
+The checksum over the uncompressed contents of the resource\&.
+.RE
+.PP
+\fBREPOSITORY_REPOMD_SIZE "repository:repomd:size"\fR
+.RS 4
+The size of the resource file\&.
+.RE
+.SH "DELTA PACKAGE ATTRIBUTES"
+.PP
+\fBDELTA_PACKAGE_NAME "delta:pkgname"\fR
+.RS 4
+The target package name for the delta package\&. Applying the delta will recreate the target package\&.
+.RE
+.PP
+\fBDELTA_PACKAGE_EVR "delta:pkgevr"\fR
+.RS 4
+The version of the target package\&.
+.RE
+.PP
+\fBDELTA_PACKAGE_ARCH "delta:pkgarch"\fR
+.RS 4
+The architecture of the target package\&.
+.RE
+.PP
+\fBDELTA_LOCATION_DIR "delta:locdir"\fR
+.RS 4
+The directory in the repository that contains the delta package\&.
+.RE
+.PP
+\fBDELTA_LOCATION_NAME "delta:locname"\fR
+.RS 4
+The first part of the file name of the delta package\&.
+.RE
+.PP
+\fBDELTA_LOCATION_EVR "delta:locevr"\fR
+.RS 4
+The version part of the file name of the delta package\&.
+.RE
+.PP
+\fBDELTA_LOCATION_SUFFIX "delta:locsuffix"\fR
+.RS 4
+The suffix part of the file name of the delta package\&.
+.RE
+.PP
+\fBDELTA_LOCATION_BASE "delta:locbase"\fR
+.RS 4
+This attribute can be used to overwrite the repositories base url for the delta\&.
+.RE
+.PP
+\fBDELTA_DOWNLOADSIZE "delta:downloadsize"\fR
+.RS 4
+The size of the delta rpm file\&.
+.RE
+.PP
+\fBDELTA_CHECKSUM "delta:checksum"\fR
+.RS 4
+The checksum of the delta rpm file\&.
+.RE
+.PP
+\fBDELTA_BASE_EVR "delta:baseevr"\fR
+.RS 4
+The version of the package the delta was built against\&.
+.RE
+.PP
+\fBDELTA_SEQ_NAME "delta:seqname"\fR
+.RS 4
+The first part of the delta sequence, the base package name\&.
+.RE
+.PP
+\fBDELTA_SEQ_EVR "delta:seqevr"\fR
+.RS 4
+The evr part of the delta sequence, the base package evr\&. Identical to the DELTA_BASE_EVR attribute\&.
+.RE
+.PP
+\fBDELTA_SEQ_NUM "delta:seqnum"\fR
+.RS 4
+The last part of the delta sequence, the content selection string\&.
+.RE
+.SH "AUTHOR"
+.sp
+Michael Schroeder <mls@suse\&.de>

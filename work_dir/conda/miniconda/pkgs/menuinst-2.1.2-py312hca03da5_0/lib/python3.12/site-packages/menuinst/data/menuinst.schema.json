@@ -1,0 +1,731 @@
+{
+  "title": "MenuInstSchema",
+  "description": "Metadata required to create menu items across operating systems with ``menuinst``.",
+  "type": "object",
+  "properties": {
+    "$id": {
+      "title": "$Id",
+      "description": "Version of the menuinst schema.",
+      "enum": [
+        "https://schemas.conda.io/menuinst-1.schema.json"
+      ],
+      "type": "string"
+    },
+    "$schema": {
+      "title": "$Schema",
+      "description": "Standard of the JSON schema we adhere to.",
+      "enum": [
+        "https://json-schema.org/draft-07/schema"
+      ],
+      "type": "string"
+    },
+    "menu_name": {
+      "title": "Menu Name",
+      "minLength": 1,
+      "type": "string"
+    },
+    "menu_items": {
+      "title": "Menu Items",
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/MenuItem"
+      }
+    }
+  },
+  "required": [
+    "$id",
+    "$schema",
+    "menu_name",
+    "menu_items"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "MenuItemNameDict": {
+      "title": "MenuItemNameDict",
+      "description": "Variable menu item name.\nUse this dictionary if the menu item name depends on installation parameters\nsuch as the target environment.",
+      "type": "object",
+      "properties": {
+        "target_environment_is_base": {
+          "title": "Target Environment Is Base",
+          "minLength": 1,
+          "type": "string"
+        },
+        "target_environment_is_not_base": {
+          "title": "Target Environment Is Not Base",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Linux": {
+      "title": "Linux",
+      "description": "Linux-specific instructions.\n\nCheck the `Desktop entry specification\n<https://specifications.freedesktop.org/desktop-entry-spec/latest/recognized-keys.html>`__\nfor more details.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "$ref": "#/definitions/MenuItemNameDict"
+            }
+          ]
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "icon": {
+          "title": "Icon",
+          "minLength": 1,
+          "type": "string"
+        },
+        "command": {
+          "title": "Command",
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "working_dir": {
+          "title": "Working Dir",
+          "minLength": 1,
+          "type": "string"
+        },
+        "precommand": {
+          "title": "Precommand",
+          "minLength": 1,
+          "type": "string"
+        },
+        "precreate": {
+          "title": "Precreate",
+          "minLength": 1,
+          "type": "string"
+        },
+        "activate": {
+          "title": "Activate",
+          "type": "boolean"
+        },
+        "terminal": {
+          "title": "Terminal",
+          "type": "boolean"
+        },
+        "Categories": {
+          "title": "Categories",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^.+;$"
+            }
+          ]
+        },
+        "DBusActivatable": {
+          "title": "Dbusactivatable",
+          "type": "boolean"
+        },
+        "GenericName": {
+          "title": "Genericname",
+          "type": "string"
+        },
+        "Hidden": {
+          "title": "Hidden",
+          "type": "boolean"
+        },
+        "Implements": {
+          "title": "Implements",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^.+;$"
+            }
+          ]
+        },
+        "Keywords": {
+          "title": "Keywords",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^.+;$"
+            }
+          ]
+        },
+        "MimeType": {
+          "title": "Mimetype",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^.+;$"
+            }
+          ]
+        },
+        "NoDisplay": {
+          "title": "Nodisplay",
+          "type": "boolean"
+        },
+        "NotShowIn": {
+          "title": "Notshowin",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^.+;$"
+            }
+          ]
+        },
+        "OnlyShowIn": {
+          "title": "Onlyshowin",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^.+;$"
+            }
+          ]
+        },
+        "PrefersNonDefaultGPU": {
+          "title": "Prefersnondefaultgpu",
+          "type": "boolean"
+        },
+        "StartupNotify": {
+          "title": "Startupnotify",
+          "type": "boolean"
+        },
+        "StartupWMClass": {
+          "title": "Startupwmclass",
+          "type": "string"
+        },
+        "TryExec": {
+          "title": "Tryexec",
+          "type": "string"
+        },
+        "glob_patterns": {
+          "title": "Glob Patterns",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": ".*\\*.*"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "CFBundleURLTypesModel": {
+      "title": "CFBundleURLTypesModel",
+      "description": "Describes a URL scheme associated with the app.",
+      "type": "object",
+      "properties": {
+        "CFBundleTypeRole": {
+          "title": "Cfbundletyperole",
+          "enum": [
+            "Editor",
+            "Viewer",
+            "Shell",
+            "None"
+          ],
+          "type": "string"
+        },
+        "CFBundleURLSchemes": {
+          "title": "Cfbundleurlschemes",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "CFBundleURLName": {
+          "title": "Cfbundleurlname",
+          "type": "string"
+        },
+        "CFBundleURLIconFile": {
+          "title": "Cfbundleurliconfile",
+          "type": "string"
+        }
+      },
+      "required": [
+        "CFBundleURLSchemes"
+      ],
+      "additionalProperties": false
+    },
+    "CFBundleDocumentTypesModel": {
+      "title": "CFBundleDocumentTypesModel",
+      "description": "Describes a document type associated with the app.",
+      "type": "object",
+      "properties": {
+        "CFBundleTypeIconFile": {
+          "title": "Cfbundletypeiconfile",
+          "type": "string"
+        },
+        "CFBundleTypeName": {
+          "title": "Cfbundletypename",
+          "type": "string"
+        },
+        "CFBundleTypeRole": {
+          "title": "Cfbundletyperole",
+          "enum": [
+            "Editor",
+            "Viewer",
+            "Shell",
+            "None"
+          ],
+          "type": "string"
+        },
+        "LSItemContentTypes": {
+          "title": "Lsitemcontenttypes",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "LSHandlerRank": {
+          "title": "Lshandlerrank",
+          "enum": [
+            "Owner",
+            "Default",
+            "Alternate"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "CFBundleTypeName",
+        "LSItemContentTypes",
+        "LSHandlerRank"
+      ],
+      "additionalProperties": false
+    },
+    "UTTypeDeclarationModel": {
+      "title": "UTTypeDeclarationModel",
+      "type": "object",
+      "properties": {
+        "UTTypeConformsTo": {
+          "title": "Uttypeconformsto",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "UTTypeDescription": {
+          "title": "Uttypedescription",
+          "type": "string"
+        },
+        "UTTypeIconFile": {
+          "title": "Uttypeiconfile",
+          "type": "string"
+        },
+        "UTTypeIdentifier": {
+          "title": "Uttypeidentifier",
+          "type": "string"
+        },
+        "UTTypeReferenceURL": {
+          "title": "Uttypereferenceurl",
+          "type": "string"
+        },
+        "UTTypeTagSpecification": {
+          "title": "Uttypetagspecification",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [
+        "UTTypeConformsTo",
+        "UTTypeIdentifier",
+        "UTTypeTagSpecification"
+      ],
+      "additionalProperties": false
+    },
+    "MacOS": {
+      "title": "MacOS",
+      "description": "Mac-specific instructions. Check these URLs for more info:\n\n- ``CF*`` keys: see `Core Foundation Keys <https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html>`__\n- ``LS*`` keys: see `Launch Services Keys <https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/LaunchServicesKeys.html>`__\n- ``entitlements``: see `Entitlements documentation <https://developer.apple.com/documentation/bundleresources/entitlements>`__",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "$ref": "#/definitions/MenuItemNameDict"
+            }
+          ]
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "icon": {
+          "title": "Icon",
+          "minLength": 1,
+          "type": "string"
+        },
+        "command": {
+          "title": "Command",
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "working_dir": {
+          "title": "Working Dir",
+          "minLength": 1,
+          "type": "string"
+        },
+        "precommand": {
+          "title": "Precommand",
+          "minLength": 1,
+          "type": "string"
+        },
+        "precreate": {
+          "title": "Precreate",
+          "minLength": 1,
+          "type": "string"
+        },
+        "activate": {
+          "title": "Activate",
+          "type": "boolean"
+        },
+        "terminal": {
+          "title": "Terminal",
+          "type": "boolean"
+        },
+        "CFBundleDisplayName": {
+          "title": "Cfbundledisplayname",
+          "type": "string"
+        },
+        "CFBundleIdentifier": {
+          "title": "Cfbundleidentifier",
+          "pattern": "^[A-z0-9\\-\\.]+$",
+          "type": "string"
+        },
+        "CFBundleName": {
+          "title": "Cfbundlename",
+          "maxLength": 16,
+          "type": "string"
+        },
+        "CFBundleSpokenName": {
+          "title": "Cfbundlespokenname",
+          "type": "string"
+        },
+        "CFBundleVersion": {
+          "title": "Cfbundleversion",
+          "pattern": "^\\S+$",
+          "type": "string"
+        },
+        "CFBundleURLTypes": {
+          "title": "Cfbundleurltypes",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CFBundleURLTypesModel"
+          }
+        },
+        "CFBundleDocumentTypes": {
+          "title": "Cfbundledocumenttypes",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CFBundleDocumentTypesModel"
+          }
+        },
+        "LSApplicationCategoryType": {
+          "title": "Lsapplicationcategorytype",
+          "pattern": "^public\\.app-category\\.\\S+$",
+          "type": "string"
+        },
+        "LSBackgroundOnly": {
+          "title": "Lsbackgroundonly",
+          "type": "boolean"
+        },
+        "LSEnvironment": {
+          "title": "Lsenvironment",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "LSMinimumSystemVersion": {
+          "title": "Lsminimumsystemversion",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "type": "string"
+        },
+        "LSMultipleInstancesProhibited": {
+          "title": "Lsmultipleinstancesprohibited",
+          "type": "boolean"
+        },
+        "LSRequiresNativeExecution": {
+          "title": "Lsrequiresnativeexecution",
+          "type": "boolean"
+        },
+        "NSSupportsAutomaticGraphicsSwitching": {
+          "title": "Nssupportsautomaticgraphicsswitching",
+          "type": "boolean"
+        },
+        "UTExportedTypeDeclarations": {
+          "title": "Utexportedtypedeclarations",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/UTTypeDeclarationModel"
+          }
+        },
+        "UTImportedTypeDeclarations": {
+          "title": "Utimportedtypedeclarations",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/UTTypeDeclarationModel"
+          }
+        },
+        "entitlements": {
+          "title": "Entitlements",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "[a-z0-9\\.\\-]+"
+          }
+        },
+        "link_in_bundle": {
+          "title": "Link In Bundle",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^(?!\\/)(?!\\.\\./).*"
+          }
+        },
+        "event_handler": {
+          "title": "Event Handler",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Windows": {
+      "title": "Windows",
+      "description": "Windows-specific instructions. You can override global keys here if needed",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "$ref": "#/definitions/MenuItemNameDict"
+            }
+          ]
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "icon": {
+          "title": "Icon",
+          "minLength": 1,
+          "type": "string"
+        },
+        "command": {
+          "title": "Command",
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "working_dir": {
+          "title": "Working Dir",
+          "minLength": 1,
+          "type": "string"
+        },
+        "precommand": {
+          "title": "Precommand",
+          "minLength": 1,
+          "type": "string"
+        },
+        "precreate": {
+          "title": "Precreate",
+          "minLength": 1,
+          "type": "string"
+        },
+        "activate": {
+          "title": "Activate",
+          "type": "boolean"
+        },
+        "terminal": {
+          "title": "Terminal",
+          "type": "boolean"
+        },
+        "desktop": {
+          "title": "Desktop",
+          "default": true,
+          "type": "boolean"
+        },
+        "quicklaunch": {
+          "title": "Quicklaunch",
+          "default": true,
+          "type": "boolean"
+        },
+        "terminal_profile": {
+          "title": "Terminal Profile",
+          "minLength": 1,
+          "type": "string"
+        },
+        "url_protocols": {
+          "title": "Url Protocols",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "\\S+"
+          }
+        },
+        "file_extensions": {
+          "title": "File Extensions",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "\\.\\S*"
+          }
+        },
+        "app_user_model_id": {
+          "title": "App User Model Id",
+          "maxLength": 128,
+          "pattern": "\\S+\\.\\S+",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Platforms": {
+      "title": "Platforms",
+      "description": "Platform specific options.\n\nNote each of these fields supports the same keys as the top-level :class:`MenuItem`\n(sans ``platforms`` itself), in case overrides are needed.",
+      "type": "object",
+      "properties": {
+        "linux": {
+          "$ref": "#/definitions/Linux"
+        },
+        "osx": {
+          "$ref": "#/definitions/MacOS"
+        },
+        "win": {
+          "$ref": "#/definitions/Windows"
+        }
+      },
+      "additionalProperties": false
+    },
+    "MenuItem": {
+      "title": "MenuItem",
+      "description": "Instructions to create a menu item across operating systems.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "$ref": "#/definitions/MenuItemNameDict"
+            }
+          ]
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "command": {
+          "title": "Command",
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "icon": {
+          "title": "Icon",
+          "minLength": 1,
+          "type": "string"
+        },
+        "precommand": {
+          "title": "Precommand",
+          "minLength": 1,
+          "type": "string"
+        },
+        "precreate": {
+          "title": "Precreate",
+          "minLength": 1,
+          "type": "string"
+        },
+        "working_dir": {
+          "title": "Working Dir",
+          "minLength": 1,
+          "type": "string"
+        },
+        "activate": {
+          "title": "Activate",
+          "default": true,
+          "type": "boolean"
+        },
+        "terminal": {
+          "title": "Terminal",
+          "default": false,
+          "type": "boolean"
+        },
+        "platforms": {
+          "$ref": "#/definitions/Platforms"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "command",
+        "platforms"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

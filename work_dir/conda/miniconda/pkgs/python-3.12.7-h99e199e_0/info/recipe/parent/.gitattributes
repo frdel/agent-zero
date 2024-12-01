@@ -1,0 +1,24 @@
+* text=auto
+
+*.patch binary
+*.diff binary
+meta.yaml text eol=lf
+build.sh text eol=lf
+bld.bat text eol=crlf
+
+# github helper pieces to make some files not show up in diffs automatically
+.azure-pipelines/* linguist-generated=true
+.circleci/* linguist-generated=true
+.drone/* linguist-generated=true
+.drone.yml linguist-generated=true
+.github/* linguist-generated=true
+.travis/* linguist-generated=true
+.appveyor.yml linguist-generated=true
+.gitattributes linguist-generated=true
+.gitignore linguist-generated=true
+.travis.yml linguist-generated=true
+LICENSE.txt linguist-generated=true
+README.md linguist-generated=true
+azure-pipelines.yml linguist-generated=true
+build-locally.py linguist-generated=true
+shippable.yml linguist-generated=true

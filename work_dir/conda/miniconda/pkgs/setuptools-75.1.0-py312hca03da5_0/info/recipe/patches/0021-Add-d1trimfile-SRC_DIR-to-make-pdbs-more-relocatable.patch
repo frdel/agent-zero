@@ -1,0 +1,39 @@
+From 0d70da5df95503fdaf6d5847733370eb22baf6c7 Mon Sep 17 00:00:00 2001
+From: Ray Donnelly <mingw.android@gmail.com>
+Date: Tue, 31 Dec 2019 20:46:36 +0100
+Subject: [PATCH 21/30] Add /d1trimfile:%SRC_DIR% to make pdbs more relocatable
+
+---
+ Lib/distutils/_msvccompiler.py | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/setuptools/_distutils/_msvccompiler.py b/setuptools/_distutils/_msvccompiler.py
+index af8099a407..8f73453a6c 100644
+--- a/setuptools/_distutils/_msvccompiler.py
++++ b/setuptools/_distutils/_msvccompiler.py
+@@ -367,6 +367,13 @@ class MSVCCompiler(CCompiler) :
+                 # without asking the user to browse for it
+                 src = os.path.abspath(src)
+
++            # Anaconda/conda-forge customisation, we want our pdbs to be
++            # relocatable:
++            # https://developercommunity.visualstudio.com/comments/623156/view.html
++            d1trimfile_opts = []
++            if 'SRC_DIR' in os.environ and os.path.basename(self.cc) == "cl.exe":
++                d1trimfile_opts.append("/d1trimfile:" + os.environ['SRC_DIR'])
++
+             if ext in self._c_extensions:
+                 input_opt = "/Tc" + src
+             elif ext in self._cpp_extensions:
+@@ -410,7 +417,7 @@ class MSVCCompiler(CCompiler) :
+                # how to handle this file?
+                raise CompileError(f"Don't know how to compile {src} to {obj}")
+
+-            args = [self.cc] + compile_opts + pp_opts
++            args = [self.cc] + compile_opts + pp_opts + d1trimfile_opts
+             if add_cpp_opts:
+                 args.append('/EHsc')
+             args.append(input_opt)
+--
+2.23.0
+

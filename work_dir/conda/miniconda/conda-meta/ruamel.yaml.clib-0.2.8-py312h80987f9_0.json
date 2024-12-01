@@ -1,0 +1,41 @@
+{
+  "build": "py312h80987f9_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "python >=3.12,<3.13.0a0"
+  ],
+  "extracted_package_dir": "/tmp/miniconda_temp/pkgs/ruamel.yaml.clib-0.2.8-py312h80987f9_0",
+  "files": [
+    "lib/python3.12/site-packages/_ruamel_yaml.cpython-312-darwin.so",
+    "lib/python3.12/site-packages/ruamel.yaml.clib-0.2.8.dist-info/INSTALLER",
+    "lib/python3.12/site-packages/ruamel.yaml.clib-0.2.8.dist-info/LICENSE",
+    "lib/python3.12/site-packages/ruamel.yaml.clib-0.2.8.dist-info/METADATA",
+    "lib/python3.12/site-packages/ruamel.yaml.clib-0.2.8.dist-info/RECORD",
+    "lib/python3.12/site-packages/ruamel.yaml.clib-0.2.8.dist-info/REQUESTED",
+    "lib/python3.12/site-packages/ruamel.yaml.clib-0.2.8.dist-info/WHEEL",
+    "lib/python3.12/site-packages/ruamel.yaml.clib-0.2.8.dist-info/direct_url.json",
+    "lib/python3.12/site-packages/ruamel.yaml.clib-0.2.8.dist-info/top_level.txt"
+  ],
+  "fn": "ruamel.yaml.clib-0.2.8-py312h80987f9_0.conda",
+  "license": "MIT",
+  "link": {
+    "source": "/tmp/miniconda_temp/pkgs/ruamel.yaml.clib-0.2.8-py312h80987f9_0",
+    "type": 1
+  },
+  "md5": "5f5c5b34268d0bf0f95cfdf5488154d2",
+  "name": "ruamel.yaml.clib",
+  "package_tarball_full_path": "/tmp/miniconda_temp/pkgs/ruamel.yaml.clib-0.2.8-py312h80987f9_0.conda",
+  "paths_data": {
+    "paths": [],
+    "paths_version": 1
+  },
+  "requested_spec": "defaults/osx-arm64::ruamel.yaml.clib==0.2.8=py312h80987f9_0[md5=5f5c5b34268d0bf0f95cfdf5488154d2]",
+  "sha256": "5a16d728c4ca82047666fd3db4d98fc7c21a038d41f6f9c056b2a8a04c56e161",
+  "size": 134101,
+  "subdir": "osx-arm64",
+  "timestamp": 1727769862000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/ruamel.yaml.clib-0.2.8-py312h80987f9_0.conda",
+  "version": "0.2.8"
+}

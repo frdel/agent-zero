@@ -1,0 +1,7 @@
+include/zconf.h
+include/zlib.h
+lib/libz.1.2.13.dylib
+lib/libz.1.dylib
+lib/libz.a
+lib/libz.dylib
+lib/pkgconfig/zlib.pc

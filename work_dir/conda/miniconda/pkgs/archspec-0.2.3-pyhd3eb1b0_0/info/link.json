@@ -1,0 +1,9 @@
+{
+  "noarch": {
+    "entry_points": [
+      "archspec = archspec.cli:main"
+    ],
+    "type": "python"
+  },
+  "package_metadata_version": 1
+}

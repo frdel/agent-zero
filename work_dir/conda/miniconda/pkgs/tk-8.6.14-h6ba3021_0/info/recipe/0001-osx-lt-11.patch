@@ -1,0 +1,18 @@
+--- unix/configure.orig	2024-04-30 16:31:23
++++ unix/configure	2024-04-30 16:31:55
+@@ -9450,9 +9450,12 @@
+ _ACEOF
+ 
+     LIBS="$LIBS -framework Cocoa -framework Carbon -framework IOKit -framework QuartzCore"
+-    if test -d "/System/Library/Frameworks/UniformTypeIdentifiers.framework"; then
+-        LIBS="$LIBS -weak_framework UniformTypeIdentifiers"
+-    fi
++#--------------------------------------------------------------------
++# UniformTypeIdentifiers requires building with at least MacOSX SDK 11.0
++#    if test -d "/System/Library/Frameworks/UniformTypeIdentifiers.framework"; then
++#        LIBS="$LIBS -weak_framework UniformTypeIdentifiers"
++#    fi
++#--------------------------------------------------------------------
+     EXTRA_CC_SWITCHES='-std=gnu99 -x objective-c'
+     TK_WINDOWINGSYSTEM=AQUA
+     if test -n "${enable_symbols}" -a "${enable_symbols}" != no; then

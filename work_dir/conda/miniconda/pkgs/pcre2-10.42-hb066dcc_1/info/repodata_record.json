@@ -1,0 +1,20 @@
+{
+  "build": "hb066dcc_1",
+  "build_number": 1,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "bzip2 >=1.0.8,<2.0a0",
+    "zlib >=1.2.13,<1.3.0a0"
+  ],
+  "fn": "pcre2-10.42-hb066dcc_1.conda",
+  "license": "BSD-3-Clause",
+  "md5": "fc667c2c468a34dbbc51af0e49df31b2",
+  "name": "pcre2",
+  "sha256": "ebf32fa9638e8f502398577975ab8aaa2645609fff9501e928dc332dcab79767",
+  "size": 814995,
+  "subdir": "osx-arm64",
+  "timestamp": 1714657668000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/pcre2-10.42-hb066dcc_1.conda",
+  "version": "10.42"
+}

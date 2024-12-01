@@ -1,0 +1,16 @@
+bin/lz4
+bin/lz4c
+bin/lz4cat
+bin/unlz4
+include/lz4.h
+include/lz4frame.h
+include/lz4frame_static.h
+include/lz4hc.h
+lib/liblz4.1.9.4.dylib
+lib/liblz4.1.dylib
+lib/liblz4.dylib
+lib/pkgconfig/liblz4.pc
+share/man/man1/lz4.1
+share/man/man1/lz4c.1
+share/man/man1/lz4cat.1
+share/man/man1/unlz4.1

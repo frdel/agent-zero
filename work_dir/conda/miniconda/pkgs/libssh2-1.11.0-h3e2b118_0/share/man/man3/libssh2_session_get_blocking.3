@@ -1,0 +1,17 @@
+.TH libssh2_session_get_blocking 3 "1 Jun 2007" "libssh2 0.15" "libssh2"
+.SH NAME
+libssh2_session_get_blocking - TODO
+.SH SYNOPSIS
+.nf
+#include <libssh2.h>
+
+int
+libssh2_session_get_blocking(LIBSSH2_SESSION *session);
+.fi
+.SH DESCRIPTION
+Returns 0 if the state of the session has previously be set to non-blocking
+and it returns 1 if the state was set to blocking.
+.SH RETURN VALUE
+See description.
+.SH SEE ALSO
+.BR libssh2_session_set_blocking(3)

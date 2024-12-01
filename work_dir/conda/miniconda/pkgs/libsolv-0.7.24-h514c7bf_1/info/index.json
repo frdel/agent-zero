@@ -1,0 +1,17 @@
+{
+  "arch": "arm64",
+  "build": "h514c7bf_1",
+  "build_number": 1,
+  "depends": [
+    "libcxx >=14.0.6",
+    "pcre2 >=10.42,<10.43.0a0",
+    "zlib >=1.2.13,<1.3.0a0"
+  ],
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "name": "libsolv",
+  "platform": "osx",
+  "subdir": "osx-arm64",
+  "timestamp": 1714483596557,
+  "version": "0.7.24"
+}

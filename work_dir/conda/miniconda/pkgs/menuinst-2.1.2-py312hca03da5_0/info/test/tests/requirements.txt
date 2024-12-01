@@ -1,0 +1,9 @@
+python
+pip
+conda
+pydantic
+pytest
+pytest-cov
+pytest-mock
+hypothesis
+hypothesis-jsonschema

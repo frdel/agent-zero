@@ -1,0 +1,24 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema",
+    "$id": "https://schemas.conda.io/menuinst-1.schema.json",
+    "menu_name": "Example with macOS symlinks",
+    "menu_items": [
+        {
+            "name": "Example with symlinks on macOS",
+            "description": "This examples include symlinks on macOS, which require code signing.",
+            "icon": null,
+            "command": [
+                "{{ MENU_ITEM_LOCATION }}/Contents/Resources/python",
+                "-c",
+                "import sys; print(sys.executable)"
+            ],
+            "platforms": {
+                "osx": {
+                    "link_in_bundle": {
+                        "{{ PREFIX }}/bin/python": "{{ MENU_ITEM_LOCATION }}/Contents/Resources/python"
+                    }
+                }
+            }
+        }
+    ]
+}

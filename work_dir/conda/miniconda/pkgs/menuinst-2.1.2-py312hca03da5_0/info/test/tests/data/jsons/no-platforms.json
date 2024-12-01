@@ -1,0 +1,18 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema",
+    "$id": "https://schemas.conda.io/menuinst-1.schema.json",
+    "menu_name": "NoPlatforms",
+    "menu_items": [
+        {
+            "name": "NoPlatforms",
+            "description": "This won't install to any platform because the 'platforms' key is empty.",
+            "icon": null,
+            "command": [
+                "python",
+                "-m",
+                "this"
+            ],
+            "platforms": {}
+        }
+    ]
+}

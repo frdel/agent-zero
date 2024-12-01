@@ -1,0 +1,22 @@
+Intellectual Property Notice
+------------------------------
+
+Archspec is licensed under the Apache License, Version 2.0 (LICENSE-APACHE
+or http://www.apache.org/licenses/LICENSE-2.0) or the MIT license,
+(LICENSE-MIT or http://opensource.org/licenses/MIT), at your option.
+
+Copyrights and patents in the Archspec project are retained by contributors.
+No copyright assignment is required to contribute to Archspec.
+
+
+SPDX usage
+------------
+
+Individual files contain SPDX tags instead of the full license text.
+This enables machine processing of license information based on the SPDX
+License Identifiers that are available here: https://spdx.org/licenses/
+
+Files that are dual-licensed as Apache-2.0 OR MIT contain the following
+text in the license header:
+
+    SPDX-License-Identifier: (Apache-2.0 OR MIT)

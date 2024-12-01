@@ -1,0 +1,42 @@
+Metadata-Version: 2.1
+Name: conda-package-handling
+Version: 2.3.0
+Summary: Create and extract conda packages of various formats.
+Home-page: https://github.com/conda/conda-package-handling
+Author: Anaconda, Inc.
+Author-email: conda@anaconda.com
+Keywords: conda-package-handling
+Classifier: Programming Language :: Python :: 3
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+License-File: AUTHORS.md
+Requires-Dist: conda-package-streaming >=0.9.0
+Provides-Extra: docs
+Requires-Dist: furo ; extra == 'docs'
+Requires-Dist: sphinx ; extra == 'docs'
+Requires-Dist: sphinx-argparse ; extra == 'docs'
+Requires-Dist: myst-parser ; extra == 'docs'
+Requires-Dist: mdit-py-plugins >=0.3.0 ; extra == 'docs'
+Provides-Extra: test
+Requires-Dist: mock ; extra == 'test'
+Requires-Dist: pytest ; extra == 'test'
+Requires-Dist: pytest-cov ; extra == 'test'
+Requires-Dist: pytest-mock ; extra == 'test'
+
+# conda-package-handling
+
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/conda/conda-package-handling/main.svg)](https://results.pre-commit.ci/latest/github/conda/conda-package-handling/main)
+
+Create and extract conda packages of various formats.
+
+`conda` and `conda-build` use `conda_package_handling.api` to create and extract
+conda packages. This package also provides the `cph` command line tool to
+extract, create, and convert between formats.
+
+See also
+[conda-package-streaming](https://conda.github.io/conda-package-streaming), an
+efficient library to read from new and old format .conda and .tar.bz2 conda
+packages.
+
+Full documentation at [https://conda.github.io/conda-package-handling/](https://conda.github.io/conda-package-handling/)

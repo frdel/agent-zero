@@ -1,0 +1,137 @@
+{% set version = "8.9.1" %}
+
+package:
+  name: curl_split_recipe
+  version: {{ version }}
+
+source:
+  url: https://curl.se/download/curl-{{ version }}.tar.bz2
+  sha256: b57285d9e18bf12a5f2309fc45244f6cf9cb14734e7454121099dd0a83d669a3
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - libtool        # [unix]
+    - {{ compiler('c') }}
+    - make           # [unix]
+    # perl is required to run the tests on UNIX.
+    - perl           # [unix]
+    - pkg-config     # [unix]
+  host:
+    - krb5        1.20.1
+    - libnghttp2  1.57.0  # [unix]
+    - libssh2     1.10.0
+    - openssl     {{ openssl }}  # [unix]
+    - zlib        {{ zlib }}
+
+outputs:
+  - name: libcurl
+    requirements:
+      build:
+        - {{ compiler('c') }}
+      host:
+        - krb5        1.20.1
+        - libnghttp2  1.57.0  # [unix]
+        - libssh2     1.10.0
+        - openssl     {{ openssl }}  # [unix]
+        - zlib        {{ zlib }}
+      run:
+        - libnghttp2  >=1.57.0  # [unix]
+        - libssh2     >=1.10.0
+        # exact pin handled through openssl run_exports
+        - openssl  # [unix]
+    build:
+      run_exports:
+        - {{ pin_subpackage('libcurl') }}
+      ignore_run_exports:  # [win]
+        - krb5             # [win]
+    files:
+      - include/curl             # [unix]
+      - lib/libcurl.so*          # [linux]
+      - lib/libcurl*.dylib       # [osx]
+      - lib/pkgconfig/libcurl*   # [unix]
+      - bin/curl-config          # [unix]
+      - Library/bin/libcurl.dll  # [win]
+      - Library/include/curl     # [win]
+      - Library/lib/libcurl.lib  # [win]
+      - Library/lib/libcurl.exp  # [win]
+    test:
+      commands:
+        - curl-config --features       # [not win]
+        - curl-config --protocols      # [not win]
+        - test -f ${PREFIX}/lib/libcurl${SHLIB_EXT}  # [not win]
+        - test ! -f ${PREFIX}/lib/libcurl.a          # [not win]
+        - if exist %LIBRARY_BIN%\curl.exe exit 1     # [win]
+        - if exist %LIBRARY_LIB%\libcurl_a.lib exit 1     # [win]
+        - if not exist %LIBRARY_BIN%\libcurl.dll exit 1   # [win]
+
+  - name: libcurl-static
+    requirements:
+      build:
+        - {{ compiler('c') }}
+      host:
+        - krb5     1.20.1
+        - libssh2  1.10.0
+        - openssl  {{ openssl }}  # [unix]
+        - zlib     {{ zlib }}
+        - {{ pin_subpackage('libcurl', exact=True) }}
+      run:
+        - {{ pin_subpackage('libcurl', exact=True) }}
+    files:
+      - lib/libcurl.a*             # [unix]
+      - Library/lib/libcurl_a.lib  # [win]
+    test:
+      commands:
+        - test -f $PREFIX/lib/libcurl.a                    # [not win]
+        - if not exist %LIBRARY_LIB%\libcurl_a.lib exit 1  # [win]
+
+  - name: curl
+    files:
+      - bin/curl                # [unix]
+      - Library/bin/curl.exe*   # [win]
+    build:
+      ignore_run_exports:
+        # Ignoring the run export since we use openssl in the host section
+        # as a means to produce the right variants only. We don't need the dependency
+        # since it's already on libcurl.
+        - openssl
+    requirements:
+      build:
+        - {{ compiler('c') }}
+      host:
+        # Only required to produce all openssl variants.
+        - openssl {{ openssl }}  # [unix]
+        - {{ pin_subpackage('libcurl', exact=True) }}
+      run:
+        - {{ pin_subpackage('libcurl', exact=True) }}
+
+    test:
+      commands:
+        # curl help commands on Windows have non-zero status codes.  Need other test.
+        - curl --help
+        # Try downloading something from https to make sure the certs are used correctly.
+        - curl https://raw.githubusercontent.com/conda-forge/curl-feedstock/master/LICENSE.txt
+        - if not exist %LIBRARY_BIN%\curl.exe exit 1  # [win]
+
+about:
+  home: https://curl.se/
+  license: curl
+  license_url: https://curl.se/docs/copyright.html
+  license_family: MIT
+  summary: tool and library for transferring data with URL syntax
+
+  description: |
+    Curl is an open source command line tool and library for transferring data
+    with URL syntax. It is used in command lines or scripts to transfer data.
+  doc_url: https://curl.se/docs/
+  dev_url: https://github.com/curl/curl
+
+extra:
+  recipe-maintainers:
+    - msarahan
+    - jakirkham
+    - ocefpaf
+    - mingwandroid
+    - xylar

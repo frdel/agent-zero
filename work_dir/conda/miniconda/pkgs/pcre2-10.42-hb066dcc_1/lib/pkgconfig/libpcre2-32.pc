@@ -1,0 +1,13 @@
+# Package Information for pkg-config
+
+prefix=/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_92peotmhak/croot/pcre2_1714657625622/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libpcre2-32
+Description: PCRE2 - Perl compatible regular expressions C library (2nd API) with 32 bit character support
+Version: 10.42
+Libs: -L${libdir} -lpcre2-32
+Libs.private:  
+Cflags: -I${includedir} 

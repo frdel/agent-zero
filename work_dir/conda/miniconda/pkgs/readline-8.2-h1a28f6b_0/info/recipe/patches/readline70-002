@@ -1,0 +1,103 @@
+			   READLINE PATCH REPORT
+			   =====================
+
+Readline-Release: 7.0
+Patch-ID: readline70-002
+
+Bug-Reported-by:	Hong Cho <hong.cho@citrix.com>
+Bug-Reference-ID:	<c30b5fe62b2543af8297e47ca487c29c@SJCPEX02CL02.citrite.net>
+Bug-Reference-URL:	http://lists.gnu.org/archive/html/bug-readline/2016-12/msg00002.html
+
+Bug-Description:
+
+There is a race condition in add_history() that can be triggered by a fatal
+signal arriving between the time the history length is updated and the time
+the history list update is completed. A later attempt to reference an
+invalid history entry can cause a crash.
+
+Patch (apply with `patch -p0'):
+
+*** ../readline-7.0-patched/history.c	2016-11-11 13:42:49.000000000 -0500
+--- history.c	2016-12-05 10:37:51.000000000 -0500
+***************
+*** 280,283 ****
+--- 280,284 ----
+  {
+    HIST_ENTRY *temp;
++   int new_length;
+  
+    if (history_stifled && (history_length == history_max_entries))
+***************
+*** 296,306 ****
+        /* Copy the rest of the entries, moving down one slot.  Copy includes
+  	 trailing NULL.  */
+- #if 0
+-       for (i = 0; i < history_length; i++)
+- 	the_history[i] = the_history[i + 1];
+- #else
+        memmove (the_history, the_history + 1, history_length * sizeof (HIST_ENTRY *));
+- #endif
+  
+        history_base++;
+      }
+--- 297,303 ----
+        /* Copy the rest of the entries, moving down one slot.  Copy includes
+  	 trailing NULL.  */
+        memmove (the_history, the_history + 1, history_length * sizeof (HIST_ENTRY *));
+  
++       new_length = history_length;
+        history_base++;
+      }
+***************
+*** 316,320 ****
+  	    history_size = DEFAULT_HISTORY_INITIAL_SIZE;
+  	  the_history = (HIST_ENTRY **)xmalloc (history_size * sizeof (HIST_ENTRY *));
+! 	  history_length = 1;
+  	}
+        else
+--- 313,317 ----
+  	    history_size = DEFAULT_HISTORY_INITIAL_SIZE;
+  	  the_history = (HIST_ENTRY **)xmalloc (history_size * sizeof (HIST_ENTRY *));
+! 	  new_length = 1;
+  	}
+        else
+***************
+*** 326,330 ****
+  		xrealloc (the_history, history_size * sizeof (HIST_ENTRY *));
+  	    }
+! 	  history_length++;
+  	}
+      }
+--- 323,327 ----
+  		xrealloc (the_history, history_size * sizeof (HIST_ENTRY *));
+  	    }
+! 	  new_length = history_length + 1;
+  	}
+      }
+***************
+*** 332,337 ****
+    temp = alloc_history_entry ((char *)string, hist_inittime ());
+  
+!   the_history[history_length] = (HIST_ENTRY *)NULL;
+!   the_history[history_length - 1] = temp;
+  }
+  
+--- 329,335 ----
+    temp = alloc_history_entry ((char *)string, hist_inittime ());
+  
+!   the_history[new_length] = (HIST_ENTRY *)NULL;
+!   the_history[new_length - 1] = temp;
+!   history_length = new_length;
+  }
+  
+*** ../readline-7.0/patchlevel	2013-11-15 08:11:11.000000000 -0500
+--- patchlevel	2014-03-21 08:28:40.000000000 -0400
+***************
+*** 1,3 ****
+  # Do not edit -- exists only for use by patch
+  
+! 1
+--- 1,3 ----
+  # Do not edit -- exists only for use by patch
+  
+! 2

@@ -1,0 +1,24 @@
+From 495bb80d6abda8f3d95e84caebf71f013a9cf5da Mon Sep 17 00:00:00 2001
+From: "Uwe L. Korn" <uwe.korn@quantco.com>
+Date: Fri, 29 Sep 2023 15:59:55 +0200
+Subject: [PATCH 3/3] apple api
+
+---
+ src/c/_cffi_backend.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/c/_cffi_backend.c b/src/c/_cffi_backend.c
+index 537271f..9d4daf6 100644
+--- a/src/c/_cffi_backend.c
++++ b/src/c/_cffi_backend.c
+@@ -94,7 +94,7 @@
+  * This is also used on macOS, provided we are executing on macOS 10.15 or
+  * above.  It's a mess because it needs runtime checks in that case.
+  */
+-#ifdef __NetBSD__
++#if defined(__NetBSD__) || (defined(__APPLE__) && !defined(FFI_AVAILABLE_APPLE))
+ 
+ # define CFFI_CHECK_FFI_CLOSURE_ALLOC 1
+ # define CFFI_CHECK_FFI_CLOSURE_ALLOC_MAYBE 1
+-- 
+2.39.3 (Apple Git-145)

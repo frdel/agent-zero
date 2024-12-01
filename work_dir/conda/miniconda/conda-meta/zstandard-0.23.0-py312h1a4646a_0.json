@@ -1,0 +1,51 @@
+{
+  "build": "py312h1a4646a_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "cffi >=1.11",
+    "python >=3.12,<3.13.0a0",
+    "zstd >=1.5.6,<1.5.7.0a0",
+    "zstd >=1.5.6,<1.6.0a0"
+  ],
+  "extracted_package_dir": "/tmp/miniconda_temp/pkgs/zstandard-0.23.0-py312h1a4646a_0",
+  "files": [
+    "lib/python3.12/site-packages/zstandard-0.23.0.dist-info/INSTALLER",
+    "lib/python3.12/site-packages/zstandard-0.23.0.dist-info/LICENSE",
+    "lib/python3.12/site-packages/zstandard-0.23.0.dist-info/METADATA",
+    "lib/python3.12/site-packages/zstandard-0.23.0.dist-info/RECORD",
+    "lib/python3.12/site-packages/zstandard-0.23.0.dist-info/REQUESTED",
+    "lib/python3.12/site-packages/zstandard-0.23.0.dist-info/WHEEL",
+    "lib/python3.12/site-packages/zstandard-0.23.0.dist-info/direct_url.json",
+    "lib/python3.12/site-packages/zstandard-0.23.0.dist-info/top_level.txt",
+    "lib/python3.12/site-packages/zstandard/__init__.py",
+    "lib/python3.12/site-packages/zstandard/__init__.pyi",
+    "lib/python3.12/site-packages/zstandard/__pycache__/__init__.cpython-312.pyc",
+    "lib/python3.12/site-packages/zstandard/__pycache__/backend_cffi.cpython-312.pyc",
+    "lib/python3.12/site-packages/zstandard/_cffi.cpython-312-darwin.so",
+    "lib/python3.12/site-packages/zstandard/backend_c.cpython-312-darwin.so",
+    "lib/python3.12/site-packages/zstandard/backend_cffi.py",
+    "lib/python3.12/site-packages/zstandard/py.typed"
+  ],
+  "fn": "zstandard-0.23.0-py312h1a4646a_0.conda",
+  "license": "BSD-3-Clause",
+  "link": {
+    "source": "/tmp/miniconda_temp/pkgs/zstandard-0.23.0-py312h1a4646a_0",
+    "type": 1
+  },
+  "md5": "1e8759e9ea39b93a2f2470b6740fd1e4",
+  "name": "zstandard",
+  "package_tarball_full_path": "/tmp/miniconda_temp/pkgs/zstandard-0.23.0-py312h1a4646a_0.conda",
+  "paths_data": {
+    "paths": [],
+    "paths_version": 1
+  },
+  "requested_spec": "defaults/osx-arm64::zstandard==0.23.0=py312h1a4646a_0[md5=1e8759e9ea39b93a2f2470b6740fd1e4]",
+  "sha256": "bbbb54042d47fc1a98a8033ba860060813d5cf50d9017ff014b0fd617bfe24d0",
+  "size": 375560,
+  "subdir": "osx-arm64",
+  "timestamp": 1728569240000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/zstandard-0.23.0-py312h1a4646a_0.conda",
+  "version": "0.23.0"
+}

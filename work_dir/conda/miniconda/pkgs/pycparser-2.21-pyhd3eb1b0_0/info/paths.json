@@ -1,0 +1,161 @@
+{
+  "paths": [
+    {
+      "_path": "site-packages/pycparser-2.21.dist-info/INSTALLER",
+      "path_type": "hardlink",
+      "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+      "size_in_bytes": 5
+    },
+    {
+      "_path": "site-packages/pycparser-2.21.dist-info/LICENSE",
+      "path_type": "hardlink",
+      "sha256": "3e7df25b8dfb658c9a91501930d4d943b05087a8347c7e2b4325616af535047b",
+      "size_in_bytes": 1536
+    },
+    {
+      "_path": "site-packages/pycparser-2.21.dist-info/METADATA",
+      "path_type": "hardlink",
+      "sha256": "6c689e256065f63f59fe3d6a25668651a28620231e1b2277163256acfbdd4e2e",
+      "size_in_bytes": 1166
+    },
+    {
+      "_path": "site-packages/pycparser-2.21.dist-info/RECORD",
+      "path_type": "hardlink",
+      "sha256": "1a5434c7b843d19b92f8c2244871683cc7542c5ca89f69375a3f8193a40b0fd3",
+      "size_in_bytes": 2961
+    },
+    {
+      "_path": "site-packages/pycparser-2.21.dist-info/REQUESTED",
+      "path_type": "hardlink",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_in_bytes": 0
+    },
+    {
+      "_path": "site-packages/pycparser-2.21.dist-info/WHEEL",
+      "path_type": "hardlink",
+      "sha256": "5b367c7308e1f25d23b542cd8d8ab51e9afe582a824603ebfbe4d7e0fe48d56a",
+      "size_in_bytes": 110
+    },
+    {
+      "_path": "site-packages/pycparser-2.21.dist-info/direct_url.json",
+      "path_type": "hardlink",
+      "sha256": "d3342467ddedd1fe6762f3c8e2588ecaa1e486364fc2f6877be5a561e71d0326",
+      "size_in_bytes": 82
+    },
+    {
+      "_path": "site-packages/pycparser-2.21.dist-info/top_level.txt",
+      "path_type": "hardlink",
+      "sha256": "73e94f712ef82fff0aa07ec813a3d0179a1fca2ad140d57856191b48520f7963",
+      "size_in_bytes": 10
+    },
+    {
+      "_path": "site-packages/pycparser/__init__.py",
+      "path_type": "hardlink",
+      "sha256": "594129e43d1fb87047f50f1cd5f62f47678a59f8fe08d8212dfd8c32540b2352",
+      "size_in_bytes": 2815
+    },
+    {
+      "_path": "site-packages/pycparser/_ast_gen.py",
+      "path_type": "hardlink",
+      "sha256": "d094559c35be270fb7223565a3c8def6b6c0729e8aa3bb681c09c1e738bb8744",
+      "size_in_bytes": 10555
+    },
+    {
+      "_path": "site-packages/pycparser/_build_tables.py",
+      "path_type": "hardlink",
+      "sha256": "a1909ddcf961abebe457e42e12c69a85c7fe8d423af8780ab2b00bf60bc5cee5",
+      "size_in_bytes": 1039
+    },
+    {
+      "_path": "site-packages/pycparser/_c_ast.cfg",
+      "path_type": "hardlink",
+      "sha256": "95de5ecc4f72cc82452150147f0edecc94a5322e275ca342cdf9aa8cec904cda",
+      "size_in_bytes": 4255
+    },
+    {
+      "_path": "site-packages/pycparser/ast_transforms.py",
+      "path_type": "hardlink",
+      "sha256": "193318954816997779c09572a2f5d8d6acf302a8f1cc2a55560d3aeb874a181b",
+      "size_in_bytes": 5691
+    },
+    {
+      "_path": "site-packages/pycparser/c_ast.py",
+      "path_type": "hardlink",
+      "sha256": "1d678eadf61d098d2ee57698844d62eb4b95c84df231675cc73102517f83a89c",
+      "size_in_bytes": 31445
+    },
+    {
+      "_path": "site-packages/pycparser/c_generator.py",
+      "path_type": "hardlink",
+      "sha256": "ca2e8c72ac6ff3c279b9ef24e7e9951b1877889dfb883e10c85fac59c1a30bef",
+      "size_in_bytes": 17772
+    },
+    {
+      "_path": "site-packages/pycparser/c_lexer.py",
+      "path_type": "hardlink",
+      "sha256": "c42a6321beaf39479b049a5d89f89d6f4f32ed7800b0edd3d603465c94fddfec",
+      "size_in_bytes": 17167
+    },
+    {
+      "_path": "site-packages/pycparser/c_parser.py",
+      "path_type": "hardlink",
+      "sha256": "ffccb78b9d9b2fa4942b6d4a984125d2acc7c5efb47994738d91a45a0f204380",
+      "size_in_bytes": 73680
+    },
+    {
+      "_path": "site-packages/pycparser/lextab.py",
+      "path_type": "hardlink",
+      "sha256": "7c8c410076110b8d7ca0a179d8cef16fcfca323dcafad1f1d13cd988ac318cf3",
+      "size_in_bytes": 8504
+    },
+    {
+      "_path": "site-packages/pycparser/ply/__init__.py",
+      "path_type": "hardlink",
+      "sha256": "ab8b3ce90c11b1845adb42fdb9e4b17e1fa13e28697ed0630cebd86b6fd24b66",
+      "size_in_bytes": 102
+    },
+    {
+      "_path": "site-packages/pycparser/ply/cpp.py",
+      "path_type": "hardlink",
+      "sha256": "52d0b7ca54d6a79ff530a03e3cb0aec0a411f3348e9e51ae18621dce3f314bdf",
+      "size_in_bytes": 33282
+    },
+    {
+      "_path": "site-packages/pycparser/ply/ctokens.py",
+      "path_type": "hardlink",
+      "sha256": "30a92c9cde344de84f86055fc422618e3fc18cbf78ddaa6b78004a633f9b9746",
+      "size_in_bytes": 3177
+    },
+    {
+      "_path": "site-packages/pycparser/ply/lex.py",
+      "path_type": "hardlink",
+      "sha256": "ed0a25e7bc7bd361d9c2303764ba7ef38094116ab511e856f8debb5b38218be3",
+      "size_in_bytes": 42918
+    },
+    {
+      "_path": "site-packages/pycparser/ply/yacc.py",
+      "path_type": "hardlink",
+      "sha256": "79ab520e444b811afa5f7fa1a0393f49042fd3ae51d0174bd8aedf439e028153",
+      "size_in_bytes": 137323
+    },
+    {
+      "_path": "site-packages/pycparser/ply/ygen.py",
+      "path_type": "hardlink",
+      "sha256": "d8960d798b6b3f3d49ccb48b3b77781ac4bccc953c8d8fc8fc2475548f605ab0",
+      "size_in_bytes": 2251
+    },
+    {
+      "_path": "site-packages/pycparser/plyparser.py",
+      "path_type": "hardlink",
+      "sha256": "f2d2cea04cad71aa6f5abaf525f09fec3a20fb0ba506d4b562b0ecf12ec97cca",
+      "size_in_bytes": 4875
+    },
+    {
+      "_path": "site-packages/pycparser/yacctab.py",
+      "path_type": "hardlink",
+      "sha256": "8ff7d5348c8358345593b79632a42d941c36030512579253aed4f9f25ef38acd",
+      "size_in_bytes": 205652
+    }
+  ],
+  "paths_version": 1
+}

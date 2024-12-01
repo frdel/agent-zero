@@ -1,0 +1,13 @@
+--- libiconv-1.15.orig/srclib/stdio.in.h	2017-01-01 21:02:22.000000000 -0200
++++ libiconv-1.15/srclib/stdio.in.h	2017-11-23 11:17:28.989995583 -0200
+@@ -744,7 +744,9 @@
+    removed it.  */
+ #undef gets
+ #if HAVE_RAW_DECL_GETS && !defined __cplusplus
+-_GL_WARN_ON_USE (gets, "gets is a security hole - use fgets instead");
++#if defined(__GLIBC__) && !defined(__UCLIBC__) && (!defined(__GLIBC_PREREQ) || !__GLIBC_PREREQ(2, 16))
++ _GL_WARN_ON_USE (gets, "gets is a security hole - use fgets instead");
++#endif
+ #endif
+ 
+ #if @GNULIB_OBSTACK_PRINTF@ || @GNULIB_OBSTACK_PRINTF_POSIX@

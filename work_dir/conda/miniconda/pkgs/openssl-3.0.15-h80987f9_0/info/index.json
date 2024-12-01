@@ -1,0 +1,15 @@
+{
+  "arch": "arm64",
+  "build": "h80987f9_0",
+  "build_number": 0,
+  "depends": [
+    "ca-certificates"
+  ],
+  "license": "Apache-2.0",
+  "license_family": "Apache",
+  "name": "openssl",
+  "platform": "osx",
+  "subdir": "osx-arm64",
+  "timestamp": 1725545955868,
+  "version": "3.0.15"
+}

@@ -1,0 +1,21 @@
+{
+  "arch": "arm64",
+  "build": "h8f13d7a_0",
+  "build_number": 0,
+  "depends": [
+    "bzip2 >=1.0.8,<2.0a0",
+    "libiconv >=1.16,<2.0a0",
+    "libxml2 >=2.13.1,<2.14.0a0",
+    "lz4-c >=1.9.4,<1.10.0a0",
+    "xz >=5.4.6,<6.0a0",
+    "zlib >=1.2.13,<1.3.0a0",
+    "zstd >=1.5.2,<1.6.0a0"
+  ],
+  "license": "BSD-2-Clause",
+  "license_family": "BSD",
+  "name": "libarchive",
+  "platform": "osx",
+  "subdir": "osx-arm64",
+  "timestamp": 1724172862403,
+  "version": "3.7.4"
+}

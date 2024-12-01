@@ -1,0 +1,7 @@
+#!/bin/sh
+_CONDA_ROOT="/tmp/miniconda_temp"
+# Copyright (C) 2012 Anaconda, Inc
+# SPDX-License-Identifier: BSD-3-Clause
+\echo >&2 "DeprecationWarning: 'source deactivate' is deprecated. Use 'conda deactivate'."
+\. "$_CONDA_ROOT/etc/profile.d/conda.sh" || return $?
+conda deactivate

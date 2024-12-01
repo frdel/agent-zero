@@ -1,0 +1,2 @@
+[console_scripts]
+conda = conda.cli.main_pip:main

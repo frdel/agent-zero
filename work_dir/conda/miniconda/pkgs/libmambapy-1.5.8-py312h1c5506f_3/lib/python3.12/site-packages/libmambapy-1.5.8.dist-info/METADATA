@@ -1,0 +1,16 @@
+Metadata-Version: 2.1
+Name: libmambapy
+Version: 1.5.8
+Summary: Python bindings of libmamba
+Home-page: https://github.com/mamba-org/mamba
+Author: QuantStack
+Author-email: info@quantstack.net
+Keywords: mamba,libmamba,conda
+Platform: Windows
+Platform: Linux
+Platform: Mac OS X
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+Python bindings of libmamba, C++ reimplementation of conda

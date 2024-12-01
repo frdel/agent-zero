@@ -1,0 +1,20 @@
+{
+  "build": "py312h80987f9_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "python >=3.12,<3.13.0a0",
+    "ruamel.yaml.clib >=0.2.7"
+  ],
+  "fn": "ruamel.yaml-0.18.6-py312h80987f9_0.conda",
+  "license": "MIT",
+  "md5": "66c83115f1a838f27803f136743de4b9",
+  "name": "ruamel.yaml",
+  "sha256": "ecc053fbdfbd8e1f023d00f94cf8360c8928daaedbfc25ca99bebedd8d4e4525",
+  "size": 279004,
+  "subdir": "osx-arm64",
+  "timestamp": 1727980320000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/ruamel.yaml-0.18.6-py312h80987f9_0.conda",
+  "version": "0.18.6"
+}

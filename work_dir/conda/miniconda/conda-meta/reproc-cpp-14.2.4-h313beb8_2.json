@@ -1,0 +1,60 @@
+{
+  "build": "h313beb8_2",
+  "build_number": 2,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "libcxx >=14.0.6",
+    "reproc 14.2.4 h313beb8_2"
+  ],
+  "extracted_package_dir": "/tmp/miniconda_temp/pkgs/reproc-cpp-14.2.4-h313beb8_2",
+  "files": [
+    "include/reproc++/arguments.hpp",
+    "include/reproc++/detail/array.hpp",
+    "include/reproc++/detail/type_traits.hpp",
+    "include/reproc++/drain.hpp",
+    "include/reproc++/env.hpp",
+    "include/reproc++/export.hpp",
+    "include/reproc++/input.hpp",
+    "include/reproc++/reproc.hpp",
+    "include/reproc++/run.hpp",
+    "lib/cmake/reproc++/reproc++-config-version.cmake",
+    "lib/cmake/reproc++/reproc++-config.cmake",
+    "lib/cmake/reproc++/reproc++-targets-release.cmake",
+    "lib/cmake/reproc++/reproc++-targets.cmake",
+    "lib/libreproc++.14.2.4.dylib",
+    "lib/libreproc++.14.dylib",
+    "lib/libreproc++.dylib",
+    "lib/pkgconfig/reproc++.pc"
+  ],
+  "fn": "reproc-cpp-14.2.4-h313beb8_2.conda",
+  "license": "MIT",
+  "link": {
+    "source": "/tmp/miniconda_temp/pkgs/reproc-cpp-14.2.4-h313beb8_2",
+    "type": 1
+  },
+  "md5": "dde005914879790985acd3af3bf84e65",
+  "name": "reproc-cpp",
+  "package_tarball_full_path": "/tmp/miniconda_temp/pkgs/reproc-cpp-14.2.4-h313beb8_2.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "lib/pkgconfig/reproc++.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_77d995f1ra/croot/reproc_1714680881141/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeho",
+        "sha256": "ece350944b87f3ddb07337bb1904690a048e1c29cfb8bc99dd85709b334bd840",
+        "sha256_in_prefix": "f30cd4615d7d1bf49d0abc86f0428d65d9906c2abe38986a0209101f9e19ed2c",
+        "size_in_bytes": 571
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "defaults/osx-arm64::reproc-cpp==14.2.4=h313beb8_2[md5=dde005914879790985acd3af3bf84e65]",
+  "sha256": "86078c391e11c380a58e83825cd9f3e0498e0866e0aa2b77ba8fe6cce49e5274",
+  "size": 21399,
+  "subdir": "osx-arm64",
+  "timestamp": 1714680948000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/reproc-cpp-14.2.4-h313beb8_2.conda",
+  "version": "14.2.4"
+}

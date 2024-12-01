@@ -1,0 +1,20 @@
+{
+  "build": "h3e2b118_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "openssl >=3.0.13,<4.0a0",
+    "zlib >=1.2.13,<1.3.0a0"
+  ],
+  "fn": "libssh2-1.11.0-h3e2b118_0.conda",
+  "license": "BSD-3-Clause",
+  "md5": "a2c10e819e80bfd0cf517d140ca08200",
+  "name": "libssh2",
+  "sha256": "b80c7f6afa0743749f611ac2feacdd7e239465c046988c5d2b30cb3fa297c2b2",
+  "size": 274449,
+  "subdir": "osx-arm64",
+  "timestamp": 1715261490000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/libssh2-1.11.0-h3e2b118_0.conda",
+  "version": "1.11.0"
+}

@@ -1,0 +1,30 @@
+.TH libssh2_channel_signal_ex 3 "20 Apr 2023" "libssh2 1.11.0" "libssh2"
+.SH NAME
+libssh2_channel_signal_ex -- Send a signal to process previously opened on channel.
+.SH SYNOPSIS
+.nf
+#include <libssh2.h>
+
+int
+libssh2_channel_signal_ex(LIBSSH2_CHANNEL *channel,
+                          const char *signame,
+                          size_t signame_len)
+.fi
+.SH DESCRIPTION
+A signal can be delivered to the remote process/service.  Some servers or
+systems may not implement signals, in which case they will probably ignore this
+message.
+
+\fIchannel\fP - Previously opened channel instance such as returned by
+.BR libssh2_channel_open_ex(3)
+
+\fIsigname\fP - The signal name is the same as the signal name constant, without the leading "SIG".
+
+\fIsigname_len\fP - Length of passed signal name parameter.
+
+There is also a macro \fIlibssh2_channel_signal(channel, signame)\fP that supplies the strlen of the signame.
+.SH RETURN VALUE
+Normal channel error codes.
+LIBSSH2_ERROR_EAGAIN when it would block.
+.SH SEE ALSO
+.BR libssh2_channel_get_exit_signal(3)

@@ -1,0 +1,48 @@
+From f90d931fa6f400065189b44d00273979709c700b Mon Sep 17 00:00:00 2001
+From: Peter Williams <peter@newton.cx>
+Date: Wed, 5 Sep 2018 16:50:54 -0400
+Subject: [PATCH] Make and install a pkg-config file on Windows.
+
+---
+ win32/Makefile.msvc | 18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/win32/Makefile.msvc b/win32/Makefile.msvc
+index 491dc88..415ec0b 100644
+--- a/win32/Makefile.msvc
++++ b/win32/Makefile.msvc
+@@ -282,7 +282,21 @@ _VC_MANIFEST_EMBED_EXE=
+ _VC_MANIFEST_EMBED_DLL=
+ !endif
+ 
+-all : libxml libxmla libxmladll utils
++all : libxml libxmla libxmladll utils libxml-2.0.pc
++
++# Note hardcoded libraries and trouble getting dollar-sign/brace variables working
++libxml-2.0.pc:
++        echo prefix=$(PREFIX:\=/) >$@
++        echo exec_prefix=$(PREFIX:\=/) >>$@
++        echo libdir=$(LIBPREFIX:\=/) >>$@
++        echo includedir=$(INCPREFIX:\=/) >>$@
++        echo modules=0 >>$@
++        echo Name: libXML >>$@
++        echo Version: $(LIBXML_MAJOR_VERSION).$(LIBXML_MINOR_VERSION).$(LIBXML_MICRO_VERSION) >>$@
++        echo Description: libXML library version2. >>$@
++        echo Requires: >>$@
++        echo Libs: -L$(LIBPREFIX:\=/) -lxml2 -liconv -lz >>$@
++        echo Cflags: -I$(INCPREFIX:\=/)/libxml2 -I$(INCPREFIX:\=/) >>$@
+ 
+ libxml : $(BINDIR)\$(XML_SO) 
+ 
+@@ -320,6 +334,8 @@ install-libs : all
+ install : install-libs 
+ 	copy $(BINDIR)\*.exe $(BINPREFIX)
+ 	-copy $(BINDIR)\*.pdb $(BINPREFIX)
++	if not exist $(LIBPREFIX)\pkgconfig mkdir $(LIBPREFIX)\pkgconfig
++	copy libxml-2.0.pc $(LIBPREFIX)\pkgconfig
+ 
+ install-dist : install-libs 
+ 	copy $(BINDIR)\xml*.exe $(BINPREFIX)
+-- 
+2.17.1
+

@@ -1,0 +1,61 @@
+{% set name = "wheel" %}
+{% set version = "0.44.0" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  sha256: a29c3f2817e95ab89aa4660681ad547c0e9547f20e75b0562fe7723c9a2a9d49
+
+build:
+  number: 0
+  skip: True  # [py<38]
+  entry_points:
+    - wheel = wheel.cli:main
+
+requirements:
+  host:
+    - python
+    - flit-core >=3.8,<4
+    - python-installer
+  run:
+    - python
+
+test:
+  imports:
+    - wheel
+    - wheel.cli
+    - wheel.vendored
+    - wheel.vendored.packaging
+  requires:
+    - pip
+  commands:
+    - pip check
+    - wheel --help
+    - wheel version
+
+about:
+  home: https://github.com/pypa/wheel
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE.txt
+  summary: A built-package format for Python.
+  description: |
+    This library is the reference implementation of the Python wheel packaging standard, 
+    as defined in PEP 427.
+    It has two different roles:
+      1. A setuptools extension for building wheels that provides the bdist_wheel setuptools command
+      2. A command line tool for working with wheel files
+  dev_url: https://github.com/pypa/wheel
+  doc_url: https://wheel.readthedocs.io/
+
+extra:
+  recipe-maintainers:
+    - jakirkham
+    - pelson
+    - ocefpaf
+    - mingwandroid
+  skip-lints:
+    - missing_wheel

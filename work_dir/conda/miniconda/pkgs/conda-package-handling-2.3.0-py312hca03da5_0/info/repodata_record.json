@@ -1,0 +1,21 @@
+{
+  "build": "py312hca03da5_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "conda-package-streaming >=0.9.0",
+    "python >=3.12,<3.13.0a0",
+    "zstandard >=0.15"
+  ],
+  "fn": "conda-package-handling-2.3.0-py312hca03da5_0.conda",
+  "license": "BSD-3-Clause",
+  "md5": "560ac9511845a3e966a6e4c1b97db715",
+  "name": "conda-package-handling",
+  "sha256": "cbf10f5773527d9b20ef3ded01fc6519f2fccd9abb12c2a9e9229ec75e551ee9",
+  "size": 287214,
+  "subdir": "osx-arm64",
+  "timestamp": 1718138305000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/conda-package-handling-2.3.0-py312hca03da5_0.conda",
+  "version": "2.3.0"
+}

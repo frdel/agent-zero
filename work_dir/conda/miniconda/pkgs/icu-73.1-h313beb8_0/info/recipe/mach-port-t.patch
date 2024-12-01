@@ -1,0 +1,21 @@
+--- source/common/umutex.h-orig	2019-07-17 11:40:06.000000000 +0200
++++ source/common/umutex.h	2019-07-17 11:40:42.000000000 +0200
+@@ -20,6 +20,18 @@
+ #ifndef UMUTEX_H
+ #define UMUTEX_H
+ 
++// Workaround for multithreading on XCode 9, see
++// https://github.com/tensorflow/tensorflow/issues/13220#issuecomment-331579775
++#ifdef __APPLE__
++#ifndef _MACH_PORT_T
++#define _MACH_PORT_T
++#include <sys/_types.h> /* __darwin_mach_port_t */
++typedef __darwin_mach_port_t mach_port_t;
++#include <pthread.h>
++mach_port_t pthread_mach_thread_np(pthread_t);
++#endif /* _MACH_PORT_T */
++#endif /* __APPLE__ */
++
+ #include <atomic>
+ #include <condition_variable>
+ #include <mutex>

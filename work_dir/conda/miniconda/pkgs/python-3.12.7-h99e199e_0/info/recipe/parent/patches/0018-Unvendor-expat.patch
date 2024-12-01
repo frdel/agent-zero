@@ -1,0 +1,204 @@
+From eec3d786f18cbe7bb4bd3f5120a1d9337ea7c44b Mon Sep 17 00:00:00 2001
+From: Isuru Fernando <isuruf@gmail.com>
+Date: Wed, 29 Mar 2023 23:07:10 -0500
+Subject: [PATCH 18/21] Unvendor expat
+
+---
+ PCbuild/_elementtree.vcxproj         | 25 ++----------
+ PCbuild/_elementtree.vcxproj.filters | 58 +---------------------------
+ PCbuild/pyexpat.vcxproj              | 12 ++----
+ PCbuild/pyexpat.vcxproj.filters      | 19 +--------
+ 4 files changed, 10 insertions(+), 104 deletions(-)
+
+diff --git a/PCbuild/_elementtree.vcxproj b/PCbuild/_elementtree.vcxproj
+index 20cc09d63f..de476a6add 100644
+--- a/PCbuild/_elementtree.vcxproj
++++ b/PCbuild/_elementtree.vcxproj
+@@ -93,36 +93,19 @@
+   </PropertyGroup>
+   <ItemDefinitionGroup>
+     <ClCompile>
+-      <AdditionalIncludeDirectories>..\Modules\expat;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <AdditionalIncludeDirectories>$(condaDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;USE_PYEXPAT_CAPI;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">/d1trimfile:%SRC_DIR%</AdditionalOptions>
+       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">/d1trimfile:%SRC_DIR%</AdditionalOptions>
+       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">/d1trimfile:%SRC_DIR%</AdditionalOptions>
+       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">/d1trimfile:%SRC_DIR%</AdditionalOptions>
+     </ClCompile>
++    <Link>
++      <AdditionalDependencies>$(condaDir)\lib\expat.lib;%(AdditionalDependencies)</AdditionalDependencies>
++    </Link>
+   </ItemDefinitionGroup>
+-  <ItemGroup>
+-    <ClInclude Include="..\Modules\expat\ascii.h" />
+-    <ClInclude Include="..\Modules\expat\asciitab.h" />
+-    <ClInclude Include="..\Modules\expat\expat.h" />
+-    <ClInclude Include="..\Modules\expat\expat_config.h" />
+-    <ClInclude Include="..\Modules\expat\expat_external.h" />
+-    <ClInclude Include="..\Modules\expat\iasciitab.h" />
+-    <ClInclude Include="..\Modules\expat\internal.h" />
+-    <ClInclude Include="..\Modules\expat\latin1tab.h" />
+-    <ClInclude Include="..\Modules\expat\macconfig.h" />
+-    <ClInclude Include="..\Modules\expat\nametab.h" />
+-    <ClInclude Include="..\Modules\expat\pyexpatns.h" />
+-    <ClInclude Include="..\Modules\expat\utf8tab.h" />
+-    <ClInclude Include="..\Modules\expat\winconfig.h" />
+-    <ClInclude Include="..\Modules\expat\xmlrole.h" />
+-    <ClInclude Include="..\Modules\expat\xmltok.h" />
+-  </ItemGroup>
+   <ItemGroup>
+     <ClCompile Include="..\Modules\_elementtree.c" />
+-    <ClCompile Include="..\Modules\expat\xmlparse.c" />
+-    <ClCompile Include="..\Modules\expat\xmlrole.c" />
+-    <ClCompile Include="..\Modules\expat\xmltok.c" />
+   </ItemGroup>
+   <ItemGroup>
+     <ResourceCompile Include="..\PC\python_nt.rc" />
+diff --git a/PCbuild/_elementtree.vcxproj.filters b/PCbuild/_elementtree.vcxproj.filters
+index bc14e31f32..7cc8e9a3b9 100644
+--- a/PCbuild/_elementtree.vcxproj.filters
++++ b/PCbuild/_elementtree.vcxproj.filters
+@@ -17,70 +17,14 @@
+       <UniqueIdentifier>{f99990ba-cd06-40cc-8f28-d2d424ec13be}</UniqueIdentifier>
+     </Filter>
+   </ItemGroup>
+-  <ItemGroup>
+-    <ClInclude Include="..\Modules\expat\ascii.h">
+-      <Filter>Header Files\expat</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\Modules\expat\asciitab.h">
+-      <Filter>Header Files\expat</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\Modules\expat\expat.h">
+-      <Filter>Header Files\expat</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\Modules\expat\expat_config.h">
+-      <Filter>Header Files\expat</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\Modules\expat\expat_external.h">
+-      <Filter>Header Files\expat</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\Modules\expat\iasciitab.h">
+-      <Filter>Header Files\expat</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\Modules\expat\internal.h">
+-      <Filter>Header Files\expat</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\Modules\expat\latin1tab.h">
+-      <Filter>Header Files\expat</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\Modules\expat\macconfig.h">
+-      <Filter>Header Files\expat</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\Modules\expat\nametab.h">
+-      <Filter>Header Files\expat</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\Modules\expat\pyexpatns.h">
+-      <Filter>Header Files\expat</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\Modules\expat\utf8tab.h">
+-      <Filter>Header Files\expat</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\Modules\expat\winconfig.h">
+-      <Filter>Header Files\expat</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\Modules\expat\xmlrole.h">
+-      <Filter>Header Files\expat</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\Modules\expat\xmltok.h">
+-      <Filter>Header Files\expat</Filter>
+-    </ClInclude>
+-  </ItemGroup>
+   <ItemGroup>
+     <ClCompile Include="..\Modules\_elementtree.c">
+       <Filter>Source Files</Filter>
+     </ClCompile>
+-    <ClCompile Include="..\Modules\expat\xmlparse.c">
+-      <Filter>Source Files\expat</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\Modules\expat\xmlrole.c">
+-      <Filter>Source Files\expat</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\Modules\expat\xmltok.c">
+-      <Filter>Source Files\expat</Filter>
+-    </ClCompile>
+   </ItemGroup>
+   <ItemGroup>
+     <ResourceCompile Include="..\PC\python_nt.rc">
+       <Filter>Resource Files</Filter>
+     </ResourceCompile>
+   </ItemGroup>
+-</Project>
+\ No newline at end of file
++</Project>
+diff --git a/PCbuild/pyexpat.vcxproj b/PCbuild/pyexpat.vcxproj
+index 3be4ac06dd..e253b39c86 100644
+--- a/PCbuild/pyexpat.vcxproj
++++ b/PCbuild/pyexpat.vcxproj
+@@ -90,23 +90,19 @@
+   <PropertyGroup Label="UserMacros" />
+   <ItemDefinitionGroup>
+     <ClCompile>
+-      <AdditionalIncludeDirectories>$(PySourcePath)Modules\expat;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <AdditionalIncludeDirectories>$(condaDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PYEXPAT_EXPORTS;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">/d1trimfile:%SRC_DIR%</AdditionalOptions>
+       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">/d1trimfile:%SRC_DIR%</AdditionalOptions>
+       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">/d1trimfile:%SRC_DIR%</AdditionalOptions>
+       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">/d1trimfile:%SRC_DIR%</AdditionalOptions>
+     </ClCompile>
++    <Link>
++      <AdditionalDependencies>$(condaDir)\lib\expat.lib;%(AdditionalDependencies)</AdditionalDependencies>
++    </Link>
+   </ItemDefinitionGroup>
+-  <ItemGroup>
+-    <ClInclude Include="..\Modules\expat\xmlrole.h" />
+-    <ClInclude Include="..\Modules\expat\xmltok.h" />
+-  </ItemGroup>
+   <ItemGroup>
+     <ClCompile Include="..\Modules\pyexpat.c" />
+-    <ClCompile Include="..\Modules\expat\xmlparse.c" />
+-    <ClCompile Include="..\Modules\expat\xmlrole.c" />
+-    <ClCompile Include="..\Modules\expat\xmltok.c" />
+   </ItemGroup>
+   <ItemGroup>
+     <ResourceCompile Include="..\PC\python_nt.rc" />
+diff --git a/PCbuild/pyexpat.vcxproj.filters b/PCbuild/pyexpat.vcxproj.filters
+index fd22fc8c47..41c73b434b 100644
+--- a/PCbuild/pyexpat.vcxproj.filters
++++ b/PCbuild/pyexpat.vcxproj.filters
+@@ -11,31 +11,14 @@
+       <UniqueIdentifier>{f1dbbdb5-41e5-4a88-bf8e-13da010c0ce4}</UniqueIdentifier>
+     </Filter>
+   </ItemGroup>
+-  <ItemGroup>
+-    <ClInclude Include="..\Modules\expat\xmlrole.h">
+-      <Filter>Header Files</Filter>
+-    </ClInclude>
+-    <ClInclude Include="..\Modules\expat\xmltok.h">
+-      <Filter>Header Files</Filter>
+-    </ClInclude>
+-  </ItemGroup>
+   <ItemGroup>
+     <ClCompile Include="..\Modules\pyexpat.c">
+       <Filter>Source Files</Filter>
+     </ClCompile>
+-    <ClCompile Include="..\Modules\expat\xmlparse.c">
+-      <Filter>Source Files</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\Modules\expat\xmlrole.c">
+-      <Filter>Source Files</Filter>
+-    </ClCompile>
+-    <ClCompile Include="..\Modules\expat\xmltok.c">
+-      <Filter>Source Files</Filter>
+-    </ClCompile>
+   </ItemGroup>
+   <ItemGroup>
+     <ResourceCompile Include="..\PC\python_nt.rc">
+       <Filter>Resource Files</Filter>
+     </ResourceCompile>
+   </ItemGroup>
+-</Project>
+\ No newline at end of file
++</Project>

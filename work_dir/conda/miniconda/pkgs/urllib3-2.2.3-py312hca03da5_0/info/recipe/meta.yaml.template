@@ -1,0 +1,77 @@
+{% set name = "urllib3" %}
+{% set version = "2.2.3" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  sha256: e7d814a81dad81e6caf2ec9fdedb284ecc9c73076b62654547cc64ccdcae26e9
+
+build:
+  number: 0
+  skip: True  # [py<38]
+  script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
+
+requirements:
+  host:
+    - python
+    - pip
+    - hatchling >=1.6.0,<2
+    - hatch-vcs
+  run:
+    - python
+
+    # brotli-python and pysocks are optional dependencies but here for
+    # consistency because in previous versions (2.0.3 and 2.1.0) were
+    # specified as dependencies (as conda-forge does as well).
+    #
+    # optional deps [socks]
+    - pysocks >=1.5.6,<2.0,!=1.5.7
+    # optional deps [brotli]
+    - brotli-python >=1.0.9
+  run_constrained:
+    # based on https://github.com/urllib3/urllib3/issues/2680
+    - requests >=2.26.0
+    - selenium >=4.4.3
+    # optional deps [zstd]
+    - zstandard >=0.18.0
+    # optional dep [h2]
+    - h2 >=4,<5
+
+test:
+  imports:
+    - urllib3
+    - urllib3.contrib
+    - urllib3.util
+  commands:
+    - pip check
+  # Test suite is being skipped due to transitive dependency on taskgroup
+  # Taskgroup is unstable as it only has pre-releases available
+    # - pytest -v --pyargs urlib3
+  requires:
+    - pip
+
+about:
+  home: https://urllib3.readthedocs.io/
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE.txt
+  summary: HTTP library with thread-safe connection pooling, file post, and more.
+  description: |
+    urllib3 is a powerful, sanity-friendly HTTP client for Python. Much of the
+    Python ecosystem already uses urllib3. urllib3 brings many critical features
+    that are missing from the Python standard libraries, such as thread safety,
+    connection pooling, client side ssl/tls verification, support for gzip and
+    deflate encodings, HTTP and SOCKS proxy support, helpers for retrying requests
+    and dealing with HTTP redirects.
+  doc_url: https://urllib3.readthedocs.io/
+  dev_url: https://github.com/urllib3/urllib3
+
+extra:
+  recipe-maintainers:
+    - pmlandwehr
+    - sigmavirus24
+    - ocefpaf
+    - sethmlarson

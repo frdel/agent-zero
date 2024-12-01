@@ -1,0 +1,295 @@
+{
+  "paths": [
+    {
+      "_path": "include/editline/readline.h",
+      "path_type": "hardlink",
+      "sha256": "c67b10c8cc3b478a64b7345dbf3261b8ba604d64dcbb619db685b77805535c45",
+      "size_in_bytes": 9592
+    },
+    {
+      "_path": "include/histedit.h",
+      "path_type": "hardlink",
+      "sha256": "352b99708fb81b1fb98f173d0e30a7286c4ee937e488bc75ad9e8e319e24f923",
+      "size_in_bytes": 9640
+    },
+    {
+      "_path": "lib/libedit.0.dylib",
+      "path_type": "hardlink",
+      "sha256": "105cee1178ace6fc52e873d737163dfbfc2709d1c73408bf9f1d23cd2a4b6f88",
+      "size_in_bytes": 229728
+    },
+    {
+      "_path": "lib/libedit.a",
+      "path_type": "hardlink",
+      "sha256": "20d102cc1638dd3ab64addcea6902071614c6f490a96bd0c2aed443064bd2e5a",
+      "size_in_bytes": 287296
+    },
+    {
+      "_path": "lib/libedit.dylib",
+      "path_type": "softlink",
+      "sha256": "105cee1178ace6fc52e873d737163dfbfc2709d1c73408bf9f1d23cd2a4b6f88",
+      "size_in_bytes": 229728
+    },
+    {
+      "_path": "lib/pkgconfig/libedit.pc",
+      "file_mode": "text",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_fbf9dxpkfy/croot/libedit_1703006213474/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeh",
+      "sha256": "c9ea8d7ec88caf0987c2c8087bba4b466768761f61cb61d914ac6296ae403202",
+      "size_in_bytes": 587
+    },
+    {
+      "_path": "share/man/man3/editline.3",
+      "path_type": "hardlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_deletestr.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_end.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_get.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_getc.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_gets.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_init.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_init_fd.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_insertstr.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_line.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_parse.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_push.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_reset.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_resize.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_set.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_source.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_wdeletestr.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_wget.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_wgetc.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_wgets.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_winsertstr.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_wline.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_wparse.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_wpush.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/el_wset.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/history_end.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/history_init.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/history_w.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/history_wend.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/history_winit.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/tok_end.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/tok_init.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/tok_line.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/tok_reset.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/tok_str.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/tok_wend.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/tok_winit.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/tok_wline.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/tok_wreset.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man3/tok_wstr.3",
+      "path_type": "softlink",
+      "sha256": "269f95e3ad6ada937f992d1515984273f1f36c431080116830e81a710c93767f",
+      "size_in_bytes": 23828
+    },
+    {
+      "_path": "share/man/man5/editrc.5",
+      "path_type": "hardlink",
+      "sha256": "6ccf6a545e09863fbe659ee742bcafabc212359295b9f3f6abc45ea5eea2da86",
+      "size_in_bytes": 3598
+    },
+    {
+      "_path": "share/man/man7/editline.7",
+      "path_type": "hardlink",
+      "sha256": "963241577dc9588615e84b42df5cf747c5f9daace8d88e87583dc82f0ca80368",
+      "size_in_bytes": 33148
+    }
+  ],
+  "paths_version": 1
+}

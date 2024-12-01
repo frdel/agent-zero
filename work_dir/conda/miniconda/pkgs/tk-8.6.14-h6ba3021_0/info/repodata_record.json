@@ -1,0 +1,19 @@
+{
+  "build": "h6ba3021_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "zlib >=1.2.13,<1.3.0a0"
+  ],
+  "fn": "tk-8.6.14-h6ba3021_0.conda",
+  "license": "TCL",
+  "md5": "9e668a25312fe740947fa53fd078145e",
+  "name": "tk",
+  "sha256": "7099df0dd85631be2cfd05d365fe95a6089ad0f13a42bb0b154e92b52c491e29",
+  "size": 3414025,
+  "subdir": "osx-arm64",
+  "timestamp": 1714770744000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/tk-8.6.14-h6ba3021_0.conda",
+  "version": "8.6.14"
+}

@@ -1,0 +1,97 @@
+# This file created by conda-build 24.5.1
+# meta.yaml template originally from:
+# /var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_cairdg5u3o/clone/recipe, last modified Thu Oct 10 09:06:34 2024
+# ------------------------------------------------
+
+package:
+  name: zstandard
+  version: 0.23.0
+source:
+  patches:
+    - use_system_zstd.patch
+  sha256: b2d8c62d08e7255f68f7a740bae85b3c9b8e5466baa9cbf7f57f1cde0ac6bc09
+  url: https://pypi.io/packages/source/z/zstandard/zstandard-0.23.0.tar.gz
+build:
+  number: '0'
+  script: /var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_cairdg5u3o/croot/zstandard_1728569200438/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/bin/python
+    -m pip install --no-deps --no-build-isolation . -vv
+  string: py312h1a4646a_0
+requirements:
+  build:
+    - cctools_osx-arm64 949.0.1 h332cad3_25
+    - clang 14.0.6 hca03da5_1
+    - clang-14 14.0.6 default_h1b80db6_1
+    - clang_osx-arm64 14.0.6 h9ff6fda_0
+    - clangxx 14.0.6 default_h1b80db6_1
+    - compiler-rt 14.0.6 h4ccfd99_0
+    - compiler-rt_osx-arm64 14.0.6 h4fb70ea_0
+    - ld64_osx-arm64 530 h001ce53_25
+    - ldid 2.1.5 h20b2a84_3
+    - libclang-cpp14 14.0.6 default_h1b80db6_1
+    - libcxx 14.0.6 h848a8c0_0
+    - libffi 3.4.4 hca03da5_1
+    - libllvm14 14.0.6 h19fdd8a_4
+    - llvm-tools 14.0.6 h7ec7a93_4
+    - patch 2.7.6 h1a28f6b_1001
+    - tapi 1100.0.11 h8754e6a_1
+    - zlib 1.2.13 h18a0788_1
+  host:
+    - bzip2 1.0.8 h80987f9_6
+    - ca-certificates 2024.9.24 hca03da5_0
+    - cffi 1.16.0 py312h80987f9_1
+    - expat 2.6.3 h313beb8_0
+    - libcxx 14.0.6 h848a8c0_0
+    - libffi 3.4.4 hca03da5_1
+    - lz4-c 1.9.4 h313beb8_1
+    - ncurses 6.4 h313beb8_0
+    - openssl 3.0.15 h80987f9_0
+    - pip 24.2 py312hca03da5_0
+    - pycparser 2.21 pyhd3eb1b0_0
+    - python 3.12.7 h99e199e_0
+    - readline 8.2 h1a28f6b_0
+    - setuptools 68.2.2 py312hca03da5_0
+    - sqlite 3.45.3 h80987f9_0
+    - tk 8.6.14 h6ba3021_0
+    - tzdata 2024b h04d1e81_0
+    - wheel 0.44.0 py312hca03da5_0
+    - xz 5.4.6 h80987f9_1
+    - zlib 1.2.13 h18a0788_1
+    - zstd 1.5.6 hfb09047_0
+  run:
+    - cffi >=1.11
+    - python >=3.12,<3.13.0a0
+    - zstd >=1.5.6,<1.5.7.0a0
+    - zstd >=1.5.6,<1.6.0a0
+test:
+  commands:
+    - pip check
+  imports:
+    - zstandard
+  requires:
+    - pip
+about:
+  description: 'This project provides Python bindings for interfacing with the
+
+    Zstandard compression library. A C extension and CFFI interface are
+
+    provided.
+
+    '
+  dev_url: https://github.com/indygreg/python-zstandard
+  doc_url: https://github.com/indygreg/python-zstandard/blob/main/README.rst#python-zstandard
+  home: https://github.com/indygreg/python-zstandard
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file:
+    - LICENSE
+    - zstd/LICENSE
+  summary: Zstandard bindings for Python
+extra:
+  copy_test_source_files: true
+  final: true
+  flow_run_id: ca2b4c11-0ed1-4f27-a8d8-3a0fb03149e0
+  recipe-maintainers:
+    - rmax
+    - xhochy
+  remote_url: git@github.com:AnacondaRecipes/zstandard-feedstock.git
+  sha: 555713904aecb004f883bf78b091e8cf3765c8b2

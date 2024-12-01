@@ -1,0 +1,2 @@
+[conda]
+anaconda-anon-usage-plugin = anaconda_anon_usage.plugin

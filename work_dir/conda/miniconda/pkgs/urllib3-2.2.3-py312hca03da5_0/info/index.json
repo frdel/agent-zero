@@ -1,0 +1,23 @@
+{
+  "arch": "arm64",
+  "build": "py312hca03da5_0",
+  "build_number": 0,
+  "constrains": [
+    "h2 >=4,<5",
+    "selenium >=4.4.3",
+    "requests >=2.26.0",
+    "zstandard >=0.18.0"
+  ],
+  "depends": [
+    "brotli-python >=1.0.9",
+    "pysocks >=1.5.6,<2.0,!=1.5.7",
+    "python >=3.12,<3.13.0a0"
+  ],
+  "license": "MIT",
+  "license_family": "MIT",
+  "name": "urllib3",
+  "platform": "osx",
+  "subdir": "osx-arm64",
+  "timestamp": 1727769980786,
+  "version": "2.2.3"
+}

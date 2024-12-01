@@ -1,0 +1,67 @@
+{% set name = "setuptools" %}
+{% set version = "75.1.0" %}
+{% set checksum = "d59a21b17a275fb872a9c3dae73963160ae079f1049ed956880cd7c09b120538" %}
+
+# make sure to set CONDA_ADD_PIP_AS_PYTHON_DEPENDENCY=0 environ-variable before building it
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  url: https://pypi.io/packages/source/s/setuptools/setuptools-{{ version }}.tar.gz
+  sha256: {{ checksum }}
+  patches:
+    # Modify setuptools to fail if used in conda build (encourage people to add all deps in meta.yaml).
+    - patches/0002-disable-downloads-inside-conda-build.patch
+    # distutils patches from python-feedstock
+    - patches/0021-Add-d1trimfile-SRC_DIR-to-make-pdbs-more-relocatable.patch
+
+build:
+  number: 0
+  skip: True                # [py<38]
+  missing_dso_whitelist:    # [win]
+    - "$RPATH/MSVCR71.dll"  # [win]
+    - "$RPATH/MSVCR80.dll"  # [win]
+
+requirements:
+  build:
+    - patch                # [unix]
+    - m2-patch             # [win]
+  host:
+    # omitting wheel for this package to avoid cyclic dependencies
+    - python
+  run:
+    - python
+
+test:
+  requires:
+    - pip
+  commands:
+    - pip check
+  imports:
+    - setuptools
+    - pkg_resources
+
+about:
+  home: https://github.com/pypa/setuptools
+  license: MIT
+  license_file: LICENSE
+  license_family: MIT
+  summary: Download, build, install, upgrade, and uninstall Python packages
+  description: |
+    Setuptools is a fully-featured, actively-maintained, and stable library
+    designed to facilitate packaging Python projects.
+  doc_url: https://setuptools.pypa.io
+  dev_url: https://github.com/pypa/setuptools
+
+extra:
+  recipe-maintainers:
+    - jakirkham
+    - msarahan
+    - ocefpaf
+    - nicoddemus
+    - isuruf
+  skip-lints:
+    # As we are bootstrapping this build we do not require python build tools
+    - missing_python_build_tool
+    - missing_wheel

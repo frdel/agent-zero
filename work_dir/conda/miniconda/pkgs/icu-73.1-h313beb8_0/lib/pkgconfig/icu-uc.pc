@@ -1,0 +1,40 @@
+# Copyright (C) 2016 and later: Unicode, Inc. and others.
+# License & terms of use: http://www.unicode.org/copyright.html
+# Copyright (C) 2010-2013, International Business Machines Corporation. All Rights Reserved.
+
+# CFLAGS contains only anything end users should set
+CFLAGS = 
+# CXXFLAGS contains only anything end users should set
+CXXFLAGS =  -std=c++11
+# DEFS only contains those UCONFIG_CPPFLAGS which are not auto-set by platform.h
+DEFS = 
+prefix = /var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_5f_fb0pad4/croot/icu_1692293050105/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_
+exec_prefix = ${prefix}
+#bindir = ${exec_prefix}/bin
+libdir = ${exec_prefix}/lib
+includedir = ${prefix}/include
+baselibs = -lpthread -lm 
+#datarootdir = ${prefix}/share
+#datadir = ${datarootdir}
+#sbindir = ${exec_prefix}/sbin
+#mandir = ${datarootdir}/man
+#sysconfdir = ${prefix}/etc
+UNICODE_VERSION=15.0
+ICUPREFIX=icu
+ICULIBSUFFIX=
+LIBICU=lib${ICUPREFIX}
+#SHAREDLIBCFLAGS=-fPIC
+pkglibdir=${libdir}/icu${ICULIBSUFFIX}/73.1
+#pkgdatadir=${datadir}/icu${ICULIBSUFFIX}/73.1
+ICUDATA_NAME = icudt73l
+#ICUPKGDATA_DIR=${exec_prefix}/lib
+#ICUDATA_DIR=${pkgdatadir}
+ICUDESC=International Components for Unicode
+
+Version: 73.1
+Cflags: -I${includedir}
+# end of icu.pc.in
+Description: International Components for Unicode: Common and Data libraries
+Name: icu-uc
+Libs: -L${libdir} -licuuc -licudata
+Libs.private: ${baselibs}

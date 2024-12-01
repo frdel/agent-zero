@@ -1,0 +1,45 @@
+'\" t
+.\"     Title: dumpsolv
+.\"    Author: [see the "Author" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 07/25/2017
+.\"    Manual: LIBSOLV
+.\"    Source: libsolv
+.\"  Language: English
+.\"
+.TH "DUMPSOLV" "1" "07/25/2017" "libsolv" "LIBSOLV"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+dumpsolv \- print a solv file into a human readable format
+.SH "SYNOPSIS"
+.sp
+\fBdumpsolv\fR [\fIOPTIONS\fR] [\fIFILE\&.solv\fR]
+.SH "DESCRIPTION"
+.sp
+The dumpsolv tool reads a solv files and writes its contents to standard output\&. If no input file is given, it reads the solv file from standard input\&.
+.PP
+\fB\-j\fR
+.RS 4
+Write the contents in JSON format\&.
+.RE
+.SH "AUTHOR"
+.sp
+Michael Schroeder <mls@suse\&.de>

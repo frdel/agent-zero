@@ -1,0 +1,33 @@
+package:
+  name: python.app
+  version: 3
+
+build:
+  number: 1
+  skip: True  # [not osx]
+
+requirements:
+  build:
+    # add this to force gcc7 builds
+    - {{ compiler('c') }}
+  host:
+    - python
+  run:
+    - python
+
+test:
+  files:
+    - t.py
+
+about:
+  home: https://www.python.org/
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: LICENSE
+  summary: Proxy on macOS letting Python libraries hook into the GUI event loop
+
+extra:
+  recipe-maintainers:
+    - cpbotha
+    - ChrisBarker-NOAA
+    - hoechenberger

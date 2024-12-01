@@ -1,0 +1,11 @@
+prefix=/tmp/miniconda_temp
+exec_prefix=${prefix}
+includedir=/tmp/miniconda_temp/include
+libdir=/tmp/miniconda_temp/lib
+
+Name: Yaml-cpp
+Description: A YAML parser and emitter for C++
+Version: 0.8.0
+Requires:
+Libs: -L${libdir} -lyaml-cpp
+Cflags: -I${includedir}

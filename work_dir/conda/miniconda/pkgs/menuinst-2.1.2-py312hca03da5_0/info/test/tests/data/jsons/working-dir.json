@@ -1,0 +1,35 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema",
+    "$id": "https://schemas.conda.io/menuinst-1.schema.json",
+    "menu_name": "Sys.Prefix {{ DISTRIBUTION_NAME }}",
+    "menu_items": [
+        {
+            "name": "Sys.Prefix",
+            "description": "This will install to Windows and Linux with default options. MacOS has a custom option.",
+            "icon": null,
+            "command": [
+                "{{ PYTHON }}",
+                "-c",
+                "import sys; print(sys.prefix)"
+            ],
+            "platforms": {
+                "win": {
+                    "command": [
+                        "{{ PYTHON }}",
+                        "-c",
+                        "import sys; f = open(r'__OUTPUT_FILE__', 'w'); f.write(sys.prefix); f.close()"
+                    ],
+                    "description": "Note how __OUTPUT_FILE__ is using raw-strings. Otherwise the backslashes are not properly escaped.",
+		    "working_dir": "%TEMP%/working_dir_test"
+                },
+                "linux": {
+		    "working_dir": "${TMP}/working_dir_test"
+		},
+                "osx": {
+                    "CFBundleName": "Sys Prefix",
+		    "working_dir": "${TMPDIR}/working_dir_test"
+                }
+            }
+        }
+    ]
+}

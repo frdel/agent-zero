@@ -1,0 +1,15 @@
+{
+  "arch": "arm64",
+  "build": "py312hca03da5_0",
+  "build_number": 0,
+  "depends": [
+    "python >=3.12,<3.13.0a0"
+  ],
+  "license": "Apache-2.0",
+  "license_family": "Apache",
+  "name": "distro",
+  "platform": "osx",
+  "subdir": "osx-arm64",
+  "timestamp": 1714488322423,
+  "version": "1.9.0"
+}

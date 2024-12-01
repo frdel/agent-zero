@@ -1,0 +1,89 @@
+#!/bin/sh
+# libtool-reloc - libtool wrapper with support for relocatable programs
+# Copyright (C) 2019-2020 Free Software Foundation, Inc.
+# Written by Bruno Haible <bruno@clisp.org>, 2019.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# Usage: libtool-reloc libtool LIBTOOL_ARGUMENTS
+
+# Outputs a command and runs it.
+func_verbose ()
+{
+  # Make it easy to copy&paste the printed command into a shell in most cases,
+  # by escaping '\\', '"', and '$'. This is not perfect, just good enough.
+  echo "$@" | sed -e 's/\([\\"$]\)/\\\1/g'
+  "$@"
+}
+
+# Determine the mode from the arguments.
+mode=
+for arg
+do
+  case "$arg" in
+    --mode=link) mode=link ;;
+  esac
+done
+
+if test "$mode" = link; then
+  # Determine the target from the arguments.
+  target=
+  next_is_target=false
+  for arg
+  do
+    if $next_is_target; then
+      target="$arg"
+      next_is_target=false
+    else
+      case "$arg" in
+        -o) next_is_target=true ;;
+        *) next_is_target=false ;;
+      esac
+    fi
+  done
+  case "$target" in
+    *.la)
+      # When creating a library:
+      # 1. Add a '-Wl,-rpath,@loader_path' option.
+      #    (A '-R @loader_path' option does not work: libtool produces
+      #    an error "error: only absolute run-paths are allowed".)
+      #    (Also note that 'install_name_tool -add_rpath @loader_path ...'
+      #    does not work on Mac OS X 10.5.)
+      #    This is done through the RELOCATABLE_LDFLAGS macro.
+      # 2. After creating the library, run
+      #    install_name_tool -id @rpath/$dlname $target_dir/.libs/$dlname
+      #    (This is easier than to modify the libtool script to emit a different
+      #    install_name. Also, an option '-Wl,-install_name,@rpath/$dlname' does
+      #    not work since libtool emits another option '-Wl,-install_name,...'
+      #    after it.
+      "$@" && {
+        dlname_assignment=`grep '^dlname=' "$target"`
+        dlname=
+        eval "$dlname_assignment"
+        # Nothing to do when --disable-shared was specified.
+        if test -n "$dlname"; then
+          target_dir=`dirname "$target"`
+          if test -f "$target_dir/.libs/$dlname"; then
+            func_verbose install_name_tool -id "@rpath/$dlname" "$target_dir/.libs/$dlname"
+          fi
+        fi
+      }
+      ;;
+    *)
+      "$@"
+      ;;
+  esac
+else
+  "$@"
+fi

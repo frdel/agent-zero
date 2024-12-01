@@ -1,0 +1,93 @@
+{% set name = "boltons" %}
+{% set version = "23.0.0" %}
+{% set hash = "9b2998cd9525ed472079c7dd90fbd216a887202e8729d5969d4f33878f0ff668" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  fn: boltons-{{ version }}.tar.gz
+  url: https://github.com/mahmoud/boltons/archive/{{ version }}.tar.gz
+  sha256: {{ hash }}
+
+build:
+  number: 0
+  script: {{ PYTHON }} -m pip install . --no-deps -vv
+
+requirements:
+  host:
+    - pip
+    - python
+    - setuptools
+    - wheel
+  run:
+    - python
+
+test:
+  source_files:
+    - boltons
+    - tests
+    - pytest.ini
+  imports:
+    - boltons
+    - boltons.cacheutils
+    - boltons.debugutils
+    - boltons.dictutils
+    - boltons.ecoutils
+    - boltons.fileutils
+    - boltons.formatutils
+    - boltons.funcutils
+    - boltons.gcutils
+    - boltons.ioutils
+    - boltons.iterutils
+    - boltons.jsonutils
+    - boltons.listutils
+    - boltons.mathutils
+    - boltons.mboxutils
+    - boltons.namedutils
+    - boltons.pathutils
+    - boltons.queueutils
+    - boltons.setutils
+    - boltons.socketutils
+    - boltons.statsutils
+    - boltons.strutils
+    - boltons.tableutils
+    - boltons.tbutils
+    - boltons.timeutils
+    - boltons.typeutils
+    - boltons.urlutils
+
+  requires:
+    - pytest
+    - pip
+  commands:
+    # tests/test_jsonutils.py::test_reverse_iter_lines fails due to line endings on windows.
+    - pytest -vv --doctest-modules boltons tests -k "not test_reverse_iter_lines"  # [win]
+    - pytest -vv --doctest-modules boltons tests  # [not win]
+    - pip check
+
+about:
+  home: https://github.com/mahmoud/boltons
+  dev_url: https://github.com/mahmoud/boltons
+  doc_url: https://boltons.readthedocs.io/
+  license: BSD-3-Clause
+  license_file: LICENSE
+  license_family: BSD
+  summary: >
+    boltons should be builtins. Boltons is a set of over 160 BSD-licensed, pure-Python utilities in the same spirit as--and yet conspicuously missing from--the standard library.
+  description: |
+    Boltons is a set of pure-Python utilities in the same spirit as — and yet conspicuously missing from — the standard library, including:
+
+      - Atomic file saving, bolted on with fileutils
+      - A highly-optimized OrderedMultiDict, in dictutils
+      - Two types of PriorityQueue, in queueutils
+      - Chunked and windowed iteration, in iterutils
+      - A full-featured TracebackInfo type, for representing stack traces, in tbutils
+      - A lightweight UTC timezone available in timeutils.
+      - Recursive mapping for nested data transforms, with remap
+
+extra:
+  recipe-maintainers:
+    - kalefranz
+    - nicoddemus

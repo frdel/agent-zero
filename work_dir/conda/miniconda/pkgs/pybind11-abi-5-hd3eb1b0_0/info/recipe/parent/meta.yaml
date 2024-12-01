@@ -1,0 +1,117 @@
+{% set version = "2.12.0" %}
+{% set sha256 = "bf8f242abd1abcd375d516a7067490fb71abd79519a282d22b6e4d19282185a7" %}
+
+# this is set to PYBIND11_INTERNALS_VERSION
+# pybind11 now defines two ABI version. 4 and 5 for 3.12+ or msvc.
+# https://github.com/pybind/pybind11/blob/v2.12.0/include/pybind11/detail/internals.h#L40
+{% set abi_version = "4" %}     # [py<312 and not win]
+{% set abi_buildnumber = "1" %} # [py<312 and not win]
+{% set abi_version = "5" %}     # [py>=312 or win]
+{% set abi_buildnumber = "0" %} # [py>=312 or win]
+
+package:
+  name: pybind11-split
+  version: {{ version }}
+
+source:
+  fn: pybind11-{{ version }}.tar.gz
+  url: https://github.com/pybind/pybind11/archive/v{{ version }}.tar.gz
+  sha256: {{ sha256 }}
+
+build:
+  number: 0
+
+outputs:
+  - name: pybind11-abi
+    version: {{ abi_version }}
+    build:
+      number: {{ abi_buildnumber }}
+      noarch: generic
+      skip: true  # [not linux and x86_64]
+      run_exports:
+        - pybind11-abi =={{ abi_version }}
+    test:
+      source_files:
+        - include/pybind11/detail/internals.h
+      commands:
+        # make sure the internals version matches the package version
+        - matched=false; while read -r version; do [ "$version" -eq "{{ abi_version }}" ] && { matched=true; break; }; done < <(awk '/define PYBIND11_INTERNALS_VERSION/{print $NF}' include/pybind11/detail/internals.h); [ "$matched" = true ] && exit 0 || exit 1
+
+  - name: pybind11-global
+    script: build-pybind11-global.sh  # [unix]
+    script: build-pybind11-global.bat  # [win]
+    requirements:
+      build:
+        - cmake
+        - make  # [unix]
+        - {{ compiler('cxx') }}
+      host:
+        - python
+        - pip
+        - setuptools
+        - wheel
+      run:
+        - python
+      run_constrained:
+        - pybind11-abi =={{ abi_version }}
+    test:
+      requires:
+        - pip
+      commands:
+        - pip check
+        - echo "works!"
+
+  - name: pybind11
+    script: build-pybind11.sh  # [unix]
+    script: build-pybind11.bat  # [win]
+    requirements:
+      build:
+        - cmake
+        - make  # [unix]
+        - {{ compiler('cxx') }}
+      host:
+        - python
+        - pip
+        - setuptools
+        - wheel
+      run:
+        - python
+        - {{ pin_subpackage("pybind11-global", exact=True) }}
+      run_constrained:
+        - pybind11-abi =={{ abi_version }}
+    test:
+      requires:
+        - pip
+      imports:
+        - pybind11
+      commands:
+        - pip check
+        - test -f ${PREFIX}/share/cmake/pybind11/pybind11Config.cmake                                     # [unix]
+        - if exist %LIBRARY_PREFIX%\share\cmake\pybind11\pybind11Config.cmake (exit 0) else (exit 1)      # [win]
+        - test -f ${PREFIX}/include/pybind11/pybind11.h      # [unix]
+        - if exist %LIBRARY_INC%\pybind11\pybind11.h (exit 0) else (exit 1)      # [win]
+        - test -f $(python -c "import pybind11 as py; print(py.get_include())")/pybind11/pybind11.h      # [unix]
+        - if exist $(python -c "import pybind11 as py; print(py.get_include())")\pybind11\pybind11.h (exit 0) else (exit 1)      # [win]
+
+about:
+  home: https://github.com/pybind/pybind11/
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: LICENSE
+  summary: Seamless operability between C++11 and Python
+  description: |
+    pybind11 is a lightweight header-only library that exposes C++ types
+    in Python and vice versa, mainly to create Python bindings of existing
+    C++ code. Its goals and syntax are similar to the excellent Boost.Python
+    library by David Abrahams: to minimize boilerplate code in traditional
+    extension modules by inferring type information using compile-time
+    introspection.
+  doc_url: https://pybind11.readthedocs.io/
+  dev_url: https://github.com/pybind/pybind11/
+
+extra:
+  recipe-maintainers:
+    - ax3l
+    - SylvainCorlay
+    - wjakob
+    - henryiii

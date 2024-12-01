@@ -1,0 +1,19 @@
+{
+  "build": "h313beb8_1",
+  "build_number": 1,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "libcxx >=14.0.6"
+  ],
+  "fn": "lz4-c-1.9.4-h313beb8_1.conda",
+  "license": "BSD-2-Clause",
+  "md5": "82202ff2e94bc301fd9c790556506bb7",
+  "name": "lz4-c",
+  "sha256": "34aaf2a9ba8bef897e3684040ecbddbc99be7987ff21fa28c860f33bfac65da5",
+  "size": 160308,
+  "subdir": "osx-arm64",
+  "timestamp": 1714510588000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/lz4-c-1.9.4-h313beb8_1.conda",
+  "version": "1.9.4"
+}

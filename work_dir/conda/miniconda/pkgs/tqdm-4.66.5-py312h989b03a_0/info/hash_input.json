@@ -1,0 +1,5 @@
+{
+  "numpy": "1.26",
+  "target_platform": "osx-arm64",
+  "channel_targets": "defaults"
+}

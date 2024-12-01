@@ -1,0 +1,13 @@
+bin/jsondiff
+bin/jsonpatch
+lib/python3.12/site-packages/__pycache__/jsonpatch.cpython-312.pyc
+lib/python3.12/site-packages/jsonpatch-1.33.dist-info/AUTHORS
+lib/python3.12/site-packages/jsonpatch-1.33.dist-info/INSTALLER
+lib/python3.12/site-packages/jsonpatch-1.33.dist-info/LICENSE
+lib/python3.12/site-packages/jsonpatch-1.33.dist-info/METADATA
+lib/python3.12/site-packages/jsonpatch-1.33.dist-info/RECORD
+lib/python3.12/site-packages/jsonpatch-1.33.dist-info/REQUESTED
+lib/python3.12/site-packages/jsonpatch-1.33.dist-info/WHEEL
+lib/python3.12/site-packages/jsonpatch-1.33.dist-info/direct_url.json
+lib/python3.12/site-packages/jsonpatch-1.33.dist-info/top_level.txt
+lib/python3.12/site-packages/jsonpatch.py

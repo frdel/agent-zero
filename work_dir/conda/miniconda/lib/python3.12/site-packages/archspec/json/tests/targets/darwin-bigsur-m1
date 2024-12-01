@@ -1,0 +1,19 @@
+machdep.cpu.cores_per_package: 8
+machdep.cpu.core_count: 8
+machdep.cpu.logical_per_package: 8
+machdep.cpu.thread_count: 8
+machdep.cpu.brand_string: Apple processor
+hw.optional.floatingpoint: 1
+hw.optional.watchpoint: 4
+hw.optional.breakpoint: 6
+hw.optional.neon: 1
+hw.optional.neon_hpfp: 1
+hw.optional.neon_fp16: 1
+hw.optional.armv8_1_atomics: 1
+hw.optional.armv8_crc32: 1
+hw.optional.armv8_2_fhm: 1
+hw.optional.armv8_2_sha512: 1
+hw.optional.armv8_2_sha3: 1
+hw.optional.amx_version: 2
+hw.optional.ucnormal_mem: 1
+hw.optional.arm64: 1

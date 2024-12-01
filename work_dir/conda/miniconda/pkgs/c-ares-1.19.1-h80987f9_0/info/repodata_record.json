@@ -1,0 +1,17 @@
+{
+  "build": "h80987f9_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [],
+  "fn": "c-ares-1.19.1-h80987f9_0.conda",
+  "license": "MIT",
+  "md5": "0c6c92129aee2de12bf560f896f1e682",
+  "name": "c-ares",
+  "sha256": "e2d5a0215197f9a38a984050f254f9c613b923c417e975fb8346628d173b195e",
+  "size": 108809,
+  "subdir": "osx-arm64",
+  "timestamp": 1693902036000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/c-ares-1.19.1-h80987f9_0.conda",
+  "version": "1.19.1"
+}

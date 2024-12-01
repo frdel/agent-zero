@@ -1,0 +1,47 @@
+			   READLINE PATCH REPORT
+			   =====================
+
+Readline-Release: 7.0
+Patch-ID: readline70-004
+
+Bug-Reported-by:	Kieran Grant <kieran.thehacker.grant@gmail.com>
+Bug-Reference-ID:	<ec9071ae-efb1-9e09-5d03-e905daf2835c@gmail.com>
+Bug-Reference-URL:	http://lists.gnu.org/archive/html/bug-bash/2018-02/msg00002.html
+
+Bug-Description:
+
+With certain values for PS1, especially those that wrap onto three or more
+lines, readline will miscalculate the number of invisible characters,
+leading to crashes and core dumps.
+
+Patch (apply with `patch -p0'):
+
+*** ../readline-7.0.3/display.c	2016-07-28 14:49:33.000000000 -0400
+--- display.c	2018-02-03 19:19:35.000000000 -0500
+***************
+*** 772,776 ****
+        wadjust = (newlines == 0)
+  		  ? prompt_invis_chars_first_line
+! 		  : ((newlines == prompt_lines_estimate) ? wrap_offset : prompt_invis_chars_first_line);
+  
+        /* fix from Darin Johnson <darin@acuson.com> for prompt string with
+--- 788,794 ----
+        wadjust = (newlines == 0)
+  		  ? prompt_invis_chars_first_line
+! 		  : ((newlines == prompt_lines_estimate)
+! 		  	? (wrap_offset - prompt_invis_chars_first_line)
+! 		  	: 0);
+  
+        /* fix from Darin Johnson <darin@acuson.com> for prompt string with
+*** ../readline-7.0/patchlevel	2013-11-15 08:11:11.000000000 -0500
+--- patchlevel	2014-03-21 08:28:40.000000000 -0400
+***************
+*** 1,3 ****
+  # Do not edit -- exists only for use by patch
+  
+! 3
+--- 1,3 ----
+  # Do not edit -- exists only for use by patch
+  
+! 4
+

@@ -1,0 +1,12 @@
+{
+    "menu_name": "Anaconda${PY_VER} ${PLATFORM} - Test Menu",
+    "menu_items":
+    [
+        {
+            "name": "Anaconda Prompt",
+            "system": "%windir%\\system32\\cmd.exe",
+            "scriptarguments": ["/C", "${ROOT_PREFIX}\\Scripts\\activate.bat", "${PREFIX}"],
+            "icon": "${MENU_DIR}/Iconleak-Atrous-Console.ico"
+        }
+    ]
+}

@@ -1,0 +1,52 @@
+{
+  "build": "hca03da5_1",
+  "build_number": 1,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [],
+  "extracted_package_dir": "/tmp/miniconda_temp/pkgs/libffi-3.4.4-hca03da5_1",
+  "files": [
+    "include/ffi.h",
+    "include/ffitarget.h",
+    "lib/libffi.7.dylib",
+    "lib/libffi.8.dylib",
+    "lib/libffi.a",
+    "lib/libffi.dylib",
+    "lib/pkgconfig/libffi.pc",
+    "share/info/libffi.info",
+    "share/man/man3/ffi.3",
+    "share/man/man3/ffi_call.3",
+    "share/man/man3/ffi_prep_cif.3",
+    "share/man/man3/ffi_prep_cif_var.3"
+  ],
+  "fn": "libffi-3.4.4-hca03da5_1.conda",
+  "license": "MIT",
+  "link": {
+    "source": "/tmp/miniconda_temp/pkgs/libffi-3.4.4-hca03da5_1",
+    "type": 1
+  },
+  "md5": "2bec9ee4b1214a3c3e2d1f2e18725daf",
+  "name": "libffi",
+  "package_tarball_full_path": "/tmp/miniconda_temp/pkgs/libffi-3.4.4-hca03da5_1.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "lib/pkgconfig/libffi.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_a4554tl608/croot/libffi_1714483416836/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeho",
+        "sha256": "8b45c79c2b77688d27226a8876c46bf53de8fdd38591aaf738f5d214d227e718",
+        "sha256_in_prefix": "783d90e395c4a3c759e2ebdd7e5f7f8117192dc5fc22c4db142758fecfbde7ca",
+        "size_in_bytes": 756
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "defaults/osx-arm64::libffi==3.4.4=hca03da5_1[md5=2bec9ee4b1214a3c3e2d1f2e18725daf]",
+  "sha256": "800216cb554d0beaf970fe7c3efeee7974bb76576c1c5e0ae070c57fca2bba93",
+  "size": 122887,
+  "subdir": "osx-arm64",
+  "timestamp": 1714483461000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/libffi-3.4.4-hca03da5_1.conda",
+  "version": "3.4.4"
+}

@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Schema for microarchitecture definitions and feature aliases",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "microarchitectures": {
+      "type": "object",
+      "patternProperties": {
+        "([\\w]*)": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "$comment": "More than one parent",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "vendor": {
+              "type": "string"
+            },
+            "features": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "compilers": {
+              "type": "object",
+              "patternProperties": {
+                "([\\w]*)": {
+                  "$comment": "Permit multiple entries since compilers change options across versions",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "versions": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "flags": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "versions",
+                      "flags"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "from",
+            "vendor",
+            "features"
+          ]
+        }
+      }
+    },
+    "feature_aliases": {
+      "type": "object",
+      "patternProperties": {
+        "([\\w]*)": {
+          "type": "object",
+          "properties": {
+            "reason": {
+              "$comment": "Comment containing the reason why an alias is there",
+              "type": "string"
+            },
+            "any_of": {
+              "$comment": "The alias is true if any of the items is a feature of the target",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "families": {
+              "$comment": "The alias is true if the family of the target is in this list",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "conversions": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "arm_vendors": {
+          "type": "object"
+        },
+        "darwin_flags": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

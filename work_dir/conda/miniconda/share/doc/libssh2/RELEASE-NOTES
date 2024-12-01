@@ -1,0 +1,75 @@
+libssh2 1.11
+
+This release includes the following enhancements and bugfixes:
+
+ o Adds support for encrypt-then-mac (ETM) MACs
+ o Adds support for AES-GCM crypto protocols
+ o Adds support for sk-ecdsa-sha2-nistp256 and sk-ssh-ed25519 keys
+ o Adds support for RSA certificate authentication
+ o Adds FIDO support with *_sk() functions
+ o Adds RSA-SHA2 key upgrading to OpenSSL, WinCNG, mbedTLS, OS400 backends
+ o Adds Agent Forwarding and libssh2_agent_sign()
+ o Adds support for Channel Signal message libssh2_channel_signal_ex()
+ o Adds support to get the user auth banner message libssh2_userauth_banner()
+ o Adds LIBSSH2_NO_{MD5, HMAC_RIPEMD, DSA, RSA, RSA_SHA1, ECDSA, ED25519,
+   AES_CBC, AES_CTR, BLOWFISH, RC4, CAST, 3DES} options
+ o Adds direct stream UNIX sockets with libssh2_channel_direct_streamlocal_ex()
+ o Adds wolfSSL support to CMake file
+ o Adds mbedTLS 3.x support
+ o Adds LibreSSL 3.5 support
+ o Adds support for CMake "unity" builds
+ o Adds CMake support for building shared and static libs in a single pass
+ o Adds symbol hiding support to CMake
+ o Adds support for libssh2.rc for all build tools
+ o Adds .zip, .tar.xz and .tar.bz2 release tarballs
+ o Enables ed25519 key support for LibreSSL 3.7.0 or higher
+ o Improves OpenSSL 1.1 and 3 compatibility
+ o Now requires OpenSSL 1.0.2 or newer
+ o Now requires CMake 3.1 or newer
+ o SFTP: Adds libssh2_sftp_open_ex_r() and libssh2_sftp_open_r() extended APIs
+ o SFTP: No longer has a packet limit when reading a directory
+ o SFTP: now parses attribute extensions if they exist
+ o SFTP: no longer will busy loop if SFTP fails to initialize
+ o SFTP: now clear various errors as expected
+ o SFTP: no longer skips files if the line buffer is too small
+ o SCP: add option to not quote paths
+ o SCP: Enables 64-bit offset support unconditionally
+ o Now skips leading \r and \n characters in banner_receive()
+ o Enables secure memory zeroing with all build tools on all platforms
+ o No longer logs SSH_MSG_REQUEST_FAILURE packets from keepalive
+ o Speed up base64 encoding by 7x
+ o Assert if there is an attempt to write a value that is too large
+ o WinCNG: fix memory leak in _libssh2_dh_secret()
+ o Added protection against possible null pointer dereferences
+ o Agent now handles overly large comment lengths
+ o Now ensure KEX replies don't include extra bytes
+ o Fixed possible buffer overflow when receiving SSH_MSG_USERAUTH_BANNER
+ o Fixed possible buffer overflow in keyboard interactive code path
+ o Fixed overlapping memcpy()
+ o Fixed Windows UWP builds
+ o Fixed DLL import name
+ o Renamed local RANDOM_PADDING macro to avoid unexpected define on Windows
+ o Support for building with gcc versions older than 8
+ o Improvements to CMake, Makefile, NMakefile, GNUmakefile, autoreconf files
+ o Restores ANSI C89 compliance
+ o Enabled new compiler warnings and fixed/silenced them
+ o Improved error messages
+ o Now uses CIFuzz
+ o Numerous minor code improvements
+ o Improvements to CI builds
+ o Improvements to unit tests
+ o Improvements to doc files
+ o Improvements to example files
+ o Removed "old gex" build option
+ o Removed no-encryption/no-mac builds
+ o Removed support for NetWare and Watcom wmake build files
+
+This release would not have looked like this without help, code, reports and
+advice from friends like these:
+
+  Viktor Szakats, Dan Fandrich, Will Cosgrove, Daniel Stenberg, Michael Buckley,
+  Zenju, Miguel de Icaza, Nick Woodruff, Keith Dart, Anders Borum,
+  Jörgen Sigvardsson, vajdaakos, Gustavo Junior Alves, Marc Hörsken, iruis,
+  Nishit Majithia, Stefan Eissing, metab0t, Y. Yang, skundu07, Mike Harris,
+  Gabriel Smith, Leo Liu, Miguel de Icaza, Sandeep Bansal, Harry Sintonen,
+  xalopp, tihmstar, Sunil Nimmagadda

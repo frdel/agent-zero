@@ -1,0 +1,41 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema",
+    "$id": "https://schemas.conda.io/menuinst-1.schema.json",
+    "menu_name": "Example with file type association and no event handler (macOS only)",
+    "menu_items": [
+        {
+            "name": "FileTypeAssociationNoEventHandler",
+            "description": "Testing file type association without event handler",
+            "icon": null,
+            "command": [
+                "{{ PYTHON }}",
+                "-c",
+                "import sys, pathlib as p; p.Path(r'__OUTPUT_FILE__').write_text(sys.argv[1])"
+            ],
+            "platforms": {
+                "osx": {
+                    "command": [
+                        "bash", "-c", "nc -l 40258 > __OUTPUT_FILE__"
+                    ],
+                    "CFBundleDocumentTypes": [
+                        {
+                            "CFBundleTypeName": "org.conda.menuinst.filetype-example-no-event-handler",
+                            "CFBundleTypeRole": "Viewer",
+                            "LSItemContentTypes": ["org.conda.menuinst.main-file-util-no-event-handler"],
+                            "LSHandlerRank": "Default"
+                        }
+                    ],
+                    "UTExportedTypeDeclarations": [
+                        {
+                            "UTTypeConformsTo": ["public.data", "public.content"],
+                            "UTTypeIdentifier": "org.conda.menuinst.main-file-util-no-event-handler",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": ["menuinst-no-event-handler"]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

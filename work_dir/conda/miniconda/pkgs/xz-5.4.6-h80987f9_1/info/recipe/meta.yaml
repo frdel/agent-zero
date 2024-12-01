@@ -1,0 +1,89 @@
+# This file created by conda-build 24.1.2
+# meta.yaml template originally from:
+# /var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_61vt91g9_9/clone/recipe, last modified Tue Apr 30 16:01:42 2024
+# ------------------------------------------------
+
+package:
+  name: xz
+  version: 5.4.6
+source:
+  sha256: 913851b274e8e1d31781ec949f1c23e8dbcf0ecf6e73a2436dc21769dd3e6f49
+  url: https://github.com/tukaani-project/xz/releases/download/v5.4.6/xz-5.4.6.tar.bz2
+build:
+  number: '1'
+  run_exports:
+    - xz >=5.4.6,<6.0a0
+  string: h80987f9_1
+requirements:
+  build:
+    - autoconf 2.71 pl5340h80987f9_0
+    - automake 1.16.5 pl5340hca03da5_1
+    - cctools_osx-arm64 949.0.1 h332cad3_25
+    - clang 14.0.6 hca03da5_1
+    - clang-14 14.0.6 default_h1b80db6_1
+    - clang_osx-arm64 14.0.6 h9ff6fda_0
+    - clangxx 14.0.6 default_h1b80db6_1
+    - compiler-rt 14.0.6 h4ccfd99_0
+    - compiler-rt_osx-arm64 14.0.6 h4fb70ea_0
+    - gdbm 1.18 h8fe7016_4
+    - ld64_osx-arm64 530 h001ce53_25
+    - ldid 2.1.5 h20b2a84_3
+    - libclang-cpp14 14.0.6 default_h1b80db6_1
+    - libcxx 14.0.6 h848a8c0_0
+    - libffi 3.4.4 hca03da5_1
+    - libllvm14 14.0.6 h7ec7a93_3
+    - libtool 2.4.6 h313beb8_1009
+    - llvm-tools 14.0.6 hfd8c8a6_3
+    - m4 1.4.18 h1230e6a_1
+    - make 4.3 h620ffc9_1
+    - ncurses 6.4 h313beb8_0
+    - perl 5.34.0 h1a28f6b_2
+    - readline 8.2 h1a28f6b_0
+    - tapi 1100.0.11 h8754e6a_1
+    - zlib 1.2.13 h5a0b063_0
+  host: []
+  run: []
+test:
+  commands:
+    - xz --help
+    - unxz --help
+    - lzma --help
+    - test -f ${PREFIX}/include/lzma.h
+    - test -f ${PREFIX}/lib/pkgconfig/liblzma.pc
+    - test -f `pkg-config --variable=libdir --dont-define-prefix liblzma`/liblzma${SHLIB_EXT}
+    - test -f ${PREFIX}/lib/liblzma.a
+    - test -f ${PREFIX}/lib/liblzma${SHLIB_EXT}
+    - test -f ${PREFIX}/lib/liblzma.5${SHLIB_EXT}
+    - conda inspect linkages -p $PREFIX $PKG_NAME
+    - conda inspect objects -p $PREFIX $PKG_NAME
+  requires:
+    - conda-build
+    - pkg-config
+about:
+  description: 'XZ Utils is free general-purpose data compression software with a
+    high
+
+    compression ratio. XZ Utils were written for POSIX-like systems, but also
+
+    work on some not-so-POSIX systems.
+
+    '
+  dev_url: https://github.com/tukaani-project/xz
+  doc_url: https://tukaani.org/xz/
+  home: https://xz.tukaani.org/xz-utils/
+  license: LGPL-2.1-or-later and GPL-2.0-or-later and 0BSD
+  license_family: GPL2
+  license_file: COPYING
+  summary: Data compression software with high compression ratio
+extra:
+  copy_test_source_files: true
+  final: true
+  flow_run_id: 61deaa50-b9de-40cc-869e-9f684e986108
+  recipe-maintainers:
+    - mingwandroid
+    - msarahan
+    - nehaljwani
+    - ocefpaf
+    - scopatz
+  remote_url: git@github.com:AnacondaRecipes/xz-feedstock.git
+  sha: e4727181dd6dd975f850faa66a9233fd6773eac8

@@ -1,0 +1,75 @@
+# This file created by conda-build 24.1.2
+# meta.yaml template originally from:
+# /feedstock/recipe, last modified Tue Jul 23 15:25:44 2024
+# ------------------------------------------------
+
+package:
+  name: charset-normalizer
+  version: 3.3.2
+source:
+  sha256: f30c3cb33b24454a82faecaf01b19c18562b1e89558fb6c56de4d9118a032fd5
+  url: https://pypi.io/packages/source/c/charset-normalizer/charset-normalizer-3.3.2.tar.gz
+build:
+  entry_points:
+    - normalizer = charset_normalizer.cli:cli_detect
+  noarch: python
+  number: '0'
+  script: /croot/charset-normalizer_1721748349566/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol/bin/python
+    -m pip install . --no-deps -vv --no-build-isolation
+  string: pyhd3eb1b0_0
+requirements:
+  host:
+    - _libgcc_mutex 0.1 main
+    - _openmp_mutex 5.1 1_gnu
+    - bzip2 1.0.8 h5eee18b_6
+    - ca-certificates 2024.7.2 h06a4308_0
+    - expat 2.6.2 h6a678d5_0
+    - ld_impl_linux-64 2.38 h1181459_1
+    - libffi 3.4.4 h6a678d5_1
+    - libgcc-ng 11.2.0 h1234567_1
+    - libgomp 11.2.0 h1234567_1
+    - libstdcxx-ng 11.2.0 h1234567_1
+    - libuuid 1.41.5 h5eee18b_0
+    - ncurses 6.4 h6a678d5_0
+    - openssl 3.0.14 h5eee18b_0
+    - pip 24.0 py312h06a4308_0
+    - python 3.12.4 h5148396_1
+    - readline 8.2 h5eee18b_0
+    - setuptools 69.5.1 py312h06a4308_0
+    - sqlite 3.45.3 h5eee18b_0
+    - tk 8.6.14 h39e8969_0
+    - tzdata 2024a h04d1e81_0
+    - wheel 0.43.0 py312h06a4308_0
+    - xz 5.4.6 h5eee18b_1
+    - zlib 1.2.13 h5eee18b_1
+  run:
+    - python >=3.7
+test:
+  commands:
+    - pip check
+    - normalizer --help
+  imports:
+    - charset_normalizer
+  requires:
+    - pip
+about:
+  description: 'A Library that helps you read text from unknown charset encoding.
+    This project is motivated by chardet.
+
+    '
+  dev_url: https://github.com/jawah/charset_normalizer
+  doc_url: https://charset-normalizer.readthedocs.io/
+  home: https://github.com/jawah/charset_normalizer
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: The Real First Universal Charset Detector. Open, modern and actively maintained
+    alternative to Chardet.
+extra:
+  copy_test_source_files: true
+  final: true
+  flow_run_id: 82a1ac6d-7ce2-46e8-8cae-562a70455ad1
+  recipe-maintainers:
+    - ocefpaf
+  remote_url: git@github.com:AnacondaRecipes/charset-normalizer-feedstock.git
+  sha: 4b6daadd609504eae5a8be28aa55fdefd037ddf1

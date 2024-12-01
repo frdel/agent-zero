@@ -1,0 +1,19 @@
+{
+  "build": "py312hca03da5_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "python >=3.12,<3.13.0a0"
+  ],
+  "fn": "setuptools-75.1.0-py312hca03da5_0.conda",
+  "license": "MIT",
+  "md5": "ed1b9acb74d55f57ea2f7ce0a95846c1",
+  "name": "setuptools",
+  "sha256": "81d8213c20f1abe712b93ac66a8610c6eb721fabf9d6cdb87569b213c5a18edf",
+  "size": 2281869,
+  "subdir": "osx-arm64",
+  "timestamp": 1726678027000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/setuptools-75.1.0-py312hca03da5_0.conda",
+  "version": "75.1.0"
+}

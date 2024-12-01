@@ -1,0 +1,68 @@
+{% set version = "8.2" %}
+
+package:
+  name: readline
+  version: {{ version }}
+
+source:
+  url: https://ftp.gnu.org/gnu/readline/readline-{{ version }}.tar.gz
+  sha256: 3feb7171f16a84ee82ca18a36d7b9be109a52c04f492a053331d7d1095007c35
+
+build:
+  # Per the upstream homepage, Windows is not supported.
+  # To avoid build failure Windows is therefore skipped.
+  skip: true  # [win]
+  number: 0
+  run_exports:
+    # change soname at major ver: https://abi-laboratory.pro/tracker/timeline/readline/
+    - {{ pin_subpackage('readline') }}
+
+requirements:
+  build:
+    - pkg-config
+    - {{ compiler('c') }}
+    - make
+  host:
+    - ncurses
+
+test:
+  requires:
+    - python 3.*
+  commands:
+  {% set readline_libs = [
+    'libreadline',
+    'libhistory'
+  ] %}
+  {% for lib in readline_libs %}
+    - test -f ${PREFIX}/lib/{{ lib }}.a
+    - test -f ${PREFIX}/lib/{{ lib }}${SHLIB_EXT}  # [not win]
+  {% endfor %}
+    # catch missing termcap/ncurses linkage problems
+    - python -c "import readline"
+
+about:
+  home: https://tiswww.case.edu/php/chet/readline/rltop.html
+  license: GPL-3.0-only
+  license_family: GPL
+  license_file: COPYING
+  license_url: https://tiswww.case.edu/php/chet/readline/README
+  summary: library for editing command lines as they are typed in
+  description: |
+    The GNU Readline library provides a set of functions for use by applications
+    that allow users to edit command lines as they are typed in.
+    The Readline library includes additional functions to maintain a list of previously-entered command lines,
+    to recall and perhaps reedit those lines, and perform csh-like history expansion on previous commands.
+  dev_url: https://git.savannah.gnu.org/cgit/readline.git/
+  doc_url: https://tiswww.case.edu/php/chet/readline/rltop.html
+
+extra:
+  recipe-maintainers:
+    - croth1
+    - jakirkham
+    - jjhelmus
+    - pelson
+    - msarahan
+    - asmeurer
+    - msarahan
+    - mingwandroid
+    - ocefpaf

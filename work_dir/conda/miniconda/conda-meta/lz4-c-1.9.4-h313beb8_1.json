@@ -1,0 +1,58 @@
+{
+  "build": "h313beb8_1",
+  "build_number": 1,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "libcxx >=14.0.6"
+  ],
+  "extracted_package_dir": "/tmp/miniconda_temp/pkgs/lz4-c-1.9.4-h313beb8_1",
+  "files": [
+    "bin/lz4",
+    "bin/lz4c",
+    "bin/lz4cat",
+    "bin/unlz4",
+    "include/lz4.h",
+    "include/lz4frame.h",
+    "include/lz4frame_static.h",
+    "include/lz4hc.h",
+    "lib/liblz4.1.9.4.dylib",
+    "lib/liblz4.1.dylib",
+    "lib/liblz4.dylib",
+    "lib/pkgconfig/liblz4.pc",
+    "share/man/man1/lz4.1",
+    "share/man/man1/lz4c.1",
+    "share/man/man1/lz4cat.1",
+    "share/man/man1/unlz4.1"
+  ],
+  "fn": "lz4-c-1.9.4-h313beb8_1.conda",
+  "license": "BSD-2-Clause",
+  "link": {
+    "source": "/tmp/miniconda_temp/pkgs/lz4-c-1.9.4-h313beb8_1",
+    "type": 1
+  },
+  "md5": "82202ff2e94bc301fd9c790556506bb7",
+  "name": "lz4-c",
+  "package_tarball_full_path": "/tmp/miniconda_temp/pkgs/lz4-c-1.9.4-h313beb8_1.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "lib/pkgconfig/liblz4.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_229oxd61sl/croot/lz4-c_1714510566256/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol",
+        "sha256": "9913144b343f71d749c995adff60047a953aec5cba93396e31b4def405651d22",
+        "sha256_in_prefix": "cad886cc37d4777b888ec9557a9ef7749dd8102ab589408831334b3f6cc9de5c",
+        "size_in_bytes": 640
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "defaults/osx-arm64::lz4-c==1.9.4=h313beb8_1[md5=82202ff2e94bc301fd9c790556506bb7]",
+  "sha256": "34aaf2a9ba8bef897e3684040ecbddbc99be7987ff21fa28c860f33bfac65da5",
+  "size": 160308,
+  "subdir": "osx-arm64",
+  "timestamp": 1714510588000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/lz4-c-1.9.4-h313beb8_1.conda",
+  "version": "1.9.4"
+}

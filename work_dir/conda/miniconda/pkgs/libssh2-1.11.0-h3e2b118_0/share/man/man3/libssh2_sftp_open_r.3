@@ -1,0 +1,23 @@
+.TH libssh2_sftp_open_r 3 "10 Apr 2023" "libssh2 1.11.0" "libssh2"
+.SH NAME
+libssh2_sftp_open_r - convenience macro for \fIlibssh2_sftp_open_ex_r(3)\fP calls
+.SH SYNOPSIS
+.nf
+#include <libssh2.h>
+#include <libssh2_sftp.h>
+
+LIBSSH2_SFTP_HANDLE *
+libssh2_sftp_open_r(LIBSSH2_SFTP *sftp, const char *filename,
+                    unsigned long flags,
+                    long mode,
+                    LIBSSH2_SFTP_ATTRIBUTES *attrs);
+.fi
+.SH DESCRIPTION
+This is a macro defined in a public libssh2 header file that is using the
+underlying function \fIlibssh2_sftp_open_ex_r(3)\fP.
+.SH RETURN VALUE
+See \fIlibssh2_sftp_open_ex_r(3)\fP
+.SH ERRORS
+See \fIlibssh2_sftp_open_ex_r(3)\fP
+.SH SEE ALSO
+.BR libssh2_sftp_open_ex_r(3)

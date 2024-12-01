@@ -1,0 +1,58 @@
+# This file created by conda-build 24.1.2
+# ------------------------------------------------
+
+package:
+  name: pybind11-abi
+  version: 5
+source:
+  fn: pybind11-2.12.0.tar.gz
+  sha256: bf8f242abd1abcd375d516a7067490fb71abd79519a282d22b6e4d19282185a7
+  url: https://github.com/pybind/pybind11/archive/v2.12.0.tar.gz
+build:
+  noarch: generic
+  number: 0
+  run_exports:
+    - pybind11-abi ==5
+  string: hd3eb1b0_0
+requirements:
+  build: []
+  run: []
+test:
+  commands:
+    - matched=false; while read -r version; do [ "$version" -eq "5" ] && { matched=true;
+      break; }; done < <(awk '/define PYBIND11_INTERNALS_VERSION/{print $NF}' include/pybind11/detail/internals.h);
+      [ "$matched" = true ] && exit 0 || exit 1
+  source_files:
+    - include/pybind11/detail/internals.h
+about:
+  description: 'pybind11 is a lightweight header-only library that exposes C++ types
+
+    in Python and vice versa, mainly to create Python bindings of existing
+
+    C++ code. Its goals and syntax are similar to the excellent Boost.Python
+
+    library by David Abrahams: to minimize boilerplate code in traditional
+
+    extension modules by inferring type information using compile-time
+
+    introspection.
+
+    '
+  dev_url: https://github.com/pybind/pybind11/
+  doc_url: https://pybind11.readthedocs.io/
+  home: https://github.com/pybind/pybind11/
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: LICENSE
+  summary: Seamless operability between C++11 and Python
+extra:
+  copy_test_source_files: true
+  final: true
+  flow_run_id: 02f5e24e-2689-4e4f-be99-d7b4bea63de4
+  recipe-maintainers:
+    - SylvainCorlay
+    - ax3l
+    - henryiii
+    - wjakob
+  remote_url: git@github.com:AnacondaRecipes/pybind11-feedstock.git
+  sha: 479f4756901b5f26b0c0c8222503e9ada4267b04

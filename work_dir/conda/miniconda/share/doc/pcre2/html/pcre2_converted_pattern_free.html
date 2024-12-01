@@ -1,0 +1,40 @@
+<html>
+<head>
+<title>pcre2_converted_pattern_free specification</title>
+</head>
+<body bgcolor="#FFFFFF" text="#00005A" link="#0066FF" alink="#3399FF" vlink="#2222BB">
+<h1>pcre2_converted_pattern_free man page</h1>
+<p>
+Return to the <a href="index.html">PCRE2 index page</a>.
+</p>
+<p>
+This page is part of the PCRE2 HTML documentation. It was generated
+automatically from the original man page. If there is any nonsense in it,
+please consult the man page, in case the conversion went wrong.
+<br>
+<br><b>
+SYNOPSIS
+</b><br>
+<P>
+<b>#include &#60;pcre2.h&#62;</b>
+</P>
+<P>
+<b>void pcre2_converted_pattern_free(PCRE2_UCHAR *<i>converted_pattern</i>);</b>
+</P>
+<br><b>
+DESCRIPTION
+</b><br>
+<P>
+This function is part of an experimental set of pattern conversion functions.
+It frees the memory occupied by a converted pattern that was obtained by
+calling <b>pcre2_pattern_convert()</b> with arguments that caused it to place
+the converted pattern into newly obtained heap memory. If the argument is NULL,
+the function returns immediately without doing anything.
+</P>
+<P>
+The pattern conversion functions are described in the
+<a href="pcre2convert.html"><b>pcre2convert</b></a>
+documentation.
+<p>
+Return to the <a href="index.html">PCRE2 index page</a>.
+</p>

@@ -1,0 +1,10 @@
+prefix=/tmp/miniconda_temp
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+vendor=MIT
+
+Name: krb5-gssapi
+Description: Kerberos implementation of the GSSAPI
+Version: 1.20.1
+Requires: mit-krb5-gssapi

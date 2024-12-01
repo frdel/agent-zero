@@ -1,0 +1,21 @@
+--- cffi-1.15.1.orig/setup.py	2022-06-30 13:38:43.000000000 -0300
++++ cffi-1.15.1/setup.py	2022-07-02 13:49:37.189516459 -0300
+@@ -1,6 +1,7 @@
+ import sys, os, platform
+ import subprocess
+ import errno
++import sysconfig
+ 
+ # on Windows we give up and always import setuptools early to fix things for us
+ if sys.platform == "win32":
+@@ -113,6 +114,10 @@
+     _ask_pkg_config(library_dirs,       '--libs-only-L', '-L', sysroot=True)
+     _ask_pkg_config(extra_link_args,    '--libs-only-other')
+     _ask_pkg_config(libraries,          '--libs-only-l', '-l')
++    # This is needed for linking to 'dlopen', 'dlclose', 'dlsym' and 'dlerror'
++    # from _cffi_backend.c for uClibc.
++    if '-ldl' in ''.join(sysconfig.get_config_vars('LIBS')).split(' '):
++        libraries.append('dl')
+ 
+ def use_homebrew_for_libffi():
+     # We can build by setting:

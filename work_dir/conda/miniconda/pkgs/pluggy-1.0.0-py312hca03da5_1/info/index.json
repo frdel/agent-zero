@@ -1,0 +1,15 @@
+{
+  "arch": "arm64",
+  "build": "py312hca03da5_1",
+  "build_number": 1,
+  "depends": [
+    "python >=3.12,<3.13.0a0"
+  ],
+  "license": "MIT",
+  "license_family": "MIT",
+  "name": "pluggy",
+  "platform": "osx",
+  "subdir": "osx-arm64",
+  "timestamp": 1699237256905,
+  "version": "1.0.0"
+}

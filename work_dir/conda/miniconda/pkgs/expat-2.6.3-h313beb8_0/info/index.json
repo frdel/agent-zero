@@ -1,0 +1,15 @@
+{
+  "arch": "arm64",
+  "build": "h313beb8_0",
+  "build_number": 0,
+  "depends": [
+    "libcxx >=14.0.6"
+  ],
+  "license": "MIT",
+  "license_family": "MIT",
+  "name": "expat",
+  "platform": "osx",
+  "subdir": "osx-arm64",
+  "timestamp": 1725543352377,
+  "version": "2.6.3"
+}

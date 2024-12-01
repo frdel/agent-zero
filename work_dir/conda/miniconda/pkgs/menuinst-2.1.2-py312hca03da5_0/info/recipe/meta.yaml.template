@@ -1,0 +1,93 @@
+{% set version = "2.1.2" %}
+
+package:
+  name: menuinst
+  version: {{ version }}
+
+source:
+  url: https://github.com/conda/menuinst/archive/{{ version }}.tar.gz
+  sha256: 6515a4e33cec8462cdb389c1c301ddbe0679c992c02e3ea42eea25225063b0e9
+
+build:
+  number: 0
+  skip: true  # [py<38]
+  script_env:
+    - SETUPTOOLS_SCM_PRETEND_VERSION={{ version }}
+  script:
+    # Apparently these files make the post-build linkage analysis crash
+    # and we should not need them on Windows
+    - del /q "{{ SRC_DIR }}\\menuinst\\data\\osx_launcher_*"     # [win]
+    - del /q "{{ SRC_DIR }}\\menuinst\\data\\appkit_launcher_*"  # [win]
+    # Delete in Linux too because we don't need them there
+    - rm -f "{{ SRC_DIR }}/menuinst/data/osx_launcher_*"     # [linux]
+    - rm -f "{{ SRC_DIR }}/menuinst/data/appkit_launcher_*"  # [linux]
+    - {{ PYTHON }} -m pip install . -vv --no-build-isolation --no-deps
+    # menuinst v1 expects cwp.py in PREFIX; backwards compat fix
+    - copy "%SP_DIR%\\menuinst\\_legacy\cwp.py" "%PREFIX%\\"  # [win]
+  skip_compile_pyc:  # [win]
+    - cwp.py  # [win]
+  missing_dso_whitelist:
+    - '**/libswift*'  # [osx]
+
+requirements:
+  build:
+    - python
+    - {{ compiler('c') }}  # [win]
+    - {{ compiler('cxx') }}  # [win]
+  host:
+    - python
+    - pip
+    - setuptools_scm
+    - wheel
+  run:
+    - python
+
+test:
+  requires:
+    - conda
+    - pip
+    - pydantic
+    - pytest
+    - pytest-mock
+  source_files:
+    - tests
+  imports:
+    - menuinst
+    - menuinst.api
+    - menuinst._legacy  # [win]
+    - menuinst.platforms.win_utils.winshortcut  # [win]
+  commands:
+    - pip check
+    - SP_DIR="$(python -c 'import site; print(site.getsitepackages()[0])')"  # [osx]
+    - test -f "${SP_DIR}/menuinst/data/appkit_launcher_arm64"    # [osx]
+    - test -f "${SP_DIR}/menuinst/data/appkit_launcher_x86_64"   # [osx]
+    - test -f "${SP_DIR}/menuinst/data/osx_launcher_arm64"       # [osx]
+    - test -f "${SP_DIR}/menuinst/data/osx_launcher_x86_64"      # [osx]
+    # Cannot run tests in test_schema.py because hypothesis-jsonschema is not on defaults
+    # Cannot run elevation test because Prefect user is admin
+    - pytest tests/ -vvv --ignore=tests/test_schema.py --ignore=tests/test_elevation.py
+
+about:
+  home: https://github.com/conda/menuinst/
+  license: BSD-3-Clause AND MIT
+  license_family: BSD
+  license_file:
+    - LICENSE.txt
+    - menuinst/_vendor/apipkg/LICENSE
+  summary: cross platform install of menu items
+  description: |
+    This package provides cross platform menu item installation for conda packages.
+
+    If a conda package ships a menuinst JSON document under $PREFIX/Menu, conda will invoke
+    menuinst to process the JSON file and install the menu items in your operating system.
+    The menu items are removed when the package is uninstalled.
+  doc_url: https://conda.github.io/menuinst/
+  dev_url: https://github.com/conda/menuinst/
+
+extra:
+  recipe-maintainers:
+    - goanpeca
+    - jakirkham
+    - carlodri
+    - isuruf
+    - jaimergp

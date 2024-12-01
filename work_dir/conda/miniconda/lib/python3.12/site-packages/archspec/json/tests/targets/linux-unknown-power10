@@ -1,0 +1,3 @@
+processor   : 0
+cpu : POWER10, altivec supported
+revision    : 17.0 (pvr 0080 1100)

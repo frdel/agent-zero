@@ -1,0 +1,43 @@
+{
+  "paths": [
+    {
+      "_path": "python-scripts/jsonpointer",
+      "file_mode": "text",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/tmp/build/80754af9/jsonpointer_1615660556387/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+      "sha256": "67c40790083f55d0128220565b66fa320e9d12fec90993f0974f72ee4722c8c7",
+      "size_in_bytes": 2087
+    },
+    {
+      "_path": "site-packages/jsonpointer-2.1-py3.6.egg-info/PKG-INFO",
+      "path_type": "hardlink",
+      "sha256": "6d4b5f13e866378e0f5e0639b2549244cc22aa867e5bc1e4fa5e9d0bdc8fe279",
+      "size_in_bytes": 2636
+    },
+    {
+      "_path": "site-packages/jsonpointer-2.1-py3.6.egg-info/SOURCES.txt",
+      "path_type": "hardlink",
+      "sha256": "8e8ed55d62a75bb8db29e4233c92111a0de4a31090d22aaea8120e699815328b",
+      "size_in_bytes": 240
+    },
+    {
+      "_path": "site-packages/jsonpointer-2.1-py3.6.egg-info/dependency_links.txt",
+      "path_type": "hardlink",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "size_in_bytes": 1
+    },
+    {
+      "_path": "site-packages/jsonpointer-2.1-py3.6.egg-info/top_level.txt",
+      "path_type": "hardlink",
+      "sha256": "06c51c6abfc2d276733c657669c92b27d0a9554f3fd16fe91d82b0a5d9d675d3",
+      "size_in_bytes": 12
+    },
+    {
+      "_path": "site-packages/jsonpointer.py",
+      "path_type": "hardlink",
+      "sha256": "4aa2a76429a15113cf377d44f60e34f475fcf03e35eac70c4304914c9eddb876",
+      "size_in_bytes": 9794
+    }
+  ],
+  "paths_version": 1
+}

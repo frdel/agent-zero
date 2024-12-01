@@ -1,0 +1,85 @@
+{% set version = "1.19.1" %}
+
+package:
+  name: c-ares-split
+  version: {{ version }}
+
+source:
+  url: https://c-ares.org/download/c-ares-{{ version }}.tar.gz
+  sha256: 321700399b72ed0e037d0074c629e7741f6b2ec2dda92956abe3e9671d3e268e
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - {{ compiler("c") }}
+    - cmake  # [win]
+    # cmake on unix depends on c-ares. This breaks the cycle.
+    - cmake-no-system  # [unix]
+    - ninja  # [unix]
+
+outputs:
+  - name: c-ares
+    script: build_output.sh  # [unix]
+    script: bld_output.bat  # [win]
+    build:
+      run_exports:
+        - {{ pin_subpackage("c-ares", max_pin="x") }}
+    requirements:
+      build:
+        - {{ compiler("c") }}
+        - cmake  # [win]
+        # cmake on unix depends on c-ares. This breaks the cycle.
+        - cmake-no-system  # [unix]
+        - ninja  # [unix]
+      run_constraint:
+        - c-ares-static <0a0
+    test:
+      commands:
+        - test -f ${PREFIX}/include/ares.h            # [not win]
+        - test -f ${PREFIX}/lib/libcares${SHLIB_EXT}  # [not win]
+        - test ! -f ${PREFIX}/lib/libcares.a          # [not win]
+        - test ! -f ${PREFIX}/lib/libcares_static.a   # [not win]
+        - if not exist %PREFIX%\\Library\\include\\ares.h exit 1  # [win]
+        - if not exist %PREFIX%\\Library\\bin\\cares.dll exit 1  # [win]
+        - if not exist %PREFIX%\\Library\\lib\\cares.lib exit 1  # [win]
+        - if exist %PREFIX%\\Library\\lib\\cares_static.lib exit 1  # [win]
+  
+  - name: c-ares-static
+    script: build_output.sh  # [unix]
+    script: bld_output.bat  # [win]
+    requirements:
+      build:
+        - {{ compiler("c") }}
+        - cmake  # [win]
+        # cmake on unix depends on c-ares. This breaks the cycle.
+        - cmake-no-system  # [unix]
+        - ninja  # [unix]
+      run_constraint:
+        - c-ares <0a0
+    test:
+      commands:
+        - test -f ${PREFIX}/lib/libcares.a  # [not win]
+        - test ! -f ${PREFIX}/lib/libcares${SHLIB_EXT}  # [not win]
+        - test -f ${PREFIX}/include/ares.h            # [not win]
+        - if not exist %PREFIX%\\Library\\include\\ares.h exit 1  # [win]
+        - if exist %PREFIX%\\Library\\bin\\cares.dll exit 1  # [win]
+        - if not exist %PREFIX%\\Library\\lib\\cares.lib exit 1  # [win]
+
+about:
+  home: https://c-ares.org/
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE.md
+  summary: This is c-ares, an asynchronous resolver library
+  description: |
+    c-ares is a C library for asynchronous DNS requests (including name resolves).
+  dev_url: https://github.com/c-ares/c-ares
+  doc_url: https://c-ares.org/docs.html
+
+extra:
+  recipe-maintainers:
+    - ocefpaf
+    - wesm
+    - xhochy

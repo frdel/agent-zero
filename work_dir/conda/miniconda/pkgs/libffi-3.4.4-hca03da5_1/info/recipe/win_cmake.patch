@@ -1,0 +1,706 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+new file mode 100644
+index 0000000..26cc2fd
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,61 @@
++cmake_minimum_required(VERSION 2.8.8)
++project(libffi C)
++
++set(SOURCES_LIST
++    src/closures.c
++    src/java_raw_api
++    src/prep_cif.c
++    src/raw_api.c
++    src/tramp.c
++    src/types.c)
++
++if(CMAKE_BUILD_TYPE MATCHES DEBUG)
++    list(APPEND SOURCES_LIST src/debug.c)
++    add_definitions(-DFFI_DEBUG)
++endif()
++
++include(configure_platform.cmake)
++include(configure_options.cmake)
++
++file(COPY ${FFI_CONFIG_FILE} DESTINATION ${CMAKE_BINARY_DIR})
++file(COPY src/${TARGETDIR}/ffitarget.h DESTINATION ${CMAKE_BINARY_DIR}/include)
++
++include_directories(${CMAKE_BINARY_DIR}/include)
++include_directories(${CMAKE_BINARY_DIR})
++include_directories(include)
++
++add_definitions(-DFFI_BUILDING)
++
++add_library(objlib OBJECT ${SOURCES_LIST})
++set_property(TARGET objlib PROPERTY POSITION_INDEPENDENT_CODE 1)
++
++add_library(ffi_static STATIC $<TARGET_OBJECTS:objlib>)
++
++if(MSVC)
++    add_definitions(-DFFI_BUILDING_DLL)
++    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
++elseif(CMAKE_SYSTEM_NAME MATCHES Darwin)
++    set(CMAKE_MACOSX_RPATH 1)
++endif()
++add_library(ffi_shared SHARED $<TARGET_OBJECTS:objlib> ${OBJECTS_LIST})
++
++set_target_properties(ffi_static PROPERTIES OUTPUT_NAME ffi)
++set_target_properties(ffi_shared PROPERTIES OUTPUT_NAME ffi)
++
++install(TARGETS ffi_static ffi_shared
++    EXPORT ${PROJECT_NAME}Targets
++    RUNTIME DESTINATION bin
++    ARCHIVE DESTINATION lib
++    LIBRARY DESTINATION lib)
++
++install(EXPORT ${PROJECT_NAME}Targets
++    DESTINATION share/${PROJECT_NAME})
++
++install(FILES
++    ${CMAKE_BINARY_DIR}/include/ffi.h
++    ${CMAKE_BINARY_DIR}/include/ffitarget.h
++    DESTINATION include)
++
++install(FILES
++    ${CMAKE_LIBRARY_DIR}/pkgconfig/libffi.pc
++    DESTINATION lib/pkgconfig)
+diff --git a/configure_options.cmake b/configure_options.cmake
+new file mode 100644
+index 0000000..849231c
+--- /dev/null
++++ b/configure_options.cmake
+@@ -0,0 +1,341 @@
++include(CheckCSourceCompiles)
++include(CheckCSourceRuns)
++include(CheckFunctionExists)
++include(CheckIncludeFile)
++include(CheckIncludeFiles)
++include(CheckSymbolExists)
++include(CheckTypeSize)
++
++# options in AC counterpart can be overriden from command-line
++# e.g.:  cmake .. -DFFI_MMAP_EXEC_EMUTRAMP_PAX=1 -DVERSION=X.Y
++if(NOT DEFINED VERSION)
++    set(VERSION 3.x-dev)
++endif()
++set(PACKAGE libffi)
++set(PACKAGE_BUGREPORT http://github.com/libffi/libffi/issues)
++set(PACKAGE_NAME ${PACKAGE})
++set(PACKAGE_STRING "${PACKAGE} ${VERSION}")
++set(PACKAGE_TARNAME ${PACKAGE})
++set(PACKAGE_URL http://github.com/libffi/libffi)
++set(PACKAGE_VERSION ${VERSION})
++set(TARGET ${TARGET_PLATFORM})
++set(LT_OBJDIR .libs/)
++set(prefix ../..)
++set(exec_prefix \${prefix})
++set(libdir \${exec_prefix}/lib)
++set(toolexeclibdir \${exec_prefix}/lib)
++set(includedir \${prefix}/include)
++
++check_type_size (size_t SIZEOF_SIZE_T)
++
++if(SIZEOF_SIZE_T STREQUAL "")
++    set(size_t "unsinged int")
++endif()
++
++if(MSVC)
++    get_filename_component(COMPILER_DIR "${CMAKE_C_COMPILER}" DIRECTORY)
++else()
++    enable_language(ASM)
++endif()
++
++set(FFI_EXEC_TRAMPOLINE_TABLE 0)
++if(TARGET_PLATFORM STREQUAL X86_WIN64)
++    if(MSVC)
++        list(APPEND WIN_ASSEMBLY_LIST src/x86/win64_intel.S)
++        enable_language(ASM_MASM)
++    else()
++        list(APPEND SOURCES_LIST src/x86/win64.S)
++    endif()
++    list(APPEND SOURCES_LIST src/x86/ffiw64.c)
++
++    set(TARGETDIR x86)
++elseif(TARGET_PLATFORM STREQUAL X86_64)
++    list(APPEND SOURCES_LIST
++        src/x86/ffi64.c
++        src/x86/unix64.S)
++
++    if(SIZEOF_SIZE_T EQUAL 4 AND TARGET_PLATFORM MATCHES X86.*)
++        set(CMAKE_REQUIRED_FLAGS "-Werror")
++
++        check_c_source_compiles(
++            "
++            int main(void)
++            {
++                return __x86_64__;
++            }
++            "
++            TARGET_X32)
++
++        set(CMAKE_REQUIRED_FLAGS)
++    endif()
++
++    if(NOT TARGET_X32)
++        list(APPEND SOURCES_LIST
++             src/x86/ffiw64.c
++             src/x86/win64.S)
++    endif()
++
++    set(TARGETDIR x86)
++elseif(TARGET_PLATFORM MATCHES X86.*)
++    if(MSVC)
++        list(APPEND WIN_ASSEMBLY_LIST src/x86/sysv_intel.S)
++        enable_language(ASM_MASM)
++    else()
++        list(APPEND SOURCES_LIST src/x86/sysv.S)
++    endif()
++
++    list(APPEND SOURCES_LIST src/x86/ffi.c)
++    set(TARGETDIR x86)
++elseif(TARGET_PLATFORM MATCHES ARM_WIN64|AARCH64)
++    if(TARGET_PLATFORM STREQUAL ARM_WIN64)
++        set(CMAKE_ASM_MASM_COMPILER ${COMPILER_DIR}/armasm64.exe)
++        set(CMAKE_ASM_COMPILER ${CMAKE_ASM_MASM_COMPILER})
++        list(APPEND WIN_ASSEMBLY_LIST src/aarch64/win64_armasm.S)
++        file(COPY src/aarch64/ffitarget.h DESTINATION ${CMAKE_BINARY_DIR}/include)
++        enable_language(ASM)
++    else()
++        list(APPEND SOURCES_LIST src/aarch64/sysv.S)
++    endif()
++
++    list(APPEND SOURCES_LIST src/aarch64/ffi.c)
++    set(TARGETDIR aarch64)
++elseif(TARGET_PLATFORM MATCHES ARM.*)
++    if(MSVC)
++        set(CMAKE_ASM_MASM_COMPILER ${COMPILER_DIR}/armasm.exe)
++        set(CMAKE_ASM_COMPILER ${CMAKE_ASM_MASM_COMPILER})
++        list(APPEND WIN_ASSEMBLY_LIST src/arm/sysv_msvc_arm32.S)
++        file(COPY src/arm/ffitarget.h DESTINATION ${CMAKE_BINARY_DIR}/include)
++        enable_language(ASM)
++    else()
++        list(APPEND SOURCES_LIST src/arm/sysv.S)
++    endif()
++
++    list(APPEND SOURCES_LIST src/arm/ffi.c)
++    set(TARGETDIR arm)
++endif()
++
++if(CMAKE_SYSTEM_NAME STREQUAL Darwin AND TARGET_PLATFORM STREQUAL AARCH64)
++    set(FFI_EXEC_TRAMPOLINE_TABLE 1)
++elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin OR TARGET_PLATFORM MATCHES .*FREEBSD.*)
++    set(FFI_MMAP_EXEC_WRIT 1)
++endif()
++
++check_type_size (double SIZEOF_DOUBLE)
++check_type_size ("long double" SIZEOF_LONG_DOUBLE)
++
++if(SIZEOF_LONG_DOUBLE STREQUAL "")
++    set(HAVE_LONG_DOUBLE 0)
++
++    if(DEFINED HAVE_LONG_DOUBLE_VARIANT)
++        set(HAVE_LONG_DOUBLE 1)
++    elseif(NOT SIZEOF_DOUBLE EQUAL SIZEOF_LONG_DOUBLE)
++        set(HAVE_LONG_DOUBLE 1)
++    endif()
++else()
++    set(HAVE_LONG_DOUBLE 1)
++endif()
++
++check_function_exists(alloca  C_ALLOCA)
++check_function_exists (mmap HAVE_MMAP)
++
++check_symbol_exists (MAP_ANON sys/mman.h HAVE_MMAP_ANON)
++
++check_c_source_runs(
++    "
++    #include <stdlib.h>
++    #include <sys/types.h>
++    #include <sys/mman.h>
++    #include <fcntl.h>
++
++    int main(void) {
++        int devzero = open(\"/dev/zero\", O_RDWR);
++        return devzero == -1 || mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, devzero, 0) == (void *)-1 ? 1 : 0;
++    }" HAVE_MMAP_DEV_ZERO)
++
++check_include_file(alloca.h HAVE_ALLOCA_H)
++
++check_c_source_compiles(
++    "
++    #include <alloca.h>
++    int main()
++    {
++        char* x = alloca(1024);
++        return 0;
++    }
++    "
++    HAVE_ALLOCA)
++
++check_include_file(dlfcn.h HAVE_DLFCN_H)
++check_include_file(inttypes.h HAVE_INTTYPES_H)
++check_include_file(memory.h HAVE_MEMORY_H)
++check_include_file(stdint.h HAVE_STDINT_H)
++check_include_file(stdlib.h HAVE_STDLIB_H)
++check_include_file(strings.h HAVE_STRINGS_H)
++check_include_file(string.h HAVE_STRING_H)
++check_include_file(sys/mman.h HAVE_SYS_MMAN_H)
++check_include_file(sys/stat.h HAVE_SYS_STAT_H)
++check_include_file(sys/types.h HAVE_SYS_TYPES_H)
++check_include_file(unistd.h HAVE_UNISTD_H)
++check_include_files("stdlib.h;stdarg.h;string.h;float.h" STDC_HEADERS)
++
++check_symbol_exists(memcpy string.h HAVE_MEMCPY)
++set(CMAKE_REQUIRED_DEFINITIONS "-D_GNU_SOURCE")
++check_symbol_exists(mkostemp stdlib.h HAVE_MKOSTEMP)
++set(CMAKE_REQUIRED_DEFINITIONS)
++
++if (NOT MSVC)
++    find_program(OBJDUMP objdump)
++    find_program(NM NAMES nm llvm-nm)
++
++    if(OBJDUMP)
++        set(DUMPTOOL_CMD "objdump -t -h") # on macOS -t -h can't be combined
++        set(EH_FRAME_GREP_EXPR "grep -A1 -n eh_frame | grep -q READONLY")
++    elseif(NM)
++        set(DUMPTOOL_CMD "nm -a")
++        set(EH_FRAME_GREP_EXPR "grep -q ' r \.eh_frame'")
++    endif()
++
++    execute_process(
++        COMMAND
++            sh -c "echo 'extern void foo (void); void bar (void) { foo (); foo (); }' | ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -xc -c -fpic -fexceptions -o conftest.o - 2>&1;
++                   ${DUMPTOOL_CMD} conftest.o 2>&1 | ${EH_FRAME_GREP_EXPR}"
++        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
++        OUTPUT_VARIABLE IGNORE
++        ERROR_VARIABLE IGNORE
++        RESULT_VARIABLE HAVE_RO_EH_FRAME_EXITCODE)
++
++    file(REMOVE ${CMAKE_BINARY_DIR}/conftest.*)
++
++    if(HAVE_RO_EH_FRAME_EXITCODE EQUAL "0")
++        set(HAVE_RO_EH_FRAME 1)
++        set(EH_FRAME_FLAGS "a")
++        message(STATUS "Checking if .eh_frame section is read-only - yes")
++    else()
++        set(EH_FRAME_FLAGS "aw")
++        message(STATUS "Checking if .eh_frame section is read-only - no")
++    endif()
++
++    execute_process(
++        COMMAND sh -c "echo '.text; foo: nop; .data; .long foo-.; .text' | ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -xassembler -c -o conftest.o - 2>&1"
++        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
++        OUTPUT_VARIABLE IGNORE
++        ERROR_VARIABLE IGNORE
++        RESULT_VARIABLE HAVE_AS_X86_PCREL_EXITCODE)
++
++    file(REMOVE ${CMAKE_BINARY_DIR}/conftest.*)
++
++    if(HAVE_AS_X86_PCREL_EXITCODE EQUAL "0")
++        set(HAVE_AS_X86_PCREL 1)
++        message(STATUS "Checking HAVE_AS_X86_PCREL - yes")
++    else()
++        message(STATUS "Checking HAVE_AS_X86_PCREL - no")
++    endif()
++
++    execute_process(
++        COMMAND
++            sh -c "echo '.text;.globl foo;foo:;jmp bar;.section .eh_frame,\"a\",@unwind;bar:' | ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -xassembler -Wa,--fatal-warnings -c -o conftest.o - 2>&1 &&
++                   echo 'extern void foo();int main(){foo();}' | ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} conftest.o -xc - 2>&1"
++        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
++        OUTPUT_VARIABLE IGNORE
++        ERROR_VARIABLE IGNORE
++        RESULT_VARIABLE HAVE_AS_X86_64_UNWIND_SECTION_TYPE_EXITCODE)
++
++    file(REMOVE ${CMAKE_BINARY_DIR}/conftest.*)
++
++    if(HAVE_AS_X86_64_UNWIND_SECTION_TYPE_EXITCODE EQUAL "0")
++        set(HAVE_AS_X86_64_UNWIND_SECTION_TYPE 1)
++        message(STATUS "Checking HAVE_AS_X86_64_UNWIND_SECTION_TYPE - yes")
++    else()
++        message(STATUS "Checking HAVE_AS_X86_64_UNWIND_SECTION_TYPE - no")
++    endif()
++
++    execute_process(
++        COMMAND sh -c "echo 'int __attribute__ ((visibility (\"hidden\"))) foo(void){return 1;}' | ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -xc -Werror -S -o- - 2>&1 |
++                       grep -q '\\.hidden.*foo'"
++        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
++        OUTPUT_VARIABLE IGNORE
++        ERROR_VARIABLE IGNORE
++        RESULT_VARIABLE HAVE_HIDDEN_VISIBILITY_ATTRIBUTE_EXITCODE)
++
++    if(HAVE_HIDDEN_VISIBILITY_ATTRIBUTE_EXITCODE EQUAL "0")
++        set(HAVE_HIDDEN_VISIBILITY_ATTRIBUTE 1)
++        message(STATUS "Checking HAVE_HIDDEN_VISIBILITY_ATTRIBUTE - yes")
++    else()
++        message(STATUS "Checking HAVE_HIDDEN_VISIBILITY_ATTRIBUTE - no")
++    endif()
++endif()
++
++file(WRITE ${CMAKE_BINARY_DIR}/conftest.c "void nm_test_func(){} int main(){nm_test_func();return 0;}")
++
++if(MSVC)
++    execute_process(
++        COMMAND "${CMAKE_C_COMPILER}" ${CMAKE_C_FLAGS} /c conftest.c
++        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
++        OUTPUT_VARIABLE IGNORE
++        ERROR_VARIABLE IGNORE
++        RESULT_VARIABLE SYMBOL_UNDERSCORE_EXITCODE)
++
++    if(SYMBOL_UNDERSCORE_EXITCODE EQUAL "0")
++        execute_process(
++            COMMAND "${COMPILER_DIR}/dumpbin.exe" /ALL /RAWDATA:NONE conftest.obj | findstr _nm_test_func > NUL
++            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
++            OUTPUT_VARIABLE IGNORE
++            ERROR_VARIABLE IGNORE
++            RESULT_VARIABLE SYMBOL_UNDERSCORE_EXITCODE)
++    endif()
++elseif()
++    execute_process(
++        COMMAND sh -c "${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -xc -c -o conftest.o conftest.c 2>&1;
++                       ${DUMPTOOL_CMD} conftest.o 2>&1 | grep -q _nm_test_func"
++        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
++        OUTPUT_VARIABLE IGNORE
++        ERROR_VARIABLE IGNORE
++        RESULT_VARIABLE SYMBOL_UNDERSCORE_EXITCODE)
++endif()
++
++file(REMOVE ${CMAKE_BINARY_DIR}/conftest.*)
++
++if(SYMBOL_UNDERSCORE_EXITCODE EQUAL "0")
++    set(SYMBOL_UNDERSCORE 1)
++    message(STATUS "Checking if symbols are underscored - yes")
++else()
++    message(STATUS "Checking if symbols are underscored - no")
++endif()
++
++check_c_source_compiles(
++    "
++    asm (\".cfi_sections\\\\n\\\\t.cfi_startproc\\\\n\\\\t.cfi_endproc\");
++    int main(void)
++    {
++        return 0;
++    }
++    "
++    HAVE_AS_CFI_PSEUDO_OP)
++
++configure_file(include/ffi.h.in ${CMAKE_BINARY_DIR}/include/ffi.h)
++configure_file(include/fficonfig.h.in ${CMAKE_BINARY_DIR}/include/fficonfig.h)
++configure_file(libffi.pc.in ${CMAKE_LIBRARY_DIR}/pkgconfig/libffi.pc)
++
++foreach(ASM_PATH IN LISTS WIN_ASSEMBLY_LIST)
++    get_filename_component(ASM_FILENAME "${ASM_PATH}" NAME_WE)
++    get_filename_component(ASM_DIRNAME "${ASM_PATH}" DIRECTORY)
++
++    add_custom_command(
++        COMMAND "${CMAKE_C_COMPILER}" /nologo /P /EP /I. /I"${CMAKE_CURRENT_SOURCE_DIR}/${ASM_DIRNAME}" /Fi"${CMAKE_BINARY_DIR}/${ASM_FILENAME}.asm" /Iinclude
++                /I"${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/${ASM_PATH}"
++        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${ASM_PATH}
++        OUTPUT ${CMAKE_BINARY_DIR}/${ASM_FILENAME}.asm
++        COMMENT "Preprocessing ${CMAKE_CURRENT_SOURCE_DIR}/${ASM_PATH}. Outputting to ${CMAKE_BINARY_DIR}/${ASM_FILENAME}.asm")
++
++    set_source_files_properties("${CMAKE_BINARY_DIR}/${ASM_FILENAME}.asm" PROPERTIES GENERATED TRUE)
++
++    add_custom_command(
++        COMMAND "${CMAKE_ASM_MASM_COMPILER}" /Fo "${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.obj" "${CMAKE_BINARY_DIR}/${ASM_FILENAME}.asm"
++        DEPENDS ${CMAKE_BINARY_DIR}/${ASM_FILENAME}.asm
++        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.obj
++        COMMENT "Assembling ${CMAKE_BINARY_DIR}/${ASM_FILENAME}.asm")
++
++    set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.obj PROPERTIES EXTERNAL_OBJECT TRUE)
++
++    list(APPEND OBJECTS_LIST ${CMAKE_CURRENT_BINARY_DIR}/${ASM_FILENAME}.obj)
++endforeach()
+diff --git a/configure_platform.cmake b/configure_platform.cmake
+new file mode 100644
+index 0000000..bc57a65
+--- /dev/null
++++ b/configure_platform.cmake
+@@ -0,0 +1,43 @@
++if("${CMAKE_C_COMPILER_ARCHITECTURE_ID}" STREQUAL "")
++    set(HOST_ARCH ${CMAKE_SYSTEM_PROCESSOR})
++else()
++    set(HOST_ARCH ${CMAKE_C_COMPILER_ARCHITECTURE_ID})
++endif()
++
++if("${TARGET_PLATFORM}" STREQUAL "")
++    if(HOST_ARCH MATCHES x64|x86_64|AMD64|amd64)
++        if(CMAKE_SYSTEM_NAME STREQUAL Windows)
++            set(TARGET_PLATFORM X86_WIN64)
++        else()
++            set(TARGET_PLATFORM X86_64)
++        endif()
++    elseif(HOST_ARCH MATCHES i.*86.*|X86|x86)
++        if(MSVC)
++            set(TARGET_PLATFORM X86_WIN32)
++        else()
++            set(TARGET_PLATFORM X86)
++        endif()
++
++        if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
++            set(TARGET_PLATFORM X86_DARWIN)
++        elseif(CMAKE_SYSTEM_NAME MATCHES FreeBSD|OpenBSD)
++            set(TARGET_PLATFORM X86_FREEBSD)
++        endif()
++    elseif(HOST_ARCH MATCHES aarch64|ARM64|arm64)
++        if(MSVC)
++            set(TARGET_PLATFORM ARM_WIN64)
++        else()
++            set(TARGET_PLATFORM AARCH64)
++        endif()
++    elseif(HOST_ARCH MATCHES arm.*|ARM.*)
++        if(MSVC)
++            set(TARGET_PLATFORM ARM_WIN32)
++        else()
++            set(TARGET_PLATFORM ARM)
++        endif()
++    else()
++        message(FATAL_ERROR "Unknown host.")
++    endif()
++endif()
++
++message(STATUS "Building for TARGET_PLATFORM: ${TARGET_PLATFORM}")
+diff --git a/include/fficonfig.h.in b/include/fficonfig.h.in
+new file mode 100644
+index 0000000..1b36207
+--- /dev/null
++++ b/include/fficonfig.h.in
+@@ -0,0 +1,210 @@
++/* fficonfig.h.in.  Generated from configure.ac by autoheader.  */
++
++/* Define if building universal (internal helper macro) */
++#cmakedefine AC_APPLE_UNIVERSAL_BUILD
++
++/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
++   systems. This function is required for `alloca.c' support on those systems.
++   */
++#cmakedefine CRAY_STACKSEG_END "@CRAY_STACKSEG_END@"
++
++/* Define if using `alloca.c'. */
++#cmakedefine C_ALLOCA
++
++/* Define to the flags needed for the .section .eh_frame directive. */
++#cmakedefine EH_FRAME_FLAGS "@EH_FRAME_FLAGS@"
++
++/* Define this if you want extra debugging. */
++#cmakedefine FFI_DEBUG
++
++/* Cannot use PROT_EXEC on this target, so, we revert to alternative means */
++#cmakedefine FFI_EXEC_TRAMPOLINE_TABLE
++
++/* Define this if you want to enable pax emulated trampolines */
++#cmakedefine FFI_MMAP_EXEC_EMUTRAMP_PAX
++
++/* Cannot use malloc on this target, so, we revert to alternative means */
++#cmakedefine01 FFI_MMAP_EXEC_WRIT
++
++/* Define this if you do not want support for the raw API. */
++#cmakedefine01 FFI_NO_RAW_API
++
++/* Define this if you do not want support for aggregate types. */
++#cmakedefine01 FFI_NO_STRUCTS
++
++/* Define to 1 if you have `alloca', as a function or macro. */
++#cmakedefine01 HAVE_ALLOCA
++
++/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
++   */
++#cmakedefine01 HAVE_ALLOCA_H
++
++/* Define if your assembler supports .cfi_* directives. */
++#cmakedefine HAVE_AS_CFI_PSEUDO_OP
++
++/* Define if your assembler supports .register. */
++#cmakedefine HAVE_AS_REGISTER_PSEUDO_OP
++
++/* Define if the compiler uses zarch features. */
++#cmakedefine HAVE_AS_S390_ZARCH
++
++/* Define if your assembler and linker support unaligned PC relative relocs.
++   */
++#cmakedefine HAVE_AS_SPARC_UA_PCREL
++
++/* Define if your assembler supports unwind section type. */
++#cmakedefine HAVE_AS_X86_64_UNWIND_SECTION_TYPE
++
++/* Define if your assembler supports PC relative relocs. */
++#cmakedefine HAVE_AS_X86_PCREL
++
++/* Define to 1 if you have the <dlfcn.h> header file. */
++#cmakedefine01 HAVE_DLFCN_H
++
++/* Define if __attribute__((visibility("hidden"))) is supported. */
++#cmakedefine HAVE_HIDDEN_VISIBILITY_ATTRIBUTE
++
++/* Define to 1 if you have the <inttypes.h> header file. */
++#cmakedefine01 HAVE_INTTYPES_H
++
++/* Define if you have the long double type and it is bigger than a double */
++#cmakedefine01 HAVE_LONG_DOUBLE
++
++/* Define if you support more than one size of the long double type */
++#cmakedefine HAVE_LONG_DOUBLE_VARIANT
++
++/* Define to 1 if you have the `memcpy' function. */
++#cmakedefine01 HAVE_MEMCPY
++
++/* Define to 1 if you have the <memory.h> header file. */
++#cmakedefine01 HAVE_MEMORY_H
++
++/* Define to 1 if you have the `mkostemp' function. */
++#cmakedefine01 HAVE_MKOSTEMP
++
++/* Define to 1 if you have the `mmap' function. */
++#cmakedefine01 HAVE_MMAP
++
++/* Define if mmap with MAP_ANON(YMOUS) works. */
++#cmakedefine HAVE_MMAP_ANON
++
++/* Define if mmap of /dev/zero works. */
++#cmakedefine HAVE_MMAP_DEV_ZERO
++
++/* Define if read-only mmap of a plain file works. */
++#cmakedefine HAVE_MMAP_FILE
++
++/* Define if .eh_frame sections should be read-only. */
++#cmakedefine HAVE_RO_EH_FRAME
++
++/* Define to 1 if you have the <stdint.h> header file. */
++#cmakedefine01 HAVE_STDINT_H
++
++/* Define to 1 if you have the <stdlib.h> header file. */
++#cmakedefine01 HAVE_STDLIB_H
++
++/* Define to 1 if you have the <strings.h> header file. */
++#cmakedefine01 HAVE_STRINGS_H
++
++/* Define to 1 if you have the <string.h> header file. */
++#cmakedefine01 HAVE_STRING_H
++
++/* Define to 1 if you have the <sys/mman.h> header file. */
++#cmakedefine01 HAVE_SYS_MMAN_H
++
++/* Define to 1 if you have the <sys/stat.h> header file. */
++#cmakedefine01 HAVE_SYS_STAT_H
++
++/* Define to 1 if you have the <sys/types.h> header file. */
++#cmakedefine01 HAVE_SYS_TYPES_H
++
++/* Define to 1 if you have the <unistd.h> header file. */
++#cmakedefine01 HAVE_UNISTD_H
++
++/* Define to the sub-directory where libtool stores uninstalled libraries. */
++#cmakedefine LT_OBJDIR "@LT_OBJDIR@"
++
++/* Name of package */
++#cmakedefine PACKAGE "@PACKAGE@"
++
++/* Define to the address where bug reports for this package should be sent. */
++#cmakedefine PACKAGE_BUGREPORT "@PACKAGE_BUGREPORT@"
++
++/* Define to the full name of this package. */
++#cmakedefine PACKAGE_NAME "@PACKAGE_NAME@"
++
++/* Define to the full name and version of this package. */
++#cmakedefine PACKAGE_STRING "@PACKAGE_STRING@"
++
++/* Define to the one symbol short name of this package. */
++#cmakedefine PACKAGE_TARNAME "@PACKAGE_TARNAME@"
++
++/* Define to the home page for this package. */
++#cmakedefine PACKAGE_URL "@PACKAGE_URL@"
++
++/* Define to the version of this package. */
++#cmakedefine PACKAGE_VERSION "@PACKAGE_VERSION@"
++
++/* The size of `double', as computed by sizeof. */
++#cmakedefine SIZEOF_DOUBLE @SIZEOF_DOUBLE@
++
++/* The size of `long double', as computed by sizeof. */
++#cmakedefine SIZEOF_LONG_DOUBLE @SIZEOF_LONG_DOUBLE@
++
++/* The size of `size_t', as computed by sizeof. */
++#cmakedefine SIZEOF_SIZE_T @SIZEOF_SIZE_T@
++
++/* If using the C implementation of alloca, define if you know the
++   direction of stack growth for your system; otherwise it will be
++   automatically deduced at runtime.
++	STACK_DIRECTION > 0 => grows toward higher addresses
++	STACK_DIRECTION < 0 => grows toward lower addresses
++	STACK_DIRECTION = 0 => direction of growth unknown */
++#cmakedefine STACK_DIRECTION @STACK_DIRECTION@
++
++/* Define to 1 if you have the ANSI C header files. */
++#cmakedefine01 STDC_HEADERS
++
++/* Define if symbols are underscored. */
++#cmakedefine SYMBOL_UNDERSCORE
++
++/* Define this if you are using Purify and want to suppress spurious messages.
++   */
++#cmakedefine USING_PURIFY
++
++/* Version number of package */
++#cmakedefine VERSION "@VERSION@"
++
++/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
++   significant byte first (like Motorola and SPARC, unlike Intel). */
++#if defined AC_APPLE_UNIVERSAL_BUILD
++# if defined __BIG_ENDIAN__
++#  define WORDS_BIGENDIAN 1
++# endif
++#else
++# ifndef WORDS_BIGENDIAN
++#  undef WORDS_BIGENDIAN
++# endif
++#endif
++
++/* Define to `unsigned int' if <sys/types.h> does not define. */
++#cmakedefine size_t @size_t@
++
++
++#ifdef HAVE_HIDDEN_VISIBILITY_ATTRIBUTE
++#ifdef LIBFFI_ASM
++#ifdef __APPLE__
++#define FFI_HIDDEN(name) .private_extern name
++#else
++#define FFI_HIDDEN(name) .hidden name
++#endif
++#else
++#define FFI_HIDDEN __attribute__ ((visibility ("hidden")))
++#endif
++#else
++#ifdef LIBFFI_ASM
++#define FFI_HIDDEN(name)
++#else
++#define FFI_HIDDEN
++#endif
++#endif
+diff --git a/src/closures.c b/src/closures.c
+index 5120021..c329077 100644
+--- a/src/closures.c
++++ b/src/closures.c
+@@ -137,6 +137,7 @@ ffi_closure_free (void *ptr)
+ /* Windows systems may have Data Execution Protection (DEP) enabled,
+    which requires the use of VirtualMalloc/VirtualFree to alloc/free
+    executable memory. */
++#  undef FFI_MMAP_EXEC_WRIT
+ #  define FFI_MMAP_EXEC_WRIT 1
+ # endif
+ #endif
+diff --git a/src/dlmalloc.c b/src/dlmalloc.c
+index d63dd36..950e977 100644
+--- a/src/dlmalloc.c
++++ b/src/dlmalloc.c
+@@ -451,6 +451,7 @@ DEFAULT_MMAP_THRESHOLD       default: 256K
+ #ifdef WIN32
+ #define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
++#undef HAVE_MMAP
+ #define HAVE_MMAP 1
+ #define HAVE_MORECORE 0
+ #define LACKS_UNISTD_H
+-- 
+2.23.0
+

@@ -1,0 +1,73 @@
+# This file created by conda-build 24.7.1
+# meta.yaml template originally from:
+# /var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_3eten91yuf/clone/recipe, last modified Wed Sep 18 11:44:35 2024
+# ------------------------------------------------
+
+package:
+  name: setuptools
+  version: 75.1.0
+source:
+  patches:
+    - patches/0002-disable-downloads-inside-conda-build.patch
+    - patches/0021-Add-d1trimfile-SRC_DIR-to-make-pdbs-more-relocatable.patch
+  sha256: d59a21b17a275fb872a9c3dae73963160ae079f1049ed956880cd7c09b120538
+  url: https://pypi.io/packages/source/s/setuptools/setuptools-75.1.0.tar.gz
+build:
+  number: '0'
+  string: py312hca03da5_0
+requirements:
+  build:
+    - patch 2.7.6 h1a28f6b_1001
+  host:
+    - bzip2 1.0.8 h80987f9_6
+    - ca-certificates 2024.7.2 hca03da5_0
+    - expat 2.6.3 h313beb8_0
+    - libcxx 14.0.6 h848a8c0_0
+    - libffi 3.4.4 hca03da5_1
+    - ncurses 6.4 h313beb8_0
+    - openssl 3.0.15 h80987f9_0
+    - python 3.12.5 h99e199e_1
+    - readline 8.2 h1a28f6b_0
+    - sqlite 3.45.3 h80987f9_0
+    - tk 8.6.14 h6ba3021_0
+    - tzdata 2024a h04d1e81_0
+    - xz 5.4.6 h80987f9_1
+    - zlib 1.2.13 h18a0788_1
+  run:
+    - python >=3.12,<3.13.0a0
+test:
+  commands:
+    - pip check
+  imports:
+    - pkg_resources
+    - setuptools
+  requires:
+    - pip
+about:
+  description: 'Setuptools is a fully-featured, actively-maintained, and stable library
+
+    designed to facilitate packaging Python projects.
+
+    '
+  dev_url: https://github.com/pypa/setuptools
+  doc_url: https://setuptools.pypa.io
+  home: https://github.com/pypa/setuptools
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: Download, build, install, upgrade, and uninstall Python packages
+extra:
+  copy_test_source_files: true
+  final: true
+  flow_run_id: 3e6cfb86-a242-4ec5-9afb-65431e6632a4
+  recipe-maintainers:
+    - isuruf
+    - jakirkham
+    - msarahan
+    - nicoddemus
+    - ocefpaf
+  remote_url: git@github.com:AnacondaRecipes/setuptools-feedstock.git
+  sha: 985bc6bdb5383b20ddaed7635f95bd2858b25902
+  skip-lints:
+    - missing_python_build_tool
+    - missing_wheel

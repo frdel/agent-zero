@@ -1,0 +1,52 @@
+{% set name = "distro" %}
+{% set version = "1.9.0" %}
+{% set sha256 = "2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  fn: {{ name }}-{{ version }}.tar.gz
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  sha256: {{ sha256 }}
+
+build:
+  number: 0
+  entry_points:
+    - distro = distro.distro:main
+  skip: true  # [py<36]
+  script: {{ PYTHON }} -m pip install . --no-deps --ignore-installed --no-cache-dir -v --no-build-isolation
+
+requirements:
+  host:
+    - python
+    - pip
+    - setuptools
+    - wheel
+  run:
+    - python
+
+test:
+  requires:
+    - pip
+  commands:
+    - pip check
+    - distro --help
+  imports:
+    - distro
+
+about:
+  home: https://github.com/python-distro/distro
+  license: Apache-2.0
+  license_family: Apache
+  license_file: LICENSE
+  summary: A much more elaborate replacement for removed Python's 'platform.linux_distribution()' method
+  description: distro provides information about the OS distribution it runs on, such as a reliable machine-readable ID, or version information.
+  doc_url: https://distro.readthedocs.io
+  dev_url: https://github.com/python-distro/distro
+
+extra:
+  recipe-maintainers:
+    - windelbouwman
+    - abloemert

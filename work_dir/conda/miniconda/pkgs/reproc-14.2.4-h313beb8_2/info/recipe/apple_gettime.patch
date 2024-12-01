@@ -1,0 +1,44 @@
+diff --git a/reproc/src/clock.posix.c b/reproc/src/clock.posix.c
+index 8d22a3b..4d47fa3 100644
+--- a/reproc/src/clock.posix.c
++++ b/reproc/src/clock.posix.c
+@@ -6,11 +6,39 @@
+ 
+ #include "error.h"
+ 
++#if defined __APPLE__ && __MAC_OS_X_VERSION_MIN_REQUIRED < 101200 // less than macOS 10.12
++#include <Availability.h>
++  #ifndef CLOCK_REALTIME
++  #define CLOCK_REALTIME 0
++  #endif
++
++  #include <mach/clock.h>
++  #include <mach/mach.h>
++  #include <sys/time.h>
++
++  int alt_clock_gettime (int clock_id, struct timespec *ts)
++  {
++    clock_serv_t cclock;
++    mach_timespec_t mts;
++    host_get_clock_service (mach_host_self (), clock_id, &cclock);
++    clock_get_time (cclock, &mts);
++    mach_port_deallocate (mach_task_self (), cclock);
++    ts->tv_sec = mts.tv_sec;
++    ts->tv_nsec = mts.tv_nsec;
++    return 0;
++  }
++#endif
++
++
+ int64_t now(void)
+ {
+   struct timespec timespec = { 0 };
+ 
++#if defined __APPLE__ && __MAC_OS_X_VERSION_MIN_REQUIRED < 101200 // less than macOS 10.12
++  int r = alt_clock_gettime(CLOCK_REALTIME, &timespec);
++#else
+   int r = clock_gettime(CLOCK_REALTIME, &timespec);
++#endif
+   ASSERT_UNUSED(r == 0);
+ 
+   return timespec.tv_sec * 1000 + timespec.tv_nsec / 1000000;

@@ -1,0 +1,8 @@
+processor       : 0
+BogoMIPS        : 48.00
+Features        : fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 asimdfhm dit uscat ilrcpc flagm ssbs sb paca pacg dcpodp flagm2 frint i8mm bf16 bti ecv
+CPU implementer : 0x61
+CPU architecture: 8
+CPU variant     : 0x1
+CPU part        : 0x032
+CPU revision    : 0

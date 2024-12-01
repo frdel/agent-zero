@@ -1,0 +1,53 @@
+{% set name = "archspec" %}
+{% set version = "0.2.3" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/archspec-{{ version }}.tar.gz
+  sha256: d07deb5b6e2ab3b74861e217523d02e69be8522f6e6565f4cc5d2062eb1a5d2c
+
+build:
+  number: 0
+  noarch: python
+  entry_points:
+    - archspec = archspec.cli:main
+  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+
+requirements:
+  host:
+    - pip
+    - python >=3.7
+    - poetry-core
+  run:
+    # According to the upstream `pyproject.toml`, python==3.6.15 is also
+    # supported, but including that here seems more trouble than it's worth.
+    - python >=3.7
+
+test:
+  imports:
+    - archspec
+    - archspec.cpu
+  commands:
+    - pip check
+    - archspec --help
+  requires:
+    - pip
+
+about:
+  home: https://pypi.org/project/archspec/
+  summary: A library to query system architecture
+  description: A library to query system architecture
+  license: MIT OR Apache-2.0
+  license_file:
+    - LICENSE-MIT
+    - LICENSE-APACHE
+  dev_url: https://github.com/archspec/archspec/
+  doc_url: https://archspec.readthedocs.io/
+
+extra:
+  recipe-maintainers:
+    - anthchirp
+    - isuruf

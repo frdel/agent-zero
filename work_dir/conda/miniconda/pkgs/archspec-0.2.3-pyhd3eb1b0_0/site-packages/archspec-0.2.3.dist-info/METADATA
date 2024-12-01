@@ -1,0 +1,117 @@
+Metadata-Version: 2.1
+Name: archspec
+Version: 0.2.3
+Summary: A library to query system architecture
+Home-page: https://github.com/archspec/archspec
+License: Apache-2.0 OR MIT
+Author: archspec developers
+Author-email: maintainers@spack.io
+Maintainer: Greg Becker
+Maintainer-email: maintainers@spack.io
+Requires-Python: >=3.6, !=2.7.*, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Information Technology
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: Other/Proprietary License
+Classifier: Operating System :: MacOS
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Operating System :: Unix
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Project-URL: Documentation, https://archspec.readthedocs.io
+Project-URL: Repository, https://github.com/archspec/archspec.git
+Description-Content-Type: text/markdown
+
+# Archspec (Python bindings)
+
+[![CI](https://github.com/archspec/archspec/workflows/Unit%20tests/badge.svg)](https://github.com/archspec/archspec/actions)
+[![CodeCov](https://codecov.io/gh/archspec/archspec/branch/master/graph/badge.svg)](https://codecov.io/gh/archspec/archspec)
+[![Documentation Status](https://readthedocs.org/projects/archspec/badge/?version=latest)](https://archspec.readthedocs.io/en/latest/?badge=latest)
+
+Archspec aims at providing a standard set of human-understandable labels for
+various aspects of a system architecture  like CPU, network fabrics, etc. and
+APIs to detect, query and compare them.
+
+This project grew out of [Spack](https://spack.io/) and is currently under
+active development. At present it supports APIs to detect and model
+compatibility relationships among different CPU microarchitectures.
+
+## Getting started with development
+
+The `archspec` Python package needs [poetry](https://python-poetry.org/) to
+be installed from VCS sources. The preferred method to install it is via
+its custom installer outside of any virtual environment:
+
+```console
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+You can refer to [Poetry's documentation](https://python-poetry.org/docs/#installation)
+for further details or for other methods to install this tool. You'll also need `tox`
+to run unit test:
+
+```console
+pip install --user tox
+```
+
+Finally, you'll need to clone the repository:
+
+```console
+git clone --recursive https://github.com/archspec/archspec.git
+```
+
+### Running unit tests
+
+Once you have your environment ready you can run `archspec` unit tests
+using ``tox`` from the root of the repository:
+
+```console
+$ tox
+  [ ... ]
+  py27: commands succeeded
+  py35: commands succeeded
+  py36: commands succeeded
+  py37: commands succeeded
+  py38: commands succeeded
+  pylint: commands succeeded
+  flake8: commands succeeded
+  black: commands succeeded
+  congratulations :)
+```
+
+## Citing Archspec
+
+If you are referencing `archspec` in a publication, please cite the following
+paper:
+
+* Massimiliano Culpo, Gregory Becker, Carlos Eduardo Arango Gutierrez, Kenneth
+   Hoste, and Todd Gamblin.
+   [**`archspec`: A library for detecting, labeling, and reasoning about
+   microarchitectures**](https://tgamblin.github.io/pubs/archspec-canopie-hpc-2020.pdf).
+   In *2nd International Workshop on Containers and New Orchestration Paradigms
+   for Isolated Environments in HPC (CANOPIE-HPC'20)*, Online Event, November
+   12, 2020.
+
+## License
+
+Archspec is distributed under the terms of both the MIT license and the
+Apache License (Version 2.0). Users may choose either license, at their
+option.
+
+All new contributions must be made under both the MIT and Apache-2.0
+licenses.
+
+See [LICENSE-MIT](https://github.com/archspec/archspec/blob/master/LICENSE-MIT),
+[LICENSE-APACHE](https://github.com/archspec/archspec/blob/master/LICENSE-APACHE),
+[COPYRIGHT](https://github.com/archspec/archspec/blob/master/COPYRIGHT), and
+[NOTICE](https://github.com/archspec/archspec/blob/master/NOTICE) for details.
+
+SPDX-License-Identifier: (Apache-2.0 OR MIT)
+
+LLNL-CODE-811653
+

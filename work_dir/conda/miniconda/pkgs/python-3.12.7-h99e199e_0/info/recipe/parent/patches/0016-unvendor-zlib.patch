@@ -1,0 +1,166 @@
+From 7752b6b98f2d8a9f88e8c32b032877654dadf28a Mon Sep 17 00:00:00 2001
+From: Isuru Fernando <isuruf@gmail.com>
+Date: Wed, 29 Sep 2021 15:21:55 -0700
+Subject: [PATCH 25/25] unvendor zlib
+
+---
+ PCbuild/pythoncore.vcxproj         | 33 ++-------------
+ PCbuild/pythoncore.vcxproj.filters | 66 ------------------------------
+ 2 files changed, 4 insertions(+), 95 deletions(-)
+
+diff --git a/PCbuild/pythoncore.vcxproj b/PCbuild/pythoncore.vcxproj
+index c4cb39c821..2161449eab 100644
+--- a/PCbuild/pythoncore.vcxproj
++++ b/PCbuild/pythoncore.vcxproj
+@@ -82,7 +82,7 @@
+   <PropertyGroup>
+     <KillPython>true</KillPython>
+     <RequirePGCFiles>true</RequirePGCFiles>
+-    <IncludeExternals Condition="$(IncludeExternals) == '' and Exists('$(zlibDir)\zlib.h')">true</IncludeExternals>
++    <IncludeExternals Condition="$(IncludeExternals) == '' and Exists('$(condaDir)\include\zlib.h')">true</IncludeExternals>
+     <IncludeExternals Condition="$(IncludeExternals) == ''">false</IncludeExternals>
+   </PropertyGroup>
+   <ImportGroup Label="PropertySheets">
+@@ -101,12 +101,13 @@
+     <ClCompile>
+       <AdditionalOptions>/d1trimfile:%SRC_DIR%</AdditionalOptions>
+       <AdditionalIncludeDirectories>$(PySourcePath)Modules\_hacl\include;$(PySourcePath)Modules\_hacl\internal;$(PySourcePath)Python;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+-      <AdditionalIncludeDirectories Condition="$(IncludeExternals)">$(zlibDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <AdditionalIncludeDirectories Condition="$(IncludeExternals)">$(condaDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+       <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_BUILD_CORE_BUILTIN;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+       <PreprocessorDefinitions Condition="$(IncludeExternals)">_Py_HAVE_ZLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalLibraryDirectories>$(condaDir)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+     </Link>
+   </ItemDefinitionGroup>
+   <ItemGroup>
+@@ -330,19 +331,6 @@
+     <ClInclude Include="..\Python\stdlib_module_names.h" />
+     <ClInclude Include="..\Python\thread_nt.h" />
+   </ItemGroup>
+-  <ItemGroup Condition="$(IncludeExternals)">
+-    <ClInclude Include="$(zlibDir)\crc32.h" />
+-    <ClInclude Include="$(zlibDir)\deflate.h" />
+-    <ClInclude Include="$(zlibDir)\inffast.h" />
+-    <ClInclude Include="$(zlibDir)\inffixed.h" />
+-    <ClInclude Include="$(zlibDir)\inflate.h" />
+-    <ClInclude Include="$(zlibDir)\inftrees.h" />
+-    <ClInclude Include="$(zlibDir)\trees.h" />
+-    <ClInclude Include="$(zlibDir)\zconf.h" />
+-    <ClInclude Include="$(zlibDir)\zconf.in.h" />
+-    <ClInclude Include="$(zlibDir)\zlib.h" />
+-    <ClInclude Include="$(zlibDir)\zutil.h" />
+-  </ItemGroup>
+   <ItemGroup>
+     <ClCompile Include="..\Modules\_abc.c" />
+     <ClCompile Include="..\Modules\_bisectmodule.c" />
+@@ -542,19 +530,6 @@
+   </ItemGroup>
+   <ItemGroup Condition="$(IncludeExternals)">
+     <ClCompile Include="..\Modules\zlibmodule.c" />
+-    <ClCompile Include="$(zlibDir)\adler32.c" />
+-    <ClCompile Include="$(zlibDir)\compress.c" />
+-    <ClCompile Include="$(zlibDir)\crc32.c" />
+-    <ClCompile Include="$(zlibDir)\deflate.c">
+-      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
+-    </ClCompile>
+-    <ClCompile Include="$(zlibDir)\infback.c" />
+-    <ClCompile Include="$(zlibDir)\inffast.c" />
+-    <ClCompile Include="$(zlibDir)\inflate.c" />
+-    <ClCompile Include="$(zlibDir)\inftrees.c" />
+-    <ClCompile Include="$(zlibDir)\trees.c" />
+-    <ClCompile Include="$(zlibDir)\uncompr.c" />
+-    <ClCompile Include="$(zlibDir)\zutil.c" />
+   </ItemGroup>
+   <ItemGroup>
+     <ClCompile Include="..\PC\dl_nt.c" />
+diff --git a/PCbuild/pythoncore.vcxproj.filters b/PCbuild/pythoncore.vcxproj.filters
+index e3fe9271dd..334cb226e2 100644
+--- a/PCbuild/pythoncore.vcxproj.filters
++++ b/PCbuild/pythoncore.vcxproj.filters
+@@ -651,39 +651,6 @@
+     <ClInclude Include="..\Include\internal\pycore_unionobject.h">
+       <Filter>Include\internal</Filter>
+     </ClInclude>
+-    <ClInclude Include="$(zlibDir)\crc32.h">
+-      <Filter>Modules\zlib</Filter>
+-    </ClInclude>
+-    <ClInclude Include="$(zlibDir)\deflate.h">
+-      <Filter>Modules\zlib</Filter>
+-    </ClInclude>
+-    <ClInclude Include="$(zlibDir)\inffast.h">
+-      <Filter>Modules\zlib</Filter>
+-    </ClInclude>
+-    <ClInclude Include="$(zlibDir)\inffixed.h">
+-      <Filter>Modules\zlib</Filter>
+-    </ClInclude>
+-    <ClInclude Include="$(zlibDir)\inflate.h">
+-      <Filter>Modules\zlib</Filter>
+-    </ClInclude>
+-    <ClInclude Include="$(zlibDir)\inftrees.h">
+-      <Filter>Modules\zlib</Filter>
+-    </ClInclude>
+-    <ClInclude Include="$(zlibDir)\trees.h">
+-      <Filter>Modules\zlib</Filter>
+-    </ClInclude>
+-    <ClInclude Include="$(zlibDir)\zconf.h">
+-      <Filter>Modules\zlib</Filter>
+-    </ClInclude>
+-    <ClInclude Include="$(zlibDir)\zconf.in.h">
+-      <Filter>Modules\zlib</Filter>
+-    </ClInclude>
+-    <ClInclude Include="$(zlibDir)\zlib.h">
+-      <Filter>Modules\zlib</Filter>
+-    </ClInclude>
+-    <ClInclude Include="$(zlibDir)\zutil.h">
+-      <Filter>Modules\zlib</Filter>
+-    </ClInclude>
+     <ClInclude Include="..\Include\internal\pycore_structseq.h">
+       <Filter>Include\internal</Filter>
+     </ClInclude>
+@@ -1208,39 +1175,6 @@
+     <ClCompile Include="..\Modules\_contextvarsmodule.c">
+       <Filter>Modules</Filter>
+     </ClCompile>
+-    <ClCompile Include="$(zlibDir)\adler32.c">
+-      <Filter>Modules\zlib</Filter>
+-    </ClCompile>
+-    <ClCompile Include="$(zlibDir)\compress.c">
+-      <Filter>Modules\zlib</Filter>
+-    </ClCompile>
+-    <ClCompile Include="$(zlibDir)\crc32.c">
+-      <Filter>Modules\zlib</Filter>
+-    </ClCompile>
+-    <ClCompile Include="$(zlibDir)\deflate.c">
+-      <Filter>Modules\zlib</Filter>
+-    </ClCompile>
+-    <ClCompile Include="$(zlibDir)\infback.c">
+-      <Filter>Modules\zlib</Filter>
+-    </ClCompile>
+-    <ClCompile Include="$(zlibDir)\inffast.c">
+-      <Filter>Modules\zlib</Filter>
+-    </ClCompile>
+-    <ClCompile Include="$(zlibDir)\inflate.c">
+-      <Filter>Modules\zlib</Filter>
+-    </ClCompile>
+-    <ClCompile Include="$(zlibDir)\inftrees.c">
+-      <Filter>Modules\zlib</Filter>
+-    </ClCompile>
+-    <ClCompile Include="$(zlibDir)\trees.c">
+-      <Filter>Modules\zlib</Filter>
+-    </ClCompile>
+-    <ClCompile Include="$(zlibDir)\uncompr.c">
+-      <Filter>Modules\zlib</Filter>
+-    </ClCompile>
+-    <ClCompile Include="$(zlibDir)\zutil.c">
+-      <Filter>Modules\zlib</Filter>
+-    </ClCompile>
+     <ClCompile Include="..\Python\hamt.c">
+       <Filter>Python</Filter>
+     </ClCompile>
+-- 
+2.32.1 (Apple Git-133)
+

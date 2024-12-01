@@ -1,0 +1,13 @@
+{
+  "arch": "arm64",
+  "build": "h1a28f6b_1",
+  "build_number": 1,
+  "depends": [],
+  "license": "BSD-2-Clause",
+  "license_family": "BSD",
+  "name": "libev",
+  "platform": "osx",
+  "subdir": "osx-arm64",
+  "timestamp": 1628961869728,
+  "version": "4.33"
+}

@@ -1,0 +1,9 @@
+; command for getting a coverage report:
+;  py.test --doctest-modules --cov=boltons --cov-report html --cov-config tests/.coveragerc tests/ boltons/
+; (run from project directory)
+
+[run]
+branch = True
+
+[html]
+directory = htmlcov

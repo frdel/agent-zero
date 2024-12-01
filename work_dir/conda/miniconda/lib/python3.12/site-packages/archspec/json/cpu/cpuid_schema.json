@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Schema for microarchitecture definitions and feature aliases",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "vendor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "eax": {
+              "type": "integer"
+            },
+            "ecx": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "highest_extension_support": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "eax": {
+              "type": "integer"
+            },
+            "ecx": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "input": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "eax": {
+                "type": "integer"
+              },
+              "ecx": {
+                "type": "integer"
+              }
+            }
+          },
+          "bits": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "register": {
+                  "type": "string"
+                },
+                "bit": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "extension-flags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "input": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "eax": {
+                "type": "integer"
+              },
+              "ecx": {
+                "type": "integer"
+              }
+            }
+          },
+          "bits": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "register": {
+                  "type": "string"
+                },
+                "bit": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

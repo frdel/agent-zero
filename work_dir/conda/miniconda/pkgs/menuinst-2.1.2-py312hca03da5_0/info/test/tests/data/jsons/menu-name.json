@@ -1,0 +1,38 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema",
+    "$id": "https://schemas.conda.io/menuinst-1.schema.json",
+    "menu_name": "Package",
+    "menu_items": [
+        {
+            "name": {
+               "target_environment_is_base": "A",
+	       "target_environment_is_not_base": "A_not_in_base"
+	    },
+            "description": "This will echo environment variables for test purposes",
+            "icon": null,
+            "command": [
+                "echo",
+                "A"
+            ],
+	    "platforms": {
+		"win": {},
+		"linux": {},
+		"osx": {}
+	    }
+	},
+        {
+            "name": "B",
+            "description": "This will echo environment variables for test purposes",
+            "icon": null,
+            "command": [
+                "echo",
+                "B"
+            ],
+	    "platforms": {
+		"win": {},
+		"linux": {},
+		"osx": {}
+	    }
+	}
+    ]
+}

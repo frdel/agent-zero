@@ -1,0 +1,72 @@
+{% set version = "3.4.4" %}
+{% set am_version = "1.15" %} # keep synchronized with build.sh
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: libffi
+  version: {{ version }}
+
+source:
+  url: https://github.com/libffi/libffi/releases/download/v{{version}}/libffi-{{version}}.tar.gz
+  sha256: d66c56ad259a82cf2a9dfc408b32bf5da52371500b84745f7fb8b645712df676
+  patches:
+    - 0001-arm64-changes-from-v3.3-patch.patch  # [osx]
+    # Windows-specific:
+    - 0002-Don-t-define-FFI_COMPLEX_TYPEDEF-ifndef-FFI_TARGET_H.patch  # [win]
+    - win_cmake.patch        # [win]
+    - fix_w3264_masm.patch   # [win]
+    - 0004-LIBFFI_CLOSURE.patch  # [linux]
+build:
+  number: 1
+  run_exports:
+    # good history: https://abi-laboratory.pro/tracker/timeline/libffi/
+    - {{ pin_subpackage('libffi', "x.x") }}
+
+requirements:
+  build:
+    - cmake                              # [win]
+    - make                               # [unix]
+    - autoconf                           # [unix]
+    - libtool                            # [unix]
+    - {{ posix }}patch
+    - automake                           # [unix]
+    - {{ posix }}texinfo                 # [unix]
+    - {{ compiler('c') }}                # [not osx]
+    - {{ compiler('cxx') }}              # [not osx]
+    - {{ posix }}sed                     # [unix]
+  host:
+  run:
+
+test:
+  requires:
+    - llvm-tools  # [win]
+    - m2-grep     # [win]
+    - make # [unix]
+    - cmake # [win]
+    # no compile tests here, as used compiler might be not upward-compatible
+    # needs to be fixed
+    - {{ compiler('c') }}    # [not osx]
+    - {{ compiler('cxx') }}  # [not osx]
+  source_files:
+    - testsuite/libffi.bhaible
+    - testsuite
+
+about:
+  home: https://sourceware.org/libffi/
+  license: MIT
+  license_file: LICENSE
+  license_family: MIT
+  summary: A Portable Foreign Function Interface Library
+  description: |
+    The libffi library provides a portable, high level programming interface
+    to various calling conventions. This allows a programmer to call any
+    function specified by a call interface description at run-time.
+  doc_url: https://sourceware.org/libffi/
+  dev_url: https://github.com/libffi/libffi
+
+extra:
+  recipe-maintainers:
+    - stefan-balke
+    - scopatz
+    - isuruf

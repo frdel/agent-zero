@@ -1,0 +1,17 @@
+{
+  "build": "h80987f9_3",
+  "build_number": 3,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [],
+  "fn": "libiconv-1.16-h80987f9_3.conda",
+  "license": "GPL-3.0-or-later",
+  "md5": "24d4c203eea2edc73ed37b3521b02ef6",
+  "name": "libiconv",
+  "sha256": "d7eb081bd4c24e8c616781f11204c803ef62988528fec33160312776e05e15f4",
+  "size": 752953,
+  "subdir": "osx-arm64",
+  "timestamp": 1714483550000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/libiconv-1.16-h80987f9_3.conda",
+  "version": "1.16"
+}

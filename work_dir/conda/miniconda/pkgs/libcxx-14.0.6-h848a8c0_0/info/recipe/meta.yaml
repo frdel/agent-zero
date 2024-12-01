@@ -1,0 +1,65 @@
+# This file created by conda-build 3.22.0
+# ------------------------------------------------
+
+package:
+  name: libcxx
+  version: 14.0.6
+source:
+  - patches:
+      - patches/0002-Support-legacy-standalone-builds.patch
+      - patches/0003-Fix-ABI-compatibility-with-system.patch
+      - patches/0004-custom-error-message-for-old-sdk.patch
+    sha256: 8b3cfd7bc695bd6cea0f37f53f0981f34f87496e79e2529874fd03a2f9dd3a8a
+    url: https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.6/llvm-project-14.0.6.src.tar.xz
+build:
+  ignore_run_exports:
+    - libstdcxx-ng
+  missing_dso_whitelist:
+    - /usr/lib/libc++abi.dylib
+  noarch: false
+  noarch_python: false
+  number: '0'
+  string: h848a8c0_0
+requirements:
+  build:
+    - clang_bootstrap_osx-arm64 12.0.0 ha993bc6_3
+  run: []
+test:
+  commands:
+    - echo 1
+    - test -f $PREFIX/include/c++/v1/iterator
+    - bash compile_test.sh
+    - if [ -f $PREFIX/lib/libc++abi.dylib ]; then exit 1; fi
+  files:
+    - compile_test.sh
+    - test_sources
+  requires:
+    - cctools
+    - clang
+    - clangxx
+    - compiler-rt
+    - ld64
+    - llvm-tools
+about:
+  dev_url: https://github.com/llvm/llvm-project
+  doc_url: https://libcxx.llvm.org/
+  home: https://libcxx.llvm.org/
+  license: Apache-2.0 WITH LLVM-exception
+  license_family: Apache
+  license_file: libcxx/LICENSE.TXT
+  summary: LLVM C++ standard library
+extra:
+  copy_test_source_files: true
+  feedstock-name: libcxx
+  final: true
+  flow_run_id: 4fd1644e-2270-45be-982a-ec7173257fb9
+  recipe-maintainers:
+    - SylvainCorlay
+    - beckermr
+    - h-vetinari
+    - inducer
+    - isuruf
+    - jakirkham
+    - timsnyder
+  remote_url: git@github.com:AnacondaRecipes/libcxx-feedstock.git
+  sha: 9532a2c85ead748f261589ca3f03bfe56c5484bf

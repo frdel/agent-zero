@@ -1,0 +1,51 @@
+{% set name = "charset-normalizer" %}
+{% set version = "3.3.2" %}
+
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/charset-normalizer-{{ version }}.tar.gz
+  sha256: f30c3cb33b24454a82faecaf01b19c18562b1e89558fb6c56de4d9118a032fd5
+
+build:
+  number: 0
+  noarch: python
+  script: {{ PYTHON }} -m pip install . --no-deps -vv --no-build-isolation
+  entry_points:
+    - normalizer = charset_normalizer.cli:cli_detect
+
+requirements:
+  host:
+    - python >=3.7
+    - pip
+    - setuptools
+    - wheel
+  run:
+    - python >=3.7
+
+test:
+  imports:
+    - charset_normalizer
+  commands:
+    - pip check
+    - normalizer --help
+  requires:
+    - pip
+
+about:
+  home: https://github.com/jawah/charset_normalizer
+  summary: The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet.
+  description: |
+    A Library that helps you read text from unknown charset encoding. This project is motivated by chardet.
+  license: MIT
+  license_file: LICENSE
+  license_family: MIT
+  doc_url: https://charset-normalizer.readthedocs.io/
+  dev_url: https://github.com/jawah/charset_normalizer
+
+extra:
+  recipe-maintainers:
+    - ocefpaf

@@ -1,0 +1,354 @@
+{% set version = "3.12.7" %}
+{% set build_number = "0" %}
+
+{% set dev = "" %}
+{% set dev_ = "" %}
+{% set ver2 = '.'.join(version.split('.')[0:2]) %}
+{% set ver2nd = ''.join(version.split('.')[0:2]) %}
+{% set ver3nd = ''.join(version.split('.')[0:3]) %}
+
+{% set channel_targets = ('abc', 'def')  %}
+# this is just for the initial build, to break dependencies with python -> pip -> libpython-static
+{% set bootstrap = "false" %}
+
+# this makes the linter happy
+{% set channel_targets = channel_targets or 'conda-forge main' %}
+
+# Sanitize build system env. var tweak parameters
+# (passed to the build scripts via script_env).
+{% set from_source_control = os.environ.get('CONDA_BUILD_FROM_SOURCE_CONTROL', '') %}
+{% if from_source_control == '' or from_source_control == 'no' %}
+  {% set from_source_control = 'no' %}
+{% else %}
+  {% set from_source_control = 'yes' %}
+{% endif %}
+{% set linkage_nature = os.environ.get('PY_INTERP_LINKAGE_NATURE', '') %}
+{% if linkage_nature != '' %}
+  {% set linkage_nature = "_" ~ linkage_nature %}
+{% endif %}
+{% if linkage_nature == 'shared' %}
+  {% set linkage_nature_env = 'shared' %}
+{% else %}
+  {% set linkage_nature_env = 'static' %}
+{% endif %}
+{% set dbg_abi = "" %}
+{% set debug = os.environ.get('PY_INTERP_DEBUG', '') %}
+{% if debug != '' and debug != 'no' %}
+  {% set py_interp_debug = "yes" %}
+  {% set debug = "_dbg" %}
+  {% set dbg_abi = "d" %}  # [win]
+{% else %}
+  {% set py_interp_debug = "no" %}
+{% endif %}
+
+package:
+  name: python-split
+  version: {{ version }}{{ dev }}
+
+source:
+{% if from_source_control == 'yes' %}
+  - git_url: https://github.com/python/CPython.git
+    git_tag: v{{ version }}{{ dev }}
+{% else %}
+  - url: https://www.python.org/ftp/python/{{ version }}/Python-{{ version }}{{ dev }}.tar.xz
+    # md5 from: https://www.python.org/downloads/release/python-{{ ver3nd }}/
+    sha256: 24887b92e2afd4a2ac602419ad4b596372f67ac9b077190f459aba390faf5550
+{% endif %}
+    patches:
+      - patches/0000-branding.patch
+      - patches/0001-Win32-Change-FD_SETSIZE-from-512-to-2048.patch
+      - patches/0002-Win32-Do-not-download-externals.patch
+      - patches/0003-Fix-find_library-so-that-it-looks-in-sys.prefix-lib-.patch
+      # https://github.com/python/cpython/pull/28397
+      # Patch doesn't apply, but is Debian-specific anyway.
+      # - patches/0008-bpo-22699-Allow-compiling-on-debian-ubuntu-with-a-di.patch
+      - patches/0004-Disable-registry-lookup-unless-CONDA_PY_ALLOW_REG_PA.patch
+      - patches/0005-Unvendor-openssl.patch
+      - patches/0006-Unvendor-sqlite3.patch
+      - patches/0007-Add-CondaEcosystemModifyDllSearchPath.patch
+      - patches/0008-Doing-d1trimfile.patch
+      # https://github.com/python/cpython/pull/23523
+      - patches/0009-cross-compile-darwin.patch
+      - patches/0010-Fix-TZPATH-on-windows.patch
+      # https://github.com/python/cpython/pull/24324
+      - patches/0011-Make-dyld-search-work-with-SYSTEM_VERSION_COMPAT-1.patch
+      - patches/0012-Unvendor-bzip2.patch
+      - patches/0013-Unvendor-libffi.patch
+      - patches/0014-Unvendor-tcltk.patch
+      - patches/0015-unvendor-xz.patch
+      - patches/0016-unvendor-zlib.patch
+      - patches/0017-Do-not-pass-g-to-GCC-when-not-Py_DEBUG.patch
+      - patches/0018-Unvendor-expat.patch
+      - patches/0019-Remove-unused-readelf.patch
+      - patches/0021-Override-configure-LIBFFI.patch
+
+build:
+  number: {{ build_number }}
+
+requirements:
+  build:
+{% if from_source_control == 'yes' %}
+    - git
+{% else %}
+    - patch  # [not win]
+    - m2-patch  # [win]
+    - m2-gcc-libs  # [win]
+{% endif %}
+
+outputs:
+  - name: python
+    script: build_base.sh  # [unix]
+    script: build_base.bat  # [win]
+    build:
+      number: {{ build_number }}
+      activate_in_script: true
+      # Windows has issues updating python if conda is using files itself.
+      # Copy rather than link.
+      no_link:
+        - DLLs/_ctypes.pyd  # [win]
+      ignore_run_exports_from:   # [unix]
+        # C++ only installed so CXX is defined for distutils/sysconfig.
+        - {{ compiler('cxx') }}  # [unix]
+      # Disabled until verified to work correctly
+      detect_binary_files_with_prefix: true
+      # detect_binary_files_with_prefix: False
+      # binary_has_prefix_files:
+      #   - lib/libpython{{ ver2 }}.*.1.0
+      #   - bin/python{{ ver2 }}  # [linux]
+      #   - lib/libpython{{ ver2 }}.a  # [linux]
+      #   - lib/libpython{{ ver2 }}.nolto.a  # [linux]
+      #   - lib/libpython3.so  # [linux]
+      #   - lib/python{{ ver2 }}/lib-dynload/_hashlib.cpython-{{ ver2nd }}-x86_64-linux-gnu.so  # [linux]
+      #   - lib/libpython3.dylib  # [osx]
+      # match python.org compiler standard
+      skip: true  # [win and int(float(vc)) < 14]
+{% if 'conda-forge' in channel_targets %}
+      skip_compile_pyc:
+        - '*.py'            # [build_platform != target_platform]
+{% endif %}
+      string: {{ dev_ }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}{{ linkage_nature }}{{ debug }}_cpython  # ["conda-forge" in (channel_targets or "")]
+      string: h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}{{ linkage_nature }}{{ debug }}  # ["conda-forge" not in (channel_targets or "")]
+{% if 'conda-forge' in channel_targets %}
+      run_exports:
+        noarch:
+          - python
+        weak:
+          - python_abi {{ ver2 }}.* *_cp{{ ver2nd }}
+{% endif %}
+      script_env:
+        - PY_INTERP_LINKAGE_NATURE={{ linkage_nature_env }}
+        - PY_INTERP_DEBUG={{ py_interp_debug }}
+        # Putting these here means they get emitted to build_env_setup.{sh,bat} meaning we can launch IDEs
+        # after sourcing or calling that script without examine the contents of conda_build.{sh,bat} for
+        # important env. vars.
+{% if 'conda-forge' in channel_targets %}
+        - CONDA_FORGE=yes
+{% else %}
+        - CONDA_FORGE=no
+{% endif %}
+      missing_dso_whitelist:   # [win or linux]
+        - '**/MSVCR71.dll'  # [win]
+        - '**/MSVCR80.dll'  # [win]
+        # I have no idea why this is not in C:\Windows\System32\downlevel
+        - '**/api-ms-win-core-path-l1-1-0.dll'  # [win]
+        # -=- libs that come from the sysroot.
+        - '$RPATH/libc.so.6'        # [linux]
+        - '$RPATH/libcrypt.so.1'    # [linux]
+        - '$RPATH/libdl.so.2'       # [linux]
+        - '$RPATH/libm.so.6'        # [linux]
+        - '$RPATH/libnsl.so.1'      # [linux]
+        - '$RPATH/libpthread.so.0'  # [linux]
+        - '$RPATH/librt.so.1'       # [linux]
+        - '$RPATH/libutil.so.1'     # [linux]
+        - '$RPATH/ld64.so.1'        # [s390x]
+
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - {{ compiler('cxx') }}
+        - sed  # [unix]
+        - {{ cdt('xorg-x11-proto-devel') }}  # [linux]
+        - {{ cdt('libx11-devel') }}  # [linux]
+        - make  # [not win]
+        - libtool  # [unix]
+        - pkg-config  # [not win]
+        # configure script looks for llvm-ar for lto
+        - llvm-tools  # [osx]
+        - ld_impl_{{ target_platform }}  # [linux]
+        # called in build_base.sh
+        - ripgrep # [linux]
+{% if 'conda-forge' in channel_targets %}
+        - binutils_impl_{{ target_platform }}  # [linux]
+{% endif %}
+      host:
+        - bzip2 {{ bzip2 }}
+        - sqlite {{ sqlite }}
+        - xz {{ xz }}
+        - zlib {{ zlib }}
+        - openssl {{ openssl }}
+        - readline {{ readline }} # [not win]
+        - tk {{ tk }}
+        - ncurses 6.4 # [unix]
+        - libffi {{ libffi }}
+        - ld_impl_{{ target_platform }} >=2.35.1  # [linux]
+        - libuuid 1.41.5 # [linux]
+        - expat {{ expat }}
+      run:
+        - ld_impl_{{ target_platform }} >=2.35.1  # [linux]
+        - tzdata
+{% if 'conda-forge' in channel_targets %}
+        - ncurses  # [unix]
+      run_constrained:
+        - python_abi {{ ver2 }}.* *_cp{{ ver2nd }}
+{% endif %}
+    test:
+{% if 'conda-forge' in channel_targets %}
+      downstreams:
+        - cython
+        - setuptools
+{% endif %}
+      requires:
+        - ripgrep
+        - cmake-no-system
+        - make  # [unix]
+        - ninja-base
+        - {{ compiler('c') }}
+        # Tried to use enable_language(C) to avoid needing this. It does not work.
+        - {{ compiler('cxx') }}
+      files:
+        - tests/cmake/*
+        - tests/cython/*
+        - tests/prefix-replacement/*
+        - run_test.py
+      commands:
+        - echo on  # [win]
+        - set  # [win]
+        - python -V
+        - python3 -V            # [not win]
+        - 2to3 -h
+        - pydoc -h
+        - python3-config --help  # [not win]
+        - set "PIP_NO_BUILD_ISOLATION=False"  # [win]
+        - set "PIP_NO_DEPENDENCIES=True"  # [win]
+        - set "PIP_IGNORE_INSTALLED=True"  # [win]
+        - set "PIP_NO_INDEX=True"  # [win]
+        - set "PIP_CACHE_DIR=%CONDA_PREFIX%/pip_cache"  # [win]
+        - set "TEMP=%CONDA_PREFIX%/tmp"  # [win]
+        - mkdir "%TEMP%"  # [win]
+        - python -Im ensurepip --upgrade --default-pip  # [win]
+        # tzdata/zoneinfo test that will need the tzdata package to pass
+        - python -c "from zoneinfo import ZoneInfo; from datetime import datetime; dt = datetime(2020, 10, 31, 12, tzinfo=ZoneInfo('America/Los_Angeles')); print(dt.tzname())"
+        - python -m venv test-venv
+        - test-venv\\Scripts\\python.exe -c "import ctypes"  # [win]
+        - test-venv/bin/python -c "import ctypes"            # [unix]
+        - python -c "import sysconfig; print(sysconfig.get_config_var('CC'))"  # [not win]
+        - _CONDA_PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_x86_64_conda_cos6_linux_gnu python -c "import sysconfig; print(sysconfig.get_config_var('CC'))"   # [linux64]
+        # check for unreplaced @ symbols in sysconfig files
+        - for f in ${CONDA_PREFIX}/lib/python*/_sysconfig*.py; do echo "Checking $f:"; if [[ `rg @[^@]*@ $f` ]]; then echo "FAILED ON $f"; cat $f; exit 1; fi; done  # [linux64 or osx]
+        - test ! -f ${PREFIX}/lib/libpython${PKG_VERSION%.*}.a  # [unix]
+        - test ! -f ${PREFIX}/lib/libpython${PKG_VERSION%.*}.nolto.a  # [unix]
+        # https://github.com/conda-forge/python-feedstock/issues/384
+        - if exist %PREFIX%\\Scripts\\pydoc exit 1  # [win]
+        - if exist %PREFIX%\\Scripts\\idle exit 1  # [win]
+        - if exist %PREFIX%\\Scripts\\2to3 exit 1  # [win]
+        - if not exist %PREFIX%\\Scripts\\pydoc-script.py exit 1  # [win]
+        - if not exist %PREFIX%\\Scripts\\idle-script.py exit 1  # [win]
+        - if not exist %PREFIX%\\Scripts\\2to3-script.py exit 1  # [win]
+        - if not exist %PREFIX%\\Scripts\\idle.exe exit 1  # [win]
+        - if not exist %PREFIX%\\Scripts\\2to3.exe exit 1  # [win]
+        - if not exist %PREFIX%\\Scripts\\pydoc.exe exit 1  # [win]
+        - if not exist %PREFIX%\\libs\\python{{ ver2nd }}.lib exit 1  # [win]
+        - pushd tests
+        - pushd prefix-replacement    # [unix]
+        - bash build-and-test.sh      # [unix]
+        - popd    # [unix]
+        - pushd cmake
+        - cmake -GNinja -DPY_VER={{ version }}
+              # --trace --debug-output --debug-trycompile .
+        - popd
+        - popd
+        - python run_test.py
+        - test ! -f default.profraw   # [osx]
+        # Test workaround for https://github.com/conda/conda/issues/10969
+        - test -d "$PREFIX/lib/python3.1/site-packages"  # [unix]
+        - python3.1 --version  # [unix]
+        # Test for segfault on osx-64 with libffi=3.4, see https://bugs.python.org/issue44556
+        - python -c "from ctypes import CFUNCTYPE; CFUNCTYPE(None)(id)"
+
+{% if bootstrap != "true" %}
+  - name: libpython-static
+    script: build_static.sh  # [unix]
+    script: build_static.bat  # [win]
+    build:
+      number: {{ build_number }}
+      activate_in_script: true
+{% if 'conda-forge' in channel_targets %}
+      ignore_run_exports:
+        - python_abi
+      string: h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}{{ linkage_nature }}{{ debug }}_cpython
+{% else %}
+      string: h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}{{ linkage_nature }}{{ debug }}
+{% endif %}
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - {{ compiler('cxx') }}
+{% if from_source_control == 'yes' %}
+        - git
+{% endif %}
+      host:
+        - {{ pin_subpackage('python', exact=True) }}
+      run:
+        - {{ pin_subpackage('python', exact=True) }}
+    test:
+      files:
+        - tests/prefix-replacement/*
+      requires:
+        - {{ compiler('c') }}
+        # Tried to use enable_language(C) to avoid needing this. It does not work.
+        - {{ compiler('cxx') }}
+        - ripgrep
+
+      commands:
+        - pushd tests                 # [unix]
+        - pushd prefix-replacement    # [unix]
+        - test -f ${PREFIX}/lib/libpython${PKG_VERSION%.*}.a  # [unix]
+        - test -f ${PREFIX}/lib/libpython${PKG_VERSION%.*}.nolto.a  # [unix]
+        - test -f ${PREFIX}/lib/python${PKG_VERSION%.*}/config-${PKG_VERSION%.*}-darwin/libpython${PKG_VERSION%.*}.a  # [osx]
+        - bash build-and-test.sh      # [unix]
+        - popd    # [unix]
+        - popd    # [unix]
+{% endif %}
+
+about:
+  home: https://www.python.org/
+  license: PSF-2.0
+  license_family: PSF
+  license_url: https://docs.python.org/3/license.html
+  license_file: LICENSE
+  summary: General purpose programming language
+  description: |
+    Python is a widely used high-level, general-purpose, interpreted, dynamic
+    programming language. Its design philosophy emphasizes code
+    readability, and its syntax allows programmers to express concepts in
+    fewer lines of code than would be possible in languages such as C++ or
+    Java. The language provides constructs intended to enable clear programs
+    on both a small and large scale.
+  doc_url: https://www.python.org/doc/versions/
+  dev_url: https://devguide.python.org/
+
+extra:
+  feedstock-name: python
+  recipe-maintainers:
+    - isuruf
+    - jakirkham
+    - mbargull
+    - mingwandroid
+    - msarahan
+    - pelson
+    - ocefpaf
+    - scopatz
+    - katietz
+    - xhochy
+  skip-lints:
+    - license_file_overspecified

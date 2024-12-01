@@ -1,0 +1,4 @@
+processor	: 0
+cpu		: POWER7 (architected), altivec supported
+clock		: 3720.000000MHz
+revision	: 2.1 (pvr 003f 0201)

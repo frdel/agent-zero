@@ -1,0 +1,13 @@
+{
+  "arch": "arm64",
+  "build": "h80987f9_3",
+  "build_number": 3,
+  "depends": [],
+  "license": "GPL-3.0-or-later",
+  "license_family": "GPL3",
+  "name": "libiconv",
+  "platform": "osx",
+  "subdir": "osx-arm64",
+  "timestamp": 1714483550601,
+  "version": "1.16"
+}

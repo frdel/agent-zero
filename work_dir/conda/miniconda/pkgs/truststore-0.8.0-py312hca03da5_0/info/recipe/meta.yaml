@@ -1,0 +1,75 @@
+# This file created by conda-build 3.27.0
+# meta.yaml template originally from:
+# /Users/builder/cbouss/perseverance-python-buildout/aggregate/truststore-feedstock/recipe, last modified Tue Dec  5 10:54:40 2023
+# ------------------------------------------------
+
+package:
+  name: truststore
+  version: 0.8.0
+source:
+  fn: truststore-0.8.0.tar.gz
+  sha256: c862292f8d136bfcf2a7827a1fd1c1b27944a982741205fb466005673b570df8
+  url: https://github.com/sethmlarson/truststore/archive/refs/tags/v0.8.0.tar.gz
+build:
+  number: '0'
+  script: /Users/builder/cbouss/perseverance-python-buildout/croot/truststore_1701805928787/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeh/bin/python
+    -m pip install . -vv --no-deps --no-build-isolation
+  string: py312hca03da5_0
+requirements:
+  host:
+    - bzip2 1.0.8 h620ffc9_4
+    - ca-certificates 2023.08.22 hca03da5_0
+    - expat 2.5.0 h313beb8_0
+    - flit-core 3.9.0 py312h26f3267_0
+    - libcxx 14.0.6 h848a8c0_0
+    - libffi 3.4.4 hca03da5_0
+    - ncurses 6.4 h313beb8_0
+    - openssl 3.0.12 h1a28f6b_0
+    - pip 23.3.1 py312hca03da5_0
+    - python 3.12.0 h99e199e_0
+    - readline 8.2 h1a28f6b_0
+    - setuptools 68.0.0 py312hca03da5_0
+    - sqlite 3.41.2 h80987f9_0
+    - tk 8.6.12 hb8d0fd4_0
+    - tzdata 2023c h04d1e81_0
+    - wheel 0.41.2 py312hca03da5_0
+    - xz 5.4.5 h80987f9_0
+    - zlib 1.2.13 h5a0b063_0
+  run:
+    - python >=3.12,<3.13.0a0
+test:
+  commands:
+    - pip check
+    - pytest -v -s -rs --no-flaky-report --max-runs=3 tests/
+  imports:
+    - truststore
+  requires:
+    - aiohttp
+    - flaky
+    - httpx
+    - pip
+    - pyopenssl
+    - pytest
+    - pytest-asyncio
+    - pytest-httpserver
+    - requests
+    - trustme
+    - urllib3
+  source_files:
+    - tests
+about:
+  description: "A library which exposes native system certificate stores (ie \u201C\
+    trust stores\u201D)\nthrough an ssl.SSLContext-like API. This means that Python\
+    \ applications no\nlonger need to rely on certifi as a root certificate store.\n"
+  dev_url: https://github.com/sethmlarson/truststore
+  doc_url: https://truststore.readthedocs.io/
+  home: https://github.com/sethmlarson/truststore
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: Verify certificates using native system trust stores
+extra:
+  copy_test_source_files: true
+  final: true
+  recipe-maintainers:
+    - wolfv

@@ -1,0 +1,52 @@
+{% set name = "conda-package-streaming" %}
+{% set version = "0.10.0" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://github.com/conda/{{ name }}/archive/refs/tags/v{{ version }}.tar.gz
+  sha256: 55f465e108f3f5acfbbd0331c6a42acd81d998a1706809883014058d2790aa9c
+
+build:
+  number: 0
+  skip: True  # [py<37]
+  script: {{ PYTHON }} -m pip install --no-deps --no-build-isolation . -vv
+
+requirements:
+  host:
+    - flit-core
+    - python
+    - pip
+  run:
+    - python
+    - zstandard >=0.15
+    # 'requests' is optional, only needed for 'url' submodule
+
+test:
+  imports:
+    - conda_package_streaming
+    - conda_package_streaming.url
+  requires:
+    - pip
+    - requests
+  commands:
+    - pip check
+
+about:
+  home: https://github.com/conda/conda-package-streaming
+  summary:  An efficient library to read from new and old format .conda and .tar.bz2 conda packages.
+  description: |
+    An efficient library to read from new and old format .conda and .tar.bz2 conda packages.
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: LICENSE
+  doc_url: https://conda.github.io/conda-package-streaming/
+  dev_url: https://github.com/conda/conda-package-streaming
+
+extra:
+  recipe-maintainers:
+    - dholth
+  skip-lints:
+    - missing_wheel

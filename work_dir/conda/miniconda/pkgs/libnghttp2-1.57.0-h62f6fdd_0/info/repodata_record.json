@@ -1,0 +1,25 @@
+{
+  "build": "h62f6fdd_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "c-ares >=1.19.1,<2.0a0",
+    "c-ares >=1.7.5",
+    "libcxx >=14.0.6",
+    "libev >=4.11",
+    "libev >=4.33,<4.34.0a0",
+    "openssl >=3.0.11,<4.0a0",
+    "zlib >=1.2.13,<1.3.0a0"
+  ],
+  "fn": "libnghttp2-1.57.0-h62f6fdd_0.conda",
+  "license": "MIT",
+  "md5": "32eac5d9a166c3cbce9b6dfef765b138",
+  "name": "libnghttp2",
+  "sha256": "6f26e84b4452251879cf8d12af77833202736d6081eebd5fa8757cfa7eac67aa",
+  "size": 648894,
+  "subdir": "osx-arm64",
+  "timestamp": 1697018415000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/libnghttp2-1.57.0-h62f6fdd_0.conda",
+  "version": "1.57.0"
+}

@@ -1,0 +1,42 @@
+diff -urN work.old/c++/cursesf.h work/c++/cursesf.h
+--- work.old/c++/cursesf.h	2017-08-19 17:00:32.000000000 +0100
++++ work/c++/cursesf.h	2017-08-19 17:04:43.000000000 +0100
+@@ -682,7 +682,7 @@
+ 		   const T* p_UserData = STATIC_CAST(T*)(0),
+ 		   bool with_frame=FALSE,
+ 		   bool autoDelete_Fields=FALSE)
+-    : NCursesForm (&Fields, with_frame, autoDelete_Fields) {
++    : NCursesForm (Fields, with_frame, autoDelete_Fields) {
+       if (form)
+ 	set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
+   };
+@@ -695,7 +695,7 @@
+ 		   const T* p_UserData = STATIC_CAST(T*)(0),
+ 		   bool with_frame=FALSE,
+ 		   bool autoDelete_Fields=FALSE)
+-    : NCursesForm (&Fields, nlines, ncols, begin_y, begin_x,
++    : NCursesForm (Fields, nlines, ncols, begin_y, begin_x,
+ 		   with_frame, autoDelete_Fields) {
+       if (form)
+ 	set_user (const_cast<void *>(reinterpret_cast<const void*>
+diff -urN work.old/c++/cursesm.h work/c++/cursesm.h
+--- work.old/c++/cursesm.h	2017-08-19 17:00:32.000000000 +0100
++++ work/c++/cursesm.h	2017-08-19 17:04:09.000000000 +0100
+@@ -640,7 +640,7 @@
+ 		   const T* p_UserData = STATIC_CAST(T*)(0),
+ 		   bool with_frame=FALSE,
+ 		   bool autoDelete_Items=FALSE)
+-    : NCursesMenu (&Items, with_frame, autoDelete_Items) {
++    : NCursesMenu (Items, with_frame, autoDelete_Items) {
+       if (menu)
+ 	set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
+   };
+@@ -652,7 +652,7 @@
+ 		   int begin_x = 0,
+ 		   const T* p_UserData = STATIC_CAST(T*)(0),
+ 		   bool with_frame=FALSE)
+-    : NCursesMenu (&Items, nlines, ncols, begin_y, begin_x, with_frame) {
++    : NCursesMenu (Items, nlines, ncols, begin_y, begin_x, with_frame) {
+       if (menu)
+ 	set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
+   };

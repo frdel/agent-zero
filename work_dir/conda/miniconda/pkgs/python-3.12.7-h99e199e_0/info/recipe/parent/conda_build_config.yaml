@@ -1,0 +1,10 @@
+python:
+  - 3.12
+python_impl:
+  - cpython
+numpy:
+  - 1.26
+MACOSX_SDK_VERSION:  # [osx and x86_64]
+  - 10.14            # [osx and x86_64]
+CONDA_BUILD_SYSROOT:  # [osx and x86_64]
+  - /opt/MacOSX10.14.sdk        # [osx and x86_64]

@@ -1,0 +1,52 @@
+# This file created by conda-build 3.21.4
+# meta.yaml template originally from:
+# /Users/ktietz/demo/src/aggregate/libev-feedstock/recipe, last modified Sat Aug  7 09:29:23 2021
+# ------------------------------------------------
+
+package:
+  name: libev
+  version: '4.33'
+source:
+  fn: libev-4.33.tar.gz
+  sha256: 507eb7b8d1015fbec5b935f34ebed15bf346bed04a11ab82b8eee848c4205aea
+  url: http://dist.schmorp.de/libev/Attic/libev-4.33.tar.gz
+build:
+  number: '1'
+  run_exports:
+    - libev >=4.33,<4.34.0a0
+  string: h1a28f6b_1
+requirements:
+  build:
+    - cctools_osx-arm64 949.0.1 h332cad3_24
+    - clang 12.0.0 hca03da5_4
+    - clang-12 12.0.0 default_he099f3d_4
+    - clang_osx-arm64 12.0.0 hcb56dc5_3
+    - clangxx 12.0.0 default_he099f3d_4
+    - compiler-rt 12.0.0 h4ccfd99_3
+    - compiler-rt_osx-arm64 12.0.0 h4fb70ea_3
+    - ld64_osx-arm64 530 h001ce53_24
+    - ldid 2.1.2 h7dde238_2
+    - libclang-cpp12 12.0.0 default_he099f3d_4
+    - libcxx 12.0.0 hf6beb65_1
+    - libllvm12 12.0.0 h12f7ac0_4
+    - libtool 2.4.6 h1230e6a_0
+    - llvm-tools 12.0.0 h12f7ac0_4
+    - make 4.3 h620ffc9_1
+    - tapi 1100.0.11 ha21211d_0
+    - zlib 1.2.11 hca03da5_3
+  host: []
+  run: []
+about:
+  home: http://software.schmorp.de/pkg/libev.html
+  license: BSD-2-Clause
+  license_family: BSD
+  license_file: LICENSE
+  summary: A full-featured and high-performance event loop that is loosely modeled
+    after libevent, but without its limitations and bugs.
+extra:
+  copy_test_source_files: true
+  final: true
+  recipe-maintainers:
+    - carlodri
+    - petercable
+    - wolfv

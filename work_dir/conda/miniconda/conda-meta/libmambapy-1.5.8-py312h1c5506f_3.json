@@ -1,0 +1,52 @@
+{
+  "build": "py312h1c5506f_3",
+  "build_number": 3,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "fmt >=9.1.0,<10.0a0",
+    "libcxx >=14.0.6",
+    "libmamba 1.5.8 haeffa04_3",
+    "openssl >=3.0.15,<4.0a0",
+    "pybind11-abi 5",
+    "python >=3.12,<3.13.0a0",
+    "yaml-cpp >=0.8.0,<0.9.0a0"
+  ],
+  "extracted_package_dir": "/tmp/miniconda_temp/pkgs/libmambapy-1.5.8-py312h1c5506f_3",
+  "files": [
+    "lib/python3.12/site-packages/libmambapy-1.5.8.dist-info/INSTALLER",
+    "lib/python3.12/site-packages/libmambapy-1.5.8.dist-info/LICENSE",
+    "lib/python3.12/site-packages/libmambapy-1.5.8.dist-info/METADATA",
+    "lib/python3.12/site-packages/libmambapy-1.5.8.dist-info/RECORD",
+    "lib/python3.12/site-packages/libmambapy-1.5.8.dist-info/REQUESTED",
+    "lib/python3.12/site-packages/libmambapy-1.5.8.dist-info/WHEEL",
+    "lib/python3.12/site-packages/libmambapy-1.5.8.dist-info/direct_url.json",
+    "lib/python3.12/site-packages/libmambapy-1.5.8.dist-info/top_level.txt",
+    "lib/python3.12/site-packages/libmambapy/__init__.py",
+    "lib/python3.12/site-packages/libmambapy/__init__.pyi",
+    "lib/python3.12/site-packages/libmambapy/__pycache__/__init__.cpython-312.pyc",
+    "lib/python3.12/site-packages/libmambapy/__pycache__/_version.cpython-312.pyc",
+    "lib/python3.12/site-packages/libmambapy/_version.py",
+    "lib/python3.12/site-packages/libmambapy/bindings.cpython-312-darwin.so"
+  ],
+  "fn": "libmambapy-1.5.8-py312h1c5506f_3.conda",
+  "license": "BSD-3-Clause",
+  "link": {
+    "source": "/tmp/miniconda_temp/pkgs/libmambapy-1.5.8-py312h1c5506f_3",
+    "type": 1
+  },
+  "md5": "794b9ce9e3f202862021f5cc519b3bd1",
+  "name": "libmambapy",
+  "package_tarball_full_path": "/tmp/miniconda_temp/pkgs/libmambapy-1.5.8-py312h1c5506f_3.conda",
+  "paths_data": {
+    "paths": [],
+    "paths_version": 1
+  },
+  "requested_spec": "defaults/osx-arm64::libmambapy==1.5.8=py312h1c5506f_3[md5=794b9ce9e3f202862021f5cc519b3bd1]",
+  "sha256": "d74137d0e6351c401d4ab530daafc7239de8ac76b2054de135dbc33c05f7c8a6",
+  "size": 294779,
+  "subdir": "osx-arm64",
+  "timestamp": 1725563733000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/libmambapy-1.5.8-py312h1c5506f_3.conda",
+  "version": "1.5.8"
+}

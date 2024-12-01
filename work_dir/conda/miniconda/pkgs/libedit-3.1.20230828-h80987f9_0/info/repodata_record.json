@@ -1,0 +1,19 @@
+{
+  "build": "h80987f9_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "ncurses >=6.4,<7.0a0"
+  ],
+  "fn": "libedit-3.1.20230828-h80987f9_0.conda",
+  "license": "BSD-2-Clause",
+  "md5": "18a06026af4782b6557d4ff94d1a7177",
+  "name": "libedit",
+  "sha256": "e83fc01d4d34ea465c18d42920d8133fba4149aa2de3d4179a454f26ea72cfc4",
+  "size": 158249,
+  "subdir": "osx-arm64",
+  "timestamp": 1703006281000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/libedit-3.1.20230828-h80987f9_0.conda",
+  "version": "3.1.20230828"
+}

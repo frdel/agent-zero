@@ -1,0 +1,92 @@
+{% set pkg_name = "lz4-c" %}
+{% set name = "lz4" %}
+{% set version = "1.9.4" %}
+
+package:
+  name: {{ pkg_name }}
+  version: {{ version }}
+
+source:
+  fn: {{ name }}-{{ version }}.tar.gz
+  url: https://github.com/{{ name }}/{{ name }}/archive/v{{ version }}.tar.gz
+  sha256: 0b0e3aa07c8c063ddf40b082bdf7e37a1562bda40a0ff5272957f3e987e0e54b
+
+build:
+  number: 1
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}  # [not win]
+    - make  # [not win]
+    - m2-gcc-libs  # [win]
+  host:
+  run:
+
+outputs:
+  - name: lz4-c
+    build:
+      # https://abi-laboratory.pro/index.php?view=timeline&l=lz4
+      run_exports:
+        - {{ pin_subpackage(pkg_name, max_pin='x.x') }}
+    test:
+      requires:
+        - pkg-config  # [unix]
+
+      commands:
+        - lz4 -h
+        - lz4c -h    # [unix]
+        - lz4cat -h  # [unix]
+        - unlz4 -h   # [unix]
+
+        - test -f ${PREFIX}/include/lz4.h       # [unix]
+        - test -f ${PREFIX}/include/lz4hc.h     # [unix]
+        - test -f ${PREFIX}/include/lz4frame.h  # [unix]
+
+        - if not exist %LIBRARY_INC%\\lz4.h exit 1       # [win]
+        - if not exist %LIBRARY_INC%\\lz4hc.h exit 1     # [win]
+        - if not exist %LIBRARY_INC%\\lz4frame.h exit 1  # [win]
+
+        - test ! -f ${PREFIX}/lib/liblz4.a      # [unix]
+        - test -f ${PREFIX}/lib/liblz4.dylib  # [osx]
+        - test -f ${PREFIX}/lib/liblz4.so     # [linux]
+
+        - if not exist %LIBRARY_BIN%\\liblz4.dll exit 1         # [win]
+        - if not exist %LIBRARY_LIB%\\liblz4.lib exit 1         # [win]
+        - if exist %LIBRARY_LIB%\\liblz4_static.lib exit 1  # [win]
+
+        - test -f ${PREFIX}/lib/pkgconfig/liblz4.pc  # [unix]
+        - pkg-config --cflags --libs liblz4          # [unix]
+
+  - name: lz4-c-static
+    build:
+      activate_in_script: true
+    script: build_static.sh  # [unix]
+    script: bld_static.bat  # [win]
+    test:
+      commands:
+        - test -f ${PREFIX}/lib/liblz4.a      # [unix]
+        - if not exist %LIBRARY_LIB%\\liblz4_static.lib exit 1  # [win]
+
+about:
+  home: https://lz4.github.io/lz4/
+  license: BSD-2-Clause
+  license_family: BSD
+  license_file: lib/LICENSE
+  summary: Extremely Fast Compression algorithm
+  description: |
+    LZ4 is lossless compression algorithm, providing compression speed at 400
+    MB/s per core (0.16 Bytes/cycle). It features an extremely fast decoder,
+    with speed in multiple GB/s per core (0.71 Bytes/cycle). A high compression
+    derivative, called LZ4_HC, is available, trading customizable CPU time for
+    compression ratio. LZ4 library is provided as open source software using a
+    BSD license.
+  dev_url: https://github.com/lz4/lz4
+  doc_url: https://github.com/lz4/lz4/blob/dev/README.md
+
+extra:
+  recipe-maintainers:
+    - mingwandroid
+    - rmax
+    - wesm
+    - xhochy

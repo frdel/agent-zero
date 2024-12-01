@@ -1,0 +1,72 @@
+{% set version = "6.4" %}
+
+package:
+  name: ncurses
+  version: {{ version }}
+
+source:
+  fn: ncurses-{{ version }}.tar.gz
+  url: https://invisible-mirror.net/archives/ncurses/ncurses-{{ version }}.tar.gz
+  sha256: 6931283d9ac87c5073f30b6290c4c75f21632bb4fc3603ac8100812bed248159
+  patches:
+    # http://lists.gnu.org/archive/html/bug-ncurses/2011-04/txtkWQqiQvcZe.txt
+    - fix.patch
+    - clang.patch # [osx]
+
+build:
+  number: 0
+  skip: True  # [win]
+  run_exports:
+    # pretty good compat within major version
+    #  https://abi-laboratory.pro/tracker/timeline/ncurses/
+    - {{ pin_subpackage('ncurses') }}
+  # A C++ compiler is needed so that the cursesapp.h file is installed,
+  # but the library does not need libstdc++/libc++
+  ignore_run_exports:
+    - libstdcxx-ng
+    - libcxx
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - libtool
+    - make
+    - patch
+  host:
+    - pkg-config
+    # Need a separate host section so that ncurses doesn't remove -L$PREFIX/lib
+    - libcxx        # [osx]
+    - libstdcxx-ng  # [linux]
+
+test:
+# TODO :: conda-build needs seperate test/requires_build and test/requires_host
+  requires:
+    # Tests failed on linux-aarch64, osx-64, and osx-arm64 because pkg-config not found 
+    - pkg-config
+
+about:
+  home: https://invisible-island.net/ncurses/
+  # See https://github.com/mirror/ncurses/blob/3ef920d65fb2d4046096131d868ae8d4bba79d46/package/debian/copyright
+  license: MIT AND X11
+  license_family: MIT
+  license_file: COPYING
+  summary: Library for text-based user interfaces
+  description: |
+    The ncurses (new curses) library is a free software
+    emulation of curses in System V Release 4.0 (SVr4),
+    and more. It uses terminfo format, supports pads and
+    color and multiple highlights and forms characters and
+    function-key mapping, and has all the other SVr4-curses
+    enhancements over BSD curses. SVr4 curses is better
+    known today as X/Open Curses
+  doc_url: https://invisible-island.net/ncurses/NCURSES-Programming-HOWTO.html
+  dev_url: https://ncurses.scripts.mit.edu/?p=ncurses.git
+
+extra:
+  recipe-maintainers:
+    - jakirkham
+    - jjhelmus
+  skip-lints:
+    - build_tools_must_be_in_build
+    - host_section_needs_exact_pinnings

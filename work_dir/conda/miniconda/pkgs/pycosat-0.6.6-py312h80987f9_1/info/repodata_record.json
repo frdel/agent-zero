@@ -1,0 +1,19 @@
+{
+  "build": "py312h80987f9_1",
+  "build_number": 1,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "python >=3.12,<3.13.0a0"
+  ],
+  "fn": "pycosat-0.6.6-py312h80987f9_1.conda",
+  "license": "MIT",
+  "md5": "fc0da04b978398971a1e0b21bdd2c3cd",
+  "name": "pycosat",
+  "sha256": "29f878e8ce1871cfb41c2f3c52a8212059905b8d4a465a5bfbff473d76de0cc7",
+  "size": 89912,
+  "subdir": "osx-arm64",
+  "timestamp": 1714510965000,
+  "url": "https://repo.anaconda.com/pkgs/main/osx-arm64/pycosat-0.6.6-py312h80987f9_1.conda",
+  "version": "0.6.6"
+}
