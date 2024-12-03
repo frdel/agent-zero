@@ -28,8 +28,8 @@ function clone_repo() {
 # setup and preload A0
 setup_venv
 clone_repo
-python /a0/prepare.py
-python /a0/preload.py
+python /a0/prepare.py --dockerized=true
+python /a0/preload.py --dockerized=true
 
 # Loop to restart the Python script when it finishes
 while true; do

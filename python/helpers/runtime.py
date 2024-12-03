@@ -10,6 +10,8 @@ dockerman = None
 
 def initialize():
     global args
+    if args:
+        return
     parser.add_argument("--port", type=int, default=None, help="Web UI port")
     parser.add_argument("--host", type=str, default=None, help="Web UI host")
     parser.add_argument(

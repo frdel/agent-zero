@@ -1,17 +1,15 @@
-import asyncio
 import json
 import os
 import re
 import subprocess
-from typing import Any, Literal, Optional, TypedDict
+from typing import Any, Literal, TypedDict
 
 import models
-from python.helpers import rfc_exchange, runtime, whisper
+from python.helpers import runtime, whisper
 from . import files, dotenv
 from models import get_model, ModelProvider, ModelType
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.embeddings import Embeddings
-
 
 class Settings(TypedDict):
     chat_model_provider: str
@@ -693,7 +691,7 @@ def _write_sensitive_settings(settings: Settings):
     if settings["root_password"]:
         dotenv.save_dotenv_value(dotenv.KEY_ROOT_PASSWORD, settings["root_password"])
     if settings["root_password"]:
-        dotenv.save_dotenv_value(dotenv.KEY_ROOT_PASSWORD, settings["root_password"])
+        set_root_password(settings["root_password"])
 
 
 def _get_default_settings() -> Settings:
@@ -777,6 +775,8 @@ def set_root_password(password: str):
     if not runtime.is_dockerized():
         raise Exception("root password can only be set in dockerized environments")
     subprocess.run(f"echo 'root:{password}' | chpasswd", shell=True, check=True)
+    dotenv.save_dotenv_value(dotenv.KEY_ROOT_PASSWORD, password)
+    
 
 
 def get_runtime_config(set: Settings):
