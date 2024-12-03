@@ -11,4 +11,4 @@ if not root_pass:
     root_pass = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
     dotenv.save_dotenv_value(dotenv.KEY_ROOT_PASSWORD, root_pass)
 print("Changing root password...")
-subprocess.run(f"echo 'root:{root_pass}' | chpasswd", shell=True, check=True)
+settings.set_root_password(root_pass)
