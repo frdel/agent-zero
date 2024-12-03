@@ -595,7 +595,7 @@ def get_settings() -> Settings:
     if not _settings:
         _settings = _read_settings_file()
     if not _settings:
-        _settings = _get_default_settings()
+        _settings = get_default_settings()
     norm = normalize_settings(_settings)
     return norm
 
@@ -609,7 +609,7 @@ def set_settings(settings: Settings):
 
 def normalize_settings(settings: Settings) -> Settings:
     copy = settings.copy()
-    default = _get_default_settings()
+    default = get_default_settings()
     for key, value in default.items():
         if key not in copy:
             copy[key] = value
@@ -696,7 +696,7 @@ def _write_sensitive_settings(settings: Settings):
         set_root_password(settings["root_password"])
 
 
-def _get_default_settings() -> Settings:
+def get_default_settings() -> Settings:
     return Settings(
         chat_model_provider=ModelProvider.OPENAI.name,
         chat_model_name="gpt-4o-mini",

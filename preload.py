@@ -6,7 +6,7 @@ runtime.initialize()
 
 
 async def preload():
-    set = settings.get_settings()
+    set = settings.get_default_settings()
 
     # async tasks to preload
     tasks = [whisper.preload(set["stt_model_size"])]

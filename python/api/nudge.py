@@ -12,7 +12,7 @@ class Nudge(ApiHandler):
         context = self.get_context(ctxid)
         context.nudge()
 
-        msg = "Context reset, agent nudged."
+        msg = "Process reset, agent nudged."
         context.log.log(type="info", content=msg)
         
         return {
