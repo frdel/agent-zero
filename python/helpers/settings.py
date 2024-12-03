@@ -1,10 +1,12 @@
+import asyncio
 import json
 import os
 import re
+import subprocess
 from typing import Any, Literal, Optional, TypedDict
 
 import models
-from python.helpers import whisper
+from python.helpers import rfc_exchange, runtime, whisper
 from . import files, dotenv
 from models import get_model, ModelProvider, ModelType
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -36,15 +38,20 @@ class Settings(TypedDict):
 
     auth_login: str
     auth_password: str
+    root_password: str
 
+    rfc_auto_docker: bool
     rfc_url: str
     rfc_password: str
+    rfc_port_http: int
+    rfc_port_ssh: int
 
     stt_model_size: str
     stt_language: str
     stt_silence_threshold: float
     stt_silence_duration: int
     stt_waiting_timeout: int
+
 
 class PartialSettings(Settings, total=False):
     pass
@@ -76,6 +83,8 @@ class SettingsSection(TypedDict, total=False):
 class SettingsOutput(TypedDict):
     sections: list[SettingsSection]
 
+
+PASSWORD_PLACEHOLDER = "****PSWD****"
 
 SETTINGS_FILE = files.get_abs_path("tmp/settings.json")
 _settings: Settings | None = None
@@ -290,8 +299,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
     auth_fields.append(
         {
             "id": "auth_login",
-            "title": "Login",
-            "description": "User name",
+            "title": "UI Login",
+            "description": "Set user name for web UI",
             "type": "input",
             "value": dotenv.get_dotenv_value(dotenv.KEY_AUTH_LOGIN) or "",
         }
@@ -300,12 +309,27 @@ def convert_out(settings: Settings) -> SettingsOutput:
     auth_fields.append(
         {
             "id": "auth_password",
-            "title": "Password",
-            "description": "User password",
+            "title": "UI Password",
+            "description": "Set user password for web UI",
             "type": "password",
-            "value": dotenv.get_dotenv_value(dotenv.KEY_AUTH_PASSWORD) or "",
+            "value": (
+                PASSWORD_PLACEHOLDER
+                if dotenv.get_dotenv_value(dotenv.KEY_AUTH_PASSWORD)
+                else ""
+            ),
         }
     )
+
+    if runtime.is_dockerized():
+        auth_fields.append(
+            {
+                "id": "root_password",
+                "title": "root Password",
+                "description": "Change linux root password in docker container. This password can be used for SSH access. Original password was randomly generated during setup.",
+                "type": "password",
+                "value": "",
+            }
+        )
 
     auth_section: SettingsSection = {
         "title": "Authentication",
@@ -393,90 +417,136 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     dev_fields: list[SettingsField] = []
 
-    dev_fields.append(
-        {
-            "id": "rfc_url",
-            "title": "RFC Destination URL",
-            "description": "URL for remote function calls. RFCs are used to call functions on another A0 instance. You can develop and debug A0 natively on your local system while redirecting some functions to A0 instance in docker.",
-            "type": "input",
-            "value": settings["rfc_url"],
-        }
-    )
+    if runtime.is_development():
+        # dev_fields.append(
+        #     {
+        #         "id": "rfc_auto_docker",
+        #         "title": "RFC Auto Docker Management",
+        #         "description": "Automatically create dockerized instance of A0 for RFCs using this instance's code base and, settings and .env.",
+        #         "type": "input",
+        #         "value": settings["rfc_auto_docker"],
+        #     }
+        # )
+
+        dev_fields.append(
+            {
+                "id": "rfc_url",
+                "title": "RFC Destination URL",
+                "description": "URL of dockerized A0 instance for remote function calls. Do not specify port here.",
+                "type": "input",
+                "value": settings["rfc_url"],
+            }
+        )
 
     dev_fields.append(
         {
             "id": "rfc_password",
             "title": "RFC Password",
-            "description": "Password for remote function calls. Passwords must match on both systems. RFCs can not be used with empty password.",
+            "description": "Password for remote function calls. Passwords must match on both instances. RFCs can not be used with empty password.",
             "type": "password",
-            "value": dotenv.get_dotenv_value(dotenv.KEY_RFC_PASSWORD) or "",
+            "value": (
+                PASSWORD_PLACEHOLDER
+                if dotenv.get_dotenv_value(dotenv.KEY_RFC_PASSWORD)
+                else ""
+            ),
         }
     )
 
+    if runtime.is_development():
+        dev_fields.append(
+            {
+                "id": "rfc_port_http",
+                "title": "RFC HTTP port",
+                "description": "HTTP port for dockerized instance of A0.",
+                "type": "input",
+                "value": settings["rfc_port_http"],
+            }
+        )
+
+        dev_fields.append(
+            {
+                "id": "rfc_port_ssh",
+                "title": "RFC SSH port",
+                "description": "SSH port for dockerized instance of A0.",
+                "type": "input",
+                "value": settings["rfc_port_ssh"],
+            }
+        )
+
     dev_section: SettingsSection = {
         "title": "Development",
-        "description": "Parameters for A0 framework development.",
+        "description": "Parameters for A0 framework development. RFCs (remote function calls) are used to call functions on another A0 instance. You can develop and debug A0 natively on your local system while redirecting some functions to A0 instance in docker. This is crucial for development as A0 needs to run in standardized environment to support all features.",
         "fields": dev_fields,
     }
 
     # Speech to text section
     stt_fields: list[SettingsField] = []
-    
-    stt_fields.append({
-        "id": "stt_model_size",
-        "title": "Model Size",
-        "description": "Select the speech recognition model size",
-        "type": "select",
-        "value": settings["stt_model_size"],
-        "options": [
-            {"value": "tiny", "label": "Tiny (39M, English)"},
-            {"value": "base", "label": "Base (74M, English)"},
-            {"value": "small", "label": "Small (244M, English)"},
-            {"value": "medium", "label": "Medium (769M, English)"},
-            {"value": "large", "label": "Large (1.5B, Multilingual)"},
-            {"value": "turbo", "label": "Turbo (Multilingual)"}
-        ]
-    })
 
-    stt_fields.append({
-        "id": "stt_language",
-        "title": "Language Code",
-        "description": "Language code (e.g. en, fr, it)",
-        "type": "input",
-        "value": settings["stt_language"]
-    })
+    stt_fields.append(
+        {
+            "id": "stt_model_size",
+            "title": "Model Size",
+            "description": "Select the speech recognition model size",
+            "type": "select",
+            "value": settings["stt_model_size"],
+            "options": [
+                {"value": "tiny", "label": "Tiny (39M, English)"},
+                {"value": "base", "label": "Base (74M, English)"},
+                {"value": "small", "label": "Small (244M, English)"},
+                {"value": "medium", "label": "Medium (769M, English)"},
+                {"value": "large", "label": "Large (1.5B, Multilingual)"},
+                {"value": "turbo", "label": "Turbo (Multilingual)"},
+            ],
+        }
+    )
 
-    stt_fields.append({
-        "id": "stt_silence_threshold",
-        "title": "Silence threshold",
-        "description": "Silence detection threshold. Lower values are more sensitive.",
-        "type": "range",
-        "min": 0,
-        "max": 1,
-        "step": 0.01,
-        "value": settings["stt_silence_threshold"]
-    })
+    stt_fields.append(
+        {
+            "id": "stt_language",
+            "title": "Language Code",
+            "description": "Language code (e.g. en, fr, it)",
+            "type": "input",
+            "value": settings["stt_language"],
+        }
+    )
 
-    stt_fields.append({
-        "id": "stt_silence_duration",
-        "title": "Silence duration (ms)",
-        "description": "Duration of silence before the server considers speaking to have ended.",
-        "type": "input",
-        "value": settings["stt_silence_duration"]
-    })
+    stt_fields.append(
+        {
+            "id": "stt_silence_threshold",
+            "title": "Silence threshold",
+            "description": "Silence detection threshold. Lower values are more sensitive.",
+            "type": "range",
+            "min": 0,
+            "max": 1,
+            "step": 0.01,
+            "value": settings["stt_silence_threshold"],
+        }
+    )
 
-    stt_fields.append({
-        "id": "stt_waiting_timeout",
-        "title": "Waiting timeout (ms)",
-        "description": "Duration before the server closes the microphone.",
-        "type": "input",
-        "value": settings["stt_waiting_timeout"]
-    })
+    stt_fields.append(
+        {
+            "id": "stt_silence_duration",
+            "title": "Silence duration (ms)",
+            "description": "Duration of silence before the server considers speaking to have ended.",
+            "type": "input",
+            "value": settings["stt_silence_duration"],
+        }
+    )
+
+    stt_fields.append(
+        {
+            "id": "stt_waiting_timeout",
+            "title": "Waiting timeout (ms)",
+            "description": "Duration before the server closes the microphone.",
+            "type": "input",
+            "value": settings["stt_waiting_timeout"],
+        }
+    )
 
     stt_section: SettingsSection = {
         "title": "Speech to Text",
         "description": "Voice transcription preferences and server turn detection settings.",
-        "fields": stt_fields
+        "fields": stt_fields,
     }
 
     # Add the section to the result
@@ -501,7 +571,7 @@ def _get_api_key_field(settings: Settings, provider: str, title: str) -> Setting
         "id": f"api_key_{provider}",
         "title": title,
         "type": "password",
-        "value": key if key != "None" else "",
+        "value": (PASSWORD_PLACEHOLDER if key and key != "None" else ""),
     }
 
 
@@ -510,12 +580,13 @@ def convert_in(settings: dict) -> Settings:
     for section in settings["sections"]:
         if "fields" in section:
             for field in section["fields"]:
-                if field["id"].endswith("_kwargs"):
-                    current[field["id"]] = _env_to_dict(field["value"])
-                elif field["id"].startswith("api_key_"):
-                    current["api_keys"][field["id"]] = field["value"]
-                else:
-                    current[field["id"]] = field["value"]
+                if field["value"] != PASSWORD_PLACEHOLDER:
+                    if field["id"].endswith("_kwargs"):
+                        current[field["id"]] = _env_to_dict(field["value"])
+                    elif field["id"].startswith("api_key_"):
+                        current["api_keys"][field["id"]] = field["value"]
+                    else:
+                        current[field["id"]] = field["value"]
     return current
 
 
@@ -584,6 +655,7 @@ def get_embedding_model(settings: Settings | None = None) -> Embeddings:
         **settings["embed_model_kwargs"],
     )
 
+
 def _read_settings_file() -> Settings | None:
     if os.path.exists(SETTINGS_FILE):
         content = files.read_file(SETTINGS_FILE)
@@ -605,14 +677,23 @@ def _remove_sensitive_settings(settings: Settings):
     settings["auth_login"] = ""
     settings["auth_password"] = ""
     settings["rfc_password"] = ""
+    settings["root_password"] = ""
 
 
 def _write_sensitive_settings(settings: Settings):
     for key, val in settings["api_keys"].items():
         dotenv.save_dotenv_value(key.upper(), val)
+
     dotenv.save_dotenv_value(dotenv.KEY_AUTH_LOGIN, settings["auth_login"])
-    dotenv.save_dotenv_value(dotenv.KEY_AUTH_PASSWORD, settings["auth_password"])
-    dotenv.save_dotenv_value(dotenv.KEY_RFC_PASSWORD, settings["rfc_password"])
+    if settings["auth_password"]:
+        dotenv.save_dotenv_value(dotenv.KEY_AUTH_PASSWORD, settings["auth_password"])
+    if settings["rfc_password"]:
+        dotenv.save_dotenv_value(dotenv.KEY_RFC_PASSWORD, settings["rfc_password"])
+
+    if settings["root_password"]:
+        dotenv.save_dotenv_value(dotenv.KEY_ROOT_PASSWORD, settings["root_password"])
+    if settings["root_password"]:
+        dotenv.save_dotenv_value(dotenv.KEY_ROOT_PASSWORD, settings["root_password"])
 
 
 def _get_default_settings() -> Settings:
@@ -633,11 +714,15 @@ def _get_default_settings() -> Settings:
         api_keys={},
         auth_login="",
         auth_password="",
+        root_password="",
         agent_prompts_subdir="default",
         agent_memory_subdir="default",
         agent_knowledge_subdir="custom",
-        rfc_url="http://localhost:55080",
+        rfc_auto_docker=True,
+        rfc_url="localhost",
         rfc_password="",
+        rfc_port_http=55080,
+        rfc_port_ssh=55022,
         stt_model_size="base",
         stt_language="en",
         stt_silence_threshold=0.3,
@@ -663,6 +748,7 @@ def _apply_settings():
     # reload whisper model if necessary
     whisper.preload()
 
+
 def _env_to_dict(data: str):
     env_dict = {}
     line_pattern = re.compile(r"\s*([^#][^=]*)\s*=\s*(.*)")
@@ -685,3 +771,33 @@ def _dict_to_env(data_dict):
             value = f'"{value}"'
         lines.append(f"{key}={value}")
     return "\n".join(lines)
+
+
+def set_root_password(password: str):
+    if not runtime.is_dockerized():
+        raise Exception("root password can only be set in dockerized environments")
+    subprocess.run(["echo", "root:" + password, "|", "chpasswd"], shell=True)
+
+
+def get_runtime_config(set: Settings):
+    if runtime.is_dockerized():
+        return {
+            "code_exec_ssh_addr": "localhost",
+            "code_exec_ssh_port": 22,
+            "code_exec_http_port": 80,
+            "code_exec_ssh_user": "root",
+        }
+    else:
+        host = set["rfc_url"]
+        if "//" in host:
+            host = host.split("//")[1]
+        if ":" in host:
+            host, port = host.split(":")
+        if host.endswith("/"):
+            host = host[:-1]
+        return {
+            "code_exec_ssh_addr": host,
+            "code_exec_ssh_port": set["rfc_port_ssh"],
+            "code_exec_http_port": set["rfc_port_http"],
+            "code_exec_ssh_user": "root",
+        }

@@ -28,6 +28,7 @@ function clone_repo() {
 # setup and preload A0
 setup_venv
 clone_repo
+python /a0/prepare.py
 python /a0/preload.py
 
 # Loop to restart the Python script when it finishes
@@ -38,14 +39,15 @@ while true; do
 
     echo "Starting A0..."
     python /a0/run_ui.py \
+        --dockerized=true \
         --port=80 \
         --host="0.0.0.0" \
         --code_exec_docker_enabled=false \
         --code_exec_ssh_enabled=true \
-        --code_exec_ssh_addr="localhost" \
-        --code_exec_ssh_port=22 \
-        --code_exec_ssh_user="root" \
-        --code_exec_ssh_pass="toor"
+        # --code_exec_ssh_addr="localhost" \
+        # --code_exec_ssh_port=22 \
+        # --code_exec_ssh_user="root" \
+        # --code_exec_ssh_pass="toor"
     
     # Check the exit status
     if [ $? -ne 0 ]; then

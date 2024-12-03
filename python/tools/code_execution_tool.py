@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import shlex
 import time
 from python.helpers.tool import Tool, Response
-from python.helpers import files
+from python.helpers import files, rfc_exchange
 from python.helpers.print_style import PrintStyle
 from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
@@ -93,12 +93,13 @@ class CodeExecution(Tool):
 
             # initialize local or remote interactive shell insterface
             if self.agent.config.code_exec_ssh_enabled:
+                pswd = self.agent.config.code_exec_ssh_pass if self.agent.config.code_exec_ssh_pass else await rfc_exchange.get_root_password()
                 shell = SSHInteractiveSession(
                     self.agent.context.log,
                     self.agent.config.code_exec_ssh_addr,
                     self.agent.config.code_exec_ssh_port,
                     self.agent.config.code_exec_ssh_user,
-                    self.agent.config.code_exec_ssh_pass,
+                    pswd,
                 )
             else:
                 shell = LocalInteractiveSession()

@@ -5,7 +5,7 @@ import json
 
 def truncate_text(agent, output, threshold=1000):
     threshold = int(threshold)
-    if len(output) <= threshold:
+    if not threshold or len(output) <= threshold:
         return output
 
     # Adjust the file path as needed

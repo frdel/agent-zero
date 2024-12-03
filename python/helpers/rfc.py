@@ -3,8 +3,7 @@ import inspect
 import json
 from typing import Any, TypedDict
 import aiohttp
-import hmac
-import hashlib
+from python.helpers import crypto
 
 from python.helpers import dotenv
 
@@ -36,14 +35,14 @@ async def call_rfc(
         kwargs=kwargs,
     )
     call = RFCCall(
-        rfc_input=json.dumps(input), hash=hash_data(json.dumps(input), password)
+        rfc_input=json.dumps(input), hash=crypto.hash_data(json.dumps(input), password)
     )
     result = await _send_json_data(url, call)
     return result
 
 
 async def handle_rfc(rfc_call: RFCCall, password: str):
-    if not verify_data(rfc_call["rfc_input"], rfc_call["hash"], password):
+    if not crypto.verify_data(rfc_call["rfc_input"], rfc_call["hash"], password):
         raise Exception("Invalid RFC hash")
 
     input: RFCInput = json.loads(rfc_call["rfc_input"])
@@ -80,11 +79,3 @@ async def _send_json_data(url: str, data):
             else:
                 error = await response.text()
                 raise Exception(error)
-
-
-def hash_data(data: str, password: str):
-    return hmac.new(password.encode(), data.encode(), hashlib.sha256).hexdigest()
-
-
-def verify_data(data: str, hash: str, password: str):
-    return hash_data(data, password) == hash

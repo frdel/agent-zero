@@ -93,7 +93,7 @@ class DockerContainerManager:
                 name=self.name,
                 volumes=self.volumes, # type: ignore
             ) 
-            atexit.register(self.cleanup_container)
+            # atexit.register(self.cleanup_container)
             print(f"Started container with ID: {self.container.id}")
             if self.logger: self.logger.log(type="info", content=f"Started container with ID: {self.container.id}")
             time.sleep(5) # this helps to get SSH ready

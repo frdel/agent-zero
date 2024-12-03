@@ -1,6 +1,7 @@
+import asyncio
 import models
 from agent import AgentConfig
-from python.helpers import files, runtime, settings
+from python.helpers import dotenv, files, rfc_exchange, runtime, settings, docker, log
 
 
 def initialize():
@@ -49,28 +50,35 @@ def initialize():
         rate_limit_requests=30,
         # rate_limit_input_tokens = 0,
         # rate_limit_output_tokens = 0,
-        # msgs_keep_max = 25,
-        # msgs_keep_start = 5,
-        # msgs_keep_end = 10,
-        max_tool_response_length=3000,
         # response_timeout_seconds = 60,
-        # code_exec_docker_enabled = True,
-        # code_exec_docker_name = "agent-zero-dev",
+        code_exec_docker_enabled = False,
+        # code_exec_docker_name = "A0-dev",
         # code_exec_docker_image = "frdel/agent-zero-run:development",
         # code_exec_docker_ports = { "22/tcp": 55022, "80/tcp": 55080 }
         # code_exec_docker_volumes = {
-            # files.get_base_dir(): {"bind": "/a0", "mode": "rw"},
-            # files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"},
+        # files.get_base_dir(): {"bind": "/a0", "mode": "rw"},
+        # files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"},
         # },
         # code_exec_ssh_enabled = True,
         # code_exec_ssh_addr = "localhost",
         # code_exec_ssh_port = 55022,
         # code_exec_ssh_user = "root",
-        # code_exec_ssh_pass = "toor",
+        # code_exec_ssh_pass = "",
         # additional = {},
     )
 
-    # update config with kwargs
+    # update SSH and docker settings
+    set_runtime_config(config, current_settings)
+
+    # update config with runtime args
+    args_override(config)
+
+    # return config object
+    return config
+
+
+def args_override(config):
+    # update config with runtime args
     for key, value in runtime.args.items():
         if hasattr(config, key):
             # conversion based on type of config[key]
@@ -93,5 +101,25 @@ def initialize():
 
             setattr(config, key, value)
 
-    # return config object
-    return config
+
+def set_runtime_config(config: AgentConfig, set: settings.Settings):
+    ssh_conf = settings.get_runtime_config(set)
+    for key, value in ssh_conf.items():
+        if hasattr(config, key):
+            setattr(config, key, value)
+
+    # if config.code_exec_docker_enabled:
+    #     config.code_exec_docker_ports["22/tcp"] = ssh_conf["code_exec_ssh_port"]
+    #     config.code_exec_docker_ports["80/tcp"] = ssh_conf["code_exec_http_port"]
+    #     config.code_exec_docker_name = f"{config.code_exec_docker_name}-{ssh_conf['code_exec_ssh_port']}-{ssh_conf['code_exec_http_port']}"
+
+    #     dman = docker.DockerContainerManager(
+    #         logger=log.Log(),
+    #         name=config.code_exec_docker_name,
+    #         image=config.code_exec_docker_image,
+    #         ports=config.code_exec_docker_ports,
+    #         volumes=config.code_exec_docker_volumes,
+    #     )
+    #     dman.start_container()
+
+    # config.code_exec_ssh_pass = asyncio.run(rfc_exchange.get_root_password())

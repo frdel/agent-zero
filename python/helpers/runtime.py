@@ -35,10 +35,15 @@ def get_arg(name: str):
     global args
     return args.get(name, None)
 
+def has_arg(name: str):
+    global args
+    return name in args
+
+def is_dockerized() -> bool:
+    return get_arg("dockerized")
 
 def is_development() -> bool:
-    return get_arg("development") == True
-
+    return not is_dockerized()
 
 async def call_development_function(func: Callable, *args, **kwargs):
     if is_development():
@@ -71,8 +76,12 @@ def _get_rfc_password() -> str:
 
 
 def _get_rfc_url() -> str:
-    url = settings.get_settings()["rfc_url"]
-    if not url.endswith("/"):
-        url += "/"
-    url += "rfc"
+    set = settings.get_settings()
+    url = set["rfc_url"]
+    if not "://" in url:
+        url = "http://"+url
+    if url.endswith("/"):
+        url = url[:-1]
+    url = url+":"+str(set["rfc_port_http"])
+    url += "/rfc"
     return url

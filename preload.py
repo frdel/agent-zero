@@ -1,3 +1,6 @@
 from python.helpers import whisper
 
-whisper.preload() # preload transcription model
+print("Running preload...")
+
+# preload transcription model
+whisper.preload()

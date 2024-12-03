@@ -129,13 +129,9 @@ class AgentConfig:
     rate_limit_requests: int = 15
     rate_limit_input_tokens: int = 0
     rate_limit_output_tokens: int = 0
-    msgs_keep_max: int = 25
-    msgs_keep_start: int = 5
-    msgs_keep_end: int = 10
     response_timeout_seconds: int = 60
-    max_tool_response_length: int = 3000
-    code_exec_docker_enabled: bool = True
-    code_exec_docker_name: str = "agent-zero-dev"
+    code_exec_docker_enabled: bool = False
+    code_exec_docker_name: str = "A0-dev"
     code_exec_docker_image: str = "frdel/agent-zero-run:development"
     code_exec_docker_ports: dict[str, int] = field(
         default_factory=lambda: {"22/tcp": 55022, "80/tcp": 55080}
@@ -150,7 +146,7 @@ class AgentConfig:
     code_exec_ssh_addr: str = "localhost"
     code_exec_ssh_port: int = 55022
     code_exec_ssh_user: str = "root"
-    code_exec_ssh_pass: str = "toor"
+    code_exec_ssh_pass: str = ""
     additional: Dict[str, Any] = field(default_factory=dict)
 
 
