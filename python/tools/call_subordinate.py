@@ -1,4 +1,4 @@
-from agent import Agent
+from agent import Agent, UserMessage
 from python.helpers.tool import Tool, Response
 
 
@@ -18,8 +18,7 @@ class Delegation(Tool):
 
         # add user message to subordinate agent
         subordinate: Agent = self.agent.get_data(Agent.DATA_NAME_SUBORDINATE)
-        template = self.agent.read_prompt("fw.call_subordinate.md", message=message)
-        await subordinate.hist_add_user_message(template)
+        await subordinate.hist_add_user_message(UserMessage(message=message, attachments=[]))
         # run subordinate monologue
         result = await subordinate.monologue()
         # result
