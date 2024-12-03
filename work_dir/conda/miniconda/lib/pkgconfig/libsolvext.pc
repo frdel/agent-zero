@@ -1,9 +1,0 @@
-libdir=/tmp/miniconda_temp/lib
-includedir=/tmp/miniconda_temp/include
-
-Name: libsolvext
-Description: Library for reading repositories
-Version: 0.7.24
-Requires: libsolv
-Libs: -L${libdir} -lsolvext
-Cflags: -I${includedir}

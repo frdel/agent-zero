@@ -1,9 +1,0 @@
-{
-  "CONDA_BUILD_SYSROOT": "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk",
-  "bzip2": "1.0",
-  "zlib": "1.2",
-  "target_platform": "osx-arm64",
-  "channel_targets": "defaults",
-  "c_compiler_version": "14",
-  "c_compiler": "clang"
-}

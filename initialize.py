@@ -15,7 +15,7 @@ def initialize():
     # chat_llm2 = models.get_lmstudio_chat(model_name="llama-3.2-8b-200k", temperature=0)
     # chat_llm = models.get_lmstudio_chat(model_name="lmstudio-community/Tess-3-Mistral-Large-2-123B-GGUF", temperature=0)
     # chat_llm = models.get_lmstudio_chat(model_name="deepseek-ai_-_deepseek-math-7b-rl", temperature=0)
-    chat_llm = models.get_lmstudio_chat(model_name="qwq-32b-preview", temperature=0)
+    # chat_llm = models.get_lmstudio_chat(model_name="qwq-32b-preview", temperature=0)
     # chat_llm = models.get_lmstudio_chat(model_name="aidc-ai-marco-o1", temperature=0)
     # chat_llm = models.get_lmstudio_chat(model_name="aidc-ai-marco-o1@q5_k_m", temperature=0)
     # chat_llm = models.get_lmstudio_chat(model_name="aidc-ai-marco-o1-mlx", temperature=0)

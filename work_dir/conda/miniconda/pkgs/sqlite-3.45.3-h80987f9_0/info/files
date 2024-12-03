@@ -1,7 +1,0 @@
-bin/sqlite3
-include/sqlite3.h
-include/sqlite3ext.h
-lib/libsqlite3.0.dylib
-lib/libsqlite3.dylib
-lib/pkgconfig/sqlite3.pc
-share/man/man1/sqlite3.1

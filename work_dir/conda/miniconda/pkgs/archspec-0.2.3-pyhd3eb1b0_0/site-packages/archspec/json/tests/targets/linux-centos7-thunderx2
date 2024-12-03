@@ -1,8 +1,0 @@
-processor       : 0
-BogoMIPS        : 400.00
-Features        : fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics cpuid asimdrdm
-CPU implementer : 0x43
-CPU architecture: 8
-CPU variant     : 0x1
-CPU part        : 0x0af
-CPU revision    : 1

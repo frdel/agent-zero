@@ -1,4 +1,0 @@
-coverage[toml]>=5.0.0
-pip>=21.1
-pretend
-pytest>=6.2.0
