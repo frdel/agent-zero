@@ -1,3 +1,46 @@
+// copy button
+
+function createCopyButton() {
+    const button = document.createElement('button');
+    button.className = 'copy-button';
+    button.textContent = 'Copy';
+    
+    button.addEventListener('click', async function(e) {
+        e.stopPropagation();
+        const container = this.closest('.msg-content, .kvps-row, .message-text');
+        let textToCopy;
+        
+        if (container.classList.contains('kvps-row')) {
+            textToCopy = container.querySelector('.kvps-val').textContent;
+        } else if (container.classList.contains('message-text')) {
+            textToCopy = container.textContent.replace('copy', '');
+        } else {
+            textToCopy = container.querySelector('span').textContent;
+        }
+        
+        try {
+            await navigator.clipboard.writeText(textToCopy);
+            const originalText = button.textContent;
+            button.classList.add('copied');
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+                button.classList.remove('copied');
+                button.textContent = originalText;
+            }, 2000);
+        } catch (err) {
+            console.error('Failed to copy text:', err);
+        }
+    });
+    
+    return button;
+}
+
+function addCopyButtonToElement(element) {
+    if (!element.querySelector('.copy-button')) {
+        element.appendChild(createCopyButton());
+    }
+}
+
 export function getHandler(type) {
     switch (type) {
         case 'user':
@@ -49,7 +92,14 @@ export function _drawMessage(messageContainer, heading, content, temp, followUp,
 
         const spanElement = document.createElement('span');
         spanElement.innerHTML = content;
+        
+        // Add click handler for small screens
+        spanElement.addEventListener('click', () => {
+            copyText(spanElement.textContent, spanElement);
+        });
+        
         preElement.appendChild(spanElement);
+        addCopyButtonToElement(preElement);
         messageDiv.appendChild(preElement);
 
         // Render LaTeX math within the span
@@ -114,6 +164,13 @@ export function drawMessageUser(messageContainer, id, type, heading, content, te
         const textDiv = document.createElement('div');
         textDiv.classList.add('message-text');
         textDiv.textContent = content;
+        
+        // Add click handler
+        textDiv.addEventListener('click', () => {
+            copyText(content, textDiv);
+        });
+        
+        addCopyButtonToElement(textDiv);
         messageDiv.appendChild(textDiv);
     }
 
@@ -229,17 +286,20 @@ function drawKvps(container, kvps) {
             const pre = document.createElement('pre');
             pre.classList.add('kvps-val');
 
-            // if value is array, join it with new line
             if (Array.isArray(value)) value = value.join('\n');
 
             if (row.classList.contains('msg-thoughts')) {
-                // Wrap content in a <span> to allow HTML parsing
                 const span = document.createElement('span');
-                span.innerHTML = value;  // Use innerHTML to enable KaTeX parsing
+                span.innerHTML = value;
                 pre.appendChild(span);
                 td.appendChild(pre);
+                addCopyButtonToElement(row);
 
-                // Render LaTeX math within the span
+                // Add click handler
+                span.addEventListener('click', () => {
+                    copyText(span.textContent, span);
+                });
+
                 if (window.renderMathInElement) {
                     renderMathInElement(span, {
                         delimiters: [
@@ -248,13 +308,19 @@ function drawKvps(container, kvps) {
                             { left: "$", right: "$", display: false },
                             { left: "\$$", right: "\$$", display: false }
                         ],
-                        throwOnError: false  // Prevent KaTeX from throwing errors
+                        throwOnError: false
                     });
                 }
             } else {
-                // For non-thought rows, use textContent as before
                 pre.textContent = value;
+                
+                // Add click handler
+                pre.addEventListener('click', () => {
+                    copyText(value, pre);
+                });
+                
                 td.appendChild(pre);
+                addCopyButtonToElement(row);
             }
         }
         container.appendChild(table);
@@ -281,4 +347,16 @@ function convertImageTags(content) {
     });
 
     return updatedContent;
+}
+
+async function copyText(text, element) {
+    try {
+        await navigator.clipboard.writeText(text);
+        element.classList.add('copied');
+        setTimeout(() => {
+            element.classList.remove('copied');
+        }, 2000);
+    } catch (err) {
+        console.error('Failed to copy text:', err);
+    }
 }

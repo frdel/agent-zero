@@ -540,6 +540,7 @@ pre {
 .message-user {
   background-color: #4a4a4a;
   border-bottom-right-radius: var(--spacing-xs);
+  min-width: 195px;
   text-align: end;
 }
 
@@ -590,6 +591,7 @@ font-size: var(--font-size-small)
   color: #e0e0e0;
 }
 .message-agent-response {
+  min-width: 255px;
   background-color: #1f3c1e;
   color: #e0e0e0;
 }
@@ -641,7 +643,7 @@ font-size: var(--font-size-small)
 .msg-kvps th,
 .msg-kvps td {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  align-content: baseline;
+  align-content: center;
   padding: 0.25rem;
   text-align: left;
 }
@@ -877,7 +879,7 @@ font-size: var(--font-size-small)
 }
 
 .attachment-item:hover {
-  background: var(--color-secondary-dark);
+  background: var(--color-secondary);
 }
 
 .attachment-item.file-type {
@@ -885,7 +887,7 @@ font-size: var(--font-size-small)
 }
 
 .attachment-item:hover {
-  background: var(--color-secondary-dark);
+  background: var(--color-secondary);
 }
 
 .attachment-preview {
@@ -982,10 +984,6 @@ font-size: var(--font-size-small)
   text-transform: uppercase;
 }
 
-.file-preview:hover {
-  background: var(--color-secondary-dark);
-}
-
 .remove-attachment {
   position: absolute;
   top: -6px;
@@ -1012,21 +1010,6 @@ font-size: var(--font-size-small)
 .remove-attachment:active {
   transform: scale(0.9);
 }
-
-/* File type specific styles
-.extension[data-type="image"] {
-  background: #4CAF50;
-}
-
-.extension[data-type="code"] {
-  background: #2196F3;
-}
-
-.extension[data-type="document"] {
-  background: #FF9800;
-}
-
-*/
 
 /* Error handling */
 .image-error {
@@ -1075,7 +1058,7 @@ font-size: var(--font-size-small)
   border-radius: 5px;
   color: var(--color-text);
   font-family: "Rubik", Arial, Helvetica, sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   padding: 6px var(--spacing-sm);
   cursor: pointer;
   opacity: 0.8;
@@ -1326,6 +1309,11 @@ input:checked + .slider:before {
   --color-input-focus: var(--color-input-focus-light);
 }
 
+.light-mode .msg-kvps th,
+.light-mode .msg-kvps td {
+  border-bottom: 1px solid var(--color-border);
+}
+
 .light-mode .message-default {
   background-color: #ffffff;
   color: #1a242f;
@@ -1432,6 +1420,12 @@ input:checked + .slider:before {
 .light-mode #logo-container img {
   -webkit-filter: invert(100%) grayscale(100%);
   filter: invert(100%) grayscale(100%);
+}
+
+.light-mode .extension {
+  background: var(--color-primary);
+  color: var(--color-background);
+  opacity: 0.7;
 }
 
 /* Utility Classes */
@@ -1563,7 +1557,7 @@ input:checked + .slider:before {
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 510px) {
   .text-buttons-row {
     display: table;
     gap: 0.1rem !important;
@@ -1649,17 +1643,58 @@ input:checked + .slider:before {
   }
   
   .text-buttons-row {
-  width: 100%;
+  width: 90%;
   display: flex;
   padding-top: var(--spacing-xs);
   gap: var(--spacing-xs);
   white-space: pre-wrap;
   }
 
+  .text-button {
+  font-size: 0.6rem;
+  }
+
   .text-button svg {
   width: 18px;
   height: 18px;
   flex-shrink: 0; /* prevents SVG from shrinking */
+  }
+  .copy-button {
+    display: none !important;
+  }
+
+  .msg-content span,
+  .kvps-val,
+  .message-text {
+    cursor: pointer;
+    position: relative;
+  }
+
+  .msg-thoughts span::after,
+  .msg-content span::after,
+  .kvps-val::after,
+  .message-text::after {
+    content: 'Copied!';
+    position: absolute;
+    opacity: 0;
+    font-family: "Rubik", Arial, Helvetica, sans-serif;
+    font-size: 0.7rem;
+    text-wrap: nowrap;
+    padding: 6px var(--spacing-sm);
+    transition: opacity var(--transition-speed) ease-in-out;
+  }
+
+  .msg-thoughts span.copied::after,
+  .msg-content span.copied::after,
+  .kvps-val.copied::after,
+  .message-text.copied::after {
+    opacity: 1;
+    right: 0px;
+    top: 0px;
+    background-color: var(--color-background);
+    border: none;
+    border-radius: 5px;
+    color: inherit;
   }
 }
 
@@ -1703,4 +1738,71 @@ input:checked + .slider:before {
     -webkit-text-size-adjust: none;
     text-size-adjust: none;
   }
+}
+
+/* Copy button styles */
+.copy-button {
+  position: absolute;
+  right: 0;
+  top: var(--spacing-sm);
+  background: none;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  padding-right: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-wrap: nowrap;
+  opacity: 0;
+  transition: opacity var(--transition-speed) ease-in-out;
+  color: inherit;
+  font-size: 12px;
+  font-family: "Rubik", Arial, Helvetica, sans-serif;
+}
+
+.copy-button:hover {
+  opacity: 0.8 !important;
+}
+
+.msg-content:hover .copy-button,
+.kvps-row:hover .copy-button,
+.message-text:hover .copy-button {
+  opacity: 0.6;
+}
+
+.copy-button.copied {
+  font-family: "Rubik", Arial, Helvetica, sans-serif !important;
+  opacity: 1 !important;
+}
+
+.msg-thoughts .copy-button {
+  top: -12px !important;
+}
+
+.message-user .copy-button {
+  top: -15px !important;
+  left: -13px !important;
+  right: 99% !important;
+}
+
+.message-agent-response .copy-button {
+  top: -22px !important;
+  right: 0 !important;
+  padding-right: 0px !important;
+}
+
+.message-tool .copy-button {
+  top: -12px !important;
+  right: 0 !important;
+}
+
+.msg-output .copy-button {
+  top: -6px !important;
+  right: 0 !important;
+}
+
+/* Make message containers relative for absolute positioning of copy buttons */
+.msg-content,
+.kvps-row,
+.message-text {
+  position: relative;
 }
