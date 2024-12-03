@@ -497,6 +497,27 @@ window.nudge = async function () {
     }
 }
 
+window.restart = async function () {
+    try {
+        const resp = await sendJsonData("/restart", {});
+    } catch (e) {
+        //error expected here
+        toast("Restarting...", "info", 0)
+        while (true) {
+            try {
+                // try health check until server is back up again
+                const resp = await sendJsonData("/health", {});
+                await new Promise(resolve => setTimeout(resolve, 250));
+                toast("Restarted", "success", 2000)
+                return;
+            } catch (e) {
+                continue;
+            }
+        }
+
+    }
+}
+
 // Modify this part
 document.addEventListener('DOMContentLoaded', () => {
     const isDarkMode = localStorage.getItem('darkMode') !== 'false';
@@ -658,7 +679,7 @@ function removeClassFromElement(element, className) {
 }
 
 
-function toast(text, type = 'info') {
+function toast(text, type = 'info', timeout = 5000) {
     const toast = document.getElementById('toast');
 
     // Update the toast content and type
@@ -694,12 +715,14 @@ function toast(text, type = 'info') {
     };
 
     // Clear any existing timeout
-    clearTimeout(toast.timeoutId);
+    if (toast.timeoutId)
+        clearTimeout(toast.timeoutId);
 
     // Automatically close the toast after 10 seconds
-    toast.timeoutId = setTimeout(() => {
-        hideToast();
-    }, 10000);
+    if (timeout)
+        toast.timeoutId = setTimeout(() => {
+            hideToast();
+        }, timeout);
 }
 
 function hideToast() {

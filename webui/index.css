@@ -780,7 +780,9 @@ font-size: var(--font-size-small)
   margin-bottom: var(--spacing-xs);
   padding: var(--spacing-sm) 0.75rem;
   text-wrap: nowrap;
-  width: 48%;
+  width: calc(50% - var(--spacing-xs));
+  float:left;
+  margin-right: var(--spacing-xs);
   max-height: 2.3rem;
   -webkit-transition: all var(--transition-speed), transform 0.1s ease-in-out;
   transition: all var(--transition-speed), transform 0.1s ease-in-out;

@@ -5,7 +5,7 @@ from flask import Flask, request, Response
 from flask_basicauth import BasicAuth
 from python.helpers import files, git
 from python.helpers.files import get_abs_path
-from python.helpers import persist_chat, runtime, dotenv
+from python.helpers import persist_chat, runtime, dotenv, process
 from python.helpers.cloudflare_tunnel import CloudflareTunnel
 from python.helpers.extract_tools import load_classes_from_folder
 from python.helpers.api import ApiHandler
@@ -51,20 +51,22 @@ async def serve_index():
         version_no=gitinfo["version"],
         version_time=gitinfo["commit_time"],
     )
+    
 
 def run():
     print("Initializing framework...")
 
     # Suppress only request logs but keep the startup messages
     from werkzeug.serving import WSGIRequestHandler
+    from werkzeug.serving import make_server
 
     class NoRequestLoggingWSGIRequestHandler(WSGIRequestHandler):
         def log_request(self, code="-", size="-"):
             pass  # Override to suppress request logging
 
     # Get configuration from environment
-    port = runtime.get_arg("port") or int(os.environ.get("WEB_UI_PORT", 0)) or None
-    host = runtime.get_arg("host") or os.environ.get("WEB_UI_HOST") or None
+    port = runtime.get_arg("port") or int(os.environ.get("WEB_UI_PORT", 0)) or 5000
+    host = runtime.get_arg("host") or os.environ.get("WEB_UI_HOST") or "localhost"
     use_cloudflare = (
         runtime.get_arg("cloudflare_tunnel")
         or os.environ.get("USE_CLOUDFLARE", "false").lower() == "true"
@@ -82,6 +84,8 @@ def run():
 
     # initialize contexts from persisted chats
     persist_chat.load_tmp_chats()
+
+    server = None
 
     def register_api_handler(app, handler):
         name = handler.__module__.split(".")[-1]
@@ -101,14 +105,14 @@ def run():
     for handler in handlers:
         register_api_handler(app, handler)
         
-
-
-
     try:
+        server = make_server(host=host, port=port, app=app, request_handler=NoRequestLoggingWSGIRequestHandler, threaded=True)
+        process.set_server(server)
+        server.serve_forever() 
         # Run Flask app
-        app.run(
-            request_handler=NoRequestLoggingWSGIRequestHandler, port=port, host=host
-        )
+        # app.run(
+        #     request_handler=NoRequestLoggingWSGIRequestHandler, port=port, host=host
+        # )
     finally:
         # Clean up tunnel if it was started
         if tunnel:

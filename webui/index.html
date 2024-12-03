@@ -20,10 +20,10 @@
     </script>
 
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.3/dist/cdn.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>    
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/ace-builds@1.36.5/src-noconflict/ace.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/ace-builds@1.36.5/css/ace.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.36.5/src-noconflict/ace.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/ace-builds@1.36.5/css/ace.min.css" rel="stylesheet">
     <!-- KaTeX CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
 
@@ -73,6 +73,7 @@
                     <button class="config-button" id="newChat" @click="newChat()">New Chat</button>
                     <button class="config-button" id="loadChats" @click="loadChats()">Load Chat</button>
                     <button class="config-button" id="loadChat" @click="saveChat()">Save Chat</button>
+                    <button class="config-button" id="restart" @click="restart()">Restart</button>
                     <button class="config-button" id="settings" @click="settingsModalProxy.openModal()"><svg
                             xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-5.0 -17.0 110.0 135.0"
                             fill="currentColor" width="24" height="24">
@@ -83,6 +84,7 @@
                                 d="m50.301 66.5c-9 0-16.398-7.3008-16.398-16.398 0-9.1016 7.3008-16.398 16.398-16.398 9.1016 0 16.398 7.3008 16.398 16.398 0 9.0977-7.3984 16.398-16.398 16.398zm0-25.5c-5 0-9.1016 4.1016-9.1016 9.1016s4.1016 9.1016 9.1016 9.1016 9.1016-4.1016 9.1016-9.1016c-0.003906-5-4.1016-9.1016-9.1016-9.1016z">
                             </path>
                         </svg>Settings</button>
+
                 </div>
                 <!-- Chats List -->
                 <div class="config-section" id="chats-section" x-data="{ contexts: [], selected: '' }"
@@ -389,9 +391,14 @@
                     </button>
 
                     <button class="text-button" id="nudges_window" @click="nudge()">
-                        <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 49 58" fill="currentColor">
-                            <path d="m11.97,16.32c-.46,0-.91-.25-1.15-.68-.9-1.63-1.36-3.34-1.36-5.1C9.45,4.73,14.18,0,20,0s10.55,4.73,10.55,10.55c0,.87-.13,1.75-.41,2.76-.19.7-.9,1.13-1.62.93-.7-.19-1.12-.92-.93-1.62.21-.79.31-1.44.31-2.07,0-4.36-3.55-7.91-7.91-7.91s-7.91,3.55-7.91,7.91c0,1.3.35,2.59,1.03,3.82.36.64.13,1.44-.51,1.79-.21.11-.42.17-.64.17Z" stroke-width="0.5" stroke="currentColor"/>
-                            <path d="m34.5,58h-6.18c-3.17,0-6.15-1.23-8.39-3.47L1.16,35.75c-1.54-1.54-1.54-4.05,0-5.59,2.4-2.4,6.27-2.68,8.99-.64l4.58,3.44V10.55c0-2.91,2.36-5.27,5.27-5.27s5.27,2.36,5.27,5.27v8.62c.78-.45,1.68-.71,2.64-.71,2.3,0,4.26,1.48,4.98,3.53.84-.56,1.85-.89,2.93-.89,2.3,0,4.26,1.48,4.98,3.53.84-.56,1.85-.89,2.93-.89,2.91,0,5.27,2.36,5.27,5.27v14.5c0,8-6.51,14.5-14.5,14.5ZM6.03,30.79c-1.1,0-2.19.42-3.01,1.23-.51.51-.51,1.35,0,1.86l18.77,18.78c1.74,1.74,4.06,2.7,6.53,2.7h6.18c6.54,0,11.86-5.32,11.86-11.86v-14.5c0-1.45-1.18-2.64-2.64-2.64s-2.64,1.18-2.64,2.64v1.32c0,.73-.59,1.32-1.32,1.32s-1.32-.59-1.32-1.32v-3.95c0-1.45-1.18-2.64-2.64-2.64s-2.64,1.18-2.64,2.64v3.95c0,.73-.59,1.32-1.32,1.32s-1.32-.59-1.32-1.32v-6.59c0-1.45-1.18-2.64-2.64-2.64s-2.64,1.18-2.64,2.64v6.59c0,.73-.59,1.32-1.32,1.32s-1.32-.59-1.32-1.32V10.55c0-1.45-1.18-2.64-2.64-2.64s-2.64,1.18-2.64,2.64v25.05c0,.5-.28.95-.73,1.18s-.98.18-1.38-.12l-6.69-5.02c-.75-.56-1.65-.84-2.54-.84Z" stroke-width="0.5" stroke="currentColor"/>
+                        <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 49 58"
+                            fill="currentColor">
+                            <path
+                                d="m11.97,16.32c-.46,0-.91-.25-1.15-.68-.9-1.63-1.36-3.34-1.36-5.1C9.45,4.73,14.18,0,20,0s10.55,4.73,10.55,10.55c0,.87-.13,1.75-.41,2.76-.19.7-.9,1.13-1.62.93-.7-.19-1.12-.92-.93-1.62.21-.79.31-1.44.31-2.07,0-4.36-3.55-7.91-7.91-7.91s-7.91,3.55-7.91,7.91c0,1.3.35,2.59,1.03,3.82.36.64.13,1.44-.51,1.79-.21.11-.42.17-.64.17Z"
+                                stroke-width="0.5" stroke="currentColor" />
+                            <path
+                                d="m34.5,58h-6.18c-3.17,0-6.15-1.23-8.39-3.47L1.16,35.75c-1.54-1.54-1.54-4.05,0-5.59,2.4-2.4,6.27-2.68,8.99-.64l4.58,3.44V10.55c0-2.91,2.36-5.27,5.27-5.27s5.27,2.36,5.27,5.27v8.62c.78-.45,1.68-.71,2.64-.71,2.3,0,4.26,1.48,4.98,3.53.84-.56,1.85-.89,2.93-.89,2.3,0,4.26,1.48,4.98,3.53.84-.56,1.85-.89,2.93-.89,2.91,0,5.27,2.36,5.27,5.27v14.5c0,8-6.51,14.5-14.5,14.5ZM6.03,30.79c-1.1,0-2.19.42-3.01,1.23-.51.51-.51,1.35,0,1.86l18.77,18.78c1.74,1.74,4.06,2.7,6.53,2.7h6.18c6.54,0,11.86-5.32,11.86-11.86v-14.5c0-1.45-1.18-2.64-2.64-2.64s-2.64,1.18-2.64,2.64v1.32c0,.73-.59,1.32-1.32,1.32s-1.32-.59-1.32-1.32v-3.95c0-1.45-1.18-2.64-2.64-2.64s-2.64,1.18-2.64,2.64v3.95c0,.73-.59,1.32-1.32,1.32s-1.32-.59-1.32-1.32v-6.59c0-1.45-1.18-2.64-2.64-2.64s-2.64,1.18-2.64,2.64v6.59c0,.73-.59,1.32-1.32,1.32s-1.32-.59-1.32-1.32V10.55c0-1.45-1.18-2.64-2.64-2.64s-2.64,1.18-2.64,2.64v25.05c0,.5-.28.95-.73,1.18s-.98.18-1.38-.12l-6.69-5.02c-.75-.56-1.65-.84-2.54-.84Z"
+                                stroke-width="0.5" stroke="currentColor" />
                         </svg>
                         <p>Nudge</p>
                     </button>
