@@ -338,8 +338,8 @@ async function poll() {
         // Update status icon state
         const timeDate = document.getElementById('time-date-container');
         if (timeDate) {
-        const statusIcon = Alpine.$data(timeDate.querySelector('.status-icon'));
-        statusIcon.connected = true;
+            const statusIcon = Alpine.$data(timeDate.querySelector('.status-icon'));
+            statusIcon.connected = true;
         }
 
         const chatsAD = Alpine.$data(chatsSection);
@@ -488,6 +488,14 @@ window.toggleSpeech = function (isOn) {
     localStorage.setItem('speech', isOn);
     if (!isOn) speech.stop()
 };
+
+window.nudge = async function () {
+    try {
+        const resp = await sendJsonData("/nudge", { ctxid: getContext() });
+    } catch (e) {
+        toast(e.message, "error")
+    }
+}
 
 // Modify this part
 document.addEventListener('DOMContentLoaded', () => {
@@ -652,30 +660,30 @@ function removeClassFromElement(element, className) {
 
 function toast(text, type = 'info') {
     const toast = document.getElementById('toast');
-  
+
     // Update the toast content and type
     toast.querySelector('.toast__message').textContent = text;
     toast.className = `toast toast--${type}`;
-  
+
     // Remove any existing animation classes
     toast.classList.remove('show', 'hide');
-  
+
     // Show the toast and trigger animation
     toast.style.display = 'flex';
     // Force a reflow to ensure the animation triggers
     void toast.offsetWidth;
     toast.classList.add('show');
-  
+
     // Show/hide copy button based on toast type
     const copyButton = toast.querySelector('.toast__copy');
     copyButton.style.display = type === 'error' ? 'inline-block' : 'none';
-  
+
     // Add the close button event listener
     const closeButton = toast.querySelector('.toast__close');
     closeButton.onclick = () => {
         hideToast();
     };
-  
+
     // Add the copy button event listener
     copyButton.onclick = () => {
         navigator.clipboard.writeText(text);
@@ -684,21 +692,21 @@ function toast(text, type = 'info') {
             copyButton.textContent = 'Copy';
         }, 2000);
     };
-  
+
     // Clear any existing timeout
     clearTimeout(toast.timeoutId);
-  
+
     // Automatically close the toast after 10 seconds
     toast.timeoutId = setTimeout(() => {
         hideToast();
     }, 10000);
 }
-  
-  function hideToast() {
+
+function hideToast() {
     const toast = document.getElementById('toast');
     toast.classList.remove('show');
     toast.classList.add('hide');
-  
+
     // Remove the element from display after animation completes
     setTimeout(() => {
         toast.style.display = 'none';

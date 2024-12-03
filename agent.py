@@ -66,14 +66,28 @@ class AgentContext:
             context.process.kill()
         return context
 
-    def reset(self):
+    def kill_process(self):
         if self.process:
             self.process.kill()
+
+    def reset(self):
+        self.kill_process()
         self.log.reset()
         self.agent0 = Agent(0, self.config, self)
         self.streaming_agent = None
         self.paused = False
 
+    def nudge(self):
+        self.kill_process()
+        self.paused = False
+        if self.streaming_agent:
+            current_agent = self.streaming_agent
+        else:
+            current_agent = self.agent0
+
+        self.process = DeferredTask(current_agent.monologue)
+        return self.process
+    
     def communicate(self, msg: "UserMessage", broadcast_level: int = 1):
         self.paused = False  # unpause if paused
 
