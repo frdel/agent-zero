@@ -75,7 +75,7 @@ class CodeExecution(Tool):
         await self.agent.hist_add_tool_result(self.name, response.message)
 
     async def prepare_state(self, reset=False):
-        self.state = self.agent.get_data("cot_state")
+        self.state = self.agent.get_data("_cot_state")
         if not self.state or reset:
 
             # initialize docker container if execution in docker is configured
@@ -106,7 +106,7 @@ class CodeExecution(Tool):
 
             self.state = State(shell=shell, docker=docker)
             await shell.connect()
-        self.agent.set_data("cot_state", self.state)
+        self.agent.set_data("_cot_state", self.state)
 
     async def execute_python_code(self, code: str, reset: bool = False):
         escaped_code = shlex.quote(code)
@@ -124,15 +124,28 @@ class CodeExecution(Tool):
     async def terminal_session(self, command: str, reset: bool = False):
 
         await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
-        if reset:
-            await self.reset_terminal()
+        # try again on lost connection
+        for i in range(2):
+            try:
+            
+                if reset:
+                    await self.reset_terminal()
 
-        self.state.shell.send_command(command)
+                self.state.shell.send_command(command)
 
-        PrintStyle(background_color="white", font_color="#1B4F72", bold=True).print(
-            f"{self.agent.agent_name} code execution output"
-        )
-        return await self.get_terminal_output()
+                PrintStyle(background_color="white", font_color="#1B4F72", bold=True).print(
+                    f"{self.agent.agent_name} code execution output"
+                )
+                return await self.get_terminal_output()
+
+            except Exception as e:
+                if i==1:
+                    # try again on lost connection
+                    PrintStyle.error(str(e))
+                    await self.prepare_state(reset=True)
+                    continue
+                else:
+                    raise e
 
     async def get_terminal_output(
         self,
