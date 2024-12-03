@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import re
@@ -5,11 +6,12 @@ import subprocess
 from typing import Any, Literal, TypedDict
 
 import models
-from python.helpers import runtime, whisper
+from python.helpers import runtime, whisper, defer
 from . import files, dotenv
 from models import get_model, ModelProvider, ModelType
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.embeddings import Embeddings
+
 
 class Settings(TypedDict):
     chat_model_provider: str
@@ -743,8 +745,8 @@ def _apply_settings():
                 agent.config = ctx.config
                 agent = agent.get_data(agent.DATA_NAME_SUBORDINATE)
 
-    # reload whisper model if necessary
-    whisper.preload()
+        # reload whisper model if necessary
+        task = defer.DeferredTask(whisper.preload, _settings["stt_model_size"])
 
 
 def _env_to_dict(data: str):
@@ -776,7 +778,6 @@ def set_root_password(password: str):
         raise Exception("root password can only be set in dockerized environments")
     subprocess.run(f"echo 'root:{password}' | chpasswd", shell=True, check=True)
     dotenv.save_dotenv_value(dotenv.KEY_ROOT_PASSWORD, password)
-    
 
 
 def get_runtime_config(set: Settings):
