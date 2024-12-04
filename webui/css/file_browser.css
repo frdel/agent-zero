@@ -1,36 +1,36 @@
 /* File Browser Styles */
-.files-list {
+
+.files-list,
+.file-header,
+.file-item {
   width: 100%;
   border-radius: 4px;
   overflow: hidden;
 }
 
+/* Header Styles */
 .file-header {
   display: grid;
-  grid-template-columns: 2fr 0.6fr 1.0fr 80px;
+  grid-template-columns: 2fr 0.6fr 1fr 80px;
   background: var(--secondary-bg);
   padding: 8px 0;
   font-weight: bold;
   border-bottom: 1px solid var(--border-color);
+  color: var(--color-primary);
 }
 
-.file-cell {
+.file-cell,
+.file-cell-size,
+.file-cell-date {
   color: var(--color-primary);
   padding: 4px;
   cursor: pointer;
 }
 
-.file-cell-size {
-  color: var(--color-primary);
-}
-
-.file-cell-date {
-  color: var(--color-primary);
-}
-
+/* File Item Styles */
 .file-item {
   display: grid;
-  grid-template-columns: 2fr 0.6fr 1.0fr 80px;
+  grid-template-columns: 2fr 0.6fr 1fr 80px;
   align-items: center;
   padding: 8px 0;
   font-size: 0.875rem;
@@ -38,64 +38,60 @@
   transition: background-color 0.2s;
   white-space: nowrap;
   overflow: hidden;
+  color: var(--color-text);
 }
 
 .file-item:hover {
   background-color: var(--color-secondary);
-  cursor: pointer;
 }
 
+/* File Icon and Name */
 .file-icon {
-  font-size: var(--font-size-sm);
   width: 1.8rem;
   height: 1.8rem;
+  margin: 0 1rem 0 0.7rem;
   vertical-align: middle;
-  margin-left: 0.7rem;
-  margin-right: 1rem;
+  font-size: var(--font-size-sm);
 }
 
 .file-name {
-    display: flex;
-    align-items: center;
-    font-weight: 500;
-    overflow: hidden;
-    margin-right: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  margin-right: var(--spacing-sm);
+  overflow: hidden;
 }
 
 .file-name > span {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.file-size {
-  color: var(--text-secondary);
-}
-
+.file-size,
 .file-date {
   color: var(--text-secondary);
 }
 
+/* No Files Message */
 .no-files {
   padding: 32px;
   text-align: center;
   color: var(--text-secondary);
 }
 
-/* Light mode adjustments */
-
+/* Light Mode Adjustments */
 .light-mode .file-item:hover {
   background-color: var(--color-secondary-light);
 }
 
-/* Path Navigator */
-
+/* Path Navigator Styles */
 .path-navigator {
   display: flex;
   align-items: center;
   gap: 24px;
   background-color: var(--color-message-bg);
-  padding: 0.50rem var(--spacing-sm) 0.5rem var(--spacing-sm);
+  padding: 0.5rem var(--spacing-sm);
   margin-bottom: 0.3rem;
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -108,6 +104,7 @@
   background: var(--color-background);
   color: var(--color-text);
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .nav-button:hover {
@@ -134,7 +131,7 @@
   opacity: 0.9;
 }
 
-/* Update file-item for folders */
+/* Folder Specific Styles */
 .file-item[data-is-dir="true"] {
   cursor: pointer;
 }
@@ -143,43 +140,40 @@
   background-color: var(--color-secondary);
 }
 
-/* Button Section */
-
-.upload-button {
-display: inline-block;
-padding: 8px 16px;
-background-color: var(--color-primary);
-color: white;
-border-radius: 4px;
-cursor: pointer;
-transition: background-color 0.2s;
+/* Upload Button Styles */
+.upload-button,
+.btn-upload {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease-in-out;
 }
 
 .btn-upload {
   background: #4248f1;
-  color: white;
-  display: flex;
-  transition: background 0.3s ease-in-out;
-  margin: 0 auto;
-  text-wrap: wrap;
   gap: 0.5rem;
-  align-items:center;    
-}
-  
-  .btn-upload > svg {
-    width: 20px;
-  }
-
-.upload-button:hover {
-background-color: #353bc5;
+  margin: 0 auto;
 }
 
-.upload-button:active {
-background-color: #2b309c;
+.btn-upload > svg {
+  width: 20px;
 }
 
-/* Delete Button */
+.upload-button:hover,
+.btn-upload:hover {
+  background-color: #353bc5;
+}
 
+.upload-button:active,
+.btn-upload:active {
+  background-color: #2b309c;
+}
+
+/* Delete Button Styles */
 .delete-button {
   background: none;
   border: none;
@@ -188,21 +182,22 @@ background-color: #2b309c;
   width: 32px;
   padding: 4px 8px;
   border-radius: 4px;
-  transition: opacity 0.2s, background-color 0.2s;}
+  transition: opacity 0.2s, background-color 0.2s;
+}
 
 .delete-button:hover {
-  color: #ff7878
+  color: #ff7878;
 }
 
 .delete-button:active {
   opacity: 0.6;
 }
 
+/* File Actions */
 .file-actions {
   display: flex;
   gap: var(--spacing-xs);
-  transition: opacity 0.2s;
-  }
+}
 
 .action-button {
   background: none;
@@ -226,58 +221,28 @@ background-color: #2b309c;
   background-color: #c6d4de;
 }
 
+/* Responsive Design */
 @media (max-width: 768px) {
-  .file-header {
-    display: grid;
-    grid-template-columns: 1fr 0.5fr 80px;
-    background: var(--secondary-bg);
-    padding: 8px 0;
-    align-items:center;
-    font-weight: bold;
-    border-bottom: 1px solid var(--border-color);
-  }
+  .file-header,
   .file-item {
-    display: grid;
     grid-template-columns: 1fr 0.5fr 80px;
-    align-items: center;
-    padding: 8px 0;
-    border-top: 1px solid var(--color-border);
-    transition: background-color 0.2s;
   }
-  .file-cell-date {
-    display: none;
-  }
+
+  .file-cell-date,
   .file-date {
     display: none;
   }
 }
 
 @media (max-width: 540px) {
-  .file-header {
-    display: grid;
-    grid-template-columns: 1fr 80px;
-    background: var(--secondary-bg);
-    padding: 8px 0;
-    font-weight: bold;
-    border-bottom: 1px solid var(--border-color);
-  }
+  .file-header,
   .file-item {
-    display: grid;
     grid-template-columns: 1fr 80px;
-    align-items: center;
-    padding: 8px 0;
-    border-top: 1px solid var(--color-border);
-    transition: background-color 0.2s;
   }
-  .file-cell-size {
-    display: none;
-  }
-  .file-size {
-    display: none;
-  }
-  .file-cell-date {
-    display: none;
-  }
+
+  .file-cell-size,
+  .file-size,
+  .file-cell-date,
   .file-date {
     display: none;
   }

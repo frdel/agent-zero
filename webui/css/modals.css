@@ -1,4 +1,6 @@
-/* Standard Modal Styles */
+/* Modal Styles */
+
+/* Overlay */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -12,6 +14,7 @@
   z-index: 2001;
 }
 
+/* Modal Container */
 .modal-container {
   background-color: var(--color-panel);
   border-radius: 12px;
@@ -21,22 +24,24 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 4px 23px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 23px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
 }
 
 .light-mode .modal-container {
   background-color: var(--color-panel-light);
 }
 
+/* Modal Header */
 .modal-header {
-  border-bottom: 1px solid var(--color-border);
-  background-color: var(--color-background);
-  color: var(--color-primary);
   display: grid;
   grid-template-columns: 40fr 0.5fr;
-  padding: 0.5rem 1.5rem 0.5rem 2rem;
   align-items: center;
-  justify-content:space-between;
+  justify-content: space-between;
+  padding: 0.5rem 1.5rem 0.5rem 2rem;
+  background-color: var(--color-background);
+  color: var(--color-primary);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .modal-header h2 {
@@ -44,17 +49,19 @@
   margin: 0;
 }
 
+/* Modal Subheader */
 .modal-subheader {
-  padding: 0.7rem 1.5rem;
   display: inline;
   justify-content: space-between;
   align-items: center;
+  padding: 0.7rem 1.5rem;
 }
 
+/* Modal Close Button */
 .modal-close {
   background: none;
-  font-size: xx-large;
   border: none;
+  font-size: xx-large;
   color: var(--color-text);
   opacity: 0.7;
   cursor: pointer;
@@ -66,14 +73,16 @@
   opacity: 1;
 }
 
+/* Modal Description */
 .modal-description {
-  padding: 0.8rem 2rem 0rem 2rem;
+  padding: 0.8rem 2rem 0 2rem;
   flex-grow: 1;
   transition: all 0.3s ease;
 }
 
+/* Modal Content */
 .modal-content {
-  padding: 0.5rem 1.5rem 0rem 1.5rem;
+  padding: 0.5rem 1.5rem 0 1.5rem;
   overflow-y: auto;
   height: calc(90vh);
   flex-grow: 1;
@@ -105,23 +114,27 @@
   background-color: rgba(155, 155, 155, 0.7);
 }
 
+/* Buttons Container */
 #buttons-container {
-    display: flex;
-    gap: 0.5rem !important;
+  display: flex;
+  gap: 0.875rem !important;
 }
 
 .modal-footer {
-  padding: 0.6rem 2rem 0.6rem 0;
-  border-top: 1px solid var(--color-border);
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  padding: 0.6rem 2rem 0.6rem 0;
+  border-top: 1px solid var(--color-border);
   background: var(--color-background);
   gap: 1rem;
 }
 
+/* Section Styles */
 .section {
   margin-bottom: 2rem;
   padding: 1rem;
+  padding-bottom: 0;
   border: 1px solid var(--color-border);
   border-radius: 0.5rem;
 }
@@ -138,11 +151,7 @@
   margin-bottom: 1rem;
 }
 
-#buttons-container {
-  display: flex;
-  gap: 0.875rem;
-}
-
+/* Button Styles */
 .btn {
   font-weight: 500;
   padding: 0.5rem 1.5rem;
@@ -156,6 +165,9 @@
 .btn-ok {
   background: #4248f1;
   color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   transition: background 0.3s ease-in-out;
 }
 
@@ -175,7 +187,7 @@
   background: transparent;
   color: var(--color-accent);
   border: 0.15rem solid var(--color-accent);
-  transition: background 0.3s ease-in-out;
+  transition: background 0.3s ease-in-out, color 0.3s ease-in-out;
 }
 
 .btn-cancel:hover {
@@ -209,32 +221,40 @@
   cursor: not-allowed;
 }
 
+/* Typography */
 h2 {
   color: var(--color-primary);
 }
 
+/* Responsive Design */
 @media (max-width: 768px) {
   .modal-header {
     padding-left: 1.1rem;
     text-wrap: nowrap;
   }
+
   .modal-content {
-    padding: 0.5rem 0.5rem 0rem 0.5rem;
+    padding: 0.5rem;
     overflow-y: auto;
     flex-grow: 1;
   }
+
   .modal-footer {
-    padding: var(--spacing-sm) 0rem var(--spacing-sm) 0 !important;
+    padding: var(--spacing-sm) 0 var(--spacing-sm) 0 !important;
   }
+
   .section {
     margin-bottom: 1.5rem;
     padding: 1rem;
+    padding-bottom: 0;
     border: 1px solid var(--color-border);
     border-radius: 0.5rem;
   }
+
   #buttons-container {
     margin: 0 auto;
   }
+
   .btn {
     padding: 0.5rem 1.7rem;
   }
@@ -245,19 +265,23 @@ h2 {
     font-size: var(--font-size-normal);
     margin: 0;
   }
+
   #buttons-container {
-    max-height: 50px;  
+    max-height: 50px;
   }
+
   .btn {
     text-wrap: wrap;
     font-size: var(--font-size-small);
     padding: 0.5rem 0.85rem;
   }
+
   .btn-upload {
     margin: 0 auto;
     gap: 0.5rem;
-    align-items:center;    
-  }  
+    align-items: center;
+  }
+
   .btn-upload > svg {
     width: 20px;
   }
