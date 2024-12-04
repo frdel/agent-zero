@@ -1,14 +1,19 @@
+/* Settings Modal Styles */
+
+/* Field Styles */
 .field {
   display: grid;
-  margin-block-start: 1rem;
   grid-template-columns: 60% 1fr;
   align-items: center;
+  margin-block: 1rem;
+  padding: var(--spacing-xs) 0;
 }
 
 .field.field-full {
   grid-template-columns: 1fr;
 }
 
+/* Field Labels */
 .field-label {
   display: flex;
   flex-direction: column;
@@ -24,78 +29,56 @@
   color: var(--color-text);
   font-size: 0.875rem;
   opacity: 0.8;
-  margin-top: 0.25rem;
-  margin-bottom: 0.5rem;
+  margin: 0.25rem 0 0.5rem 0;
 }
 
+/* Field Controls */
 .field-control {
   width: 100%;
   display: flex;
   align-items: center;
 }
 
-input[type="text"] {
+/* Input Styles */
+input[type="text"],
+input[type="password"],
+textarea,
+select {
   width: 100%;
   padding: 0.5rem;
   border: 1px solid var(--color-secondary);
   border-radius: 0.25rem;
   background-color: var(--color-background);
-  outline: none;
-  opacity: 0.7;
   color: var(--color-text);
   font-family: "Rubik", Arial, Helvetica, sans-serif;
+  outline: none;
   transition: all 0.3s ease;
 }
 
-input[type="text"]:focus {
-  opacity: 1;
-}
-
-input[type="password"] {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid var(--color-secondary);
-  border-radius: 0.25rem;
-  background-color: var(--color-background);
-  outline: none;
-  opacity: 0.7;
-  color: var(--color-text);
-  font-family: "Rubik", Arial, Helvetica, sans-serif;
-  transition: all 0.3s ease;
-}
-
+input[type="text"]:focus,
 input[type="password"]:focus {
   opacity: 1;
 }
 
 textarea {
-  width: 100%;
   min-height: 100px;
-  padding: 0.5rem;
-  border: 1px solid var(--color-secondary);
-  border-radius: 0.25rem;
-  font-family: Roboto Mono;
-  background-color: var(--color-background);
-  color: var(--color-text);
+  font-family: 'Roboto Mono', monospace;
   scroll-behavior: smooth;
   resize: none;
-  outline: none;
-  /* scrollbar padding */
   background-clip: border-box;
   border: 6px solid transparent;
-  transition: all 0.3s ease;
 }
 
 textarea:focus {
   background-color: #151515;
 }
 
+/* Toggle Switch Styles */
 .toggle {
   position: relative;
   display: inline-block;
   width: 60px;
   height: 34px;
-  margin: 0;
 }
 
 .toggle input {
@@ -106,26 +89,26 @@ textarea:focus {
 
 .toggler {
   position: absolute;
-  cursor: pointer;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background-color: #ccc;
-  transition: 0.4s;
   border-radius: 34px;
+  cursor: pointer;
+  transition: 0.4s;
 }
 
 .toggler:before {
-  position: absolute;
   content: "";
+  position: absolute;
   height: 26px;
   width: 26px;
   left: 4px;
   bottom: 4px;
   background-color: white;
-  transition: 0.4s;
   border-radius: 50%;
+  transition: 0.4s;
 }
 
 input:checked + .toggler {
@@ -136,8 +119,10 @@ input:checked + .toggler:before {
   transform: translateX(26px);
 }
 
+/* Range Input Styles */
 input[type="range"] {
   width: 100%;
+  cursor: grab;
 }
 
 .range-value {
@@ -145,18 +130,9 @@ input[type="range"] {
   text-align: right;
 }
 
+/* Select Styles */
 select {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid var(--color-secondary);
-  border-radius: 0.25rem;
-  background-color: var(--color-background);
-  color: var(--color-primary);
-  font-size: inherit;
   cursor: pointer;
-  font-family: "Rubik", Arial, Helvetica, sans-serif;
-  outline: none;
-  transition: none;
 }
 
 select:disabled {
@@ -164,8 +140,7 @@ select:disabled {
   cursor: not-allowed;
 }
 
-/* Styles for navigation links */
-
+/* Navigation Links */
 #settings-sections {
   padding-bottom: 1rem;
 }
@@ -203,7 +178,6 @@ nav ul li a {
 nav ul li a:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  text-decoration: none;
   background-color: var(--color-secondary);
 }
 
@@ -214,7 +188,6 @@ nav ul li a img {
   filter: var(--svg-filter);
 }
 
-/* Light mode adjustments */
 .light-mode nav ul li a {
   background-color: var(--color-panel-light);
 }
@@ -223,22 +196,20 @@ nav ul li a img {
   background-color: var(--color-secondary-light);
 }
 
-.light-mode textarea:focus {
-  background-color: #dddddd;
-}
-
+/* Responsive Design */
 @media (max-width: 768px) {
   .field-control {
     width: 100%;
   }
+
   .field-description {
     padding-bottom: var(--spacing-sm);
   }
+
   .field {
-    padding-top: var(--spacing-xs);
-    padding-bottom: var(--spacing-xs);
     display: block;
     align-items: center;
+    padding: var(--spacing-xs) 0;
   }
 }
 

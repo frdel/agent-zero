@@ -681,19 +681,13 @@ function removeClassFromElement(element, className) {
 
 function toast(text, type = 'info', timeout = 5000) {
     const toast = document.getElementById('toast');
+    const isVisible = toast.style.display === 'flex';
 
     // Update the toast content and type
+    const title = type.charAt(0).toUpperCase() + type.slice(1);
+    toast.querySelector('.toast__title').textContent = title;
     toast.querySelector('.toast__message').textContent = text;
     toast.className = `toast toast--${type}`;
-
-    // Remove any existing animation classes
-    toast.classList.remove('show', 'hide');
-
-    // Show the toast and trigger animation
-    toast.style.display = 'flex';
-    // Force a reflow to ensure the animation triggers
-    void toast.offsetWidth;
-    toast.classList.add('show');
 
     // Show/hide copy button based on toast type
     const copyButton = toast.querySelector('.toast__copy');
@@ -714,11 +708,23 @@ function toast(text, type = 'info', timeout = 5000) {
         }, 2000);
     };
 
+    // Only trigger animation if toast is not already visible
+    if (!isVisible) {
+        // Remove any existing animation classes
+        toast.classList.remove('show', 'hide');
+
+        // Show the toast and trigger animation
+        toast.style.display = 'flex';
+        // Force a reflow to ensure the animation triggers
+        void toast.offsetWidth;
+        toast.classList.add('show');
+    }
+
     // Clear any existing timeout
     if (toast.timeoutId)
         clearTimeout(toast.timeoutId);
 
-    // Automatically close the toast after 10 seconds
+    // Automatically close the toast after specified timeout
     if (timeout)
         toast.timeoutId = setTimeout(() => {
             hideToast();
