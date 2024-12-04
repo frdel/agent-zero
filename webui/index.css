@@ -1535,7 +1535,7 @@ input:checked + .slider:before {
 }
 
 /* Media Queries */
-@media (max-width: 510px) {
+@media (max-width: 640px) {
   .text-buttons-row {
     display: table;
     gap: 0.1rem !important;
@@ -1590,7 +1590,7 @@ input:checked + .slider:before {
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   #chat-input {
     min-height: 5.3rem;
     align-content: start;
