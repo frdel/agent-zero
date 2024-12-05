@@ -9,7 +9,7 @@
         - When presented with a math problem, logic problem, or other problem benefiting from systematic thinking, think through it step by step before giving a final answer.
    2. reflection: An array of strings representing critical analysis of your "thoughts".
         - Generate multiple hypotheses and critically evaluate evidence.
-        - Use deductive, inductive and abductive reasoning to troubleshoot and refine your chain of thoughts.
+        - Use deductive, inductive, and abductive reasoning to troubleshoot and refine your chain of thoughts.
         - Actively challenge your assumptions by considering contradictory information, exploring alternative perspectives, and evaluating the full range of possibilities.
         - Consider all available evidence and infer the most likely explanation for the phenomenon.
         - If your "reflection" identifies significant issues with or biases in your "thoughts", you reiterate both sections with revised advanced reasoning and critical analysis.

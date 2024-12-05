@@ -29,7 +29,7 @@ Refer to the [Choosing your LLMs](installation.md#installing-and-using-ollama-lo
 > Some LLM providers offer free usage of their APIs, for example Groq, Mistral or SambaNova.
 
 **4. How can I make Agent Zero retain memory between sessions?**
-Auto memory automatically saves and loads solutions and informations from previous sessions.
+Auto memory automatically saves and loads solutions and information from previous sessions.
 
 **5. Where can I find more documentation or tutorials?**
 *   Join the Agent Zero [Skool](https://www.skool.com/agent-zero) or [Discord](https://discord.gg/Z2tun2N3) community for support and discussions.

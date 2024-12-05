@@ -110,7 +110,7 @@ The `prompts` directory contains various Markdown files that control agent behav
 > if they exist, otherwise, it will fall back to the files in `prompts/default`.
 
 ## Extensions
-- Extensions are a powerful feature of Agent Zero, designed to keep the main codebase clean and organized while allowing for greater flexibility and modularity. Here’s a detailed exploration of the extensions feature:
+- Extensions are a powerful feature of Agent Zero, designed to keep the main codebase clean and organized while allowing for greater flexibility and modularity. Here's a detailed exploration of the extensions feature:
 ### Structure of Extensions
 Extensions can be found in `python/extensions` directory.
 - **Folder Organization**: The extensions are stored in a designated subfolder within the Python directory. This includes various subfolders that correspond to different aspects of the agent's message loop.

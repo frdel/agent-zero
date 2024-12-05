@@ -15,13 +15,13 @@ class MemorizeSolutions(Extension):
 
         # show temp info message
         self.agent.context.log.log(
-            type="info", content="Memorizing succesful solutions...", temp=True
+            type="info", content="Memorizing successful solutions...", temp=True
         )
 
         # show full util message, this will hide temp message immediately if turned on
         log_item = self.agent.context.log.log(
             type="util",
-            heading="Memorizing succesful solutions...",
+            heading="Memorizing successful solutions...",
         )
 
         #memorize in background
