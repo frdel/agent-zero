@@ -47,6 +47,11 @@ def is_dockerized() -> bool:
 def is_development() -> bool:
     return not is_dockerized()
 
+def get_local_url():
+    if is_dockerized():
+        return "host.docker.internal"
+    return "127.0.0.1"
+
 async def call_development_function(func: Callable, *args, **kwargs):
     if is_development():
         url = _get_rfc_url()
