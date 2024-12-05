@@ -27,7 +27,7 @@ def get_ollama_chat(model_name:str, temperature=DEFAULT_TEMPERATURE, base_url=os
     return ChatOllama(model=model_name,temperature=temperature, base_url=base_url, num_ctx=num_ctx)
 
 def get_ollama_embedding(model_name:str, temperature=DEFAULT_TEMPERATURE, base_url=os.getenv("OLLAMA_BASE_URL") or "http://127.0.0.1:11434"):
-    
+
     return OllamaEmbeddings(model=model_name,temperature=temperature, base_url=base_url)
 
 # HuggingFace models
@@ -76,15 +76,15 @@ def get_mistral_chat(model_name:str, api_key=get_api_key("mistral"), temperature
 # Groq models
 def get_groq_chat(model_name:str, api_key=get_api_key("groq"), temperature=DEFAULT_TEMPERATURE):
     return ChatGroq(model_name=model_name, temperature=temperature, api_key=api_key) # type: ignore
-   
+
 # OpenRouter models
 def get_openrouter_chat(model_name: str, api_key=get_api_key("openrouter"), temperature=DEFAULT_TEMPERATURE, base_url=os.getenv("OPEN_ROUTER_BASE_URL") or "https://openrouter.ai/api/v1"):
     return ChatOpenAI(api_key=api_key, model=model_name, temperature=temperature, base_url=base_url) # type: ignore
-      
+
 def get_openrouter_embedding(model_name: str, api_key=get_api_key("openrouter"), base_url=os.getenv("OPEN_ROUTER_BASE_URL") or "https://openrouter.ai/api/v1"):
     return OpenAIEmbeddings(model=model_name, api_key=api_key, base_url=base_url) # type: ignore
 
 # Sambanova models
 def get_sambanova_chat(model_name: str, api_key=get_api_key("sambanova"), temperature=DEFAULT_TEMPERATURE, base_url=os.getenv("SAMBANOVA_BASE_URL") or "https://fast-api.snova.ai/v1", max_tokens=1024):
     return ChatOpenAI(api_key=api_key, model=model_name, temperature=temperature, base_url=base_url, max_tokens=max_tokens) # type: ignore
-   
+

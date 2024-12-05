@@ -34,7 +34,7 @@ class PrintStyle:
             else:
                 rgb_color = webcolors.name_to_rgb(color)
                 r, g, b = rgb_color.red, rgb_color.green, rgb_color.blue
-            
+
             if is_background:
                 return f"\033[48;2;{r};{g};{b}m", f"background-color: rgb({r}, {g}, {b});"
             else:
@@ -88,15 +88,15 @@ class PrintStyle:
     def _close_html_log():
         if PrintStyle.log_file_path:
             with open(PrintStyle.log_file_path, "a") as f:
-                f.write("</pre></body></html>")            
+                f.write("</pre></body></html>")
 
     def get(self, *args, sep=' ', **kwargs):
         text = sep.join(map(str, args))
         return text, self._get_styled_text(text), self._get_html_styled_text(text)
-        
+
     def print(self, *args, sep=' ', **kwargs):
         self._add_padding_if_needed()
-        if not PrintStyle.last_endline: 
+        if not PrintStyle.last_endline:
             print()
             self._log_html("<br>")
         plain_text, styled_text, html_text = self.get(*args, sep=sep, **kwargs)

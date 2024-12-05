@@ -22,4 +22,4 @@
    - Consolidate the results of all subtasks and summarize their status.
    - Verify the final outcome using available tools (e.g., check generated files).
    - If errors occur, troubleshoot diligently. Retry with modified inputs, explore alternative approaches, and consider out-of-the-box solutions. If necessary, seek human input or collaboration as a last resort.
-   - Report back to your user using response_tool, describe the result and provide all necessary information. Do not just output your response, you must use the tool to do that.
+   - Report back to your user using `response_tool`, describe the result and provide all necessary information. Do not just output your response, you must use the tool to do that.

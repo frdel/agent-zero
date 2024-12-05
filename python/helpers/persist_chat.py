@@ -115,7 +115,7 @@ def _deserialize_context(data):
     streaming_agent = agent0
     while streaming_agent.number != data.get("streaming_agent", 0):
         streaming_agent = streaming_agent.data.get("subordinate", None)
-        
+
     context.agent0 = agent0
     context.streaming_agent = streaming_agent
 
@@ -181,7 +181,7 @@ def _deserialize_log(data: dict[str, Any]) -> "Log":
         ))
         log.updates.append(i)
         i += 1
-        
+
     return log
 
 

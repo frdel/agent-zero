@@ -57,7 +57,7 @@
 <br><br>
 
 
-4. Once installed, you should see Docker Desktop application on your Windows/Mac machine. 
+4. Once installed, you should see Docker Desktop application on your Windows/Mac machine.
 
 <img src="image-11.png" alt="docker installed" height="100"/>
 <img src="image-13.png" alt="docker installed" height="100"/>

@@ -2,12 +2,12 @@ import re
 import sys
 import time
 
-def calculate_valid_match_lengths(first: bytes | str, second: bytes | str, 
-                                  deviation_threshold: int = 5, 
-                                  deviation_reset: int = 5, 
+def calculate_valid_match_lengths(first: bytes | str, second: bytes | str,
+                                  deviation_threshold: int = 5,
+                                  deviation_reset: int = 5,
                                   ignore_patterns: list[bytes|str] = [],
                                   debug: bool = False) -> tuple[int, int]:
-    
+
     first_length = len(first)
     second_length = len(second)
 

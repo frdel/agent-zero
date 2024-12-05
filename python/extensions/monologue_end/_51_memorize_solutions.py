@@ -15,17 +15,17 @@ class MemorizeSolutions(Extension):
 
         # show temp info message
         self.agent.context.log.log(
-            type="info", content="Memorizing succesful solutions...", temp=True
+            type="info", content="Memorizing successful solutions...", temp=True
         )
 
         # show full util message, this will hide temp message immediately if turned on
         log_item = self.agent.context.log.log(
             type="util",
-            heading="Memorizing succesful solutions...",
+            heading="Memorizing successful solutions...",
         )
 
         #memorize in background
-        asyncio.create_task(self.memorize(loop_data, log_item))        
+        asyncio.create_task(self.memorize(loop_data, log_item))
 
     async def memorize(self, loop_data: LoopData, log_item: LogItem, **kwargs):
         # get system message and chat history for util llm

@@ -43,7 +43,7 @@ class LocalInteractiveSession:
         self.full_output = ""
         self.process.stdin.write(command + '\n') # type: ignore
         self.process.stdin.flush() # type: ignore
- 
+
     async def read_output(self, timeout: float = 0, reset_full_output: bool = False) -> Tuple[str, Optional[str]]:
         if not self.process:
             raise Exception("Shell not connected")
@@ -52,7 +52,7 @@ class LocalInteractiveSession:
             self.full_output = ""
         partial_output = ''
         start_time = time.time()
-        
+
         while (timeout <= 0 or time.time() - start_time < timeout):
             rlist, _, _ = select.select([self.process.stdout], [], [], 0.1)
             if rlist:
@@ -68,5 +68,5 @@ class LocalInteractiveSession:
 
         if not partial_output:
             return self.full_output, None
-        
+
         return self.full_output, partial_output

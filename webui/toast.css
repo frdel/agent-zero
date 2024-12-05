@@ -13,24 +13,24 @@
     align-items: center;
     z-index: 9999;
   }
-  
+
   #toast.toast--success {
     background-color: #4CAF50;
   }
-  
+
   #toast.toast--error {
     background-color: #731811;
   }
-  
+
   #toast.toast--info {
     background-color: #2196F3;
   }
-  
+
   .toast__message {
     margin-right: 16px;
     flex-grow: 1;
   }
-  
+
   .toast__close,
   .toast__copy {
     background-color: transparent;

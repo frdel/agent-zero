@@ -7,10 +7,10 @@ def post_install():
         with zipfile.ZipFile("_internal.zip", 'r') as zip_ref:
             zip_ref.extractall("_internal")
         os.remove("_internal.zip")
-        
+
 def run_bundle():
     print("\nImporting dependencies, this may take a while...\n")
-    
+
     # dependencies to bundle
     import ansio
     import bs4

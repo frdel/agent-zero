@@ -145,7 +145,7 @@ class Log:
 
         self.updates += [item.no]
 
-    def output(self, start=None, end=None):        
+    def output(self, start=None, end=None):
         if start is None:
             start = 0
         if end is None:

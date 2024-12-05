@@ -23,7 +23,7 @@
 - The only default tools in its arsenal are online search, memory features, communication (with the user and other agents), and code/terminal execution. Everything else is created by the agent itself or can be extended by the user.
 - Tool usage functionality has been developed from scratch to be the most compatible and reliable, even with very small models.
 
-* **Default Tools:** Agent Zero includes tools like knowledge, webpage content, code execution, and communication. 
+* **Default Tools:** Agent Zero includes tools like knowledge, webpage content, code execution, and communication.
 * **Creating Custom Tools:**  Extend Agent Zero's functionality by creating your own custom tools.
 * **Instruments:**  Instruments are a new type of tool that allow you to create custom functions and procedures that can be called by Agent Zero.
 
@@ -111,7 +111,7 @@ The documentation dives deep into the framework and its features. It is a good p
 - **Reflection prompts**
 - **Bugfixes**
 
-> [!NOTE]  
-> **Changes to launch files since v0.6:**  
+> [!NOTE]
+> **Changes to launch files since v0.6:**
 > - main.py file has been replaced with run_ui.py (webui) and run_cli.py (terminal) launch files.
 > - configuration has been moved to initialize.py for both webui and terminal launch files.

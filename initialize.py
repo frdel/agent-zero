@@ -3,7 +3,7 @@ from agent import AgentConfig
 from python.helpers import files
 
 def initialize():
-    
+
     # main chat model used by agents (smarter, more accurate)
     chat_llm = models.get_openai_chat(model_name="gpt-4o-mini", temperature=0)
     # chat_llm = models.get_ollama_chat(model_name="llama3.2:3b-instruct-fp16", temperature=0)
@@ -48,7 +48,7 @@ def initialize():
         # code_exec_docker_name = "agent-zero-exe",
         # code_exec_docker_image = "frdel/agent-zero-exe:latest",
         # code_exec_docker_ports = { "22/tcp": 50022 }
-        # code_exec_docker_volumes = { 
+        # code_exec_docker_volumes = {
             # files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"},
             # files.get_abs_path("instruments"): {"bind": "/instruments", "mode": "rw"},
             #                         },
