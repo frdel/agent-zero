@@ -24,7 +24,7 @@ The following guide provides both quick start instructions for the full installa
 <summary><h2>macOS Quick Start</h2></summary>
 
 1. **Install Miniconda:** Download the pkg installer from [here](https://docs.anaconda.com/miniconda/#miniconda-latest-installer-links) and follow the instructions.
-2. **Install Docker Desktop:** Download the dmg image from [here](https://www.docker.com/products/docker-desktop/), drag the Docker application to your Applications folder, and create a Docker Hub account.
+2. **Install Docker Desktop:** Download the .DMG disk image from [here](https://www.docker.com/products/docker-desktop/), drag the Docker application to your Applications folder, and create a Docker Hub account.
 3. **Download Agent Zero:** Download the latest release zip from the [GitHub releases page](https://github.com/frdel/agent-zero/releases) and extract it.
 4. **Open Terminal:** Navigate to the Agent Zero directory.
 5. **Create Conda Environment:** Run: `conda create -n a0 python=3.12 -y`
@@ -303,7 +303,7 @@ Once you've downloaded some models, you might want to check which ones you have 
 # How to update Agent Zero
 To update Agent Zero to the latest version, follow these steps:
 - **Using Git/GitHub:** Pull the latest version of the Agent Zero repository with Git/GitHub. The custom knowledge, solutions, memory, and other data will get ignored by Git, so you don't need to worry about losing any of your custom data. The same goes for your .env file with all of your API keys.
-- **Backup LLM choices**: Before updating, make sure to save your customizations you've made to the first part of `def_initialize` function in the `initialize.py` file to choose your LLMs (highlighted section in below figure). This is important because the update process will overwrite these files with the default versions from the repository and can save you time rewriting all your LLMs choices.
+- **Backup LLM choices**: Before updating, make sure to save any customizations you've made to the first part of `def_initialize` function in the `initialize.py` file to choose your LLMs (highlighted section in below figure). This is important because the update process will overwrite these files with the default versions from the repository and can save you time rewriting all your LLMs choices.
 
 ![Update initialize.py](res/setup/update-initialize.png)
 

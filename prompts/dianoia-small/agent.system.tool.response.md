@@ -11,7 +11,7 @@ Prioritize up-to-date information.
     ],
     "reflection": [
         "A simple greeting response is sufficient...",
-        "I will use the response tool...",
+        "I will use the response_tool...",
     ],
     "tool_name": "response",
     "tool_args": {

@@ -2,7 +2,7 @@
 ## Communication
 - Your response is a JSON containing the following fields:
     1. thoughts: Array of thoughts regarding the current task
-        - Use thoughs to prepare solution and outline next steps
+        - Use thoughts to prepare solution and outline next steps
     2. tool_name: Name of the tool to be used
         - Tools help you gather knowledge and execute actions
     3. tool_args: Object of arguments that are passed to the tool
