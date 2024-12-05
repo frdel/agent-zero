@@ -33,7 +33,7 @@ def process_includes(content, base_path, backup_dirs, **kwargs):
         include_path = match.group(1)
         # First attempt to resolve the include relative to the base path
         full_include_path = find_file_in_dirs(os.path.join(base_path, include_path), backup_dirs)
-        
+
         # Recursively read the included file content, keeping the original base path
         included_content = read_file(full_include_path, backup_dirs, **kwargs)
         return included_content

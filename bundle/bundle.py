@@ -83,29 +83,29 @@ def compress_internal_folder(dist_dir, exe_name):
     try:
         internal_path = Path(dist_dir) / exe_name / "_internal"
         archive_path = internal_path.parent / "_internal.zip"
-        
+
         if not internal_path.exists():
             print("Warning: _internal folder not found")
             return False
-            
+
         # Remove existing archive if it exists
         if archive_path.exists():
             archive_path.unlink()
-        
+
         print(f"Compressing _internal folder to: {archive_path}")
-        
+
         # Create the zip archive
         with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_STORED) as archive:
             for root, dirs, files in os.walk(internal_path):
                 for file in files:
                     file_path = Path(root) / file
                     archive.write(file_path, arcname=file_path.relative_to(internal_path.parent))
-        
+
         # Remove the original _internal folder
         shutil.rmtree(internal_path)
         print("_internal folder compressed and removed successfully")
         return True
-            
+
     except Exception as e:
         print(f"Error during _internal compression: {e}")
         return False
@@ -116,20 +116,20 @@ def compress_dist_folder(dist_dir, exe_name):
         archive_path = Path(dist_dir) / f"{exe_name}.7z"
         files_path = Path(dist_dir) / exe_name
 
-        
+
         # Remove existing archive if it exists
         if archive_path.exists():
             archive_path.unlink()
-        
+
         print(f"Compressing dist folder to: {archive_path}")
-        
+
         # Create the 7z archive with maximum compression
         with py7zr.SevenZipFile(archive_path, 'w', filters=[{'id': py7zr.FILTER_LZMA2, 'preset': 2}]) as archive:
             archive.writeall(files_path, arcname=files_path.name)
-        
+
         print("Compression completed successfully")
         return str(archive_path)
-            
+
     except Exception as e:
         print(f"Error during compression: {e}")
         return None
@@ -142,7 +142,7 @@ def build_executable(script_path, exe_name=None, compress=False):
         script_path = (bundling_script_dir / script_path).resolve()
         script_name = script_path.name  # run_bundle.py
         project_dir = script_path.parent  # Folder containing run_bundle.py
-        
+
         # Define build and dist paths under the /bundle directory (bundling_script_dir)
         build_dir = bundling_script_dir / "build"
         dist_dir = bundling_script_dir / "dist"

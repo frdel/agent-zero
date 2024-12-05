@@ -52,15 +52,15 @@ class DeferredTask:
     async def result(self, timeout: Optional[float] = None) -> Any:
         if not self._future:
             raise RuntimeError("Task hasn't been started")
-        
+
         loop = asyncio.get_running_loop()
-        
+
         def _get_result():
             try:
                 return self._future.result(timeout) # type: ignore
             except TimeoutError:
                 raise TimeoutError("The task did not complete within the specified timeout.")
-        
+
         return await loop.run_in_executor(None, _get_result)
 
     def kill(self) -> None:

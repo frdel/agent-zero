@@ -1,6 +1,6 @@
 ### call_subordinate:
 Delegate subtasks to subordinate agents.
-Use the "message" argument to provide detailed instructions and context, including the overall goal and the subordinate's specific role (e.g., scientist, coder, writer).  
+Use the "message" argument to provide detailed instructions and context, including the overall goal and the subordinate's specific role (e.g., scientist, coder, writer).
 Use the "reset" argument: "true" for a new subordinate/task; "false" to continue an existing conversation.
 **Example usage**:
 ~~~json

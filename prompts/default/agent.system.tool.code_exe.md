@@ -6,7 +6,7 @@ Select the corresponding runtime with "runtime" argument. Possible values are "t
 Sometimes a dialogue can occur in output, questions like Y/N, in that case use the "terminal" runtime in the next step and send your answer.
 If the code is running long, you can use runtime "output" to wait for next output part or use runtime "reset" to kill the process.
 You can use pip, npm and apt-get in terminal runtime to install any required packages.
-IMPORTANT: Never use implicit print or implicit output, it does not work! If you need output of your code, you MUST use print() or console.log() to output selected variables. 
+IMPORTANT: Never use implicit print or implicit output, it does not work! If you need output of your code, you MUST use print() or console.log() to output selected variables.
 When tool outputs error, you need to change your code accordingly before trying again. `knowledge_tool` can help analyze errors.
 IMPORTANT!: Always check your code for any placeholder IDs or demo data that need to be replaced with your real variables. Do not simply reuse code snippets from tutorials.
 Do not use in combination with other tools except for thoughts. Wait for response before using other tools.

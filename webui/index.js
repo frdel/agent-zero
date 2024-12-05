@@ -18,7 +18,7 @@ const autoScrollSwitch = document.getElementById('auto-scroll-switch');
 let autoScroll = true;
 let context = "";
 
-// Initialize the toggle button 
+// Initialize the toggle button
 setupSidebarToggle();
 
 function isMobile() {
@@ -421,20 +421,20 @@ window.saveChat = async function () {
 function downloadFile(filename, content) {
     // Create a Blob with the content to save
     const blob = new Blob([content], { type: 'application/json' });
-    
+
     // Create a link element
     const link = document.createElement('a');
-    
+
     // Create a URL for the Blob
     const url = URL.createObjectURL(blob);
     link.href = url;
-    
+
     // Set the file name for download
     link.download = filename;
-    
+
     // Programmatically click the link to trigger the download
     link.click();
-    
+
     // Clean up by revoking the object URL
     setTimeout(() => {
         URL.revokeObjectURL(url);
