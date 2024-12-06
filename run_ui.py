@@ -108,7 +108,7 @@ def run():
     try:
         server = make_server(host=host, port=port, app=app, request_handler=NoRequestLoggingWSGIRequestHandler, threaded=True)
         process.set_server(server)
-        print(f"\nStarting server on http://{server.socket.getsockname()[0]}:{server.socket.getsockname()[1]}\n")
+        server.log_startup()
         server.serve_forever() 
         # Run Flask app
         # app.run(
