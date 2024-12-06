@@ -15,7 +15,7 @@ chmod 444 /root/.bashrc
 chmod 444 /root/.profile
 
 # update package list to save time later
-apt-get update &
+apt-get update > /dev/null 2>&1 &
 
 # Start SSH service in background
 /usr/sbin/sshd -D &
