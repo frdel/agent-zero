@@ -33,7 +33,7 @@ async function loadMicSettings() {
         const response = await fetch('/settings_get');
         const data = await response.json();
         const sttSettings = data.settings.sections.find(s => s.title === 'Speech to Text');
-        
+
         if (sttSettings) {
             // Update options from server settings
             sttSettings.fields.forEach(field => {
@@ -42,6 +42,7 @@ async function loadMicSettings() {
             });
         }
     } catch (error) {
+        window.toastFetchError("Failed to load speech settings", error)
         console.error('Failed to load speech settings:', error);
     }
 }
@@ -282,8 +283,8 @@ class MicrophoneInput {
                 await this.updateCallback(result.text, true);
             }
         } catch (error) {
+            window.toastFetchError("Transcription error", error)
             console.error('Transcription error:', error);
-            toast('Transcription failed.', 'error');
         } finally {
             this.audioChunks = [];
             this.status = Status.LISTENING;
@@ -407,7 +408,7 @@ class Speech {
     }
 
     replaceURLs(text) {
-        const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])|(\b(www\.)[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])|(\b[-A-Z0-9+&@#\/%?=~_|!:,.;]*\.(?:[A-Z]{2,})[-A-Z0-9+&@#\/%?=~_|])/ig;        return text.replace(urlRegex, (url) => {
+        const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])|(\b(www\.)[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])|(\b[-A-Z0-9+&@#\/%?=~_|!:,.;]*\.(?:[A-Z]{2,})[-A-Z0-9+&@#\/%?=~_|])/ig; return text.replace(urlRegex, (url) => {
             let text = url
             // if contains ://, split by it
             if (text.includes('://')) text = text.split('://')[1];

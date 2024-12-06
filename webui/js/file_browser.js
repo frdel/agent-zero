@@ -51,7 +51,7 @@ const fileBrowserModalProxy = {
                 this.browser.entries = [];
             }
         } catch (error) {
-            console.error('Error fetching files:', error);
+            window.toastFetchError("Error fetching files", error)
             this.browser.entries = [];
         } finally {
             this.isLoading = false;
@@ -129,7 +129,7 @@ const fileBrowserModalProxy = {
                 alert(`Error deleting file: ${await response.text()}`);
             }
         } catch (error) {
-            console.error('Error deleting file:', error);
+            window.toastFetchError("Error deleting file", error)
             alert('Error deleting file');
         }
     },
@@ -180,7 +180,7 @@ const fileBrowserModalProxy = {
             }
 
         } catch (error) {
-            console.error('Error uploading files:', error);
+            window.toastFetchError("Error uploading files", error)
             alert('Error uploading files');
         }
     },
@@ -209,8 +209,7 @@ const fileBrowserModalProxy = {
             window.URL.revokeObjectURL(link.href);
 
         } catch (error) {
-
-            console.error('Error downloading file:', error);
+            window.toastFetchError("Error downloading file", error)
             alert('Error downloading file');
         }
     },

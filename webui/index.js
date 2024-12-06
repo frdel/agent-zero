@@ -12,9 +12,13 @@ const statusSection = document.getElementById('status-section');
 const chatsSection = document.getElementById('chats-section');
 const progressBar = document.getElementById('progress-bar');
 const autoScrollSwitch = document.getElementById('auto-scroll-switch');
+const timeDate = document.getElementById('time-date-container');
+
 
 let autoScroll = true;
 let context = "";
+let connectionStatus = false
+
 
 // Initialize the toggle button 
 setupSidebarToggle();
@@ -157,9 +161,19 @@ export async function sendMessage() {
             adjustTextareaHeight();
         }
     } catch (e) {
-        toast(e.message, "error");
+        toastFetchError("Error sending message", e)
     }
 }
+
+function toastFetchError(text, error) {
+    if (getConnectionStatus()) {
+        toast(`${text}: ${error.message}`, "error");
+    } else {
+        toast(`${text} (it seems the backend is not running): ${error.message}`, "error");
+    }
+    console.error(text, error);
+}
+window.toastFetchError = toastFetchError
 
 chatInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -302,6 +316,16 @@ function generateGUID() {
     });
 }
 
+function getConnectionStatus() {
+    return connectionStatus
+}
+
+function setConnectionStatus(connected) {
+    connectionStatus = connected
+    const statusIcon = Alpine.$data(timeDate.querySelector('.status-icon'));
+    statusIcon.connected = connected
+}
+
 let lastLogVersion = 0;
 let lastLogGuid = ""
 let lastSpokenNo = 0
@@ -336,11 +360,7 @@ async function poll() {
         inputAD.paused = response.paused;
 
         // Update status icon state
-        const timeDate = document.getElementById('time-date-container');
-        if (timeDate) {
-            const statusIcon = Alpine.$data(timeDate.querySelector('.status-icon'));
-            statusIcon.connected = true;
-        }
+        setConnectionStatus(true)
 
         const chatsAD = Alpine.$data(chatsSection);
         chatsAD.contexts = response.contexts;
@@ -350,11 +370,7 @@ async function poll() {
 
     } catch (error) {
         console.error('Error:', error);
-        const timeDate = document.getElementById('time-date-container');
-        if (timeDate) {
-            const statusIcon = Alpine.$data(timeDate.querySelector('.status-icon'));
-            statusIcon.connected = false;
-        }
+        setConnectionStatus(false)
     }
 
     return updated
@@ -396,41 +412,56 @@ function updateProgress(progress) {
 }
 
 window.pauseAgent = async function (paused) {
-    const resp = await sendJsonData("/pause", { paused: paused, context });
+    try {
+        const resp = await sendJsonData("/pause", { paused: paused, context });
+    } catch (e) {
+        window.toastFetchError("Error pausing agent", e)
+    }
 }
 
 window.resetChat = async function () {
-    const resp = await sendJsonData("/chat_reset", { context });
-    updateAfterScroll()
+    try {
+        const resp = await sendJsonData("/chat_reset", { context });
+        updateAfterScroll()
+    } catch (e) {
+        window.toastFetchError("Error resetting chat", e)
+    }
 }
 
 window.newChat = async function () {
-    setContext(generateGUID());
-    updateAfterScroll()
+    try {
+        setContext(generateGUID());
+        updateAfterScroll()
+    } catch (e) {
+        window.toastFetchError("Error creating new chat", e)
+    }
 }
 
 window.killChat = async function (id) {
-
-
-    const chatsAD = Alpine.$data(chatsSection);
-    let found, other
-    for (let i = 0; i < chatsAD.contexts.length; i++) {
-        if (chatsAD.contexts[i].id == id) {
-            found = true
-        } else {
-            other = chatsAD.contexts[i]
+    try {
+        const chatsAD = Alpine.$data(chatsSection);
+        let found, other
+        for (let i = 0; i < chatsAD.contexts.length; i++) {
+            if (chatsAD.contexts[i].id == id) {
+                found = true
+            } else {
+                other = chatsAD.contexts[i]
+            }
+            if (found && other) break
         }
-        if (found && other) break
+
+        if (context == id && found) {
+            if (other) setContext(other.id)
+            else setContext(generateGUID())
+        }
+
+        if (found) sendJsonData("/chat_remove", { context: id });
+
+        updateAfterScroll()
+
+    } catch (e) {
+        window.toastFetchError("Error creating new chat", e)
     }
-
-    if (context == id && found) {
-        if (other) setContext(other.id)
-        else setContext(generateGUID())
-    }
-
-    if (found) sendJsonData("/chat_remove", { context: id });
-
-    updateAfterScroll()
 }
 
 window.selectChat = async function (id) {
@@ -493,21 +524,25 @@ window.nudge = async function () {
     try {
         const resp = await sendJsonData("/nudge", { ctxid: getContext() });
     } catch (e) {
-        toast(e.message, "error")
+        toastFetchError("Error nudging agent", e)
     }
 }
 
 window.restart = async function () {
     try {
+        if (!getConnectionStatus()) {
+            toast("Backend disconnected, cannot restart.", "error");
+            return
+        }
         // First try to initiate restart
         const resp = await sendJsonData("/restart", {});
     } catch (e) {
         // Show restarting message
         toast("Restarting...", "info", 0);
-        
+
         let retries = 0;
         const maxRetries = 60; // Maximum number of retries (15 seconds with 250ms interval)
-        
+
         while (retries < maxRetries) {
             try {
                 const resp = await sendJsonData("/health", {});
@@ -523,7 +558,7 @@ window.restart = async function () {
                 await new Promise(resolve => setTimeout(resolve, 250));
             }
         }
-        
+
         // If we get here, restart failed or took too long
         hideToast();
         await new Promise(resolve => setTimeout(resolve, 400));
@@ -592,7 +627,7 @@ window.loadChats = async function () {
         }
 
     } catch (e) {
-        toast(e.message, "error")
+        toastFetchError("Error loading chats", e)
     }
 }
 
@@ -616,7 +651,7 @@ window.saveChat = async function () {
         }
 
     } catch (e) {
-        toast(e.message, "error")
+        toastFetchError("Error saving chat", e)
     }
 }
 
@@ -751,7 +786,7 @@ function toast(text, type = 'info', timeout = 5000) {
         // If a toast is visible, hide it first then show the new one
         toast.classList.remove('show');
         toast.classList.add('hide');
-        
+
         // Wait for hide animation to complete before showing new toast
         setTimeout(() => {
             toast.classList.remove('hide');
@@ -765,13 +800,13 @@ function toast(text, type = 'info', timeout = 5000) {
 
 function hideToast() {
     const toast = document.getElementById('toast');
-    
+
     // Clear any existing timeout
     if (toast.timeoutId) {
         clearTimeout(toast.timeoutId);
         toast.timeoutId = null;
     }
-    
+
     toast.classList.remove('show');
     toast.classList.add('hide');
 

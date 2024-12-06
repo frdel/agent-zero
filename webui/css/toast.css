@@ -37,7 +37,7 @@
 
 .toast__message {
   margin: 0;
-  max-width: 320px;
+  /* max-width: 320px; */
   text-overflow: ellipsis !important;
 }
 

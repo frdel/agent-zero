@@ -87,7 +87,7 @@ class AgentContext:
 
         self.process = DeferredTask(current_agent.monologue)
         return self.process
-    
+
     def communicate(self, msg: "UserMessage", broadcast_level: int = 1):
         self.paused = False  # unpause if paused
 
@@ -394,7 +394,7 @@ class Agent:
             # Handling for general exceptions
             error_message = errors.format_error(exception)
             PrintStyle(font_color="red", padding=True).print(error_message)
-            self.context.log.log(type="error", content=error_message)
+            self.context.log.log(type="error", heading="Error", content=error_message)
             raise HandledException(exception)  # Re-raise the exception to kill the loop
 
     async def get_system_prompt(self, loop_data: LoopData) -> list[str]:
