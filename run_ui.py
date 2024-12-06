@@ -106,7 +106,7 @@ def run():
         register_api_handler(app, handler)
         
     try:
-        server = make_server(host=host, port=port, app=app, request_handler=NoRequestLoggingWSGIRequestHandler, threaded=True)
+        server = make_server(host=host, port=port, app=app, request_handler=NoRequestLoggingWSGIRequestHandler)
         process.set_server(server)
         print(f"\nStarting server on http://{server.socket.getsockname()[0]}:{server.socket.getsockname()[1]}\n")
         server.serve_forever() 
