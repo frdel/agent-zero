@@ -21,10 +21,10 @@ apt-get update &
 /usr/sbin/sshd -D &
 
 # Start searxng server in background
-sudo -H -u searxng -i bash /exe/run_searxng.sh &
+su - searxng -c "bash /exe/run_searxng.sh" &
 
 # Start A0 and restart on exit
-bash /exe/run_A0.sh
+bash /exe/run_A0.sh "$@"
 if [ $? -ne 0 ]; then
     echo "A0 script exited with an error. Restarting container..."
     exit 1

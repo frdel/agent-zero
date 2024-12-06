@@ -7,5 +7,5 @@ rm -rf /git/agent-zero
 bash /ins/install_A0.sh "$@"
 
 # remove python packages cache
-source /opt/venv/bin/activate
+. "/ins/setup_venv.sh" "$@"
 pip cache purge

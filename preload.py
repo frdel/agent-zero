@@ -6,12 +6,15 @@ runtime.initialize()
 
 
 async def preload():
-    set = settings.get_default_settings()
+    try:
+        set = settings.get_default_settings()
 
-    # async tasks to preload
-    tasks = [whisper.preload(set["stt_model_size"])]
+        # async tasks to preload
+        tasks = [whisper.preload(set["stt_model_size"])]
 
-    return asyncio.gather(*tasks, return_exceptions=True)
+        return asyncio.gather(*tasks, return_exceptions=True)
+    except Exception as e:
+        print(f"Error in preload: {e}")
 
 
 # preload transcription model
