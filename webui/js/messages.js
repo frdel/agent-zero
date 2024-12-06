@@ -247,7 +247,7 @@ export function drawMessageCodeExe(messageContainer, id, type, heading, content,
 
 export function drawMessageAgentPlain(classes, messageContainer, id, type, heading, content, temp, kvps = null) {
     const messageContent = convertImageTags(content); // Convert image tags
-    _drawMessage(messageContainer, heading, messageContent, temp, false, null, [...classes]);
+    _drawMessage(messageContainer, heading, messageContent, temp, false, kvps, [...classes]);
     messageContainer.classList.add('center-container');
 }
 

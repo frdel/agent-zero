@@ -392,9 +392,15 @@ class Agent:
             )  # Re-raise the exception to cancel the loop
         else:
             # Handling for general exceptions
+            error_text = errors.error_text(exception)
             error_message = errors.format_error(exception)
             PrintStyle(font_color="red", padding=True).print(error_message)
-            self.context.log.log(type="error", heading="Error", content=error_message)
+            self.context.log.log(
+                type="error",
+                heading="Error",
+                content=error_message,
+                kvps={"text": error_text},
+            )
             raise HandledException(exception)  # Re-raise the exception to kill the loop
 
     async def get_system_prompt(self, loop_data: LoopData) -> list[str]:

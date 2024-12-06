@@ -252,7 +252,7 @@ def get_google_embedding(
 
 
 # Mistral models
-def get_mistral_chat(
+def get_mistralai_chat(
     model_name: str,
     api_key=None,
     temperature=DEFAULT_TEMPERATURE,
