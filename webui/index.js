@@ -263,6 +263,7 @@ window.loadKnowledge = async function () {
     input.multiple = true;
 
     input.onchange = async () => {
+        try{
         const formData = new FormData();
         for (let file of input.files) {
             formData.append('files[]', file);
@@ -278,6 +279,9 @@ window.loadKnowledge = async function () {
         } else {
             const data = await response.json();
             toast("Knowledge files imported: " + data.filenames.join(", "), "success");
+        }
+        } catch (e) {
+            toastFetchError("Error loading knowledge", e)
         }
     };
 
