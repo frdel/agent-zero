@@ -38,10 +38,10 @@ class DockerContainerManager:
             try:
                 self.container.stop()
                 self.container.remove()
-                print(f"Stopped and removed the container: {self.container.id}")
+                PrintStyle.standard(f"Stopped and removed the container: {self.container.id}")
                 if self.logger: self.logger.log(type="info", content=f"Stopped and removed the container: {self.container.id}")
             except Exception as e:
-                print(f"Failed to stop and remove the container: {e}")
+                PrintStyle.error(f"Failed to stop and remove the container: {e}")
                 if self.logger: self.logger.log(type="error", content=f"Failed to stop and remove the container: {e}")
 
     def get_image_containers(self):
@@ -72,7 +72,7 @@ class DockerContainerManager:
 
         if existing_container:
             if existing_container.status != 'running':
-                print(f"Starting existing container: {self.name} for safe code execution...")
+                PrintStyle.standard(f"Starting existing container: {self.name} for safe code execution...")
                 if self.logger: self.logger.log(type="info", content=f"Starting existing container: {self.name} for safe code execution...", temp=True)
                 
                 existing_container.start()
@@ -81,9 +81,9 @@ class DockerContainerManager:
                 
             else:
                 self.container = existing_container
-                # print(f"Container with name '{self.name}' is already running with ID: {existing_container.id}")
+                # PrintStyle.standard(f"Container with name '{self.name}' is already running with ID: {existing_container.id}")
         else:
-            print(f"Initializing docker container {self.name} for safe code execution...")
+            PrintStyle.standard(f"Initializing docker container {self.name} for safe code execution...")
             if self.logger: self.logger.log(type="info", content=f"Initializing docker container {self.name} for safe code execution...", temp=True)
 
             self.container = self.client.containers.run(
@@ -94,6 +94,6 @@ class DockerContainerManager:
                 volumes=self.volumes, # type: ignore
             ) 
             # atexit.register(self.cleanup_container)
-            print(f"Started container with ID: {self.container.id}")
+            PrintStyle.standard(f"Started container with ID: {self.container.id}")
             if self.logger: self.logger.log(type="info", content=f"Started container with ID: {self.container.id}")
             time.sleep(5) # this helps to get SSH ready

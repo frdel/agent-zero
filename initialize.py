@@ -84,16 +84,12 @@ def args_override(config):
             # conversion based on type of config[key]
             if isinstance(getattr(config, key), bool):
                 value = value.lower().strip() == "true"
-                print("bool", value)
             elif isinstance(getattr(config, key), int):
                 value = int(value)
-                print("int", value)
             elif isinstance(getattr(config, key), float):
                 value = float(value)
-                print("float", value)
             elif isinstance(getattr(config, key), str):
                 value = str(value)
-                print("str", value)
             else:
                 raise Exception(
                     f"Unsupported argument type of '{key}': {type(getattr(config, key))}"

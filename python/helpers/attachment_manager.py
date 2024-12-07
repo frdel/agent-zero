@@ -5,6 +5,8 @@ from PIL import Image
 from typing import Dict, List, Optional, Tuple
 from werkzeug.utils import secure_filename
 
+from python.helpers.print_style import PrintStyle
+
 class AttachmentManager:
   ALLOWED_EXTENSIONS = {
       'image': {'jpg', 'jpeg', 'png', 'bmp'},
@@ -66,7 +68,7 @@ class AttachmentManager:
           return file_path, metadata
         
       except Exception as e:
-          print(f"Error saving file {filename}: {e}")
+          PrintStyle.error(f"Error saving file {filename}: {e}")
           return None, {} # type: ignore
 
   def generate_image_preview(self, image_path: str, max_size: int = 800) -> Optional[str]:
@@ -86,6 +88,6 @@ class AttachmentManager:
               # Convert to base64
               return base64.b64encode(buffer.getvalue()).decode('utf-8')
       except Exception as e:
-          print(f"Error generating preview for {image_path}: {e}")
+          PrintStyle.error(f"Error generating preview for {image_path}: {e}")
           return None
       

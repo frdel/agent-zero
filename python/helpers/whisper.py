@@ -4,6 +4,7 @@ import whisper
 import tempfile
 import asyncio
 from python.helpers import runtime, rfc, settings
+from python.helpers.print_style import PrintStyle
 
 # Suppress FutureWarning from torch.load
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -28,7 +29,7 @@ async def _preload(model_name:str):
     try:
         is_updating_model = True
         if not _model or _model_name != model_name:
-                print(f"Loading Whisper model: {model_name}")
+                PrintStyle.standard(f"Loading Whisper model: {model_name}")
                 _model = whisper.load_model(model_name)
                 _model_name = model_name
     finally:

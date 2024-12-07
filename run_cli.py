@@ -96,7 +96,7 @@ def timeout_input(prompt, timeout=10):
 
 def run():
     global context
-    print("Initializing framework...")
+    PrintStyle.standard("Initializing framework...")
 
     #load env vars
     load_dotenv()
@@ -112,5 +112,5 @@ def run():
     asyncio.run(chat(context))
 
 if __name__ == "__main__":
-    print("\n\n!!! run_cli.py is now discontinued. run_ui.py serves as both UI and API endpoint !!!\n\n")
+    PrintStyle.standard("\n\n!!! run_cli.py is now discontinued. run_ui.py serves as both UI and API endpoint !!!\n\n")
     run()

@@ -1,6 +1,7 @@
 import os
 import sys
 from python.helpers import runtime
+from python.helpers.print_style import PrintStyle
 
 _server = None
 
@@ -26,10 +27,10 @@ def reload():
         restart_process()
 
 def restart_process():
-    print("Restarting process...")
+    PrintStyle.standard("Restarting process...")
     python = sys.executable
     os.execv(python, [python] + sys.argv)
 
 def exit_process():
-    print("Exiting process...")
+    PrintStyle.standard("Exiting process...")
     sys.exit(0)

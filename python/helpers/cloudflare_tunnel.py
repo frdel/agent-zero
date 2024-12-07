@@ -4,6 +4,7 @@ import requests
 import subprocess
 import threading
 from python.helpers import files
+from python.helpers.print_style import PrintStyle
 
 class CloudflareTunnel:
     def __init__(self, port: int):
@@ -41,7 +42,7 @@ class CloudflareTunnel:
             download_url = f"{base_url}{download_file}"
             download_path = files.get_abs_path(self.bin_dir, download_file)
             
-            print(f"\nDownloading cloudflared from: {download_url}")
+            PrintStyle().print(f"\nDownloading cloudflared from: {download_url}")
             response = requests.get(download_url, stream=True)
             if response.status_code != 200:
                 raise RuntimeError(f"Failed to download cloudflared: {response.status_code}")
@@ -77,7 +78,7 @@ class CloudflareTunnel:
             download_url = f"{base_url}{download_file}"
             download_path = files.get_abs_path(self.bin_dir, download_file)
             
-            print(f"\nDownloading cloudflared from: {download_url}")
+            PrintStyle().print(f"\nDownloading cloudflared from: {download_url}")
             response = requests.get(download_url, stream=True)
             if response.status_code != 200:
                 raise RuntimeError(f"Failed to download cloudflared: {response.status_code}")
@@ -113,9 +114,9 @@ class CloudflareTunnel:
                 start = line.find("https://")
                 end = line.find("trycloudflare.com") + len("trycloudflare.com")
                 self.tunnel_url = line[start:end].strip()
-                print("\n=== Cloudflare Tunnel URL ===")
-                print(f"URL: {self.tunnel_url}")
-                print("============================\n")
+                PrintStyle().print("\n=== Cloudflare Tunnel URL ===")
+                PrintStyle().print(f"URL: {self.tunnel_url}")
+                PrintStyle().print("============================\n")
                 return
 
     def start(self):
@@ -123,7 +124,7 @@ class CloudflareTunnel:
         if not self.cloudflared_path:
             self.download_cloudflared()
             
-        print("\nStarting Cloudflare tunnel...")
+        PrintStyle().print("\nStarting Cloudflare tunnel...")
         # Start tunnel process
         self.tunnel_process = subprocess.Popen(
             [
@@ -149,7 +150,7 @@ class CloudflareTunnel:
         """Stops the cloudflare tunnel"""
         self._stop_event.set()
         if self.tunnel_process:
-            print("\nStopping Cloudflare tunnel...")
+            PrintStyle().print("\nStopping Cloudflare tunnel...")
             self.tunnel_process.terminate()
             self.tunnel_process.wait()
             self.tunnel_process = None

@@ -1,7 +1,8 @@
 import asyncio
 from python.helpers import runtime, whisper, settings
+from python.helpers.print_style import PrintStyle
 
-print("Running preload...")
+PrintStyle().print("Running preload...")
 runtime.initialize()
 
 
@@ -14,7 +15,7 @@ async def preload():
 
         return asyncio.gather(*tasks, return_exceptions=True)
     except Exception as e:
-        print(f"Error in preload: {e}")
+        PrintStyle().print(f"Error in preload: {e}")
 
 
 # preload transcription model
