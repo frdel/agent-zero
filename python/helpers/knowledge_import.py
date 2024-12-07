@@ -13,6 +13,7 @@ from langchain_community.document_loaders import (
 )
 from python.helpers import files
 from python.helpers.log import LogItem
+from python.helpers.print_style import PrintStyle
 
 text_loader_kwargs = {"autodetect_encoding": True}
 
@@ -49,7 +50,8 @@ def load_knowledge(
         "pdf": PyPDFLoader,
         "csv": CSVLoader,
         "html": UnstructuredHTMLLoader,
-        "json": JSONLoader,
+        # "json": JSONLoader,
+        "json": TextLoader,
         # "md": UnstructuredMarkdownLoader,
         "md": TextLoader,
     }
@@ -69,7 +71,7 @@ def load_knowledge(
     kn_files = [f for f in kn_files if os.path.isfile(f)]
 
     if kn_files:
-        print(
+        PrintStyle.standard(
             f"Found {len(kn_files)} knowledge files in {knowledge_dir}, processing..."
         )
         if log_item:
@@ -107,7 +109,7 @@ def load_knowledge(
                     doc.metadata = {**doc.metadata, **metadata}
                 cnt_files += 1
                 cnt_docs += len(file_data["documents"])
-                # print(f"Imported {len(file_data['documents'])} documents from {file_path}")
+                # PrintStyle.standard(f"Imported {len(file_data['documents'])} documents from {file_path}")
 
             # Update the index
             index[file_key] = file_data  # type: ignore
@@ -117,7 +119,7 @@ def load_knowledge(
         if not file_data.get("state", ""):
             index[file_key]["state"] = "removed"
 
-    print(f"Processed {cnt_docs} documents from {cnt_files} files.")
+    PrintStyle.standard(f"Processed {cnt_docs} documents from {cnt_files} files.")
     if log_item:
         log_item.stream(
             progress=f"\nProcessed {cnt_docs} documents from {cnt_files} files."

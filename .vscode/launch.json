@@ -1,29 +1,29 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Debug run_ui.py",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "./run_ui.py",
-            "console": "integratedTerminal",
-            "args": ["-Xfrozen_modules=off"]
-        },
-        {
-            "name": "Debug run_cli.py",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "./run_cli.py",
-            "console": "integratedTerminal",
-            "args": ["-Xfrozen_modules=off"]
-        },
-        {
-            "name": "Debug current file",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "args": ["-Xfrozen_modules=off"]
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug run_ui.py",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "./run_ui.py",
+      "console": "integratedTerminal",
+      "args": ["--development=true", "-Xfrozen_modules=off"]
+    },
+    {
+      "name": "Debug run_cli.py",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "./run_cli.py",
+      "console": "integratedTerminal",
+      "args": ["--development=true", "-Xfrozen_modules=off"]
+    },
+    {
+      "name": "Debug current file",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "args": ["--development=true", "-Xfrozen_modules=off"]
+    }
+  ]
 }

@@ -13,6 +13,8 @@ from langchain_community.vectorstores.utils import (
 import os, json
 
 import numpy as np
+
+from python.helpers.print_style import PrintStyle
 from . import files
 from langchain_core.documents import Document
 import uuid
@@ -26,7 +28,7 @@ class MyFaiss(FAISS):
     # override aget_by_ids
     def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
         # return all self.docstore._dict[id] in ids
-        return [self.docstore._dict[id] for id in ids if id in self.docstore._dict]  # type: ignore
+        return [self.docstore._dict[id] for id in (ids if isinstance(ids, list) else [ids]) if id in self.docstore._dict]  # type: ignore
 
     async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
         return self.get_by_ids(ids)
@@ -78,7 +80,7 @@ class Memory:
         in_memory=False,
     ) -> MyFaiss:
 
-        print("Initializing VectorDB...")
+        PrintStyle.standard("Initializing VectorDB...")
 
         if log_item:
             log_item.stream(progress="\nInitializing VectorDB")
@@ -312,7 +314,7 @@ class Memory:
             try:
                 return eval(condition, {}, data)
             except Exception as e:
-                # print(f"Error evaluating condition: {e}")
+                # PrintStyle.error(f"Error evaluating condition: {e}")
                 return False
 
         return comparator
@@ -348,3 +350,6 @@ class Memory:
     @staticmethod
     def get_timestamp():
         return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+def get_memory_subdir_abs(agent: Agent) -> str:
+    return files.get_abs_path("memory", agent.config.memory_subdir or "default")

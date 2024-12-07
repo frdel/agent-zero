@@ -1,5 +1,6 @@
-~~~json
+```json
 {
-    "user": "{{message}}"
+  "user_message": {{message}},
+  "attachments": {{attachments}}
 }
-~~~
+```

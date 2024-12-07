@@ -7,6 +7,8 @@
         - Tools help you gather knowledge and execute actions
     3. tool_args: Object of arguments that are passed to the tool
         - Each tool has specific arguments listed in Available tools section
+- When providing mathematical expressions, please use LaTeX syntax and enclose them in proper delimiters.
+- Use `$$...$$` or `$$...$$` for display equations, and `$...$` or `$$...$$` for inline math.
 - No text before or after the JSON object. End message there.
 
 ### Response example

@@ -6,7 +6,7 @@ from agent import LoopData
 class RecallSolutions(Extension):
 
     INTERVAL = 3
-    HISTORY = 5
+    HISTORY = 5 # TODO cleanup
     SOLUTIONS_COUNT = 2
     INSTRUMENTS_COUNT = 2
     THRESHOLD = 0.6
@@ -19,6 +19,12 @@ class RecallSolutions(Extension):
             await self.search_solutions(loop_data=loop_data, **kwargs)
 
     async def search_solutions(self, loop_data: LoopData, **kwargs):
+
+        #cleanup
+        extras = loop_data.extras_temporary
+        if "solutions" in extras:
+            del extras["solutions"]
+        
         # try:
         # show temp info message
         self.agent.context.log.log(
@@ -32,9 +38,10 @@ class RecallSolutions(Extension):
         )
 
         # get system message and chat history for util llm
-        msgs_text = self.agent.concat_messages(
-            self.agent.history[-RecallSolutions.HISTORY :]
-        )  # only last X messages
+        # msgs_text = self.agent.concat_messages(
+        #     self.agent.history[-RecallSolutions.HISTORY :]
+        # )  # only last X messages
+        msgs_text = self.agent.history.current.output_text()
         system = self.agent.read_prompt(
             "memory.solutions_query.sys.md", history=msgs_text
         )
@@ -45,7 +52,7 @@ class RecallSolutions(Extension):
 
         # call util llm to summarize conversation
         query = await self.agent.call_utility_llm(
-            system=system, msg=loop_data.message, callback=log_callback
+            system=system, msg=loop_data.user_message.output_text() if loop_data.user_message else "", callback=log_callback
         )
 
         # get solutions database
@@ -85,10 +92,12 @@ class RecallSolutions(Extension):
                 solutions_text += solution.page_content + "\n\n"
             solutions_text = solutions_text.strip()
             log_item.update(solutions=solutions_text)
-            solutions_prompt = self.agent.read_prompt(
+            solutions_prompt = self.agent.parse_prompt(
                 "agent.system.solutions.md", solutions=solutions_text
             )
-            loop_data.system.append(solutions_prompt)
+
+            # append to prompt
+            extras["solutions"] = solutions_prompt
 
     # except Exception as e:
     #     err = errors.format_error(e)

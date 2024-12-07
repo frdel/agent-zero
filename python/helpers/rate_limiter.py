@@ -51,6 +51,7 @@ class RateLimiter:
             if wait_time > 0:
                 PrintStyle(font_color="yellow", padding=True).print(f"Rate limit exceeded. Waiting for {wait_time:.2f} seconds due to: {', '.join(wait_reasons)}")
                 self.logger.log("rate_limit","Rate limit exceeded",f"Rate limit exceeded. Waiting for {wait_time:.2f} seconds due to: {', '.join(wait_reasons)}")
+                # TODO rate limit log type
                 time.sleep(wait_time)
             current_time = time.time()
 

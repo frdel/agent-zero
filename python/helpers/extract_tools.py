@@ -51,12 +51,7 @@ def fix_json_string(json_string):
 
 T = TypeVar('T')  # Define a generic type variable
 
-def load_classes_from_folder(folder: str, name_pattern: str, base_class: Type[T]) -> list[Type[T]]:
-    import os
-    import importlib
-    import inspect
-    from fnmatch import fnmatch
-
+def load_classes_from_folder(folder: str, name_pattern: str, base_class: Type[T], one_per_file: bool = True) -> list[Type[T]]:
     classes = []
     abs_folder = get_abs_path(folder)
 
@@ -75,8 +70,11 @@ def load_classes_from_folder(folder: str, name_pattern: str, base_class: Type[T]
         class_list = inspect.getmembers(module, inspect.isclass)
 
         # Filter for classes that are subclasses of the given base_class
-        for cls in class_list:
+        # iterate backwards to skip imported superclasses
+        for cls in reversed(class_list):
             if cls[1] is not base_class and issubclass(cls[1], base_class):
                 classes.append(cls[1])
+                if one_per_file:
+                    break
 
     return classes

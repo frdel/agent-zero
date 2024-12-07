@@ -1,42 +1,32 @@
 # Use the latest slim version of Debian
-FROM --platform=$TARGETPLATFORM debian:bookworm-slim
+FROM debian:bookworm-slim
 
-# Set ARG for platform-specific commands
-ARG TARGETPLATFORM
+# Check if the argument is provided, else throw an error
+ARG BRANCH
+RUN if [ -z "$BRANCH" ]; then echo "ERROR: BRANCH is not set!" >&2; exit 1; fi
+ENV BRANCH=$BRANCH
 
-# Update and install necessary packages
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    python3-venv \
-    nodejs \
-    npm \
-    openssh-server \
-    sudo \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+# Copy contents of the project to /a0
+COPY ./fs/ /
 
-# Set up SSH
-RUN mkdir /var/run/sshd && \
-    echo 'root:toor' | chpasswd && \
-    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+# pre installation steps
+RUN bash /ins/pre_install.sh $BRANCH
 
-# Create and activate Python virtual environment
-ENV VIRTUAL_ENV=/opt/venv
-RUN python3 -m venv $VIRTUAL_ENV
+# install additional software
+RUN bash /ins/install_additional.sh $BRANCH
 
-# Copy initial .bashrc with virtual environment activation to a temporary location
-COPY .bashrc /etc/skel/.bashrc
+# install A0
+RUN bash /ins/install_A0.sh $BRANCH
 
-# Copy the script to ensure .bashrc is in the root directory
-COPY initialize.sh /usr/local/bin/initialize.sh
-RUN chmod +x /usr/local/bin/initialize.sh
+# cleanup repo and install A0 without caching, this speeds up builds
+ARG CACHE_DATE=none
+RUN echo "cache buster $CACHE_DATE" && bash /ins/install_A02.sh $BRANCH
 
-# Ensure the virtual environment and pip setup
-RUN $VIRTUAL_ENV/bin/pip install --upgrade pip
+# post installation steps
+RUN bash /ins/post_install.sh $BRANCH
 
-# Expose SSH port
-EXPOSE 22
+# Expose ports
+EXPOSE 22 80
 
-# Init .bashrc
-CMD ["/usr/local/bin/initialize.sh"]
+# initialize runtime
+CMD ["/bin/bash", "-c", "/bin/bash /exe/initialize.sh $BRANCH"]
