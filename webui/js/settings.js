@@ -35,6 +35,8 @@ const settingsModalProxy = {
             modalAD.isOpen = true; // Update directly
             modalAD.settings = settings; // Update directly
 
+
+
             return new Promise(resolve => {
                 this.resolvePromise = resolve;
             });
