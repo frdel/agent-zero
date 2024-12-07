@@ -49,27 +49,31 @@ class CodeExecution(Tool):
             response = self.agent.read_prompt("fw.code_no_output.md")
         return Response(message=response, break_loop=False)
 
-    async def before_execution(self, **kwargs):
-        await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
-        PrintStyle(
-            font_color="#1B4F72", padding=True, background_color="white", bold=True
-        ).print(f"{self.agent.agent_name}: Using tool '{self.name}'")
-        self.log = self.agent.context.log.log(
-            type="code_exe",
-            heading=f"{self.agent.agent_name}: Using tool '{self.name}'",
-            content="",
-            kvps=self.args,
-        )
-        if self.args and isinstance(self.args, dict):
-            for key, value in self.args.items():
-                PrintStyle(font_color="#85C1E9", bold=True).stream(
-                    self.nice_key(key) + ": "
-                )
-                PrintStyle(
-                    font_color="#85C1E9",
-                    padding=isinstance(value, str) and "\n" in value,
-                ).stream(value)
-                PrintStyle().print()
+    # async def before_execution(self, **kwargs):
+    #     await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
+    #     PrintStyle(
+    #         font_color="#1B4F72", padding=True, background_color="white", bold=True
+    #     ).print(f"{self.agent.agent_name}: Using tool '{self.name}'")
+    #     self.log = self.agent.context.log.log(
+    #         type="code_exe",
+    #         heading=f"{self.agent.agent_name}: Using tool '{self.name}'",
+    #         content="",
+    #         kvps=self.args,
+    #     )
+    #     if self.args and isinstance(self.args, dict):
+    #         for key, value in self.args.items():
+    #             PrintStyle(font_color="#85C1E9", bold=True).stream(
+    #                 self.nice_key(key) + ": "
+    #             )
+    #             PrintStyle(
+    #                 font_color="#85C1E9",
+    #                 padding=isinstance(value, str) and "\n" in value,
+    #             ).stream(value)
+    #             PrintStyle().print()
+
+    def get_log_object(self):
+        return self.agent.context.log.log(type="code_exe", heading=f"{self.agent.agent_name}: Using tool '{self.name}'", content="", kvps=self.args)
+
 
     async def after_execution(self, response, **kwargs):
         await self.agent.hist_add_tool_result(self.name, response.message)
