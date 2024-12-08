@@ -402,26 +402,6 @@ function speakMessages(logs) {
     }
 }
 
-function afterMessagesUpdate(logs) {
-    if (localStorage.getItem('speech') == 'true') {
-        speakMessages(logs)
-    }
-}
-
-function speakMessages(logs) {
-    // log.no, log.type, log.heading, log.content
-    for (let i = logs.length - 1; i >= 0; i--) {
-        const log = logs[i]
-        if (log.type == "response") {
-            if (log.no > lastSpokenNo) {
-                lastSpokenNo = log.no
-                speech.speak(log.content)
-                return
-            }
-        }
-    }
-}
-
 function updateProgress(progress, active) {
     if (!progress) progress = ""
 
