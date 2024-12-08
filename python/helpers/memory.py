@@ -73,6 +73,13 @@ class Memory:
             )
 
     @staticmethod
+    async def reload(agent: Agent):
+        memory_subdir = agent.config.memory_subdir or "default"
+        if Memory.index.get(memory_subdir):
+            del Memory.index[memory_subdir]
+        return await Memory.get(agent)
+
+    @staticmethod
     def initialize(
         log_item: LogItem | None,
         embeddings_model,
@@ -151,6 +158,9 @@ class Memory:
     async def preload_knowledge(
         self, log_item: LogItem | None, kn_dirs: list[str], memory_subdir: str
     ):
+        if log_item:
+            log_item.update(heading="Preloading knowledge...")
+
         # db abs path
         db_dir = Memory._abs_db_dir(memory_subdir)
 
@@ -351,5 +361,12 @@ class Memory:
     def get_timestamp():
         return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+
 def get_memory_subdir_abs(agent: Agent) -> str:
     return files.get_abs_path("memory", agent.config.memory_subdir or "default")
+
+def get_custom_knowledge_subdir_abs(agent: Agent) -> str:
+    for dir in agent.config.knowledge_subdirs:
+        if dir != "default":    
+            return files.get_abs_path("knowledge", dir)
+    raise Exception("No custom knowledge subdir set")

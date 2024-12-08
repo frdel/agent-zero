@@ -83,8 +83,7 @@ class Log:
         self.guid: str = str(uuid.uuid4())
         self.updates: list[int] = []
         self.logs: list[LogItem] = []
-        self.progress = ""
-        self.progress_no = 0
+        self.set_initial_progress()
 
     def log(
         self,
@@ -111,8 +110,7 @@ class Log:
         self.logs.append(item)
         self.updates += [item.no]
         if heading and item.no >= self.progress_no:
-            self.progress = heading
-            self.progress_no = item.no
+            self.set_progress(heading, item.no)
         return item
 
     def update_item(
@@ -131,8 +129,7 @@ class Log:
         if heading is not None:
             item.heading = heading
             if no >= self.progress_no:
-                self.progress = heading
-                self.progress_no = no
+                self.set_progress(heading, no)
         if content is not None:
             item.content = content
         if kvps is not None:
@@ -149,9 +146,15 @@ class Log:
 
         self.updates += [item.no]
 
-    def set_progress(self, progress: str):
+    def set_progress(self, progress: str, no: int = 0, active: bool = True):
         self.progress = progress
-        self.progress_no = len(self.logs)
+        if not no:
+            no = len(self.logs)
+        self.progress_no = no
+        self.progress_active = active
+
+    def set_initial_progress(self):
+        self.set_progress("Waiting for input", 0, False)
 
     def output(self, start=None, end=None):
         if start is None:
@@ -172,5 +175,4 @@ class Log:
         self.guid = str(uuid.uuid4())
         self.updates = []
         self.logs = []
-        self.progress = ""
-        self.progress_no = 0
+        self.set_initial_progress()

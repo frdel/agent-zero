@@ -269,6 +269,8 @@ window.loadKnowledge = async function () {
             formData.append('files[]', file);
         }
 
+        formData.append('ctxid', getContext());
+
         const response = await fetch('/import_knowledge', {
             method: 'POST',
             body: formData,
@@ -357,7 +359,7 @@ async function poll() {
             afterMessagesUpdate(response.logs)
         }
 
-        updateProgress(response.log_progress)
+        updateProgress(response.log_progress, response.log_progress_active)
 
         //set ui model vars from backend
         const inputAD = Alpine.$data(inputSection);
@@ -400,11 +402,10 @@ function speakMessages(logs) {
     }
 }
 
-function updateProgress(progress) {
-    const defaultText = "Waiting for input"
-    if (!progress) progress = defaultText
+function updateProgress(progress, active) {
+    if (!progress) progress = ""
 
-    if (progress == defaultText) {
+    if (!active) {
         removeClassFromElement(progressBar, "shiny-text")
     } else {
         addClassToElement(progressBar, "shiny-text")
