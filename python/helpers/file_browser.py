@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 
 from python.helpers import files, runtime
+from python.helpers.print_style import PrintStyle
 
 class FileBrowser:
     ALLOWED_EXTENSIONS = {
@@ -58,13 +59,13 @@ class FileBrowser:
                     else:
                         failed.append(file.filename)
                 except Exception as e:
-                    print(f"Error saving file {file.filename}: {e}")
+                    PrintStyle.error(f"Error saving file {file.filename}: {e}")
                     failed.append(file.filename)
                     
             return successful, failed
             
         except Exception as e:
-            print(f"Error in save_files: {e}")
+            PrintStyle.error(f"Error in save_files: {e}")
             return successful, failed
         
     def delete_file(self, file_path: str) -> bool:
@@ -85,7 +86,7 @@ class FileBrowser:
             return False
             
         except Exception as e:
-            print(f"Error deleting {file_path}: {e}")
+            PrintStyle.error(f"Error deleting {file_path}: {e}")
             return False
 
     def _is_allowed_file(self, filename: str, file) -> bool:
@@ -160,7 +161,7 @@ class FileBrowser:
             }
 
         except Exception as e:
-            print(f"Error reading directory: {e}")
+            PrintStyle.error(f"Error reading directory: {e}")
             return {"entries": [], "current_path": "", "parent_path": ""}
         
     def get_full_path(self, file_path: str, allow_dir: bool = False) -> str:

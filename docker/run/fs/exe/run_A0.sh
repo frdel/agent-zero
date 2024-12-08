@@ -6,15 +6,7 @@ TARGET_DIR="/a0"
 
 
 function setup_venv() {
-    # Create virtual environment if it doesn't exist
-    if [ ! -d /opt/venv ]; then
-        echo "Creating virtual environment..."
-        python3 -m venv /opt/venv
-        /opt/venv/bin/pip install ipython requests
-    fi
-
-    # Activate the virtual environment
-    source /opt/venv/bin/activate
+    . "/ins/setup_venv.sh" "$@"
 }
 
 function clone_repo() {

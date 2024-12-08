@@ -1,4 +1,4 @@
 #!/bin/bash
 
-# run the original install script again
+# searxng
 bash /ins/install_searxng.sh "$@"

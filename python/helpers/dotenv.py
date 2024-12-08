@@ -1,5 +1,6 @@
 import os
 import re
+from typing import Any
 
 from .files import get_abs_path
 from dotenv import load_dotenv as _load_dotenv
@@ -16,9 +17,9 @@ def load_dotenv():
 def get_dotenv_file_path():
     return get_abs_path(".env")
 
-def get_dotenv_value(key: str):
+def get_dotenv_value(key: str, default: Any = None):
     # load_dotenv()       
-    return os.getenv(key)
+    return os.getenv(key, default)
 
 def save_dotenv_value(key: str, value: str):
     if value is None:

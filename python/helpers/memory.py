@@ -13,6 +13,8 @@ from langchain_community.vectorstores.utils import (
 import os, json
 
 import numpy as np
+
+from python.helpers.print_style import PrintStyle
 from . import files
 from langchain_core.documents import Document
 import uuid
@@ -78,7 +80,7 @@ class Memory:
         in_memory=False,
     ) -> MyFaiss:
 
-        print("Initializing VectorDB...")
+        PrintStyle.standard("Initializing VectorDB...")
 
         if log_item:
             log_item.stream(progress="\nInitializing VectorDB")
@@ -312,7 +314,7 @@ class Memory:
             try:
                 return eval(condition, {}, data)
             except Exception as e:
-                # print(f"Error evaluating condition: {e}")
+                # PrintStyle.error(f"Error evaluating condition: {e}")
                 return False
 
         return comparator

@@ -118,6 +118,10 @@ class PrintStyle:
         return bool(lines) and not lines[-1].strip()
 
     @staticmethod
+    def standard(text:str):
+        PrintStyle().print(text)
+
+    @staticmethod
     def hint(text:str):
         PrintStyle(font_color="#6C3483", padding=True).print("Hint: "+text)
 
