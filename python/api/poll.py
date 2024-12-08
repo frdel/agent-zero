@@ -35,5 +35,6 @@ class Poll(ApiHandler):
             "log_guid": context.log.guid,
             "log_version": len(context.log.updates),
             "log_progress": context.log.progress,
+            "log_progress_active": context.log.progress_active,
             "paused": context.paused,
         }

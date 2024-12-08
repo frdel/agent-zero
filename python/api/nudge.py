@@ -1,8 +1,6 @@
 from python.helpers.api import ApiHandler
 from flask import Request, Response
 
-from python.helpers import persist_chat
-
 class Nudge(ApiHandler):
     async def process(self, input: dict, request: Request) -> dict | Response:
         ctxid = input.get("ctxid", "")

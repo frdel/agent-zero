@@ -15,7 +15,7 @@ class OrganizeHistoryWait(Extension):
             # Check if the task is already done
             if task:
                 if not task.done():
-                    self.log()
+                    self.agent.context.log.set_progress("Compressing history...")
 
                 # Wait for the task to complete
                 await task
@@ -24,11 +24,6 @@ class OrganizeHistoryWait(Extension):
                 self.agent.set_data(DATA_NAME_TASK, None)
             else:
                 # no task running, start and wait
-                self.log()
+                self.agent.context.log.set_progress("Compressing history...")
                 await self.agent.history.compress()
 
-    def log(self):
-        if not hasattr(self, 'log_item') or not self.log_item:
-            self.log_item = self.agent.context.log.log(
-                type="util", heading="Waiting for history to be compressed..."
-            )

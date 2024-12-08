@@ -166,8 +166,7 @@ def _deserialize_agents(
 def _deserialize_log(data: dict[str, Any]) -> "Log":
     log = Log()
     log.guid = data.get("guid", str(uuid.uuid4()))
-    log.progress = ""  # data.get("progress", "")
-    log.progress_no = data.get("progress_no", 0)
+    log.set_initial_progress()
 
     # Deserialize the list of LogItem objects
     i = 0

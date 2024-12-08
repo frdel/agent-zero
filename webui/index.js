@@ -269,6 +269,8 @@ window.loadKnowledge = async function () {
             formData.append('files[]', file);
         }
 
+        formData.append('ctxid', getContext());
+
         const response = await fetch('/import_knowledge', {
             method: 'POST',
             body: formData,
@@ -357,7 +359,7 @@ async function poll() {
             afterMessagesUpdate(response.logs)
         }
 
-        updateProgress(response.log_progress)
+        updateProgress(response.log_progress, response.log_progress_active)
 
         //set ui model vars from backend
         const inputAD = Alpine.$data(inputSection);
@@ -400,11 +402,30 @@ function speakMessages(logs) {
     }
 }
 
-function updateProgress(progress) {
-    const defaultText = "Waiting for input"
-    if (!progress) progress = defaultText
+function afterMessagesUpdate(logs) {
+    if (localStorage.getItem('speech') == 'true') {
+        speakMessages(logs)
+    }
+}
 
-    if (progress == defaultText) {
+function speakMessages(logs) {
+    // log.no, log.type, log.heading, log.content
+    for (let i = logs.length - 1; i >= 0; i--) {
+        const log = logs[i]
+        if (log.type == "response") {
+            if (log.no > lastSpokenNo) {
+                lastSpokenNo = log.no
+                speech.speak(log.content)
+                return
+            }
+        }
+    }
+}
+
+function updateProgress(progress, active) {
+    if (!progress) progress = ""
+
+    if (!active) {
         removeClassFromElement(progressBar, "shiny-text")
     } else {
         addClassToElement(progressBar, "shiny-text")
