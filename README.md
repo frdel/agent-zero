@@ -78,8 +78,7 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 3. The agent can break his operating system. Sometimes the agent can deactivate virtual environment, uninstall packages, change config etc. Again, removing the Docker container and cleaning up the **work_dir/** is enough to fix that.
 
 ## Ideal environment
-- **Docker container**: The perfect environment to run Agent Zero is the built-in Docker container. The agent can download the image **frdel/agent-zero-exe** on its own and start the container, you only need to have Docker running (like the Docker Desktop application).
-- **Python**: Python has to be installed on the system to run the framework.
+- **Docker container**: The perfect environment to run Agent Zero is the built-in Docker container. You only need to have Docker running (like the Docker Desktop application).
 - **Internet access**: The agent will need internet access to use its online knowledge tool and execute commands and scripts requiring a connection. If you do not need your agent to be online, you can alter its prompts in the **prompts/** folder and make it fully local.
 
 ![Time example](/docs/res/time_example.jpg)
@@ -87,7 +86,7 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 ## Setup
 A detailed setup guide for Windows, macOS and Linux with a video can be found in the new Agent Zero Documentation at [this page](docs/installation.md#windows-macos-and-linux-setup-guide). 
 
-You can download the executable for your system from the [releases page](https://github.com/frdel/agent-zero/releases).
+You can download the full binaries for your system from the [releases page](https://github.com/frdel/agent-zero/releases).
 
 ## Consult the Documentation
 The documentation dives deep into the framework and its features. It is a good place to start if you are new to Agent Zero. Click [here](docs/README.md) to see the Documentation.
@@ -98,13 +97,7 @@ The documentation dives deep into the framework and its features. It is a good p
 
 ### Changelog [since version 0.7]
 
-#### v0.7.1
-- **Preinstalled binaries and bundler scripts**
-- **Persistent Chats** - Serialized to /tmp/chats and automatically loaded in run_ui.py on startup
-- **Documentation stack merged into the repository**
-- **Bug Fixes**
-
-> [!NOTE]  
+> [!IMPORTANT]  
 > **Changes to frdel/agent-zero Docker image since v0.8:**  
 > - In version 0.8, the Docker image has changed to frdel/agent-zero-run using the new Dockerfile.
 
@@ -119,6 +112,12 @@ The documentation dives deep into the framework and its features. It is a good p
 - **KaTeX math visualization support**
 - **In-chat file attachments**
 
+#### v0.7.1
+- **Preinstalled binaries and bundler scripts**
+- **Persistent Chats** - Serialized to /tmp/chats and automatically loaded in run_ui.py on startup
+- **Documentation stack merged into the repository**
+- **Bug Fixes**
+
 #### v0.7
 - **Automatic memory**
 - **UI improvements**
@@ -126,7 +125,3 @@ The documentation dives deep into the framework and its features. It is a good p
 - **Extensions framework**
 - **Reflection prompts**
 - **Bugfixes**
-
-> [!NOTE]  
-> **Changes to launch files since v0.7:**  
-> - the Docker image has been changed to frdel/agent-zero-run from the legacy installation process.
