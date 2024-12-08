@@ -11,7 +11,7 @@
 - Agent Zero uses the computer as a tool to accomplish its (your) tasks.
 
 ## Now fully Dockerized, fully UI, with TTS and STT:
-![Web UI](/docs/res/win_webui2.gif)
+https://github.com/user-attachments/assets/5d70aad8-4313-48b6-aadb-96059ceea048
 
 ## Key concepts
 1. **General-purpose assistant**
