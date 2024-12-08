@@ -1,7 +1,9 @@
+import asyncio
 from python.helpers.extension import Extension
 from python.helpers.memory import Memory
 from agent import LoopData
 
+DATA_NAME_TASK = "_recall_solutions_task"
 
 class RecallSolutions(Extension):
 
@@ -13,10 +15,14 @@ class RecallSolutions(Extension):
 
     async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
 
-        if (
-            loop_data.iteration % RecallSolutions.INTERVAL == 0
-        ):  # every 3 iterations (or the first one) recall solution memories
-            await self.search_solutions(loop_data=loop_data, **kwargs)
+        # every 3 iterations (or the first one) recall memories
+        if loop_data.iteration % RecallSolutions.INTERVAL == 0:
+            task = asyncio.create_task(self.search_solutions(loop_data=loop_data, **kwargs))
+        else:
+            task = None
+
+        # set to agent to be able to wait for it
+        self.agent.set_data(DATA_NAME_TASK, task)
 
     async def search_solutions(self, loop_data: LoopData, **kwargs):
 
