@@ -10,8 +10,8 @@
 - Agent Zero is fully transparent, readable, comprehensible, customizable and interactive.
 - Agent Zero uses the computer as a tool to accomplish its (your) tasks.
 
-## Now with Responsive UI, Auto-memory and Reflection:
-![Web UI](/docs/res/win_webui2.gif)
+## Now fully Dockerized, fully UI, with TTS and STT:
+https://github.com/user-attachments/assets/58e5462b-481d-4f43-8a4c-e989b9acfdf7
 
 ## Key concepts
 1. **General-purpose assistant**
@@ -59,7 +59,7 @@
 
 ## Keep in mind
 1. **Agent Zero can be dangerous!**
-With proper instruction, Agent Zero is capable of many things, even potentially dangerous to your computer, data, or accounts. Always run Agent Zero in an isolated environment (like the built in docker container) and be careful what you wish for.
+With proper instruction, Agent Zero is capable of many things, even potentially dangerous to your computer, data, or accounts. Always run Agent Zero in an isolated environment (like the one provided with Docker) and be careful what you wish for.
 
 2. **Agent Zero is not pre-programmed; it is prompt-based.**
 The whole framework contains only a minimal amount of code and does not guide the agent in any way.
@@ -74,31 +74,46 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 
 ## Known problems
 1. The system prompt sucks. You can do better. If you do, help me please :)
-2. The communication between agents and terminal in Docker Container via SSH can sometimes break and stop producing outputs. Sometimes it is because the agent runs something like "server.serve_forever()" which causes the terminal to hang, sometimes a random error can occur. Restarting the agent and/or the docker container helps.
-3. The agent can break his operating system. Sometimes the agent can deactivate virtual environment, uninstall packages, change config etc. Again, removing the docker container and cleaning up the **work_dir/** is enough to fix that.
+2. The communication between agents and terminal in Docker Container via SSH can sometimes break and stop producing outputs. Sometimes it is because the agent runs something like "server.serve_forever()" which causes the terminal to hang, sometimes a random error can occur. Restarting the agent and/or the Docker container helps.
+3. The agent can break his operating system. Sometimes the agent can deactivate virtual environment, uninstall packages, change config etc. Again, removing the Docker container and cleaning up the **work_dir/** is enough to fix that.
 
 ## Ideal environment
-- **Docker container**: The perfect environment to run Agent Zero is the built-in docker container. The agent can download the image **frdel/agent-zero-exe** on its own and start the container, you only need to have docker running (like the Docker Desktop application).
-- **Python**: Python has to be installed on the system to run the framework.
+- **Docker container**: The perfect environment to run Agent Zero is the built-in Docker container. You only need to have Docker running (like the Docker Desktop application).
 - **Internet access**: The agent will need internet access to use its online knowledge tool and execute commands and scripts requiring a connection. If you do not need your agent to be online, you can alter its prompts in the **prompts/** folder and make it fully local.
 
 ![Time example](/docs/res/time_example.jpg)
 
 ## Setup
-A detailed setup guide for Windows, macOS and Linux with a video can be found in the new Agent Zero Documentation at [this page](docs/installation.md#in-depth-guide-for-windows-and-macos).
+A detailed setup guide for Windows, macOS and Linux with a video can be found in the new Agent Zero Documentation at [this page](docs/installation.md#windows-macos-and-linux-setup-guide). 
+
+You can download the full binaries for your system from the [releases page](https://github.com/frdel/agent-zero/releases).
 
 ## Consult the Documentation
 The documentation dives deep into the framework and its features. It is a good place to start if you are new to Agent Zero. Click [here](docs/README.md) to see the Documentation.
 
 ## Coming up
-- **Preinstalled binaries and bundler scripts**
-- **Knowledge tool open-sourcing and web scraping tool**
 - **User interaction refinements**
-- **In-context switchable LLMs**
+- **Browser use and RAG tools**
 
 ### Changelog [since version 0.7]
 
+> [!IMPORTANT]  
+> **Changes to frdel/agent-zero Docker image since v0.8:**  
+> - In version 0.8, the Docker image has changed to frdel/agent-zero-run using the new Dockerfile.
+
+#### v0.8
+- **Docker runtime**
+- **New messages history and summarization system**
+- **Agent behavior change and management**
+- **Text-to-Speech (TTS) and Speech-to-Text (STT)**
+- **Settings page in Web UI**
+- **SearXNG integration replacing Perplexity + DuckDuckGo knowledge_tool**
+- **File browser functionality**
+- **KaTeX math visualization support**
+- **In-chat file attachments**
+
 #### v0.7.1
+- **Preinstalled binaries and bundler scripts**
 - **Persistent Chats** - Serialized to /tmp/chats and automatically loaded in run_ui.py on startup
 - **Documentation stack merged into the repository**
 - **Bug Fixes**
@@ -110,8 +125,3 @@ The documentation dives deep into the framework and its features. It is a good p
 - **Extensions framework**
 - **Reflection prompts**
 - **Bugfixes**
-
-> [!NOTE]  
-> **Changes to launch files since v0.6:**  
-> - main.py file has been replaced with run_ui.py (webui) and run_cli.py (terminal) launch files.
-> - configuration has been moved to initialize.py for both webui and terminal launch files.
