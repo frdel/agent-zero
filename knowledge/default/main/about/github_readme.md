@@ -10,7 +10,7 @@
 - Agent Zero is fully transparent, readable, comprehensible, customizable and interactive.
 - Agent Zero uses the computer as a tool to accomplish its (your) tasks.
 
-## Now with Responsive UI, Auto-memory and Persistent chats:
+## Now fully Dockerized, fully UI, with TTS and STT:
 ![Web UI](/docs/res/win_webui2.gif)
 
 ## Key concepts
@@ -93,9 +93,8 @@ You can download the executable for your system from the [releases page](https:/
 The documentation dives deep into the framework and its features. It is a good place to start if you are new to Agent Zero. Click [here](docs/README.md) to see the Documentation.
 
 ## Coming up
-- **Knowledge tool open-sourcing and web scraping tool**
 - **User interaction refinements**
-- **In-context switchable LLMs**
+- **Browser use and RAG tools**
 
 ### Changelog [since version 0.7]
 
@@ -106,8 +105,19 @@ The documentation dives deep into the framework and its features. It is a good p
 - **Bug Fixes**
 
 > [!NOTE]  
-> **Changes to frdel/agent-zero Docker image since v0.7:**  
-> - when installing version 0.7.1, the Docker image has to be removed from your Docker Desktop application and reinstalled. This is because the image has been updated.
+> **Changes to frdel/agent-zero Docker image since v0.8:**  
+> - In version 0.8, the Docker image has changed to frdel/agent-zero-run using the new Dockerfile.
+
+#### v0.8
+- **Docker runtime**
+- **New messages history and summarization system**
+- **Agent behavior change and management**
+- **Text-to-Speech (TTS) and Speech-to-Text (STT)**
+- **Settings page in Web UI**
+- **SearXNG integration replacing Perplexity + DuckDuckGo knowledge_tool**
+- **File browser functionality**
+- **KaTeX math visualization support**
+- **In-chat file attachments**
 
 #### v0.7
 - **Automatic memory**
@@ -118,6 +128,5 @@ The documentation dives deep into the framework and its features. It is a good p
 - **Bugfixes**
 
 > [!NOTE]  
-> **Changes to launch files since v0.6:**  
-> - main.py file has been replaced with run_ui.py (webui) and run_cli.py (terminal) launch files.
-> - configuration has been moved to initialize.py for both webui and terminal launch files.
+> **Changes to launch files since v0.7:**  
+> - the Docker image has been changed to frdel/agent-zero-run from the legacy installation process.
