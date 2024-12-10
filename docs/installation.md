@@ -524,6 +524,13 @@ ollama pull <model-name>
 ```
 
 Replace `<model-name>` with the name of the model you want to use.  For example, to pull the Mistral Large model, you would use the command `ollama pull mistral-large`.
+A CLI message should confirm the model download on your system
+
+#### Selecting your model within Agent Zero
+Once you've downloaded your model(s), you must select it in the Settings page of the GUI. 
+Within the Chat model, Utility model, or Embedding model section, choose Ollama as provider.
+Write your model code as expected by Ollama, in the format `llama3.2` or `qwen2.5:7b`
+Click `Save` to confirm your settings.
 
 #### Managing your downloaded models
 Once you've downloaded some models, you might want to check which ones you have available or remove any you no longer need.
