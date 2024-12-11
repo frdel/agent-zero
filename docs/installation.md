@@ -167,7 +167,8 @@ Agent Zero provides a comprehensive settings interface to customize various aspe
 - **Silence Settings:** Configure silence threshold, duration, and timeout parameters for voice input
 
 ### API Keys
-- Configure API keys for various service providers
+- Configure API keys for various service providers directly within the Web UI
+- Click `Save` to confirm your settings
 
 ### Authentication
 - **UI Login:** Set username for web interface access
@@ -195,7 +196,7 @@ The Settings page is the control center for selecting the Large Language Models 
 
 **How to Change:**
 1. Open Settings page in the Web UI.
-2. Change the LLM for each role (Chat model, Utility model, Embedding model).
+2. Choose the provider for the LLM for each role (Chat model, Utility model, Embedding model) and write the model name.
 3. Click "Save" to apply the changes.
 
 ## Important Considerations
@@ -204,6 +205,66 @@ The Settings page is the control center for selecting the Large Language Models 
 > Changing the `embedding_llm` will re-index all the memory and knowledge, and 
 > requires clearing the `memory` folder to avoid errors, as the embeddings can't be 
 > mixed in the vector database. Note that this will DELETE ALL of Agent Zero's memory.
+
+## Installing and Using Ollama (Local Models)
+If you're interested in Ollama, which is a powerful tool that allows you to run various large language models locally, here's how to install and use it:
+
+#### First step: installation
+**On Windows:**
+
+Download Ollama from the official website and install it on your machine.
+
+<button>[Download Ollama Setup](https://ollama.com/download/OllamaSetup.exe)</button>
+
+**On macOS:**
+```
+brew install ollama
+```
+Otherwise choose macOS installer from the [official website](https://ollama.com/).
+
+**On Linux:**
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+**Finding Model Names:**
+Visit the [Ollama model library](https://ollama.com/library) for a list of available models and their corresponding names.  The format is usually `provider/model-name` (or just `model-name` in some cases).
+
+#### Second step: pulling the model
+**On Windows, macOS, and Linux:**
+```
+ollama pull <model-name>
+```
+
+1. Replace `<model-name>` with the name of the model you want to use.  For example, to pull the Mistral Large model, you would use the command `ollama pull mistral-large`.
+
+2. A CLI message should confirm the model download on your system
+
+#### Selecting your model within Agent Zero
+1. Once you've downloaded your model(s), you must select it in the Settings page of the GUI. 
+
+2. Within the Chat model, Utility model, or Embedding model section, choose Ollama as provider.
+
+3. Write your model code as expected by Ollama, in the format `llama3.2` or `qwen2.5:7b`
+
+4. Click `Save` to confirm your settings.
+
+![ollama](res/setup/settings/4-local-models.png)
+
+#### Managing your downloaded models
+Once you've downloaded some models, you might want to check which ones you have available or remove any you no longer need.
+
+- **Listing downloaded models:** 
+  To see a list of all the models you've downloaded, use the command:
+  ```
+  ollama list
+  ```
+- **Removing a model:**
+  If you need to remove a downloaded model, you can use the `ollama rm` command followed by the model name:
+  ```
+  ollama rm <model-name>
+  ```
+
 
 - Experiment with different model combinations to find the balance of performance and cost that best suits your needs. E.g., faster and lower latency LLMs will help, and you can also use `faiss_gpu` instead of `faiss_cpu` for the memory.
 
@@ -290,7 +351,8 @@ For developers or users who need to run Agent Zero directly on their system,see 
 > ```
 
 3. **Full Binaries**
-- Using Git/GitHub: Pull the latest version of the Agent Zero repository with. The custom knowledge, solutions, memory, and other data will get ignored, so you don't need to worry about losing any of your custom data. The same goes for your .env file with all of your API keys and settings.json.
+- Using Git/GitHub: Pull the latest version of the Agent Zero repository. 
+- The custom knowledge, solutions, memory, and other data will get ignored, so you don't need to worry about losing any of your custom data. The same goes for your .env file with all of your API keys and settings.json.
 
 > [!WARNING]  
 > - If you update manually, beware: save your .env file with the API keys, and look for new dependencies in requirements.txt. 
@@ -493,55 +555,3 @@ After following the instructions for your specific operating system, you should 
 
 If you encounter any issues during the installation process, please consult the [Troubleshooting section](troubleshooting.md) of this documentation or refer to the Agent Zero [Skool](https://www.skool.com/agent-zero) or [Discord](https://discord.gg/Z2tun2N3) community for assistance.
 
-## Installing and Using Ollama (Local Models)
-If you're interested in Ollama, which is a powerful tool that allows you to run various large language models locally, here's how to install and use it:
-
-#### First step: installation
-**On Windows:**
-
-Download Ollama from the official website and install it on your machine.
-
-<button>[Download Ollama Setup](https://ollama.com/download/OllamaSetup.exe)</button>
-
-**On macOS:**
-```
-brew install ollama
-```
-Otherwise choose macOS installer from the [official website](https://ollama.com/).
-
-**On Linux:**
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-```
-
-**Finding Model Names:**
-Visit the [Ollama model library](https://ollama.com/library) for a list of available models and their corresponding names.  The format is usually `provider/model-name` (or just `model-name` in some cases).
-
-#### Second step: pulling the model
-**On Windows, macOS, and Linux:**
-```
-ollama pull <model-name>
-```
-
-Replace `<model-name>` with the name of the model you want to use.  For example, to pull the Mistral Large model, you would use the command `ollama pull mistral-large`.
-A CLI message should confirm the model download on your system
-
-#### Selecting your model within Agent Zero
-Once you've downloaded your model(s), you must select it in the Settings page of the GUI. 
-Within the Chat model, Utility model, or Embedding model section, choose Ollama as provider.
-Write your model code as expected by Ollama, in the format `llama3.2` or `qwen2.5:7b`
-Click `Save` to confirm your settings.
-
-#### Managing your downloaded models
-Once you've downloaded some models, you might want to check which ones you have available or remove any you no longer need.
-
-- **Listing downloaded models:** 
-  To see a list of all the models you've downloaded, use the command:
-  ```
-  ollama list
-  ```
-- **Removing a model:**
-  If you need to remove a downloaded model, you can use the `ollama rm` command followed by the model name:
-  ```
-  ollama rm <model-name>
-  ```

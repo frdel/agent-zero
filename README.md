@@ -49,7 +49,7 @@ https://github.com/user-attachments/assets/58e5462b-481d-4f43-8a4c-e989b9acfdf7
 ![Agent Zero](/docs/res/splash_wide.png)
 
 ## Nice features to have
-- Output is very clean, colorful, readable and interactive; nothing is hidden.
+- The new GUI output is very clean, fluid, colorful, readable and interactive; nothing is hidden.
 - The same colorful output you see in the terminal is automatically saved to HTML file in **logs/** folder for every session.
 - Agent output is streamed in real-time, allowing the user to read along and intervene at any time.
 - No coding is required, only prompting and communication skills.

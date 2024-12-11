@@ -38,7 +38,7 @@ Located beneath the chat input box, Agent Zero provides a set of action buttons 
   - Success message confirms successful import
   - See [knowledge](architecture.md#knowledge) for more details
 
-* **File Browser:** Manage files in the Agent Zero environment
+### File Browser: Manage files in the Agent Zero environment
   - Upload new files and folders
   - Download files (click filename) or folders (as zip archives)
   - Delete files and folders
@@ -54,7 +54,8 @@ Located beneath the chat input box, Agent Zero provides a set of action buttons 
 
 ![Context](res/ui-context.png)
 
-* **History:** Access the chat history in JSON format
+### History: 
+Access the chat history in JSON format
   - View the conversation as processed by the LLM
   - Useful for debugging and understanding agent behavior
 
@@ -227,6 +228,10 @@ Agent Zero provides a powerful file browser interface for managing your workspac
   - Click directories to enter them
   - Use "Up" button to move to parent directory
   - Current path always visible for context
+
+> [!NOTE]
+> The files browser allows the user to go in the Agent Zero root folder if you click the `Up` button, but the working directory of Agents will always be `/work_dir`
+> 
 - **File Operations**:
   - Create new files and directories
   - Delete existing files and directories

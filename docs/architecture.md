@@ -269,7 +269,7 @@ Extensions can be found in `python/extensions` directory:
 
 > [!NOTE]
 > When using the Docker runtime container, these directories are mounted 
-> within the `/a0` volume for data persistence.
+> within the `/a0` volume for data persistence until the container is restarted or deleted.
 
 ## Customization
 Agent Zero's strength lies in its flexibility. This section details how to customize various aspects of the framework, tailoring it to your specific needs and preferences.
