@@ -12,7 +12,7 @@ class Nudge(ApiHandler):
 
         msg = "Process reset, agent nudged."
         context.log.log(type="info", content=msg)
-        
+
         return {
             "message": msg,
             "ctxid": context.id,

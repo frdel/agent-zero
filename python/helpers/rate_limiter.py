@@ -34,7 +34,7 @@ class RateLimiter:
         while True:
             self._clean_old_records(current_time)
             calls, input_tokens, output_tokens = self._get_counts()
-            
+
             wait_reasons = []
             if self.max_calls > 0 and calls >= self.max_calls:
                 wait_reasons.append("max calls")
@@ -42,10 +42,10 @@ class RateLimiter:
                 wait_reasons.append("max input tokens")
             if self.max_output_tokens > 0 and output_tokens >= self.max_output_tokens:
                 wait_reasons.append("max output tokens")
-            
+
             if not wait_reasons:
                 break
-            
+
             oldest_record = self.call_records[0]
             wait_time = oldest_record.timestamp + self.window_seconds - current_time
             if wait_time > 0:

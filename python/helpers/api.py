@@ -31,7 +31,7 @@ class ApiHandler:
             # process via handler
             output = await self.process(input, request)
 
-            # return output based on type            
+            # return output based on type
             if isinstance(output, Response):
                 return output
             else:
@@ -44,7 +44,7 @@ class ApiHandler:
             PrintStyle.error(error)
             return Response(response=error, status=500, mimetype="text/plain")
 
-        
+
 
     # get context to run agent zero in
     def get_context(self, ctxid: str):

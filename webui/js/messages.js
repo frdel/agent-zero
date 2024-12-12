@@ -4,12 +4,12 @@ function createCopyButton() {
     const button = document.createElement('button');
     button.className = 'copy-button';
     button.textContent = 'Copy';
-    
+
     button.addEventListener('click', async function(e) {
         e.stopPropagation();
         const container = this.closest('.msg-content, .kvps-row, .message-text');
         let textToCopy;
-        
+
         if (container.classList.contains('kvps-row')) {
             textToCopy = container.querySelector('.kvps-val').textContent;
         } else if (container.classList.contains('message-text')) {
@@ -17,7 +17,7 @@ function createCopyButton() {
         } else {
             textToCopy = container.querySelector('span').textContent;
         }
-        
+
         try {
             await navigator.clipboard.writeText(textToCopy);
             const originalText = button.textContent;
@@ -31,7 +31,7 @@ function createCopyButton() {
             console.error('Failed to copy text:', err);
         }
     });
-    
+
     return button;
 }
 
@@ -92,12 +92,12 @@ export function _drawMessage(messageContainer, heading, content, temp, followUp,
 
         const spanElement = document.createElement('span');
         spanElement.innerHTML = content;
-        
+
         // Add click handler for small screens
         spanElement.addEventListener('click', () => {
             copyText(spanElement.textContent, spanElement);
         });
-        
+
         preElement.appendChild(spanElement);
         addCopyButtonToElement(preElement);
         messageDiv.appendChild(preElement);
@@ -164,12 +164,12 @@ export function drawMessageUser(messageContainer, id, type, heading, content, te
         const textDiv = document.createElement('div');
         textDiv.classList.add('message-text');
         textDiv.textContent = content;
-        
+
         // Add click handler
         textDiv.addEventListener('click', () => {
             copyText(content, textDiv);
         });
-        
+
         addCopyButtonToElement(textDiv);
         messageDiv.appendChild(textDiv);
     }
@@ -313,12 +313,12 @@ function drawKvps(container, kvps) {
                 }
             } else {
                 pre.textContent = value;
-                
+
                 // Add click handler
                 pre.addEventListener('click', () => {
                     copyText(value, pre);
                 });
-                
+
                 td.appendChild(pre);
                 addCopyButtonToElement(row);
             }

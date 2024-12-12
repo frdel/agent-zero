@@ -1,5 +1,5 @@
 ### response:
-Concludes the task and delivers the final response to the user. 
+Concludes the task and delivers the final response to the user.
 Use only when the task is complete. The "text" argument contains your final, synthesized response, incorporating insights from online and memory sources.
 Prioritize up-to-date information.
 **Example usage**:
@@ -11,7 +11,7 @@ Prioritize up-to-date information.
     ],
     "reflection": [
         "A simple greeting response is sufficient...",
-        "I will use the response tool...",
+        "I will use the response_tool...",
     ],
     "tool_name": "response",
     "tool_args": {

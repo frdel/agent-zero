@@ -9,7 +9,7 @@
 # Expected output format
 - Return filtered list of bullet points of key elements in the memories
 - Do not include memory contents, only their summaries to inform the user that he has memories of the topic.
-- If there are relevant memories, instruct user to use "knowledge_tool" to get more details.
+- If there are relevant memories, instruct user to use `knowledge_tool` to get more details.
 
 # Example output 1 (relevant memories):
 ~~~md

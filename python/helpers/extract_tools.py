@@ -29,10 +29,10 @@ def extract_json_object_string(content):
 def extract_json_string(content):
     # Regular expression pattern to match a JSON object
     pattern = r'\{(?:[^{}]|(?R))*\}|\[(?:[^\[\]]|(?R))*\]|"(?:\\.|[^"\\])*"|true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?'
-    
+
     # Search for the pattern in the content
     match = regex.search(pattern, content)
-    
+
     if match:
         # Return the matched JSON string
         return match.group(0)

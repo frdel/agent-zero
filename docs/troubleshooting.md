@@ -25,11 +25,11 @@ pip install -r requirements.txt
 **3. How do I integrate open-source models with Agent Zero?**
 Refer to the [Choosing your LLMs](installation.md#installing-and-using-ollama-local-models) section of the documentation for detailed instructions and examples for configuring different LLMs in `initialize.py`. Local models can be run using Ollama or LM Studio.
 
-> [!TIP]  
+> [!TIP]
 > Some LLM providers offer free usage of their APIs, for example Groq, Mistral or SambaNova.
 
 **4. How can I make Agent Zero retain memory between sessions?**
-Auto memory automatically saves and loads solutions and informations from previous sessions.
+Auto memory automatically saves and loads solutions and information from previous sessions.
 
 **5. Where can I find more documentation or tutorials?**
 *   Join the Agent Zero [Skool](https://www.skool.com/agent-zero) or [Discord](https://discord.gg/Z2tun2N3) community for support and discussions.
@@ -38,7 +38,7 @@ Auto memory automatically saves and loads solutions and informations from previo
 Modify the `rate_limit_seconds` and `rate_limit_requests` parameters in the `AgentConfig` class within `initialize.py`.
 
 **7. Can Agent Zero interact with external APIs or services (e.g., WhatsApp)?**
-Extending Agent Zero to interact with external APIs is possible by creating custom tools or solutions. Refer to the documentation on creating them. 
+Extending Agent Zero to interact with external APIs is possible by creating custom tools or solutions. Refer to the documentation on creating them.
 
 ## Troubleshooting
 

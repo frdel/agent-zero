@@ -14,17 +14,17 @@ class UploadWorkDirFiles(ApiHandler):
             raise Exception("No files uploaded")
 
         current_path = request.form.get('path', '')
-        uploaded_files = request.files.getlist("files[]") 
-        
+        uploaded_files = request.files.getlist("files[]")
+
         browser = FileBrowser()
-        
+
         successful, failed = browser.save_files(uploaded_files, current_path)
-        
+
         if not successful and failed:
             raise Exception("All uploads failed")
-            
+
         result = browser.get_files(current_path)
-        
+
         return {
             "message": "Files uploaded successfully" if not failed else "Some files failed to upload",
             "data": result,

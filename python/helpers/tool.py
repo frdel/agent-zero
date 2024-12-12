@@ -8,7 +8,7 @@ from python.helpers import messages
 class Response:
     message:str
     break_loop:bool
-    
+
 class Tool:
 
     def __init__(self, agent: Agent, name: str, args: dict[str,str], message: str, **kwargs) -> None:
@@ -29,7 +29,7 @@ class Tool:
                 PrintStyle(font_color="#85C1E9", bold=True).stream(self.nice_key(key)+": ")
                 PrintStyle(font_color="#85C1E9", padding=isinstance(value,str) and "\n" in value).stream(value)
                 PrintStyle().print()
-                
+
     async def after_execution(self, response: Response, **kwargs):
         text = response.message.strip()
         await self.agent.hist_add_tool_result(self.name, text)

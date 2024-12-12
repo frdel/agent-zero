@@ -20,7 +20,7 @@ let context = "";
 let connectionStatus = false
 
 
-// Initialize the toggle button 
+// Initialize the toggle button
 setupSidebarToggle();
 
 function isMobile() {
@@ -149,7 +149,7 @@ export async function sendMessage() {
             //     } else {
             //         toast("Undefined error.", "error");
             //     }
-            // } 
+            // }
             else {
                 setContext(jsonResponse.context);
             }
@@ -625,7 +625,7 @@ window.loadChats = async function () {
         //     } else {
         //         toast("Undefined error.", "error")
         //     }
-        // } 
+        // }
         else {
             setContext(response.ctxids[0])
             toast("Chats loaded.", "success")

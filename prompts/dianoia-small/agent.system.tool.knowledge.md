@@ -1,5 +1,5 @@
 ### knowledge_tool:
-Provide a "question" argument to retrieve information from online sources and memory. Prioritize asking for direct answers over guidance. 
+Provide a "question" argument to retrieve information from online sources and memory. Prioritize asking for direct answers over guidance.
 Verify memory information against online sources.
 **Example usage**:
 ~~~json

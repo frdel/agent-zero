@@ -40,7 +40,7 @@ while true; do
         # --code_exec_ssh_port=22 \
         # --code_exec_ssh_user="root" \
         # --code_exec_ssh_pass="toor"
-    
+
     # Check the exit status
     if [ $? -ne 0 ]; then
         echo "A0 script exited with an error. Restarting..."

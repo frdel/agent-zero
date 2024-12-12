@@ -367,6 +367,6 @@ def get_memory_subdir_abs(agent: Agent) -> str:
 
 def get_custom_knowledge_subdir_abs(agent: Agent) -> str:
     for dir in agent.config.knowledge_subdirs:
-        if dir != "default":    
+        if dir != "default":
             return files.get_abs_path("knowledge", dir)
     raise Exception("No custom knowledge subdir set")

@@ -193,7 +193,7 @@ class MicrophoneInput {
         this.analyserNode.smoothingTimeConstant = 0.85;
         this.mediaStreamSource.connect(this.analyserNode);
     }
-    
+
 
     startAudioAnalysis() {
         const analyzeFrame = () => {
@@ -251,7 +251,7 @@ class MicrophoneInput {
             return;
         }
 
-        const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });        
+        const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
         const audioUrl = URL.createObjectURL(audioBlob);
 
 

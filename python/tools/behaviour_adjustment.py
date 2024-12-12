@@ -11,7 +11,7 @@ class UpdateBehaviour(Tool):
 
     # async def before_execution(self, **kwargs):
     #     pass
-    
+
     # async def after_execution(self, response, **kwargs):
     #     pass
 
@@ -19,7 +19,7 @@ async def update_behaviour(agent: Agent, log_item: LogItem, adjustments: str):
     # get system message and current ruleset
     system = agent.read_prompt("behaviour.merge.sys.md")
     current_rules = read_rules(agent)
-        
+
     # log query streamed by LLM
     def log_callback(content):
         log_item.stream(ruleset=content)
@@ -49,4 +49,3 @@ def read_rules(agent: Agent):
     else:
         rules = agent.read_prompt("agent.system.behaviour_default.md")
         return agent.read_prompt("agent.system.behaviour.md", rules=rules)
-  

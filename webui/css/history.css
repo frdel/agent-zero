@@ -4,7 +4,7 @@
 .ace_scrollbar-v {
     overflow-y: auto;
   }
-  
+
   /* JSON Viewer Container */
   #json-viewer-container {
     width: 100%;
@@ -12,14 +12,13 @@
     border-radius: 0.4rem;
     overflow: auto;
   }
-  
+
   #json-viewer-container::-webkit-scrollbar {
     width: 0;
   }
-  
+
   /* Viewer Styles */
   #viewer {
     overflow: hidden;
     margin-bottom: 0.5rem;
   }
-  

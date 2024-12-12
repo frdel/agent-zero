@@ -22,7 +22,7 @@ class RecallMemories(Extension):
 
         # set to agent to be able to wait for it
         self.agent.set_data(DATA_NAME_TASK, task)
-            
+
 
     async def search_memories(self, loop_data: LoopData, **kwargs):
 

@@ -21,4 +21,3 @@ def read_rules(agent: Agent):
     else:
         rules = agent.read_prompt("agent.system.behaviour_default.md")
         return agent.read_prompt("agent.system.behaviour.md", rules=rules)
-  
