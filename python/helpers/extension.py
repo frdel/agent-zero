@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Any
 from agent import Agent
-    
+
 class Extension:
 
     def __init__(self, agent: Agent, *args, **kwargs):

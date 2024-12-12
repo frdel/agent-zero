@@ -213,7 +213,7 @@ nav ul li a img {
   }
 }
 
-@media (max-width: 480px) { 
+@media (max-width: 480px) {
   nav ul {
     grid-template-columns: repeat(2, 1.2fr);
   }
@@ -223,14 +223,14 @@ nav ul li a img {
   nav ul {
     grid-template-columns: 1fr;
   }
-  
+
   nav ul li a {
     flex-direction: row;
     justify-content: flex-start;
     gap: 1rem;
     padding: 0.75rem 1rem;
   }
-  
+
   nav ul li a img {
     margin-bottom: 0;
     width: 30px;

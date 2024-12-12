@@ -12,7 +12,7 @@ apt-get update && apt-get install -y \
     curl \
     wget \
     git \
-    ffmpeg 
+    ffmpeg
 
 # prepare SSH daemon
 bash /ins/setup_ssh.sh "$@"

@@ -25,7 +25,7 @@ class FileBrowser:
         else:
             base_dir = "/"
         self.base_dir = Path(base_dir)
-      
+
     def _check_file_size(self, file) -> bool:
         try:
             file.seek(0, os.SEEK_END)
@@ -39,15 +39,15 @@ class FileBrowser:
         """Save uploaded files and return successful and failed filenames"""
         successful = []
         failed = []
-        
+
         try:
             # Resolve the target directory path
             target_dir = (self.base_dir / current_path).resolve()
             if not str(target_dir).startswith(str(self.base_dir)):
                 raise ValueError("Invalid target directory")
-                
+
             os.makedirs(target_dir, exist_ok=True)
-            
+
             for file in files:
                 try:
                     if file and self._is_allowed_file(file.filename, file):
@@ -61,13 +61,13 @@ class FileBrowser:
                 except Exception as e:
                     PrintStyle.error(f"Error saving file {file.filename}: {e}")
                     failed.append(file.filename)
-                    
+
             return successful, failed
-            
+
         except Exception as e:
             PrintStyle.error(f"Error in save_files: {e}")
             return successful, failed
-        
+
     def delete_file(self, file_path: str) -> bool:
         """Delete a file or empty directory"""
         try:
@@ -75,35 +75,35 @@ class FileBrowser:
             full_path = (self.base_dir / file_path).resolve()
             if not str(full_path).startswith(str(self.base_dir)):
                 raise ValueError("Invalid path")
-                
+
             if os.path.exists(full_path):
                 if os.path.isfile(full_path):
                     os.remove(full_path)
                 elif os.path.isdir(full_path):
                     shutil.rmtree(full_path)
                 return True
-                
+
             return False
-            
+
         except Exception as e:
             PrintStyle.error(f"Error deleting {file_path}: {e}")
             return False
 
     def _is_allowed_file(self, filename: str, file) -> bool:
         # allow any file to be uploaded in file browser
-        
+
         # if not filename:
         #     return False
         # ext = self._get_file_extension(filename)
         # all_allowed = set().union(*self.ALLOWED_EXTENSIONS.values())
         # if ext not in all_allowed:
         #     return False
-        
+
         return True  # Allow the file if it passes the checks
 
     def _get_file_extension(self, filename: str) -> str:
         return filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-        
+
     def get_files(self, current_path: str = "") -> Dict:
         try:
             # Resolve the full path while preventing directory traversal
@@ -150,7 +150,7 @@ class FileBrowser:
                     # parent_path is empty only if we're already at root
                     if str(current_abs) != str(self.base_dir):
                         parent_path = str(Path(current_path).parent)
-                    
+
                 except Exception as e:
                     parent_path = ""
 
@@ -163,14 +163,14 @@ class FileBrowser:
         except Exception as e:
             PrintStyle.error(f"Error reading directory: {e}")
             return {"entries": [], "current_path": "", "parent_path": ""}
-        
+
     def get_full_path(self, file_path: str, allow_dir: bool = False) -> str:
         """Get full file path if it exists and is within base_dir"""
         full_path = files.get_abs_path(self.base_dir,file_path)
         if not files.exists(full_path):
-            raise ValueError(f"File {file_path} not found")        
+            raise ValueError(f"File {file_path} not found")
         return full_path
-        
+
     def _get_file_type(self, filename: str) -> str:
         ext = self._get_file_extension(filename)
         for file_type, extensions in self.ALLOWED_EXTENSIONS.items():
@@ -189,4 +189,3 @@ class FileBrowser:
                     rel_path = os.path.relpath(file_path, full_path)
                     zip.write(file_path, os.path.join(base_name, rel_path))
         return zip_file_path
-        

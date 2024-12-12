@@ -3,7 +3,7 @@ Concludes the current task and delivers the final response to the user.
 Use this tool only when the task is complete or when no active task is in progress.
 The "text" argument contains the synthesized result of your reasoning and processing, incorporating insights from memory, online searches, or other tools.
 Prioritize up-to-date information from reliable online sources.
-Memory can provide valuable context, but reliable online data provide up-to-date information. 
+Memory can provide valuable context, but reliable online data provide up-to-date information.
 **Example usage**:
 ~~~json
 {

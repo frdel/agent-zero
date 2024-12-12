@@ -13,7 +13,7 @@ class AttachmentManager:
       'code': {'py', 'js', 'sh', 'html', 'css'},
       'document': {'md', 'pdf', 'txt', 'csv', 'json'}
   }
-  
+
   def __init__(self, work_dir: str):
       self.work_dir = work_dir
       os.makedirs(work_dir, exist_ok=True)
@@ -33,7 +33,7 @@ class AttachmentManager:
   @staticmethod
   def get_file_extension(filename: str) -> str:
       return filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-  
+
   def validate_mime_type(self, file) -> bool:
       try:
           mime_type = file.content_type
@@ -47,9 +47,9 @@ class AttachmentManager:
           filename = secure_filename(filename)
           if not filename:
               raise ValueError("Invalid filename")
-              
+
           file_path = os.path.join(self.work_dir, filename)
-          
+
           file_type = self.get_file_type(filename)
           metadata = {
               'filename': filename,
@@ -57,16 +57,16 @@ class AttachmentManager:
               'extension': self.get_file_extension(filename),
               'preview': None
           }
-  
+
           # Save file
           file.save(file_path)
-  
+
           # Generate preview for images
           if file_type == 'image':
               metadata['preview'] = self.generate_image_preview(file_path)
-  
+
           return file_path, metadata
-        
+
       except Exception as e:
           PrintStyle.error(f"Error saving file {filename}: {e}")
           return None, {} # type: ignore
@@ -77,17 +77,16 @@ class AttachmentManager:
               # Convert image if needed
               if img.mode in ('RGBA', 'P'):
                   img = img.convert('RGB')
-              
+
               # Resize for preview
               img.thumbnail((max_size, max_size))
-              
+
               # Save to buffer
               buffer = io.BytesIO()
               img.save(buffer, format="JPEG", quality=70, optimize=True)
-              
+
               # Convert to base64
               return base64.b64encode(buffer.getvalue()).decode('utf-8')
       except Exception as e:
           PrintStyle.error(f"Error generating preview for {image_path}: {e}")
           return None
-      

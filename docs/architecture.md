@@ -72,13 +72,13 @@ The memory system is a critical component of Agent Zero, enabling the agent to l
 - **Knowledge Tool:** The `knowledge_tool` uses DuckDuckGo and Perplexity APIs to search the web and retrieve information. It can also search the local knowledge base and memory for relevant information. The tool returns a summary of the information, which can be used by the agent to make decisions or answer questions.
 
 > [!TIP]
-> The Perplexity API key is the only service recommended for a full experience of 
-> Agent Zero, but you can use DuckDuckGo by leaving the Perplexity API key value 
+> The Perplexity API key is the only service recommended for a full experience of
+> Agent Zero, but you can use DuckDuckGo by leaving the Perplexity API key value
 > empty. DuckDuckGo usage in Agent Zero is free of charge but has its rate limits.
-  
-> [!NOTE]  
-> It's important to note that the DuckDuckGo API is not as powerful as Perplexity 
-> and may not return accurate or relevant results for some queries. The Perplexity 
+
+> [!NOTE]
+> It's important to note that the DuckDuckGo API is not as powerful as Perplexity
+> and may not return accurate or relevant results for some queries. The Perplexity
 > API is yet to be replaced with an open-source alternative.
 
 - **Custom Tools:** Users can create custom tools to extend Agent Zero's capabilities. Custom tools can be integrated into the framework by defining a tool specification, which includes the tool's prompt to be placed in `/prompts/$FOLDERNAME/agent.system.tool.$TOOLNAME.md`, as further detailed [here](#adding-tools).
@@ -93,7 +93,7 @@ The memory system is a critical component of Agent Zero, enabling the agent to l
 - **Knowledge Base:** PDFs, databases, books, code documentation, and other documents can be added to the knowledge base. Agent Zero uses this information to answer questions and make decisions. The `/docs` folder, containing Agent Zero's documentation stack, is automatically added to the knowledge base.
 
 ## Prompts
-The `prompts` directory contains various Markdown files that control agent behavior and communication. The most important file is `agent.system.main.md`, which acts as a central hub, referencing other prompt files.  
+The `prompts` directory contains various Markdown files that control agent behavior and communication. The most important file is `agent.system.main.md`, which acts as a central hub, referencing other prompt files.
 
 **Key Prompt Files:**
 | Prompt File | Description |
@@ -105,8 +105,8 @@ The `prompts` directory contains various Markdown files that control agent behav
 | agent.system.tools.md | Organizes and calls the individual tool prompt files. |
 | agent.system.tool.*.md | Individual tool prompt files (with * as the tool name). |
 
-> [!NOTE]  
-> You can customize any of these files.  Agent Zero will use the files in your custom `prompts_subdir` 
+> [!NOTE]
+> You can customize any of these files.  Agent Zero will use the files in your custom `prompts_subdir`
 > if they exist, otherwise, it will fall back to the files in `prompts/default`.
 
 ## Extensions
@@ -171,7 +171,7 @@ The `AgentConfig` class is present in both `agent.py` and `initialize.py` and pr
 
 - **Rate Limiting:** Control API usage and prevent rate limit errors by setting `rate_limit_seconds` and `rate_limit_requests`.
 
-- **Docker and SSH:** Configure Docker and SSH settings for code execution, if needed. If you need to configure SSH to run on another machine, such as a remote VM, see more in 
+- **Docker and SSH:** Configure Docker and SSH settings for code execution, if needed. If you need to configure SSH to run on another machine, such as a remote VM, see more in
 
 ## Adding Tools
 While good prompting can often achieve the desired behavior, sometimes custom tools are necessary.
@@ -193,7 +193,7 @@ To create a new extension, follow these steps:
 3. Your desired extension's name has to start with a number to ensure it is executed before or after an already existing extension based on your needs.
 4. Ensure that the extension is compatible with the main system and does not introduce any conflicts or errors.
 
-> [!NOTE]  
-> If you believe your custom tool, instrument or extension could bring value to the community, consider contributing 
-> it to the main repository by making a pull request. This will make it available for others to use and benefit from your work. 
+> [!NOTE]
+> If you believe your custom tool, instrument or extension could bring value to the community, consider contributing
+> it to the main repository by making a pull request. This will make it available for others to use and benefit from your work.
 > See [Contributing](contribution.md) for more information.

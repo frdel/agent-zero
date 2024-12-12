@@ -30,7 +30,7 @@ class RecallSolutions(Extension):
         extras = loop_data.extras_temporary
         if "solutions" in extras:
             del extras["solutions"]
-        
+
         # try:
         # show temp info message
         self.agent.context.log.log(

@@ -1147,7 +1147,7 @@ pre {
 }
 
 .text-button:active {
- opacity: 0.5; 
+ opacity: 0.5;
 }
 
 .text-button svg {
@@ -1540,7 +1540,7 @@ input:checked + .slider:before {
     display: table;
     gap: 0.1rem !important;
   }
-  
+
   .text-button {
     max-height: 25px;
   }
@@ -1555,7 +1555,7 @@ input:checked + .slider:before {
   margin-left: var(--spacing-md);
   margin-bottom: var(--spacing-md);
   }
-  
+
   .msg-kvps {
     display: flex;
     flex-direction: column;
@@ -1621,7 +1621,7 @@ input:checked + .slider:before {
   .sidebar-overlay.visible {
     display: block;
   }
-}  
+}
 
 @media (max-width: 768px) {
   #left-panel {
@@ -1651,15 +1651,15 @@ input:checked + .slider:before {
     -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
   }
-  
+
   #right-panel.expanded #logo-container {
     margin-left: 4.6rem;
   }
-  
+
   #input-section {
     align-items: start;
   }
-  
+
   .text-buttons-row {
     width: 90%;
     display: flex;
@@ -1738,7 +1738,7 @@ input:checked + .slider:before {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  
+
   #chats-section {
     min-height: 100%;
   }

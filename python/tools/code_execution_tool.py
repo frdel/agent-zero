@@ -131,7 +131,7 @@ class CodeExecution(Tool):
         # try again on lost connection
         for i in range(2):
             try:
-            
+
                 if reset:
                     await self.reset_terminal()
 

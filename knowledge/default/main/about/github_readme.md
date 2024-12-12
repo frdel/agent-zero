@@ -83,7 +83,7 @@ If you cannot provide all the necessary conditions or API keys, just change the 
 
 A detailed setup guide with a video can be found here: [/docs/installation](https://github.com/frdel/agent-zero/tree/main/docs/installation). Scroll down to see the readme file.
 
-> ⚠️ **Changes to launch files since v0.6:**  
+> ⚠️ **Changes to launch files since v0.6:**
 > main.py file has been replaced with run_ui.py (webui) and run_cli.py (terminal) launch files.
 > configuration has been moved to initialize.py for both webui and terminal launch files.
 

@@ -215,26 +215,26 @@
                     <span id="stop-speech" @click="window.speech.stop()" style="cursor: pointer">Stop Speech</span>
                 </h4>
             </div>
-            <div id="input-section" x-data="{ 
+            <div id="input-section" x-data="{
                 paused: false,
                 attachments: [],
                 hasAttachments: false,
-                
+
                 handleFileUpload(event) {
                     const files = event.target.files;
                     //if (files.length + this.attachments.length > 4) {
                     //    alert('Maximum 4 attachments allowed');
                     //    return;
                     //}
-    
+
                     Array.from(files).forEach(file => {
                         const ext = file.name.split('.').pop().toLowerCase();
-                        const allowedExts = new Set(['jpg', 'jpeg', 'png', 'bmp', 'md', 'py', 'js', 'sh', 
+                        const allowedExts = new Set(['jpg', 'jpeg', 'png', 'bmp', 'md', 'py', 'js', 'sh',
                                                     'html', 'css', 'pdf', 'txt', 'csv', 'json']);
-                        
+
                         //if (allowedExts.has(ext)) {
                             const isImage = ['jpg', 'jpeg', 'png', 'bmp'].includes(ext);
-                            
+
                             if (isImage) {
                                 // Handle image preview
                                 const reader = new FileReader();

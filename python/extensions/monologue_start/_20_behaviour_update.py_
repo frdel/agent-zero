@@ -22,7 +22,7 @@ class BehaviourUpdate(Extension):
         adjustments = await self.get_adjustments(agent, loop_data, log_item)
         if adjustments:
             await self.merge_rules(agent, adjustments, loop_data, log_item)
-    
+
     async def get_adjustments(self, agent: Agent, loop_data: LoopData, log_item: LogItem, **kwargs) -> list[str] | None:
 
         # get system message and chat history for util llm
@@ -53,7 +53,7 @@ class BehaviourUpdate(Extension):
         # get system message and current ruleset
         system = self.agent.read_prompt("behaviour.merge.sys.md")
         current_rules = _20_behaviour_prompt.read_rules(agent)
-            
+
         # log query streamed by LLM
         def log_callback(content):
             log_item.stream(ruleset=content)

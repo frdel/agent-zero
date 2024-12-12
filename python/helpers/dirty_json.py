@@ -13,7 +13,7 @@ class DirtyJson:
     def parse_string(json_string):
         parser = DirtyJson()
         return parser.parse(json_string)
-    
+
     def parse(self, json_string):
         self._reset()
         self.json_string = json_string
@@ -21,7 +21,7 @@ class DirtyJson:
         self.current_char = self.json_string[self.index]
         self._parse()
         return self.result
-        
+
     def feed(self, chunk):
         self.json_string += chunk
         if not self.current_char and self.json_string:
@@ -87,7 +87,7 @@ class DirtyJson:
             self._advance(cnt)
             return True
         return False
-    
+
     def _parse_object(self):
         obj = {}
         self._advance()  # Skip opening brace
@@ -108,11 +108,11 @@ class DirtyJson:
             if self.current_char is None:
                 self.stack.pop()
                 return  # End of input reached while parsing object
-            
+
             key = self._parse_key()
             value = None
             self._skip_whitespace()
-            
+
             if self.current_char == ':':
                 self._advance()
                 value = self._parse_value()
@@ -120,9 +120,9 @@ class DirtyJson:
                 value = None  # End of input reached after key
             else:
                 value = self._parse_value()
-                
+
             self.stack[-1][key] = value
-            
+
             self._skip_whitespace()
             if self.current_char == ',':
                 self._advance()

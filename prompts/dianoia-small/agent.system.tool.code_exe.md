@@ -1,12 +1,12 @@
 ### code_execution_tool:
-Execute terminal commands, Python, or Node.js code. 
-Use the "code" argument for properly escaped and indented code.  
-Specify the runtime environment using the "runtime" argument: "terminal", "python", "nodejs", "output" (wait for next output), or "reset" (kill process).  
+Execute terminal commands, Python, or Node.js code.
+Use the "code" argument for properly escaped and indented code.
+Specify the runtime environment using the "runtime" argument: "terminal", "python", "nodejs", "output" (wait for next output), or "reset" (kill process).
 For interactive terminal prompts (e.g., Y/N), use "terminal" in the next step with your response.  Install packages via `pip`, `npm`, or `apt-get` within the "terminal" runtime.
-IMPORTANT: Never use implicit print or implicit output, it does not work! If you need output of your code, you MUST use print() or console.log() to output selected variables. 
-Analyze errors using `knowledge_tool`. 
-Replace placeholder IDs/demo data with actual variables. 
-Do not combine with other tools (except `thoughts`). 
+IMPORTANT: Never use implicit print or implicit output, it does not work! If you need output of your code, you MUST use print() or console.log() to output selected variables.
+Analyze errors using `knowledge_tool`.
+Replace placeholder IDs/demo data with actual variables.
+Do not combine with other tools (except `thoughts`).
 Wait for the response before using other tools.
 ALWAYS put print/log statements inside and at the end of your code to get results.
 **Example usages:**

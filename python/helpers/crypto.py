@@ -29,7 +29,7 @@ def _generate_public_key(private_key: rsa.RSAPrivateKey):
         )
         .hex()
     )
-    
+
 def _decode_public_key(public_key: str) -> rsa.RSAPublicKey:
     # Decode hex string back to bytes
     pem_bytes = bytes.fromhex(public_key)

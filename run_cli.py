@@ -18,70 +18,70 @@ input_lock = threading.Lock()
 
 # Main conversation loop
 async def chat(context: AgentContext):
-    
-    # start the conversation loop  
+
+    # start the conversation loop
     while True:
         # ask user for message
         with input_lock:
             timeout = context.agent0.get_data("timeout") # how long the agent is willing to wait
             if not timeout: # if agent wants to wait for user input forever
-                PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ('e' to leave):")        
+                PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ('e' to leave):")
                 if sys.platform != "win32": import readline # this fixes arrow keys in terminal
                 user_input = input("> ")
-                PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}") 
-                
+                PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")
+
             else: # otherwise wait for user input with a timeout
-                PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ({timeout}s timeout, 'w' to wait, 'e' to leave):")        
+                PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User message ({timeout}s timeout, 'w' to wait, 'e' to leave):")
                 if sys.platform != "win32": import readline # this fixes arrow keys in terminal
                 # user_input = timed_input("> ", timeout=timeout)
                 user_input = timeout_input("> ", timeout=timeout)
-                                    
+
                 if not user_input:
                     user_input = context.agent0.read_prompt("fw.msg_timeout.md")
-                    PrintStyle(font_color="white", padding=False).stream(f"{user_input}")        
+                    PrintStyle(font_color="white", padding=False).stream(f"{user_input}")
                 else:
                     user_input = user_input.strip()
                     if user_input.lower()=="w": # the user needs more time
                         user_input = input("> ").strip()
-                    PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
-                    
-                    
+                    PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")
+
+
 
         # exit the conversation when the user types 'exit'
         if user_input.lower() == 'e': break
 
-        # send message to agent0, 
+        # send message to agent0,
         assistant_response = await context.communicate(UserMessage(user_input, [])).result()
-        
+
         # print agent0 response
-        PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{context.agent0.agent_name}: reponse:")        
-        PrintStyle(font_color="white").print(f"{assistant_response}")        
-                        
+        PrintStyle(font_color="white",background_color="#1D8348", bold=True, padding=True).print(f"{context.agent0.agent_name}: reponse:")
+        PrintStyle(font_color="white").print(f"{assistant_response}")
+
 
 # User intervention during agent streaming
 def intervention():
     if context.streaming_agent and not context.paused:
         context.paused = True # stop agent streaming
-        PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User intervention ('e' to leave, empty to continue):")        
+        PrintStyle(background_color="#6C3483", font_color="white", bold=True, padding=True).print(f"User intervention ('e' to leave, empty to continue):")
 
         if sys.platform != "win32": import readline # this fixes arrow keys in terminal
         user_input = input("> ").strip()
-        PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")        
-        
+        PrintStyle(font_color="white", padding=False, log_only=True).print(f"> {user_input}")
+
         if user_input.lower() == 'e': os._exit(0) # exit the conversation when the user types 'exit'
         if user_input: context.streaming_agent.intervention = UserMessage(user_input, []) # set intervention message if non-empty
-        context.paused = False # continue agent streaming 
-    
+        context.paused = False # continue agent streaming
+
 
 # Capture keyboard input to trigger user intervention
 def capture_keys():
         global input_lock
-        intervent=False            
+        intervent=False
         while True:
             if intervent: intervention()
             intervent = False
             time.sleep(0.1)
-            
+
             if context.streaming_agent:
                 # with raw_input, application_keypad, mouse_input:
                 with input_lock, raw_input, application_keypad:

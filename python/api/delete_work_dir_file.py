@@ -9,9 +9,9 @@ class DeleteWorkDirFile(ApiHandler):
     async def process(self, input: dict, request: Request) -> dict | Response:
         file_path = input.get('path', '')
         current_path = input.get('currentPath', '')
-        
+
         browser = FileBrowser()
-        
+
         if browser.delete_file(file_path):
             # Get updated file list
             result = browser.get_files(current_path)

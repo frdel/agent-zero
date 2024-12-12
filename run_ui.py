@@ -52,7 +52,7 @@ async def serve_index():
         version_no=gitinfo["version"],
         version_time=gitinfo["commit_time"],
     )
-    
+
 
 def run():
     PrintStyle().print("Initializing framework...")
@@ -70,11 +70,11 @@ def run():
     host = runtime.get_arg("host") or dotenv.get_dotenv_value("WEB_UI_HOST") or "localhost"
     use_cloudflare = (runtime.get_arg("cloudflare_tunnel")
         or dotenv.get_dotenv_value("USE_CLOUDFLARE", "false").lower()) == "true"
-    
+
 
     tunnel = None
 
-    try:    
+    try:
         # Initialize and start Cloudflare tunnel if enabled
         if use_cloudflare and port:
             try:
@@ -104,17 +104,17 @@ def run():
             handle_request,
             methods=["POST", "GET"],
         )
-        
+
     # initialize and register API handlers
     handlers = load_classes_from_folder("python/api", "*.py", ApiHandler)
     for handler in handlers:
         register_api_handler(app, handler)
-        
+
     try:
         server = make_server(host=host, port=port, app=app, request_handler=NoRequestLoggingWSGIRequestHandler, threaded=True)
         process.set_server(server)
         server.log_startup()
-        server.serve_forever() 
+        server.serve_forever()
         # Run Flask app
         # app.run(
         #     request_handler=NoRequestLoggingWSGIRequestHandler, port=port, host=host
