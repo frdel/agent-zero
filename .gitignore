@@ -9,6 +9,9 @@
 # Ignore all contents of the virtual environment directory
 .venv/
 
+# Ignore IDE files
+.idea/
+
 # ignore all folders under /bundle
 bundle/*/
 # except some
@@ -61,3 +64,4 @@ instruments/**/*.*
 # Explicitly allow the default folder and its contents
 !instruments/default/
 !instruments/default/**
+
