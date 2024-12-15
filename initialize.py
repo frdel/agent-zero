@@ -1,6 +1,6 @@
 import asyncio
 import models
-from agent import AgentConfig
+from agent import AgentConfig, ModelConfig
 from python.helpers import dotenv, files, rfc_exchange, runtime, settings, docker, log
 
 
@@ -8,36 +8,45 @@ def initialize():
 
     current_settings = settings.get_settings()
 
-    # main chat model used by agents (smarter, more accurate)
-    # chat_llm = models.get_openai_chat(model_name="gpt-4o-mini", temperature=0)
-    # chat_llm = models.get_ollama_chat(model_name="llama3.2:3b-instruct-fp16", temperature=0)
-    # chat_llm = models.get_lmstudio_chat(model_name="lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF", temperature=0)
-    # chat_llm = models.get_openrouter_chat(model_name="openai/o1-mini-2024-09-12")
-    # chat_llm = models.get_azure_openai_chat(deployment_name="gpt-4o-mini", temperature=0)
-    # chat_llm = models.get_anthropic_chat(model_name="claude-3-5-sonnet-20240620", temperature=0)
-    # chat_llm = models.get_google_chat(model_name="gemini-1.5-flash", temperature=0)
-    # chat_llm = models.get_mistral_chat(model_name="mistral-small-latest", temperature=0)
-    # chat_llm = models.get_groq_chat(model_name="llama-3.2-90b-text-preview", temperature=0)
-    # chat_llm = models.get_sambanova_chat(model_name="Meta-Llama-3.1-70B-Instruct-8k", temperature=0)
-    chat_llm = settings.get_chat_model(
-        current_settings
-    )  # chat model from user settings
+    # chat model from user settings
+    chat_llm = ModelConfig(
+        provider=models.ModelProvider[current_settings["chat_model_provider"]],
+        name=current_settings["chat_model_name"],
+        ctx_length=current_settings["chat_model_ctx_length"],
+        limit_requests=current_settings["chat_model_rl_requests"],
+        limit_input=current_settings["chat_model_rl_input"],
+        limit_output=current_settings["chat_model_rl_output"],
+        kwargs={
+            "temperature": current_settings["chat_model_temperature"],
+            **current_settings["chat_model_kwargs"],
+        },
+    )
 
-    # utility model used for helper functions (cheaper, faster)
-    # utility_llm = chat_llm
-    utility_llm = settings.get_utility_model(
-        current_settings
-    )  # utility model from user settings
-
-    # embedding model used for memory
-    # embedding_llm = models.get_openai_embedding(model_name="text-embedding-3-small")
-    # embedding_llm = models.get_ollama_embedding(model_name="nomic-embed-text")
-    # embedding_llm = models.get_huggingface_embedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    # embedding_llm = models.get_lmstudio_embedding(model_name="nomic-ai/nomic-embed-text-v1.5-GGUF")
-    embedding_llm = settings.get_embedding_model(
-        current_settings
-    )  # embedding model from user settings
-
+    # utility model from user settings
+    utility_llm = ModelConfig(
+        provider=models.ModelProvider[current_settings["util_model_provider"]],
+        name=current_settings["util_model_name"],
+        ctx_length=current_settings["util_model_ctx_length"],
+        limit_requests=current_settings["util_model_rl_requests"],
+        limit_input=current_settings["util_model_rl_input"],
+        limit_output=current_settings["util_model_rl_output"],
+        kwargs={
+            "temperature": current_settings["util_model_temperature"],
+            **current_settings["util_model_kwargs"],
+        },
+    )
+    # embedding model from user settings
+    embedding_llm = ModelConfig(
+        provider=models.ModelProvider[current_settings["embed_model_provider"]],
+        name=current_settings["embed_model_name"],
+        ctx_length=0,
+        limit_requests=current_settings["embed_model_rl_requests"],
+        limit_input=0,
+        limit_output=0,
+        kwargs={
+            **current_settings["embed_model_kwargs"],
+        },
+    )
     # agent configuration
     config = AgentConfig(
         chat_model=chat_llm,
@@ -46,12 +55,7 @@ def initialize():
         prompts_subdir=current_settings["agent_prompts_subdir"],
         memory_subdir=current_settings["agent_memory_subdir"],
         knowledge_subdirs=["default", current_settings["agent_knowledge_subdir"]],
-        # rate_limit_seconds = 60,
-        rate_limit_requests=30,
-        # rate_limit_input_tokens = 0,
-        # rate_limit_output_tokens = 0,
-        # response_timeout_seconds = 60,
-        code_exec_docker_enabled = False,
+        code_exec_docker_enabled=False,
         # code_exec_docker_name = "A0-dev",
         # code_exec_docker_image = "frdel/agent-zero-run:development",
         # code_exec_docker_ports = { "22/tcp": 55022, "80/tcp": 55080 }

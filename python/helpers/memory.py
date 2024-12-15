@@ -10,6 +10,8 @@ from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
 )
+from langchain_core.embeddings import Embeddings
+
 import os, json
 
 import numpy as np
@@ -22,6 +24,7 @@ from python.helpers import knowledge_import
 from python.helpers.log import Log, LogItem
 from enum import Enum
 from agent import Agent
+import models
 
 
 class MyFaiss(FAISS):
@@ -54,7 +57,12 @@ class Memory:
             )
             db = Memory.initialize(
                 log_item,
-                agent.config.embeddings_model,
+                models.get_model(
+                    models.ModelType.EMBEDDING,
+                    agent.config.embeddings_model.provider,
+                    agent.config.embeddings_model.name,
+                    **agent.config.embeddings_model.kwargs,
+                ),
                 memory_subdir,
                 False,
             )
@@ -82,7 +90,7 @@ class Memory:
     @staticmethod
     def initialize(
         log_item: LogItem | None,
-        embeddings_model,
+        embeddings_model: Embeddings,
         memory_subdir: str,
         in_memory=False,
     ) -> MyFaiss:
@@ -187,7 +195,7 @@ class Memory:
                     index[file]["ids"]
                 )  # remove original version
             if index[file]["state"] == "changed":
-                index[file]["ids"] = self.insert_documents(
+                index[file]["ids"] = await self.insert_documents(
                     index[file]["documents"]
                 )  # insert new version
 
@@ -234,6 +242,11 @@ class Memory:
         self, query: str, limit: int, threshold: float, filter: str = ""
     ):
         comparator = Memory._get_comparator(filter) if filter else None
+
+        #rate limiter
+        await self.agent.rate_limiter(
+            model_config=self.agent.config.embeddings_model, input=query)
+
         return await self.db.asearch(
             query,
             search_type="similarity_score_threshold",
@@ -287,30 +300,28 @@ class Memory:
             self._save_db()  # persist
         return rem_docs
 
-    def insert_text(self, text, metadata: dict = {}):
-        id = str(uuid.uuid4())
-        if not metadata.get("area", ""):
-            metadata["area"] = Memory.Area.MAIN.value
+    async def insert_text(self, text, metadata: dict = {}):
+        doc = Document(text, metadata=metadata)
+        ids = await self.insert_documents([doc])
+        return ids[0]
 
-        self.db.add_documents(
-            documents=[
-                Document(
-                    text,
-                    metadata={"id": id, "timestamp": self.get_timestamp(), **metadata},
-                )
-            ],
-            ids=[id],
-        )
-        self._save_db()  # persist
-        return id
-
-    def insert_documents(self, docs: list[Document]):
+    async def insert_documents(self, docs: list[Document]):
         ids = [str(uuid.uuid4()) for _ in range(len(docs))]
         timestamp = self.get_timestamp()
+
+        
         if ids:
             for doc, id in zip(docs, ids):
                 doc.metadata["id"] = id  # add ids to documents metadata
                 doc.metadata["timestamp"] = timestamp  # add timestamp
+                if not doc.metadata.get("area", ""):
+                    doc.metadata["area"] = Memory.Area.MAIN.value
+            
+            #rate limiter
+            docs_txt = "".join(self.format_docs_plain(docs))
+            await self.agent.rate_limiter(
+                model_config=self.agent.config.embeddings_model, input=docs_txt)
+
             self.db.add_documents(documents=docs, ids=ids)
             self._save_db()  # persist
         return ids
@@ -365,8 +376,9 @@ class Memory:
 def get_memory_subdir_abs(agent: Agent) -> str:
     return files.get_abs_path("memory", agent.config.memory_subdir or "default")
 
+
 def get_custom_knowledge_subdir_abs(agent: Agent) -> str:
     for dir in agent.config.knowledge_subdirs:
-        if dir != "default":    
+        if dir != "default":
             return files.get_abs_path("knowledge", dir)
     raise Exception("No custom knowledge subdir set")

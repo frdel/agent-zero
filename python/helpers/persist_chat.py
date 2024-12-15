@@ -174,7 +174,7 @@ def _deserialize_log(data: dict[str, Any]) -> "Log":
         log.logs.append(
             LogItem(
                 log=log,  # restore the log reference
-                no=item_data["no"],
+                no=i, #item_data["no"],
                 type=item_data["type"],
                 heading=item_data.get("heading", ""),
                 content=item_data.get("content", ""),

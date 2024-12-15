@@ -33,14 +33,15 @@ class MemorizeSolutions(Extension):
         msgs_text = self.agent.concat_messages(self.agent.history)
 
         # log query streamed by LLM
-        def log_callback(content):
+        async def log_callback(content):
             log_item.stream(content=content)
 
         # call util llm to find solutions in history
-        solutions_json = await self.agent.call_utility_llm(
+        solutions_json = await self.agent.call_utility_model(
             system=system,
-            msg=msgs_text,
+            message=msgs_text,
             callback=log_callback,
+            background=True,
         )
 
         solutions = DirtyJson.parse_string(solutions_json)
@@ -75,7 +76,7 @@ class MemorizeSolutions(Extension):
                     log_item.update(replaced=rem_txt)
 
             # insert new solution
-            db.insert_text(text=txt, metadata={"area": Memory.Area.SOLUTIONS.value})
+            await db.insert_text(text=txt, metadata={"area": Memory.Area.SOLUTIONS.value})
 
         solutions_txt = solutions_txt.strip()
         log_item.update(solutions=solutions_txt)

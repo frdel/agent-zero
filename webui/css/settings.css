@@ -42,6 +42,7 @@
 /* Input Styles */
 input[type="text"],
 input[type="password"],
+input[type="number"],
 textarea,
 select {
   width: 100%;
