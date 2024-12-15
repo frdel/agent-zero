@@ -92,7 +92,7 @@ def run():
 
     server = None
 
-    def register_api_handler(app, handler):
+    def register_api_handler(app, handler: type[ApiHandler]):
         name = handler.__module__.split(".")[-1]
         instance = handler(app, lock)
         @requires_auth

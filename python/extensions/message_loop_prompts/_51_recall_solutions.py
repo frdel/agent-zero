@@ -53,12 +53,12 @@ class RecallSolutions(Extension):
         )
 
         # log query streamed by LLM
-        def log_callback(content):
+        async def log_callback(content):
             log_item.stream(query=content)
 
         # call util llm to summarize conversation
-        query = await self.agent.call_utility_llm(
-            system=system, msg=loop_data.user_message.output_text() if loop_data.user_message else "", callback=log_callback
+        query = await self.agent.call_utility_model(
+            system=system, message=loop_data.user_message.output_text() if loop_data.user_message else "", callback=log_callback
         )
 
         # get solutions database

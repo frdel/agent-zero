@@ -130,12 +130,12 @@ class Topic(Record):
             * LARGE_MESSAGE_TO_TOPIC_RATIO
         )
         large_msgs = []
-        for m in self.messages:
+        for m in (m for m in self.messages if not m.summary):
             out = m.output()
             text = output_text(out)
             tok = tokens.approximate_tokens(text)
             leng = len(text)
-            if leng > msg_max_size:
+            if tok > msg_max_size:
                 large_msgs.append((m, tok, leng, out))
         large_msgs.sort(key=lambda x: x[1], reverse=True)
         for msg, tok, leng, out in large_msgs:
@@ -173,12 +173,11 @@ class Topic(Record):
 
     async def summarize_messages(self, messages: list[Message]):
         msg_txt = [m.output_text() for m in messages]
-        summary = await call_llm.call_llm(
+        summary = await self.history.agent.call_utility_model(
             system=self.history.agent.read_prompt("fw.topic_summary.sys.md"),
             message=self.history.agent.read_prompt(
                 "fw.topic_summary.msg.md", content=msg_txt
             ),
-            model=settings.get_utility_model(),
         )
         return summary
 
@@ -218,12 +217,11 @@ class Bulk(Record):
         return False
 
     async def summarize(self):
-        self.summary = await call_llm.call_llm(
+        self.summary = await self.history.agent.call_utility_model(
             system=self.history.agent.read_prompt("fw.topic_summary.sys.md"),
             message=self.history.agent.read_prompt(
                 "fw.topic_summary.msg.md", content=self.output_text()
             ),
-            model=settings.get_utility_model(),
         )
         return self.summary
 
@@ -309,42 +307,38 @@ class History(Record):
         return json.dumps(data)
 
     async def compress(self):
-        curr, hist, bulk = (
-            self.get_current_topic_tokens(),
-            self.get_topics_tokens(),
-            self.get_bulks_tokens(),
-        )
-        total = get_ctx_size_for_history()
         compressed = False
+        while True:
+            curr, hist, bulk = (
+                self.get_current_topic_tokens(),
+                self.get_topics_tokens(),
+                self.get_bulks_tokens(),
+            )
+            total = get_ctx_size_for_history()
+            ratios = [
+                (curr, CURRENT_TOPIC_RATIO, "current_topic"),
+                (hist, HISTORY_TOPIC_RATIO, "history_topic"),
+                (bulk, HISTORY_BULK_RATIO, "history_bulk"),
+            ]
+            ratios = sorted(ratios, key=lambda x: (x[0] / total) / x[1], reverse=True)
+            compressed_part = False
+            for ratio in ratios:
+                if ratio[0] > ratio[1] * total:
+                    over_part = ratio[2]
+                    if over_part == "current_topic":
+                        compressed_part = await self.current.compress()
+                    elif over_part == "history_topic":
+                        compressed_part = await self.compress_topics()
+                    else:
+                        compressed_part = await self.compress_bulks()
+                    if compressed_part:
+                        break
 
-        # calculate ratios of individual parts
-        ratios = [
-            (curr, CURRENT_TOPIC_RATIO, "current_topic"),
-            (hist, HISTORY_TOPIC_RATIO, "history_topic"),
-            (bulk, HISTORY_BULK_RATIO, "history_bulk"),
-        ]
-        # start from the most oversized part and compress it
-        ratios = sorted(ratios, key=lambda x: (x[0] / total) / x[1], reverse=True)
-        for ratio in ratios:
-            if ratio[0] > ratio[1] * total:
-                over_part = ratio[2]
-                if over_part == "current_topic":
-                    compressed = await self.current.compress()
-                elif over_part == "history_topic":
-                    compressed = await self.compress_topics()
-                else:
-                    compressed = await self.compress_bulks()
-                # if part was compressed, stop the loop and try the whole function again, maybe no more compression is necessary
-                if compressed:
-                    break
+            if compressed_part:
+                compressed = True
+                continue
             else:
-                break
-
-        # try the whole function again to see if there is still a need for compression
-        if compressed:
-            await self.compress()
-
-        return compressed
+                return compressed
 
     async def compress_topics(self) -> bool:
         # summarize topics one by one

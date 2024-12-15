@@ -21,15 +21,15 @@ async def update_behaviour(agent: Agent, log_item: LogItem, adjustments: str):
     current_rules = read_rules(agent)
         
     # log query streamed by LLM
-    def log_callback(content):
+    async def log_callback(content):
         log_item.stream(ruleset=content)
 
     msg = agent.read_prompt("behaviour.merge.msg.md", current_rules=current_rules, adjustments=adjustments)
 
     # call util llm to find solutions in history
-    adjustments_merge = await agent.call_utility_llm(
+    adjustments_merge = await agent.call_utility_model(
         system=system,
-        msg=msg,
+        message=msg,
         callback=log_callback,
     )
 

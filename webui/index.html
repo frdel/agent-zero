@@ -451,11 +451,20 @@
 
                                         <div class="field-control">
                                             <!-- Input field -->
-                                            <template x-if="field.type === 'input'">
+                                            <template x-if="field.type === 'text'">
                                                 <input type="text" :class="field.classes" :value="field.value"
                                                     :readonly="field.readonly === true"
                                                     @input="field.value = $event.target.value">
                                             </template>
+
+                                            <!-- Number field -->
+                                            <template x-if="field.type === 'number'">
+                                                <input type="number" :class="field.classes" :value="field.value"
+                                                    :readonly="field.readonly === true"
+                                                    @input="field.value = $event.target.value"
+                                                    :min="field.min" :max="field.max" :step="field.step">
+                                            </template>
+
 
                                             <!-- Password field -->
                                             <template x-if="field.type === 'password'">

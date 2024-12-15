@@ -1,5 +1,6 @@
 from enum import Enum
 import os
+from typing import Any
 from langchain_openai import (
     ChatOpenAI,
     OpenAI,
@@ -28,6 +29,7 @@ from langchain_mistralai import ChatMistralAI
 from pydantic.v1.types import SecretStr
 from python.helpers import dotenv, runtime
 from python.helpers.dotenv import load_dotenv
+from python.helpers.rate_limiter import RateLimiter
 
 # environment variables
 load_dotenv()
@@ -56,6 +58,9 @@ class ModelProvider(Enum):
     OTHER = "Other"
 
 
+rate_limiters: dict[str, RateLimiter] = {}
+
+
 # Utility function to get API keys from environment variables
 def get_api_key(service):
     return (
@@ -71,11 +76,36 @@ def get_model(type: ModelType, provider: ModelProvider, name: str, **kwargs):
     return model
 
 
+def get_rate_limiter(
+    provider: ModelProvider, name: str, requests: int, input: int, output: int
+) -> RateLimiter:
+    # get or create
+    key = f"{provider.name}\\{name}"
+    rate_limiters[key] = limiter = rate_limiters.get(key, RateLimiter(seconds=60))
+    # always update
+    limiter.limits["requests"] = requests or 0
+    limiter.limits["input"] = input or 0
+    limiter.limits["output"] = output or 0
+    return limiter
+
+
+def parse_chunk(chunk: Any):
+    if isinstance(chunk, str):
+        content = chunk
+    elif hasattr(chunk, "content"):
+        content = str(chunk.content)
+    else:
+        content = str(chunk)
+    return content
 
 
 # Ollama models
 def get_ollama_base_url():
-    return dotenv.get_dotenv_value("OLLAMA_BASE_URL") or f"http://{runtime.get_local_url()}:11434"
+    return (
+        dotenv.get_dotenv_value("OLLAMA_BASE_URL")
+        or f"http://{runtime.get_local_url()}:11434"
+    )
+
 
 def get_ollama_chat(
     model_name: str,
@@ -138,7 +168,11 @@ def get_huggingface_embedding(model_name: str, **kwargs):
 
 # LM Studio and other OpenAI compatible interfaces
 def get_lmstudio_base_url():
-    return dotenv.get_dotenv_value("LM_STUDIO_BASE_URL") or f"http://{runtime.get_local_url()}:1234/v1"
+    return (
+        dotenv.get_dotenv_value("LM_STUDIO_BASE_URL")
+        or f"http://{runtime.get_local_url()}:1234/v1"
+    )
+
 
 def get_lmstudio_chat(
     model_name: str,

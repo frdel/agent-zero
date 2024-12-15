@@ -19,6 +19,9 @@ Type = Literal[
     "warning",
 ]
 
+ProgressUpdate = Literal["persistent", "temporary", "none"]
+
+
 @dataclass
 class LogItem:
     log: "Log"
@@ -27,6 +30,7 @@ class LogItem:
     heading: str
     content: str
     temp: bool
+    update_progress: Optional[ProgressUpdate] = "persistent"
     kvps: Optional[OrderedDict] = None  # Use OrderedDict for kvps
     id: Optional[str] = None  # Add id field
     guid: str = ""
@@ -41,20 +45,27 @@ class LogItem:
         content: str | None = None,
         kvps: dict | None = None,
         temp: bool | None = None,
+        update_progress: ProgressUpdate | None = None,
         **kwargs,
     ):
         if self.guid == self.log.guid:
-            self.log.update_item(
+            self.log._update_item(
                 self.no,
                 type=type,
                 heading=heading,
                 content=content,
                 kvps=kvps,
                 temp=temp,
+                update_progress=update_progress,
                 **kwargs,
             )
 
-    def stream(self, heading: str | None = None, content: str | None = None, **kwargs):
+    def stream(
+        self,
+        heading: str | None = None,
+        content: str | None = None,
+        **kwargs,
+    ):
         if heading is not None:
             self.update(heading=self.heading + heading)
         if content is not None:
@@ -75,6 +86,7 @@ class LogItem:
             "kvps": self.kvps,
         }
 
+
 class Log:
 
     def __init__(self):
@@ -90,7 +102,9 @@ class Log:
         content: str | None = None,
         kvps: dict | None = None,
         temp: bool | None = None,
+        update_progress: ProgressUpdate | None = None,
         id: Optional[str] = None,  # Add id parameter
+        **kwargs,
     ) -> LogItem:
         # Use OrderedDict if kvps is provided
         if kvps is not None:
@@ -101,17 +115,19 @@ class Log:
             type=type,
             heading=heading or "",
             content=content or "",
-            kvps=kvps,
-            temp=temp or False,
+            kvps=OrderedDict({**(kvps or {}), **(kwargs or {})}),
+            update_progress=(
+                update_progress if update_progress is not None else "persistent"
+            ),
+            temp=temp if temp is not None else False,
             id=id,  # Pass id to LogItem
         )
         self.logs.append(item)
         self.updates += [item.no]
-        if heading and item.no >= self.progress_no:
-            self.set_progress(heading, item.no)
+        self._update_progress_from_item(item)
         return item
 
-    def update_item(
+    def _update_item(
         self,
         no: int,
         type: str | None = None,
@@ -119,15 +135,16 @@ class Log:
         content: str | None = None,
         kvps: dict | None = None,
         temp: bool | None = None,
+        update_progress: ProgressUpdate | None = None,
         **kwargs,
     ):
         item = self.logs[no]
         if type is not None:
             item.type = type
+        if update_progress is not None:
+            item.update_progress = update_progress
         if heading is not None:
             item.heading = heading
-            if no >= self.progress_no:
-                self.set_progress(heading, no)
         if content is not None:
             item.content = content
         if kvps is not None:
@@ -143,6 +160,7 @@ class Log:
                 item.kvps[k] = v
 
         self.updates += [item.no]
+        self._update_progress_from_item(item)
 
     def set_progress(self, progress: str, no: int = 0, active: bool = True):
         self.progress = progress
@@ -174,3 +192,12 @@ class Log:
         self.updates = []
         self.logs = []
         self.set_initial_progress()
+
+    def _update_progress_from_item(self, item: LogItem):
+        if item.heading and item.update_progress != "none":
+            if item.no >= self.progress_no:
+                self.set_progress(
+                    item.heading,
+                    (item.no if item.update_progress == "persistent" else -1),
+                )
+            

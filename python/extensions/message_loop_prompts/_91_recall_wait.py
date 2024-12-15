@@ -9,11 +9,11 @@ class RecallWait(Extension):
 
             task = self.agent.get_data(DATA_NAME_TASK_MEMORIES)
             if task and not task.done():
-                self.agent.context.log.set_progress("Recalling memories...")
+                # self.agent.context.log.set_progress("Recalling memories...")
                 await task
 
             task = self.agent.get_data(DATA_NAME_TASK_SOLUTIONS)
             if task and not task.done():
-                self.agent.context.log.set_progress("Recalling solutions...")
+                # self.agent.context.log.set_progress("Recalling solutions...")
                 await task
 
