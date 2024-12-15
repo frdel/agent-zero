@@ -83,10 +83,17 @@ Agent Zero comes with a set of built-in tools designed to help agents perform ta
 #### Knowledge Tool
 The `knowledge_tool` uses SearXNG to search the web and retrieve information. It can also search the local knowledge base and memory for relevant information. The tool returns a summary of the information, which can be used by the agent to make decisions or answer questions.
 
-> [!TIP]
-> SearXNG is a privacy-respecting, self-hosted search engine aggregator that provides 
-> reliable and comprehensive search results. It combines results from multiple search 
-> engines while maintaining user privacy.
+##### SearXNG Integration
+Agent Zero has integrated SearXNG as its primary search tool, replacing the previous knowledge tools (Perplexity and DuckDuckGo). This integration enhances the agent's ability to retrieve information while ensuring user privacy and customization.
+
+- Privacy-Focused Search
+SearXNG is an open-source metasearch engine that allows users to search multiple sources without tracking their queries. This integration ensures that user data remains private and secure while accessing a wide range of information.
+
+- Enhanced Search Capabilities
+The integration provides access to various types of content, including images, videos, and news articles, allowing users to gather comprehensive information on any topic.
+
+- Fallback Mechanism
+In cases where SearXNG might not return satisfactory results, Agent Zero can be configured to fall back on other sources or methods, ensuring that users always have access to information.
 
 > [!NOTE]
 > The Knowledge Tool is designed to work seamlessly with both online searches through 

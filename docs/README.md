@@ -46,6 +46,7 @@ To begin with Agent Zero, follow the links below for detailed guides on various 
   - [Core Components](architecture.md#core-components)
     - [Agents](architecture.md#1-agents)
     - [Tools](architecture.md#2-tools)
+    - [SearXNG Integration](architecture.md#searxng-integration)
     - [Memory System](architecture.md#3-memory-system)
     - [Prompts](architecture.md#4-prompts)
     - [Knowledge](architecture.md#5-knowledge)

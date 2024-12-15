@@ -137,14 +137,21 @@ Effective prompt engineering is crucial for getting the most out of Agent Zero. 
 * **Break Down Complex Tasks:**  For complex tasks, break them down into smaller, more manageable sub-tasks.  This makes it easier for the agent to reason through the problem and generate a solution.
 * **Iterative Refinement:** Don't expect perfect results on the first try.  Experiment with different prompts, refine your instructions based on the agent's responses, and iterate until you achieve the desired outcome. To achieve a full-stack, web-app development task, for example, you might need to iterate for a few hours for 100% success.
 
-### Voice Interface
+## Voice Interface
 Agent Zero provides both Text-to-Speech (TTS) and Speech-to-Text (STT) capabilities for natural voice interaction:
 
-#### Text-to-Speech
+### Text-to-Speech
 Enable voice responses from agents:
 * Toggle the "Speech" switch in the Preferences section of the sidebar
 * Agents will use your system's built-in voice synthesizer to speak their messages
 * Click the "Stop Speech" button above the input area to immediately stop any ongoing speech
+
+![TTS Stop Speech](res/ui-tts-stop-speech.png)
+
+- The interface allows users to stop speech at any time if a response is too lengthy or if they wish to intervene during the conversation.
+
+The TTS uses a standard voice interface provided by modern browsers, which may sound robotic but is effective and does not require complex AI models. This ensures low latency and quick responses across various platforms, including mobile devices.
+
 
 > [!TIP]
 > The Text-to-Speech feature is great for:
@@ -152,8 +159,8 @@ Enable voice responses from agents:
 > - Accessibility purposes
 > - Creating a more interactive experience
 
-#### Speech-to-Text
-Send voice messages to agents using OpenAI's Whisper model:
+### Speech-to-Text
+Send voice messages to agents using OpenAI's Whisper model (does not require OpenAI API key!):
 
 1. Click the microphone button in the input area to start recording
 2. The button color indicates the current status:
@@ -163,7 +170,7 @@ Send voice messages to agents using OpenAI's Whisper model:
    - Teal: Waiting
    - Cyan (pulsing): Processing
 
-![TTS Stop Speech](res/ui-tts-stop-speech.png)
+Users can adjust settings such as silence threshold and message duration before sending to optimize their interaction experience.
 
 Configure STT settings in the Settings page:
 * **Model Size:** Choose between Base (74M, English) or other models
@@ -177,11 +184,9 @@ Configure STT settings in the Settings page:
 ![Speech to Text Settings](res/ui-settings-5-speech-to-text.png)
 
 > [!IMPORTANT]
-> Speech-to-Text quality depends on:
-> - Microphone quality and positioning
-> - Background noise levels
-> - Chosen model size and language settings
-> - Proper silence detection configuration
+> All STT and TTS functionalities operate locally within the Docker container, 
+> ensuring that no data is transmitted to external servers or OpenAI APIs. This 
+> enhances user privacy while maintaining functionality.
 
 ### Mathematical Expressions
 Agent Zero supports KaTeX for beautiful mathematical typesetting:
