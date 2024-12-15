@@ -6,8 +6,8 @@ from typing import Callable, Awaitable
 class RateLimiter:
     def __init__(self, seconds: int = 60, **limits: int):
         self.timeframe = seconds
-        self.limits = limits or {}
-        self.values = {key: [] for key in limits.keys()}
+        self.limits = {key: value if isinstance(value, (int, float)) else 0 for key, value in (limits or {}).items()}
+        self.values = {key: [] for key in self.limits.keys()}
         self._lock = asyncio.Lock()
 
     def add(self, **kwargs: int):

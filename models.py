@@ -83,9 +83,9 @@ def get_rate_limiter(
     key = f"{provider.name}\\{name}"
     rate_limiters[key] = limiter = rate_limiters.get(key, RateLimiter(seconds=60))
     # always update
-    limiter.limits["requests"] = requests
-    limiter.limits["input"] = input
-    limiter.limits["output"] = output
+    limiter.limits["requests"] = requests or 0
+    limiter.limits["input"] = input or 0
+    limiter.limits["output"] = output or 0
     return limiter
 
 

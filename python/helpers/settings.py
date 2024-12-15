@@ -690,7 +690,7 @@ def normalize_settings(settings: Settings) -> Settings:
             try:
                 copy[key] = type(value)(copy[key])  # type: ignore
             except (ValueError, TypeError):
-                pass
+                copy[key] = value # make default instead
     return copy
 
 
@@ -775,7 +775,7 @@ def get_default_settings() -> Settings:
     return Settings(
         chat_model_provider=ModelProvider.OPENAI.name,
         chat_model_name="gpt-4o-mini",
-        chat_model_temperature=0,
+        chat_model_temperature=0.0,
         chat_model_kwargs={},
         chat_model_ctx_length=120000,
         chat_model_ctx_history=0.7,
@@ -784,7 +784,7 @@ def get_default_settings() -> Settings:
         chat_model_rl_output=0,
         util_model_provider=ModelProvider.OPENAI.name,
         util_model_name="gpt-4o-mini",
-        util_model_temperature=0,
+        util_model_temperature=0.0,
         util_model_ctx_length=120000,
         util_model_ctx_input=0.7,
         util_model_kwargs={},

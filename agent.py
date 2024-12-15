@@ -271,6 +271,9 @@ class Agent:
                                 printer.stream(chunk)
                                 self.log_from_stream(full, log)
 
+                        # store as last context window content
+                        self.set_data(Agent.DATA_NAME_CTX_WINDOW, prompt.format())
+
                         agent_response = await self.call_chat_model(
                             prompt, callback=stream_callback
                         )
