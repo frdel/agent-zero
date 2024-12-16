@@ -11,7 +11,7 @@ The user or Agent 0 is at the top of the hierarchy, delegating tasks to subordin
 ## Runtime Architecture
 Agent Zero's runtime architecture is built around Docker containers:
 
-1. **Host System**:
+1. **Host System (your machine)**:
    - Requires only Docker and a web browser
    - Runs Docker Desktop or Docker Engine
    - Handles container orchestration
@@ -34,6 +34,48 @@ This architecture ensures:
 > is still possible but requires Remote Function Calling (RFC) configuration through the Settings 
 > page. See [Full Binaries Installation](installation.md#in-depth-guide-for-full-binaries-installation) 
 > for detailed instructions.
+
+## Implementation Details
+
+### Directory Structure
+| Directory | Description |
+| --- | --- |
+| `/docker` | Docker-related files for runtime container |
+| `/docs` | Documentation files and guides |
+| `/instruments` | Custom scripts and tools for runtime environment |
+| `/knowledge` | Knowledge base storage |
+| `/logs` | HTML CLI-style chat logs |
+| `/memory` | Persistent agent memory storage |
+| `/prompts` | System and tool prompts |
+| `/python` | Core Python codebase: |
+| `/api` | API endpoints and interfaces |
+| `/extensions` | Modular extensions |
+| `/helpers` | Utility functions |
+| `/tools` | Tool implementations |
+| `/tmp` | Temporary runtime data |
+| `/webui` | Web interface components: |
+| `/css` | Stylesheets |
+| `/js` | JavaScript modules |
+| `/public` | Static assets |
+| `/work_dir` | Working directory |
+
+### Key Files
+| File | Description |
+| --- | --- |
+| `.env` | Environment configuration |
+| `agent.py` | Core agent implementation |
+| `example.env` | Configuration template |
+| `initialize.py` | Framework initialization |
+| `models.py` | Model providers and configs |
+| `preload.py` | Pre-initialization routines |
+| `prepare.py` | Environment preparation |
+| `requirements.txt` | Python dependencies |
+| `run_cli.py` | CLI launcher |
+| `run_ui.py` | Web UI launcher |
+
+> [!NOTE]
+> When using the Docker runtime container, these directories are mounted 
+> within the `/a0` volume for data persistence until the container is restarted or deleted.
 
 ## Core Components
 Agent Zero's architecture revolves around the following key components:
@@ -73,8 +115,10 @@ Agent Zero comes with a set of built-in tools designed to help agents perform ta
 
 | Tool | Function |
 | --- | --- |
+| behavior_adjustment | Agent Zero use this tool to change its behavior according to a prior request from the user.
 | call_subordinate | Allows agents to delegate tasks to subordinate agents |
-| code_execution_tool | Allows agents to execute Python, Node.js, and Shell code in the terminal of the Docker container |
+| code_execution_tool | Allows agents to execute Python, Node.js, and Shell code in the terminal |
+| input | Allows agents to use the keyboard to interact with an active shell |
 | knowledge_tool | Enables agents to retrieve information from memory, knowledge base or online external sources |
 | response_tool | Allows agents to output a response |
 | memory_tool | Enables agents to save, load, delete and forget information from memory |
@@ -83,7 +127,7 @@ Agent Zero comes with a set of built-in tools designed to help agents perform ta
 #### Knowledge Tool
 The `knowledge_tool` uses SearXNG to search the web and retrieve information. It can also search the local knowledge base and memory for relevant information. The tool returns a summary of the information, which can be used by the agent to make decisions or answer questions.
 
-##### SearXNG Integration
+#### SearXNG Integration
 Agent Zero has integrated SearXNG as its primary search tool, replacing the previous knowledge tools (Perplexity and DuckDuckGo). This integration enhances the agent's ability to retrieve information while ensuring user privacy and customization.
 
 - Privacy-Focused Search
@@ -101,7 +145,12 @@ In cases where SearXNG might not return satisfactory results, Agent Zero can be 
 > retrieval system.
 
 #### Custom Tools
-Users can create custom tools to extend Agent Zero's capabilities. Custom tools can be integrated into the framework by defining a tool specification, which includes the tool's prompt to be placed in `/prompts/$FOLDERNAME/agent.system.tool.$TOOLNAME.md`, as detailed in [Adding Tools](#adding-tools).
+Users can create custom tools to extend Agent Zero's capabilities. Custom tools can be integrated into the framework by defining a tool specification, which includes the tool's prompt to be placed in `/prompts/$FOLDERNAME/agent.system.tool.$TOOLNAME.md`, as detailed below.
+
+1. Create `agent.system.tool.$TOOL_NAME.md` in `prompts/$SUBDIR`
+2. Add reference in `agent.system.tools.md`
+3. If needed, implement tool class in `python/tools` using `Tool` base class
+4. Follow existing patterns for consistency
 
 > [!NOTE]
 > Tools are always present in system prompt, so you should keep them to minimum. 
@@ -119,27 +168,34 @@ The memory is categorized into four distinct areas:
 - **Metadata**: Each memory entry includes metadata (IDs, timestamps), enabling efficient filtering and searching based on specific criteria
 
 #### Messages History and Summarization
-Agent Zero implements a sophisticated message history and summarization system that helps maintain context while optimizing memory usage:
 
-- **Message Summaries**: Individual messages are summarized using a structured JSON format that captures key information while reducing token usage
+Agent Zero employs a sophisticated message history and summarization system to maintain context effectively while optimizing memory usage. This system dynamically manages the information flow, ensuring relevant details are readily available while efficiently handling the constraints of context windows.
+
+- **Context Extraction:** The system identifies key information from previous messages that are vital for ongoing discussions. This process mirrors how humans recall important memories, allowing less critical details to fade.
+- **Summarization Process:** Using natural language processing through the utility model, Agent Zero condenses the extracted information into concise summaries. By summarizing past interactions, Agent Zero can quickly recall important facts about the whole chat, leading to more appropriate responses.
+- **Contextual Relevance:** The summarized context is prioritized based on its relevance to the current topic, ensuring users receive the most pertinent information.
+
+**Implementation Details:**
+
+- **Message Summaries**: Individual messages are summarized using a structured format that captures key information while reducing token usage.
 - **Dynamic Compression**: The system employs an intelligent compression strategy:
-  - Recent messages remain in their original form for immediate context
-  - Older messages are gradually compressed into more concise summaries
-  - Multiple compression levels allow for efficient context window usage
-  - Original messages are preserved separately from summaries
-- **Dual-Access Memory**: The system maintains two parallel streams of information:
-  - Compressed summaries in the context window for quick reference
-  - Original messages stored separately for detailed recall when needed
-- **Context Window Optimization**: 
-  - Acts as a near-infinite short-term memory for single conversations
-  - Automatically balances detail level based on message age and importance
-  - Maintains searchable indexes for efficient information retrieval
-  - Dynamically adjusts compression ratios based on available space
+  - Recent messages remain in their original form for immediate context.
+  - Older messages are gradually compressed into more concise summaries.
+  - Multiple compression levels allow for efficient context window usage.
+  - Original messages are preserved separately from summaries.
+- **Context Window Optimization**:
+  - Acts as a near-infinite short-term memory for single conversations.
+  - Dynamically adjusts compression ratios based on available space and settings.
 - **Bulk and Topic Summarization**:
-  - Groups related messages into thematic chunks for better organization
-  - Generates concise summaries of multiple messages while preserving key context
-  - Enables efficient navigation of long conversation histories
-  - Maintains semantic connections between related topics
+  - Groups related messages into thematic chunks for better organization.
+  - Generates concise summaries of multiple messages while preserving key context.
+  - Enables efficient navigation of long conversation histories.
+  - Maintains semantic connections between related topics.
+
+By dynamically adjusting context windows and summarizing past interactions, Agent Zero enhances both efficiency and user experience. This innovation not only reflects the framework's commitment to being dynamic and user-centric, but also draws inspiration from human cognitive processes, making AI interactions more relatable and effective. Just as humans forget trivial details, Agent Zero intelligently condenses information to enhance communication.
+
+> [!NOTE]
+> To maximize the effectiveness of context summarization, users should provide clear and specific instructions during interactions. This helps Agent Zero understand which details are most important to retain.
 
 ### 4. Prompts
 The `prompts` directory contains various Markdown files that control agent behavior and communication. The most important file is `agent.system.main.md`, which acts as a central hub, referencing other prompt files.
@@ -161,6 +217,12 @@ The `prompts` directory contains various Markdown files that control agent behav
 - **Custom Prompts**: Can be placed in custom subdirectories (e.g., `prompts/my-custom/`)
 - **Behavior Files**: Stored in memory as `behaviour.md`, containing dynamic rules
 - **Tool Prompts**: Organized in tool-specific files for modularity
+
+#### Custom Prompts
+1. Create directory in `prompts/` (e.g., `my-custom-prompts`)
+2. Copy and modify needed files from `prompts/default/`
+3. Agent Zero will merge your custom files with the default ones
+4. Select your custom prompts in the Settings page (Agent Config section)
 
 #### Dynamic Behavior System
 - **Behavior Adjustment**: 
@@ -217,7 +279,12 @@ Instruments provide a way to add custom functionalities to Agent Zero without ad
 - Can modify agent behavior by introducing new procedures
 - Function calls or scripts to integrate with other systems
 - Scripts are run inside the Docker Container
-- Implementation details in [Adding Instruments](#adding-instruments)
+
+#### Adding Instruments
+1. Create folder in `instruments/custom` (no spaces in name)
+2. Add `.md` description file for the interface
+3. Add `.sh` script (or other executable) for implementation
+4. The agent will automatically detect and use the instrument
 
 ### 7. Extensions
 Extensions are a powerful feature of Agent Zero, designed to keep the main codebase clean and organized while allowing for greater flexibility and modularity.
@@ -232,82 +299,7 @@ Extensions can be found in `python/extensions` directory:
 #### Types
 - **Message Loop Prompts**: Handle system messages and history construction
 - **Memory Management**: Handle recall and solution memorization
-- **Custom Extensions**: Add new functionalities (see [Adding Extensions](#adding-extensions))
-- **Behavior Management**: Handle dynamic behavior adjustments
 - **System Integration**: Manage interaction with external systems
-
-## Implementation Details
-
-### Directory Structure
-| Directory | Description |
-| --- | --- |
-| `/docker` | Docker-related files for runtime container |
-| `/docs` | Documentation files and guides |
-| `/instruments` | Custom scripts and tools for runtime environment |
-| `/knowledge` | Knowledge base storage |
-| `/logs` | HTML CLI-style chat logs |
-| `/memory` | Persistent agent memory storage |
-| `/prompts` | System and tool prompts |
-| `/python` | Core Python codebase: |
-| &nbsp;&nbsp;`/api` | API endpoints and interfaces |
-| &nbsp;&nbsp;`/extensions` | Modular extensions |
-| &nbsp;&nbsp;`/helpers` | Utility functions |
-| &nbsp;&nbsp;`/tools` | Tool implementations |
-| `/tmp` | Temporary runtime data |
-| `/webui` | Web interface components: |
-| &nbsp;&nbsp;`/css` | Stylesheets |
-| &nbsp;&nbsp;`/js` | JavaScript modules |
-| &nbsp;&nbsp;`/public` | Static assets |
-| `/work_dir` | Working directory |
-
-### Key Files
-| File | Description |
-| --- | --- |
-| `.env` | Environment configuration |
-| `agent.py` | Core agent implementation |
-| `example.env` | Configuration template |
-| `initialize.py` | Framework initialization |
-| `models.py` | Model providers and configs |
-| `preload.py` | Pre-initialization routines |
-| `prepare.py` | Environment preparation |
-| `requirements.txt` | Python dependencies |
-| `run_cli.py` | CLI launcher |
-| `run_ui.py` | Web UI launcher |
-
-> [!NOTE]
-> When using the Docker runtime container, these directories are mounted 
-> within the `/a0` volume for data persistence until the container is restarted or deleted.
-
-## Customization
-Agent Zero's strength lies in its flexibility. This section details how to customize various aspects of the framework, tailoring it to your specific needs and preferences.
-
-### AgentConfig
-The `AgentConfig` class in `initialize.py` provides various customization options:
-
-- `prompts_subdir`: Specifies the directory containing your custom prompts
-- `knowledge_subdirs`: Defines the directories where Agent Zero searches for knowledge files
-- **Rate Limiting:** Control API usage with `rate_limit_seconds` and `rate_limit_requests`
-- **Docker and SSH:** Configure execution environment settings
-
-### Adding Custom Components
-
-#### Custom Prompts
-1. Create directory in `prompts/` (e.g., `my-custom-prompts`)
-2. Copy and modify needed files from `prompts/default/`
-3. Agent Zero will merge your custom files with the default ones
-4. Select your custom prompts in the Settings page
-
-#### Adding Instruments
-1. Create folder in `instruments/custom` (no spaces in name)
-2. Add `.md` description file for the interface
-3. Add `.sh` script (or other executable) for implementation
-4. The agent will automatically detect and use the instrument
-
-#### Adding Tools
-1. Create `agent.system.tool.$TOOL_NAME.md` in `prompts/$SUBDIR`
-2. Add reference in `agent.system.tools.md`
-3. If needed, implement tool class in `python/tools` using `Tool` base class
-4. Follow existing patterns for consistency
 
 #### Adding Extensions
 1. Create Python file in appropriate `python/extensions` subfolder
