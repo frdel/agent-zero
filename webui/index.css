@@ -7,30 +7,30 @@
 
 :root {
   /* Dark mode */
-  --color-background-dark: #171717;
-  --color-text-dark: #e0e0e0;
-  --color-primary-dark: #86929d;
-  --color-secondary-dark: #3f3f3f;
+  --color-background-dark: #131313;
+  --color-text-dark: #d4d4d4;
+  --color-primary-dark: #737a81;
+  --color-secondary-dark: #656565;
   --color-accent-dark: #cf6679;
   --color-message-bg-dark: #2d2d2d;
   --color-message-text-dark: #e0e0e0;
-  --color-panel-dark: #1e1e1e;
+  --color-panel-dark: #171717;
   --color-border-dark: #444444a8;
-  --color-input-dark: #222;
-  --color-input-focus-dark: #1b1b1b;
+  --color-input-dark: #131313;
+  --color-input-focus-dark: #101010;
 
   /* Light mode */
-  --color-background-light: #e8e9e9;
+  --color-background-light: #dbdbdb;
   --color-text-light: #333333;
-  --color-primary-light: #324d66;
+  --color-primary-light: #384653;
   --color-secondary-light: #e8eaf6;
   --color-accent-light: #b00020;
   --color-message-bg-light: #ffffff;
   --color-message-text-light: #333333;
-  --color-panel-light: #ffffff;
+  --color-panel-light: #f0f0f0;
   --color-border-light: #e0e0e0c7;
-  --color-input-light: #f1f1f1;
-  --color-input-focus-light: #ebeced;
+  --color-input-light: #e4e4e4;
+  --color-input-focus-light: #dadada;
 
   /* Default to dark mode */
   --color-background: var(--color-background-dark);
@@ -752,6 +752,11 @@ pre {
 }
 
 /* Text input */
+#chat-input-container {
+  position: relative;
+  width: 100%;
+}
+
 #chat-input {
   background-color: var(--color-input);
   border: 1px solid var(--color-border);
@@ -763,8 +768,10 @@ pre {
   -webkit-font-optical-sizing: auto;
   font-size: 0.875rem;
   max-height: 7rem;
-  min-height: 2.8rem;
-  padding: 0.65rem var(--spacing-sm) var(--spacing-sm) var(--spacing-sm);
+  min-height: 3rem;
+  width: 100%;
+  padding: 0.5rem 40px var(--spacing-sm) var(--spacing-sm);
+  margin-right: var(--spacing-xs);
   overflow-y: auto;
   scroll-behavior: smooth;
   resize: none;
@@ -773,6 +780,36 @@ pre {
   border: 6px solid transparent;
   transition: all 0.3s ease;
   -webkit-transition: all 0.3s ease;
+}
+
+#chat-input {
+  outline: 1px solid var(--color-border);
+}
+
+#expand-button {
+  position: absolute;
+  top: 12px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: var(--color-text);
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+#expand-button:hover {
+  opacity: 0.7;
+}
+
+#expand-button:active {
+  opacity: 1;
+}
+
+#expand-button svg {
+    width: 1.3rem;
+    height: 1.3rem;
 }
 
 #chat-input::-webkit-scrollbar {
@@ -798,9 +835,9 @@ pre {
 }
 
 #chat-input:focus {
-  outline: 0.05rem solid rgba(155, 155, 155, 0.3);
+  outline: 0.05rem solid rgba(155, 155, 155, 0.5);
   font-size: 0.955rem;
-  padding-top: 0.58rem;
+  padding-top: 0.5rem;
   background-color: var(--color-input-focus);
 }
 
@@ -1098,18 +1135,6 @@ pre {
 }
 
 /* Text input */
-#chat-input {
-  flex-grow: 1;
-  min-height: 2.7rem;
-  padding: var(--spacing-sm) var(--spacing-sm);
-  padding-top: 0.65rem;
-  margin-right: var(--spacing-xs);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  resize: none;
-  align-content: start;
-}
-
 .input-row {
   width: 100%;
   white-space: nowrap;
@@ -1164,6 +1189,7 @@ pre {
 
 #chat-buttons-wrapper {
     gap: var(--spacing-xs);
+    padding-left: var(--spacing-xs);
   }
 
 .chat-button {
@@ -1778,57 +1804,57 @@ input:checked + .slider:before {
 }
 
 .light-mode .message-default {
-  background-color: #ffffff;
+  background-color: #f3f3f3;
   color: #1a242f;
 }
 
 .light-mode .message-agent {
-  background-color: #ffffff;
+  background-color: #f3f3f3;
   color: #356ca3;
 }
 
 .light-mode .message-agent-response {
-  background-color: #ffffff;
+  background-color: #f3f3f3;
   color: #188216;
 }
 
 .light-mode .message-agent-delegation {
-  background-color: #ffffff;
+  background-color: #f3f3f3;
   color: #12685e;
 }
 
 .light-mode .message-tool {
-  background-color: #ffffff;
+  background-color: #f3f3f3;
   color: #1c3c88;
 }
 
 .light-mode .message-code-exe {
-  background-color: #ffffff;
+  background-color: #f3f3f3;
   color: #6c43b0;
 }
 
 .light-mode .message-info {
-  background-color: #ffffff;
+  background-color: #f3f3f3;
   color: #3f3f3f;
 }
 
 .light-mode .message-util {
-  background-color: #ffffff;
+  background-color: #f3f3f3;
   color: #5b5540;
 }
 
 .light-mode .message-warning {
-  background-color: #ffffff;
+  background-color: #f3f3f3;
   color: #8f4800;
 }
 
 .light-mode .message-error {
-  background-color: #ffffff;
+  background-color: #f3f3f3;
   color: #8f1010;
 }
 
 .light-mode .message-user {
-  background-color: #ffffff;
+  background-color: #f3f3f3;
   color: #4e4e4e;
 }
 
