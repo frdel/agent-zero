@@ -304,10 +304,20 @@
                         </div>
                     </div>
 
-                    <!-- Text input -->
-                    <textarea id="chat-input" placeholder="Type your message here..." rows="1"></textarea>
-
+                    <!-- Container for textarea and button -->
+                    <div id="chat-input-container" style="position: relative;">
+                        <textarea id="chat-input" placeholder="Type your message here..." rows="1"></textarea>
+                        
+                        <!-- Expand button inside the textarea container -->
+                        <button id="expand-button" @click="$store.fullScreenInputModal.openModal()" aria-label="Expand input">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
                     <div id="chat-buttons-wrapper">
+
                         <!-- Send button -->
                         <button class="chat-button" id="send-button" aria-label="Send message">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
@@ -679,6 +689,28 @@
                     </div>
                 </div> -->
                 </div>
+        </template>
+    </div>
+
+    <!-- Full Screen Input Modal -->
+    <div id="fullScreenInputModal" x-data="fullScreenInputModalProxy">
+        <template x-teleport="body">
+            <div x-show="isOpen" class="modal-overlay" @click.self="handleClose()" 
+                @keydown.escape.window="handleClose()" x-transition>
+                <div class="modal-container full-screen-input-modal">
+                    <div class="modal-content">
+                        <button class="modal-close" @click="handleClose()">&times;</button>
+                        <textarea id="full-screen-input" x-model="inputText" 
+                            placeholder="Type your message here..." 
+                            @keydown.ctrl.enter="handleClose()"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <div id="buttons-container">
+                            <button class="btn btn-ok" @click="handleClose()">Done (Ctrl+Enter)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </template>
     </div>
 

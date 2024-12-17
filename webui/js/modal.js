@@ -1,3 +1,37 @@
+const fullScreenInputModalProxy = {
+    isOpen: false,
+    inputText: '',
+
+    openModal() {
+        const chatInput = document.getElementById('chat-input');
+        this.inputText = chatInput.value;
+        this.isOpen = true;
+        
+        // Focus the full screen input after a short delay to ensure the modal is rendered
+        setTimeout(() => {
+            const fullScreenInput = document.getElementById('full-screen-input');
+            fullScreenInput.focus();
+        }, 100);
+    },
+
+    handleClose() {
+        const chatInput = document.getElementById('chat-input');
+        chatInput.value = this.inputText;
+        chatInput.dispatchEvent(new Event('input')); // Trigger input event for textarea auto-resize
+        this.isOpen = false;
+    }
+};
+
+// Register the full screen input modal with Alpine as a store
+document.addEventListener('alpine:init', () => {
+    Alpine.store('fullScreenInputModal', fullScreenInputModalProxy);
+});
+
+// Also register as a component for x-data usage
+document.addEventListener('alpine:init', () => {
+    Alpine.data('fullScreenInputModalProxy', () => fullScreenInputModalProxy);
+});
+
 const genericModalProxy = {
     isOpen: false,
     isLoading: false,
