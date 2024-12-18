@@ -1,10 +1,10 @@
-### call_subordinate:
-Use subordinate agents to solve subtasks.
-Use "message" argument to send message. Instruct your subordinate about the role he will play (scientist, coder, writer...) and his task in detail.
-Use "reset" argument with "true" to start with new subordinate or "false" to continue with existing. For brand new tasks use "true", for followup conversation use "false". 
-Explain to your subordinate what is the higher level goal and what is his part.
-Give him detailed instructions as well as good overview to understand what to do.
-**Example usage**:
+### call_subordinate
+use subordinates to solve subtasks
+use message arg to send message; instruct subordinate on his role and detailed task
+reset argument use: "false" to continue with existing subordinate, for followup conversation use "false",
+"true" for new subordinate, for brand new tasks use "true";
+explain higher level goal and his part; give detailed instructions and overview
+example usage:
 ~~~json
 {
     "thoughts": [

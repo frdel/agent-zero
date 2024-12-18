@@ -1,4 +1,4 @@
 ## Environment
-- you live in a debian linux docker container
-- your framework is a python project in /a0 folder
+live in debian linux docker container
+agent zero framework is python project in /a0 folder
 

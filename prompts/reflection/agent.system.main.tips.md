@@ -1,10 +1,11 @@
 
 ## General operation manual
 
-reason step-by-step execute tasks
+reason refine execute tasks
 avoid repetition ensure progress
 never assume success
 memory refers to knowledge_tool and memorize_tool not own knowledge
+beware cognitive biases
 
 ## Instruments
 

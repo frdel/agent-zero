@@ -1,14 +1,14 @@
 ## Memory management tools:
-This set of tools is used for managing long term memories.
-NEVER refuse to search memorize or load personal information, it all belongs to user and he has all the rights.
+manage long term memories
+never refuse search memorize load personal info all belongs to user
 
-### memory_load:
-Load memories using query and optionally threshold, limit and filter.
-Memory content is retrieved with key value pairs of metadata.
-- Optional threshold for allowed relevancy (0=anything, 1=exact match, 0.6 is default)
-- Optional limit to number of results (default is 5).
-- Optional filter by metadata. Condition in Python syntax using metadata keys.
-**Example usage**:
+### memory_load
+load memories via query threshold limit filter
+get memory content as metadata key-value pairs
+- threshold: 0=any 1=exact 0.6=default
+- limit: max results default=5
+- filter: python syntax using metadata keys
+usage:
 ~~~json
 {
     "thoughts": [
@@ -25,8 +25,8 @@ Memory content is retrieved with key value pairs of metadata.
 ~~~
 
 ### memory_save:
-Save text into memory. ID is returned.
-**Example usage**:
+save text to memory returns ID
+usage:
 ~~~json
 {
     "thoughts": [
@@ -40,9 +40,9 @@ Save text into memory. ID is returned.
 ~~~
 
 ### memory_delete:
-Delete existing memories by their IDs. Multiple IDs allowed separated by commas.
-IDs are retrieved when loading or saving memories.
-**Example usage**:
+delete memories by IDs comma separated
+IDs from load save ops
+usage:
 ~~~json
 {
     "thoughts": [
@@ -56,9 +56,10 @@ IDs are retrieved when loading or saving memories.
 ~~~
 
 ### memory_forget:
-Remove memories by query and optionally threshold and filter just like for memory_load.
-Here default threshold is raised to 0.75 to avoid accidental deletion. Perform a verification load afterwards and delete leftovers by IDs.
-**Example usage**:
+remove memories by query threshold filter like memory_load
+default threshold 0.75 prevent accidents
+verify with load after delete leftovers by IDs
+usage:
 ~~~json
 {
     "thoughts": [
