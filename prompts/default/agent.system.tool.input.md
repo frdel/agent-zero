@@ -1,6 +1,6 @@
 ### input:
 use keyboard arg for program input
-answer dialogs enter passwords etc
+answer dialogues enter passwords etc in terminal
 usage:
 ~~~json
 {

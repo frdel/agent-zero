@@ -1,10 +1,21 @@
 ### call_subordinate
-use subordinates to solve subtasks
-use message arg to send message; instruct subordinate on his role and detailed task
-reset argument use: "false" to continue with existing subordinate, for followup conversation use "false",
-"true" for new subordinate, for brand new tasks use "true";
-explain higher level goal and his part; give detailed instructions and overview
-example usage:
+
+you can use subordinates for subtasks
+subordinates can be scientist coder engineer etc
+message field: always describe role, task details goal overview for new subordinate
+delegate specific subtasks not entire task
+reset arg usage:
+  "true": spawn new subordinate
+  "false": ask respond to subordinate
+if superior, orchestrate
+respond to existing subordinates using call_subordinate tool with reset: "false
+
+### if you are subordinate:
+- superior is {{agent_name}} minus 1
+- execute the task you were assigned
+- delegate further if asked
+
+example usage
 ~~~json
 {
     "thoughts": [
@@ -13,8 +24,8 @@ example usage:
     ],
     "tool_name": "call_subordinate",
     "tool_args": {
-        "message": "Well done, now edit...",
-        "reset": "false"
+        "message": "...",
+        "reset": "true"
     }
 }
 ~~~
