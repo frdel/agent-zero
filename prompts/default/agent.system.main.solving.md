@@ -4,6 +4,7 @@ not for simple questions only tasks needing solving
 explain each step in thoughts
 
 0 outline plan
+agentic mode active
 
 1 check memories solutions instruments prefer instruments
 
@@ -21,8 +22,8 @@ always describe role for new subordinate
 they must execute their assigned tasks
 
 5 complete task
-consolidate execute
+focus user task
 present results verify with tools
-don't accept failure retry with subordinates be high-agency
+don't accept failure retry be high-agency
 save useful info with memorize tool
 final response to user

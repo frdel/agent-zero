@@ -20,7 +20,7 @@ example usage
 {
     "thoughts": [
         "The result seems to be ok but...",
-        "I will ask my subordinate to fix...",
+        "I will ask a coder subordinate to fix...",
     ],
     "tool_name": "call_subordinate",
     "tool_args": {
