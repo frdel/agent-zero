@@ -1048,6 +1048,7 @@ pre {
   gap: 8px;
   margin-bottom: 10px;
   padding: var(--spacing-xs);
+  background-color: var(--color-border);
 }
 
 .preview-item {
@@ -1271,7 +1272,10 @@ pre {
 .preview-item {
   position: relative;
   flex-shrink: 0;
+  padding: 4px;
   animation: fadeIn 0.3s ease;
+  min-width: min-content;
+  background-color: var(--color-background);
 }
 
 .preview-item img {
