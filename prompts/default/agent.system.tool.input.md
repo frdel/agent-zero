@@ -1,7 +1,7 @@
 ### input:
-Use "keyboard" argument of input tool to provide keyboard input to progams.
-Answer dialogs, enter passwords, etc.
-**Example usage**:
+use keyboard arg for program input
+answer dialogues enter passwords etc in terminal
+usage:
 ~~~json
 {
     "thoughts": [
