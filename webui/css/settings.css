@@ -214,13 +214,13 @@ nav ul li a img {
   }
 }
 
-@media (max-width: 480px) { 
+@media (max-width: 640px) { 
   nav ul {
     grid-template-columns: repeat(2, 1.2fr);
   }
 }
 
-@media (max-width: 380px) {
+@media (max-width: 480px) {
   nav ul {
     grid-template-columns: 1fr;
   }
