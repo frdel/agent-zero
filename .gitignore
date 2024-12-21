@@ -1,63 +1,45 @@
+# Ignore common unwanted files globally
 **/.DS_Store
 **/.env
 **/__pycache__/
 **/.conda/
 
-# Ignore git (for bundler)
+# Ignore git internal files (for bundler)
 .git/
 
 # Ignore all contents of the virtual environment directory
 .venv/
 
-# ignore all folders under /bundle
+# Handle bundle directory
 bundle/*/
-# except some
 !bundle/mac_pkg_scripts
 
-# Ignore all contents of the directory "work_dir"
+# Handle work_dir directory
 work_dir/*
-# But do not ignore the directory itself
-!work_dir/.gitkeep
 
-# Ignore all contents of the directory "memory"
-memory/*
-# But do not ignore the directory itself
-!memory/.gitkeep
+# Handle memory directory
+memory/**
+!memory/**/
 
-# Ignore all contents of the directory "logs"
+# Handle logs directory
 logs/*
-# But do not ignore the directory itself
-!logs/.gitkeep
 
-# Ignore all contents of the directory "tmp"
+# Handle tmp directory
 tmp/*
-# But do not ignore the directory itself
-!tmp/.gitkeep
 
-# Ignore everything in the "knowledge" directory
-knowledge/*
-
-# Do not ignore subdirectories (so we can track .gitkeep)
-!knowledge/*/
-
-# Ignore all files within subdirectories (except .gitkeep)
-knowledge/**/*.*
-!knowledge/**/.gitkeep
-
-# Explicitly allow the default folder and its contents
+# Handle knowledge directory
+knowledge/**
+!knowledge/**/
+# Explicitly allow the default folder in knowledge
 !knowledge/default/
 !knowledge/default/**
 
-# Ignore everything in the "instruments" directory
-instruments/*
-
-# Do not ignore subdirectories (so we can track .gitkeep)
-!instruments/*/
-
-# Ignore all files within subdirectories (except .gitkeep)
-instruments/**/*.*
-!instruments/**/.gitkeep
-
-# Explicitly allow the default folder and its contents
+# Handle instruments directory
+instruments/**
+!instruments/**/
+# Explicitly allow the default folder in instruments
 !instruments/default/
 !instruments/default/**
+
+# Global rule to include .gitkeep files anywhere
+!**/.gitkeep

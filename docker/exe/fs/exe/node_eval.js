@@ -2,11 +2,34 @@
 
 const vm = require('vm');
 const path = require('path');
+const Module = require('module');
 
-// Create a comprehensive context with all important global objects
+ // Enhance `require` to search CWD and parent directories first, then globally
+function customRequire(moduleName) {
+  let currentDir = process.cwd();
+  const root = path.parse(currentDir).root;
+
+  do {
+    try {
+      const modulePath = path.join(currentDir, 'node_modules', moduleName);
+      return require(modulePath);
+    } catch (err) {
+      currentDir = path.dirname(currentDir);
+    }
+  } while (currentDir !== root);
+
+  try {
+    return require(moduleName);
+  } catch (globalErr) {
+    console.error(`Cannot find module: ${moduleName}`);
+    throw globalErr;
+  }
+}
+
+// Create the VM context
 const context = vm.createContext({
   ...global,
-  require: require,
+  require: customRequire, // Use the custom require
   __filename: path.join(process.cwd(), 'eval.js'),
   __dirname: process.cwd(),
   module: { exports: {} },
@@ -19,10 +42,12 @@ const context = vm.createContext({
   setImmediate: setImmediate,
   clearTimeout: clearTimeout,
   clearInterval: clearInterval,
-  clearImmediate: clearImmediate
+  clearImmediate: clearImmediate,
 });
 
+// Retrieve the code from the command-line argument
 const code = process.argv[2];
+
 const wrappedCode = `
   (async function() {
     try {

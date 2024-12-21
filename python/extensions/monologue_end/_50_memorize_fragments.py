@@ -35,14 +35,15 @@ class MemorizeMemories(Extension):
         msgs_text = self.agent.concat_messages(self.agent.history)
 
         # log query streamed by LLM
-        def log_callback(content):
+        async def log_callback(content):
             log_item.stream(content=content)
 
         # call util llm to find info in history
-        memories_json = await self.agent.call_utility_llm(
+        memories_json = await self.agent.call_utility_model(
             system=system,
-            msg=msgs_text,
+            message=msgs_text,
             callback=log_callback,
+            background=True,
         )
 
         memories = DirtyJson.parse_string(memories_json)
@@ -64,7 +65,7 @@ class MemorizeMemories(Extension):
             memories_txt += "\n\n" + txt
             log_item.update(memories=memories_txt.strip())
 
-            # remove previous solutions too similiar to this one
+            # remove previous fragments too similiar to this one
             if self.REPLACE_THRESHOLD > 0:
                 rem += await db.delete_documents_by_query(
                     query=txt,
@@ -76,7 +77,7 @@ class MemorizeMemories(Extension):
                     log_item.update(replaced=rem_txt)
 
             # insert new solution
-            db.insert_text(text=txt, metadata={"area": Memory.Area.FRAGMENTS.value})
+            await db.insert_text(text=txt, metadata={"area": Memory.Area.FRAGMENTS.value})
 
         log_item.update(
             result=f"{len(memories)} entries memorized.",

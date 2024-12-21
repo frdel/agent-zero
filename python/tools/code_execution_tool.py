@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import shlex
 import time
 from python.helpers.tool import Tool, Response
-from python.helpers import files
+from python.helpers import files, rfc_exchange
 from python.helpers.print_style import PrintStyle
 from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
@@ -49,36 +49,37 @@ class CodeExecution(Tool):
             response = self.agent.read_prompt("fw.code_no_output.md")
         return Response(message=response, break_loop=False)
 
-    async def before_execution(self, **kwargs):
-        await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
-        PrintStyle(
-            font_color="#1B4F72", padding=True, background_color="white", bold=True
-        ).print(f"{self.agent.agent_name}: Using tool '{self.name}'")
-        self.log = self.agent.context.log.log(
-            type="code_exe",
-            heading=f"{self.agent.agent_name}: Using tool '{self.name}'",
-            content="",
-            kvps=self.args,
-        )
-        if self.args and isinstance(self.args, dict):
-            for key, value in self.args.items():
-                PrintStyle(font_color="#85C1E9", bold=True).stream(
-                    self.nice_key(key) + ": "
-                )
-                PrintStyle(
-                    font_color="#85C1E9",
-                    padding=isinstance(value, str) and "\n" in value,
-                ).stream(value)
-                PrintStyle().print()
+    # async def before_execution(self, **kwargs):
+    #     await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
+    #     PrintStyle(
+    #         font_color="#1B4F72", padding=True, background_color="white", bold=True
+    #     ).print(f"{self.agent.agent_name}: Using tool '{self.name}'")
+    #     self.log = self.agent.context.log.log(
+    #         type="code_exe",
+    #         heading=f"{self.agent.agent_name}: Using tool '{self.name}'",
+    #         content="",
+    #         kvps=self.args,
+    #     )
+    #     if self.args and isinstance(self.args, dict):
+    #         for key, value in self.args.items():
+    #             PrintStyle(font_color="#85C1E9", bold=True).stream(
+    #                 self.nice_key(key) + ": "
+    #             )
+    #             PrintStyle(
+    #                 font_color="#85C1E9",
+    #                 padding=isinstance(value, str) and "\n" in value,
+    #             ).stream(value)
+    #             PrintStyle().print()
+
+    def get_log_object(self):
+        return self.agent.context.log.log(type="code_exe", heading=f"{self.agent.agent_name}: Using tool '{self.name}'", content="", kvps=self.args)
+
 
     async def after_execution(self, response, **kwargs):
-        msg_response = self.agent.read_prompt(
-            "fw.tool_response.md", tool_name=self.name, tool_response=response.message
-        )
-        await self.agent.append_message(msg_response, human=True)
+        await self.agent.hist_add_tool_result(self.name, response.message)
 
     async def prepare_state(self, reset=False):
-        self.state = self.agent.get_data("cot_state")
+        self.state = self.agent.get_data("_cot_state")
         if not self.state or reset:
 
             # initialize docker container if execution in docker is configured
@@ -96,19 +97,20 @@ class CodeExecution(Tool):
 
             # initialize local or remote interactive shell insterface
             if self.agent.config.code_exec_ssh_enabled:
+                pswd = self.agent.config.code_exec_ssh_pass if self.agent.config.code_exec_ssh_pass else await rfc_exchange.get_root_password()
                 shell = SSHInteractiveSession(
                     self.agent.context.log,
                     self.agent.config.code_exec_ssh_addr,
                     self.agent.config.code_exec_ssh_port,
                     self.agent.config.code_exec_ssh_user,
-                    self.agent.config.code_exec_ssh_pass,
+                    pswd,
                 )
             else:
                 shell = LocalInteractiveSession()
 
             self.state = State(shell=shell, docker=docker)
             await shell.connect()
-        self.agent.set_data("cot_state", self.state)
+        self.agent.set_data("_cot_state", self.state)
 
     async def execute_python_code(self, code: str, reset: bool = False):
         escaped_code = shlex.quote(code)
@@ -126,15 +128,28 @@ class CodeExecution(Tool):
     async def terminal_session(self, command: str, reset: bool = False):
 
         await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
-        if reset:
-            await self.reset_terminal()
+        # try again on lost connection
+        for i in range(2):
+            try:
+            
+                if reset:
+                    await self.reset_terminal()
 
-        self.state.shell.send_command(command)
+                self.state.shell.send_command(command)
 
-        PrintStyle(background_color="white", font_color="#1B4F72", bold=True).print(
-            f"{self.agent.agent_name} code execution output"
-        )
-        return await self.get_terminal_output()
+                PrintStyle(background_color="white", font_color="#1B4F72", bold=True).print(
+                    f"{self.agent.agent_name} code execution output"
+                )
+                return await self.get_terminal_output()
+
+            except Exception as e:
+                if i==1:
+                    # try again on lost connection
+                    PrintStyle.error(str(e))
+                    await self.prepare_state(reset=True)
+                    continue
+                else:
+                    raise e
 
     async def get_terminal_output(
         self,

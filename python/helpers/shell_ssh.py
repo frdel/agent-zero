@@ -4,6 +4,7 @@ import time
 import re
 from typing import Tuple
 from python.helpers.log import Log
+from python.helpers.print_style import PrintStyle
 from python.helpers.strings import calculate_valid_match_lengths
 
 
@@ -33,7 +34,12 @@ class SSHInteractiveSession:
         while True:
             try:
                 self.client.connect(
-                    self.hostname, self.port, self.username, self.password
+                    self.hostname,
+                    self.port,
+                    self.username,
+                    self.password,
+                    allow_agent=False,
+                    look_for_keys=False,
                 )
                 self.shell = self.client.invoke_shell(width=160, height=48)
                 # self.shell.send(f'PS1="{SSHInteractiveSession.ps1_label}"'.encode())
@@ -46,7 +52,7 @@ class SSHInteractiveSession:
             except Exception as e:
                 errors += 1
                 if errors < 3:
-                    print(f"SSH Connection attempt {errors}...")
+                    PrintStyle.standard(f"SSH Connection attempt {errors}...")
                     self.logger.log(
                         type="info",
                         content=f"SSH Connection attempt {errors}...",

@@ -3,156 +3,717 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>Agent Zero</title>
     <link rel="stylesheet" href="index.css">
-    <link rel="stylesheet" href="toast.css">
+    <link rel="stylesheet" href="css/toast.css">
+    <link rel="stylesheet" href="css/settings.css">
+    <link rel="stylesheet" href="css/file_browser.css">
+    <link rel="stylesheet" href="css/modals.css">
+    <link rel="stylesheet" href="css/speech.css">
+    <link rel="stylesheet" href="css/history.css">
 
     <script>
         window.safeCall = function (name, ...args) {
             if (window[name]) window[name](...args)
         }
     </script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.3/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.36.5/src-noconflict/ace.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/ace-builds@1.36.5/css/ace.min.css" rel="stylesheet">
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
+
+    <!-- KaTeX javascript -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+        crossorigin="anonymous"></script>
+
+
     <script type="module" src="index.js"></script>
+    <script type="text/javascript" src="js/settings.js"></script>
+    <script type="text/javascript" src="js/file_browser.js"></script>
+    <script type="text/javascript" src="js/modal.js"></script>
+    <script type="module" src="js/speech.js"></script>
+    <script type="module" src="js/history.js"></script>
 
 </head>
 
 <body>
     <div class="container">
+        <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
         <div class="icons-section" id="hide-button" x-data="{ connected: true }">
             <!--Sidebar-->
+            <!-- Sidebar Toggle Button -->
             <button id="toggle-sidebar" class="toggle-sidebar-button" aria-label="Toggle Sidebar" aria-expanded="false">
                 <span aria-hidden="true">
-                    <svg id="sidebar-hamburger-svg" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                    <!-- Hamburger Icon -->
+                    <svg id="sidebar-hamburger-svg" xmlns="http://www.w3.org/2000/svg" width="22" height="22"
                         viewBox="0 0 24 24" fill="CurrentColor">
-                        <path
-                            d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
+                        <path d="M3 13h18v-2H3v2zm0 4h18v-2H3v2zm0-8h18V7H3v2z"></path>
                     </svg>
                 </span>
             </button>
-        </div>
-        <div id="left-panel" class="panel">
-            <div class="left-panel-top">
-                <!--Sidebar upper elements-->
-                <div class="config-section" id="status-section" x-data="{ connected: true }">
-                    <h3>Status</h3>
-                    <h4 class="connected" x-show="connected">&#10004; Connected</h4>
-                    <h4 class="disconnected" x-show="!connected">&#10008; Disconnected</h4>
-                </div>
 
+            <div id="logo-container">
+                <a href="https://github.com/frdel/agent-zero" target="_blank" rel="noopener noreferrer">
+                    <img src="./public/splash.jpg" alt="a0" width="22" height="22">
+                </a>
+            </div>
+        </div>
+
+        <div id="left-panel" class="panel">
+            <!--Sidebar upper elements-->
+            <div class="left-panel-top">
                 <div class="config-section" x-data="{ showQuickActions: true }">
-                    <h3>Quick Actions</h3>
-                    <button class="config-button" id="resetChat" @click="resetChat()">Reset chat</button>
+                    <button class="config-button" id="resetChat" @click="resetChat()">Reset Chat</button>
                     <button class="config-button" id="newChat" @click="newChat()">New Chat</button>
                     <button class="config-button" id="loadChats" @click="loadChats()">Load Chat</button>
                     <button class="config-button" id="loadChat" @click="saveChat()">Save Chat</button>
-                </div>
+                    <button class="config-button" id="restart" @click="restart()">Restart</button>
+                    <button class="config-button" id="settings" @click="settingsModalProxy.openModal()"><svg
+                            xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-5.0 -17.0 110.0 135.0"
+                            fill="currentColor" width="24" height="24">
+                            <path
+                                d="m52.301 90.102h-4.1016c-3 0-5 0-6.8984-1.3984-1.8984-1.3984-2.5-3.3008-3.5-6.1016l-1.1016-3.6016c-0.19922-0.60156-0.69922-1.1992-1.3984-1.6016l-1.1016-0.60156c-0.60156-0.30078-1.5-0.39844-2.3008-0.19922l-4.3008 1.1992c-3.1016 0.89844-5.1016 1.5-7.3984 0.5-2.3008-0.89844-3.3984-2.8008-5-5.6016l-1.8008-3.1016c-1.5-2.5-2.5-4.3008-2.3008-6.6992 0.19922-2.3984 1.6016-3.8008 3.6016-6.1016l3.8008-4.1992c0.19922-0.19922 0.60156-1.3984 0.60156-2.6016 0-1.1016-0.5-2.3008-0.80078-2.6992l-3.6016-4c-2-2.1992-3.3008-3.6992-3.6016-6.1016-0.19922-2.3984 0.80078-4.1992 2.3008-6.6992l1.8008-3.1016c1.6016-2.8008 2.6992-4.6016 5-5.6016 2.3008-0.89844 4.3008-0.39844 7.3984 0.5l4.3984 1.1992c0.69922 0.10156 1.5 0 2.3008-0.30078l1.1016-0.60156c0.5-0.30078 1-0.89844 1.3008-1.6992l1.1992-3.5c0.89844-2.8008 1.6016-4.6992 3.5-6.1016 1.8984-1.3984 3.8984-1.3984 6.8984-1.3984h4.1016c3 0 5 0 6.8984 1.3984 1.8984 1.3984 2.5 3.1992 3.5 6.1016l1.1992 3.6016c0.19922 0.60156 0.69922 1.1992 1.3984 1.6016l1.1016 0.60156c0.60156 0.30078 1.5 0.39844 2.3008 0.19922l4.3008-1.1992c3.1016-0.89844 5.1016-1.5 7.3984-0.5 2.3008 0.89844 3.3984 2.8008 5 5.5l1.8008 3.1016c1.3984 2.5 2.5 4.3008 2.3008 6.6992-0.19922 2.3984-1.6016 3.8008-3.6016 6.1016l-3.9961 4.4062c-0.19922 0.19922-0.60156 1.3984-0.60156 2.6016 0 1.1016 0.5 2.3008 0.80078 2.6992l3.6016 4c2 2.1992 3.3008 3.6992 3.6016 6.1016 0.19922 2.3984-0.80078 4.1992-2.3008 6.6992l-1.8008 3.1016c-1.6016 2.8008-2.6992 4.6016-5 5.6016-2.3008 0.89844-4.3984 0.39844-7.3984-0.5l-4.3984-1.1992c-0.69922-0.10156-1.5 0-2.3008 0.30078l-1.1016 0.60156c-0.5 0.30078-1 0.89844-1.3008 1.6992l-1.1992 3.5c-0.89844 2.8008-1.6016 4.6992-3.5 6.1016-1.8008 1.293-3.8008 1.293-6.8008 1.293zm-6.6016-7.3008c0.5 0.10156 1.6016 0.10156 2.6016 0.10156h4.1016c1 0 2 0 2.6016-0.10156 0.19922-0.5 0.60156-1.5 0.89844-2.3984l1.1992-3.6016c0.89844-2.3008 2.3984-4.1992 4.3984-5.3984l1.3984-0.80078c2.3984-1.3008 5.1016-1.6016 7.6016-1l4.6016 1.3008c1 0.30078 2.1016 0.60156 2.6992 0.69922 0.30078-0.5 0.89844-1.5 1.3984-2.3984l1.8008-3.1016c0.5-0.80078 1-1.8008 1.1992-2.3008-0.30078-0.39844-1-1.1992-1.6992-2l-3.8008-4.1992c-1.6016-2-2.5-4.8008-2.5-7.3984 0-2.6016 0.89844-5.3984 2.3008-7.3008l3.8984-4.3984c0.69922-0.69922 1.3984-1.5 1.6992-2-0.19922-0.5-0.80078-1.3984-1.1992-2.3008l-1.8984-3.1016c-0.5-0.89844-1.1016-1.8984-1.3984-2.3984-0.60156 0.10156-1.6992 0.39844-2.6992 0.69922l-4.3984 1.3008c-2.6992 0.60156-5.3008 0.30078-7.6016-0.89844l-1.4023-0.80469c-2.1016-1.3984-3.6016-3.1992-4.3984-5.3984l-1.3008-3.8008c-0.30078-0.89844-0.60156-1.8984-0.89844-2.3984-0.5-0.10156-1.6016-0.10156-2.6016-0.10156h-4.1016c-1 0-2 0-2.6016 0.10156-0.19922 0.5-0.60156 1.5-0.89844 2.3984l-1.1992 3.6016c-0.89844 2.3008-2.3984 4.1992-4.3984 5.3984l-1.3984 0.80078c-2.3984 1.3008-5.1016 1.6016-7.6016 1l-4.6016-1.3008c-1-0.30078-2.1016-0.60156-2.6992-0.69922-0.30078 0.5-0.89844 1.5-1.3984 2.3984l-1.8008 3.1016c-0.5 0.80078-1 1.8008-1.1992 2.3008 0.30078 0.39844 1 1.1992 1.6992 2l3.8008 4.1992c1.6016 2 2.5 4.8008 2.5 7.3984 0 2.6016-0.89844 5.3984-2.3008 7.3008l-3.8984 4.3984c-0.69922 0.69922-1.3984 1.5-1.6992 2 0.19922 0.5 0.80078 1.3984 1.1992 2.3008l1.8008 3.1016c0.5 0.89844 1.1016 1.8984 1.3984 2.3984 0.60156-0.10156 1.6992-0.39844 2.6992-0.69922l4.3984-1.1992c2.6992-0.60156 5.3008-0.30078 7.6016 0.89844l1.3984 0.80078c2.1016 1.3008 3.6016 3.1992 4.3984 5.3984l1.3008 3.8008c0.5 0.80078 0.80078 1.8008 1 2.3008z">
+                            </path>
+                            <path
+                                d="m50.301 66.5c-9 0-16.398-7.3008-16.398-16.398 0-9.1016 7.3008-16.398 16.398-16.398 9.1016 0 16.398 7.3008 16.398 16.398 0 9.0977-7.3984 16.398-16.398 16.398zm0-25.5c-5 0-9.1016 4.1016-9.1016 9.1016s4.1016 9.1016 9.1016 9.1016 9.1016-4.1016 9.1016-9.1016c-0.003906-5-4.1016-9.1016-9.1016-9.1016z">
+                            </path>
+                        </svg>Settings</button>
 
+                </div>
+                <!-- Chats List -->
                 <div class="config-section" id="chats-section" x-data="{ contexts: [], selected: '' }"
                     x-show="contexts.length > 0">
                     <h3>Chats</h3>
-                    <ul class="config-list">
-                        <template x-for="context in contexts">
-                            <li>
-                                <span :class="{'chat-list-button': true, 'font-bold': context.id === selected}"
-                                    @click="selected = context.id; selectChat(context.id)">
-                                    Chat #<span x-text="context.no"></span>
-                                </span>
-                                <button class="edit-button" @click="killChat(context.id)">X</button>
-                            </li>
-                        </template>
-                    </ul>
+                    <div class="chats-list-container">
+                        <ul class="config-list">
+                            <template x-for="context in contexts">
+                                <li>
+                                    <span :class="{'chat-list-button': true, 'font-bold': context.id === selected}"
+                                        @click="selected = context.id; selectChat(context.id)">
+                                        Chat #<span x-text="context.no"></span>
+                                    </span>
+                                    <button class="edit-button" @click="killChat(context.id)">X</button>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
                 </div>
             </div>
-            <!--Preferences-->
-            <div class="pref-section">
-                <h3>Preferences</h3>
-                <ul class="config-list">
-                    <li x-data="{ autoScroll: true }">
-                        <span>Autoscroll</span>
-                        <label class="switch">
-                            <input id="auto-scroll-switch" type="checkbox" x-model="autoScroll"
-                                x-effect="window.safeCall('toggleAutoScroll',autoScroll)">
-                            <span class="slider"></span>
-                        </label>
-                    </li>
-                    <li x-data="{ darkMode: localStorage.getItem('darkMode') != 'false' }"
-                        x-init="$watch('darkMode', val => toggleDarkMode(val))">
-                        <div class="switch-label">Dark mode</div>
-                        <label class="switch">
-                            <input type="checkbox" x-model="darkMode">
-                            <span class="slider"></span>
-                        </label>
-                    </li>
-                    <li x-data="{ showThoughts: true }">
-                        <span>Show thoughts</span>
-                        <label class="switch">
-                            <input type="checkbox" x-model="showThoughts"
-                                x-effect="window.safeCall('toggleThoughts',showThoughts)">
-                            <span class="slider"></span>
-                        </label>
-                    </li>
-                    <li x-data="{ showJson: false }">
-                        <span>Show JSON</span>
-                        <label class="switch">
-                            <input type="checkbox" x-model="showJson" x-effect="window.safeCall('toggleJson',showJson)">
-                            <span class="slider"></span>
-                        </label>
-                    </li>
-                    <li x-data="{ showUtils: false }">
-                        <span>Show utility messages</span>
-                        <label class="switch">
-                            <input type="checkbox" x-model="showUtils"
-                                x-effect="window.safeCall('toggleUtils',showUtils)">
-                            <span class="slider"></span>
-                        </label>
-                    </li>
-
-                </ul>
-                <span id="a0version">Agent Zero 0.7<br>built on 2024-10-6</span>
+            <!--Sidebar lower elements-->
+            <div class="left-panel-bottom">
+                <!-- Preferences -->
+                <div class="pref-section" x-data="{ prefOpen: true }">
+                    <span>
+                        <h3 class="pref-header" @click="prefOpen = !prefOpen">
+                            Preferences
+                            <svg class="arrow-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" width="16" height="16"
+                                :class="{'rotated': !prefOpen}">
+                                <path d="M8 4l8 8-8 8" />
+                            </svg>
+                        </h3>
+                        <ul class="config-list" id="pref-list" x-show="prefOpen" x-collapse x-transition>
+                            <!-- Preferences Items -->
+                            <li x-data="{ autoScroll: true }">
+                                <span>Autoscroll</span>
+                                <label class="switch">
+                                    <input id="auto-scroll-switch" type="checkbox" x-model="autoScroll"
+                                        x-effect="window.safeCall('toggleAutoScroll',autoScroll)">
+                                    <span class="slider"></span>
+                                </label>
+                            </li>
+                            <li x-data="{ darkMode: localStorage.getItem('darkMode') != 'false' }"
+                                x-init="$watch('darkMode', val => toggleDarkMode(val))">
+                                <span class="switch-label">Dark mode</span>
+                                <label class="switch">
+                                    <input type="checkbox" x-model="darkMode">
+                                    <span class="slider"></span>
+                                </label>
+                            </li>
+                            <li x-data="{ speech: localStorage.getItem('speech') == 'true' }"
+                                x-init="$watch('speech', val => toggleSpeech(val))">
+                                <span class="switch-label">Speech</span>
+                                <label class="switch">
+                                    <input type="checkbox" x-model="speech">
+                                    <span class="slider"></span>
+                                </label>
+                            </li>
+                            <li x-data="{ showThoughts: true }">
+                                <span>Show thoughts</span>
+                                <label class="switch">
+                                    <input type="checkbox" x-model="showThoughts"
+                                        x-effect="window.safeCall('toggleThoughts',showThoughts)">
+                                    <span class="slider"></span>
+                                </label>
+                            </li>
+                            <li x-data="{ showJson: false }">
+                                <span>Show JSON</span>
+                                <label class="switch">
+                                    <input type="checkbox" x-model="showJson"
+                                        x-effect="window.safeCall('toggleJson',showJson)">
+                                    <span class="slider"></span>
+                                </label>
+                            </li>
+                            <li x-data="{ showUtils: false }">
+                                <span>Show utility messages</span>
+                                <label class="switch">
+                                    <input type="checkbox" x-model="showUtils"
+                                        x-effect="window.safeCall('toggleUtils',showUtils)">
+                                    <span class="slider"></span>
+                                </label>
+                            </li>
+                        </ul>
+                    </span>
+                </div>
+                <!-- Version Info -->
+                <div class="version-info">
+                    <span id="a0version">Version {{version_no}} {{version_time}}</span>
+                </div>
             </div>
         </div>
         <div id="right-panel" class="panel">
-            <div id="logo-container">
-                <a href="https://github.com/frdel/agent-zero" target="_blank" rel="noopener noreferrer">
-                    <img src="splash.jpg" alt="a0" width="48" height="48">
-                </a>
-                <div id="time-date"></div>
-            </div>
             <!--Chat-->
+            <div id="time-date-container">
+                <div id="time-date"></div>
+                <div class="status-icon" x-data="{ connected: true }">
+                    <svg viewBox="0 0 30 30">
+                        <!-- Connected State (filled circle) -->
+                        <circle class="connected-circle" cx="15" cy="15" r="8"
+                            x-bind:fill="connected ? '#00c340' : 'none'" x-bind:opacity="connected ? 1 : 0" />
+
+                        <!-- Disconnected State (outline circle) -->
+                        <circle class="disconnected-circle" cx="15" cy="15" r="12" fill="none" stroke="#e40138"
+                            stroke-width="3" x-bind:opacity="connected ? 0 : 1" />
+                    </svg>
+                </div>
+            </div>
             <div id="chat-history">
             </div>
             <div id="toast" class="toast">
-                <div class="toast__message"></div>
-                <button class="toast__copy">Copy</button>
+                <div class="toast__content">
+                    <div class="toast__title"></div>
+                    <div class="toast__separator"></div>
+                    <div class="toast__message"></div>
+                </div>
+                <button class="toast__copy" style="display: none;">Copy</button>
                 <button class="toast__close">Close</button>
             </div>
-            <div id="progress-bar-box">
-                <h4 id="progress-bar-h"><span id="progress-bar-i">|></span><span id="progress-bar"></span></h4>
+            <div id="progress-bar-box" x-data="{ isSpeaking: false }" x-init="
+            // Watch the speech synthesis status to update isSpeaking
+            setInterval(() => isSpeaking = window.speech.isSpeaking(), 100)
+        ">
+                <h4 id="progress-bar-h">
+                    <span id="progress-bar-i">|></span><span id="progress-bar"></span>
+                </h4>
+                <h4 id="progress-bar-stop-speech" x-show="isSpeaking">
+                    <span id="stop-speech" @click="window.speech.stop()" style="cursor: pointer">Stop Speech</span>
+                </h4>
             </div>
-            <div id="input-section" x-data="{ paused: false }">
-                <textarea id="chat-input" placeholder="Type your message here..." rows="1"></textarea>
-                <button class="chat-button" id="send-button" aria-label="Send message">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-                        <path d="M25 20 L75 50 L25 80" fill="none" stroke="currentColor" stroke-width="15" />
-                    </svg>
-                </button>
-                <button class="chat-button pause-button" id="pause-button" @click="pauseAgent(true)" x-show="!paused"
-                    aria-label="Pause agent">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                    </svg>
-                </button>
-                <button class="chat-button pause-button" id="unpause-button" @click="pauseAgent(false)" x-show="paused"
-                    aria-label="Resume agent">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z" />
-                    </svg>
-                </button>
+            <div id="input-section" x-data="{ 
+                paused: false,
+                attachments: [],
+                hasAttachments: false,
+                
+                handleFileUpload(event) {
+                    const files = event.target.files;
+                    //if (files.length + this.attachments.length > 4) {
+                    //    alert('Maximum 4 attachments allowed');
+                    //    return;
+                    //}
+    
+                    Array.from(files).forEach(file => {
+                        const ext = file.name.split('.').pop().toLowerCase();
+                        const allowedExts = new Set(['jpg', 'jpeg', 'png', 'bmp', 'md', 'py', 'js', 'sh', 
+                                                    'html', 'css', 'pdf', 'txt', 'csv', 'json']);
+                        
+                        //if (allowedExts.has(ext)) {
+                            const isImage = ['jpg', 'jpeg', 'png', 'bmp'].includes(ext);
+                            
+                            if (isImage) {
+                                // Handle image preview
+                                const reader = new FileReader();
+                                reader.onload = e => {
+                                    this.attachments.push({
+                                        file: file,
+                                        url: e.target.result,
+                                        type: 'image',
+                                        name: file.name,
+                                        extension: ext
+                                    });
+                                    this.hasAttachments = true;
+                                };
+                                reader.readAsDataURL(file);
+                            } else {
+                                // Handle other file types
+                                this.attachments.push({
+                                    file: file,
+                                    type: 'file',
+                                    name: file.name,
+                                    extension: ext
+                                });
+                                this.hasAttachments = true;
+                            }
+                        //}
+                    });
+                }
+            }">
+
+                <!-- Preview section -->
+                <div x-show="hasAttachments" class="preview-section">
+                    <template x-for="(attachment, index) in attachments" :key="index">
+                        <div class="preview-item" :class="{'image-preview': attachment.type === 'image'}">
+                            <template x-if="attachment.type === 'image'">
+                                <img :src="attachment.url" :alt="attachment.name">
+                            </template>
+                            <template x-if="attachment.type === 'file'">
+                                <div class="file-preview">
+                                    <span class="filename" x-text="attachment.name"></span>
+                                    <span class="extension" x-text="attachment.extension.toUpperCase()"></span>
+                                </div>
+                            </template>
+                            <button @click="attachments.splice(index, 1); hasAttachments = attachments.length > 0"
+                                class="remove-attachment">&times;</button>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Top row with input and buttons -->
+                <div class="input-row">
+                    <!-- Attachment icon with tooltip -->
+                    <div class="attachment-wrapper" x-data="{ showTooltip: false }">
+                        <label for="file-input" class="attachment-icon" @mouseover="showTooltip = true"
+                            @mouseleave="showTooltip = false">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="currentColor">
+                                <path
+                                    d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z" />
+                            </svg>
+                        </label>
+                        <input type="file" id="file-input"
+                            accept=".png, .jpg, .jpeg, .txt, .pdf, .csv, .html, .json, .md, .py, .js, .sh, .css"
+                            multiple style="display: none" @change="handleFileUpload($event)">
+
+                        <div x-show="showTooltip" class="tooltip">
+                            Add attachments to the message
+                        </div>
+                    </div>
+
+                    <!-- Container for textarea and button -->
+                    <div id="chat-input-container" style="position: relative;">
+                        <textarea id="chat-input" placeholder="Type your message here..." rows="1"></textarea>
+                        
+                        <!-- Expand button inside the textarea container -->
+                        <button id="expand-button" @click="$store.fullScreenInputModal.openModal()" aria-label="Expand input">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div id="chat-buttons-wrapper">
+
+                        <!-- Send button -->
+                        <button class="chat-button" id="send-button" aria-label="Send message">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                                <path d="M25 20 L75 50 L25 80" fill="none" stroke="currentColor" stroke-width="15">
+                                </path>
+                            </svg>
+                        </button>
+
+                        <!-- Microphone button -->
+                        <button class="chat-button mic-inactive" id="microphone-button"
+                            aria-label="Start/Stop recording">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 18" fill="currentColor">
+                                <path
+                                    d="m8,12c1.66,0,3-1.34,3-3V3c0-1.66-1.34-3-3-3s-3,1.34-3,3v6c0,1.66,1.34,3,3,3Zm-1,1.9c-2.7-.4-4.8-2.6-5-5.4H0c.2,3.8,3.1,6.9,7,7.5v2h2v-2c3.9-.6,6.8-3.7,7-7.5h-2c-.2,2.8-2.3,5-5,5.4h-2Z" />
+                            </svg>
+
+                        </button>
+
+                    </div>
+                </div>
+
+                <!-- Bottom row with text buttons -->
+                <div class="text-buttons-row">
+
+                    <button class="text-button" @click="pauseAgent(!paused)">
+                        <!-- Dynamic path that switches between pause and play icons -->
+                        <template x-if="!paused">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" width="14" height="14">
+                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
+                            </svg>
+                        </template>
+                        <template x-if="paused">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"
+                                stroke-width="1.8" stroke="currentColor" width="14" height="14">
+                                <path d="M8 5v14l11-7z"></path>
+                            </svg>
+                        </template>
+                        </svg>
+                        <span x-text="paused ? 'Resume Agent' : 'Pause Agent'"></span>
+                    </button>
+
+                    <button class="text-button" @click="loadKnowledge()"><svg xmlns="http://www.w3.org/2000/svg"
+                            fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5">
+                            </path>
+                        </svg>
+                        <p>Import knowledge</p>
+                    </button>
+                    <button class="text-button" id="work_dir_browser" @click="fileBrowserModalProxy.openModal()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 123.37 92.59">
+                            <path
+                                d="m5.72,11.5l-3.93,8.73h119.77s-3.96-8.73-3.96-8.73h-60.03c-1.59,0-2.88-1.29-2.88-2.88V1.75H13.72v6.87c0,1.59-1.29,2.88-2.88,2.88h-5.12Z"
+                                fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="7"></path>
+                            <path
+                                d="m6.38,20.23H1.75l7.03,67.03c.11,1.07.55,2.02,1.2,2.69.55.55,1.28.89,2.11.89h97.1c.82,0,1.51-.33,2.05-.87.68-.68,1.13-1.67,1.28-2.79l9.1-66.94H6.38Z"
+                                fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="8"></path>
+                        </svg>
+                        <p>Files</p>
+                    </button>
+
+                    <button class="text-button" id="history_inspect" @click="window.openHistoryModal()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="5 10 85 85">
+                            <path fill="currentColor"
+                                d="m59.572,57.949c-.41,0-.826-.105-1.207-.325l-9.574-5.528c-.749-.432-1.21-1.231-1.21-2.095v-14.923c0-1.336,1.083-2.419,2.419-2.419s2.419,1.083,2.419,2.419v13.526l8.364,4.829c1.157.668,1.554,2.148.886,3.305-.448.776-1.261,1.21-2.097,1.21Zm30.427-7.947c0,10.684-4.161,20.728-11.716,28.283-6.593,6.59-15.325,10.69-24.59,11.544-1.223.113-2.448.169-3.669.169-7.492,0-14.878-2.102-21.22-6.068l-15.356,5.733c-.888.331-1.887.114-2.557-.556s-.887-1.669-.556-2.557l5.733-15.351c-4.613-7.377-6.704-16.165-5.899-24.891.854-9.266,4.954-17.998,11.544-24.588,7.555-7.555,17.6-11.716,28.285-11.716s20.73,4.161,28.285,11.716c7.555,7.555,11.716,17.599,11.716,28.283Zm-15.137-24.861c-13.71-13.71-36.018-13.71-49.728,0-11.846,11.846-13.682,30.526-4.365,44.417.434.647.53,1.464.257,2.194l-4.303,11.523,11.528-4.304c.274-.102.561-.153.846-.153.474,0,.944.139,1.348.41,13.888,9.315,32.568,7.479,44.417-4.365,13.707-13.708,13.706-36.014,0-49.723Zm-24.861-4.13c-15.989,0-28.996,13.006-28.996,28.992s13.008,28.992,28.996,28.992c1.336,0,2.419-1.083,2.419-2.419s-1.083-2.419-2.419-2.419c-13.32,0-24.157-10.835-24.157-24.153s10.837-24.153,24.157-24.153,24.153,10.835,24.153,24.153c0,1.336,1.083,2.419,2.419,2.419s2.419-1.083,2.419-2.419c0-15.986-13.006-28.992-28.992-28.992Zm25.041,33.531c-1.294.347-2.057,1.673-1.71,2.963.343,1.289,1.669,2.057,2.963,1.71,1.289-.343,2.053-1.669,1.71-2.963-.347-1.289-1.673-2.057-2.963-1.71Zm-2.03,6.328c-1.335,0-2.419,1.084-2.419,2.419s1.084,2.419,2.419,2.419,2.419-1.084,2.419-2.419-1.084-2.419-2.419-2.419Zm-3.598,5.587c-1.289-.347-2.615.416-2.963,1.71-.343,1.289.421,2.615,1.71,2.963,1.294.347,2.62-.421,2.963-1.71.347-1.294-.416-2.62-1.71-2.963Zm-4.919,4.462c-1.157-.667-2.638-.27-3.306.887-.667,1.157-.27,2.638.887,3.305,1.157.668,2.638.27,3.306-.887.667-1.157.27-2.638-.887-3.306Zm-9.327,3.04c-.946.946-.946,2.478,0,3.42.942.946,2.473.946,3.42,0,.946-.942.946-2.473,0-3.42-.946-.946-2.478-.946-3.42,0Z">
+                            </path>
+                        </svg>
+                        <p>History</p>
+                    </button>
+
+                    <button class="text-button" id="ctx_window" @click="window.openCtxWindowModal()">
+                        <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="17 15 70 70" fill="currentColor">
+                            <path
+                                d="m63 25c1.1016 0 2-0.89844 2-2s-0.89844-2-2-2h-26c-1.1016 0-2 0.89844-2 2s0.89844 2 2 2z">
+                            </path>
+                            <path
+                                d="m63 79c1.1016 0 2-0.89844 2-2s-0.89844-2-2-2h-26c-1.1016 0-2 0.89844-2 2s0.89844 2 2 2z">
+                            </path>
+                            <path
+                                d="m68 39h-36c-6.0703 0-11 4.9297-11 11s4.9297 11 11 11h36c6.0703 0 11-4.9297 11-11s-4.9297-11-11-11zm0 18h-36c-3.8594 0-7-3.1406-7-7s3.1406-7 7-7h36c3.8594 0 7 3.1406 7 7s-3.1406 7-7 7z">
+                            </path>
+                        </svg>
+                        <p>Context</p>
+                    </button>
+
+                    <button class="text-button" id="nudges_window" @click="nudge()">
+                        <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 49 58"
+                            fill="currentColor">
+                            <path
+                                d="m11.97,16.32c-.46,0-.91-.25-1.15-.68-.9-1.63-1.36-3.34-1.36-5.1C9.45,4.73,14.18,0,20,0s10.55,4.73,10.55,10.55c0,.87-.13,1.75-.41,2.76-.19.7-.9,1.13-1.62.93-.7-.19-1.12-.92-.93-1.62.21-.79.31-1.44.31-2.07,0-4.36-3.55-7.91-7.91-7.91s-7.91,3.55-7.91,7.91c0,1.3.35,2.59,1.03,3.82.36.64.13,1.44-.51,1.79-.21.11-.42.17-.64.17Z"
+                                stroke-width="0.5" stroke="currentColor" />
+                            <path
+                                d="m34.5,58h-6.18c-3.17,0-6.15-1.23-8.39-3.47L1.16,35.75c-1.54-1.54-1.54-4.05,0-5.59,2.4-2.4,6.27-2.68,8.99-.64l4.58,3.44V10.55c0-2.91,2.36-5.27,5.27-5.27s5.27,2.36,5.27,5.27v8.62c.78-.45,1.68-.71,2.64-.71,2.3,0,4.26,1.48,4.98,3.53.84-.56,1.85-.89,2.93-.89,2.3,0,4.26,1.48,4.98,3.53.84-.56,1.85-.89,2.93-.89,2.91,0,5.27,2.36,5.27,5.27v14.5c0,8-6.51,14.5-14.5,14.5ZM6.03,30.79c-1.1,0-2.19.42-3.01,1.23-.51.51-.51,1.35,0,1.86l18.77,18.78c1.74,1.74,4.06,2.7,6.53,2.7h6.18c6.54,0,11.86-5.32,11.86-11.86v-14.5c0-1.45-1.18-2.64-2.64-2.64s-2.64,1.18-2.64,2.64v1.32c0,.73-.59,1.32-1.32,1.32s-1.32-.59-1.32-1.32v-3.95c0-1.45-1.18-2.64-2.64-2.64s-2.64,1.18-2.64,2.64v3.95c0,.73-.59,1.32-1.32,1.32s-1.32-.59-1.32-1.32v-6.59c0-1.45-1.18-2.64-2.64-2.64s-2.64,1.18-2.64,2.64v6.59c0,.73-.59,1.32-1.32,1.32s-1.32-.59-1.32-1.32V10.55c0-1.45-1.18-2.64-2.64-2.64s-2.64,1.18-2.64,2.64v25.05c0,.5-.28.95-.73,1.18s-.98.18-1.38-.12l-6.69-5.02c-.75-.56-1.65-.84-2.54-.84Z"
+                                stroke-width="0.5" stroke="currentColor" />
+                        </svg>
+                        <p>Nudge</p>
+                    </button>
+
+                </div>
             </div>
         </div>
     </div>
+    <div id="settingsModal" x-data="settingsModalProxy">
+        <template x-teleport="body">
+            <div x-show="isOpen" class="modal-overlay" @click.self="handleCancel()"
+                @keydown.escape.window="handleCancel()" x-transition>
+                <div class="modal-container">
+                    <div class="modal-header">
+                        <h2 x-text="settings.title"></h2>
+                        <button class="modal-close" @click="handleCancel()">&times;</button>
+                    </div>
+
+                    <div class="modal-content">
+                        <div id="settings-sections">
+                            <nav>
+                                <ul>
+                                    <template x-for="(section, index) in settings.sections" :key="section.title">
+                                        <li>
+                                            <a :href="'#section' + (index + 1)">
+                                                <img :src="'/public/' + getIconName(section.title) + '.svg'"
+                                                    :alt="section.title">
+                                                <span x-text="section.title"></span>
+                                            </a>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </nav>
+                        </div>
+                        <template x-for="(section, sectionIndex) in settings.sections" :key="sectionIndex">
+                            <div :id="'section' + (sectionIndex + 1)" class="section">
+                                <div class="section-title" x-text="section.title"></div>
+                                <div class="section-description" x-text="section.description"></div>
+
+                                <template x-for="(field, fieldIndex) in section.fields" :key="fieldIndex">
+                                    <div :class="{'field': true, 'field-full': field.type === 'textarea'}">
+                                        <div class="field-label">
+                                            <div class="field-title" x-text="field.title"></div>
+                                            <div class="field-description" x-text="field.description"></div>
+                                        </div>
+
+                                        <div class="field-control">
+                                            <!-- Input field -->
+                                            <template x-if="field.type === 'text'">
+                                                <input type="text" :class="field.classes" :value="field.value"
+                                                    :readonly="field.readonly === true"
+                                                    @input="field.value = $event.target.value">
+                                            </template>
+
+                                            <!-- Number field -->
+                                            <template x-if="field.type === 'number'">
+                                                <input type="number" :class="field.classes" :value="field.value"
+                                                    :readonly="field.readonly === true"
+                                                    @input="field.value = $event.target.value"
+                                                    :min="field.min" :max="field.max" :step="field.step">
+                                            </template>
+
+
+                                            <!-- Password field -->
+                                            <template x-if="field.type === 'password'">
+                                                <input type="password" :class="field.classes" :value="field.value"
+                                                    :readonly="field.readonly === true"
+                                                    @input="field.value = $event.target.value">
+                                            </template>
+
+                                            <!-- Textarea field -->
+                                            <template x-if="field.type === 'textarea'">
+                                                <textarea :class="field.classes" :value="field.value"
+                                                    :readonly="field.readonly === true"
+                                                    @input="field.value = $event.target.value"></textarea>
+                                            </template>
+
+                                            <!-- Switch field -->
+                                            <template x-if="field.type === 'switch'">
+                                                <label class="toggle">
+                                                    <input type="checkbox" :checked="field.value"
+                                                        :disabled="field.readonly === true"
+                                                        @change="field.value = $event.target.checked">
+                                                    <span class="toggler"></span>
+                                                </label>
+                                            </template>
+
+                                            <!-- Range field -->
+                                            <template x-if="field.type === 'range'">
+                                                <div class="field-control">
+                                                    <input type="range" :min="field.min" :max="field.max"
+                                                        :step="field.step" :value="field.value"
+                                                        :disabled="field.readonly === true"
+                                                        @input="field.value = $event.target.value"
+                                                        :class="field.classes">
+                                                    <span class="range-value" x-text="field.value"></span>
+                                                </div>
+                                            </template>
+
+                                            <!-- Button field -->
+                                            <template x-if="field.type === 'button'">
+                                                <button class="btn btn-field" :class="field.classes"
+                                                    :disabled="field.readonly === true"
+                                                    @click="handleFieldButton(field)" x-text="field.value"></button>
+                                            </template>
+
+                                            <!-- Select field -->
+                                            <template x-if="field.type === 'select'">
+                                                <select :class="field.classes" x-model="field.value"
+                                                    :disabled="field.readonly === true">
+                                                    <template x-for="option in field.options" :key="option.value">
+                                                        <option :value="option.value" x-text="option.label"
+                                                            :selected="option.value === field.value"></option>
+                                                    </template>
+                                                </select>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="modal-footer">
+                        <div id="buttons-container">
+                            <template x-for="button in settings.buttons" :key="button.id">
+                                <button :class="button.classes" @click="handleButton(button.id)"
+                                    x-text="button.title"></button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- work_dir Browser Modal -->
+
+    <div id="fileBrowserModal" x-data="fileBrowserModalProxy">
+        <template x-teleport="body">
+            <div x-show="isOpen" class="modal-overlay" @click.self="handleClose()"
+                @keydown.escape.window="handleClose()" x-transition>
+                <div class="modal-container">
+                    <div class="modal-header">
+                        <h2 class="modal-title" x-text="browser.title"></h2>
+                        <button class="modal-close" @click="handleClose()">&times;</button>
+                    </div>
+                    <div class="modal-content">
+                        <div x-show="isLoading" class="loading-spinner">
+                            Loading...
+                        </div>
+                        <div x-show="!isLoading">
+                            <div class="path-navigator">
+                                <!-- Up Button -->
+                                <button class="text-button back-button" @click="navigateUp()" aria-label="Navigate Up">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10.5 15">
+                                        <path d="m.75,5.25L5.25.75m0,0l4.5,4.5M5.25.75v13.5" fill="none"
+                                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                            stroke-width="1.5"></path>
+                                    </svg>
+                                    Up
+                                </button>
+
+                                <div id="current-path">
+                                    <span id="path-text" x-text="browser.currentPath"></span>
+                                </div>
+                            </div>
+
+                            <div class="files-list">
+                                <!-- Header -->
+                                <div class="file-header">
+                                    <div class="file-cell" @click="toggleSort('name')">
+                                        Name
+                                        <span x-show="browser.sortBy === 'name'"
+                                            x-text="browser.sortDirection === 'asc' ? '↑' : '↓'">
+                                        </span>
+                                    </div>
+                                    <div class="file-cell-size" @click="toggleSort('size')">
+                                        Size
+                                        <span x-show="browser.sortBy === 'size'"
+                                            x-text="browser.sortDirection === 'asc' ? '↑' : '↓'">
+                                        </span>
+                                    </div>
+                                    <div class="file-cell-date" @click="toggleSort('date')">
+                                        Modified
+                                        <span x-show="browser.sortBy === 'date'"
+                                            x-text="browser.sortDirection === 'asc' ? '↑' : '↓'">
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- File List -->
+                                <template x-if="browser.entries.length">
+                                    <template x-for="file in sortFiles(browser.entries)" :key="file.path">
+                                        <div class="file-item" :data-is-dir="file.is_dir">
+                                            <div class="file-name"
+                                                @click="file.is_dir ? navigateToFolder(file.path) : downloadFile(file)">
+                                                <img :src="'/public/' + (file.type === 'unknown' ? 'file' : (isArchive(file.name) ? 'archive' : file.type)) + '.svg'"
+                                                    class="file-icon" :alt="file.type">
+                                                <span x-text="file.name"></span>
+                                            </div>
+                                            <div class="file-size" x-text="formatFileSize(file.size)"></div>
+                                            <div class="file-date" x-text="formatDate(file.modified)"></div>
+
+                                            <div class="file-actions">
+                                                <button class="action-button download-button"
+                                                    @click.stop="downloadFile(file)">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.5 19.5">
+                                                        <path
+                                                            d="m.75,14.25v2.25c0,1.24,1.01,2.25,2.25,2.25h13.5c1.24,0,2.25-1.01,2.25-2.25v-2.25m-4.5-4.5l-4.5,4.5m0,0l-4.5-4.5m4.5,4.5V.75"
+                                                            fill="none" stroke="currentColor" stroke-linecap="round"
+                                                            stroke-linejoin="round" stroke-width="1.5"></path>
+                                                    </svg>
+                                                </button>
+                                                <button class="delete-button" @click.stop="deleteFile(file)">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15.03 22.53"
+                                                        fill="currentColor">
+                                                        <path
+                                                            d="m14.55,7.82H4.68L14.09,3.19c.83-.41,1.17-1.42.77-2.25-.41-.83-1.42-1.17-2.25-.77l-3.16,1.55-.15-.31c-.22-.44-.59-.76-1.05-.92-.46-.16-.96-.13-1.39.09l-2.08,1.02c-.9.44-1.28,1.54-.83,2.44l.15.31-3.16,1.55c-.83.41-1.17,1.42-.77,2.25.29.59.89.94,1.51.94.25,0,.5-.06.74-.17l.38-.19s.09.03.14.03h11.14v11.43c0,.76-.62,1.38-1.38,1.38h-.46v-11.28c0-.26-.21-.47-.47-.47s-.47.21-.47.47v11.28h-2.39v-11.28c0-.26-.21-.47-.47-.47s-.47.21-.47.47v11.28h-2.39v-11.28c0-.26-.21-.47-.47-.47s-.47.21-.47.47v11.28h-.46c-.76,0-1.38-.62-1.38-1.38v-9.9c0-.26-.21-.47-.47-.47s-.47.21-.47.47v9.9c0,1.28,1.04,2.32,2.32,2.32h8.55c1.28,0,2.32-1.04,2.32-2.32v-11.91c0-.26-.21-.47-.47-.47ZM5.19,2.46l2.08-1.02c.12-.06.25-.09.39-.09.09,0,.19.02.28.05.22.08.4.23.5.44l.15.31-.19.09-3.46,1.7-.15-.31c-.21-.43-.03-.96.4-1.17Zm-3.19,5.62c-.36.18-.8.03-.98-.33-.18-.36-.03-.8.33-.98l5.8-2.85,2.72-1.34,3.16-1.55c.1-.05.21-.07.32-.07.27,0,.53.15.66.41.09.17.1.37.04.56-.06.18-.19.33-.37.42L2,8.08Z"
+                                                            stroke-width="0"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </template>
+
+                                <!-- Empty State -->
+                                <template x-if="!browser.entries.length">
+                                    <div class="no-files">
+                                        No files found
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <div id="buttons-container">
+                            <label class="btn btn-upload"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                                    viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5">
+                                    </path>
+                                </svg>
+                                Upload Files
+                                <input type="file" multiple="" accept="all" @change="handleFileUpload"
+                                    style="display: none;">
+                            </label>
+                            <button class="btn btn-cancel" @click="handleClose()">Close Browser</button>
+                        </div>
+                    </div>
+                </div>
+        </template>
+    </div>
+
+    <!-- generic modal -->
+
+    <div id="genericModal" x-data="genericModalProxy">
+        <template x-teleport="body">
+            <div x-show="isOpen" class="modal-overlay" @click.self="handleClose()"
+                @keydown.escape.window="handleClose()" x-transition>
+                <div class="modal-container">
+                    <div class="modal-header">
+                        <h2 class="modal-title" x-text="title"></h2>
+                        <button class="modal-close" @click="handleClose()">&times;</button>
+                    </div>
+                    <div class="modal-description" x-text="description"></div>
+                    <div class="modal-content" id="viewer">
+                        <div class="html-pre" x-html="html"></div>
+                    </div>
+                    <!-- <div class="modal-footer">
+                    <div id="buttons-container">
+                        <button class="btn btn-cancel" @click="handleClose()">Close</button>
+                    </div>
+                </div> -->
+                </div>
+        </template>
+    </div>
+
+    <!-- Full Screen Input Modal -->
+    <div id="fullScreenInputModal" x-data="fullScreenInputModalProxy">
+        <template x-teleport="body">
+            <div x-show="isOpen" class="modal-overlay" @click.self="handleClose()" 
+                @keydown.escape.window="handleClose()" x-transition>
+                <div class="modal-container full-screen-input-modal">
+                    <div class="modal-content">
+                        <button class="modal-close" @click="handleClose()">&times;</button>
+                        <textarea id="full-screen-input" x-model="inputText" 
+                            placeholder="Type your message here..." 
+                            @keydown.ctrl.enter="handleClose()"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <div id="buttons-container">
+                            <button class="btn btn-ok" @click="handleClose()">Done (Ctrl+Enter)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+
 </body>
 
 </html>

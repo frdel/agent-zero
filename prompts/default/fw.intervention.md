@@ -1,5 +1,6 @@
-~~~json
+```json
 {
-    "user_intervention": "{{user_message}}"
+  "user_intervention": {{message}},
+  "attachments": {{attachments}}
 }
-~~~
+```

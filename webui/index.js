@@ -1,4 +1,5 @@
-import * as msgs from "./messages.js"
+import * as msgs from "./js/messages.js";
+import { speech } from "./js/speech.js";
 
 const leftPanel = document.getElementById('left-panel');
 const rightPanel = document.getElementById('right-panel');
@@ -9,14 +10,15 @@ const sendButton = document.getElementById('send-button');
 const inputSection = document.getElementById('input-section');
 const statusSection = document.getElementById('status-section');
 const chatsSection = document.getElementById('chats-section');
-const scrollbarThumb = document.querySelector('#chat-history::-webkit-scrollbar-thumb');
 const progressBar = document.getElementById('progress-bar');
 const autoScrollSwitch = document.getElementById('auto-scroll-switch');
-
+const timeDate = document.getElementById('time-date-container');
 
 
 let autoScroll = true;
 let context = "";
+let connectionStatus = false
+
 
 // Initialize the toggle button 
 setupSidebarToggle();
@@ -25,24 +27,43 @@ function isMobile() {
     return window.innerWidth <= 768;
 }
 
-function toggleSidebar() {
-    leftPanel.classList.toggle('hidden');
-    rightPanel.classList.toggle('expanded');
-}
-
-function handleResize() {
-    if (isMobile()) {
-        leftPanel.classList.add('hidden');
-        rightPanel.classList.add('expanded');
+function toggleSidebar(show) {
+    const overlay = document.getElementById('sidebar-overlay');
+    if (typeof show === 'boolean') {
+        leftPanel.classList.toggle('hidden', !show);
+        rightPanel.classList.toggle('expanded', !show);
+        overlay.classList.toggle('visible', show);
     } else {
-        leftPanel.classList.remove('hidden');
-        rightPanel.classList.remove('expanded');
+        leftPanel.classList.toggle('hidden');
+        rightPanel.classList.toggle('expanded');
+        overlay.classList.toggle('visible', !leftPanel.classList.contains('hidden'));
     }
 }
 
-// Run on startup and window resize
+function handleResize() {
+    const overlay = document.getElementById('sidebar-overlay');
+    if (isMobile()) {
+        leftPanel.classList.add('hidden');
+        rightPanel.classList.add('expanded');
+        overlay.classList.remove('visible');
+    } else {
+        leftPanel.classList.remove('hidden');
+        rightPanel.classList.remove('expanded');
+        overlay.classList.remove('visible');
+    }
+}
+
 window.addEventListener('load', handleResize);
 window.addEventListener('resize', handleResize);
+
+document.addEventListener('DOMContentLoaded', () => {
+    const overlay = document.getElementById('sidebar-overlay');
+    overlay.addEventListener('click', () => {
+        if (isMobile()) {
+            toggleSidebar(false);
+        }
+    });
+});
 
 function setupSidebarToggle() {
     const leftPanel = document.getElementById('left-panel');
@@ -55,36 +76,104 @@ function setupSidebarToggle() {
         setTimeout(setupSidebarToggle, 100);
     }
 }
-// Make sure to call this function
 document.addEventListener('DOMContentLoaded', setupSidebarToggle);
 
-async function sendMessage() {
+export async function sendMessage() {
     try {
         const message = chatInput.value.trim();
-        if (message) {
+        const inputAD = Alpine.$data(inputSection);
+        const attachments = inputAD.attachments;
+        const hasAttachments = attachments && attachments.length > 0;
 
-            const response = await sendJsonData("/msg", { text: message, context });
+        if (message || hasAttachments) {
+            let response;
+            const messageId = generateGUID();
 
-            if (!response) {
-                toast("No response returned.", "error")
-            } else if (!response.ok) {
-                if (response.message) {
-                    toast(response.message, "error")
-                } else {
-                    toast("Undefined error.", "error")
+            // Include attachments in the user message
+            if (hasAttachments) {
+                const attachmentsWithUrls = attachments.map(attachment => {
+                    if (attachment.type === 'image') {
+                        return {
+                            ...attachment,
+                            url: URL.createObjectURL(attachment.file)
+                        };
+                    } else {
+                        return {
+                            ...attachment
+                        };
+                    }
+                });
+
+                // Render user message with attachments
+                setMessage(messageId, 'user', '', message, false, {
+                    attachments: attachmentsWithUrls
+                });
+
+                const formData = new FormData();
+                formData.append('text', message);
+                formData.append('context', context);
+                formData.append('message_id', messageId);
+
+                for (let i = 0; i < attachments.length; i++) {
+                    formData.append('attachments', attachments[i].file);
                 }
+
+                response = await fetch('/message_async', {
+                    method: 'POST',
+                    body: formData
+                });
             } else {
-                setContext(response.context)
+                // For text-only messages
+                const data = {
+                    text: message,
+                    context,
+                    message_id: messageId
+                };
+                response = await fetch('/message_async', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
             }
 
-            //setMessage('user', message);
+            // Handle response
+            const jsonResponse = await response.json();
+            if (!jsonResponse) {
+                toast("No response returned.", "error");
+            }
+            // else if (!jsonResponse.ok) {
+            //     if (jsonResponse.message) {
+            //         toast(jsonResponse.message, "error");
+            //     } else {
+            //         toast("Undefined error.", "error");
+            //     }
+            // } 
+            else {
+                setContext(jsonResponse.context);
+            }
+
+            // Clear input and attachments
             chatInput.value = '';
+            inputAD.attachments = [];
+            inputAD.hasAttachments = false;
             adjustTextareaHeight();
         }
     } catch (e) {
-        toast(e.message, "error")
+        toastFetchError("Error sending message", e)
     }
 }
+
+function toastFetchError(text, error) {
+    if (getConnectionStatus()) {
+        toast(`${text}: ${error.message}`, "error");
+    } else {
+        toast(`${text} (it seems the backend is not running): ${error.message}`, "error");
+    }
+    console.error(text, error);
+}
+window.toastFetchError = toastFetchError
 
 chatInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -94,6 +183,22 @@ chatInput.addEventListener('keydown', (e) => {
 });
 
 sendButton.addEventListener('click', sendMessage);
+
+
+export function updateChatInput(text) {
+    console.log('updateChatInput called with:', text);
+
+    // Append text with proper spacing
+    const currentValue = chatInput.value;
+    const needsSpace = currentValue.length > 0 && !currentValue.endsWith(' ');
+    chatInput.value = currentValue + (needsSpace ? ' ' : '') + text + ' ';
+
+    // Adjust height and trigger input event
+    adjustTextareaHeight();
+    chatInput.dispatchEvent(new Event('input'));
+
+    console.log('Updated chat input value:', chatInput.value);
+}
 
 function updateUserTime() {
     const now = new Date();
@@ -118,12 +223,17 @@ function updateUserTime() {
 updateUserTime();
 setInterval(updateUserTime, 1000);
 
+
 function setMessage(id, type, heading, content, temp, kvps = null) {
     // Search for the existing message container by id
     let messageContainer = document.getElementById(`message-${id}`);
 
     if (messageContainer) {
-        // Clear the existing container's content if found
+        // Don't re-render user messages
+        if (type === 'user') {
+            return; // Skip re-rendering
+        }
+        // For other types, update the message
         messageContainer.innerHTML = '';
     } else {
         // Create a new container if not found
@@ -131,8 +241,7 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
         messageContainer = document.createElement('div');
         messageContainer.id = `message-${id}`;
         messageContainer.classList.add('message-container', `${sender}-container`);
-        if (temp) messageContainer.classList.add("message-temp")
-
+        if (temp) messageContainer.classList.add("message-temp");
     }
 
     const handler = msgs.getHandler(type);
@@ -147,13 +256,47 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
 }
 
 
+window.loadKnowledge = async function () {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.pdf,.csv,.html,.json,.md';
+    input.multiple = true;
+
+    input.onchange = async () => {
+        try{
+        const formData = new FormData();
+        for (let file of input.files) {
+            formData.append('files[]', file);
+        }
+
+        formData.append('ctxid', getContext());
+
+        const response = await fetch('/import_knowledge', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            toast(await response.text(), "error");
+        } else {
+            const data = await response.json();
+            toast("Knowledge files imported: " + data.filenames.join(", "), "success");
+        }
+        } catch (e) {
+            toastFetchError("Error loading knowledge", e)
+        }
+    };
+
+    input.click();
+}
+
 
 function adjustTextareaHeight() {
     chatInput.style.height = 'auto';
     chatInput.style.height = (chatInput.scrollHeight) + 'px';
 }
 
-async function sendJsonData(url, data) {
+export const sendJsonData = async function (url, data) {
     const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -163,11 +306,13 @@ async function sendJsonData(url, data) {
     });
 
     if (!response.ok) {
-        throw new Error('Network response was not ok');
+        const error = await response.text();
+        throw new Error(error);
     }
     const jsonResponse = await response.json();
     return jsonResponse;
 }
+window.sendJsonData = sendJsonData
 
 function generateGUID() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -177,8 +322,19 @@ function generateGUID() {
     });
 }
 
+function getConnectionStatus() {
+    return connectionStatus
+}
+
+function setConnectionStatus(connected) {
+    connectionStatus = connected
+    const statusIcon = Alpine.$data(timeDate.querySelector('.status-icon'));
+    statusIcon.connected = connected
+}
+
 let lastLogVersion = 0;
 let lastLogGuid = ""
+let lastSpokenNo = 0
 
 async function poll() {
     let updated = false
@@ -186,106 +342,131 @@ async function poll() {
         const response = await sendJsonData("/poll", { log_from: lastLogVersion, context });
         //console.log(response)
 
-        if (response.ok) {
+        if (!context) setContext(response.context)
+        if (response.context != context) return //skip late polls after context change
 
-            if (!context) setContext(response.context)
-            if (response.context != context) return //skip late polls after context change
-
-            if (lastLogGuid != response.log_guid) {
-                chatHistory.innerHTML = ""
-                lastLogVersion = 0
-            }
-
-            if (lastLogVersion != response.log_version) {
-                updated = true
-                for (const log of response.logs) {
-                    setMessage(log.no, log.type, log.heading, log.content, log.temp, log.kvps);
-                }
-            }
-
-            updateProgress(response.log_progress)
-
-            //set ui model vars from backend
-            const inputAD = Alpine.$data(inputSection);
-            inputAD.paused = response.paused;
-            const statusAD = Alpine.$data(statusSection);
-            statusAD.connected = response.ok;
-            const chatsAD = Alpine.$data(chatsSection);
-            chatsAD.contexts = response.contexts;
-
-            lastLogVersion = response.log_version;
-            lastLogGuid = response.log_guid;
-
-
+        if (lastLogGuid != response.log_guid) {
+            chatHistory.innerHTML = ""
+            lastLogVersion = 0
         }
+
+        if (lastLogVersion != response.log_version) {
+            updated = true
+            for (const log of response.logs) {
+                const messageId = log.id || log.no; // Use log.id if available
+                setMessage(messageId, log.type, log.heading, log.content, log.temp, log.kvps);
+            }
+            afterMessagesUpdate(response.logs)
+        }
+
+        updateProgress(response.log_progress, response.log_progress_active)
+
+        //set ui model vars from backend
+        const inputAD = Alpine.$data(inputSection);
+        inputAD.paused = response.paused;
+
+        // Update status icon state
+        setConnectionStatus(true)
+
+        const chatsAD = Alpine.$data(chatsSection);
+        chatsAD.contexts = response.contexts;
+
+        lastLogVersion = response.log_version;
+        lastLogGuid = response.log_guid;
 
     } catch (error) {
         console.error('Error:', error);
-        const statusAD = Alpine.$data(statusSection);
-        statusAD.connected = false;
+        setConnectionStatus(false)
     }
 
     return updated
 }
 
-function updateProgress(progress) {
-    if (!progress) progress = "Waiting for input"
+function afterMessagesUpdate(logs) {
+    if (localStorage.getItem('speech') == 'true') {
+        speakMessages(logs)
+    }
+}
+
+function speakMessages(logs) {
+    // log.no, log.type, log.heading, log.content
+    for (let i = logs.length - 1; i >= 0; i--) {
+        const log = logs[i]
+        if (log.type == "response") {
+            if (log.no > lastSpokenNo) {
+                lastSpokenNo = log.no
+                speech.speak(log.content)
+                return
+            }
+        }
+    }
+}
+
+function updateProgress(progress, active) {
+    if (!progress) progress = ""
+
+    if (!active) {
+        removeClassFromElement(progressBar, "shiny-text")
+    } else {
+        addClassToElement(progressBar, "shiny-text")
+    }
 
     if (progressBar.innerHTML != progress) {
         progressBar.innerHTML = progress
     }
 }
 
-function updatePauseButtonState(isPaused) {
-    const pauseButton = document.getElementById('pause-button');
-    const unpauseButton = document.getElementById('unpause-button');
-
-    if (isPaused) {
-        pauseButton.style.display = 'none';
-        unpauseButton.style.display = 'flex';
-    } else {
-        pauseButton.style.display = 'flex';
-        unpauseButton.style.display = 'none';
-    }
-}
-
 window.pauseAgent = async function (paused) {
-    const resp = await sendJsonData("/pause", { paused: paused, context });
-    updatePauseButtonState(paused);
+    try {
+        const resp = await sendJsonData("/pause", { paused: paused, context });
+    } catch (e) {
+        window.toastFetchError("Error pausing agent", e)
+    }
 }
 
 window.resetChat = async function () {
-    const resp = await sendJsonData("/reset", { context });
-    updateAfterScroll()
+    try {
+        const resp = await sendJsonData("/chat_reset", { context });
+        updateAfterScroll()
+    } catch (e) {
+        window.toastFetchError("Error resetting chat", e)
+    }
 }
 
 window.newChat = async function () {
-    setContext(generateGUID());
-    updateAfterScroll()
+    try {
+        setContext(generateGUID());
+        updateAfterScroll()
+    } catch (e) {
+        window.toastFetchError("Error creating new chat", e)
+    }
 }
 
 window.killChat = async function (id) {
-
-
-    const chatsAD = Alpine.$data(chatsSection);
-    let found, other
-    for (let i = 0; i < chatsAD.contexts.length; i++) {
-        if (chatsAD.contexts[i].id == id) {
-            found = true
-        } else {
-            other = chatsAD.contexts[i]
+    try {
+        const chatsAD = Alpine.$data(chatsSection);
+        let found, other
+        for (let i = 0; i < chatsAD.contexts.length; i++) {
+            if (chatsAD.contexts[i].id == id) {
+                found = true
+            } else {
+                other = chatsAD.contexts[i]
+            }
+            if (found && other) break
         }
-        if (found && other) break
+
+        if (context == id && found) {
+            if (other) setContext(other.id)
+            else setContext(generateGUID())
+        }
+
+        if (found) sendJsonData("/chat_remove", { context: id });
+
+        updateAfterScroll()
+
+    } catch (e) {
+        window.toastFetchError("Error creating new chat", e)
     }
-
-    if (context == id && found) {
-        if (other) setContext(other.id)
-        else setContext(generateGUID())
-    }
-
-    if (found) sendJsonData("/remove", { context: id });
-
-    updateAfterScroll()
 }
 
 window.selectChat = async function (id) {
@@ -293,13 +474,18 @@ window.selectChat = async function (id) {
     updateAfterScroll()
 }
 
-const setContext = function (id) {
+export const setContext = function (id) {
     if (id == context) return
     context = id
     lastLogGuid = ""
     lastLogVersion = 0
+    lastSpokenNo = 0
     const chatsAD = Alpine.$data(chatsSection);
     chatsAD.selected = id
+}
+
+export const getContext = function () {
+    return context
 }
 
 window.toggleAutoScroll = async function (_autoScroll) {
@@ -332,6 +518,58 @@ window.toggleDarkMode = function (isDark) {
     console.log("Dark mode:", isDark);
     localStorage.setItem('darkMode', isDark);
 };
+
+window.toggleSpeech = function (isOn) {
+    console.log("Speech:", isOn);
+    localStorage.setItem('speech', isOn);
+    if (!isOn) speech.stop()
+};
+
+window.nudge = async function () {
+    try {
+        const resp = await sendJsonData("/nudge", { ctxid: getContext() });
+    } catch (e) {
+        toastFetchError("Error nudging agent", e)
+    }
+}
+
+window.restart = async function () {
+    try {
+        if (!getConnectionStatus()) {
+            toast("Backend disconnected, cannot restart.", "error");
+            return
+        }
+        // First try to initiate restart
+        const resp = await sendJsonData("/restart", {});
+    } catch (e) {
+        // Show restarting message
+        toast("Restarting...", "info", 0);
+
+        let retries = 0;
+        const maxRetries = 60; // Maximum number of retries (15 seconds with 250ms interval)
+
+        while (retries < maxRetries) {
+            try {
+                const resp = await sendJsonData("/health", {});
+                // Server is back up, show success message
+                await new Promise(resolve => setTimeout(resolve, 250));
+                hideToast();
+                await new Promise(resolve => setTimeout(resolve, 400));
+                toast("Restarted", "success", 5000);
+                return;
+            } catch (e) {
+                // Server still down, keep waiting
+                retries++;
+                await new Promise(resolve => setTimeout(resolve, 250));
+            }
+        }
+
+        // If we get here, restart failed or took too long
+        hideToast();
+        await new Promise(resolve => setTimeout(resolve, 400));
+        toast("Restart timed out or failed", "error", 5000);
+    }
+}
 
 // Modify this part
 document.addEventListener('DOMContentLoaded', () => {
@@ -376,65 +614,69 @@ function toggleCssProperty(selector, property, value) {
 window.loadChats = async function () {
     try {
         const fileContents = await readJsonFiles();
-        const response = await sendJsonData("/loadChats", { chats: fileContents });
+        const response = await sendJsonData("/chat_load", { chats: fileContents });
 
         if (!response) {
             toast("No response returned.", "error")
-        } else if (!response.ok) {
-            if (response.message) {
-                toast(response.message, "error")
-            } else {
-                toast("Undefined error.", "error")
-            }
-        } else {
+        }
+        // else if (!response.ok) {
+        //     if (response.message) {
+        //         toast(response.message, "error")
+        //     } else {
+        //         toast("Undefined error.", "error")
+        //     }
+        // } 
+        else {
             setContext(response.ctxids[0])
             toast("Chats loaded.", "success")
         }
 
     } catch (e) {
-        toast(e.message, "error")
+        toastFetchError("Error loading chats", e)
     }
 }
 
 window.saveChat = async function () {
     try {
-        const response = await sendJsonData("/exportChat", { ctxid: context });
+        const response = await sendJsonData("/chat_export", { ctxid: context });
 
         if (!response) {
             toast("No response returned.", "error")
-        } else if (!response.ok) {
-            if (response.message) {
-                toast(response.message, "error")
-            } else {
-                toast("Undefined error.", "error")
-            }
-        } else {
+        }
+        //  else if (!response.ok) {
+        //     if (response.message) {
+        //         toast(response.message, "error")
+        //     } else {
+        //         toast("Undefined error.", "error")
+        //     }
+        // }
+        else {
             downloadFile(response.ctxid + ".json", response.content)
             toast("Chat file downloaded.", "success")
         }
 
     } catch (e) {
-        toast(e.message, "error")
+        toastFetchError("Error saving chat", e)
     }
 }
 
 function downloadFile(filename, content) {
     // Create a Blob with the content to save
     const blob = new Blob([content], { type: 'application/json' });
-    
+
     // Create a link element
     const link = document.createElement('a');
-    
+
     // Create a URL for the Blob
     const url = URL.createObjectURL(blob);
     link.href = url;
-    
+
     // Set the file name for download
     link.download = filename;
-    
+
     // Programmatically click the link to trigger the download
     link.click();
-    
+
     // Clean up by revoking the object URL
     setTimeout(() => {
         URL.revokeObjectURL(url);
@@ -481,39 +723,103 @@ function readJsonFiles() {
     });
 }
 
+function addClassToElement(element, className) {
+    element.classList.add(className);
+}
 
-function toast(text, type = 'info') {
+function removeClassFromElement(element, className) {
+    element.classList.remove(className);
+}
+
+
+function toast(text, type = 'info', timeout = 5000) {
+    const toast = document.getElementById('toast');
+    const isVisible = toast.classList.contains('show');
+
+    // Clear any existing timeout immediately
+    if (toast.timeoutId) {
+        clearTimeout(toast.timeoutId);
+        toast.timeoutId = null;
+    }
+
+    // Function to update toast content and show it
+    const updateAndShowToast = () => {
+        // Update the toast content and type
+        const title = type.charAt(0).toUpperCase() + type.slice(1);
+        toast.querySelector('.toast__title').textContent = title;
+        toast.querySelector('.toast__message').textContent = text;
+
+        // Remove old classes and add new ones
+        toast.classList.remove('toast--success', 'toast--error', 'toast--info');
+        toast.classList.add(`toast--${type}`);
+
+        // Show/hide copy button based on toast type
+        const copyButton = toast.querySelector('.toast__copy');
+        copyButton.style.display = type === 'error' ? 'inline-block' : 'none';
+
+        // Add the close button event listener
+        const closeButton = document.querySelector('.toast__close');
+        closeButton.onclick = () => {
+            hideToast();
+        };
+
+        // Add the copy button event listener
+        copyButton.onclick = () => {
+            navigator.clipboard.writeText(text);
+            copyButton.textContent = 'Copied!';
+            setTimeout(() => {
+                copyButton.textContent = 'Copy';
+            }, 2000);
+        };
+
+        // Show the toast
+        toast.style.display = 'flex';
+        // Force a reflow to ensure the animation triggers
+        void toast.offsetWidth;
+        toast.classList.add('show');
+
+        // Set timeout if specified
+        if (timeout) {
+            const minTimeout = Math.max(timeout, 5000);
+            toast.timeoutId = setTimeout(() => {
+                hideToast();
+            }, minTimeout);
+        }
+    };
+
+    if (isVisible) {
+        // If a toast is visible, hide it first then show the new one
+        toast.classList.remove('show');
+        toast.classList.add('hide');
+
+        // Wait for hide animation to complete before showing new toast
+        setTimeout(() => {
+            toast.classList.remove('hide');
+            updateAndShowToast();
+        }, 400); // Match this with CSS transition duration
+    } else {
+        // If no toast is visible, show the new one immediately
+        updateAndShowToast();
+    }
+}
+
+function hideToast() {
     const toast = document.getElementById('toast');
 
-    // Update the toast content and type
-    toast.querySelector('#toast .toast__message').textContent = text;
-    toast.className = `toast toast--${type}`;
-    toast.style.display = 'flex';
-
-    // Add the close button event listener
-    const closeButton = toast.querySelector('#toast .toast__close');
-    closeButton.onclick = () => {
-        toast.style.display = 'none';
-        clearTimeout(toast.timeoutId);
-    };
-
-    // Add the copy button event listener
-    const copyButton = toast.querySelector('#toast .toast__copy');
-    copyButton.onclick = () => {
-        navigator.clipboard.writeText(text);
-        copyButton.textContent = 'Copied!';
-        setTimeout(() => {
-            copyButton.textContent = 'Copy';
-        }, 2000);
-    };
-
     // Clear any existing timeout
-    clearTimeout(toast.timeoutId);
+    if (toast.timeoutId) {
+        clearTimeout(toast.timeoutId);
+        toast.timeoutId = null;
+    }
 
-    // Automatically close the toast after 5 seconds
-    toast.timeoutId = setTimeout(() => {
+    toast.classList.remove('show');
+    toast.classList.add('hide');
+
+    // Wait for the hide animation to complete before removing from display
+    setTimeout(() => {
         toast.style.display = 'none';
-    }, 10000);
+        toast.classList.remove('hide');
+    }, 400); // Match this with CSS transition duration
 }
 
 function scrollChanged(isAtBottom) {
