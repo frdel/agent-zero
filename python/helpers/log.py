@@ -6,6 +6,7 @@ from collections import OrderedDict  # Import OrderedDict
 
 Type = Literal[
     "agent",
+    "browser",
     "code_exe",
     "error",
     "hint",

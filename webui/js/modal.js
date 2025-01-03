@@ -39,14 +39,18 @@ const genericModalProxy = {
     description: '',
     html: '',
 
-    async openModal(title, description, html) {
+    async openModal(title, description, html, contentClasses = []) {
         const modalEl = document.getElementById('genericModal');
+        const modalContent = document.getElementById('viewer');
         const modalAD = Alpine.$data(modalEl);
 
         modalAD.isOpen = true;
         modalAD.title = title
         modalAD.description = description
         modalAD.html = html
+
+        modalContent.className = 'modal-content';
+        modalContent.classList.add(...contentClasses);
     },
 
     handleClose() {

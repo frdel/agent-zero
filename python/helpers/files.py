@@ -162,6 +162,11 @@ def write_file(relative_path: str, content: str, encoding: str = "utf-8"):
     with open(abs_path, "w", encoding=encoding) as f:
         f.write(content)
 
+def write_file_bin(relative_path: str, content: bytes):
+    abs_path = get_abs_path(relative_path)
+    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+    with open(abs_path, "wb") as f:
+        f.write(content)
 
 def delete_file(relative_path: str):
     abs_path = get_abs_path(relative_path)

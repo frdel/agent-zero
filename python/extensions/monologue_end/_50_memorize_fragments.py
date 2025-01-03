@@ -4,7 +4,6 @@ from python.helpers.memory import Memory
 from python.helpers.dirty_json import DirtyJson
 from agent import LoopData
 from python.helpers.log import LogItem
-from python.helpers.defer import run_in_background
 
 
 class MemorizeMemories(Extension):

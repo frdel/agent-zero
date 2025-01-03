@@ -29,7 +29,7 @@ async function showEditorModal(data, type = "json", title, description = "") {
     const html = `<div id="json-viewer-container"></div>`;
 
     // Open the modal with the generated HTML
-    await window.genericModalProxy.openModal(title, description, html);
+    await window.genericModalProxy.openModal(title, description, html, ["history-viewer"]);
 
     // Initialize the JSON Viewer after the modal is rendered
     const container = document.getElementById("json-viewer-container");

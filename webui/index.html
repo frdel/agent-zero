@@ -438,7 +438,7 @@
                                     <template x-for="(section, index) in settings.sections" :key="section.title">
                                         <li>
                                             <a :href="'#section' + (index + 1)">
-                                                <img :src="'/public/' + getIconName(section.title) + '.svg'"
+                                                <img :src="'/public/' + section.id +'.svg'"
                                                     :alt="section.title">
                                                 <span x-text="section.title"></span>
                                             </a>

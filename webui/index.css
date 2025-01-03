@@ -568,6 +568,7 @@ pre {
 .message-agent-delegation,
 .message-tool,
 .message-code-exe,
+.message-browser,
 .message-info,
 .message-util,
 .message-warning,
@@ -597,6 +598,10 @@ pre {
 }
 
 .message-code-exe {
+  background-color: #4b3a69;
+}
+
+.message-browser {
   background-color: #4b3a69;
 }
 
@@ -1452,6 +1457,19 @@ input:checked + .slider:before {
   white-space: pre-wrap;
 }
 
+.kvps-img {
+  width: 8em;
+  height: 8em;
+  object-fit: cover;
+  object-position: top left;
+  border-radius: 10%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.image-viewer-img{
+  width: 100%;
+}
+
 .msg-json {
   display: none;
 }
@@ -1834,6 +1852,11 @@ input:checked + .slider:before {
 
 .light-mode .message-code-exe {
   background-color: #f3f3f3;
+  color: #6c43b0;
+}
+
+.light-mode .message-browser {
+  background-color: #ffffff;
   color: #6c43b0;
 }
 

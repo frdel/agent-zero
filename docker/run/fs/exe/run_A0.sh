@@ -9,17 +9,22 @@ function setup_venv() {
     . "/ins/setup_venv.sh" "$@"
 }
 
-function clone_repo() {
+function clone_and_install() {
     # Copy repository files if run_ui.py is missing in /a0 (if the volume is mounted)
     if [ ! -f "$TARGET_DIR/run_ui.py" ]; then
+        
+        echo "Cloning and installing A0..."
+        . "/ins/install_A0.sh" "$@"
+
         echo "Copying files from $SOURCE_DIR to $TARGET_DIR..."
         cp -rn --no-preserve=ownership,mode "$SOURCE_DIR/." "$TARGET_DIR"
+
     fi
 }
 
 # setup and preload A0
 setup_venv
-clone_repo
+clone_and_install
 python /a0/prepare.py --dockerized=true
 python /a0/preload.py --dockerized=true
 

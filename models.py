@@ -26,7 +26,7 @@ from langchain_google_genai import (
     embeddings as google_embeddings,
 )
 from langchain_mistralai import ChatMistralAI
-from pydantic.v1.types import SecretStr
+# from pydantic.v1.types import SecretStr
 from python.helpers import dotenv, runtime
 from python.helpers.dotenv import load_dotenv
 from python.helpers.rate_limiter import RateLimiter
