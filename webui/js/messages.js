@@ -14,7 +14,7 @@ function createCopyButton() {
     if (container.classList.contains("kvps-row")) {
       textToCopy = container.querySelector(".kvps-val").textContent;
     } else if (container.classList.contains("message-text")) {
-      textToCopy = container.textContent.replace("copy", "");
+      textToCopy = container.querySelector("span").textContent;
     } else {
       textToCopy = container.querySelector("span").textContent;
     }
@@ -118,10 +118,7 @@ export function _drawMessage(
     if (window.renderMathInElement && latex) {
       renderMathInElement(spanElement, {
         delimiters: [
-          { left: "$", right: "$", display: true },
-          { left: "\\$", right: "\\$", display: true },
-          { left: "$", right: "$", display: false },
-          { left: "\\$", right: "\\$", display: false },
+          { left: "$", right: "$", display: true }
         ],
         throwOnError: false,
       });
@@ -254,7 +251,11 @@ export function drawMessageUser(
   if (content && content.trim().length > 0) {
     const textDiv = document.createElement("div");
     textDiv.classList.add("message-text");
-    textDiv.textContent = content;
+    
+    // Create a span for the content
+    const spanElement = document.createElement("span");
+    spanElement.textContent = content;
+    textDiv.appendChild(spanElement);
 
     // Add click handler
     textDiv.addEventListener("click", () => {
@@ -548,10 +549,7 @@ function drawKvps(container, kvps, latex) {
           if (window.renderMathInElement && latex) {
             renderMathInElement(span, {
               delimiters: [
-                { left: "$$", right: "$$", display: true },
-                { left: "$$", right: "$$", display: true },
-                { left: "$", right: "$", display: false },
-                { left: "$$", right: "$$", display: false },
+                { left: "$", right: "$", display: true }
               ],
               throwOnError: false,
             });
