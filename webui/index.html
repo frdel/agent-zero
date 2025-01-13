@@ -714,6 +714,23 @@
         </template>
     </div>
 
+    <!-- Drag and Drop Overlay -->
+    <div id="dragdrop-overlay" 
+         x-cloak
+         x-data="{ isVisible: false }" 
+         x-show="isVisible"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="dragdrop-overlay">
+        <img src="public/dragndrop.svg" alt="Drop files" class="dragdrop-icon">
+        <div class="dragdrop-text">Drop files to attach them to your message</div>
+        <div class="dragdrop-subtext">Supported formats: Images (JPG, PNG, BMP) and Documents (PDF, TXT, CSV, HTML, JSON, MD)</div>
+    </div>
+
 </body>
 
 </html>
