@@ -437,6 +437,25 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "fields": browser_model_fields,
     }
 
+    # Memory settings section
+    memory_fields: list[SettingsField] = []
+    memory_fields.append(
+        {
+            "id": "memory_settings",
+            "title": "Memory Settings",
+            "description": "<settings for memory>",
+            "type": "text",
+            "value": "",
+        }
+    )
+
+    memory_section: SettingsSection = {
+        "id": "memory",
+        "title": "Memory Settings",
+        "description": "<settings for memory management here>",
+        "fields": memory_fields,
+    }
+
     # basic auth section
     auth_fields: list[SettingsField] = []
 
@@ -706,6 +725,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             util_model_section,
             embed_model_section,
             browser_model_section,
+            memory_section,
             stt_section,
             api_keys_section,
             auth_section,

@@ -771,11 +771,11 @@ pre {
   font-family: 'Roboto Mono', monospace;
   font-optical-sizing: auto;
   -webkit-font-optical-sizing: auto;
-  font-size: 0.875rem;
+  font-size: 0.90rem;
   max-height: 7rem;
-  min-height: 3rem;
+  min-height: 3.05rem;
   width: 100%;
-  padding: 0.5rem 40px var(--spacing-sm) var(--spacing-sm);
+  padding: 0.48rem 40px var(--spacing-sm) var(--spacing-sm);
   margin-right: var(--spacing-xs);
   overflow-y: auto;
   scroll-behavior: smooth;
@@ -842,7 +842,7 @@ pre {
 #chat-input:focus {
   outline: 0.05rem solid rgba(155, 155, 155, 0.5);
   font-size: 0.955rem;
-  padding-top: 0.5rem;
+  padding-top: 0.45rem;
   background-color: var(--color-input-focus);
 }
 
@@ -1526,8 +1526,8 @@ input:checked + .slider:before {
 
 /* Math (KaTeX) */
 .katex {
-  line-height: 1rem !important;
-  font-size: 3rem;
+  line-height: 1.2 !important;
+  font-size: 1.1em;
 }
 
 /* Animations */
@@ -2003,4 +2003,73 @@ input:checked + .slider:before {
   100% {
     transform: scale(1);
   }
+}
+
+.dragdrop-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.light-mode .dragdrop-overlay {
+    background: rgba(255, 255, 255, 0.92);
+}
+
+/* Alpine transition classes */
+.transition {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.duration-300 {
+    transition-duration: 300ms;
+}
+
+.opacity-0 {
+    opacity: 0;
+}
+
+.opacity-100 {
+    opacity: 1;
+}
+
+/* Rest of dragdrop styles remain the same */
+.dragdrop-icon {
+    width: 128px;
+    height: 128px;
+    opacity: 0.85;
+    filter: invert(1);
+}
+
+.light-mode .dragdrop-icon {
+    filter: none;
+}
+
+.dragdrop-text {
+    color: var(--color-text);
+    font-size: 1.2rem;
+    opacity: 0.85;
+    text-align: center;
+    max-width: 80%;
+    line-height: 1.5;
+}
+
+.dragdrop-subtext {
+    color: var(--color-text);
+    font-size: 0.9rem;
+    opacity: 0.6;
+}
+
+/* Alpine cloak to prevent FOUC */
+[x-cloak] {
+    display: none !important;
 }
