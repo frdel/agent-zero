@@ -45,6 +45,7 @@ class ModelType(Enum):
 
 class ModelProvider(Enum):
     ANTHROPIC = "Anthropic"
+    DEEPSEEK = "DeepSeek"
     HUGGINGFACE = "HuggingFace"
     GOOGLE = "Google"
     GROQ = "Groq"
@@ -307,6 +308,24 @@ def get_groq_chat(
     if not api_key:
         api_key = get_api_key("groq")
     return ChatGroq(model_name=model_name, temperature=temperature, api_key=api_key, **kwargs)  # type: ignore
+
+
+# DeepSeek models
+def get_deepseek_chat(
+    model_name: str,
+    api_key=None,
+    temperature=DEFAULT_TEMPERATURE,
+    base_url=None,
+    **kwargs,
+):
+    if not api_key:
+        api_key = get_api_key("deepseek")
+    if not base_url:
+        base_url = (
+            dotenv.get_dotenv_value("DEEPSEEK_BASE_URL")
+            or "https://api.deepseek.com"
+        )
+    return ChatOpenAI(api_key=api_key, model=model_name, temperature=temperature, base_url=base_url, **kwargs)  # type: ignore
 
 
 # OpenRouter models

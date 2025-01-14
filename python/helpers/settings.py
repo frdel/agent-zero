@@ -510,6 +510,9 @@ def convert_out(settings: Settings) -> SettingsOutput:
     api_keys_fields.append(_get_api_key_field(settings, "groq", "Groq API Key"))
     api_keys_fields.append(_get_api_key_field(settings, "google", "Google API Key"))
     api_keys_fields.append(
+        _get_api_key_field(settings, "deepseek", "DeepSeek API Key")
+    )
+    api_keys_fields.append(
         _get_api_key_field(settings, "openrouter", "OpenRouter API Key")
     )
     api_keys_fields.append(
