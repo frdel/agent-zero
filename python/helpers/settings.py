@@ -874,7 +874,7 @@ def get_default_settings() -> Settings:
 
     return Settings(
         chat_model_provider=ModelProvider.OPENAI.name,
-        chat_model_name="gpt-4o-mini",
+        chat_model_name="gpt-4o",
         chat_model_temperature=0.0,
         chat_model_kwargs={},
         chat_model_ctx_length=120000,
@@ -897,7 +897,7 @@ def get_default_settings() -> Settings:
         embed_model_rl_requests=0,
         embed_model_rl_input=0,
         browser_model_provider=ModelProvider.OPENAI.name,
-        browser_model_name="gpt-4o-mini",
+        browser_model_name="gpt-4o",
         browser_model_vision=False,
         browser_model_temperature=0.0,
         browser_model_kwargs={},

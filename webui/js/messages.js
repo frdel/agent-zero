@@ -333,7 +333,7 @@ export function drawMessageTool(
   _drawMessage(
     messageContainer,
     heading,
-    messageContent,
+    content,
     temp,
     true,
     kvps,
