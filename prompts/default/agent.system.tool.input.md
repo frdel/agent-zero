@@ -1,6 +1,7 @@
 ### input:
-use keyboard arg for program input
-answer dialogues enter passwords etc in terminal
+use keyboard arg for terminal program input
+answer dialogues enter passwords etc
+not for browser
 usage:
 ~~~json
 {

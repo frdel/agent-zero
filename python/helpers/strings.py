@@ -2,6 +2,8 @@ import re
 import sys
 import time
 
+from python.helpers import files
+
 def calculate_valid_match_lengths(first: bytes | str, second: bytes | str, 
                                   deviation_threshold: int = 5, 
                                   deviation_reset: int = 5, 
@@ -89,5 +91,28 @@ def calculate_valid_match_lengths(first: bytes | str, second: bytes | str,
     # Return the last matched positions instead of the current indices
     return last_matched_i, last_matched_j
 
-    # Return the last matched positions instead of the current indices
-    return last_matched_i, last_matched_j
+def format_key(key: str) -> str:
+    """Format a key string to be more readable.
+    Converts camelCase and snake_case to Title Case with spaces."""
+    # First replace non-alphanumeric with spaces
+    result = ''.join(' ' if not c.isalnum() else c for c in key)
+    
+    # Handle camelCase
+    formatted = ''
+    for i, c in enumerate(result):
+        if i > 0 and c.isupper() and result[i-1].islower():
+            formatted += ' ' + c
+        else:
+            formatted += c
+            
+    # Split on spaces and capitalize each word
+    return ' '.join(word.capitalize() for word in formatted.split())
+
+def dict_to_text(d: dict) -> str:
+    parts = []
+    for key, value in d.items():
+        parts.append(f"{format_key(str(key))}:")
+        parts.append(f"{value}")
+        parts.append("")  # Add empty line between entries
+    
+    return "\n".join(parts).rstrip()  # rstrip to remove trailing newline

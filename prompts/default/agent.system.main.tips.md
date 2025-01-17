@@ -4,7 +4,11 @@
 reason step-by-step execute tasks
 avoid repetition ensure progress
 never assume success
-memory refers to knowledge_tool and memorize_tool not own knowledge
+memory refers to knowledge_tool and memory tools not own knowledge
+
+## Files
+save files in /root
+don't use spaces in file names
 
 ## Instruments
 

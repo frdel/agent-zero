@@ -3,6 +3,9 @@ import json
 import os, re
 
 import re
+import shutil
+import tempfile
+import zipfile
 
 
 def parse_file(_relative_path, _backup_dirs=None, _encoding="utf-8", **kwargs):
@@ -50,6 +53,7 @@ def replace_placeholders_text(_content: str, **kwargs):
         _content = _content.replace(placeholder, strval)
     return _content
 
+
 def replace_placeholders_json(_content: str, **kwargs):
     # Replace placeholders with values from kwargs
     for key, value in kwargs.items():
@@ -57,6 +61,7 @@ def replace_placeholders_json(_content: str, **kwargs):
         strval = json.dumps(value)
         _content = _content.replace(placeholder, strval)
     return _content
+
 
 def replace_placeholders_dict(_content: dict, **kwargs):
     def replace_value(value):
@@ -163,10 +168,23 @@ def write_file(relative_path: str, content: str, encoding: str = "utf-8"):
         f.write(content)
 
 
+def write_file_bin(relative_path: str, content: bytes):
+    abs_path = get_abs_path(relative_path)
+    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+    with open(abs_path, "wb") as f:
+        f.write(content)
+
+
 def delete_file(relative_path: str):
     abs_path = get_abs_path(relative_path)
     if os.path.exists(abs_path):
         os.remove(abs_path)
+
+
+def delete_dir(relative_path: str):
+    abs_path = get_abs_path(relative_path)
+    if os.path.exists(abs_path):
+        shutil.rmtree(abs_path)
 
 
 def list_files(relative_path: str, filter: str = "*"):
@@ -174,6 +192,11 @@ def list_files(relative_path: str, filter: str = "*"):
     if not os.path.exists(abs_path):
         return []
     return [file for file in os.listdir(abs_path) if fnmatch(file, filter)]
+
+
+def make_dirs(relative_path: str):
+    abs_path = get_abs_path(relative_path)
+    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
 
 
 def get_abs_path(*relative_paths):
@@ -202,3 +225,23 @@ def get_subdirectories(relative_path: str, include: str = "*", exclude=None):
         and fnmatch(subdir, include)
         and (exclude is None or not fnmatch(subdir, exclude))
     ]
+
+
+def zip_dir(dir_path: str):
+    full_path = get_abs_path(dir_path)
+    zip_file_path = tempfile.NamedTemporaryFile(suffix=".zip", delete=False).name
+    base_name = os.path.basename(full_path)
+    with zipfile.ZipFile(zip_file_path, "w", compression=zipfile.ZIP_DEFLATED) as zip:
+        for root, _, files in os.walk(full_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                rel_path = os.path.relpath(file_path, full_path)
+                zip.write(file_path, os.path.join(base_name, rel_path))
+    return zip_file_path
+
+
+def move_file(relative_path: str, new_path: str):
+    abs_path = get_abs_path(relative_path)
+    new_abs_path = get_abs_path(new_path)
+    os.makedirs(os.path.dirname(new_abs_path), exist_ok=True)
+    os.rename(abs_path, new_abs_path)

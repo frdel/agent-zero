@@ -18,7 +18,7 @@
   }
   
   /* Viewer Styles */
-  #viewer {
+  .history-viewer {
     overflow: hidden;
     margin-bottom: 0.5rem;
   }

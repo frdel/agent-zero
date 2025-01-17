@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import shutil
 import tempfile
+import base64
 from typing import Dict, List, Tuple, Optional, Any
 import zipfile
 from werkzeug.utils import secure_filename
@@ -20,10 +21,11 @@ class FileBrowser:
     MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
 
     def __init__(self):
-        if runtime.is_development():
-            base_dir = files.get_base_dir()
-        else:
-            base_dir = "/"
+        # if runtime.is_development():
+        #     base_dir = files.get_base_dir()
+        # else:
+        #     base_dir = "/"
+        base_dir = "/"
         self.base_dir = Path(base_dir)
       
     def _check_file_size(self, file) -> bool:
@@ -33,6 +35,22 @@ class FileBrowser:
             file.seek(0)
             return size <= self.MAX_FILE_SIZE
         except (AttributeError, IOError):
+            return False
+
+    def save_file_b64(self, current_path: str, filename:str, base64_content: str):
+        try:
+            # Resolve the target directory path
+            target_file = (self.base_dir / current_path / filename).resolve()
+            if not str(target_file).startswith(str(self.base_dir)):
+                raise ValueError("Invalid target directory")
+
+            os.makedirs(target_file.parent, exist_ok=True)
+            # Save file
+            with open(target_file, "wb") as file:
+                file.write(base64.b64decode(base64_content))
+            return True
+        except Exception as e:
+            PrintStyle.error(f"Error saving file {filename}: {e}")
             return False
 
     def save_files(self, files: List, current_path: str = "") -> Tuple[List[str], List[str]]:
@@ -177,16 +195,3 @@ class FileBrowser:
             if ext in extensions:
                 return file_type
         return 'unknown'
-
-    def zip_dir(self, dir_path: str):
-        full_path = self.get_full_path(dir_path, allow_dir=True)
-        zip_file_path = tempfile.NamedTemporaryFile(suffix='.zip', delete=False).name
-        base_name = os.path.basename(full_path)
-        with zipfile.ZipFile(zip_file_path, "w", compression=zipfile.ZIP_DEFLATED) as zip:
-            for root, _, files in os.walk(full_path):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    rel_path = os.path.relpath(file_path, full_path)
-                    zip.write(file_path, os.path.join(base_name, rel_path))
-        return zip_file_path
-        

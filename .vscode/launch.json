@@ -7,6 +7,7 @@
       "request": "launch",
       "program": "./run_ui.py",
       "console": "integratedTerminal",
+      "justMyCode": false,
       "args": ["--development=true", "-Xfrozen_modules=off"]
     },
     {
@@ -15,6 +16,7 @@
       "request": "launch",
       "program": "./run_cli.py",
       "console": "integratedTerminal",
+      "justMyCode": false,
       "args": ["--development=true", "-Xfrozen_modules=off"]
     },
     {
@@ -23,6 +25,7 @@
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
+      "justMyCode": false,
       "args": ["--development=true", "-Xfrozen_modules=off"]
     }
   ]

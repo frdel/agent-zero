@@ -46,13 +46,20 @@ def requires_auth(f):
 @app.route("/", methods=["GET"])
 @requires_auth
 async def serve_index():
-    gitinfo = git.get_git_info()
+    gitinfo = None
+    try:
+        gitinfo = git.get_git_info()
+    except Exception as e:
+        gitinfo = {
+            "version": "unknown",
+            "commit_time": "unknown",
+        }
     return files.read_file(
         "./webui/index.html",
         version_no=gitinfo["version"],
         version_time=gitinfo["commit_time"],
     )
-    
+
 
 def run():
     PrintStyle().print("Initializing framework...")
@@ -66,15 +73,22 @@ def run():
             pass  # Override to suppress request logging
 
     # Get configuration from environment
-    port = runtime.get_arg("port") or int(dotenv.get_dotenv_value("WEB_UI_PORT", 0)) or 5000
-    host = runtime.get_arg("host") or dotenv.get_dotenv_value("WEB_UI_HOST") or "localhost"
-    use_cloudflare = (runtime.get_arg("cloudflare_tunnel")
-        or dotenv.get_dotenv_value("USE_CLOUDFLARE", "false").lower()) == "true"
-    
+    port = (
+        runtime.get_arg("port")
+        or int(dotenv.get_dotenv_value("WEB_UI_PORT", 0))
+        or 5000
+    )
+    host = (
+        runtime.get_arg("host") or dotenv.get_dotenv_value("WEB_UI_HOST") or "localhost"
+    )
+    use_cloudflare = (
+        runtime.get_arg("cloudflare_tunnel")
+        or dotenv.get_dotenv_value("USE_CLOUDFLARE", "false").lower()
+    ) == "true"
 
     tunnel = None
 
-    try:    
+    try:
         # Initialize and start Cloudflare tunnel if enabled
         if use_cloudflare and port:
             try:
@@ -95,26 +109,34 @@ def run():
     def register_api_handler(app, handler: type[ApiHandler]):
         name = handler.__module__.split(".")[-1]
         instance = handler(app, lock)
+
         @requires_auth
         async def handle_request():
             return await instance.handle_request(request=request)
+
         app.add_url_rule(
             f"/{name}",
             f"/{name}",
             handle_request,
             methods=["POST", "GET"],
         )
-        
+
     # initialize and register API handlers
     handlers = load_classes_from_folder("python/api", "*.py", ApiHandler)
     for handler in handlers:
         register_api_handler(app, handler)
-        
+
     try:
-        server = make_server(host=host, port=port, app=app, request_handler=NoRequestLoggingWSGIRequestHandler, threaded=True)
+        server = make_server(
+            host=host,
+            port=port,
+            app=app,
+            request_handler=NoRequestLoggingWSGIRequestHandler,
+            threaded=True,
+        )
         process.set_server(server)
         server.log_startup()
-        server.serve_forever() 
+        server.serve_forever()
         # Run Flask app
         # app.run(
         #     request_handler=NoRequestLoggingWSGIRequestHandler, port=port, host=host

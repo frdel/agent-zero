@@ -21,7 +21,7 @@ apt-get update > /dev/null 2>&1 &
 /usr/sbin/sshd -D &
 
 # Start searxng server in background
-su - searxng -c "bash /exe/run_searxng.sh" &
+su - searxng -c "bash /exe/run_searxng.sh \"$@\"" &
 
 # Start A0 and restart on exit
 bash /exe/run_A0.sh "$@"
