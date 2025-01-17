@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>Agent Zero</title>
-    <link rel="icon" type="image/svg+xml" href="public/darkSymbol.svg">
+    <link rel="icon" type="image/svg+xml" href="public/favicon.svg">
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="css/toast.css">
     <link rel="stylesheet" href="css/settings.css">
@@ -451,13 +451,13 @@
                         <template x-for="(section, sectionIndex) in settings.sections" :key="sectionIndex">
                             <div :id="'section' + (sectionIndex + 1)" class="section">
                                 <div class="section-title" x-text="section.title"></div>
-                                <div class="section-description" x-text="section.description"></div>
+                                <div class="section-description" x-html="section.description"></div>
 
                                 <template x-for="(field, fieldIndex) in section.fields" :key="fieldIndex">
                                     <div :class="{'field': true, 'field-full': field.type === 'textarea'}">
                                         <div class="field-label">
                                             <div class="field-title" x-text="field.title"></div>
-                                            <div class="field-description" x-text="field.description"></div>
+                                            <div class="field-description" x-html="field.description"></div>
                                         </div>
 
                                         <div class="field-control">
@@ -767,7 +767,7 @@
          class="dragdrop-overlay">
         <img src="public/dragndrop.svg" alt="Drop files" class="dragdrop-icon">
         <div class="dragdrop-text">Drop files to attach them to your message</div>
-        <div class="dragdrop-subtext">Supported formats: Images (JPG, PNG, BMP) and Documents (PDF, TXT, CSV, HTML, JSON, MD)</div>
+        <div class="dragdrop-subtext"></div>
     </div>
 
 </body>

@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from typing import Any
 import uuid
-from agent import Agent, AgentConfig, AgentContext, HumanMessage, AIMessage
+from agent import Agent, AgentConfig, AgentContext
 from python.helpers import files, history
 import json
 from initialize import initialize
@@ -10,25 +10,51 @@ from python.helpers.log import Log, LogItem
 
 CHATS_FOLDER = "tmp/chats"
 LOG_SIZE = 1000
+CHAT_FILE_NAME = "chat.json"
 
+
+def get_chat_folder_path(ctxid: str):
+    return files.get_abs_path(CHATS_FOLDER, ctxid)
 
 def save_tmp_chat(context: AgentContext):
-    relative_path = _get_file_path(context.id)
+    path = _get_chat_file_path(context.id)
+    files.make_dirs(path)
     data = _serialize_context(context)
     js = _safe_json_serialize(data, ensure_ascii=False)
-    files.write_file(relative_path, js)
+    files.write_file(path, js)
 
 
 def load_tmp_chats():
-    json_files = files.list_files("tmp/chats", "*.json")
+    _convert_v080_chats()
+    folders = files.list_files("tmp/chats/", "*")
+    json_files = []
+    for folder in folders:
+        json_files.append(_get_chat_file_path(folder))
+
     ctxids = []
     for file in json_files:
-        path = files.get_abs_path(CHATS_FOLDER, file)
-        js = files.read_file(path)
-        data = json.loads(js)
-        ctx = _deserialize_context(data)
-        ctxids.append(ctx.id)
+        try:
+            js = files.read_file(file)
+            data = json.loads(js)
+            ctx = _deserialize_context(data)
+            ctxids.append(ctx.id)
+        except Exception as e:
+            print(f"Error loading chat {file}: {e}")
     return ctxids
+
+
+def _get_chat_file_path(ctxid: str):
+    return files.get_abs_path(CHATS_FOLDER, ctxid, CHAT_FILE_NAME)
+
+
+def _convert_v080_chats():
+    json_files = files.list_files("tmp/chats", "*.json")
+    for file in json_files:
+        path = files.get_abs_path(CHATS_FOLDER, file)
+        name = file.rstrip(".json")
+        fold = files.get_abs_path(CHATS_FOLDER, name)
+        new = _get_chat_file_path(name)
+        files.move_file(path, new)
 
 
 def load_json_chats(jsons: list[str]):
@@ -49,11 +75,8 @@ def export_json_chat(context: AgentContext):
 
 
 def remove_chat(ctxid):
-    files.delete_file(_get_file_path(ctxid))
+    files.delete_dir(get_chat_folder_path(ctxid))
 
-
-def _get_file_path(ctxid: str):
-    return f"{CHATS_FOLDER}/{ctxid}.json"
 
 
 def _serialize_context(context: AgentContext):
@@ -174,7 +197,7 @@ def _deserialize_log(data: dict[str, Any]) -> "Log":
         log.logs.append(
             LogItem(
                 log=log,  # restore the log reference
-                no=i, #item_data["no"],
+                no=i,  # item_data["no"],
                 type=item_data["type"],
                 heading=item_data.get("heading", ""),
                 content=item_data.get("content", ""),

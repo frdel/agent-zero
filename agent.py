@@ -618,6 +618,10 @@ class Agent:
             await self.hist_add_user_message(msg, intervention=True)
             raise InterventionException(msg)
 
+    async def wait_if_paused(self):
+        while self.context.paused:
+            await asyncio.sleep(0.1)
+
     async def process_tools(self, msg: str):
         # search for tool usage requests in agent message
         tool_request = extract_tools.json_parse_dirty(msg)

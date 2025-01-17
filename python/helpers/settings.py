@@ -381,7 +381,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "browser_model_provider",
             "title": "Web Browser model provider",
-            "description": "Select provider for web browser model used by browser-use framework",
+            "description": "Select provider for web browser model used by <a href='https://github.com/browser-use/browser-use' target='_blank'>browser-use</a> framework",
             "type": "select",
             "value": settings["browser_model_provider"],
             "options": [{"value": p.name, "label": p.value} for p in ModelProvider],
@@ -433,28 +433,28 @@ def convert_out(settings: Settings) -> SettingsOutput:
     browser_model_section: SettingsSection = {
         "id": "browser_model",
         "title": "Web Browser Model",
-        "description": "Settings for the web browser model used by browser-use framework.",
+        "description": "Settings for the web browser model. Agent Zero uses <a href='https://github.com/browser-use/browser-use' target='_blank'>browser-use</a> agentic framework to handle web interactions.",
         "fields": browser_model_fields,
     }
 
-    # Memory settings section
-    memory_fields: list[SettingsField] = []
-    memory_fields.append(
-        {
-            "id": "memory_settings",
-            "title": "Memory Settings",
-            "description": "<settings for memory>",
-            "type": "text",
-            "value": "",
-        }
-    )
+    # # Memory settings section
+    # memory_fields: list[SettingsField] = []
+    # memory_fields.append(
+    #     {
+    #         "id": "memory_settings",
+    #         "title": "Memory Settings",
+    #         "description": "<settings for memory>",
+    #         "type": "text",
+    #         "value": "",
+    #     }
+    # )
 
-    memory_section: SettingsSection = {
-        "id": "memory",
-        "title": "Memory Settings",
-        "description": "<settings for memory management here>",
-        "fields": memory_fields,
-    }
+    # memory_section: SettingsSection = {
+    #     "id": "memory",
+    #     "title": "Memory Settings",
+    #     "description": "<settings for memory management here>",
+    #     "fields": memory_fields,
+    # }
 
     # basic auth section
     auth_fields: list[SettingsField] = []
@@ -728,7 +728,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             util_model_section,
             embed_model_section,
             browser_model_section,
-            memory_section,
+            # memory_section,
             stt_section,
             api_keys_section,
             auth_section,

@@ -802,6 +802,7 @@ function toast(text, type = 'info', timeout = 5000) {
         updateAndShowToast();
     }
 }
+window.toast = toast
 
 function hideToast() {
     const toast = document.getElementById('toast');

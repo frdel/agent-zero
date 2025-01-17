@@ -46,9 +46,9 @@ class ModelType(Enum):
 class ModelProvider(Enum):
     ANTHROPIC = "Anthropic"
     DEEPSEEK = "DeepSeek"
-    HUGGINGFACE = "HuggingFace"
     GOOGLE = "Google"
     GROQ = "Groq"
+    HUGGINGFACE = "HuggingFace"
     LMSTUDIO = "LM Studio"
     MISTRALAI = "Mistral AI"
     OLLAMA = "Ollama"

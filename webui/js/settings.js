@@ -15,7 +15,7 @@ const settingsModalProxy = {
 
 
             const settings = {
-                "title": "Settings page",
+                "title": "Settings",
                 "buttons": [
                     {
                         "id": "save",

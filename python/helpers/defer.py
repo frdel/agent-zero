@@ -1,11 +1,10 @@
 import asyncio
 from dataclasses import dataclass
 import threading
-from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Any, Callable, Optional, Coroutine, TypeVar, Union, Awaitable
+from concurrent.futures import Future
+from typing import Any, Callable, Optional, Coroutine, TypeVar, Awaitable
 
 T = TypeVar("T")
-
 
 class EventLoopThread:
     _instances = {}
@@ -155,7 +154,7 @@ class DeferredTask:
         return self._future and not self._future.done()  # type: ignore
 
     def restart(self, terminate_thread: bool = False) -> None:
-        self.kill()
+        self.kill(terminate_thread=terminate_thread)
         self._start_task()
 
     def add_child_task(

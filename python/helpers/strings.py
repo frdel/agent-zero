@@ -2,6 +2,8 @@ import re
 import sys
 import time
 
+from python.helpers import files
+
 def calculate_valid_match_lengths(first: bytes | str, second: bytes | str, 
                                   deviation_threshold: int = 5, 
                                   deviation_reset: int = 5, 

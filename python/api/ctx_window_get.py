@@ -1,10 +1,10 @@
+from python.helpers.api import ApiHandler, Input, Output, Request, Response
+
 from python.helpers import tokens
-from python.helpers.api import ApiHandler
-from flask import Request, Response
 
 
 class GetCtxWindow(ApiHandler):
-    async def process(self, input: dict, request: Request) -> dict | Response:
+    async def process(self, input: Input, request: Request) -> Output:
         ctxid = input.get("context", [])
         context = self.get_context(ctxid)
         agent = context.streaming_agent or context.agent0

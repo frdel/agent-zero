@@ -5,7 +5,7 @@ from agent import Agent
 
 import models
 from python.helpers.tool import Tool, Response
-from python.helpers import dirty_json, files, rfc_exchange, defer, strings
+from python.helpers import dirty_json, files, rfc_exchange, defer, strings, persist_chat
 from python.helpers.print_style import PrintStyle
 from python.helpers.browser_use import browser_use
 from pydantic import BaseModel
@@ -57,9 +57,7 @@ class State:
                 thread_name="BrowserAgent" + self.agent.context.id
             )
             if self.agent.context.task:
-                self.agent.context.task.add_child_task(
-                    self.task, terminate_thread=True
-                )
+                self.agent.context.task.add_child_task(self.task, terminate_thread=True)
         self.task.start_task(self._run_task, task)
         return self.task
 
@@ -114,7 +112,7 @@ class State:
         self.use_agent = browser_use.Agent(
             task=task,
             browser_context=self.context,
-            llm=self.agent.get_utility_model(),
+            llm=model,
             use_vision=self.agent.config.browser_model.vision,
             system_prompt_class=CustomSystemPrompt,
             controller=controller,
@@ -172,14 +170,27 @@ class BrowserAgent(Tool):
         await self.prepare_state()
 
         result = {}
+        agent = self.agent
         ua = self.state.use_agent
         page = await self.state.get_page()
+        ctx = self.state.context
 
         if ua and page:
             try:
 
                 async def _get_update():
+
+                    await agent.wait_if_paused()
+
                     log = []
+
+                    # dom_service = browser_use.DomService(page)
+                    # dom_state = await browser_use.utils.time_execution_sync('get_clickable_elements')(
+                    #     dom_service.get_clickable_elements
+                    # )()
+                    # elements = dom_state.element_tree
+                    # selector_map = dom_state.selector_map
+                    # el_text = elements.clickable_elements_to_string()
 
                     for message in ua.message_manager.get_messages():
                         if message.type == "system":
@@ -202,7 +213,13 @@ class BrowserAgent(Tool):
                                 log.append("FW:" + part)
                     result["log"] = log
 
-                    path = files.get_abs_path("tmp/browser", f"{self.guid}.png")
+                    path = files.get_abs_path(
+                        persist_chat.get_chat_folder_path(agent.context.id),
+                        "browser",
+                        "screenshots",
+                        f"{self.guid}.png",
+                    )
+                    files.make_dirs(path)
                     await page.screenshot(path=path, full_page=False, timeout=3000)
                     result["screenshot"] = f"img://{path}&t={str(time.time())}"
 

@@ -103,7 +103,7 @@ export function _drawMessage(
     preElement.style.wordBreak = "break-word";
 
     const spanElement = document.createElement("span");
-    spanElement.innerHTML = escapeHTML(content);
+    spanElement.innerHTML = convertHTML(content);
 
     // Add click handler for small screens
     spanElement.addEventListener("click", () => {
@@ -117,9 +117,7 @@ export function _drawMessage(
     // Render LaTeX math within the span
     if (window.renderMathInElement && latex) {
       renderMathInElement(spanElement, {
-        delimiters: [
-          { left: "$", right: "$", display: true }
-        ],
+        delimiters: [{ left: "$", right: "$", display: true }],
         throwOnError: false,
       });
     }
@@ -143,11 +141,10 @@ export function drawMessageDefault(
   temp,
   kvps = null
 ) {
-  const messageContent = convertImageTags(content); // Convert image tags
   _drawMessage(
     messageContainer,
     heading,
-    messageContent,
+    content,
     temp,
     false,
     kvps,
@@ -171,11 +168,10 @@ export function drawMessageAgent(
     delete kvpsFlat["tool_args"];
   }
 
-  const messageContent = convertImageTags(content); // Convert image tags
   _drawMessage(
     messageContainer,
     heading,
-    messageContent,
+    content,
     temp,
     false,
     kvpsFlat,
@@ -194,11 +190,10 @@ export function drawMessageResponse(
   temp,
   kvps = null
 ) {
-  const messageContent = convertImageTags(content); // Convert image tags
   _drawMessage(
     messageContainer,
     heading,
-    messageContent,
+    content,
     temp,
     true,
     null,
@@ -217,7 +212,6 @@ export function drawMessageDelegation(
   temp,
   kvps = null
 ) {
-  const messageContent = convertImageTags(content); // Convert image tags
   _drawMessage(
     messageContainer,
     heading,
@@ -251,10 +245,10 @@ export function drawMessageUser(
   if (content && content.trim().length > 0) {
     const textDiv = document.createElement("div");
     textDiv.classList.add("message-text");
-    
+
     // Create a span for the content
     const spanElement = document.createElement("span");
-    spanElement.textContent = content;
+    spanElement.innerHTML = convertHTML(content);
     textDiv.appendChild(spanElement);
 
     // Add click handler
@@ -336,7 +330,6 @@ export function drawMessageTool(
   temp,
   kvps = null
 ) {
-  const messageContent = convertImageTags(content); // Convert image tags
   _drawMessage(
     messageContainer,
     heading,
@@ -358,8 +351,7 @@ export function drawMessageCodeExe(
   temp,
   kvps = null
 ) {
-  const messageContent = convertImageTags(content); // Convert image tags
-  _drawMessage(messageContainer, heading, messageContent, temp, true, null, [
+  _drawMessage(messageContainer, heading, content, temp, true, null, [
     "message-ai",
     "message-code-exe",
   ]);
@@ -374,11 +366,10 @@ export function drawMessageBrowser(
   temp,
   kvps = null
 ) {
-  const messageContent = convertImageTags(content); // Convert image tags
   _drawMessage(
     messageContainer,
     heading,
-    messageContent,
+    content,
     temp,
     true,
     kvps,
@@ -397,8 +388,7 @@ export function drawMessageAgentPlain(
   temp,
   kvps = null
 ) {
-  const messageContent = convertImageTags(content); // Convert image tags
-  _drawMessage(messageContainer, heading, messageContent, temp, false, kvps, [
+  _drawMessage(messageContainer, heading, content, temp, false, kvps, [
     ...classes,
   ]);
   messageContainer.classList.add("center-container");
@@ -434,11 +424,10 @@ export function drawMessageUtil(
   temp,
   kvps = null
 ) {
-  const messageContent = convertImageTags(content); // Convert image tags
   _drawMessage(
     messageContainer,
     heading,
-    messageContent,
+    content,
     temp,
     false,
     kvps,
@@ -536,7 +525,7 @@ function drawKvps(container, kvps, latex) {
           pre.classList.add("kvps-val");
           //   if (row.classList.contains("msg-thoughts")) {
           const span = document.createElement("span");
-          span.innerHTML = escapeHTML(value);
+          span.innerHTML = convertHTML(value);
           pre.appendChild(span);
           td.appendChild(pre);
           addCopyButtonToElement(row);
@@ -548,9 +537,7 @@ function drawKvps(container, kvps, latex) {
 
           if (window.renderMathInElement && latex) {
             renderMathInElement(span, {
-              delimiters: [
-                { left: "$", right: "$", display: true }
-              ],
+              delimiters: [{ left: "$", right: "$", display: true }],
               throwOnError: false,
             });
           }
@@ -608,11 +595,16 @@ async function copyText(text, element) {
   }
 }
 
-function escapeHTML(str) {
-  if (typeof str !== "string") {
-    return str;
-  }
+function convertHTML(str) {
+  if (typeof str !== "string") str = JSON.stringify(str, null, 2);
 
+  let result = escapeHTML(str);
+  result = convertPathsToLinks(result);
+  result = convertImageTags(result);
+  return result;
+}
+
+function escapeHTML(str) {
   const escapeChars = {
     "&": "&amp;",
     "<": "&lt;",
@@ -621,4 +613,28 @@ function escapeHTML(str) {
     '"': "&quot;",
   };
   return str.replace(/[&<>'"]/g, (char) => escapeChars[char]);
+}
+
+function convertPathsToLinks(str) {
+  function generateLinks(match,...args) {
+    const parts = match.split("/");
+
+    if (!parts[0]) parts.shift();
+    let conc = "";
+    let html = "";
+    for (let part of parts) {
+      conc += "/" + part;
+      html += `/<a href="#" class="path-link" onclick="openFileLink('${conc}');">${part}</a>`;
+    }
+    return html;
+  }
+
+  const prefix = `(?:[ \`'"\\n]|&#39;|&quot;)`; // Use a non-capturing group for OR logic
+  const folder = `[a-zA-Z0-9_\\/\\.]`; // Characters allowed in folder names
+  const file = `[a-zA-Z0-9_\\/]`; // Characters allowed in file names
+  const suffix = `(?<!\\.)`
+
+  const regex = new RegExp(`(?<=${prefix})\\/${folder}*${file}${suffix}`, 'g');
+
+  return str.replace(regex, generateLinks);
 }

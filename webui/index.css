@@ -1806,6 +1806,24 @@ input:checked + .slider:before {
   }
 }
 
+/* Link styling */
+a {
+    color: inherit;
+    /* text-decoration: none; */
+}
+
+a:visited {
+    color: inherit;
+}
+
+a:hover {
+    color: inherit;
+}
+
+a:active {
+    color: inherit;
+}
+
 /* Light mode class */
 .light-mode {
   --color-background: var(--color-background-light);
@@ -2067,6 +2085,11 @@ input:checked + .slider:before {
     color: var(--color-text);
     font-size: 0.9rem;
     opacity: 0.6;
+}
+
+.path-link{
+  margin-left: 0.1em;
+  margin-right: 0.1em;
 }
 
 /* Alpine cloak to prevent FOUC */
