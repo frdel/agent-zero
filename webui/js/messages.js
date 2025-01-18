@@ -629,9 +629,9 @@ function convertPathsToLinks(str) {
     return html;
   }
 
-  const prefix = `(?:[ \`'"\\n]|&#39;|&quot;)`; // Use a non-capturing group for OR logic
-  const folder = `[a-zA-Z0-9_\\/\\.]`; // Characters allowed in folder names
-  const file = `[a-zA-Z0-9_\\/]`; // Characters allowed in file names
+  const prefix = `(?:^|[ \`'"\\n]|&#39;|&quot;)`; // Use a non-capturing group for OR logic
+  const folder = `[a-zA-Z0-9_\\/.\\-]`; // Characters allowed in folder chain
+  const file = `[a-zA-Z0-9_\\-\\/]`; // Characters allowed in file names
   const suffix = `(?<!\\.)`
 
   const regex = new RegExp(`(?<=${prefix})\\/${folder}*${file}${suffix}`, 'g');
