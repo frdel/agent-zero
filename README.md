@@ -14,6 +14,10 @@
 
 </div>
 
+> [!NOTE]
+> **🎉 v0.8.1 Release**: Now featuring a browser agent capable of using Chromium for web interactions! This enables Agent Zero to browse the web, gather information, and interact with web content autonomously.
+
+
 https://github.com/user-attachments/assets/c168759d-57d8-4b43-b62a-1026afcf52e6
 
 ## A personal, organic agentic framework that grows and learns with you
@@ -120,19 +124,10 @@ docker run -p 50001:80 frdel/agent-zero-run
 
 - With proper instruction, Agent Zero is capable of many things, even potentially dangerous actions concerning your computer, data, or accounts. Always run Agent Zero in an isolated environment (like Docker) and be careful what you wish for.
 
-2. **Agent Zero Is Not Pre-programmed; It Is Prompt-based.**
+2. **Agent Zero Is Prompt-based.**
 
-- The whole framework contains only a minimal amount of code and does not guide the agent in any way. Everything lies in the system prompt located in the **prompts/** folder.
+- The whole framework is guided by the **prompts/** folder. Agent guidelines, tool instructions, messages, utility AI functions, it's all there.
 
-3. **If You Cannot Provide the Ideal Environment, Let Your Agent Know.**
-
-- Agent Zero is made to be used in an isolated virtual environment (for safety) with some tools preinstalled and configured.
-
-### 📌 Known Problems
-
-1. The system prompt may need improvements; contributions are welcome!
-2. The agent may inadvertently alter its operating environment; cleaning up the `work_dir` often fixes this.
-3. Agents might loop in multi-agentic interactions, leading to unexpected behaviors.
 
 ## 📚 Read the Documentation
 
@@ -148,14 +143,18 @@ docker run -p 50001:80 frdel/agent-zero-run
 
 ### Coming soon
 
-- **User Interaction Refinements**
-- **Browser Use and RAG Tools**
+- **Knowledge and RAG Tools**
+- **Planning and Scheduling**
 
 > [!IMPORTANT]
 >
 >**Changes to frdel/agent-zero Docker image since v0.7:**
 >
 > The new Docker image `frdel/agent-zero-run` provides the new unified environment.
+
+### v0.8.1
+- **Browser Agent**
+- **UX Improvements**
 
 ### v0.8
 
