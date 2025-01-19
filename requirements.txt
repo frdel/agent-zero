@@ -4,6 +4,7 @@ browser-use==0.1.17
 docker==7.1.0
 duckduckgo-search==6.1.12
 faiss-cpu==1.8.0.post1
+flaredantic==0.1.1
 flask[async]==3.0.3
 flask-basicauth==0.2.0
 GitPython==3.1.43
