@@ -9,6 +9,7 @@ import models
 from python.helpers import runtime, whisper, defer
 from . import files, dotenv
 
+
 class Settings(TypedDict):
     chat_model_provider: str
     chat_model_name: str
@@ -30,12 +31,17 @@ class Settings(TypedDict):
     util_model_rl_input: int
     util_model_rl_output: int
 
-        
     embed_model_provider: str
     embed_model_name: str
     embed_model_kwargs: dict[str, str]
     embed_model_rl_requests: int
     embed_model_rl_input: int
+
+    browser_model_provider: str
+    browser_model_name: str
+    browser_model_vision: bool
+    browser_model_temperature: float
+    browser_model_kwargs: dict[str, str]
 
     agent_prompts_subdir: str
     agent_memory_subdir: str
@@ -73,7 +79,7 @@ class SettingsField(TypedDict, total=False):
     id: str
     title: str
     description: str
-    type: Literal["text", "number", "select", "range", "textarea", "password"]
+    type: Literal["text", "number", "select", "range", "textarea", "password", "switch"]
     value: Any
     min: float
     max: float
@@ -82,6 +88,7 @@ class SettingsField(TypedDict, total=False):
 
 
 class SettingsSection(TypedDict, total=False):
+    id: str
     title: str
     description: str
     fields: list[SettingsField]
@@ -99,7 +106,6 @@ _settings: Settings | None = None
 
 def convert_out(settings: Settings) -> SettingsOutput:
     from models import ModelProvider
-
 
     # main model section
     chat_model_fields: list[SettingsField] = []
@@ -200,6 +206,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     )
 
     chat_model_section: SettingsSection = {
+        "id": "chat_model",
         "title": "Chat Model",
         "description": "Selection and settings for main chat model used by Agent Zero",
         "fields": chat_model_fields,
@@ -239,7 +246,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "value": settings["util_model_temperature"],
         }
     )
-    
+
     # util_model_fields.append(
     #     {
     #         "id": "util_model_ctx_length",
@@ -303,6 +310,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     )
 
     util_model_section: SettingsSection = {
+        "id": "util_model",
         "title": "Utility model",
         "description": "Smaller, cheaper, faster model for handling utility tasks like organizing memory, preparing prompts, summarizing.",
         "fields": util_model_fields,
@@ -329,7 +337,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "value": settings["embed_model_name"],
         }
     )
-    
+
     embed_model_fields.append(
         {
             "id": "embed_model_rl_requests",
@@ -361,10 +369,92 @@ def convert_out(settings: Settings) -> SettingsOutput:
     )
 
     embed_model_section: SettingsSection = {
+        "id": "embed_model",
         "title": "Embedding Model",
         "description": "Settings for the embedding model used by Agent Zero.",
         "fields": embed_model_fields,
     }
+
+    # embedding model section
+    browser_model_fields: list[SettingsField] = []
+    browser_model_fields.append(
+        {
+            "id": "browser_model_provider",
+            "title": "Web Browser model provider",
+            "description": "Select provider for web browser model used by <a href='https://github.com/browser-use/browser-use' target='_blank'>browser-use</a> framework",
+            "type": "select",
+            "value": settings["browser_model_provider"],
+            "options": [{"value": p.name, "label": p.value} for p in ModelProvider],
+        }
+    )
+    browser_model_fields.append(
+        {
+            "id": "browser_model_name",
+            "title": "Web Browser model name",
+            "description": "Exact name of model from selected provider",
+            "type": "text",
+            "value": settings["browser_model_name"],
+        }
+    )
+
+    browser_model_fields.append(
+        {
+            "id": "browser_model_vision",
+            "title": "Use Vision",
+            "description": "Models capable of Vision can use it to analyze web pages from screenshots. Increases quality but also token usage.",
+            "type": "switch",
+            "value": settings["browser_model_vision"],
+        }
+    )
+
+    browser_model_fields.append(
+        {
+            "id": "browser_model_temperature",
+            "title": "Web Browser model temperature",
+            "description": "Determines the randomness of generated responses. 0 is deterministic, 1 is random",
+            "type": "range",
+            "min": 0,
+            "max": 1,
+            "step": 0.01,
+            "value": settings["browser_model_temperature"],
+        }
+    )
+
+    browser_model_fields.append(
+        {
+            "id": "browser_model_kwargs",
+            "title": "Web Browser model additional parameters",
+            "description": "Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.",
+            "type": "textarea",
+            "value": _dict_to_env(settings["browser_model_kwargs"]),
+        }
+    )
+
+    browser_model_section: SettingsSection = {
+        "id": "browser_model",
+        "title": "Web Browser Model",
+        "description": "Settings for the web browser model. Agent Zero uses <a href='https://github.com/browser-use/browser-use' target='_blank'>browser-use</a> agentic framework to handle web interactions.",
+        "fields": browser_model_fields,
+    }
+
+    # # Memory settings section
+    # memory_fields: list[SettingsField] = []
+    # memory_fields.append(
+    #     {
+    #         "id": "memory_settings",
+    #         "title": "Memory Settings",
+    #         "description": "<settings for memory>",
+    #         "type": "text",
+    #         "value": "",
+    #     }
+    # )
+
+    # memory_section: SettingsSection = {
+    #     "id": "memory",
+    #     "title": "Memory Settings",
+    #     "description": "<settings for memory management here>",
+    #     "fields": memory_fields,
+    # }
 
     # basic auth section
     auth_fields: list[SettingsField] = []
@@ -405,6 +495,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         )
 
     auth_section: SettingsSection = {
+        "id": "auth",
         "title": "Authentication",
         "description": "Settings for authentication to use Agent Zero Web UI.",
         "fields": auth_fields,
@@ -419,6 +510,9 @@ def convert_out(settings: Settings) -> SettingsOutput:
     api_keys_fields.append(_get_api_key_field(settings, "groq", "Groq API Key"))
     api_keys_fields.append(_get_api_key_field(settings, "google", "Google API Key"))
     api_keys_fields.append(
+        _get_api_key_field(settings, "deepseek", "DeepSeek API Key")
+    )
+    api_keys_fields.append(
         _get_api_key_field(settings, "openrouter", "OpenRouter API Key")
     )
     api_keys_fields.append(
@@ -432,6 +526,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     )
 
     api_keys_section: SettingsSection = {
+        "id": "api_keys",
         "title": "API Keys",
         "description": "API keys for model providers and services used by Agent Zero.",
         "fields": api_keys_fields,
@@ -470,7 +565,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     agent_fields.append(
         {
-            "id": "agent_knowledge_subdirs",
+            "id": "agent_knowledge_subdir",
             "title": "Knowledge subdirectory",
             "description": "Subdirectory of /knowledge folder to use for agent knowledge import. 'default' subfolder is always imported and contains framework knowledge.",
             "type": "select",
@@ -483,6 +578,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     )
 
     agent_section: SettingsSection = {
+        "id": "agent",
         "title": "Agent Config",
         "description": "Agent parameters.",
         "fields": agent_fields,
@@ -547,6 +643,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         )
 
     dev_section: SettingsSection = {
+        "id": "dev",
         "title": "Development",
         "description": "Parameters for A0 framework development. RFCs (remote function calls) are used to call functions on another A0 instance. You can develop and debug A0 natively on your local system while redirecting some functions to A0 instance in docker. This is crucial for development as A0 needs to run in standardized environment to support all features.",
         "fields": dev_fields,
@@ -617,6 +714,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     )
 
     stt_section: SettingsSection = {
+        "id": "stt",
         "title": "Speech to Text",
         "description": "Voice transcription preferences and server turn detection settings.",
         "fields": stt_fields,
@@ -629,6 +727,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
             chat_model_section,
             util_model_section,
             embed_model_section,
+            browser_model_section,
+            # memory_section,
             stt_section,
             api_keys_section,
             auth_section,
@@ -690,7 +790,7 @@ def normalize_settings(settings: Settings) -> Settings:
             try:
                 copy[key] = type(value)(copy[key])  # type: ignore
             except (ValueError, TypeError):
-                copy[key] = value # make default instead
+                copy[key] = value  # make default instead
     return copy
 
 
@@ -774,7 +874,7 @@ def get_default_settings() -> Settings:
 
     return Settings(
         chat_model_provider=ModelProvider.OPENAI.name,
-        chat_model_name="gpt-4o-mini",
+        chat_model_name="gpt-4o",
         chat_model_temperature=0.0,
         chat_model_kwargs={},
         chat_model_ctx_length=120000,
@@ -796,6 +896,11 @@ def get_default_settings() -> Settings:
         embed_model_kwargs={},
         embed_model_rl_requests=0,
         embed_model_rl_input=0,
+        browser_model_provider=ModelProvider.OPENAI.name,
+        browser_model_name="gpt-4o",
+        browser_model_vision=False,
+        browser_model_temperature=0.0,
+        browser_model_kwargs={},
         api_keys={},
         auth_login="",
         auth_password="",
@@ -831,7 +936,7 @@ def _apply_settings():
                 agent = agent.get_data(agent.DATA_NAME_SUBORDINATE)
 
         # reload whisper model if necessary
-        task = defer.DeferredTask(whisper.preload, _settings["stt_model_size"])
+        task = defer.DeferredTask().start_task(whisper.preload, _settings["stt_model_size"]) #TODO overkill, replace with background task
 
 
 def _env_to_dict(data: str):

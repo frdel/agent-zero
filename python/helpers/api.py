@@ -1,6 +1,8 @@
 from abc import abstractmethod
 import json
 import threading
+from typing import Union, TypedDict, Dict, Any
+from attr import dataclass
 from flask import Request, Response, jsonify, Flask
 from agent import AgentContext
 from initialize import initialize
@@ -9,6 +11,8 @@ from python.helpers.errors import format_error
 from werkzeug.serving import make_server
 
 
+Input = dict
+Output = Union[Dict[str, Any], Response, TypedDict]
 
 
 class ApiHandler:
@@ -17,7 +21,7 @@ class ApiHandler:
         self.thread_lock = thread_lock
 
     @abstractmethod
-    async def process(self, input: dict, request: Request) -> dict | Response:
+    async def process(self, input: Input, request: Request) -> Output:
         pass
 
     async def handle_request(self, request: Request) -> Response:
@@ -31,20 +35,20 @@ class ApiHandler:
             # process via handler
             output = await self.process(input, request)
 
-            # return output based on type            
+            # return output based on type
             if isinstance(output, Response):
                 return output
             else:
                 response_json = json.dumps(output)
-                return Response(response=response_json, status=200, mimetype="application/json")
+                return Response(
+                    response=response_json, status=200, mimetype="application/json"
+                )
 
             # return exceptions with 500
         except Exception as e:
             error = format_error(e)
             PrintStyle.error(error)
             return Response(response=error, status=500, mimetype="text/plain")
-
-        
 
     # get context to run agent zero in
     def get_context(self, ctxid: str):

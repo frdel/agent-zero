@@ -1,33 +1,13 @@
 #!/bin/bash
 
-# Paths
-SOURCE_DIR="/git/agent-zero"
-TARGET_DIR="/a0"
-
-
-function setup_venv() {
-    . "/ins/setup_venv.sh" "$@"
-}
-
-function clone_repo() {
-    # Copy repository files if run_ui.py is missing in /a0 (if the volume is mounted)
-    if [ ! -f "$TARGET_DIR/run_ui.py" ]; then
-        echo "Copying files from $SOURCE_DIR to $TARGET_DIR..."
-        cp -rn --no-preserve=ownership,mode "$SOURCE_DIR/." "$TARGET_DIR"
-    fi
-}
-
-# setup and preload A0
-setup_venv
-clone_repo
-python /a0/prepare.py --dockerized=true
-python /a0/preload.py --dockerized=true
-
 # Loop to restart the Python script when it finishes
 while true; do
 
-    setup_venv
-    clone_repo
+    . "/ins/setup_venv.sh" "$@"
+    . "/ins/copy_A0.sh" "$@"
+
+    python /a0/prepare.py --dockerized=true
+    python /a0/preload.py --dockerized=true
 
     echo "Starting A0..."
     python /a0/run_ui.py \

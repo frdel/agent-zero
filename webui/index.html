@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>Agent Zero</title>
+    <link rel="icon" type="image/svg+xml" href="public/favicon.svg">
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="css/toast.css">
     <link rel="stylesheet" href="css/settings.css">
@@ -222,17 +223,10 @@
                 
                 handleFileUpload(event) {
                     const files = event.target.files;
-                    //if (files.length + this.attachments.length > 4) {
-                    //    alert('Maximum 4 attachments allowed');
-                    //    return;
-                    //}
     
                     Array.from(files).forEach(file => {
                         const ext = file.name.split('.').pop().toLowerCase();
-                        const allowedExts = new Set(['jpg', 'jpeg', 'png', 'bmp', 'md', 'py', 'js', 'sh', 
-                                                    'html', 'css', 'pdf', 'txt', 'csv', 'json']);
-                        
-                        //if (allowedExts.has(ext)) {
+                       
                             const isImage = ['jpg', 'jpeg', 'png', 'bmp'].includes(ext);
                             
                             if (isImage) {
@@ -259,7 +253,6 @@
                                 });
                                 this.hasAttachments = true;
                             }
-                        //}
                     });
                 }
             }">
@@ -295,9 +288,7 @@
                                     d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z" />
                             </svg>
                         </label>
-                        <input type="file" id="file-input"
-                            accept=".png, .jpg, .jpeg, .txt, .pdf, .csv, .html, .json, .md, .py, .js, .sh, .css"
-                            multiple style="display: none" @change="handleFileUpload($event)">
+                        <input type="file" id="file-input" accept="*" multiple style="display: none" @change="handleFileUpload($event)">
 
                         <div x-show="showTooltip" class="tooltip">
                             Add attachments to the message
@@ -438,7 +429,7 @@
                                     <template x-for="(section, index) in settings.sections" :key="section.title">
                                         <li>
                                             <a :href="'#section' + (index + 1)">
-                                                <img :src="'/public/' + getIconName(section.title) + '.svg'"
+                                                <img :src="'/public/' + section.id +'.svg'"
                                                     :alt="section.title">
                                                 <span x-text="section.title"></span>
                                             </a>
@@ -450,13 +441,13 @@
                         <template x-for="(section, sectionIndex) in settings.sections" :key="sectionIndex">
                             <div :id="'section' + (sectionIndex + 1)" class="section">
                                 <div class="section-title" x-text="section.title"></div>
-                                <div class="section-description" x-text="section.description"></div>
+                                <div class="section-description" x-html="section.description"></div>
 
                                 <template x-for="(field, fieldIndex) in section.fields" :key="fieldIndex">
                                     <div :class="{'field': true, 'field-full': field.type === 'textarea'}">
                                         <div class="field-label">
                                             <div class="field-title" x-text="field.title"></div>
-                                            <div class="field-description" x-text="field.description"></div>
+                                            <div class="field-description" x-html="field.description || ''"></div>
                                         </div>
 
                                         <div class="field-control">
@@ -665,6 +656,7 @@
                         </div>
                     </div>
                 </div>
+            </div>
         </template>
     </div>
 
@@ -700,9 +692,46 @@
                 <div class="modal-container full-screen-input-modal">
                     <div class="modal-content">
                         <button class="modal-close" @click="handleClose()">&times;</button>
+                        
+                        <!-- Add toolbar -->
+                        <div class="editor-toolbar">
+                            <div class="toolbar-group">
+                                <button class="toolbar-button" @click="undo()" :disabled="!canUndo" title="Undo (Ctrl+Z)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 7v6h6"></path>
+                                        <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path>
+                                    </svg>
+                                </button>
+                                <button class="toolbar-button" @click="redo()" :disabled="!canRedo" title="Redo (Ctrl+Shift+Z)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 7v6h-6"></path>
+                                        <path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="toolbar-group">
+                                <button class="toolbar-button" @click="clearText()" title="Clear Text">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
+                                </button>
+                                <button class="toolbar-button" @click="toggleWrap()" :class="{ active: wordWrap }" title="Toggle Word Wrap">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 6h18M3 12h15l3 3-3 3M3 18h18"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
                         <textarea id="full-screen-input" x-model="inputText" 
                             placeholder="Type your message here..." 
-                            @keydown.ctrl.enter="handleClose()"></textarea>
+                            @keydown.ctrl.enter="handleClose()"
+                            @keydown.ctrl.z.prevent="undo()"
+                            @keydown.ctrl.shift.z.prevent="redo()"
+                            :style="{ 'white-space': wordWrap ? 'pre-wrap' : 'pre' }"
+                            @input="updateHistory()"></textarea>
                     </div>
                     <div class="modal-footer">
                         <div id="buttons-container">
@@ -712,6 +741,23 @@
                 </div>
             </div>
         </template>
+    </div>
+
+    <!-- Drag and Drop Overlay -->
+    <div id="dragdrop-overlay" 
+         x-cloak
+         x-data="{ isVisible: false }" 
+         x-show="isVisible"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="dragdrop-overlay">
+        <img src="public/dragndrop.svg" alt="Drop files" class="dragdrop-icon">
+        <div class="dragdrop-text">Drop files to attach them to your message</div>
+        <div class="dragdrop-subtext"></div>
     </div>
 
 </body>

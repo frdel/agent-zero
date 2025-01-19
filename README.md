@@ -4,7 +4,8 @@
 
 # `Agent Zero`
 
-[![Join our Skool Community](https://img.shields.io/badge/Skool-Join%20our%20Community-4A90E2?style=for-the-badge&logo=skool&logoColor=white)](https://www.skool.com/agent-zero) [![Join our Discord](https://img.shields.io/badge/Discord-Join%20our%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/B8KZKNsPpj) [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@AgentZeroFW) [![Connect on LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/jan-tomasek/) [![Follow on X.com](https://img.shields.io/badge/X.com-Follow-1DA1F2?style=for-the-badge&logo=x&logoColor=white)](https://x.com/JanTomasekDev)
+[![Thanks to Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-Thanks%20to%20Sponsors-FF69B4?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/frdel) [![Join our Skool Community](https://img.shields.io/badge/Skool-Join%20our%20Community-4A90E2?style=for-the-badge&logo=skool&logoColor=white)](https://www.skool.com/agent-zero) [![Join our Discord](https://img.shields.io/badge/Discord-Join%20our%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/B8KZKNsPpj) [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@AgentZeroFW) [![Connect on LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/jan-tomasek/) [![Follow on X.com](https://img.shields.io/badge/X.com-Follow-1DA1F2?style=for-the-badge&logo=x&logoColor=white)](https://x.com/JanTomasekDev)
+
 
 [Installation](./docs/installation.md) •
 [How to update](./docs/installation.md#how-to-update-agent-zero) •
@@ -12,6 +13,10 @@
 [Usage](./docs/usage.md)
 
 </div>
+
+> [!NOTE]
+> **🎉 v0.8.1 Release**: Now featuring a browser agent capable of using Chromium for web interactions! This enables Agent Zero to browse the web, gather information, and interact with web content autonomously.
+
 
 https://github.com/user-attachments/assets/c168759d-57d8-4b43-b62a-1026afcf52e6
 
@@ -119,19 +124,10 @@ docker run -p 50001:80 frdel/agent-zero-run
 
 - With proper instruction, Agent Zero is capable of many things, even potentially dangerous actions concerning your computer, data, or accounts. Always run Agent Zero in an isolated environment (like Docker) and be careful what you wish for.
 
-2. **Agent Zero Is Not Pre-programmed; It Is Prompt-based.**
+2. **Agent Zero Is Prompt-based.**
 
-- The whole framework contains only a minimal amount of code and does not guide the agent in any way. Everything lies in the system prompt located in the **prompts/** folder.
+- The whole framework is guided by the **prompts/** folder. Agent guidelines, tool instructions, messages, utility AI functions, it's all there.
 
-3. **If You Cannot Provide the Ideal Environment, Let Your Agent Know.**
-
-- Agent Zero is made to be used in an isolated virtual environment (for safety) with some tools preinstalled and configured.
-
-### 📌 Known Problems
-
-1. The system prompt may need improvements; contributions are welcome!
-2. The agent may inadvertently alter its operating environment; cleaning up the `work_dir` often fixes this.
-3. Agents might loop in multi-agentic interactions, leading to unexpected behaviors.
 
 ## 📚 Read the Documentation
 
@@ -147,14 +143,18 @@ docker run -p 50001:80 frdel/agent-zero-run
 
 ### Coming soon
 
-- **User Interaction Refinements**
-- **Browser Use and RAG Tools**
+- **Knowledge and RAG Tools**
+- **Planning and Scheduling**
 
 > [!IMPORTANT]
 >
 >**Changes to frdel/agent-zero Docker image since v0.7:**
 >
 > The new Docker image `frdel/agent-zero-run` provides the new unified environment.
+
+### v0.8.1
+- **Browser Agent**
+- **UX Improvements**
 
 ### v0.8
 

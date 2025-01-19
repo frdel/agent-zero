@@ -1,10 +1,11 @@
-from python.helpers.api import ApiHandler
-from flask import Request, Response
+from python.helpers.api import ApiHandler, Input, Output, Request, Response
+
 
 from python.helpers import persist_chat
 
+
 class Reset(ApiHandler):
-    async def process(self, input: dict, request: Request) -> dict | Response:
+    async def process(self, input: Input, request: Request) -> Output:
         ctxid = input.get("context", "")
 
         # context instance - get or create

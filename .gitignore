@@ -4,6 +4,9 @@
 **/__pycache__/
 **/.conda/
 
+# ignore test files in root dir
+/*.test.py
+
 # Ignore git internal files (for bundler)
 .git/
 
