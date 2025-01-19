@@ -1,13 +1,14 @@
 import asyncio
 import json
 import time
-from agent import Agent
+from agent import Agent, InterventionException
 
 import models
 from python.helpers.tool import Tool, Response
 from python.helpers import dirty_json, files, rfc_exchange, defer, strings, persist_chat
 from python.helpers.print_style import PrintStyle
 from python.helpers.browser_use import browser_use
+from python.extensions.message_loop_start._10_iteration_no import get_iter_no
 from pydantic import BaseModel
 import uuid
 
@@ -24,6 +25,8 @@ class State:
         self.task = None
         self.use_agent = None
         self.browser = None
+        self.iter_no = 0
+
 
     def __del__(self):
         self.kill_task()
@@ -41,6 +44,9 @@ class State:
 
         # Await the coroutine to get the browser context
         self.context = await self.browser.new_context()
+
+        # override async methods to create hooks
+        self.override_hooks()
 
         # Add init script to the context - this will be applied to all new pages
         await self.context._initialize_session()
@@ -68,6 +74,7 @@ class State:
             self.context = None
             self.use_agent = None
             self.browser = None
+            self.iter_no = 0
 
     async def _run_task(self, task: str):
 
@@ -117,8 +124,33 @@ class State:
             system_prompt_class=CustomSystemPrompt,
             controller=controller,
         )
+
+        self.iter_no = get_iter_no(self.agent)
+
+        # orig_err_hnd = self.use_agent._handle_step_error
+        # def new_err_hnd(*args, **kwargs):
+        #     if isinstance(args[0], InterventionException):
+        #         raise args[0]
+        #     return orig_err_hnd(*args, **kwargs)
+        # self.use_agent._handle_step_error = new_err_hnd
+
         result = await self.use_agent.run()
         return result
+
+    def override_hooks(self):
+        # override async function to create a hook
+        def override_hook(func):
+            async def wrapper(*args, **kwargs):
+                await self.agent.wait_if_paused()
+                if self.iter_no != get_iter_no(self.agent):
+                    raise InterventionException("Task cancelled")
+                return await func(*args, **kwargs)
+            return wrapper
+
+        if self.context:
+            self.context.get_state = override_hook(self.context.get_state)
+            self.context.get_session = override_hook(self.context.get_session)
+            self.context.remove_highlights = override_hook(self.context.remove_highlights)
 
     async def get_page(self):
         if self.use_agent:
@@ -150,8 +182,11 @@ class BrowserAgent(Tool):
         # collect result
         result = await task.result()
         answer = result.final_result()
-        answer_data = dirty_json.DirtyJson.parse_string(answer)
-        answer_text = strings.dict_to_text(answer_data)  # type: ignore
+        try:
+            answer_data = dirty_json.DirtyJson.parse_string(answer)
+            answer_text = strings.dict_to_text(answer_data)  # type: ignore
+        except Exception as e:
+            answer_text = answer
         self.log.update(answer=answer_text)
         return Response(message=answer, break_loop=False)
 

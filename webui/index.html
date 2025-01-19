@@ -457,7 +457,7 @@
                                     <div :class="{'field': true, 'field-full': field.type === 'textarea'}">
                                         <div class="field-label">
                                             <div class="field-title" x-text="field.title"></div>
-                                            <div class="field-description" x-html="field.description"></div>
+                                            <div class="field-description" x-html="field.description || ''"></div>
                                         </div>
 
                                         <div class="field-control">
