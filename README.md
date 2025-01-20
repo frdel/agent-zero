@@ -14,6 +14,8 @@
 
 </div>
 
+[![Browser Agent](/docs/res/081_vid.png)](https://youtu.be/quv145buW74)
+
 > [!NOTE]
 > **🎉 v0.8.1 Release**: Now featuring a browser agent capable of using Chromium for web interactions! This enables Agent Zero to browse the web, gather information, and interact with web content autonomously.
 

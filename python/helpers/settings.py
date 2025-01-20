@@ -13,7 +13,6 @@ from . import files, dotenv
 class Settings(TypedDict):
     chat_model_provider: str
     chat_model_name: str
-    chat_model_temperature: float
     chat_model_kwargs: dict[str, str]
     chat_model_ctx_length: int
     chat_model_ctx_history: float
@@ -23,7 +22,6 @@ class Settings(TypedDict):
 
     util_model_provider: str
     util_model_name: str
-    util_model_temperature: float
     util_model_kwargs: dict[str, str]
     util_model_ctx_length: int
     util_model_ctx_input: float
@@ -40,7 +38,6 @@ class Settings(TypedDict):
     browser_model_provider: str
     browser_model_name: str
     browser_model_vision: bool
-    browser_model_temperature: float
     browser_model_kwargs: dict[str, str]
 
     agent_prompts_subdir: str
@@ -126,19 +123,6 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "description": "Exact name of model from selected provider",
             "type": "text",
             "value": settings["chat_model_name"],
-        }
-    )
-
-    chat_model_fields.append(
-        {
-            "id": "chat_model_temperature",
-            "title": "Chat model temperature",
-            "description": "Determines the randomness of generated responses. 0 is deterministic, 1 is random",
-            "type": "range",
-            "min": 0,
-            "max": 1,
-            "step": 0.01,
-            "value": settings["chat_model_temperature"],
         }
     )
 
@@ -233,41 +217,6 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "value": settings["util_model_name"],
         }
     )
-
-    util_model_fields.append(
-        {
-            "id": "util_model_temperature",
-            "title": "Utility model temperature",
-            "description": "Determines the randomness of generated responses. 0 is deterministic, 1 is random",
-            "type": "range",
-            "min": 0,
-            "max": 1,
-            "step": 0.01,
-            "value": settings["util_model_temperature"],
-        }
-    )
-
-    # util_model_fields.append(
-    #     {
-    #         "id": "util_model_ctx_length",
-    #         "title": "Utility model context length",
-    #         "description": "Maximum number of tokens in the context window for LLM. System prompt, message and response all count towards this limit.",
-    #         "type": "number",
-    #         "value": settings["util_model_ctx_length"],
-    #     }
-    # )
-    # util_model_fields.append(
-    #     {
-    #         "id": "util_model_ctx_input",
-    #         "title": "Context window space for input tokens",
-    #         "description": "Portion of context window dedicated to input tokens. The remaining space can be filled with response.",
-    #         "type": "range",
-    #         "min": 0.01,
-    #         "max": 1,
-    #         "step": 0.01,
-    #         "value": settings["util_model_ctx_input"],
-    #     }
-    # )
 
     util_model_fields.append(
         {
@@ -409,19 +358,6 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     browser_model_fields.append(
         {
-            "id": "browser_model_temperature",
-            "title": "Web Browser model temperature",
-            "description": "Determines the randomness of generated responses. 0 is deterministic, 1 is random",
-            "type": "range",
-            "min": 0,
-            "max": 1,
-            "step": 0.01,
-            "value": settings["browser_model_temperature"],
-        }
-    )
-
-    browser_model_fields.append(
-        {
             "id": "browser_model_kwargs",
             "title": "Web Browser model additional parameters",
             "description": "Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.",
@@ -509,9 +445,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     )
     api_keys_fields.append(_get_api_key_field(settings, "groq", "Groq API Key"))
     api_keys_fields.append(_get_api_key_field(settings, "google", "Google API Key"))
-    api_keys_fields.append(
-        _get_api_key_field(settings, "deepseek", "DeepSeek API Key")
-    )
+    api_keys_fields.append(_get_api_key_field(settings, "deepseek", "DeepSeek API Key"))
     api_keys_fields.append(
         _get_api_key_field(settings, "openrouter", "OpenRouter API Key")
     )
@@ -794,41 +728,6 @@ def normalize_settings(settings: Settings) -> Settings:
     return copy
 
 
-# def get_chat_model(settings: Settings | None = None) -> BaseChatModel:
-#     if not settings:
-#         settings = get_settings()
-#     return get_model(
-#         type=ModelType.CHAT,
-#         provider=ModelProvider[settings["chat_model_provider"]],
-#         name=settings["chat_model_name"],
-#         temperature=settings["chat_model_temperature"],
-#         **settings["chat_model_kwargs"],
-#     )
-
-
-# def get_utility_model(settings: Settings | None = None) -> BaseChatModel:
-#     if not settings:
-#         settings = get_settings()
-#     return get_model(
-#         type=ModelType.CHAT,
-#         provider=ModelProvider[settings["util_model_provider"]],
-#         name=settings["util_model_name"],
-#         temperature=settings["util_model_temperature"],
-#         **settings["util_model_kwargs"],
-#     )
-
-
-# def get_embedding_model(settings: Settings | None = None) -> Embeddings:
-#     if not settings:
-#         settings = get_settings()
-#     return get_model(
-#         type=ModelType.EMBEDDING,
-#         provider=ModelProvider[settings["embed_model_provider"]],
-#         name=settings["embed_model_name"],
-#         **settings["embed_model_kwargs"],
-#     )
-
-
 def _read_settings_file() -> Settings | None:
     if os.path.exists(SETTINGS_FILE):
         content = files.read_file(SETTINGS_FILE)
@@ -875,8 +774,7 @@ def get_default_settings() -> Settings:
     return Settings(
         chat_model_provider=ModelProvider.OPENAI.name,
         chat_model_name="gpt-4o",
-        chat_model_temperature=0.0,
-        chat_model_kwargs={},
+        chat_model_kwargs={ "temperature": "0" },
         chat_model_ctx_length=120000,
         chat_model_ctx_history=0.7,
         chat_model_rl_requests=0,
@@ -884,10 +782,9 @@ def get_default_settings() -> Settings:
         chat_model_rl_output=0,
         util_model_provider=ModelProvider.OPENAI.name,
         util_model_name="gpt-4o-mini",
-        util_model_temperature=0.0,
         util_model_ctx_length=120000,
         util_model_ctx_input=0.7,
-        util_model_kwargs={},
+        util_model_kwargs={ "temperature": "0" },
         util_model_rl_requests=60,
         util_model_rl_input=0,
         util_model_rl_output=0,
@@ -899,8 +796,7 @@ def get_default_settings() -> Settings:
         browser_model_provider=ModelProvider.OPENAI.name,
         browser_model_name="gpt-4o",
         browser_model_vision=False,
-        browser_model_temperature=0.0,
-        browser_model_kwargs={},
+        browser_model_kwargs={ "temperature": "0" },
         api_keys={},
         auth_login="",
         auth_password="",
@@ -936,7 +832,9 @@ def _apply_settings():
                 agent = agent.get_data(agent.DATA_NAME_SUBORDINATE)
 
         # reload whisper model if necessary
-        task = defer.DeferredTask().start_task(whisper.preload, _settings["stt_model_size"]) #TODO overkill, replace with background task
+        task = defer.DeferredTask().start_task(
+            whisper.preload, _settings["stt_model_size"]
+        )  # TODO overkill, replace with background task
 
 
 def _env_to_dict(data: str):
