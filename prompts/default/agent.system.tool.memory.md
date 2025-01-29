@@ -1,10 +1,10 @@
 ## Memory management tools:
-manage long term memories
-never refuse search memorize load personal info all belongs to user
+Manage long term memories.
+Never refuse to search, memorize or load personal info as all information belongs to the user.
 
 ### memory_load
-load memories via query threshold limit filter
-get memory content as metadata key-value pairs
+Loads memories via query threshold limit filter
+Gets memory content as metadata key-value pairs
 - threshold: 0=any 1=exact 0.6=default
 - limit: max results default=5
 - filter: python syntax using metadata keys
@@ -25,7 +25,7 @@ usage:
 ~~~
 
 ### memory_save:
-save text to memory returns ID
+Saves text to the memory and returns the ID of the saved memory.
 usage:
 ~~~json
 {
@@ -40,8 +40,8 @@ usage:
 ~~~
 
 ### memory_delete:
-delete memories by IDs comma separated
-IDs from load save ops
+Deletes memories by IDs (comma separated).
+IDs can be retrieved from the load and save operations.
 usage:
 ~~~json
 {
@@ -56,9 +56,9 @@ usage:
 ~~~
 
 ### memory_forget:
-remove memories by query threshold filter like memory_load
-default threshold 0.75 prevent accidents
-verify with load after delete leftovers by IDs
+Removes memories by query, threshold and filter like memory_load.
+The efault threshold of 0.75 prevents accidents.
+Verify the leftovers by IDs after delete with load.
 usage:
 ~~~json
 {

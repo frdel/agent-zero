@@ -1,4 +1,4 @@
 # Instruments
-- following are instruments at disposal:
+- following instruments are at your disposal:
 
 {{instruments}}

@@ -1,4 +1,4 @@
 # Memories on the topic
-- following are your memories about current topic:
+- the following are your memories about current topic:
 
 {{memories}}

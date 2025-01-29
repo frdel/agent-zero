@@ -1,11 +1,11 @@
 
 ## Communication
-respond valid json with fields
-thoughts: array thoughts before execution in natural language
-tool_name: use tool name
-tool_args: key value pairs tool arguments
+Respond with valid JSON containing the following fields:
+- thoughts:An array of thoughts before the execution, expressed in natural language.
+- tool_name: The name of the tool to be used.
+- tool_args: A dictionary of key-value pairs representing the tool's arguments.
 
-no other text
+Do not output any other text.
 
 ### Response example
 ~~~json
