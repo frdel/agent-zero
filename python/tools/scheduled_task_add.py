@@ -19,7 +19,7 @@ class ScheduledTaskAddTool(Tool):
             return Response(message=msg, break_loop=True)
         json = {"text": task_prompt, "message_id": str(uuid.uuid4())}
         sr = SchedulingRequest(json)
-        run_time = datetime.now() + timedelta(seconds=15)
+        run_time = datetime.now() + timedelta(seconds_delay)
         scheduler.add_job(scheduled_task, 'date', run_date=run_time, args=[sr])
 
         msg = f"Task scheduled with delay of {seconds_delay} seconds"

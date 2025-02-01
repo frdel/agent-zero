@@ -6,11 +6,16 @@ from python.api.message_async import MessageAsync, Message
 from flask import Request
 from run_ui import app, lock
 
-# Create a single instance of BackgroundScheduler
+# Create a single instance
 scheduler = AsyncIOScheduler()
-# TODO: configure scheduler for persistence and other settings
-scheduler.start()  # Start the scheduler immediately
 
+# TODO: configure scheduler for persistence and other settings
+
+def start_scheduler():
+    if not scheduler.running:
+        scheduler.start()
+
+start_scheduler()
 
 class SchedulingRequest(Request):
 
