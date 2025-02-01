@@ -41,4 +41,4 @@ class ScheduledTaskListTool(Tool):
             "tool.scheduled_task.list_tool_response.md",
             scheduled_tasks=tasks_info
         )
-        return Response(message=msg, break_loop=True)
+        return Response(message=msg, break_loop=False)

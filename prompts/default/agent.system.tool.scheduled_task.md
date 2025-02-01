@@ -35,3 +35,20 @@ usage:
     "tool_args": { }
 }
 ~~~
+
+### scheduled_task_remove
+Removes a scheduled task from the system.
+task_id: The ID of the task to be removed. (The unique identifier for the task)
+
+usage:
+~~~json
+{
+    "thoughts": [
+        "Let's remove a scheduled task..",
+    ],
+    "tool_name": "scheduled_task_remove",
+    "tool_args": {
+        "task_id": 1234567890
+    }
+}
+~~~

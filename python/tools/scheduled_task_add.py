@@ -24,4 +24,4 @@ class ScheduledTaskAddTool(Tool):
 
         msg = f"Task scheduled with delay of {seconds_delay} seconds"
 
-        return Response(message=msg, break_loop=True)
+        return Response(message=msg, break_loop=False)
