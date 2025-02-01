@@ -17,7 +17,7 @@ class ScheduledTaskAddTool(Tool):
         if not task_prompt:
             msg = "No task prompt to schedule provided - please provide a task to schedule"
             return Response(message=msg, break_loop=True)
-        json = {"text": task_prompt, "message_id": uuid.uuid4()}
+        json = {"text": task_prompt, "message_id": str(uuid.uuid4())}
         sr = SchedulingRequest(json)
         run_time = datetime.now() + timedelta(seconds=15)
         scheduler.add_job(scheduled_task, 'date', run_date=run_time, args=[sr])
