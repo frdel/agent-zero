@@ -488,12 +488,12 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "id": "agent_memory_subdir",
             "title": "Memory Subdirectory",
             "description": "Subdirectory of /memory folder to use for agent memory storage. Used to separate memory storage between different instances.",
-            "type": "select",
+            "type": "text",
             "value": settings["agent_memory_subdir"],
-            "options": [
-                {"value": subdir, "label": subdir}
-                for subdir in files.get_subdirectories("memory", exclude="embeddings")
-            ],
+            # "options": [
+            #     {"value": subdir, "label": subdir}
+            #     for subdir in files.get_subdirectories("memory", exclude="embeddings")
+            # ],
         }
     )
 

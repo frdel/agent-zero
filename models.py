@@ -316,12 +316,8 @@ def get_deepseek_chat(
             dotenv.get_dotenv_value("DEEPSEEK_BASE_URL") or "https://api.deepseek.com"
         )
     
-    model = ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
-    # little hack for reasoning model's problem with temperature
-    if not "temperature" in kwargs:
-        model.temperature = None # type: ignore
-    return model
-
+    return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
+    
 # OpenRouter models
 def get_openrouter_chat(
     model_name: str,
