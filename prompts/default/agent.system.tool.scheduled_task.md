@@ -4,7 +4,7 @@ Schedule tasks for later execution.
 
 ### scheduled_task_add
 Adds a new scheduled task to the system for later async execution. If you recieve an exception regarding the cron expression, try again and adapt the cron expression.
-- `task_prompt`: The instructions for you needed for executing the task. Do not mention the time of execution.
+- `task_prompt`: The instructions for you needed for executing the task. Do not mention the time of execution. Emphasize that the task should be done now and not be scheduled.
 - `trigger_type`: Either "date" for one-time execution or "cron" for recurring execution (default: "date")
 - `seconds_delay`: The delay in seconds before the task is executed (required when trigger_type="date")
 - `cron_expression`: A valid cron expression consisting of minute, hour, day of month, month and day of week. A '*' can be used for a unit of time if you want to execute it every time. E.g. every minute: use '*' for the unit minute. (required when trigger_type="cron")
@@ -18,7 +18,7 @@ usage:
     ],
     "tool_name": "scheduled_task_add",
     "tool_args": {
-        "task_prompt": "Execute this task once",
+        "task_prompt": "Do .. now",
         "seconds_delay": 300,
         "trigger_type": "date"
     },
@@ -34,7 +34,7 @@ Alternatively:
     ],
     "tool_name": "scheduled_task_add",
     "tool_args": {
-        "task_prompt": "Execute this task daily",
+        "task_prompt": "Do .. now.",
         "cron_expression": "0 8 * * *",
         "trigger_type": "cron"
     },
