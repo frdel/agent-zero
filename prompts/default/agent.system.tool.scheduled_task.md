@@ -4,10 +4,11 @@ Schedule tasks for later execution.
 
 ### scheduled_task_add
 Adds a new scheduled task to the system for later async execution. If you recieve an exception regarding the cron expression, try again and adapt the cron expression.
-- `task_prompt`: The prompt for the task to execute later. (What shall be done later?)
+- `task_prompt`: The instructions for you needed for executing the task. Do not mention the time of execution.
 - `trigger_type`: Either "date" for one-time execution or "cron" for recurring execution (default: "date")
 - `seconds_delay`: The delay in seconds before the task is executed (required when trigger_type="date")
-- `cron_expression`: A valid cron expression consisting of minute, hour, day of month, month and day of week (required when trigger_type="cron")
+- `cron_expression`: A valid cron expression consisting of minute, hour, day of month, month and day of week. A '*' can be used for a unit of time if you want to execute it every time. E.g. every minute: use '*' for the unit minute. (required when trigger_type="cron")
+- `new_chat`: A boolean indicating whether to create a new chat for the scheduled task on the UI. (default: False)
 
 usage:
 ~~~json
@@ -20,7 +21,8 @@ usage:
         "task_prompt": "Execute this task once",
         "seconds_delay": 300,
         "trigger_type": "date"
-    }
+    },
+    "new_chat": false
 }
 ~~~
 
@@ -35,7 +37,8 @@ Alternatively:
         "task_prompt": "Execute this task daily",
         "cron_expression": "0 8 * * *",
         "trigger_type": "cron"
-    }
+    },
+    "new_chat": false
 }
 ~~~
 
