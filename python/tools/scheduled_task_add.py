@@ -34,6 +34,12 @@ class ScheduledTaskAddTool(Tool):
             if not cron_expression:
                 msg = "Cron expression is required when using 'cron' trigger type"
                 return Response(message=msg, break_loop=True)
+            
+            # from_crontab does not support seconds
+            cron_args = cron_expression.split(' ')
+            if(len(cron_args) > 5):
+                print("Cron expression has more than 5 parts. Removing trailing parts")
+                cron_expression = ' '.join(cron_args[:5])
 
             try:
                 # Validate cron expression
