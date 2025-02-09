@@ -11,11 +11,14 @@ scheduler = AsyncIOScheduler()
 
 # TODO: configure scheduler for persistence and other settings
 
+
 def start_scheduler():
     if not scheduler.running:
         scheduler.start()
 
+
 start_scheduler()
+
 
 class SchedulingRequest(Request):
 
@@ -39,6 +42,5 @@ class SchedulingRequest(Request):
 async def scheduled_task(request: SchedulingRequest):
     print("Executing scheduled task")
     async_message = Message(app, lock)
-    print("Scheduled task executed")
     result = await async_message.handle_request(request)
-    print("result: ", result)
+    print("Scheduled task executed")
