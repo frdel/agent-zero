@@ -11,16 +11,13 @@
 [Documentation](./docs/README.md) •
 [Usage](./docs/usage.md)
 
-<div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
-  <img src="./docs/res/web_screenshot.jpg" alt="Web Interface" width="100"/>
-  <p>
-  <a href="https://agent-zero.ai">www.agent-zero.ai</a><br>
-  Visit the web for more information</p>
 </div>
 
-<br/>
 
-</div>
+See [www.agent-zero.ai](https://agent-zero.ai) for more info
+
+[![Browser Agent](/docs/res/web_screenshot.jpg)](https://agent-zero.ai)
+
 
 [![Browser Agent](/docs/res/081_vid.png)](https://youtu.be/quv145buW74)
 
