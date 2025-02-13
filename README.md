@@ -6,11 +6,19 @@
 
 [![Thanks to Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-Thanks%20to%20Sponsors-FF69B4?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/frdel) [![Join our Skool Community](https://img.shields.io/badge/Skool-Join%20our%20Community-4A90E2?style=for-the-badge&logo=skool&logoColor=white)](https://www.skool.com/agent-zero) [![Join our Discord](https://img.shields.io/badge/Discord-Join%20our%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/B8KZKNsPpj) [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@AgentZeroFW) [![Connect on LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/jan-tomasek/) [![Follow on X.com](https://img.shields.io/badge/X.com-Follow-1DA1F2?style=for-the-badge&logo=x&logoColor=white)](https://x.com/JanTomasekDev)
 
-
 [Installation](./docs/installation.md) •
 [How to update](./docs/installation.md#how-to-update-agent-zero) •
 [Documentation](./docs/README.md) •
 [Usage](./docs/usage.md)
+
+<div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+  <img src="./docs/res/web_screenshot.jpg" alt="Web Interface" width="100"/>
+  <p>
+  <a href="https://agent-zero.ai">www.agent-zero.ai</a><br>
+  Visit the web for more information</p>
+</div>
+
+<br/>
 
 </div>
 
