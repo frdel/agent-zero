@@ -1,6 +1,6 @@
 ansio==0.0.1
 beautifulsoup4==4.12.3
-browser-use==0.1.17
+browser-use==0.1.37
 docker==7.1.0
 duckduckgo-search==6.1.12
 faiss-cpu==1.8.0.post1
@@ -8,14 +8,14 @@ flask[async]==3.0.3
 flask-basicauth==0.2.0
 GitPython==3.1.43
 inputimeout==1.0.4
-langchain-anthropic==0.3.1
+langchain-anthropic==0.3.3
 langchain-community==0.3.13
-langchain-google-genai==2.0.7
+langchain-google-genai==2.0.8
 langchain-groq==0.2.2
 langchain-huggingface==0.1.2
 langchain-mistralai==0.2.4
 langchain-ollama==0.2.2
-langchain-openai==0.3.4
+langchain-openai==0.3.1
 openai-whisper==20240930
 lxml_html_clean==0.3.1
 markdown==3.7
