@@ -20,7 +20,7 @@ let context = "";
 let connectionStatus = false
 
 
-// Initialize the toggle button 
+// Initialize the toggle button
 setupSidebarToggle();
 
 function isMobile() {
@@ -149,7 +149,7 @@ export async function sendMessage() {
             //     } else {
             //         toast("Undefined error.", "error");
             //     }
-            // } 
+            // }
             else {
                 setContext(jsonResponse.context);
             }
@@ -460,7 +460,11 @@ window.killChat = async function (id) {
             else setContext(generateGUID())
         }
 
-        if (found) sendJsonData("/chat_remove", { context: id });
+        if (found) {
+            // Delete the chat and its name
+            await sendJsonData("/chat_remove", { context: id });
+            // The backend will handle removing the chat name
+        }
 
         updateAfterScroll()
 
@@ -625,7 +629,7 @@ window.loadChats = async function () {
         //     } else {
         //         toast("Undefined error.", "error")
         //     }
-        // } 
+        // }
         else {
             setContext(response.ctxids[0])
             toast("Chats loaded.", "success")
@@ -905,7 +909,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dragDropOverlay.addEventListener('drop', (e) => {
         dragCounter = 0;
         Alpine.$data(dragDropOverlay).isVisible = false;
-        
+
         const inputAD = Alpine.$data(inputSection);
         const files = e.dataTransfer.files;
         handleFiles(files, inputAD);
@@ -916,9 +920,9 @@ document.addEventListener('DOMContentLoaded', () => {
 function handleFiles(files, inputAD) {
     Array.from(files).forEach(file => {
         const ext = file.name.split('.').pop().toLowerCase();
-       
+
             const isImage = ['jpg', 'jpeg', 'png', 'bmp'].includes(ext);
-            
+
             if (isImage) {
                 const reader = new FileReader();
                 reader.onload = e => {
@@ -941,7 +945,7 @@ function handleFiles(files, inputAD) {
                 });
                 inputAD.hasAttachments = true;
             }
-        
+
     });
 }
 
@@ -951,3 +955,77 @@ window.handleFileUpload = function(event) {
     const inputAD = Alpine.$data(inputSection);
     handleFiles(files, inputAD);
 }
+
+// Add these functions to handle chat renaming
+
+window.editChatName = function(id, event) {
+    // Get the name element
+    const nameElement = event?.target || document.querySelector(`.chat-name[data-chat-id="${id}"]`);
+    if (!nameElement) return;
+
+    // Set a flag to indicate we're editing
+    nameElement.setAttribute('data-editing', 'true');
+
+    // Create input element
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'chat-name-edit';
+    input.value = nameElement.textContent;
+
+    // Replace text with input
+    nameElement.textContent = '';
+    nameElement.appendChild(input);
+    input.focus();
+
+    // Handle save on enter or cancel on escape
+    input.addEventListener('keydown', async function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const newName = input.value.trim();
+            if (newName && newName !== nameElement.textContent) {
+                try {
+                    const response = await sendJsonData("/chat_rename", {
+                        chat_id: id,
+                        name: newName
+                    });
+
+                    if (response) {
+                        const chatsAD = Alpine.$data(chatsSection);
+                        const chat = chatsAD.contexts.find(c => c.id === id);
+                        if (chat) {
+                            chat.name = newName;
+                            chatsAD.contexts = [...chatsAD.contexts];
+                        }
+                        toast("Chat renamed successfully", "success");
+                    }
+                } catch (e) {
+                    toastFetchError("Error renaming chat", e);
+                }
+            }
+            nameElement.textContent = input.value;
+            nameElement.removeAttribute('data-editing');
+        } else if (e.key === 'Escape') {
+            nameElement.textContent = input.defaultValue;
+            nameElement.removeAttribute('data-editing');
+        }
+    });
+
+    // Handle save on blur
+    input.addEventListener('blur', function() {
+        // Small delay to allow for Enter key processing
+        setTimeout(() => {
+            if (nameElement.getAttribute('data-editing') === 'true') {
+                nameElement.textContent = input.value || input.defaultValue;
+                nameElement.removeAttribute('data-editing');
+            }
+        }, 100);
+    });
+
+    // Stop click event from bubbling to prevent chat selection
+    input.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+};
+
+// Remove the old renameChat function since we're using editChatName now
+window.renameChat = editChatName;

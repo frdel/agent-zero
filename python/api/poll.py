@@ -2,6 +2,7 @@ from python.helpers.api import ApiHandler
 from flask import Request, Response
 
 from agent import AgentContext
+from python.api.chat_rename import ChatNames
 
 class Poll(ApiHandler):
     async def process(self, input: dict, request: Request) -> dict | Response:
@@ -10,16 +11,26 @@ class Poll(ApiHandler):
 
         # context instance - get or create
         context = self.get_context(ctxid)
-
         logs = context.log.output(start=from_no)
 
-        # loop AgentContext._contexts
+        # Get chat names instance
+        chat_names = ChatNames.get_instance()
+
+        # loop AgentContext._contexts and number unnamed chats
         ctxs = []
+        chat_count = 1
         for ctx in AgentContext._contexts.values():
+            name = chat_names.get_name(ctx.id)
+            # If it's a default name (Chat #xxxxx), replace with sequential number
+            if name.startswith("Chat #"):
+                name = f"Chat {chat_count}"
+            chat_count += 1
+
             ctxs.append(
                 {
                     "id": ctx.id,
                     "no": ctx.no,
+                    "name": name,
                     "log_guid": ctx.log.guid,
                     "log_version": len(ctx.log.updates),
                     "log_length": len(ctx.log.logs),
