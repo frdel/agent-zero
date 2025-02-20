@@ -1178,7 +1178,7 @@ pre {
 }
 
 .text-button:active {
- opacity: 0.5; 
+ opacity: 0.5;
 }
 
 .text-button svg {
@@ -1588,7 +1588,7 @@ input:checked + .slider:before {
     display: table;
     gap: 0.1rem !important;
   }
-  
+
   .text-button {
     max-height: 25px;
   }
@@ -1603,7 +1603,7 @@ input:checked + .slider:before {
   margin-left: var(--spacing-md);
   margin-bottom: var(--spacing-md);
   }
-  
+
   .msg-kvps {
     display: flex;
     flex-direction: column;
@@ -1669,7 +1669,7 @@ input:checked + .slider:before {
   .sidebar-overlay.visible {
     display: block;
   }
-}  
+}
 
 @media (max-width: 768px) {
   #left-panel {
@@ -1699,15 +1699,15 @@ input:checked + .slider:before {
     -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
   }
-  
+
   #right-panel.expanded #logo-container {
     margin-left: 4.6rem;
   }
-  
+
   #input-section {
     align-items: start;
   }
-  
+
   .text-buttons-row {
     width: 90%;
     display: flex;
@@ -1786,7 +1786,7 @@ input:checked + .slider:before {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  
+
   #chats-section {
     min-height: 100%;
   }
@@ -2095,4 +2095,55 @@ a:active {
 /* Alpine cloak to prevent FOUC */
 [x-cloak] {
     display: none !important;
+}
+
+/* Add to the existing .chat-actions class or create it */
+.chat-actions {
+    display: flex;
+    gap: 4px;
+}
+
+/* Update the existing edit-button class */
+.edit-button {
+    background-color: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 0.1875rem;
+    color: var(--color-primary);
+    cursor: pointer;
+    padding: 0.125rem 0.5rem;
+    transition: all var(--transition-speed) ease-in-out;
+}
+
+.edit-button:hover {
+    border-color: var(--color-primary);
+    background-color: #32455690;
+}
+
+.chat-name {
+    cursor: text;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.chat-name:hover {
+    background-color: var(--color-secondary);
+}
+
+.chat-name-edit {
+    background: var(--color-input);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin: -3px -5px;
+    width: calc(100% - 50px);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: inherit;
+}
+
+.chat-name-edit:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: var(--color-input-focus);
 }
