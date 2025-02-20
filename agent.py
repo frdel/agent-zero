@@ -18,6 +18,9 @@ from langchain_core.embeddings import Embeddings
 import python.helpers.log as Log
 from python.helpers.dirty_json import DirtyJson
 from python.helpers.defer import DeferredTask
+from python.helpers import settings
+from python.helpers.settings import Settings
+from models import ModelProvider
 from typing import Callable
 
 
@@ -152,6 +155,7 @@ class ModelConfig:
     limit_input: int = 0
     limit_output: int = 0
     vision: bool = False
+    reasoning: bool = False
     kwargs: dict = field(default_factory=dict)
 
 
@@ -242,7 +246,10 @@ class Agent:
         self.history = history.History(self)
         self.last_user_message: history.Message | None = None
         self.intervention: UserMessage | None = None
-        self.data = {}  # free data object all the tools can use
+        self.data = {
+            "chat_model_reasoning_tokens": 0,
+            "chat_model_reasoning_effort": "none",
+        }  # free data object all the tools can use
 
     async def monologue(self):
         while True:
@@ -429,10 +436,10 @@ class Agent:
         prompt = files.remove_code_fences(prompt)
         return prompt
 
-    def get_data(self, field: str):
+    def get_data(self, field: str) -> Any:
         return self.data.get(field, None)
 
-    def set_data(self, field: str, value):
+    def set_data(self, field: str, value: Any):
         self.data[field] = value
 
     def hist_add_message(self, ai: bool, content: history.MessageContent):
@@ -491,13 +498,33 @@ class Agent:
         return self.history.output_text(human_label="user", ai_label="assistant")
 
     def get_chat_model(self):
-        return models.get_model(
-            models.ModelType.CHAT,
-            self.config.chat_model.provider,
-            self.config.chat_model.name,
-            **self.config.chat_model.kwargs,
+        reasoning_tokens = self.get_data("chat_model_reasoning_tokens") or 0
+        reasoning_effort = self.get_data("chat_model_reasoning_effort") or "none"
+        PrintStyle(font_color="blue", padding=True).print(
+            f"DEBUG: get_chat_model: reasoning_tokens: {reasoning_tokens}, reasoning_effort: {reasoning_effort}"
         )
+        set: Settings = settings.get_settings()
+        chat_model_ctx_length = int(set["chat_model_ctx_length"])
+        chat_model_ctx_output = int((1.0 - float(set["chat_model_ctx_history"])) * chat_model_ctx_length)
 
+        # native reasoning only supported for these 3 for now
+        if self.config.chat_model.provider in [ModelProvider.ANTHROPIC, ModelProvider.OPENAI, ModelProvider.OPENROUTER]:
+            return models.get_model(
+                models.ModelType.CHAT,
+                self.config.chat_model.provider,
+                self.config.chat_model.name,
+                max_tokens = chat_model_ctx_output,
+                chat_model_reasoning_tokens = reasoning_tokens,
+                chat_model_reasoning_effort = reasoning_effort,
+                **self.config.chat_model.kwargs,
+            )
+        else:
+            return models.get_model(
+                models.ModelType.CHAT,
+                self.config.chat_model.provider,
+                self.config.chat_model.name,
+                **self.config.chat_model.kwargs,
+            )
     def get_utility_model(self):
         return models.get_model(
             models.ModelType.CHAT,
@@ -554,7 +581,7 @@ class Agent:
     ):
         response = ""
 
-        # model class
+        # model class - the inner functions handle the reasoning tokens and effort
         model = self.get_chat_model()
 
         # rate limiter
@@ -569,6 +596,11 @@ class Agent:
 
             if callback:
                 await callback(content, response)
+
+        # reset reasoning config until next call to reasoning_tool
+        # these were set by reasoning_tool.execute()
+        self.set_data("chat_model_reasoning_tokens", 0)
+        self.set_data("chat_model_reasoning_effort", "none")
 
         return response
 

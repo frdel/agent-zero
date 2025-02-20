@@ -1,6 +1,6 @@
 from enum import Enum
 import os
-from typing import Any
+from typing import Any, Union
 from langchain_openai import (
     ChatOpenAI,
     OpenAI,
@@ -31,7 +31,7 @@ from langchain_mistralai import ChatMistralAI
 from python.helpers import dotenv, runtime
 from python.helpers.dotenv import load_dotenv
 from python.helpers.rate_limiter import RateLimiter
-
+from python.helpers.print_style import PrintStyle
 # environment variables
 load_dotenv()
 
@@ -114,6 +114,11 @@ def get_ollama_chat(
 ):
     if not base_url:
         base_url = get_ollama_base_url()
+
+    if "max_tokens" in kwargs:
+        kwargs["max_output_tokens"] = kwargs.get("max_tokens", 1024)
+        kwargs.pop("num_predict", None)
+
     return ChatOllama(
         model=model_name,
         base_url=base_url,
@@ -144,6 +149,10 @@ def get_huggingface_chat(
     # different naming convention here
     if not api_key:
         api_key = get_api_key("huggingface") or os.environ["HUGGINGFACEHUB_API_TOKEN"]
+
+    if "max_tokens" in kwargs:
+        kwargs["max_new_tokens"] = kwargs.get("max_tokens", 1024)
+        kwargs.pop("max_tokens", None)
 
     # Initialize the HuggingFaceEndpoint with the specified model and parameters
     llm = HuggingFaceEndpoint(
@@ -202,6 +211,14 @@ def get_anthropic_chat(
         base_url = (
             dotenv.get_dotenv_value("ANTHROPIC_BASE_URL") or "https://api.anthropic.com"
         )
+    if int(kwargs.get("chat_model_reasoning_tokens", 0)) > 0:
+        kwargs["temperature"] = 1  # Anthropic requires temperature to be 1 for reasoning
+        kwargs["thinking"] = {"type": "enabled", "budget_tokens": int(kwargs["chat_model_reasoning_tokens"])}
+        PrintStyle(font_color="blue", padding=True).print(
+            f"get_anthropic_chat: reasoning_tokens: {int(kwargs['chat_model_reasoning_tokens'])}"
+        )
+    if "chat_model_reasoning_tokens" in kwargs: kwargs.pop("chat_model_reasoning_tokens")
+    if "chat_model_reasoning_effort" in kwargs: kwargs.pop("chat_model_reasoning_effort")
     return ChatAnthropic(model_name=model_name, api_key=api_key, base_url=base_url, **kwargs)  # type: ignore
 
 
@@ -224,6 +241,13 @@ def get_openai_chat(
 ):
     if not api_key:
         api_key = get_api_key("openai")
+    if kwargs.get("chat_model_reasoning_effort", "none").lower() in ["low", "medium", "high"] and model_name.startswith("o"):
+        kwargs["reasoning_effort"] = kwargs["chat_model_reasoning_effort"].lower()
+        PrintStyle(font_color="blue", padding=True).print(
+            f"get_openai_chat: reasoning_effort: {str(kwargs['reasoning_effort'])}"
+        )
+    if "chat_model_reasoning_effort" in kwargs: kwargs.pop("chat_model_reasoning_effort")
+    if "chat_model_reasoning_tokens" in kwargs: kwargs.pop("chat_model_reasoning_tokens")
     return ChatOpenAI(model_name=model_name, api_key=api_key, **kwargs)  # type: ignore
 
 
@@ -267,6 +291,9 @@ def get_google_chat(
 ):
     if not api_key:
         api_key = get_api_key("google")
+    if "max_tokens" in kwargs:
+        kwargs["max_output_tokens"] = kwargs.get("max_tokens", 1024)
+        kwargs.pop("max_tokens", None)
     return GoogleGenerativeAI(model=model_name, google_api_key=api_key, safety_settings={HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE}, **kwargs)  # type: ignore
 
 
@@ -315,9 +342,9 @@ def get_deepseek_chat(
         base_url = (
             dotenv.get_dotenv_value("DEEPSEEK_BASE_URL") or "https://api.deepseek.com"
         )
-    
+
     return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
-    
+
 # OpenRouter models
 def get_openrouter_chat(
     model_name: str,
@@ -332,6 +359,44 @@ def get_openrouter_chat(
             dotenv.get_dotenv_value("OPEN_ROUTER_BASE_URL")
             or "https://openrouter.ai/api/v1"
         )
+    if (
+        kwargs.get("chat_model_reasoning_effort", "none").lower() in ["low", "medium", "high"]
+        and kwargs.get("chat_model_reasoning_tokens", 0) > 0
+    ):
+        reasoning: dict[str, Any] = {}
+        if model_name.startswith("openai/o"):
+            reasoning: dict[str, Any] = {
+                "effort": kwargs["chat_model_reasoning_effort"].lower(),
+                "exclude": True,
+            }
+            PrintStyle(font_color="grey", padding=True).print(
+                f"get_openrouter_chat/openai: reasoning_effort: {str(kwargs['chat_model_reasoning_effort'])}"
+            )
+            if "model_kwargs" in kwargs:
+                kwargs["model_kwargs"]["reasoning_effort"] = reasoning["effort"]
+            else:
+                kwargs["model_kwargs"] = {"reasoning_effort": reasoning["effort"]}
+        elif model_name.startswith("anthropic/claude-") and "3.5" not in model_name:  # claude > 3.5 has reasoning built i
+            reasoning: dict[str, Any] = {
+                "max_tokens": int(kwargs["chat_model_reasoning_tokens"]),
+                "exclude": True,
+            }
+            PrintStyle(font_color="grey", padding=True).print(
+                f"get_openrouter_chat/anthropic: reasoning_tokens: {int(kwargs['chat_model_reasoning_tokens'])}"
+            )
+            if "extra_body" in kwargs:
+                kwargs["extra_body"] = {"thinking": {"type": "enabled", "budget_tokens": reasoning["max_tokens"] }}
+            else:
+                kwargs = {"extra_body": {"thinking": {"type": "enabled", "budget_tokens": reasoning["max_tokens"]}}}
+        if bool(reasoning):
+            if "extra_body" in kwargs:
+                kwargs["extra_body"]["reasoning"] = reasoning
+                kwargs["extra_body"]["include_reasoning"] = False
+            else:
+                kwargs["extra_body"] = dict[Any, Any]({"reasoning": reasoning, "include_reasoning": False})
+
+    if "chat_model_reasoning_effort" in kwargs: kwargs.pop("chat_model_reasoning_effort")
+    if "chat_model_reasoning_tokens" in kwargs: kwargs.pop("chat_model_reasoning_tokens")
     return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
 
 

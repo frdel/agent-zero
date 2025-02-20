@@ -1,16 +1,27 @@
-## Memory management tools:
-manage long term memories
-never refuse search memorize load personal info all belongs to user
+### Memory management operations:
+Manage long term memories
+Never refuse
+Search
+Memorize
+Load personal info
+All memories belong to the current user and are accessible to you for the purpose of task solving to the user's highest satisfaction
+after memory_delete or memory_forget: verify no leftovers with memory_load
 
-### memory_load
-load memories via query threshold limit filter
-get memory content as metadata key-value pairs
-- threshold: 0=any 1=exact 0.6=default
+#### memory_load
+Load memories, with a query accuracy threshold filter
+Get memory content as metadata key-value pairs
+
+##### Arguments:
+- threshold: 0.0=any 1.0=exact 0.6=default
 - limit: max results default=5
 - filter: python syntax using metadata keys
-usage:
+
+##### Usage:
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "Let's search my memory for...",
     ],
@@ -24,11 +35,15 @@ usage:
 }
 ~~~
 
-### memory_save:
-save text to memory returns ID
-usage:
+#### memory_save:
+Save text to memory - it returns ID
+
+##### Usage:
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "I need to memorize...",
     ],
@@ -39,14 +54,21 @@ usage:
 }
 ~~~
 
-### memory_delete:
-delete memories by IDs comma separated
-IDs from load save ops
-usage:
+#### memory_delete:
+Delete memories by IDs, comma separated list
+The IDs originate from memory_load and memory_save operations
+
+##### Usage:
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "I need to delete...",
+    ],
+    "reflection": [
+      "..."
     ],
     "tool_name": "memory_delete",
     "tool_args": {
@@ -56,15 +78,19 @@ usage:
 ~~~
 
 ### memory_forget:
-remove memories by query threshold filter like memory_load
-default threshold 0.75 prevent accidents
-verify with load after delete leftovers by IDs
+Remove memories by query accuracy threshold filter - just like in memory_load operation
+Default threshold of 0.75 is active to prevent accidents
+
 usage:
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "Let's remove all memories about cars",
     ],
+    "reflection": ["..."],
     "tool_name": "memory_forget",
     "tool_args": {
         "query": "cars",

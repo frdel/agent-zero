@@ -1,15 +1,20 @@
 ### knowledge_tool:
-provide question arg get online and memory response
-powerful tool answers specific questions directly
-ask for result first not guidance
-memory gives guidance online gives current info
-verify memory with online
-**Example usage**:
+Provide question as "question" argument
+Helps you get combined current online search results and memory contents matching question
+Powerful tool answers specific questions directly
+Ask for specific results - not guidance
+Verify consistency between memory contents and online results, update memory if necessary with help of memory management tools
+
+#### Usage:
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "...",
     ],
+    "reflection": ["..."],
     "tool_name": "knowledge_tool",
     "tool_args": {
         "question": "How to...",

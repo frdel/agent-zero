@@ -6,8 +6,8 @@ You must return a single summary of all records
 
 # Expected output
 Your output will be a text of the summary
-Length of the text should be one paragraph, approximately 100 words
+Length of the text should be concise - preferably single paragraph if possible
 No intro
 No conclusion
 No formatting
-Only the summary text is returned
+IMPORTANT: You may ONLY return the summary text, nothing else, no formatting

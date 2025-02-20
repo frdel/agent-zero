@@ -486,7 +486,7 @@ function drawKvps(container, kvps, latex) {
     for (let [key, value] of Object.entries(kvps)) {
       const row = table.insertRow();
       row.classList.add("kvps-row");
-      if (key === "thoughts" || key === "reflection")
+      if (key === "observations" || key === "thoughts" || key === "reflection")
         row.classList.add("msg-thoughts");
 
       const th = row.insertCell();

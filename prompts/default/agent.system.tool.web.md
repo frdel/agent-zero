@@ -1,14 +1,20 @@
 ### webpage_content_tool:
-get webpage text content news wiki etc
-use url arg for main text
-gather online content
-provide full valid url with http:// or https://
+Get webpage text content, for example news, wiki etc
+Use url argument for address of the page
+Gather online content
+Provide full valid url with http:// or https:// in the url argument
 
-**Example usage**:
+#### Usage
 ```json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "...",
+    ],
+    "reflection": [
+      "..."
     ],
     "tool_name": "webpage_content_tool",
     "tool_args": {

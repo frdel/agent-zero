@@ -8,6 +8,7 @@ once page is opened use browser_do tool to interact.
 ```json
 {
   "thoughts": ["I need to send..."],
+  "reflection": ["When sending, I need to check if the form is valid..."],
   "tool_name": "browser_open",
   "tool_args": {
     "url": "https://www.example.com"
@@ -30,9 +31,24 @@ only use selectors mentioned in last browser response
 do not repeat same steps if do not work! find ways around problems
 ```json
 {
+  "observations": [
+    "This website is a login page.",
+    "The filter button is at the top right corner of the page.",
+    "The filter button is a button with the text 'Filter'.",
+    "The filter button has a data-uid attribute of '12l'.",
+    "The username input field has a data-uid attribute of '14vs'.",
+    "The password input field has a data-uid attribute of '14vs'.",
+    "The remember me checkbox has a data-uid attribute of '19c'.",
+    "The submit button has a data-uid attribute of '65d'.",
+  ],
   "thoughts": [
     "Login required...",
     "I will fill username, password, click remember me and submit."
+  ],
+  "reflection": [
+    "I need to fill the form with the correct username and password.",
+    "I need to click the remember me checkbox.",
+    "I need to click the submit button."
   ],
   "tool_name": "browser_do",
   "tool_args": {
@@ -53,9 +69,20 @@ do not repeat same steps if do not work! find ways around problems
 
 ```json
 {
+  "observations": [
+    "This website is a search page.",
+    "The search box has a data-uid attribute of '98d'.",
+    "The search box is a text input field with the placeholder 'Search...'.",
+    "The search box has a data-uid attribute of '98d'.",
+    "The search box is a text input field with the placeholder 'Search...'.",
+  ],
   "thoughts": [
     "Search for...",
     "I will fill search box and press Enter."
+  ],
+  "reflection": [
+    "I need to fill the search box with the correct search query.",
+    "I need to press Enter."
   ],
   "tool_name": "browser_do",
   "tool_args": {
@@ -72,8 +99,19 @@ do not repeat same steps if do not work! find ways around problems
 
 ```json
 {
+  "observations": [
+    "This website is a search page.",
+    "The search box has a data-uid attribute of '98d'.",
+    "The search box is a text input field with the placeholder 'Search...'.",
+    "The search box has a data-uid attribute of '98d'.",
+    "The search box is a text input field with the placeholder 'Search...'.",
+  ],
   "thoughts": [
     "Standard interaction not possible, I need to execute custom code..."
+  ],
+  "reflection": [
+    "I need to execute the custom code.",
+    "I need to execute the custom code."
   ],
   "tool_name": "browser_do",
   "tool_args": {
