@@ -1,2 +1,3 @@
 - Favor linux commands for simple tasks where possible instead of python
 - Enclose any math with $...$
+- Only schedule tasks if the user explicitly told you to do so
