@@ -18,6 +18,7 @@ apt-get update && apt-get upgrade -y && apt-get install -y \
     wget \
     git \
     ffmpeg \
+    nginx\
     supervisor \
     cron
 
@@ -42,6 +43,9 @@ echo "=====AFTER UPDATE====="
 #   python3 -m ensurepip --upgrade
 #   python3 -m pip install --upgrade pip
 # fi
+
+# Install npx for use by local MCP Servers
+npm i -g npx shx
 
 # Prepare SSH daemon
 bash /ins/setup_ssh.sh "$@"
