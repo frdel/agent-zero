@@ -1,6 +1,7 @@
 import asyncio
 from python.helpers.extension import Extension
 from python.helpers.memory import Memory
+import dirtyjson
 from python.helpers.dirty_json import DirtyJson
 from agent import LoopData
 from python.helpers.log import LogItem
@@ -25,7 +26,7 @@ class MemorizeSolutions(Extension):
         )
 
         #memorize in background
-        asyncio.create_task(self.memorize(loop_data, log_item))        
+        asyncio.create_task(self.memorize(loop_data, log_item))
 
     async def memorize(self, loop_data: LoopData, log_item: LogItem, **kwargs):
         # get system message and chat history for util llm
@@ -44,7 +45,10 @@ class MemorizeSolutions(Extension):
             background=True,
         )
 
-        solutions = DirtyJson.parse_string(solutions_json)
+        try:
+            solutions = dirtyjson.loads(solutions_json)
+        except Exception as e:
+            solutions = DirtyJson.parse_string(solutions_json)
 
         if not isinstance(solutions, list) or len(solutions) == 0:
             log_item.update(heading="No successful solutions to memorize.")
@@ -61,7 +65,7 @@ class MemorizeSolutions(Extension):
         rem = []
         for solution in solutions:
             # solution to plain text:
-            txt = f"# Problem\n {solution['problem']}\n# Solution\n {solution['solution']}"
+            txt = f"# Problem\n{solution['problem']}\n# Solution\n{solution['solution']}"
             solutions_txt += txt + "\n\n"
 
             # remove previous solutions too similiar to this one

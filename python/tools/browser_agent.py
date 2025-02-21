@@ -5,12 +5,14 @@ from agent import Agent, InterventionException
 
 import models
 from python.helpers.tool import Tool, Response
-from python.helpers import dirty_json, files, rfc_exchange, defer, strings, persist_chat
+from python.helpers import files, rfc_exchange, defer, strings, persist_chat
 from python.helpers.print_style import PrintStyle
 from python.helpers.browser_use import browser_use
 from python.extensions.message_loop_start._10_iteration_no import get_iter_no
 from pydantic import BaseModel
 import uuid
+import dirtyjson
+from python.helpers.dirty_json import DirtyJson
 
 
 class State:
@@ -183,10 +185,14 @@ class BrowserAgent(Tool):
         result = await task.result()
         answer = result.final_result()
         try:
-            answer_data = dirty_json.DirtyJson.parse_string(answer)
+            answer_data = dirtyjson.loads(answer)
             answer_text = strings.dict_to_text(answer_data)  # type: ignore
         except Exception as e:
-            answer_text = answer
+            try:
+                answer_data = DirtyJson.parse_string(answer)
+                answer_text = strings.dict_to_text(answer_data)  # type: ignore
+            except Exception as e:
+                answer_text = answer
         self.log.update(answer=answer_text)
         return Response(message=answer, break_loop=False)
 

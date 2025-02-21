@@ -1,6 +1,7 @@
 import asyncio
 from python.helpers.extension import Extension
 from python.helpers.memory import Memory
+import dirtyjson
 from python.helpers.dirty_json import DirtyJson
 from agent import LoopData
 from python.helpers.log import LogItem
@@ -45,7 +46,10 @@ class MemorizeMemories(Extension):
             background=True,
         )
 
-        memories = DirtyJson.parse_string(memories_json)
+        try:
+            memories = dirtyjson.loads(memories_json)
+        except Exception as e:
+            memories = DirtyJson.parse_string(memories_json)
 
         if not isinstance(memories, list) or len(memories) == 0:
             log_item.update(heading="No useful information to memorize.")
