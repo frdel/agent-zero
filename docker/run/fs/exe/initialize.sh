@@ -20,6 +20,9 @@ apt-get update > /dev/null 2>&1 &
 # Start SSH service in background
 /usr/sbin/sshd -D &
 
+# Start nginx server in background
+nginx -c /etc/nginx/nginx.conf &
+
 # Start searxng server in background
 su - searxng -c "bash /exe/run_searxng.sh \"$@\"" &
 

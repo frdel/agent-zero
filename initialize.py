@@ -53,6 +53,7 @@ def initialize():
         prompts_subdir=current_settings["agent_prompts_subdir"],
         memory_subdir=current_settings["agent_memory_subdir"],
         knowledge_subdirs=["default", current_settings["agent_knowledge_subdir"]],
+        mcp_servers=current_settings["mcp_servers"],
         code_exec_docker_enabled=False,
         # code_exec_docker_name = "A0-dev",
         # code_exec_docker_image = "frdel/agent-zero-run:development",
@@ -74,6 +75,23 @@ def initialize():
 
     # update config with runtime args
     args_override(config)
+
+    import python.helpers.mcp as mcp_helper
+    import agent as agent_helper
+    import python.helpers.print_style as print_style_helper
+    if not mcp_helper.MCPConfig.get_instance().is_initialized():
+        try:
+            mcp_helper.MCPConfig.update(config.mcp_servers)
+        except Exception as e:
+            if agent_helper.AgentContext.first():
+                (
+                    agent_helper.AgentContext.first().log
+                    .log(type="warning", content=f"Failed to update MCP settings: {e}", temp=False)
+                )
+            (
+                print_style_helper.PrintStyle(background_color="black", font_color="red", padding=True)
+                .print(f"Failed to update MCP settings: {e}")
+            )
 
     # return config object
     return config

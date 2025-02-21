@@ -1,16 +1,21 @@
 from datetime import datetime
+from typing import Any, Optional
 from python.helpers.extension import Extension
+from python.helpers.mcp import MCPConfig
 from agent import Agent, LoopData
 
 
 class SystemPrompt(Extension):
 
-    async def execute(self, system_prompt: list[str]=[], loop_data: LoopData = LoopData(), **kwargs):
+    async def execute(self, system_prompt: list[str] = [], loop_data: LoopData = LoopData(), **kwargs: Any):
         # append main system prompt and tools
         main = get_main_prompt(self.agent)
         tools = get_tools_prompt(self.agent)
+        mcp_tools = get_mcp_tools_prompt(self.agent)
+
         system_prompt.append(main)
         system_prompt.append(tools)
+        system_prompt.append(mcp_tools)
 
 
 def get_main_prompt(agent: Agent):
@@ -23,6 +28,9 @@ def get_tools_prompt(agent: Agent):
         prompt += '\n' + get_prompt("agent.system.tools_vision.md", agent)
     return prompt
 
+
+def get_mcp_tools_prompt(agent: Agent):
+    return MCPConfig.get_instance().get_tools_prompt()
 
 def get_prompt(file: str, agent: Agent):
     # variables for system prompts
