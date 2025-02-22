@@ -9,7 +9,6 @@ import models
 from python.helpers import runtime, whisper, defer
 from . import files, dotenv
 
-
 class Settings(TypedDict):
     chat_model_provider: str
     chat_model_name: str
@@ -488,12 +487,12 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "id": "agent_memory_subdir",
             "title": "Memory Subdirectory",
             "description": "Subdirectory of /memory folder to use for agent memory storage. Used to separate memory storage between different instances.",
-            "type": "text",
+            "type": "select",
             "value": settings["agent_memory_subdir"],
-            # "options": [
-            #     {"value": subdir, "label": subdir}
-            #     for subdir in files.get_subdirectories("memory", exclude="embeddings")
-            # ],
+            "options": [
+                {"value": subdir, "label": subdir}
+                for subdir in files.get_subdirectories("memory", exclude="embeddings")
+            ],
         }
     )
 
