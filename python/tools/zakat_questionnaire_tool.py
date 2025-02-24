@@ -65,17 +65,17 @@ class ZakatQuestionnaireHandler(Tool):
                 
                 if not filtered_assets:
                     return Response(
-                        message={
+                        message=str({
                             "status": "error",
                             "message": "কোন সম্পদের তথ্য প্রদান করা হয়নি।",
                             "current_question": 0
-                        },
+                        }),
                         break_loop=False
                     )
 
                 # Use Zakat calculator tool with collected answers
                 return Response(
-                    message={
+                    message=str({
                         "status": "complete",
                         "use_tool": "zakat_calculator_tool",
                         "tool_args": {
@@ -83,7 +83,7 @@ class ZakatQuestionnaireHandler(Tool):
                             "gold_price": answers.get("gold_price", "0"),
                             "currency": "BDT"
                         }
-                    },
+                    }),
                     break_loop=False
                 )
 
@@ -91,7 +91,7 @@ class ZakatQuestionnaireHandler(Tool):
             question = self.QUESTIONS[current_question]
             
             return Response(
-                message={
+                message=str({
                     "status": "question",
                     "question_id": question["id"],
                     "question_bn": question["bn"],
@@ -99,16 +99,16 @@ class ZakatQuestionnaireHandler(Tool):
                     "current_question": current_question,
                     "total_questions": len(self.QUESTIONS),
                     "answers_so_far": answers
-                },
+                }),
                 break_loop=False
             )
 
         except Exception as e:
             return Response(
-                message={
+                message=str({
                     "status": "error",
                     "message": f"ত্রুটি ঘটেছে: {str(e)}",
                     "current_question": current_question
-                },
+                }),
                 break_loop=False
             ) 
