@@ -21,7 +21,7 @@ Sends the final response to the user and concludes the task processing.
     "tool_name": "response",
     "tool_args": {
         "text": "Primary response message to the user",
-        "type": "text|audio|json",
+        "type": "text|audio",
         
         // Audio Response Schema (Required if type is audio)
         "data": {
