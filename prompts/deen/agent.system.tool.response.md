@@ -1,69 +1,57 @@
 ### response:
-Sends the final response to the user and concludes the task processing.
+Sends the final response to the user and concludes task processing.
 
 **Purpose:**
-- Provides the final answer to the user
-- Terminates the current task processing
-- Must only be used when task is complete or no task is active
+- Provides final answer to user
+- Concludes task processing
+- Use only when task complete
 
-**Response Types:**
+**Types:**
 1. Text Response (Default)
-2. Audio Response (If quran_audio_tool is used or text contains audio file path)
+2. Audio Response (For audio content)
 
-**Usage Example:**
+**Text Example:**
 ~~~json
 {
-    "thoughts": [
-        "...",
-    ],
+    "thoughts": ["..."],
     "tool_name": "response",
     "tool_args": {
-        "text": "Answer to the user",
-        "type": "text"
+        "text": "Entire response text",
+        "type": "text",
+        "online_sources": [
+            {
+                "source": "source name",
+                "url": "source url"
+            },
+        ]
     }
 }
 ~~~
 
-**Audio Response Example:**
+**Audio Example:**
 ~~~json
 {
-    "thoughts": [
-        "User requested Quran audio...",
-        "Preparing audio response with metadata..."
-    ],
+    "thoughts": ["Preparing audio..."],
     "tool_name": "response",
     "tool_args": {
-        "text": "description of the audio with url",
+        "text": "Audio description",
         "type": "audio",
         "data": {
-            "url": "absolute_path_or_url_to_audio",
+            "url": "audio_path",
             "metadata": {
-                "title": "Audio title",
-                "duration": "Duration in seconds",
-                "format": "mp3|wav|ogg",
-                "bitrate": "128kbps",
-                "language": "ISO 639-1 code",
-                "reciter": "Reciter name if applicable"
+                "title": "Title",
+                "format": "mp3",
+                "duration": "120",
+                "language": "ar"
             }
         }
     }
 }
 ~~~
 
-**Schema Requirements:**
-
-1. Text Response:
-- Required: text, type="text"
-- Optional: data=null
-
-2. Audio Response:
-- Required: text, type="audio", data (with url and metadata)
-- Metadata must include: title, format
-- Optional metadata: duration, bitrate, language, reciter
-
-**Important Notes:** 
-- Always specify response type explicitly
-- Include data object for audio responses
-- Use complete file paths for audio URLs
-- Include relevant thoughts explaining the response
-- Text field is always required regardless of type
+**Requirements:**
+- Text: Must have `text`, `type="text"` and optional `online_sources`
+- Text: Do not include any other keys or values
+- Audio: Requires `text`, `type="audio"`, `data` with `url` and `metadata`
+- Metadata: `title` and `format` required
+- Always include relevant thoughts

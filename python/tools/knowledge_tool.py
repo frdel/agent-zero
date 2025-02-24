@@ -1,4 +1,3 @@
-import os
 import asyncio
 from python.helpers import dotenv, memory, perplexity_search, duckduckgo_search
 from python.helpers.tool import Tool, Response
@@ -8,23 +7,18 @@ from python.helpers.searxng import search as searxng
 
 SEARCH_ENGINE_RESULTS = 10
 class Knowledge(Tool):
-    async def execute(self, question="", use_online=False, **kwargs):
-        tasks = [self.mem_search(question)]
-        
-        if use_online:
-            tasks.append(self.searxng_search(question))
-        
+    async def execute(self, question="", search_sites=[], **kwargs):
         # Run tasks concurrently
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        tasks = [
+            self.mem_search(question),
+            self.searxng_search(question, search_sites)
+        ]
         
-        if use_online:
-            memory_result, searxng_result = results
-            searxng_result = self.format_result_searxng(searxng_result, "Search Engine")
-        else:
-            memory_result = results[0]
-            searxng_result = ""
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        memory_result, searxng_result = results
         
         memory_result = self.format_result(memory_result, "Memory")
+        searxng_result = self.format_result_searxng(searxng_result, "Search Engine")
 
         msg = self.agent.read_prompt(
             "tool.knowledge.response.md",
@@ -54,8 +48,8 @@ class Knowledge(Tool):
     async def duckduckgo_search(self, question):
         return await asyncio.to_thread(duckduckgo_search.search, question)
 
-    async def searxng_search(self, question):
-        return await searxng(question)
+    async def searxng_search(self, question, search_sites):
+        return await searxng(question, search_sites)
 
     async def mem_search(self, question: str):
         db = await memory.Memory.get(self.agent)
