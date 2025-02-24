@@ -49,11 +49,12 @@ class Memory:
 
     @staticmethod
     async def get(agent: Agent):
+        ctxid = agent.context.id if hasattr(agent, 'context') else ""
         memory_subdir = agent.config.memory_subdir or "default"
-        if Memory.index.get(memory_subdir) is None:
+        if Memory.index.get(ctxid) is None:
             log_item = agent.context.log.log(
                 type="util",
-                heading=f"Initializing VectorDB in '/{memory_subdir}'",
+                heading=f"Initializing VectorDB for chat {ctxid}",
             )
             db = Memory.initialize(
                 log_item,
@@ -64,10 +65,11 @@ class Memory:
                     **agent.config.embeddings_model.kwargs,
                 ),
                 memory_subdir,
+                ctxid,
                 False,
             )
-            Memory.index[memory_subdir] = db
-            wrap = Memory(agent, db, memory_subdir=memory_subdir)
+            Memory.index[ctxid] = db
+            wrap = Memory(agent, db, memory_subdir=memory_subdir, ctxid=ctxid)
             if agent.config.knowledge_subdirs:
                 await wrap.preload_knowledge(
                     log_item, agent.config.knowledge_subdirs, memory_subdir
@@ -76,15 +78,16 @@ class Memory:
         else:
             return Memory(
                 agent=agent,
-                db=Memory.index[memory_subdir],
+                db=Memory.index[ctxid],
                 memory_subdir=memory_subdir,
+                ctxid=ctxid,
             )
 
     @staticmethod
     async def reload(agent: Agent):
-        memory_subdir = agent.config.memory_subdir or "default"
-        if Memory.index.get(memory_subdir):
-            del Memory.index[memory_subdir]
+        ctxid = agent.context.id if hasattr(agent, 'context') else ""
+        if Memory.index.get(ctxid):
+            del Memory.index[ctxid]
         return await Memory.get(agent)
 
     @staticmethod
@@ -92,6 +95,7 @@ class Memory:
         log_item: LogItem | None,
         embeddings_model: Embeddings,
         memory_subdir: str,
+        ctxid: str = "",
         in_memory=False,
     ) -> MyFaiss:
 
@@ -103,7 +107,7 @@ class Memory:
         em_dir = files.get_abs_path(
             "memory/embeddings"
         )  # just caching, no need to parameterize
-        db_dir = Memory._abs_db_dir(memory_subdir)
+        db_dir = Memory._abs_db_dir(memory_subdir, ctxid)
 
         # make sure embeddings and database directories exist
         os.makedirs(db_dir, exist_ok=True)
@@ -158,10 +162,12 @@ class Memory:
         agent: Agent,
         db: MyFaiss,
         memory_subdir: str,
+        ctxid: str = "",
     ):
         self.agent = agent
         self.db = db
         self.memory_subdir = memory_subdir
+        self.ctxid = ctxid
 
     async def preload_knowledge(
         self, log_item: LogItem | None, kn_dirs: list[str], memory_subdir: str
@@ -354,7 +360,11 @@ class Memory:
         return res
 
     @staticmethod
-    def _abs_db_dir(memory_subdir: str) -> str:
+    def _abs_db_dir(memory_subdir: str, ctxid: str = "") -> str:
+        # If context ID provided, use chat-specific subfolder
+        if ctxid:
+            return files.get_abs_path("memory", "chats", ctxid)
+        # Otherwise use system default
         return files.get_abs_path("memory", memory_subdir)
 
     @staticmethod
@@ -374,10 +384,15 @@ class Memory:
 
 
 def get_memory_subdir_abs(agent: Agent) -> str:
+    ctxid = agent.context.id if hasattr(agent, 'context') else ""
     return files.get_abs_path("memory", agent.config.memory_subdir or "default")
 
 
-def get_custom_knowledge_subdir_abs(agent: Agent) -> str:
+def get_custom_knowledge_subdir_abs(agent: Agent, ctxid: str = "") -> str:
+    # If context ID provided, use chat-specific knowledge folder
+    if ctxid:
+        return files.get_abs_path("knowledge", "chats", ctxid, "custom")
+    # Otherwise use configured knowledge subdir
     for dir in agent.config.knowledge_subdirs:
         if dir != "default":
             return files.get_abs_path("knowledge", dir)
