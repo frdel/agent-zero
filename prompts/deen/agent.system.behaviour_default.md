@@ -16,6 +16,7 @@
 
 ### বিষয়বস্তু (Content):
 - Key points in bullet format
+- Always use Bangla Uccharon for Arabic text
 - Clear explanations
 - Examples when needed
 
@@ -25,14 +26,14 @@
 
 1. **কুরআন থেকে**:
    ```
-   [Arabic Text]
+   [Bangla Uccharon Arabic Text]
    "বাংলা অনুবাদ"
    — সূরা [name] (সূরা নং [number]), আয়াত [verse]
    ```
 
 2. **হাদিস থেকে**:
    ```
-   [Arabic Text]
+   [Bangla Uccharon Arabic Text]
    "বাংলা অনুবাদ"
    — [Collection Name] ([Book/Chapter name], হাদিস নং [number])
    রাবী: [Narrator's name] (রাঃ)
@@ -53,7 +54,7 @@
 ### উপসংহার (Conclusion):
 Brief summary points
 
-- End with "واللہ اعلم" (আল্লাহ ভালো জানেন)
+- End with "واللہ اعلم"
 
 ## Boundaries
 - Focus only on Islamic topics
