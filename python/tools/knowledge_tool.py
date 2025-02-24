@@ -8,37 +8,31 @@ from python.helpers.searxng import search as searxng
 
 SEARCH_ENGINE_RESULTS = 10
 class Knowledge(Tool):
-    async def execute(self, question="", **kwargs):
-        # Create tasks for all three search methods
-        tasks = [
-            self.searxng_search(question),
-            # self.perplexity_search(question),
-            # self.duckduckgo_search(question),
-            self.mem_search(question),
-        ]
-
-        # Run all tasks concurrently
+    async def execute(self, question="", use_online=False, **kwargs):
+        tasks = [self.mem_search(question)]
+        
+        if use_online:
+            tasks.append(self.searxng_search(question))
+        
+        # Run tasks concurrently
         results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        # perplexity_result, duckduckgo_result, memory_result = results
-        searxng_result, memory_result = results
-
-        # Handle exceptions and format results
-        # perplexity_result = self.format_result(perplexity_result, "Perplexity")
-        # duckduckgo_result = self.format_result(duckduckgo_result, "DuckDuckGo")
-        searxng_result = self.format_result_searxng(searxng_result, "Search Engine")
+        
+        if use_online:
+            memory_result, searxng_result = results
+            searxng_result = self.format_result_searxng(searxng_result, "Search Engine")
+        else:
+            memory_result = results[0]
+            searxng_result = ""
+        
         memory_result = self.format_result(memory_result, "Memory")
 
         msg = self.agent.read_prompt(
             "tool.knowledge.response.md",
-            #   online_sources = ((perplexity_result + "\n\n") if perplexity_result else "") + str(duckduckgo_result),
             online_sources=((searxng_result + "\n\n") if searxng_result else ""),
             memory=memory_result,
         )
 
-        await self.agent.handle_intervention(
-            msg
-        )  # wait for intervention and handle it, if paused
+        await self.agent.handle_intervention(msg)
 
         return Response(message=msg, break_loop=False)
 
