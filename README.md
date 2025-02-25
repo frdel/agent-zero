@@ -14,7 +14,7 @@
 </div>
 
 
-[![Showcase](/docs/res/showcase-thumb.png)](https://youtu.be/7mKEeANy-AY)
+[![Showcase](/docs/res/showcase-thumb.png)](https://youtu.be/lazLNcEYsiQ)
 
 
 
