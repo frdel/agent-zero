@@ -8,6 +8,7 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
 from python.helpers.docker import DockerContainerManager
+import json
 
 
 @dataclass
@@ -73,10 +74,6 @@ class CodeExecution(Tool):
 
     def get_log_object(self):
         return self.agent.context.log.log(type="code_exe", heading=f"{self.agent.agent_name}: Using tool '{self.name}'", content="", kvps=self.args)
-
-
-    async def after_execution(self, response, **kwargs):
-        await self.agent.hist_add_tool_result(self.name, response.message)
 
     async def prepare_state(self, reset=False):
         self.state = self.agent.get_data("_cot_state")
@@ -190,3 +187,8 @@ class CodeExecution(Tool):
         response = self.agent.read_prompt("fw.code_reset.md")
         self.log.update(content=response)
         return response
+
+    async def after_execution(self, response: Response, **kwargs):
+        text = json.dumps(response.message) if isinstance(response.message, dict) else str(response.message).strip()
+        await self.agent.hist_add_tool_result(self.name, text)
+        ...
