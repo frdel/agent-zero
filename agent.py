@@ -1,7 +1,7 @@
 import asyncio
 from collections import OrderedDict
 from dataclasses import dataclass, field
-import time, importlib, inspect, os, json
+import time, importlib, inspect, os, json 
 import token
 from typing import Any, Awaitable, Coroutine, Optional, Dict, TypedDict
 import uuid
@@ -137,7 +137,8 @@ class AgentContext:
             response = await agent.monologue()
             superior = agent.data.get(Agent.DATA_NAME_SUPERIOR, None)
             if superior:
-                response = await self._process_chain(superior, response, False)
+                str_response = json.dumps(response) if isinstance(response, dict) else str(response)
+                response = await self._process_chain(superior, str_response, False)
             return response
         except Exception as e:
             agent.handle_critical_exception(e)

@@ -616,7 +616,7 @@ function escapeHTML(str) {
 }
 
 function convertPathsToLinks(str) {
-  function generateLinks(match,...args) {
+  function generateLinks(match, ...args) {
     const parts = match.split("/");
 
     if (!parts[0]) parts.shift();

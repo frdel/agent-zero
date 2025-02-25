@@ -97,4 +97,5 @@ class QuranAudioTool(Tool):
         )
 
     async def after_execution(self, response, **kwargs):
-        await self.agent.hist_add_tool_result(self.name, response.message)
+        tool_result = json.dumps(response.message) if isinstance(response.message, dict) else str(response.message)
+        await self.agent.hist_add_tool_result(self.name, tool_result)

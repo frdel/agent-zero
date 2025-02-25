@@ -7,7 +7,7 @@ Sends the final response to the user and concludes task processing.
 - Use only when task complete
 
 **Types:**
-1. Text Response (Default)
+1. Json Response (Default)
 2. Audio Response (For audio content)
 
 **Text Example:**
@@ -17,7 +17,7 @@ Sends the final response to the user and concludes task processing.
     "tool_name": "response",
     "tool_args": {
         "text": "Entire response text",
-        "type": "text",
+        "type": "json",
         "online_sources": [
             {
                 "source": "source name",
@@ -50,8 +50,8 @@ Sends the final response to the user and concludes task processing.
 ~~~
 
 **Requirements:**
-- Text: Must have `text`, `type="text"` and optional `online_sources`
-- Text: Do not include any other keys or values
+- Json: Must have `text`, `type="json"` and optional `online_sources`
+- Json: Do not include any other keys or values
 - Audio: Requires `text`, `type="audio"`, `data` with `url` and `metadata`
 - Metadata: `title` and `format` required
 - Always include relevant thoughts

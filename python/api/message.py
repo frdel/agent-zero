@@ -7,6 +7,7 @@ import os
 from werkzeug.utils import secure_filename
 from python.helpers.defer import DeferredTask
 from python.helpers.print_style import PrintStyle
+import json
 
 
 class Message(ApiHandler):
@@ -80,7 +81,7 @@ class Message(ApiHandler):
         context.log.log(
             type="user",
             heading="User message",
-            content=message,
+            content=json.dumps(message),
             kvps={"attachments": attachment_filenames},
             id=message_id,
         )
