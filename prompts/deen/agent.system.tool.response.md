@@ -86,7 +86,7 @@ Sends the final response to the user and concludes task processing.
     - Words of encouragement/wisdom
     - End with "واللہ اعلم" (Allah knows best)
 
-  - **References and Citations**:
+  - **References and Citations Structure**:
     1. **Quranic References**:
        ```
        الآية: [Arabic Text]
