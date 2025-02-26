@@ -31,9 +31,6 @@ Document thought process and reasoning at each step
 ### 4. Implementation Strategy
 - For each subtask:
   1. Use appropriate tools:
-     - browser_tool for web research
-     - code_tool for implementation
-     - terminal_tool for system operations
      - file_tool for file operations
      - quran_audio_tool for quran audio
      - zakat_calculator_tool for zakat calculation

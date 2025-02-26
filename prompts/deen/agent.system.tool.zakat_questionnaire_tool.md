@@ -7,6 +7,7 @@ Features:
 - Collects all necessary asset information
 - Validates responses
 - Automatically triggers Zakat calculation when complete
+- Try to guide user with suggestion with each question
 
 Usage:
 Start with no parameters to begin questionnaire:
