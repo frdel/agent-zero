@@ -1,6 +1,5 @@
 import json
-from datetime import datetime
-from hijri_converter.convert import Gregorian, Hijri
+from datetime import datetime, timedelta
 from ..helpers.tool import Tool, Response
 
 class ZakatCalculatorTool(Tool):
@@ -90,35 +89,68 @@ class ZakatCalculatorTool(Tool):
         return total_value
 
     def _check_hawl(self, asset_date):
-        """Check if a complete lunar year (Hawl) has passed."""
+        """Check if approximately one year (354.367 days - lunar year) has passed."""
         if not asset_date:
             return True  # If no date provided, assume Hawl is complete
             
         try:
-            # Convert asset date to Hijri
-            asset_greg = datetime.strptime(asset_date, "%Y-%m-%d")
-            asset_hijri = Gregorian(asset_greg.year, asset_greg.month, asset_greg.day).to_hijri()
+            # Convert asset date string to datetime
+            asset_datetime = datetime.strptime(asset_date, "%Y-%m-%d")
             
-            # Get current date in Hijri
+            # Get current date
             today = datetime.now()
-            current_hijri = Gregorian(today.year, today.month, today.day).to_hijri()
             
-            # Calculate difference in years
-            year_diff = current_hijri.year - asset_hijri.year
-            if year_diff == 0:
-                return False
-            elif year_diff == 1:
-                # Check if a complete year has passed
-                if current_hijri.month < asset_hijri.month:
-                    return False
-                elif current_hijri.month == asset_hijri.month:
-                    return current_hijri.day >= asset_hijri.day
-                return True
-            return True
+            # Calculate the difference in days
+            # Lunar year is approximately 354.367 days
+            days_diff = (today - asset_datetime).days
+            
+            # Return True if at least one lunar year has passed
+            return days_diff >= 354
             
         except Exception:
             return True  # If date parsing fails, assume Hawl is complete
     
+    def _get_bengali_date(self):
+        """Convert current date to Bengali format."""
+        today = datetime.now()
+        
+        # Bengali month names
+        bn_months = {
+            1: "জানুয়ারি",
+            2: "ফেব্রুয়ারি",
+            3: "মার্চ",
+            4: "এপ্রিল",
+            5: "মে",
+            6: "জুন",
+            7: "জুলাই",
+            8: "আগস্ট",
+            9: "সেপ্টেম্বর",
+            10: "অক্টোবর",
+            11: "নভেম্বর",
+            12: "ডিসেম্বর"
+        }
+        
+        # Bengali numerals
+        bn_numerals = {
+            "0": "০",
+            "1": "১",
+            "2": "২",
+            "3": "৩",
+            "4": "৪",
+            "5": "৫",
+            "6": "৬",
+            "7": "৭",
+            "8": "৮",
+            "9": "৯"
+        }
+        
+        # Convert day and year to Bengali numerals
+        day = "".join(bn_numerals[d] for d in str(today.day))
+        year = "".join(bn_numerals[d] for d in str(today.year))
+        
+        # Format the date in Bengali
+        return f"{day} {bn_months[today.month]} {year}"
+
     async def execute(self, assets=None, liabilities=None, currency="BDT", asset_dates=None, **kwargs):
         """Calculate Zakat based on provided assets and liabilities."""
         try:
@@ -254,7 +286,7 @@ class ZakatCalculatorTool(Tool):
                     
                     মোট প্রদেয় যাকাত: {total_zakat:,.2f} {currency}
                     
-                    (হিসাব তারিখ: ২৭ মার্চ ২০২৪)
+                    (হিসাব তারিখ: {self._get_bengali_date()})
                     """
                 }
             else:
@@ -287,7 +319,7 @@ class ZakatCalculatorTool(Tool):
                     • বর্তমান নিসাব সীমা: {self.CURRENT_NISAB_BDT:,.2f} {currency}
                     • আপনার সম্পদ নিসাব সীমা অতিক্রম করেনি
                     
-                    (হিসাব তারিখ: ২৭ মার্চ ২০২৪)
+                    (হিসাব তারিখ: {self._get_bengali_date()})
                     """
                 }
 
