@@ -12,7 +12,6 @@ Sends the final response to the user and concludes task processing.
   - Do not include online sources in the markdown response.
   - Never return base format of the response.
   - Must include all the details from the response structure.
-  - Must not miss any information from the response structure.
 
 2. **Tone and Content**:
   - Maintain humility and provide scholarly interpretations where relevant.
@@ -91,29 +90,28 @@ Sends the final response to the user and concludes task processing.
     1. **Quranic References**:
        ```
        الآية: [Arabic Text]
-       Translation: [Bengali & English]
-       Surah: [Name] ([Number])
-       Verse: [Number]
-       Tafsir Sources: [References]
+       - [Bengali Transliteration & Translation]
+       - [Surah] ([Number]) [Verse]
+       - [Tafsir Sources]
        ```
 
     2. **Hadith References**:
        ```
        الحديث: [Arabic Text]
-       Translation: [Bengali & English]
-       Collection: [Book Name]
-       Reference: [Book/Chapter/Hadith Number]
-       Grade: [Authentication Level]
-       Narrator Chain: [Key Narrators]
+       - [Bengali Transliteration & Translation]
+       - [Collection]
+       - [Reference]
+       - [Grade]
+       - [Narrator Chain]
        ```
 
     3. **Scholarly References**:
        ```
        Scholar: [Name] ([Year/Period])
-       Work: [Book/Publication]
-       School: [Madhab/Methodology]
-       Quote/Opinion: [Text]
-       Source Page/Volume: [Reference]
+       - [Work]
+       - [School]
+       - [Quote/Opinion]
+       - [Source Page/Volume]
        ```
 
     4. **Contemporary Sources**:
@@ -135,7 +133,6 @@ Sends the final response to the user and concludes task processing.
 
 ## Example of Audio Response:
   - MUST be used when response comes from quran_audio_tool
-  - MUST include both audio player and surah information
   - Format:
   ```json
   {
