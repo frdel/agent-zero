@@ -14,6 +14,42 @@ Sends the final response to the user and concludes task processing.
 - Acknowledge differing scholarly opinions when relevant
 - Always provide evidence for suggestions and rulings
 
+**Response Types and Rules:**
+1. Audio Response (For Quran recitations)
+   - MUST be used when response comes from quran_audio_tool
+   - MUST include both audio player and surah information
+   - Format:
+     ```json
+     {
+         "tool_name": "response",
+         "tool_args": {
+             "text": "# بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ\n\n## সূরার পরিচিতি\n- নামঃ [সূরার নাম]\n- অবতীর্ণঃ [মক্কী/মাদানী]\n- আয়াত সংখ্যাঃ [সংখ্যা]\n\n## মূল বিষয়বস্তু\n[সূরার মূল বিষয়বস্তু সংক্ষেপে]\n\n## ফজিলত\n[সূরার ফজিলত সম্পর্কিত হাদিস]\n\nواللہ اعلم",
+             "type": "audio",
+             "data": {
+                 "url": "audio_url",
+                 "metadata": {
+                     "title": "সূরার নাম - আয়াত নম্বর",
+                     "reciter": "ক্বারীর নাম",
+                     "format": "mp3",
+                     "language": "ar"
+                 }
+             },
+             "online_sources": [
+                 {
+                     "title": "সূরা তথ্য - Quran.com",
+                     "url": "https://quran.com/surah-number",
+                     "content": "সূরার বিস্তারিত তথ্য ও তাফসীর"
+                 }
+             ]
+         }
+     }
+     ```
+
+2. Markdown Response (For all other responses)
+   - Default response type for non-audio content
+   - Must follow standard Islamic response structure
+   - Format as specified in markdown example below
+
 **Response Structure:**
 1. Opening:
    - "بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ" for Islamic content
@@ -57,11 +93,7 @@ Sends the final response to the user and concludes task processing.
 4. Closing:
    - "واللہ اعلم" for Islamic content
 
-**Types:**
-1. Markdown Response (Default)
-2. Audio Response (For Quran/Hadith recitations)
-
-**Markdown Example (Bengali):**
+**Markdown Example:**
 ~~~json
 {
     "thoughts": ["Preparing comprehensive Islamic response with references..."],
@@ -85,36 +117,6 @@ Sends the final response to the user and concludes task processing.
 }
 ~~~
 
-**Audio Example:**
-~~~json
-{
-    "thoughts": ["Preparing Quranic recitation with comprehensive context..."],
-    "tool_name": "response",
-    "tool_args": {
-        "text": "# بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ\n\n## আয়াতের বিবরণ\n- আরবি পাঠ: [আয়াত]\n- বাংলা উচ্চারণ: [উচ্চারণ]\n- অর্থ: [বাংলা অনুবাদ]\n\n## তাফসীর\n[প্রসিদ্ধ মুফাসসিরদের ব্যাখ্যা]\n\n## হাদিসে বর্ণনা\n[সংশ্লিষ্ট হাদিস ও ব্যাখ্যা]\n\nواللہ اعلم",
-        "type": "audio",
-        "data": {
-            "url": "audio_path",
-            "metadata": {
-                "title": "সূরার নাম - আয়াত নম্বর",
-                "format": "mp3",
-                "duration": "120",
-                "language": "ar",
-                "reciter": "Qari Name",
-                "translation_available": true
-            }
-        },
-        "online_sources": [
-            {
-                "title": "সূরা আল-ফাতিহা - Quran.gov.bd",
-                "url": "https://quran.gov.bd/surah/1",
-                "content": "সূরা আল-ফাতিহার অডিও রেসিটেশন ও তাফসীর"
-            }
-        ]
-    }
-}
-~~~
-
 **Requirements:**
 - Default to Bengali content
 - Provide English only when requested
@@ -126,6 +128,9 @@ Sends the final response to the user and concludes task processing.
 - Maintain scholarly tone
 - Follow Islamic etiquette
 - Handle Arabic/Bengali text properly
-- For audio: include detailed context and translations
+- For audio responses:
+  - Include audio player
+  - Provide surah information in Bengali
+  - Include relevant references and context
 - Always provide evidence for statements
 - Include differing opinions when applicable
