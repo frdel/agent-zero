@@ -14,12 +14,15 @@
 </div>
 
 
+[![Showcase](/docs/res/showcase-thumb.png)](https://youtu.be/lazLNcEYsiQ)
+
+
+
 See [www.agent-zero.ai](https://agent-zero.ai) for more info
 
 [![Browser Agent](/docs/res/web_screenshot.jpg)](https://agent-zero.ai)
 
 
-[![Browser Agent](/docs/res/081_vid.png)](https://youtu.be/quv145buW74)
 
 > [!NOTE]
 > **🎉 v0.8.1 Release**: Now featuring a browser agent capable of using Chromium for web interactions! This enables Agent Zero to browse the web, gather information, and interact with web content autonomously.
