@@ -1,5 +1,11 @@
-# Online sources
+# Search Results
+
+## Online Sources
 {{online_sources}}
 
-# Memory
+## Memory Results
 {{memory}}
+
+## Citations
+{{citations}}
+
