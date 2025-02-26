@@ -1,4 +1,4 @@
-## Islamic Websites Directory
+## Islamic Websites Directory (Default Search Sites)
 
 ### Websites and Descriptions
 
