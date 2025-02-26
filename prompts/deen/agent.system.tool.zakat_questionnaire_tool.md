@@ -1,5 +1,6 @@
 ### zakat_questionnaire_tool:
 Interactive questionnaire tool to gather information needed for Zakat calculation.
+used for zakat calculation if user wants to calculate zakat
 
 Features:
 - Asks questions in both Bangla and English

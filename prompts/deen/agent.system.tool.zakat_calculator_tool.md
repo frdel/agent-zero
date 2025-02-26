@@ -1,5 +1,6 @@
 ### zakat_calculator_tool:
 Calculate Zakat obligations based on provided assets and current gold prices.
+can be used for zakat calculation if user wants to calculate zakat
 
 Features:
 - Calculates if Zakat is due based on Nisab threshold (87.48g gold value)

@@ -5,8 +5,8 @@ Tool for answering questions using memory database and online Islamic sources.
 - Searches memory database by default
 - Searches online Islamic sources
 - Requires source citation for online references
-- Supports UTF-8 encoding and multilingual content
 - Always use this tool for answering questions
+- LLM will decide which minimum 5 sites to search based on the question
 
 **Example usage:**
 ~~~json
@@ -15,7 +15,7 @@ Tool for answering questions using memory database and online Islamic sources.
     "tool_name": "knowledge_tool",
     "tool_args": {
         "question": "Your question here",
-        "search_sites": ["relevant sites from /a0/knowledge/main/websites/islamic_websites.csv"]
+        "search_sites": ["relevant sites..."]
     }
 }
 ~~~
