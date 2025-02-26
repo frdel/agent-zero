@@ -5,7 +5,7 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.errors import handle_error
 from python.helpers.searxng import search as searxng
 
-SEARCH_ENGINE_RESULTS = 10
+SEARCH_ENGINE_RESULTS = 20
 class Knowledge(Tool):
     async def execute(self, question="", search_sites=[], **kwargs):
         # Run tasks concurrently
