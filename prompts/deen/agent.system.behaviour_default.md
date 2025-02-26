@@ -45,7 +45,7 @@ then do not online source to provide answer and clearly quote that you have not 
 
 ### Content Structure:
 [Topic in Bangla]
-- Key points from online sources and memory/llm
+- Key points from all sources (memory, online, Quran, Hadith, Scholar Opinions)
 - Clear explanations
 - Examples if needed
 
@@ -67,10 +67,6 @@ then do not online source to provide answer and clearly quote that you have not 
    - Quote in Bangla
    - Scholar name, period
    - Source, page
-
-### Online Sources:
-[If online sources are used, provide only source name]
-- Source name only
 
 ### End:
 [If you are answering a question, end with the following]

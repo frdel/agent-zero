@@ -7,7 +7,7 @@ Sends the final response to the user and concludes task processing.
 - Use only when task complete
 
 **Types:**
-1. Json Response (Default)
+1. Markdown Response (Default)
 2. Audio Response (For audio content)
 
 **Text Example:**
@@ -17,7 +17,7 @@ Sends the final response to the user and concludes task processing.
     "tool_name": "response",
     "tool_args": {
         "text": "Entire response text",
-        "type": "json",
+        "type": "markdown",
         "online_sources": [
             {
                 "source": "source name",
@@ -50,8 +50,8 @@ Sends the final response to the user and concludes task processing.
 ~~~
 
 **Requirements:**
-- Json: Must have `text`, `type="json"` and optional `online_sources`
-- Json: Do not include any other keys or values
+- Markdown: Must have `text`, `type="json"` and optional `online_sources` if online sources are used
+- Markdown: Do not include any other keys or values
 - Audio: Requires `text`, `type="audio"`, `data` with `url` and `metadata`
 - Metadata: `title` and `format` required
 - Always include relevant thoughts
