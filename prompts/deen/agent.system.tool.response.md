@@ -9,10 +9,11 @@ Sends the final response to the user and concludes task processing.
 ## Response Guidelines:
 
 1. **Core Requirements**:
-   - No external URLs in markdown response
    - Must include supporting evidence (Quran/Hadith/Scholar opinions)
    - Never return base response format
    - Always maintain the response format with the following structure
+   - Beautifully formatted response with proper references
+   - Use markdown for formatting
    
 2. **Response Types**:
 
@@ -34,9 +35,9 @@ Sends the final response to the user and concludes task processing.
        },
        "online_sources": [
          {
-           "title": "সূরা [নাম]",
-           "url": "https://quran.com/surah",
-           "content": "তাফসীর"
+           "title": "Online Source Title",
+           "url": "https://online-source-url.com",
+           "content": "Online source content"
          }
        ]
      }
@@ -59,9 +60,9 @@ Sends the final response to the user and concludes task processing.
        "text": "<formatted content>",
        "online_sources": [
          {
-           "title": "সূরা [নাম]",
-           "url": "https://quran.com/surah",
-           "content": "তাফসীর"
+           "title": "Online Source Title",
+           "url": "https://online-source-url.com",
+           "content": "Online source content"
          }
        ]
      }
@@ -74,19 +75,19 @@ Sends the final response to the user and concludes task processing.
       - Brief executive summary
 
    2. **Main Content**:
+      [Do not include online sources reference in the main content]
       - Topic overview and context
       - Evidence (Quran/Hadith/Scholarly opinions)
+        - Quran: `[Arabic] - [Bengali] - Surah:Verse - [Tafsir]`
+        - Hadith: `[Arabic] - [Bengali] - Collection/Reference/Grade`
+        - Scholar: `Name (Period) - Work - Opinion`
+      - Different perspectives
       - Practical applications
       - Additional perspectives/considerations
 
    3. **Conclusion**:
       - Key takeaways
       - "واللہ اعلم" (Allah knows best)
-
-   4. **References**:
-      - Quran: `[Arabic] - [Bengali] - Surah:Verse - [Tafsir]`
-      - Hadith: `[Arabic] - [Bengali] - Collection/Reference/Grade`
-      - Scholar: `Name (Period) - Work - Opinion`
 
 3. **Tone and Style**:
    - Maintain scholarly humility
