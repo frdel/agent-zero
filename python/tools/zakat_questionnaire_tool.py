@@ -1,6 +1,34 @@
 from ..helpers.tool import Tool, Response
 
 class ZakatQuestionnaireHandler(Tool):
+    CONFIG_QUESTIONS = [
+        # Currency configuration - commented out for now (Bangladesh-only)
+        # {
+        #     "id": "currency",
+        #     "bn": "আপনার মুদ্রা নির্বাচন করুন:",
+        #     "en": "Select your currency:",
+        #     "description_bn": "যে মুদ্রায় আপনি হিসাব করতে চান (যেমন: BDT, USD, EUR, GBP, SAR ইত্যাদি)।",
+        #     "description_en": "The currency you want to calculate in (e.g., BDT, USD, EUR, GBP, SAR etc.).",
+        #     "default": "BDT"
+        # },
+        {
+            "id": "gold_price",
+            "bn": "স্বর্ণের বর্তমান মূল্য (প্রতি গ্রাম):",
+            "en": "Current Gold Price (per gram):",
+            "description_bn": "বর্তমান বাজারে স্বর্ণের প্রতি গ্রামের মূল্য (বাংলাদেশি টাকায়)।",
+            "description_en": "Current market price of gold per gram in BDT.",
+            "default": "12464"
+        },
+        {
+            "id": "silver_price",
+            "bn": "রূপার বর্তমান মূল্য (প্রতি গ্রাম):",
+            "en": "Current Silver Price (per gram):",
+            "description_bn": "বর্তমান বাজারে রূপার প্রতি গ্রামের মূল্য (বাংলাদেশি টাকায়)।",
+            "description_en": "Current market price of silver per gram in BDT.",
+            "default": "152"
+        }
+    ]
+
     QUESTIONS = [
         # Assets Section
         # 1. Cash and Bank
@@ -112,27 +140,78 @@ class ZakatQuestionnaireHandler(Tool):
         }
     ]
 
-    async def execute(self, current_question=0, answers=None, language="bn", **kwargs):
+    async def execute(self, current_question=0, answers=None, language="bn", calculation_date=None, **kwargs):
         """Handle the questionnaire flow for Zakat calculation.
         
         Args:
             current_question (int): Current question index
             answers (dict): Previously collected answers
             language (str): Language preference ('bn' for Bengali, 'en' for English)
+            calculation_date (datetime): Specific date for calculation (optional)
         """
         try:
             if answers is None:
                 answers = {}
 
+            # Handle configuration questions first
+            if current_question < len(self.CONFIG_QUESTIONS):
+                config_question = self.CONFIG_QUESTIONS[current_question]
+                
+                # Format the configuration question prompt
+                if language == "bn":
+                    question_text = f"""যাকাত হিসাব কনফিগারেশন:
+
+প্রশ্ন {current_question + 1} / {len(self.CONFIG_QUESTIONS)}:
+
+{config_question['bn']}
+
+{config_question['description_bn']}
+
+ডিফল্ট মান: {config_question['default']}"""
+                else:
+                    question_text = f"""Zakat Calculation Configuration:
+
+Question {current_question + 1} of {len(self.CONFIG_QUESTIONS)}:
+
+{config_question['en']}
+
+{config_question['description_en']}
+
+Default value: {config_question['default']}"""
+                
+                response = {
+                    "status": "config_question",
+                    "question_id": config_question["id"],
+                    "prompt": question_text,
+                    "current_question": current_question + 1,
+                    "total_config_questions": len(self.CONFIG_QUESTIONS),
+                    "answers_so_far": answers,
+                    "language": language,
+                    "default": config_question["default"]
+                }
+                
+                return Response(
+                    message=str(response),
+                    break_loop=False
+                )
+
+            # Adjust the question index for main questions
+            main_question_index = current_question - len(self.CONFIG_QUESTIONS)
+
             # If we've collected all answers, calculate Zakat
-            if current_question >= len(self.QUESTIONS):
+            if main_question_index >= len(self.QUESTIONS):
                 # Separate assets and liabilities
                 assets = {}
                 liabilities = {}
                 
+                # Get configuration values - using fixed BDT for now
+                currency = "BDT"  # Fixed for Bangladesh
+                gold_price = float(answers.get("gold_price", 12464))
+                silver_price = float(answers.get("silver_price", 152))
+                
                 # Process answers by category
                 for k, v in answers.items():
-                    if v and float(v) > 0:
+                    if k not in ["gold_price", "silver_price"] and v and float(v) > 0:  # Removed currency check
                         question = next((q for q in self.QUESTIONS if q["id"] == k), None)
                         if question:
                             category = question.get("category", "")
@@ -146,7 +225,7 @@ class ZakatQuestionnaireHandler(Tool):
                         message=str({
                             "status": "error",
                             "message": "কোন সম্পদের তথ্য প্রদান করা হয়নি।" if language == "bn" else "No assets information provided.",
-                            "current_question": 0,
+                            "current_question": len(self.CONFIG_QUESTIONS),
                             "language": language
                         }),
                         break_loop=False
@@ -160,21 +239,24 @@ class ZakatQuestionnaireHandler(Tool):
                         "tool_args": {
                             "assets": assets,
                             "liabilities": liabilities if liabilities else None,
-                            "currency": "BDT",
-                            "language": language
+                            "currency": currency,
+                            "language": language,
+                            "gold_price": gold_price,
+                            "silver_price": silver_price,
+                            "calculation_date": calculation_date
                         }
                     }),
                     break_loop=False
                 )
 
-            # Get current question
-            question = self.QUESTIONS[current_question]
+            # Get current main question
+            question = self.QUESTIONS[main_question_index]
             
             # Format the question prompt
             if language == "bn":
                 question_text = f"""যাকাত হিসাব প্রশ্নমালা:
 
-প্রশ্ন {current_question + 1} / {len(self.QUESTIONS)}:
+প্রশ্ন {main_question_index + 1} / {len(self.QUESTIONS)}:
 
 {question['bn']}
 
@@ -182,7 +264,7 @@ class ZakatQuestionnaireHandler(Tool):
             else:
                 question_text = f"""Zakat calculation questionnaire:
 
-Question {current_question + 1} of {len(self.QUESTIONS)}:
+Question {main_question_index + 1} of {len(self.QUESTIONS)}:
 
 {question['en']}
 
@@ -194,7 +276,7 @@ Question {current_question + 1} of {len(self.QUESTIONS)}:
                 "question_id": question["id"],
                 "prompt": question_text,
                 "current_question": current_question + 1,
-                "total_questions": len(self.QUESTIONS),
+                "total_questions": len(self.CONFIG_QUESTIONS) + len(self.QUESTIONS),
                 "answers_so_far": answers,
                 "language": language
             }

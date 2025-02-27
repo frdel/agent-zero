@@ -7,15 +7,6 @@ class ZakatCalculatorTool(Tool):
     GOLD_NISAB_GRAMS = 87.48
     SILVER_NISAB_GRAMS = 612.36
     
-    # Current precious metal prices
-    GOLD_PRICE = 12464  # Price per gram for gold
-    SILVER_PRICE = 152  # Price per gram for silver
-    
-    # Current Nisab values in BDT (as of March 27, 2024)
-    GOLD_NISAB_BDT = GOLD_NISAB_GRAMS * GOLD_PRICE  # 1,090,370.72 BDT
-    SILVER_NISAB_BDT = SILVER_NISAB_GRAMS * SILVER_PRICE    # 93,078.72 BDT
-    CURRENT_NISAB_BDT = min(GOLD_NISAB_BDT, SILVER_NISAB_BDT)  # Use the lower of gold and silver nisab
-    
     # Zakat rates for different asset types
     ZAKAT_RATES = {
         "default": 0.025,  # 2.5% for most assets
@@ -66,13 +57,13 @@ class ZakatCalculatorTool(Tool):
         "expenses": "খরচ"
     }
 
-    def _calculate_precious_metal_value(self, assets):
+    def _calculate_precious_metal_value(self, assets, gold_price, silver_price):
         """Calculate the total value of precious metals from weight or direct value."""
         total_value = 0
         
         # Calculate gold value
         if "gold_weight" in assets:
-            total_value += float(assets["gold_weight"]) * self.GOLD_PRICE
+            total_value += float(assets["gold_weight"]) * gold_price
             assets["gold_value"] = total_value
             del assets["gold_weight"]
         elif "gold_value" in assets:
@@ -80,7 +71,7 @@ class ZakatCalculatorTool(Tool):
             
         # Calculate silver value
         if "silver_weight" in assets:
-            total_value += float(assets["silver_weight"]) * self.SILVER_PRICE
+            total_value += float(assets["silver_weight"]) * silver_price
             assets["silver_value"] = total_value
             del assets["silver_weight"]
         elif "silver_value" in assets:
@@ -109,76 +100,39 @@ class ZakatCalculatorTool(Tool):
             
         except Exception:
             return True  # If date parsing fails, assume Hawl is complete
-    
-    def _get_bengali_date(self):
-        """Convert current date to Bengali format."""
-        today = datetime.now()
-        
-        # Bengali month names
-        bn_months = {
-            1: "জানুয়ারি",
-            2: "ফেব্রুয়ারি",
-            3: "মার্চ",
-            4: "এপ্রিল",
-            5: "মে",
-            6: "জুন",
-            7: "জুলাই",
-            8: "আগস্ট",
-            9: "সেপ্টেম্বর",
-            10: "অক্টোবর",
-            11: "নভেম্বর",
-            12: "ডিসেম্বর"
-        }
-        
-        # Bengali numerals
-        bn_numerals = {
-            "0": "০",
-            "1": "১",
-            "2": "২",
-            "3": "৩",
-            "4": "৪",
-            "5": "৫",
-            "6": "৬",
-            "7": "৭",
-            "8": "৮",
-            "9": "৯"
-        }
-        
-        # Convert day and year to Bengali numerals
-        day = "".join(bn_numerals[d] for d in str(today.day))
-        year = "".join(bn_numerals[d] for d in str(today.year))
-        
-        # Format the date in Bengali
-        return f"{day} {bn_months[today.month]} {year}"
 
-    async def execute(self, assets=None, liabilities=None, currency="BDT", asset_dates=None, **kwargs):
-        """Calculate Zakat based on provided assets and liabilities."""
+    async def execute(self, assets=None, liabilities=None, currency="BDT", asset_dates=None, language="bn", gold_price=12464, silver_price=152, **kwargs):
+        """Calculate Zakat based on provided assets and liabilities.
+        
+        Args:
+            assets: Dictionary of assets and their values
+            liabilities: Dictionary of liabilities (optional)
+            currency: Currency code (default: "BDT")
+            asset_dates: Dictionary of asset acquisition dates (optional)
+            language: Language preference ("bn" for Bengali, "en" for English)
+            gold_price: Current gold price per gram in specified currency
+            silver_price: Current silver price per gram in specified currency
+        """
         try:
             if not assets or not isinstance(assets, (dict, str)):
-                return Response(
-                    message="অনুগ্রহ করে সম্পদের তথ্য সঠিক ফরম্যাটে প্রদান করুন।",
-                    break_loop=False
-                )
+                message = "অনুগ্রহ করে সম্পদের তথ্য সঠিক ফরম্যাটে প্রদান করুন।" if language == "bn" else "Please provide asset information in the correct format."
+                return Response(message=message, break_loop=False)
 
             # Convert string to dict if needed
             if isinstance(assets, str):
                 try:
                     assets = json.loads(assets)
                 except json.JSONDecodeError:
-                    return Response(
-                        message="সম্পদের ফরম্যাট সঠিক নয়। অনুগ্রহ করে একটি বৈধ JSON অবজেক্ট প্রদান করুন।",
-                        break_loop=False
-                    )
+                    message = "সম্পদের ফরম্যাট সঠিক নয়। অনুগ্রহ করে একটি বৈধ JSON অবজেক্ট প্রদান করুন।" if language == "bn" else "Invalid asset format. Please provide a valid JSON object."
+                    return Response(message=message, break_loop=False)
 
             # Convert liabilities string to dict if needed
             if isinstance(liabilities, str):
                 try:
                     liabilities = json.loads(liabilities) if liabilities else {}
                 except json.JSONDecodeError:
-                    return Response(
-                        message="দায়ের ফরম্যাট সঠিক নয়। অনুগ্রহ করে একটি বৈধ JSON অবজেক্ট প্রদান করুন।",
-                        break_loop=False
-                    )
+                    message = "দায়ের ফরম্যাট সঠিক নয়। অনুগ্রহ করে একটি বৈধ JSON অবজেক্ট প্রদান করুন।" if language == "bn" else "Invalid liabilities format. Please provide a valid JSON object."
+                    return Response(message=message, break_loop=False)
 
             # Convert asset_dates string to dict if needed
             if isinstance(asset_dates, str):
@@ -189,8 +143,13 @@ class ZakatCalculatorTool(Tool):
             elif asset_dates is None:
                 asset_dates = {}
 
+            # Calculate Nisab thresholds using current prices
+            gold_nisab_value = self.GOLD_NISAB_GRAMS * gold_price
+            silver_nisab_value = self.SILVER_NISAB_GRAMS * silver_price
+            current_nisab = min(gold_nisab_value, silver_nisab_value)
+
             # Calculate precious metal values
-            self._calculate_precious_metal_value(assets)
+            self._calculate_precious_metal_value(assets, gold_price, silver_price)
 
             # Calculate total wealth with specific rates
             total_assets = 0
@@ -232,62 +191,45 @@ class ZakatCalculatorTool(Tool):
             # Calculate total zakat
             total_zakat = sum(cat["zakat"] for cat in zakat_by_category.values())
 
+            # Format the summary based on language
+            if language == "bn":
+                summary = self._format_bengali_summary(assets, liabilities, zakat_by_category, total_assets, total_liabilities, net_wealth, total_zakat, currency, gold_price, silver_price, gold_nisab_value, silver_nisab_value, current_nisab)
+            else:
+                summary = self._format_english_summary(assets, liabilities, zakat_by_category, total_assets, total_liabilities, net_wealth, total_zakat, currency, gold_price, silver_price, gold_nisab_value, silver_nisab_value, current_nisab)
+
             # Prepare result based on nisab threshold
-            if net_wealth >= self.CURRENT_NISAB_BDT:
+            if net_wealth >= current_nisab:
                 result = {
                     "total_assets": total_assets,
                     "total_liabilities": total_liabilities,
                     "net_wealth": net_wealth,
                     "nisab_threshold": {
-                        "gold": self.GOLD_NISAB_BDT,
-                        "silver": self.SILVER_NISAB_BDT,
-                        "current": self.CURRENT_NISAB_BDT
+                        "gold": gold_nisab_value,
+                        "silver": silver_nisab_value,
+                        "current": current_nisab
                     },
                     "precious_metal_prices": {
-                        "gold": {
-                            "price_per_gram": self.GOLD_PRICE
-                        },
-                        "silver": {
-                            "price_per_gram": self.SILVER_PRICE
-                        }
+                        "gold": {"price_per_gram": gold_price},
+                        "silver": {"price_per_gram": silver_price}
                     },
                     "zakat_due": True,
                     "total_zakat": total_zakat,
                     "currency": currency,
+                    "summary": summary,
                     "breakdown": {
                         "assets": formatted_assets,
                         "liabilities": formatted_liabilities,
                         "zakat_by_category": zakat_by_category,
                         "calculations": {
-                            "মোট সম্পদ": total_assets,
-                            "মোট দায়": total_liabilities,
-                            "নীট সম্পদ": net_wealth,
-                            "নিসাব সীমা (স্বর্ণ)": self.GOLD_NISAB_BDT,
-                            "নিসাব সীমা (রূপা)": self.SILVER_NISAB_BDT,
-                            "বর্তমান নিসাব সীমা": self.CURRENT_NISAB_BDT,
-                            "মোট যাকাত": total_zakat
+                            "total_assets": total_assets,
+                            "total_liabilities": total_liabilities,
+                            "net_wealth": net_wealth,
+                            "nisab_gold": gold_nisab_value,
+                            "nisab_silver": silver_nisab_value,
+                            "current_nisab": current_nisab,
+                            "total_zakat": total_zakat
                         }
-                    },
-                    "message": f"""
-                    যাকাত প্রদান করতে হবে।
-                    
-                    সম্পদের হিসাব:
-                    ১। মোট সম্পদ: {total_assets:,.2f} {currency}
-                    ২। মোট দায়: {total_liabilities:,.2f} {currency}
-                    ৩। নীট সম্পদ: {net_wealth:,.2f} {currency}
-                    
-                    নিসাব সীমা:
-                    • স্বর্ণ ({self.GOLD_NISAB_GRAMS} গ্রাম): {self.GOLD_NISAB_BDT:,.2f} {currency}
-                    • রূপা ({self.SILVER_NISAB_GRAMS} গ্রাম): {self.SILVER_NISAB_BDT:,.2f} {currency}
-                    • বর্তমান নিসাব: {self.CURRENT_NISAB_BDT:,.2f} {currency}
-                    
-                    যাকাতের হিসাব:
-                    {self._format_zakat_breakdown(zakat_by_category, currency)}
-                    
-                    মোট প্রদেয় যাকাত: {total_zakat:,.2f} {currency}
-                    
-                    (হিসাব তারিখ: {self._get_bengali_date()})
-                    """
+                    }
                 }
             else:
                 result = {
@@ -295,50 +237,134 @@ class ZakatCalculatorTool(Tool):
                     "total_liabilities": total_liabilities,
                     "net_wealth": net_wealth,
                     "nisab_threshold": {
-                        "gold": self.GOLD_NISAB_BDT,
-                        "silver": self.SILVER_NISAB_BDT,
-                        "current": self.CURRENT_NISAB_BDT
+                        "gold": gold_nisab_value,
+                        "silver": silver_nisab_value,
+                        "current": current_nisab
                     },
                     "precious_metal_prices": {
-                        "gold": {
-                            "price_per_gram": self.GOLD_PRICE
-                        },
-                        "silver": {
-                            "price_per_gram": self.SILVER_PRICE
-                        }
+                        "gold": {"price_per_gram": gold_price},
+                        "silver": {"price_per_gram": silver_price}
                     },
                     "zakat_due": False,
                     "currency": currency,
-                    "message": f"""
-                    যাকাত প্রদান করা ফরয নয়।
-                    
-                    কারণ:
-                    • আপনার নীট সম্পদ: {net_wealth:,.2f} {currency}
-                    • স্বর্ণের নিসাব সীমা: {self.GOLD_NISAB_BDT:,.2f} {currency}
-                    • রূপার নিসাব সীমা: {self.SILVER_NISAB_BDT:,.2f} {currency}
-                    • বর্তমান নিসাব সীমা: {self.CURRENT_NISAB_BDT:,.2f} {currency}
-                    • আপনার সম্পদ নিসাব সীমা অতিক্রম করেনি
-                    
-                    (হিসাব তারিখ: {self._get_bengali_date()})
-                    """
+                    "summary": summary
                 }
 
             return Response(message=json.dumps(result), break_loop=False)
 
         except Exception as e:
-            return Response(
-                message=f"যাকাত গণনায় ত্রুটি: {str(e)}",
-                break_loop=False
-            )
+            message = f"যাকাত গণনায় ত্রুটি: {str(e)}" if language == "bn" else f"Error in zakat calculation: {str(e)}"
+            return Response(message=message, break_loop=False)
+
+    def _format_bengali_summary(self, assets, liabilities, zakat_by_category, total_assets, total_liabilities, net_wealth, total_zakat, currency, gold_price, silver_price, gold_nisab_value, silver_nisab_value, current_nisab):
+        """Format a detailed summary in Bengali."""
+        summary = "যাকাত হিসাবের বিস্তারিত সারসংক্ষেপ:\n\n"
+        
+        # Nisab and current prices section
+        summary += "নিসাব এবং বর্তমান মূল্য:\n"
+        summary += f"• স্বর্ণের নিসাব: {self.GOLD_NISAB_GRAMS} গ্রাম = {gold_nisab_value:,.2f} {currency}\n"
+        summary += f"• রূপার নিসাব: {self.SILVER_NISAB_GRAMS} গ্রাম = {silver_nisab_value:,.2f} {currency}\n"
+        summary += f"• বর্তমান নিসাব সীমা: {current_nisab:,.2f} {currency}\n"
+        summary += f"• স্বর্ণের বর্তমান মূল্য: {gold_price:,.2f} {currency}/গ্রাম\n"
+        summary += f"• রূপার বর্তমান মূল্য: {silver_price:,.2f} {currency}/গ্রাম\n\n"
+        
+        # Assets section
+        summary += "১. প্রদত্ত সম্পদের তথ্য:\n"
+        for key, value in assets.items():
+            if key in self.ASSET_CATEGORIES:
+                bn_name = self.ASSET_CATEGORIES[key]["bn"]
+                rate_key = self.ASSET_CATEGORIES[key]["rate"]
+                rate = self.ZAKAT_RATES[rate_key] * 100
+                summary += f"   • {bn_name}:\n"
+                summary += f"     - পরিমাণ: {float(value):,.2f} {currency}\n"
+                summary += f"     - যাকাতের হার: {rate}%\n"
+        
+        # Liabilities section
+        if liabilities:
+            summary += "\n২. প্রদত্ত দায়ের তথ্য:\n"
+            for key, value in liabilities.items():
+                bn_key = self.LIABILITIES_CATEGORIES.get(key, key)
+                summary += f"   • {bn_key}: {float(value):,.2f} {currency}\n"
+        
+        # Calculations section
+        summary += f"\n৩. হিসাব:\n"
+        summary += f"   • মোট সম্পদ: {total_assets:,.2f} {currency}\n"
+        summary += f"   • মোট দায়: {total_liabilities:,.2f} {currency}\n"
+        summary += f"   • নীট সম্পদ: {net_wealth:,.2f} {currency}\n"
+        summary += f"   • নিসাব স্থিতি: {'নিসাব পূর্ণ হয়েছে' if net_wealth >= current_nisab else 'নিসাব পূর্ণ হয়নি'}\n"
+        
+        # Zakat breakdown
+        if net_wealth >= current_nisab:
+            summary += "\n৪. যাকাতের বিস্তারিত হিসাব:\n"
+            for category, data in zakat_by_category.items():
+                summary += f"   • {category}:\n"
+                summary += f"     - মূল্য: {data['value']:,.2f} {currency}\n"
+                summary += f"     - হার: {data['rate']}%\n"
+                summary += f"     - যাকাত: {data['zakat']:,.2f} {currency}\n"
             
-    def _format_zakat_breakdown(self, zakat_by_category, currency):
-        """Format the zakat breakdown message in Bengali."""
-        breakdown = []
-        for category, data in zakat_by_category.items():
-            breakdown.append(
-                f"• {category}:\n"
-                f"  - মূল্য: {data['value']:,.2f} {currency}\n"
-                f"  - হার: {data['rate']}%\n"
-                f"  - যাকাত: {data['zakat']:,.2f} {currency}"
-            )
-        return "\n".join(breakdown) 
+            summary += f"\nমোট প্রদেয় যাকাত: {total_zakat:,.2f} {currency}"
+            summary += "\n\nবিশেষ নোট:"
+            summary += "\n• যাকাত প্রদানের সময় মূল্যের হ্রাস-বৃদ্ধি বিবেচনা করুন"
+            summary += "\n• যাকাত বছর (হাওল) পূর্ণ হওয়া নিশ্চিত করুন"
+            summary += "\n• সম্পদের মালিকানা ও ঋণমুক্ত অবস্থা যাচাই করুন"
+        else:
+            summary += "\n৪. যাকাত প্রদান করা ফরয নয়"
+            summary += f"\nকারণ: আপনার নীট সম্পদ ({net_wealth:,.2f} {currency}) নিসাব সীমার ({current_nisab:,.2f} {currency}) কম"
+            
+        return summary
+
+    def _format_english_summary(self, assets, liabilities, zakat_by_category, total_assets, total_liabilities, net_wealth, total_zakat, currency, gold_price, silver_price, gold_nisab_value, silver_nisab_value, current_nisab):
+        """Format a detailed summary in English."""
+        summary = "Detailed Zakat Calculation Summary:\n\n"
+        
+        # Nisab and current prices section
+        summary += "Nisab and Current Prices:\n"
+        summary += f"• Gold Nisab: {self.GOLD_NISAB_GRAMS}g = {gold_nisab_value:,.2f} {currency}\n"
+        summary += f"• Silver Nisab: {self.SILVER_NISAB_GRAMS}g = {silver_nisab_value:,.2f} {currency}\n"
+        summary += f"• Current Nisab Threshold: {current_nisab:,.2f} {currency}\n"
+        summary += f"• Current Gold Price: {gold_price:,.2f} {currency}/g\n"
+        summary += f"• Current Silver Price: {silver_price:,.2f} {currency}/g\n\n"
+        
+        # Assets section
+        summary += "1. Provided Assets:\n"
+        for key, value in assets.items():
+            if key in self.ASSET_CATEGORIES:
+                rate_key = self.ASSET_CATEGORIES[key]["rate"]
+                rate = self.ZAKAT_RATES[rate_key] * 100
+                summary += f"   • {key.replace('_', ' ').title()}:\n"
+                summary += f"     - Amount: {float(value):,.2f} {currency}\n"
+                summary += f"     - Zakat Rate: {rate}%\n"
+        
+        # Liabilities section
+        if liabilities:
+            summary += "\n2. Provided Liabilities:\n"
+            for key, value in liabilities.items():
+                summary += f"   • {key.replace('_', ' ').title()}: {float(value):,.2f} {currency}\n"
+        
+        # Calculations section
+        summary += f"\n3. Calculations:\n"
+        summary += f"   • Total Assets: {total_assets:,.2f} {currency}\n"
+        summary += f"   • Total Liabilities: {total_liabilities:,.2f} {currency}\n"
+        summary += f"   • Net Wealth: {net_wealth:,.2f} {currency}\n"
+        summary += f"   • Nisab Status: {'Meets Nisab' if net_wealth >= current_nisab else 'Below Nisab'}\n"
+        
+        # Zakat breakdown
+        if net_wealth >= current_nisab:
+            summary += "\n4. Detailed Zakat Calculation:\n"
+            for category, data in zakat_by_category.items():
+                en_category = next((k.replace('_', ' ').title() for k, v in self.ASSET_CATEGORIES.items() if v['bn'] == category), category)
+                summary += f"   • {en_category}:\n"
+                summary += f"     - Value: {data['value']:,.2f} {currency}\n"
+                summary += f"     - Rate: {data['rate']}%\n"
+                summary += f"     - Zakat: {data['zakat']:,.2f} {currency}\n"
+            
+            summary += f"\nTotal Zakat Due: {total_zakat:,.2f} {currency}"
+            summary += "\n\nImportant Notes:"
+            summary += "\n• Consider value fluctuations when paying Zakat"
+            summary += "\n• Ensure completion of Zakat year (Hawl)"
+            summary += "\n• Verify ownership and debt-free status of assets"
+        else:
+            summary += "\n4. No Zakat is Due"
+            summary += f"\nReason: Your net wealth ({net_wealth:,.2f} {currency}) is below the Nisab threshold ({current_nisab:,.2f} {currency})"
+            
+        return summary 
