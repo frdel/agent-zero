@@ -6,6 +6,3 @@
 ## Memory Results
 {{memory}}
 
-## Citations
-{{citations}}
-

@@ -26,8 +26,7 @@ class Knowledge(Tool):
         # Prepare response
         response_data = {
             "online_sources": searxng_result if searxng_result else "",
-            "memory": memory_result if memory_result else "",
-            "citations": self.format_citations(searxng_result)
+            "memory": memory_result if memory_result else ""
         }
 
         msg = self.agent.read_prompt(
@@ -88,26 +87,3 @@ Content:
                 continue
 
         return "\n\n".join(outputs[:SEARCH_ENGINE_RESULTS]).strip() if outputs else "No valid results found"
-
-    def format_citations(self, search_result: str) -> List[str]:
-        if not search_result:
-            return []
-            
-        citations = []
-        current_citation = {}
-        
-        for line in search_result.split("\n"):
-            if line.startswith("Source:"):
-                if current_citation:
-                    citations.append(self.format_citation(current_citation))
-                current_citation = {"title": line.split(":")[1].strip()}
-            elif line.startswith("URL:"):
-                current_citation["url"] = line.split(":")[1].strip()
-                
-        if current_citation:
-            citations.append(self.format_citation(current_citation))
-            
-        return citations
-
-    def format_citation(self, citation: Dict[str, str]) -> str:
-        return f"{citation.get('title', '')} - {citation.get('url', '')}"
