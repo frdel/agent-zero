@@ -8,12 +8,16 @@ class ZakatQuestionnaireHandler(Tool):
             "id": "cash_in_hand",
             "bn": "আপনার কাছে থাকা নগদ টাকা:",
             "en": "Cash in Hand:",
+            "description_bn": "আপনার নিজের কাছে রাখা নগদ টাকা, যা ব্যাংকে জমা নেই। এর মধ্যে আপনার পকেট, ওয়ালেট, বাড়িতে রাখা টাকা ইত্যাদি অন্তর্ভুক্ত।",
+            "description_en": "Cash that you have in your possession, not deposited in banks. This includes money in your pocket, wallet, kept at home, etc.",
             "category": "cash_and_bank"
         },
         {
             "id": "bank_deposits",
             "bn": "ব্যাংকে জমা টাকা (সকল হিসাব):",
             "en": "Bank Deposits (all accounts):",
+            "description_bn": "সকল ধরনের ব্যাংক অ্যাকাউন্টে জমা টাকা, যেমন: চলতি হিসাব, সঞ্চয়ী হিসাব, এফডিআর, ডিপিএস ইত্যাদি। মোট টাকার পরিমাণ লিখুন।",
+            "description_en": "Money deposited in all types of bank accounts, including: current accounts, savings accounts, fixed deposits (FDR), DPS, etc. Enter the total amount.",
             "category": "cash_and_bank"
         },
         # 2. Loans Given
@@ -21,6 +25,8 @@ class ZakatQuestionnaireHandler(Tool):
             "id": "loans_given",
             "bn": "অন্যদের দেওয়া ঋণ:",
             "en": "Cash Given as Loan:",
+            "description_bn": "আপনি অন্য কাউকে ধার দিয়েছেন এমন টাকা, যা আপনি ফেরত পাওয়ার আশা করেন। এর মধ্যে বন্ধু-বান্ধব, আত্মীয় বা ব্যবসায়িক ঋণ অন্তর্ভুক্ত।",
+            "description_en": "Money you have lent to others that you expect to get back. This includes loans to friends, family, or business loans.",
             "category": "loans_given"
         },
         # 3. Investments
@@ -28,6 +34,8 @@ class ZakatQuestionnaireHandler(Tool):
             "id": "shares_investments",
             "bn": "শেয়ার ও বিনিয়োগ:",
             "en": "Shares and Investments:",
+            "description_bn": "শেয়ার বাজারে বিনিয়োগ, মিউচুয়াল ফান্ড, বন্ড বা অন্যান্য আর্থিক বিনিয়োগের বর্তমান বাজার মূল্য।",
+            "description_en": "Current market value of investments in stock market, mutual funds, bonds, or other financial investments.",
             "category": "investments"
         },
         # 4. Gold and Silver
@@ -35,12 +43,16 @@ class ZakatQuestionnaireHandler(Tool):
             "id": "gold_value",
             "bn": "স্বর্ণের মূল্য:",
             "en": "Value of Gold:",
+            "description_bn": "আপনার কাছে থাকা সকল স্বর্ণের বর্তমান বাজার মূল্য। এর মধ্যে গহনা, বার, কয়েন ইত্যাদি অন্তর্ভুক্ত।",
+            "description_en": "Current market value of all gold in your possession. This includes jewelry, bars, coins, etc.",
             "category": "precious_metals"
         },
         {
             "id": "silver_value",
             "bn": "রূপার মূল্য:",
             "en": "Value of Silver:",
+            "description_bn": "আপনার কাছে থাকা সকল রূপার বর্তমান বাজার মূল্য। এর মধ্যে গহনা, বার, কয়েন ইত্যাদি অন্তর্ভুক্ত।",
+            "description_en": "Current market value of all silver in your possession. This includes jewelry, bars, coins, etc.",
             "category": "precious_metals"
         },
         # 5. Trade Goods
@@ -48,6 +60,8 @@ class ZakatQuestionnaireHandler(Tool):
             "id": "trade_goods",
             "bn": "ব্যবসায়িক পণ্যের মূল্য:",
             "en": "Value of Trade Goods:",
+            "description_bn": "ব্যবসার জন্য রাখা সকল পণ্যের বর্তমান বাজার মূল্য। এর মধ্যে স্টক, ইনভেন্টরি, কাঁচামাল ইত্যাদি অন্তর্ভুক্ত।",
+            "description_en": "Current market value of all goods kept for business. This includes stock, inventory, raw materials, etc.",
             "category": "trade_goods"
         },
         # 6. Investment Properties
@@ -55,13 +69,17 @@ class ZakatQuestionnaireHandler(Tool):
             "id": "investment_properties",
             "bn": "বিনিয়োগ হিসেবে রাখা সম্পত্তির মূল্য:",
             "en": "Property Held as Investments:",
+            "description_bn": "বিনিয়োগ হিসেবে রাখা সকল স্থাবর সম্পত্তির বর্তমান বাজার মূল্য। এর মধ্যে ভাড়া দেওয়া বাড়ি, জমি, দোকান ইত্যাদি অন্তর্ভুক্ত। (নিজের বসবাসের বাড়ি অন্তর্ভুক্ত নয়)",
+            "description_en": "Current market value of all properties held as investments. This includes rental houses, land, shops, etc. (Excludes your primary residence)",
             "category": "investment_properties"
         },
         # 7. Other Income
         {
             "id": "other_income",
             "bn": "অন্যান্য আয়:",
-            "en": "Other Income Price:",
+            "en": "Other Income:",
+            "description_bn": "অন্য কোন খাতে প্রাপ্ত আয় যা উপরের কোন বিভাগে অন্তর্ভুক্ত হয়নি। যেমন: রয়্যালটি, কমিশন, পুরস্কার ইত্যাদি।",
+            "description_en": "Any other income not included in above categories. For example: royalties, commissions, prizes, etc.",
             "category": "other_income"
         },
         # Liabilities Section
@@ -70,6 +88,8 @@ class ZakatQuestionnaireHandler(Tool):
             "id": "borrowed_money",
             "bn": "ধার করা টাকা বা বাকিতে কেনা পণ্যের মূল্য:",
             "en": "Debts (Borrowed Money or Goods Brought on Credit):",
+            "description_bn": "আপনি অন্যের কাছ থেকে ধার নিয়েছেন এমন টাকা বা বাকিতে কেনা পণ্যের মূল্য। এর মধ্যে ব্যক্তিগত ঋণ, ব্যাংক লোন, ক্রেডিট কার্ড বাকি ইত্যাদি অন্তর্ভুক্ত।",
+            "description_en": "Money you have borrowed or value of goods bought on credit. This includes personal loans, bank loans, credit card dues, etc.",
             "category": "liabilities"
         },
         # 2. Dues
@@ -77,6 +97,8 @@ class ZakatQuestionnaireHandler(Tool):
             "id": "dues",
             "bn": "বাকি বিল, পেমেন্ট বা বেতন:",
             "en": "Dues (Bills, Payments or Salaries):",
+            "description_bn": "আপনার উপর বাকি থাকা বিল, পেমেন্ট বা বেতন। যেমন: ইউটিলিটি বিল, ভাড়া, কর্মচারীদের বেতন ইত্যাদি।",
+            "description_en": "Outstanding bills, payments, or salaries you owe. For example: utility bills, rent, employee salaries, etc.",
             "category": "liabilities"
         },
         # 3. Expenses
@@ -84,12 +106,20 @@ class ZakatQuestionnaireHandler(Tool):
             "id": "expenses",
             "bn": "বাদ দিন আপনার খরচ:",
             "en": "Deduct Your Expenses:",
+            "description_bn": "আপনার নিত্য প্রয়োজনীয় খরচ যা আগামী একমাসে প্রয়োজন হবে। যেমন: খাবার, যাতায়াত, চিকিৎসা ইত্যাদি।",
+            "description_en": "Your necessary expenses for the next month. For example: food, transportation, medical expenses, etc.",
             "category": "liabilities"
         }
     ]
 
-    async def execute(self, current_question=0, answers=None, **kwargs):
-        """Handle the questionnaire flow for Zakat calculation."""
+    async def execute(self, current_question=0, answers=None, language="bn", **kwargs):
+        """Handle the questionnaire flow for Zakat calculation.
+        
+        Args:
+            current_question (int): Current question index
+            answers (dict): Previously collected answers
+            language (str): Language preference ('bn' for Bengali, 'en' for English)
+        """
         try:
             if answers is None:
                 answers = {}
@@ -115,8 +145,9 @@ class ZakatQuestionnaireHandler(Tool):
                     return Response(
                         message=str({
                             "status": "error",
-                            "message": "কোন সম্পদের তথ্য প্রদান করা হয়নি।",
-                            "current_question": 0
+                            "message": "কোন সম্পদের তথ্য প্রদান করা হয়নি।" if language == "bn" else "No assets information provided.",
+                            "current_question": 0,
+                            "language": language
                         }),
                         break_loop=False
                     )
@@ -129,7 +160,8 @@ class ZakatQuestionnaireHandler(Tool):
                         "tool_args": {
                             "assets": assets,
                             "liabilities": liabilities if liabilities else None,
-                            "currency": "BDT"
+                            "currency": "BDT",
+                            "language": language
                         }
                     }),
                     break_loop=False
@@ -138,15 +170,33 @@ class ZakatQuestionnaireHandler(Tool):
             # Get current question
             question = self.QUESTIONS[current_question]
             
+            # Format the question prompt
+            if language == "bn":
+                question_text = f"""যাকাত হিসাব প্রশ্নমালা:
+
+প্রশ্ন {current_question + 1} / {len(self.QUESTIONS)}:
+
+{question['bn']}
+
+{question['description_bn']}"""
+            else:
+                question_text = f"""Zakat calculation questionnaire:
+
+Question {current_question + 1} of {len(self.QUESTIONS)}:
+
+{question['en']}
+
+{question['description_en']}"""
+            
             # Add options if available
             response = {
                 "status": "question",
                 "question_id": question["id"],
-                "question_bn": question["bn"],
-                "question_en": question["en"],
-                "current_question": current_question,
+                "prompt": question_text,
+                "current_question": current_question + 1,
                 "total_questions": len(self.QUESTIONS),
-                "answers_so_far": answers
+                "answers_so_far": answers,
+                "language": language
             }
             
             if "options" in question:
@@ -158,11 +208,13 @@ class ZakatQuestionnaireHandler(Tool):
             )
 
         except Exception as e:
+            error_msg = "ত্রুটি ঘটেছে: " if language == "bn" else "Error occurred: "
             return Response(
                 message=str({
                     "status": "error",
-                    "message": f"ত্রুটি ঘটেছে: {str(e)}",
-                    "current_question": current_question
+                    "message": f"{error_msg}{str(e)}",
+                    "current_question": current_question,
+                    "language": language
                 }),
                 break_loop=False
             ) 

@@ -3,7 +3,7 @@ Interactive questionnaire tool to gather information needed for Zakat calculatio
 used for zakat calculation if user wants to calculate zakat
 
 Features:
-- Asks questions in both Bangla and English
+- Asks questions in provided language
 - Collects all necessary asset information
 - Validates responses
 - Automatically triggers Zakat calculation when complete
@@ -20,7 +20,8 @@ Start with no parameters to begin questionnaire:
     "tool_name": "zakat_questionnaire_tool",
     "tool_args": {
         "current_question": 0,
-        "answers": {}
+        "answers": {},
+        "language": "bn"
     }
 }
 ~~~
@@ -37,7 +38,8 @@ Continue with previous answers:
         "current_question": 1,
         "answers": {
             "gold_price": "8500"
-        }
+        },
+        "language": "bn"
     }
 }
 ~~~ 
