@@ -1,66 +1,43 @@
-### knowledge_tool:
-Tool for answering questions using memory database and online Islamic sources.
+### Knowledge Tool
+Islamic information search and verification tool.
 
-**Features:**
-- Searches memory database by default
-- Searches online Islamic sources with enhanced capabilities
-- Provides comprehensive search results from multiple sources
-- Maintains source attribution and citations
-- Supports multilingual search (Arabic, English, and Bengali)
+## Core Rules:
+1. **Source Restrictions**:
+   - ONLY use websites from `knowledge/default/main/websites/websites.md`
+   - MUST parse websites.md for current approved list
+   - NEVER use unapproved websites
+   - If no approved sources have information, explicitly state this
 
-**Website Selection Rules:**
-You MUST follow these strict rules for website selection:
+2. **Language Requirements**:
+   - Primary: Bengali content
+   - Secondary: English translations
+   - Source: Arabic texts
 
-1. ONLY use websites listed in the Islamic Websites Directory (`knowledge/default/main/websites/websites.md`)
-2. You MUST read and parse the websites.md file to get the current approved list
-3. You MUST NEVER use any website not listed in websites.md
-4. If a search returns results from non-approved domains, IGNORE them completely
-5. If you cannot find information from approved sites, state this explicitly rather than using unapproved sources
-
-The tool selects relevant websites from the approved list based on:
-
-1. Question Category:
-   - Quran interpretation and recitation
-   - Hadith verification and translations
-   - Islamic jurisprudence (Fiqh)
-   - Contemporary Islamic issues
+3. **Search Categories**:
+   - Quran (interpretation/recitation)
+   - Hadith (verification/translations)
+   - Fiqh (Islamic jurisprudence)
+   - Contemporary issues
    - Educational resources
-   - General Islamic references
+   - General references
 
-2. Language Requirements:
-   - Always to provide Bengali content
-   - English translations
-   - Arabic source texts
-
-3. Content Depth:
-   - Basic information
-   - Detailed scholarly analysis
-   - Academic research
-   - Practical guidance
-
-**Example usage:**
-~~~json
+## Usage Format:
+```json
 {
-    "thoughts": ["Reading websites.md for approved sources and searching relevant ones..."],
+    "thoughts": ["Searching approved sources from websites.md..."],
     "tool_name": "knowledge_tool",
     "tool_args": {
-        "question": "Your question here",
-        "search_sites": ["approved sites from websites.md based on context"]
+        "question": "<query>",
+        "search_sites": ["<approved_sites_based_on_context>"]
     }
 }
-~~~
+```
 
-**Response Format:**
-- Maintains text formatting and encoding
-- Includes citations and references
-- Lists relevant sources used
-- Clearly indicates when information comes from approved sources
+## Response Requirements:
+- Include source citations
+- Maintain text formatting
+- Indicate approved source usage
+- Prioritize scholarly consensus
+- Follow Islamic ethical guidelines
 
-**Boundaries:**
-- Always use this tool for answering Islamic questions
-- Provide source citations for all references
-- Prioritize scholarly consensus when available
-- Respect Islamic ethical guidelines in content
-- NEVER use or cite unapproved websites
-
-**Note:** The tool will select relevant websites ONLY from the approved list in websites.md based on the question context and required depth of information.
+Note: Website selection is strictly based on websites.md and question context.
