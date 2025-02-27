@@ -10,9 +10,6 @@ Features:
 - Includes common Bangladeshi asset categories
 - Provides results and messages in Bangla
 
-# Values
-- নিসাব ৬৭,৩৬০ টাকা (২৭ মার্চ ২০২৪)
-
 Usage:
 Provide assets as a dictionary and current gold price per gram:
 
