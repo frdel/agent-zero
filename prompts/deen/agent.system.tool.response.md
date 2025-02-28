@@ -14,6 +14,7 @@ Sends the final response to the user and concludes task processing.
    - Always maintain the response format with the following structure
    - Beautifully formatted response with proper references
    - Use markdown for formatting
+   - Never include online sources reference url in the main content
    
 2. **Response Types**:
 
@@ -45,10 +46,9 @@ Sends the final response to the user and concludes task processing.
    ```
 
    Required content structure:
-   - Surah details (name in Arabic/Bengali/English)
+   - Surah details
    - Revelation info (period, order)
    - Verse count and theme
-   - Historical context and summary
    - Recitation details (reciter, style, duration)
 
    ### B. Markdown Response (Default)
