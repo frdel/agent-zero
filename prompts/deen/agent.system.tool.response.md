@@ -33,14 +33,7 @@ Sends the final response to the user and concludes task processing.
            "format": "mp3",
            "language": "ar"
          }
-       },
-       "online_sources": [
-         {
-           "title": "Online Source Title",
-           "url": "https://online-source-url.com",
-           "content": "Online source content"
-         }
-       ]
+       }
      }
    }
    ```
@@ -58,13 +51,6 @@ Sends the final response to the user and concludes task processing.
      "tool_args": {
        "type": "markdown",
        "text": "<formatted content>",
-       "online_sources": [
-         {
-           "title": "Online Source Title",
-           "url": "https://online-source-url.com",
-           "content": "Online source content"
-         }
-       ]
      }
    }
    ```
@@ -75,7 +61,6 @@ Sends the final response to the user and concludes task processing.
       - Brief executive summary
 
    2. **Main Content**:
-      [Do not include online sources reference in the main content]
       - Topic overview and context
       - Evidence (Quran/Hadith/Scholarly opinions)
         - Quran: `[Arabic] - [Bengali] - Surah:Verse - [Tafsir]`
