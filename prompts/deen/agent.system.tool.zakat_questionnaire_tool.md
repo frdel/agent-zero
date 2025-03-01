@@ -1,6 +1,8 @@
 ### zakat_questionnaire_tool:
 Interactive questionnaire tool to gather information needed for Zakat calculation.
-Used for zakat calculation if user wants to calculate zakat.
+Used for zakat calculation if user wants to calculate zakat in a guided manner.
+
+NOTE: This questionnaire is optional for token optimization. Users can directly use the zakat_calculator_tool with their assets and liabilities information. For users who successfully calculated zakat or want to cancel, use the zakat_calculator_tool with status="success" or status="cancel" parameter.
 
 Features:
 - Asks questions in provided language (Bengali or English)

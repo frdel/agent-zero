@@ -79,51 +79,82 @@ class ZakatCalculatorTool(Tool):
             
         return total_value
 
-    def _check_hawl(self, asset_date):
-        """Check if approximately one year (354.367 days - lunar year) has passed."""
-        if not asset_date:
-            return True  # If no date provided, assume Hawl is complete
+    def _check_hawl(self, date_str):
+        """Check if a full Islamic year (Hawl) has passed.
+        
+        Args:
+            date_str (str): Date string in format YYYY-MM-DD
+        
+        Returns:
+            bool: True if Hawl is complete, False otherwise
+        """
+        if not date_str:
+            return True  # If no date is provided, assume Hawl is complete
             
         try:
-            # Convert asset date string to datetime
-            asset_datetime = datetime.strptime(asset_date, "%Y-%m-%d")
+            # Parse the acquisition date
+            acquisition_date = datetime.strptime(date_str, "%Y-%m-%d")
             
-            # Get current date
-            today = datetime.now()
+            # Calculate the Islamic year (approximately 354.367 days)
+            hawl_completion_date = acquisition_date + timedelta(days=354)
             
-            # Calculate the difference in days
-            # Lunar year is approximately 354.367 days
-            days_diff = (today - asset_datetime).days
-            
-            # Return True if at least one lunar year has passed
-            return days_diff >= 354
-            
-        except Exception:
-            return True  # If date parsing fails, assume Hawl is complete
+            # Compare with current date
+            return datetime.now() >= hawl_completion_date
+        except:
+            return True  # If there's an error parsing the date, assume Hawl is complete
 
-    async def execute(self, assets=None, liabilities=None, currency="BDT", asset_dates=None, language="bn", gold_price=12464, silver_price=152, **kwargs):
+    async def execute(self, assets=None, liabilities=None, currency="BDT", asset_dates=None, language="bn", gold_price=12464, silver_price=152, status=None, **kwargs):
         """Calculate Zakat based on provided assets and liabilities.
         
         Args:
-            assets: Dictionary of assets and their values
-            liabilities: Dictionary of liabilities (optional)
-            currency: Currency code (default: "BDT")
-            asset_dates: Dictionary of asset acquisition dates (optional)
-            language: Language preference ("bn" for Bengali, "en" for English)
-            gold_price: Current gold price per gram in specified currency
-            silver_price: Current silver price per gram in specified currency
+            assets (dict): Dictionary of assets and values
+            liabilities (dict): Dictionary of liabilities and values
+            currency (str): Currency code (default: BDT)
+            asset_dates (dict): Dictionary of asset acquisition dates for Hawl calculation
+            language (str): Language preference ('bn' for Bengali, 'en' for English)
+            gold_price (float): Current gold price per gram
+            silver_price (float): Current silver price per gram
+            status (str): Optional status - 'success' for successful calculation, 'cancel' for canceled calculation
         """
         try:
-            if not assets or not isinstance(assets, (dict, str)):
-                message = "অনুগ্রহ করে সম্পদের তথ্য সঠিক ফরম্যাটে প্রদান করুন।" if language == "bn" else "Please provide asset information in the correct format."
-                return Response(message=message, break_loop=False)
+            # Ensure assets and liabilities are properly initialized
+            if assets is None:
+                assets = {}
+                
+            if liabilities is None:
+                liabilities = {}
+                
+            # Handle status parameter for success or cancel states
+            if status == "success":
+                if language == "bn":
+                    return Response(
+                        message="যাকাত গণনা সফলভাবে সম্পন্ন হয়েছে। আপনার যাকাত সম্পর্কিত প্রয়োজনীয় তথ্য প্রদান করা হয়েছে।",
+                        break_loop=False
+                    )
+                else:
+                    return Response(
+                        message="Zakat calculation successfully completed. Your necessary zakat information has been provided.",
+                        break_loop=False
+                    )
+            
+            if status == "cancel":
+                if language == "bn":
+                    return Response(
+                        message="যাকাত হিসাব বাতিল করা হয়েছে। যেকোন সময় আবার যাকাত হিসাব করতে চাইলে জানাবেন।",
+                        break_loop=False
+                    )
+                else:
+                    return Response(
+                        message="Zakat calculation has been canceled. Feel free to ask for zakat calculation again anytime.",
+                        break_loop=False
+                    )
 
-            # Convert string to dict if needed
+            # Convert assets string to dict if needed
             if isinstance(assets, str):
                 try:
-                    assets = json.loads(assets)
+                    assets = json.loads(assets) if assets else {}
                 except json.JSONDecodeError:
-                    message = "সম্পদের ফরম্যাট সঠিক নয়। অনুগ্রহ করে একটি বৈধ JSON অবজেক্ট প্রদান করুন।" if language == "bn" else "Invalid asset format. Please provide a valid JSON object."
+                    message = "সম্পদের ফরম্যাট সঠিক নয়। অনুগ্রহ করে একটি বৈধ JSON অবজেক্ট প্রদান করুন।" if language == "bn" else "Invalid assets format. Please provide a valid JSON object."
                     return Response(message=message, break_loop=False)
 
             # Convert liabilities string to dict if needed
@@ -176,10 +207,11 @@ class ZakatCalculatorTool(Tool):
 
             # Format assets with Bangla categories
             formatted_assets = {}
-            for key, value in assets.items():
-                if key in self.ASSET_CATEGORIES:
-                    bn_key = self.ASSET_CATEGORIES[key]["bn"]
-                    formatted_assets[bn_key] = float(value)
+            if assets:
+                for key, value in assets.items():
+                    if key in self.ASSET_CATEGORIES:
+                        bn_key = self.ASSET_CATEGORIES[key]["bn"]
+                        formatted_assets[bn_key] = float(value)
 
             # Format liabilities with Bangla categories
             formatted_liabilities = {}
@@ -258,24 +290,23 @@ class ZakatCalculatorTool(Tool):
 
     def _format_bengali_summary(self, assets, liabilities, zakat_by_category, total_assets, total_liabilities, net_wealth, total_zakat, currency, gold_price, silver_price, gold_nisab_value, silver_nisab_value, current_nisab):
         """Format a detailed summary in Bengali."""
-        summary = "যাকাত হিসাবের বিস্তারিত সারসংক্ষেপ:\n\n"
         
         # Nisab and current prices section
-        summary += "নিসাব এবং বর্তমান মূল্য:\n"
-        summary += f"• স্বর্ণের নিসাব: {self.GOLD_NISAB_GRAMS} গ্রাম = {gold_nisab_value:,.2f} {currency}\n"
-        summary += f"• রূপার নিসাব: {self.SILVER_NISAB_GRAMS} গ্রাম = {silver_nisab_value:,.2f} {currency}\n"
+        summary = "বিস্তারিত যাকাত হিসাব সংক্ষিপ্তসার:\n\n"
+        summary += "নিসাব সীমা এবং বর্তমান মূল্য:\n"
+        summary += f"• স্বর্ণের নিসাব: {self.GOLD_NISAB_GRAMS}গ্রাম = {gold_nisab_value:,.2f} {currency}\n"
+        summary += f"• রূপার নিসাব: {self.SILVER_NISAB_GRAMS}গ্রাম = {silver_nisab_value:,.2f} {currency}\n"
         summary += f"• বর্তমান নিসাব সীমা: {current_nisab:,.2f} {currency}\n"
-        summary += f"• স্বর্ণের বর্তমান মূল্য: {gold_price:,.2f} {currency}/গ্রাম\n"
-        summary += f"• রূপার বর্তমান মূল্য: {silver_price:,.2f} {currency}/গ্রাম\n\n"
+        summary += f"• বর্তমান স্বর্ণের মূল্য: {gold_price:,.2f} {currency}/গ্রাম\n"
+        summary += f"• বর্তমান রূপার মূল্য: {silver_price:,.2f} {currency}/গ্রাম\n\n"
         
         # Assets section
         summary += "১. প্রদত্ত সম্পদের তথ্য:\n"
         for key, value in assets.items():
             if key in self.ASSET_CATEGORIES:
-                bn_name = self.ASSET_CATEGORIES[key]["bn"]
                 rate_key = self.ASSET_CATEGORIES[key]["rate"]
                 rate = self.ZAKAT_RATES[rate_key] * 100
-                summary += f"   • {bn_name}:\n"
+                summary += f"   • {self.ASSET_CATEGORIES[key]['bn']}:\n"
                 summary += f"     - পরিমাণ: {float(value):,.2f} {currency}\n"
                 summary += f"     - যাকাতের হার: {rate}%\n"
         

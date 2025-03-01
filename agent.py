@@ -406,11 +406,26 @@ class Agent:
     def parse_prompt(self, file: str, **kwargs):
         prompt_dir = files.get_abs_path("prompts/default")
         backup_dir = []
-        if (
-            self.config.prompts_subdir
-        ):  # if agent has custom folder, use it and use default as backup
+        if self.config.prompts_subdir:  # if agent has custom folder, use it and use default as backup
             prompt_dir = files.get_abs_path("prompts", self.config.prompts_subdir)
             backup_dir.append(files.get_abs_path("prompts/default"))
+            
+            # Check for config file in custom prompt directory
+            config_file = files.get_abs_path(prompt_dir, "prompt_config.json")
+            if os.path.exists(config_file):
+                try:
+                    with open(config_file, 'r') as f:
+                        prompt_config = json.load(f)
+                    
+                    # If this is a system prompt and we have a configured structure, use it
+                    if file.startswith("agent.system") and "system_prompt_structure" in prompt_config:
+                        # Add context-specific configuration to kwargs
+                        kwargs["prompt_config"] = prompt_config
+                except Exception as e:
+                    PrintStyle(font_color="yellow", padding=True).print(
+                        f"Warning: Failed to load prompt configuration: {str(e)}"
+                    )
+        
         prompt = files.parse_file(
             files.get_abs_path(prompt_dir, file), _backup_dirs=backup_dir, **kwargs
         )
@@ -419,11 +434,24 @@ class Agent:
     def read_prompt(self, file: str, **kwargs) -> str:
         prompt_dir = files.get_abs_path("prompts/default")
         backup_dir = []
-        if (
-            self.config.prompts_subdir
-        ):  # if agent has custom folder, use it and use default as backup
+        if self.config.prompts_subdir:  # if agent has custom folder, use it and use default as backup
             prompt_dir = files.get_abs_path("prompts", self.config.prompts_subdir)
             backup_dir.append(files.get_abs_path("prompts/default"))
+            
+            # Check for config file in custom prompt directory
+            config_file = files.get_abs_path(prompt_dir, "prompt_config.json")
+            if os.path.exists(config_file):
+                try:
+                    with open(config_file, 'r') as f:
+                        prompt_config = json.load(f)
+                    
+                    # Add context-specific configuration to kwargs
+                    kwargs["prompt_config"] = prompt_config
+                except Exception as e:
+                    PrintStyle(font_color="yellow", padding=True).print(
+                        f"Warning: Failed to load prompt configuration: {str(e)}"
+                    )
+        
         prompt = files.read_file(
             files.get_abs_path(prompt_dir, file), _backup_dirs=backup_dir, **kwargs
         )

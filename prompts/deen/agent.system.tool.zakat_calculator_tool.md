@@ -19,6 +19,7 @@ Features:
 - Provides detailed breakdown in both Bengali and English
 - Supports multiple currencies (default: BDT)
 - Dynamic precious metal prices for accurate Nisab calculation
+- Optional status parameter for handling successful calculation or cancellation without requiring the questionnaire
 
 Usage:
 Provide the following parameters:
@@ -29,6 +30,7 @@ Provide the following parameters:
 - language: (Optional) Language preference ("bn" for Bengali, "en" for English)
 - gold_price: (Optional) Current gold price per gram in specified currency (default: 12464)
 - silver_price: (Optional) Current silver price per gram in specified currency (default: 152)
+- status: (Optional) Set to "success" when calculation is successful or "cancel" when user cancels calculation
 
 Example:
 ~~~json
@@ -53,6 +55,36 @@ Example:
         "gold_price": 12464,
         "silver_price": 152,
         "language": "bn",
+    }
+}
+~~~
+
+For successful calculation acknowledgment:
+~~~json
+{
+    "thoughts": [
+        "User has successfully calculated their zakat",
+        "Will acknowledge successful calculation"
+    ],
+    "tool_name": "zakat_calculator_tool",
+    "tool_args": {
+        "status": "success",
+        "language": "bn"
+    }
+}
+~~~
+
+For cancellation acknowledgment:
+~~~json
+{
+    "thoughts": [
+        "User wants to cancel zakat calculation",
+        "Will acknowledge cancellation"
+    ],
+    "tool_name": "zakat_calculator_tool",
+    "tool_args": {
+        "status": "cancel",
+        "language": "bn"
     }
 }
 ~~~

@@ -1,0 +1,46 @@
+{
+    "system_prompt_structure": [
+        "agent.system.main.role.md",
+        "agent.system.main.communication.md",
+        "agent.system.main.environment.md",
+        "agent.system.main.tips.md",
+        "agent.system.tools.md"
+    ],
+    "tool_prioritization": {
+        "primary_tools": [
+            "response",
+            "knowledge"
+        ],
+        "specialized_tools": [
+            "quran_audio_tool",
+            "zakat_questionnaire_tool",
+            "zakat_calculator_tool"
+        ],
+        "utility_tools": [
+            "memory",
+            "behaviour"
+        ]
+    },
+    "response_formats": {
+        "default": "markdown",
+        "specialized": [
+            "audio"
+        ]
+    },
+    "language_preferences": {
+        "primary": "Bengali",
+        "secondary": [
+            "English",
+            "Arabic"
+        ]
+    },
+    "formatting": {
+        "use_markdown": true,
+        "citation_required": true,
+        "required_elements": [
+            "opening_bismillah",
+            "evidence_citation",
+            "closing_wallahu_alam"
+        ]
+    }
+}
