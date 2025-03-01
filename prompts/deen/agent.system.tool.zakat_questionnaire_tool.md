@@ -7,17 +7,32 @@ Features:
 - Collects all necessary asset information
 - Validates responses
 - Automatically triggers Zakat calculation when complete
+- Dynamically determines next questions based on answers provided
+- Supports all asset types recognized by the calculator, including agricultural and mining assets
+- Allows entry of gold/silver by either weight or value
 
 Questionnaire Flow:
 1. First asks configuration questions (gold/silver prices)
-2. Then asks about assets (cash, investments, property, etc.)
+2. Then asks about various assets:
+   - Cash and bank deposits
+   - Loans given to others
+   - Investments and shares
+   - Precious metals (gold/silver by weight or value)
+   - Trade goods
+   - Agricultural assets (if applicable)
+   - Mining resources (if applicable)
+   - Investment properties
+   - Other income
 3. Finally asks about liabilities (debts, expenses)
 
 Response Format:
-The tool returns the question directly as a string to be shown to the user.
-When complete, it returns a dictionary with instructions to call the zakat_calculator_tool.
+The tool returns an object with:
+- `text`: The question text to display to the user
+- `type`: The type of response expected ("text" or "multiple_choice")
+- `question_id`: The ID of the current question (for internal use)
+- `options`: Array of options (only for multiple_choice questions)
 
-IMPORTANT: The tool now includes a hint at the end of each question with the exact current_question value to use for the next question. Always use this exact value to avoid skipping questions.
+When complete, it returns a dictionary with instructions to call the zakat_calculator_tool.
 
 Usage:
 Start with no parameters to begin questionnaire:
@@ -29,26 +44,42 @@ Start with no parameters to begin questionnaire:
     ],
     "tool_name": "zakat_questionnaire_tool",
     "tool_args": {
-        "current_question": 0,
         "answers": {},
         "language": "bn"  // or "en" for English
     }
 }
 ~~~
 
-Continue with user's answer and move to next question:
+Continue with user's answer:
 ~~~json
 {
     "thoughts": [
         "Continuing questionnaire",
-        "User provided answer '8500' for gold price",
-        "Moving to next question using the specified current_question value"
+        "User provided answer '8500' for gold price"
     ],
     "tool_name": "zakat_questionnaire_tool",
     "tool_args": {
-        "current_question": 1,  // Use EXACTLY the value provided in the previous question
         "answers": {
-            "gold_price": "8500"  // include previous answers
+            "gold_price": "8500",  // add the answer with the question_id
+            // include all previous answers
+        },
+        "language": "bn"
+    }
+}
+~~~
+
+For multiple choice questions, provide the index of the selected option (starting from 0):
+~~~json
+{
+    "thoughts": [
+        "User selected to provide gold information by weight"
+    ],
+    "tool_name": "zakat_questionnaire_tool",
+    "tool_args": {
+        "answers": {
+            "gold_price": "8500",
+            "gold_input_type": "0",  // 0 = weight, 1 = value
+            // include all previous answers
         },
         "language": "bn"
     }
@@ -56,6 +87,7 @@ Continue with user's answer and move to next question:
 ~~~
 
 IMPORTANT REMINDER:
-1. DO NOT skip questions - follow the exact current_question value provided at the end of each question
-2. Display the message directly to the user and wait for their response
-3. Add each answer to the "answers" object with the appropriate question ID 
+1. Always add each new answer to the "answers" object using the question_id
+2. Display the text field from the response to the user and wait for their input
+3. For multiple choice questions, show the options and get the selected index
+4. The tool automatically determines which question to ask next based on the answers dictionary and handles conditional logic 
