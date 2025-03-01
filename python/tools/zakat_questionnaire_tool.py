@@ -1,23 +1,18 @@
 from ..helpers.tool import Tool, Response
+import json
 
 class ZakatQuestionnaireHandler(Tool):
-    CONFIG_QUESTIONS = [
-        # Currency configuration - commented out for now (Bangladesh-only)
-        # {
-        #     "id": "currency",
-        #     "bn": "আপনার মুদ্রা নির্বাচন করুন:",
-        #     "en": "Select your currency:",
-        #     "description_bn": "যে মুদ্রায় আপনি হিসাব করতে চান (যেমন: BDT, USD, EUR, GBP, SAR ইত্যাদি)।",
-        #     "description_en": "The currency you want to calculate in (e.g., BDT, USD, EUR, GBP, SAR etc.).",
-        #     "default": "BDT"
-        # },
+    # Unified question list with categories
+    QUESTIONS = [
+        # Configuration Section
         {
             "id": "gold_price",
             "bn": "স্বর্ণের বর্তমান মূল্য (প্রতি গ্রাম):",
             "en": "Current Gold Price (per gram):",
             "description_bn": "বর্তমান বাজারে স্বর্ণের প্রতি গ্রামের মূল্য (বাংলাদেশি টাকায়)।",
             "description_en": "Current market price of gold per gram in BDT.",
-            "default": "12464"
+            "default": "12464",
+            "category": "configuration"
         },
         {
             "id": "silver_price",
@@ -25,11 +20,10 @@ class ZakatQuestionnaireHandler(Tool):
             "en": "Current Silver Price (per gram):",
             "description_bn": "বর্তমান বাজারে রূপার প্রতি গ্রামের মূল্য (বাংলাদেশি টাকায়)।",
             "description_en": "Current market price of silver per gram in BDT.",
-            "default": "152"
-        }
-    ]
-
-    QUESTIONS = [
+            "default": "152",
+            "category": "configuration"
+        },
+        
         # Assets Section
         # 1. Cash and Bank
         {
@@ -140,6 +134,10 @@ class ZakatQuestionnaireHandler(Tool):
         }
     ]
 
+    # Get questions by category for easy reference
+    def get_questions_by_category(self, category):
+        return [q for q in self.QUESTIONS if q.get("category") == category]
+
     async def execute(self, current_question=0, answers=None, language="bn", calculation_date=None, **kwargs):
         """Handle the questionnaire flow for Zakat calculation.
         
@@ -153,150 +151,133 @@ class ZakatQuestionnaireHandler(Tool):
             if answers is None:
                 answers = {}
 
-            # Handle configuration questions first
-            if current_question < len(self.CONFIG_QUESTIONS):
-                config_question = self.CONFIG_QUESTIONS[current_question]
-                
-                # Format the configuration question prompt
-                if language == "bn":
-                    question_text = f"""যাকাত হিসাব কনফিগারেশন:
-
-প্রশ্ন {current_question + 1} / {len(self.CONFIG_QUESTIONS)}:
-
-{config_question['bn']}
-
-{config_question['description_bn']}
-
-ডিফল্ট মান: {config_question['default']}"""
-                else:
-                    question_text = f"""Zakat Calculation Configuration:
-
-Question {current_question + 1} of {len(self.CONFIG_QUESTIONS)}:
-
-{config_question['en']}
-
-{config_question['description_en']}
-
-Default value: {config_question['default']}"""
-                
-                response = {
-                    "status": "config_question",
-                    "question_id": config_question["id"],
-                    "prompt": question_text,
-                    "current_question": current_question + 1,
-                    "total_config_questions": len(self.CONFIG_QUESTIONS),
-                    "answers_so_far": answers,
-                    "language": language,
-                    "default": config_question["default"]
-                }
-                
-                return Response(
-                    message=str(response),
-                    break_loop=False
-                )
-
-            # Adjust the question index for main questions
-            main_question_index = current_question - len(self.CONFIG_QUESTIONS)
-
-            # If we've collected all answers, calculate Zakat
-            if main_question_index >= len(self.QUESTIONS):
+            # Check if we've collected all answers
+            if current_question >= len(self.QUESTIONS):
                 # Separate assets and liabilities
                 assets = {}
                 liabilities = {}
                 
-                # Get configuration values - using fixed BDT for now
+                # Get configuration values
                 currency = "BDT"  # Fixed for Bangladesh
                 gold_price = float(answers.get("gold_price", 12464))
                 silver_price = float(answers.get("silver_price", 152))
                 
                 # Process answers by category
                 for k, v in answers.items():
-                    if k not in ["gold_price", "silver_price"] and v and float(v) > 0:  # Removed currency check
+                    if k not in ["gold_price", "silver_price"] and v and float(v) > 0:
                         question = next((q for q in self.QUESTIONS if q["id"] == k), None)
                         if question:
                             category = question.get("category", "")
-                            if category in ["liabilities"]:
+                            if category == "liabilities":
                                 liabilities[k] = v
-                            else:
+                            elif category != "configuration":  # Skip configuration values
                                 assets[k] = v
                 
                 if not assets:
+                    error_message = "কোন সম্পদের তথ্য প্রদান করা হয়নি।" if language == "bn" else "No assets information provided."
+                    
+                    # Response for error - directly return the error message to show to user
                     return Response(
-                        message=str({
-                            "status": "error",
-                            "message": "কোন সম্পদের তথ্য প্রদান করা হয়নি।" if language == "bn" else "No assets information provided.",
-                            "current_question": len(self.CONFIG_QUESTIONS),
-                            "language": language
-                        }),
-                        break_loop=False
+                        message=error_message,
+                        break_loop=True  # Break the loop on error
                     )
 
-                # Use Zakat calculator tool with collected answers
+                # Data for the Zakat calculator
+                calculator_args = {
+                    "assets": assets,
+                    "liabilities": liabilities if liabilities else None,
+                    "currency": currency,
+                    "language": language,
+                    "gold_price": gold_price,
+                    "silver_price": silver_price,
+                    "calculation_date": calculation_date
+                }
+                
+                completion_message = "যাকাত গণনা সম্পন্ন। ফলাফলে এগিয়ে যাচ্ছি।" if language == "bn" else "Zakat calculation complete. Proceeding to results."
+                
+                # Return a simple dictionary with the command to use the calculator tool
                 return Response(
-                    message=str({
+                    message={
+                        "message_to_user": completion_message,
                         "status": "complete",
                         "use_tool": "zakat_calculator_tool",
-                        "tool_args": {
-                            "assets": assets,
-                            "liabilities": liabilities if liabilities else None,
-                            "currency": currency,
-                            "language": language,
-                            "gold_price": gold_price,
-                            "silver_price": silver_price,
-                            "calculation_date": calculation_date
-                        }
-                    }),
-                    break_loop=False
+                        "tool_args": calculator_args
+                    },
+                    break_loop=True  # Break the loop when complete
                 )
 
-            # Get current main question
-            question = self.QUESTIONS[main_question_index]
+            # Get current question
+            question = self.QUESTIONS[current_question]
+            current_question_id = question["id"]
             
-            # Format the question prompt
+            # Get the current category and count questions in this category
+            current_category = question.get("category", "")
+            category_questions = self.get_questions_by_category(current_category)
+            category_index = category_questions.index(question) + 1
+            
+            # Format the question prompt with category header
+            category_headers = {
+                "configuration": "যাকাত হিসাব কনফিগারেশন" if language == "bn" else "Zakat Calculation Configuration",
+                "cash_and_bank": "নগদ ও ব্যাংক" if language == "bn" else "Cash and Bank",
+                "loans_given": "প্রদত্ত ঋণ" if language == "bn" else "Loans Given",
+                "investments": "বিনিয়োগ" if language == "bn" else "Investments",
+                "precious_metals": "মূল্যবান ধাতু" if language == "bn" else "Precious Metals",
+                "trade_goods": "ব্যবসায়িক পণ্য" if language == "bn" else "Trade Goods",
+                "investment_properties": "বিনিয়োগকৃত সম্পত্তি" if language == "bn" else "Investment Properties",
+                "other_income": "অন্যান্য আয়" if language == "bn" else "Other Income",
+                "liabilities": "দায়" if language == "bn" else "Liabilities"
+            }
+            
+            category_header = category_headers.get(current_category, "")
+            
             if language == "bn":
                 question_text = f"""যাকাত হিসাব প্রশ্নমালা:
 
-প্রশ্ন {main_question_index + 1} / {len(self.QUESTIONS)}:
+বিভাগ: {category_header}
+প্রশ্ন {current_question + 1} / {len(self.QUESTIONS)}:
 
 {question['bn']}
 
 {question['description_bn']}"""
+                input_prompt = "\n\nদয়া করে আপনার উত্তর লিখুন:"
             else:
                 question_text = f"""Zakat calculation questionnaire:
 
-Question {main_question_index + 1} of {len(self.QUESTIONS)}:
+Category: {category_header}
+Question {current_question + 1} of {len(self.QUESTIONS)}:
 
 {question['en']}
 
 {question['description_en']}"""
+                input_prompt = "\n\nPlease enter your answer:"
             
-            # Add options if available
-            response = {
-                "status": "question",
-                "question_id": question["id"],
-                "prompt": question_text,
-                "current_question": current_question + 1,
-                "total_questions": len(self.CONFIG_QUESTIONS) + len(self.QUESTIONS),
-                "answers_so_far": answers,
-                "language": language
-            }
+            # Add default value for configuration questions
+            if "default" in question:
+                if language == "bn":
+                    question_text += f"\n\nডিফল্ট মান: {question['default']}"
+                else:
+                    question_text += f"\n\nDefault value: {question['default']}"
             
-            if "options" in question:
-                response["options"] = question["options"]
-
+            # Add input prompt
+            question_text += input_prompt
+            
+            # Add instruction for next question at the end (important!)
+            if language == "bn":
+                question_text += f"\n\n(পরবর্তী প্রশ্নে যাওয়ার জন্য current_question={current_question + 1} ব্যবহার করুন)"
+            else:
+                question_text += f"\n\n(Use current_question={current_question + 1} to proceed to next question)"
+            
+            # Simply return the question text directly - this will be displayed to the user
             return Response(
-                message=str(response),
-                break_loop=False
+                message=question_text,
+                break_loop=True  # Break the loop to wait for user input
             )
 
         except Exception as e:
-            error_msg = "ত্রুটি ঘটেছে: " if language == "bn" else "Error occurred: "
+            error_msg = f"{'ত্রুটি ঘটেছে:' if language == 'bn' else 'Error occurred:'} {str(e)}"
+            
+            # Return the error message directly to show to user
             return Response(
-                message=str({
-                    "status": "error",
-                    "message": f"{error_msg}{str(e)}",
-                    "current_question": current_question,
-                    "language": language
-                }),
-                break_loop=False
+                message=error_msg,
+                break_loop=True  # Break the loop on error
             ) 
