@@ -4,7 +4,9 @@ Sends the final response to the user and concludes task processing.
 ## Purpose:
 - Provides Islamic-based answers with proper references
 - Concludes task processing
-- Use only when task complete
+- Use EVERY TIME you need to respond to the user, including your FIRST response
+
+## ⚠️ CRITICAL: You MUST use this format for EVERY response, including your very FIRST message.
 
 ## Response Guidelines:
 
@@ -14,7 +16,7 @@ Sends the final response to the user and concludes task processing.
    - Always maintain the response format with the following structure
    - Beautifully formatted response with proper references
    - Use markdown for formatting
-   - Never include online sources reference url in the main content
+   - Never include any url in the main content
    
 2. **Response Types**:
 
@@ -79,3 +81,5 @@ Sends the final response to the user and concludes task processing.
    - Present multiple viewpoints when applicable
    - Focus on practical application
    - Use clear, accessible language
+
+ALWAYS use the proper tool format shown above for EVERY response.
