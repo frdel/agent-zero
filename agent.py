@@ -10,8 +10,9 @@ import models
 from langchain_core.prompt_values import ChatPromptValue
 from python.helpers import extract_tools, rate_limiter, files, errors, history, tokens
 from python.helpers.print_style import PrintStyle
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, HumanMessagePromptTemplate, StringPromptTemplate
+from langchain_core.prompts.image import ImagePromptTemplate
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, BaseMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.embeddings import Embeddings
@@ -19,6 +20,7 @@ import python.helpers.log as Log
 from python.helpers.dirty_json import DirtyJson
 from python.helpers.defer import DeferredTask
 from typing import Callable
+from python.helpers.history import OutputMessage
 
 
 class AgentContext:
@@ -187,7 +189,7 @@ class AgentConfig:
 @dataclass
 class UserMessage:
     message: str
-    attachments: list[str]
+    attachments: list[str] = field(default_factory=list[str])
 
 
 class LoopData:
@@ -357,10 +359,14 @@ class Agent:
         loop_data.extras_temporary.clear()
 
         # combine history and extras
-        history_combined = history.group_outputs_abab(loop_data.history_output + extras)
+        history_combined: list[OutputMessage] = history.group_outputs_abab(loop_data.history_output + extras)
 
         # convert history to LLM format
-        history_langchain = history.output_langchain(history_combined)
+        history_langchain: list[BaseMessage] = history.output_langchain(history_combined)
+
+        PrintStyle(font_color="grey", background_color="black", bold=True, padding=True).print(
+            f"History Langchain: {history_langchain}"
+        )
 
         # build chain from system prompt, message history and model
         prompt = ChatPromptTemplate.from_messages(
@@ -479,9 +485,10 @@ class Agent:
         content = self.parse_prompt("fw.warning.md", message=message)
         return self.hist_add_message(False, content=content)
 
-    async def hist_add_tool_result(self, tool_name: str, tool_result: str):
+    async def hist_add_tool_result(self, tool_name: str, tool_result: str, attachments: list[str] = []):
+        attachments_str = json.dumps(attachments).replace("\n", "")
         content = self.parse_prompt(
-            "fw.tool_result.md", tool_name=tool_name, tool_result=tool_result
+            "fw.tool_result.md", tool_name=tool_name, tool_result=tool_result, attachments=attachments_str
         )
         return self.hist_add_message(False, content=content)
 
