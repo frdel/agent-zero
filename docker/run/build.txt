@@ -11,6 +11,9 @@ docker build -f ./DockerfileKali -t agent-zero-run:hacking --build-arg BRANCH=ma
 
 docker login
 
+# hacking
+docker buildx build --build-arg BRANCH=hacking -t frdel/agent-zero-run:hacking --platform linux/amd64,linux/arm64 --push --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
+
 # development:
 docker buildx build --build-arg BRANCH=development -t frdel/agent-zero-run:development --platform linux/amd64,linux/arm64 --push --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
 
