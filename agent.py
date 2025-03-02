@@ -245,6 +245,8 @@ class Agent:
         self.data = {}  # free data object all the tools can use
 
     async def monologue(self):
+        self.set_data('monolog_start', time.time())
+
         while True:
             try:
                 # loop data dictionary to pass to extensions
@@ -275,15 +277,26 @@ class Agent:
                             type="agent", heading=f"{self.agent_name}: Generating"
                         )
 
+                        start = time.time()
+                        ttft = ''
                         async def stream_callback(chunk: str, full: str):
+                            nonlocal ttft
                             # output the agent response stream
                             if chunk:
                                 printer.stream(chunk)
-                                self.log_from_stream(full, log)
+                                duration = time.strftime("%H:%M:%S", time.gmtime(time.time() - start))
+                                if not ttft:
+                                    ttft = duration
+                                self.set_data('response_ttft', ttft)
+                                self.set_data('response_duration', duration)
+                                self.log_from_stream(full, log, duration, ttft)
 
                         # store as last context window content
                         self.set_data(Agent.DATA_NAME_CTX_WINDOW, prompt.format())
 
+                        self.log_from_stream('', log, '00:00:00', '00:00:00')
+                        self.set_data('response_ttft', '00:00:00')
+                        self.set_data('response_duration', '00:00:00')
                         agent_response = await self.call_chat_model(
                             prompt, callback=stream_callback
                         )
@@ -648,15 +661,20 @@ class Agent:
                 type="error", content=f"{self.agent_name}: Message misformat"
             )
 
-    def log_from_stream(self, stream: str, logItem: Log.LogItem):
+    def log_from_stream(self, stream: str, logItem: Log.LogItem, duration: str, ttft: str):
+        # We do not want to crash the loop because of a log error
         try:
             if len(stream) < 25:
                 return  # no reason to try
             response = DirtyJson.parse_string(stream)
             if isinstance(response, dict):
-                # log if result is a dictionary already
-                logItem.update(content=stream, kvps=response)
-        except Exception as e:
+                response["duration"] = duration
+                response["time_to_first_token"] = ttft
+            else:
+                response = {"duration": duration, "time_to_first_token": ttft}
+            # log if result is a dictionary already
+            logItem.update(content=stream, kvps=response)
+        except Exception:
             pass
 
     def get_tool(self, name: str, args: dict, message: str, **kwargs):

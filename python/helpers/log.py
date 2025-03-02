@@ -201,4 +201,3 @@ class Log:
                     item.heading,
                     (item.no if item.update_progress == "persistent" else -1),
                 )
-            
