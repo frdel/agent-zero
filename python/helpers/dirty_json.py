@@ -103,9 +103,14 @@ class DirtyJson:
         return None
 
     def _match(self, text: str) -> bool:
-        cnt = len(text)
-        if self._peek(cnt).lower() == text.lower():
-            self._advance(cnt)
+        # first char should match current char
+        if not self.current_char or self.current_char.lower() != text[0].lower():
+            return False
+        
+        # peek remaining chars
+        remaining = len(text) - 1
+        if self._peek(remaining).lower() == text[1:].lower():
+            self._advance(len(text))
             return True
         return False
     
@@ -187,6 +192,13 @@ class DirtyJson:
             self._skip_whitespace()
             if self.current_char == ',':
                 self._advance()
+                # handle trailing commas, end of array
+                self._skip_whitespace()
+                if self.current_char is None or self.current_char == ']':
+                    if self.current_char == ']':
+                        self._advance()
+                    self.stack.pop()
+                    return
             elif self.current_char != ']':
                 self.stack.pop()
                 return
@@ -244,30 +256,6 @@ class DirtyJson:
             return int(number_str)
         except ValueError:
             return float(number_str)
-
-    def _parse_true(self):
-        self._advance()
-        for char in 'rue':
-            if self.current_char != char:
-                return None
-            self._advance()
-        return True
-
-    def _parse_false(self):
-        self._advance()
-        for char in 'alse':
-            if self.current_char != char:
-                return None
-            self._advance()
-        return False
-
-    def _parse_null(self):
-        self._advance()
-        for char in 'ull':
-            if self.current_char != char:
-                return None
-            self._advance()
-        return None
 
     def _parse_unquoted_string(self):
         result = ""

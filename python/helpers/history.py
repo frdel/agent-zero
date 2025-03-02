@@ -126,7 +126,7 @@ class Topic(Record):
         msg_max_size = (
             set["chat_model_ctx_length"]
             * set["chat_model_ctx_history"]
-            * HISTORY_TOPIC_RATIO
+            * CURRENT_TOPIC_RATIO
             * LARGE_MESSAGE_TO_TOPIC_RATIO
         )
         large_msgs = []
