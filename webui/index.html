@@ -216,19 +216,19 @@
                     <span id="stop-speech" @click="window.speech.stop()" style="cursor: pointer">Stop Speech</span>
                 </h4>
             </div>
-            <div id="input-section" x-data="{ 
+            <div id="input-section" x-data="{
                 paused: false,
                 attachments: [],
                 hasAttachments: false,
-                
+
                 handleFileUpload(event) {
                     const files = event.target.files;
-    
+
                     Array.from(files).forEach(file => {
                         const ext = file.name.split('.').pop().toLowerCase();
-                       
+
                             const isImage = ['jpg', 'jpeg', 'png', 'bmp'].includes(ext);
-                            
+
                             if (isImage) {
                                 // Handle image preview
                                 const reader = new FileReader();
@@ -298,7 +298,7 @@
                     <!-- Container for textarea and button -->
                     <div id="chat-input-container" style="position: relative;">
                         <textarea id="chat-input" placeholder="Type your message here..." rows="1"></textarea>
-                        
+
                         <!-- Expand button inside the textarea container -->
                         <button id="expand-button" @click="$store.fullScreenInputModal.openModal()" aria-label="Expand input">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -306,7 +306,7 @@
                             </svg>
                         </button>
                     </div>
-                    
+
                     <div id="chat-buttons-wrapper">
 
                         <!-- Send button -->
@@ -406,6 +406,36 @@
                                 stroke-width="0.5" stroke="currentColor" />
                         </svg>
                         <p>Nudge</p>
+                    </button>
+
+                    <button class="text-button ml-auto" id="reasoning_button" x-data="{ reasoning: false }" @click="window.toggleReasoning(!reasoning); reasoning = !reasoning" :class="{ 'active-reasoning': reasoning }">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" fill="currentColor">
+                            <path d="M475.619,295.498l-41.406-87.766c0.109-2.625,0.203-5.266,0.203-7.906
+                                c0-110.359-89.469-199.828-199.828-199.828S34.744,89.467,34.744,199.826c0,62.063,28.297,117.5,72.672,154.156v70.641
+                                c0,6.891,4.125,13.125,10.453,15.797l165.516,70.219c5.281,2.25,11.359,1.688,16.172-1.484c4.797-3.188,7.688-8.563,7.688-14.313
+                                v-59.844c0-9.484,7.688-17.172,17.172-17.172h84.75c9.484,0,17.156-7.703,17.156-17.172v-51.609c0-6.563,3.766-12.563,9.672-15.438
+                                l31.594-15.344C476.041,314.154,479.619,303.998,475.619,295.498z M234.588,335.717c-75.047,0-135.891-60.828-135.891-135.891
+                                c0-75.047,60.844-135.875,135.891-135.875s135.875,60.828,135.875,135.875C370.463,274.889,309.635,335.717,234.588,335.717z"/>
+                            <path d="M330.432,216.623c3.672-0.281,6.484-3.328,6.484-7.016v-16.766c0-3.688-2.813-6.734-6.484-7.031l-22.234-1.734
+                                c-1.391-0.094-2.625-0.984-3.156-2.297l-7.328-17.656c-0.531-1.297-0.297-2.797,0.609-3.875l14.5-16.953
+                                c2.391-2.781,2.234-6.938-0.375-9.531l-11.859-11.875c-2.609-2.594-6.766-2.75-9.547-0.375l-16.953,14.5
+                                c-1.063,0.906-2.578,1.156-3.859,0.625l-17.656-7.328c-1.313-0.531-2.203-1.766-2.313-3.172l-1.719-22.219
+                                c-0.297-3.688-3.359-6.5-7.031-6.5h-16.781c-3.672,0-6.734,2.813-7.016,6.5l-1.719,22.219c-0.109,1.406-1.016,2.641-2.328,3.172
+                                l-17.641,7.328c-1.313,0.531-2.797,0.281-3.875-0.625l-16.953-14.5c-2.797-2.375-6.953-2.219-9.547,0.375l-11.859,11.875
+                                c-2.594,2.594-2.766,6.75-0.375,9.531l14.5,16.953c0.906,1.078,1.156,2.578,0.609,3.875l-7.313,17.656
+                                c-0.531,1.313-1.781,2.203-3.188,2.297l-22.234,1.734c-3.656,0.297-6.469,3.344-6.469,7.031v16.766
+                                c0,3.688,2.813,6.734,6.469,7.016l22.234,1.734c1.406,0.109,2.656,1,3.188,2.313l7.313,17.656c0.547,1.281,0.297,2.797-0.609,3.859
+                                l-14.5,16.969c-2.391,2.781-2.219,6.938,0.375,9.531l11.859,11.859c2.594,2.609,6.75,2.766,9.547,0.391l16.953-14.516
+                                c1.078-0.891,2.563-1.141,3.875-0.594l17.641,7.313c1.313,0.531,2.219,1.766,2.328,3.156l1.719,22.25
+                                c0.281,3.656,3.344,6.484,7.016,6.484h16.781c3.672,0,6.734-2.828,7.031-6.484l1.719-22.25c0.109-1.391,1-2.625,2.313-3.156
+                                l17.656-7.313c1.281-0.547,2.797-0.297,3.859,0.594l16.953,14.516c2.781,2.375,6.938,2.219,9.547-0.391l11.859-11.859
+                                c2.609-2.594,2.766-6.75,0.375-9.531l-14.5-16.969c-0.906-1.063-1.141-2.578-0.609-3.859l7.328-17.656
+                                c0.531-1.313,1.766-2.203,3.156-2.313L330.432,216.623z M233.119,236.311c-9.375,0-18.188-3.656-24.813-10.281
+                                s-10.266-15.438-10.266-24.797c0-9.375,3.641-18.188,10.266-24.813c6.625-6.641,15.438-10.281,24.813-10.281
+                                s18.188,3.641,24.813,10.281c6.625,6.625,10.266,15.438,10.266,24.813c0,9.359-3.641,18.172-10.266,24.797
+                                S242.494,236.311,233.119,236.311z"/>
+                        </svg>
+                        <p x-text="reasoning ? 'Reasoning: >ON<' : 'Reasoning: >OFF<'"></p>
                     </button>
 
                 </div>
@@ -681,18 +711,19 @@
                     </div>
                 </div> -->
                 </div>
+            </div>
         </template>
     </div>
 
     <!-- Full Screen Input Modal -->
     <div id="fullScreenInputModal" x-data="fullScreenInputModalProxy">
         <template x-teleport="body">
-            <div x-show="isOpen" class="modal-overlay" @click.self="handleClose()" 
+            <div x-show="isOpen" class="modal-overlay" @click.self="handleClose()"
                 @keydown.escape.window="handleClose()" x-transition>
                 <div class="modal-container full-screen-input-modal">
                     <div class="modal-content">
                         <button class="modal-close" @click="handleClose()">&times;</button>
-                        
+
                         <!-- Add toolbar -->
                         <div class="editor-toolbar">
                             <div class="toolbar-group">
@@ -725,8 +756,8 @@
                             </div>
                         </div>
 
-                        <textarea id="full-screen-input" x-model="inputText" 
-                            placeholder="Type your message here..." 
+                        <textarea id="full-screen-input" x-model="inputText"
+                            placeholder="Type your message here..."
                             @keydown.ctrl.enter="handleClose()"
                             @keydown.ctrl.z.prevent="undo()"
                             @keydown.ctrl.shift.z.prevent="redo()"
@@ -744,9 +775,9 @@
     </div>
 
     <!-- Drag and Drop Overlay -->
-    <div id="dragdrop-overlay" 
+    <div id="dragdrop-overlay"
          x-cloak
-         x-data="{ isVisible: false }" 
+         x-data="{ isVisible: false }"
          x-show="isVisible"
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0"

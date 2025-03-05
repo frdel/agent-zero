@@ -15,5 +15,3 @@
 {{ include './agent.system.tool.input.md' }}
 
 {{ include './agent.system.tool.browser.md' }}
-
-{{ include './agent.system.tool.reasoning_tool.md' }}

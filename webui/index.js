@@ -20,7 +20,7 @@ let context = "";
 let connectionStatus = false
 
 
-// Initialize the toggle button 
+// Initialize the toggle button
 setupSidebarToggle();
 
 function isMobile() {
@@ -149,7 +149,7 @@ export async function sendMessage() {
             //     } else {
             //         toast("Undefined error.", "error");
             //     }
-            // } 
+            // }
             else {
                 setContext(jsonResponse.context);
             }
@@ -625,7 +625,7 @@ window.loadChats = async function () {
         //     } else {
         //         toast("Undefined error.", "error")
         //     }
-        // } 
+        // }
         else {
             setContext(response.ctxids[0])
             toast("Chats loaded.", "success")
@@ -905,7 +905,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dragDropOverlay.addEventListener('drop', (e) => {
         dragCounter = 0;
         Alpine.$data(dragDropOverlay).isVisible = false;
-        
+
         const inputAD = Alpine.$data(inputSection);
         const files = e.dataTransfer.files;
         handleFiles(files, inputAD);
@@ -916,9 +916,9 @@ document.addEventListener('DOMContentLoaded', () => {
 function handleFiles(files, inputAD) {
     Array.from(files).forEach(file => {
         const ext = file.name.split('.').pop().toLowerCase();
-       
+
             const isImage = ['jpg', 'jpeg', 'png', 'bmp'].includes(ext);
-            
+
             if (isImage) {
                 const reader = new FileReader();
                 reader.onload = e => {
@@ -941,7 +941,7 @@ function handleFiles(files, inputAD) {
                 });
                 inputAD.hasAttachments = true;
             }
-        
+
     });
 }
 
@@ -950,4 +950,12 @@ window.handleFileUpload = function(event) {
     const files = event.target.files;
     const inputAD = Alpine.$data(inputSection);
     handleFiles(files, inputAD);
+}
+
+window.toggleReasoning = async function (reasoning) {
+    try {
+        const resp = await sendJsonData("/reasoning", { reasoning: reasoning, context });
+    } catch (e) {
+        window.toastFetchError("Error toggling reasoning", e)
+    }
 }

@@ -50,6 +50,7 @@ class AgentContext:
         self.task: DeferredTask | None = None
         AgentContext._counter += 1
         self.no = AgentContext._counter
+        self.reasoning = False
 
         existing = self._contexts.get(self.id, None)
         if existing:
@@ -192,6 +193,7 @@ class AgentConfig:
 class UserMessage:
     message: str
     attachments: list[str]
+    system_message: list[str] = field(default_factory=list[str])
 
 
 class LoopData:
@@ -456,12 +458,14 @@ class Agent:
                 "fw.intervention.md",
                 message=message.message,
                 attachments=message.attachments,
+                system_message=message.system_message,
             )
         else:
             content = self.parse_prompt(
                 "fw.user_message.md",
                 message=message.message,
                 attachments=message.attachments,
+                system_message=message.system_message,
             )
 
         # remove empty attachments from template
