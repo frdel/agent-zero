@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+set -o pipefail
+
 # Paths
 SOURCE_DIR="/git/agent-zero"
 TARGET_DIR="/a0"

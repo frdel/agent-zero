@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+set -o pipefail
+
 # Set up SSH
 mkdir -p /var/run/sshd && \
     # echo 'root:toor' | chpasswd && \

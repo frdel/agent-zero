@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+set -o pipefail
+
 # clone SearXNG repo
 git clone "https://github.com/searxng/searxng" \
                    "/usr/local/searxng/searxng-src"

@@ -7,6 +7,8 @@ if [ -z "$1" ]; then
 fi
 BRANCH="$1"
 
+set -e
+set -o pipefail
 # clone project repo branch
 git clone -b "$BRANCH" "https://github.com/frdel/agent-zero" "/git/agent-zero"
 

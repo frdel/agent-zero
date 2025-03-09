@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+set -o pipefail
+
 # Install necessary packages
 apt-get install -y \
     python3.12-dev python3-babel python3.12-venv \
