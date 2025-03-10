@@ -264,6 +264,9 @@ class Agent:
                         # prepare LLM chain (model, system, history)
                         prompt = await self.prepare_prompt(loop_data=self.loop_data)
 
+                        if self.get_data('agent_responded') is None:
+                            self.set_data('agent_responded', False)
+
                         # output that the agent is starting
                         PrintStyle(
                             bold=True,
@@ -275,11 +278,22 @@ class Agent:
                             type="agent", heading=f"{self.agent_name}: Generating"
                         )
 
+                        last_object = None
+
                         async def stream_callback(chunk: str, full: str):
+                            nonlocal last_object
                             # output the agent response stream
                             if chunk:
                                 printer.stream(chunk)
-                                self.log_from_stream(full, log)
+                                current_object = self.log_from_stream(full, log)
+                                complete_response = True
+                                for key in ['thoughts', 'tool_name', 'tool_args']:
+                                    if key not in current_object:
+                                        complete_response = False
+                                if complete_response and last_object and current_object == last_object:
+                                    self.set_data('agent_responded', True)
+
+                                last_object = current_object
 
                         # store as last context window content
                         self.set_data(Agent.DATA_NAME_CTX_WINDOW, prompt.format())
@@ -567,8 +581,14 @@ class Agent:
             limiter.add(output=tokens.approximate_tokens(content))
             response += content
 
+            # here we might have set the agent_responded flag to True
             if callback:
                 await callback(content, response)
+
+            # if the agent has responded, we can break the streaming loop to forbid multiple json stanzas or plaintext comments
+            if self.get_data('agent_responded'):
+                PrintStyle(background_color="black", font_color="grey", padding=True).print("Agent full response received, breaking streaming loop")
+                break
 
         return response
 
@@ -648,16 +668,20 @@ class Agent:
                 type="error", content=f"{self.agent_name}: Message misformat"
             )
 
-    def log_from_stream(self, stream: str, logItem: Log.LogItem):
+    def log_from_stream(self, stream: str, logItem: Log.LogItem) -> dict[str, Any]:
         try:
             if len(stream) < 25:
-                return  # no reason to try
+                return {}  # no reason to try
             response = DirtyJson.parse_string(stream)
             if isinstance(response, dict):
                 # log if result is a dictionary already
                 logItem.update(content=stream, kvps=response)
-        except Exception as e:
+                return response
+
+        except Exception:
             pass
+
+        return {}
 
     def get_tool(self, name: str, args: dict, message: str, **kwargs):
         from python.tools.unknown import Unknown
