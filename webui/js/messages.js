@@ -162,23 +162,40 @@ export function drawMessageAgent(
   temp,
   kvps = null
 ) {
-  let kvpsFlat = null;
+  const messageDiv = document.createElement('div');
+  messageDiv.classList.add('message', 'message-agent');
+
+  // Create heading element
+  const headingDiv = document.createElement('div');
+  headingDiv.classList.add('message-heading');
+  headingDiv.textContent = heading || 'Agent message';
+  messageDiv.appendChild(headingDiv);
+
+  // Create content wrapper
+  const contentWrapper = document.createElement('div');
+  contentWrapper.classList.add('message-content');
+
+  // Add kvps first if provided
   if (kvps) {
-    kvpsFlat = { ...kvps, ...(kvps["tool_args"] || {}) };
-    delete kvpsFlat["tool_args"];
+    drawKvps(contentWrapper, kvps, true);
   }
 
-  _drawMessage(
-    messageContainer,
-    heading,
-    content,
-    temp,
-    false,
-    kvpsFlat,
-    ["message-ai", "message-agent"],
-    ["msg-json"],
-    true
-  );
+  // Add JSON content after kvps
+  if (content) {
+    const contentDiv = document.createElement('pre');
+    contentDiv.classList.add('msg-content', 'msg-json');
+    contentDiv.style.whiteSpace = 'pre-wrap';
+    contentDiv.style.wordBreak = 'break-word';
+
+    const spanElement = document.createElement('span');
+    spanElement.innerHTML = convertHTML(content);
+    contentDiv.appendChild(spanElement);
+    addCopyButtonToElement(contentDiv);
+    contentWrapper.appendChild(contentDiv);
+  }
+
+  messageDiv.appendChild(contentWrapper);
+  messageContainer.appendChild(messageDiv);
 }
 
 export function drawMessageResponse(
@@ -330,16 +347,41 @@ export function drawMessageTool(
   temp,
   kvps = null
 ) {
-  _drawMessage(
-    messageContainer,
-    heading,
-    content,
-    temp,
-    true,
-    kvps,
-    ["message-ai", "message-tool"],
-    ["msg-output"]
-  );
+  const messageDiv = document.createElement('div');
+  messageDiv.classList.add('message', 'message-tool');
+
+  // Create heading element
+  const headingDiv = document.createElement('div');
+  headingDiv.classList.add('message-heading');
+  headingDiv.textContent = heading || 'Tool execution';
+  messageDiv.appendChild(headingDiv);
+
+  // Create content wrapper
+  const contentWrapper = document.createElement('div');
+  contentWrapper.classList.add('message-content');
+
+  // Add content if provided
+  if (content) {
+    const contentDiv = document.createElement('pre');
+    contentDiv.classList.add('msg-content', 'msg-output');
+    contentDiv.style.whiteSpace = 'pre-wrap';
+    contentDiv.style.wordBreak = 'break-word';
+
+    const spanElement = document.createElement('span');
+    spanElement.innerHTML = convertHTML(content);
+    contentDiv.appendChild(spanElement);
+    addCopyButtonToElement(contentDiv);
+    contentWrapper.appendChild(contentDiv);
+  }
+
+  // Add kvps if provided
+  if (kvps) {
+    drawKvps(contentWrapper, kvps, false);
+  }
+
+  messageDiv.appendChild(contentWrapper);
+  messageContainer.appendChild(messageDiv);
+  messageContainer.classList.add('message-followup');
 }
 
 export function drawMessageCodeExe(
@@ -351,10 +393,41 @@ export function drawMessageCodeExe(
   temp,
   kvps = null
 ) {
-  _drawMessage(messageContainer, heading, content, temp, true, null, [
-    "message-ai",
-    "message-code-exe",
-  ]);
+  const messageDiv = document.createElement('div');
+  messageDiv.classList.add('message', 'message-code-exe');
+
+  // Create heading element
+  const headingDiv = document.createElement('div');
+  headingDiv.classList.add('message-heading');
+  headingDiv.textContent = heading || 'Code execution';
+  messageDiv.appendChild(headingDiv);
+
+  // Create content wrapper
+  const contentWrapper = document.createElement('div');
+  contentWrapper.classList.add('message-content');
+
+  // Add content if provided
+  if (content) {
+    const contentDiv = document.createElement('pre');
+    contentDiv.classList.add('msg-content');
+    contentDiv.style.whiteSpace = 'pre-wrap';
+    contentDiv.style.wordBreak = 'break-word';
+
+    const spanElement = document.createElement('span');
+    spanElement.innerHTML = convertHTML(content);
+    contentDiv.appendChild(spanElement);
+    addCopyButtonToElement(contentDiv);
+    contentWrapper.appendChild(contentDiv);
+  }
+
+  // Add kvps if provided
+  if (kvps) {
+    drawKvps(contentWrapper, kvps, false);
+  }
+
+  messageDiv.appendChild(contentWrapper);
+  messageContainer.appendChild(messageDiv);
+  messageContainer.classList.add('message-followup');
 }
 
 export function drawMessageBrowser(
@@ -366,16 +439,41 @@ export function drawMessageBrowser(
   temp,
   kvps = null
 ) {
-  _drawMessage(
-    messageContainer,
-    heading,
-    content,
-    temp,
-    true,
-    kvps,
-    ["message-ai", "message-browser"],
-    ["msg-json"]
-  );
+  const messageDiv = document.createElement('div');
+  messageDiv.classList.add('message', 'message-browser');
+
+  // Create heading element
+  const headingDiv = document.createElement('div');
+  headingDiv.classList.add('message-heading');
+  headingDiv.textContent = heading || 'Browser action';
+  messageDiv.appendChild(headingDiv);
+
+  // Create content wrapper
+  const contentWrapper = document.createElement('div');
+  contentWrapper.classList.add('message-content');
+
+  // Add content if provided
+  if (content) {
+    const contentDiv = document.createElement('pre');
+    contentDiv.classList.add('msg-content', 'msg-json');
+    contentDiv.style.whiteSpace = 'pre-wrap';
+    contentDiv.style.wordBreak = 'break-word';
+
+    const spanElement = document.createElement('span');
+    spanElement.innerHTML = convertHTML(content);
+    contentDiv.appendChild(spanElement);
+    addCopyButtonToElement(contentDiv);
+    contentWrapper.appendChild(contentDiv);
+  }
+
+  // Add kvps if provided
+  if (kvps) {
+    drawKvps(contentWrapper, kvps, false);
+  }
+
+  messageDiv.appendChild(contentWrapper);
+  messageContainer.appendChild(messageDiv);
+  messageContainer.classList.add('message-followup');
 }
 
 export function drawMessageAgentPlain(
@@ -486,7 +584,7 @@ function drawKvps(container, kvps, latex) {
     for (let [key, value] of Object.entries(kvps)) {
       const row = table.insertRow();
       row.classList.add("kvps-row");
-      if (key === "thoughts" || key === "reflection")
+      if (key === "topic" || key === "observations" || key === "thoughts" || key === "reflection")
         row.classList.add("msg-thoughts");
 
       const th = row.insertCell();
@@ -637,4 +735,59 @@ function convertPathsToLinks(str) {
   const regex = new RegExp(`(?<=${prefix})\\/${folder}*${file}${suffix}`, 'g');
 
   return str.replace(regex, generateLinks);
+}
+
+function createMessageElement(container, id, type, heading, content, temp = false, kvps = null) {
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message', `message-${type}`);
+
+    // Create heading element if provided
+    if (heading) {
+        const headingDiv = document.createElement('div');
+        headingDiv.classList.add('message-heading');
+        headingDiv.textContent = heading;
+        messageDiv.appendChild(headingDiv);
+    }
+
+    // Create content wrapper
+    const contentWrapper = document.createElement('div');
+    contentWrapper.classList.add('message-content');
+
+    // Add content if provided
+    if (content) {
+        const contentDiv = document.createElement('div');
+        contentDiv.classList.add('msg-content');
+        contentDiv.innerHTML = content;
+        contentWrapper.appendChild(contentDiv);
+    }
+
+    // Add key-value pairs if provided
+    if (kvps) {
+        const kvpsTable = createKvpsTable(kvps);
+        contentWrapper.appendChild(kvpsTable);
+    }
+
+    messageDiv.appendChild(contentWrapper);
+    container.appendChild(messageDiv);
+}
+
+// Update all message type handlers to use the new createMessageElement function
+export function handleDefault(container, id, type, heading, content, temp, kvps) {
+    createMessageElement(container, id, type, heading, content, temp, kvps);
+}
+
+export function handleAgent(container, id, type, heading, content, temp, kvps) {
+    createMessageElement(container, id, type, heading, content, temp, kvps);
+}
+
+export function handleTool(container, id, type, heading, content, temp, kvps) {
+    createMessageElement(container, id, type, heading, content, temp, kvps);
+}
+
+export function handleCodeExe(container, id, type, heading, content, temp, kvps) {
+    createMessageElement(container, id, type, heading, content, temp, kvps);
+}
+
+export function handleBrowser(container, id, type, heading, content, temp, kvps) {
+    createMessageElement(container, id, type, heading, content, temp, kvps);
 }

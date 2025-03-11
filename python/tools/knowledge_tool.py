@@ -30,7 +30,7 @@ class Knowledge(Tool):
         memory_result = self.format_result(memory_result, "Memory")
 
         msg = self.agent.read_prompt(
-            "tool.knowledge.response.md",
+            "fw.knowledge_tool.response.md",
             #   online_sources = ((perplexity_result + "\n\n") if perplexity_result else "") + str(duckduckgo_result),
             online_sources=((searxng_result + "\n\n") if searxng_result else ""),
             memory=memory_result,

@@ -93,6 +93,8 @@ def _serialize_context(context: AgentContext):
         "streaming_agent": (
             context.streaming_agent.number if context.streaming_agent else 0
         ),
+        "reasoning": getattr(context, "reasoning", False),
+        "deep_search": getattr(context, "deep_search", False),
         "log": _serialize_log(context.log),
     }
 
@@ -133,6 +135,11 @@ def _deserialize_context(data):
         # agent0=agent0,
         # streaming_agent=straming_agent,
     )
+
+    # Restore reasoning state
+    context.reasoning = data.get("reasoning", False)
+    # Restore deep search state
+    context.deep_search = data.get("deep_search", False)
 
     agents = data.get("agents", [])
     agent0 = _deserialize_agents(agents, config, context)

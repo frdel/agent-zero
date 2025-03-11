@@ -1,4 +1,3 @@
 # Solutions from the past
-- following are your memories about successful solutions of related problems:
-
+## Following are your memories about successful solutions of related problems:
 {{solutions}}

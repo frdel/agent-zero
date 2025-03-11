@@ -16,6 +16,7 @@ class Settings(TypedDict):
     chat_model_kwargs: dict[str, str]
     chat_model_ctx_length: int
     chat_model_ctx_history: float
+    chat_model_reasoning: bool
     chat_model_rl_requests: int
     chat_model_rl_input: int
     chat_model_rl_output: int
@@ -146,6 +147,16 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "max": 1,
             "step": 0.01,
             "value": settings["chat_model_ctx_history"],
+        }
+    )
+
+    chat_model_fields.append(
+        {
+            "id": "chat_model_reasoning",
+            "title": "Supports Reasoning",
+            "description": "Models capable of reasoning will use native reasoning with reasoning_tool.",
+            "type": "switch",
+            "value": settings["chat_model_reasoning"],
         }
     )
 
@@ -777,6 +788,7 @@ def get_default_settings() -> Settings:
         chat_model_kwargs={ "temperature": "0" },
         chat_model_ctx_length=120000,
         chat_model_ctx_history=0.7,
+        chat_model_reasoning=False,
         chat_model_rl_requests=0,
         chat_model_rl_input=0,
         chat_model_rl_output=0,

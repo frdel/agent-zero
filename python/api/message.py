@@ -85,4 +85,13 @@ class Message(ApiHandler):
             id=message_id,
         )
 
-        return context.communicate(UserMessage(message, attachment_paths)), context
+        system_message = []
+        if context.reasoning == "on":
+            system_message_reasoning = context.agent0.parse_prompt(
+                "fw.msg_system_use_reasoning.md"
+            )
+            system_message.append(system_message_reasoning)
+
+        return context.communicate(
+            UserMessage(message=message, attachments=attachment_paths, system_message=system_message)
+        ), context

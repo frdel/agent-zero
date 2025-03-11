@@ -1,4 +1,4 @@
-## Tools available:
+## "General Agent Tools" available:
 
 {{ include './agent.system.tool.response.md' }}
 
@@ -15,3 +15,5 @@
 {{ include './agent.system.tool.input.md' }}
 
 {{ include './agent.system.tool.browser.md' }}
+
+{{ include './agent.system.tool.document_query.md' }}

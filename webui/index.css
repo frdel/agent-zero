@@ -1152,6 +1152,12 @@ pre {
   display: flex;
   padding-top: var(--spacing-xs);
   margin-left: var(--spacing-xs);
+  margin-right: var(--spacing-xs);
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  position: relative;
+  gap: 8px; /* Add consistent gap between buttons */
 }
 
 .text-button {
@@ -1160,7 +1166,7 @@ pre {
   border-radius: 5px;
   color: var(--color-text);
   font-family: "Rubik", Arial, Helvetica, sans-serif;
-  font-size: 0.6rem;
+  font-size: 0.7rem; /* Slightly larger font */
   padding: 6px var(--spacing-sm);
   cursor: pointer;
   opacity: 0.8;
@@ -1178,12 +1184,12 @@ pre {
 }
 
 .text-button:active {
- opacity: 0.5; 
+ opacity: 0.5;
 }
 
 .text-button svg {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0; /* prevents SVG from shrinking */
 }
 
@@ -1588,7 +1594,7 @@ input:checked + .slider:before {
     display: table;
     gap: 0.1rem !important;
   }
-  
+
   .text-button {
     max-height: 25px;
   }
@@ -1603,7 +1609,7 @@ input:checked + .slider:before {
   margin-left: var(--spacing-md);
   margin-bottom: var(--spacing-md);
   }
-  
+
   .msg-kvps {
     display: flex;
     flex-direction: column;
@@ -1669,7 +1675,7 @@ input:checked + .slider:before {
   .sidebar-overlay.visible {
     display: block;
   }
-}  
+}
 
 @media (max-width: 768px) {
   #left-panel {
@@ -1699,15 +1705,15 @@ input:checked + .slider:before {
     -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
   }
-  
+
   #right-panel.expanded #logo-container {
     margin-left: 4.6rem;
   }
-  
+
   #input-section {
     align-items: start;
   }
-  
+
   .text-buttons-row {
     width: 90%;
     display: flex;
@@ -1763,6 +1769,57 @@ input:checked + .slider:before {
   .message-text.copied::after {
     opacity: 1;
   }
+
+  /* Mobile styles for the buttons */
+  #reasoning_button,
+  #deep_search_button {
+    padding: 4px 8px;
+  }
+
+  #reasoning_button {
+    margin-left: 5px;
+  }
+
+  #deep_search_button {
+    margin-right: 5px;
+  }
+
+  /* Hide text labels on smaller screens to save space */
+  @media (max-width: 640px) {
+    #reasoning_button p,
+    #deep_search_button p {
+      display: none;
+    }
+
+    /* Add tooltip instead */
+    #reasoning_button::after,
+    #deep_search_button::after {
+      position: absolute;
+      top: -25px;
+      background: var(--color-panel);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 10px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    #reasoning_button::after {
+      content: "Toggle Reasoning";
+      left: 0;
+    }
+
+    #deep_search_button::after {
+      content: "Toggle Deep Search";
+      right: 0;
+    }
+
+    #reasoning_button:hover::after,
+    #deep_search_button:hover::after {
+      opacity: 1;
+    }
+  }
 }
 
 @media (min-width: 768px) {
@@ -1786,7 +1843,7 @@ input:checked + .slider:before {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  
+
   #chats-section {
     min-height: 100%;
   }
@@ -2095,4 +2152,290 @@ a:active {
 /* Alpine cloak to prevent FOUC */
 [x-cloak] {
     display: none !important;
+}
+
+/* Add new styles for reasoning button */
+.ml-auto {
+  margin-left: auto;
+}
+
+.active-reasoning {
+  background: rgba(0, 120, 255, 0.15);
+  border: 1px solid rgba(0, 120, 255, 0.7);
+  border-radius: 6px;
+  padding: 5px 10px;
+  transition: all 0.2s ease-in-out;
+}
+
+.active-reasoning svg {
+  filter: drop-shadow(0 0 3px rgba(66, 136, 241, 0.8));
+}
+
+.active-reasoning p {
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 5px rgba(66, 136, 241, 0.8);
+}
+
+.auto-reasoning {
+  background: rgba(40, 167, 69, 0.15);
+  border: 1px solid rgba(40, 167, 69, 0.7);
+  border-radius: 6px;
+  padding: 5px 10px;
+  transition: all 0.2s ease-in-out;
+}
+
+.auto-reasoning svg {
+  filter: drop-shadow(0 0 3px rgba(40, 167, 69, 0.8));
+}
+
+.auto-reasoning p {
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 5px rgba(40, 167, 69, 0.8);
+}
+
+.light-mode .active-reasoning {
+  background: rgba(0, 120, 255, 0.15);
+  border: 1px solid rgba(0, 120, 255, 0.7);
+}
+
+.light-mode .active-reasoning p {
+  color: #333;
+  text-shadow: 0 0 5px rgba(66, 136, 241, 0.4);
+}
+
+.light-mode .auto-reasoning {
+  background: rgba(40, 167, 69, 0.15);
+  border: 1px solid rgba(40, 167, 69, 0.7);
+}
+
+.light-mode .auto-reasoning p {
+  color: #333;
+  text-shadow: 0 0 5px rgba(40, 167, 69, 0.4);
+}
+
+.light-mode #reasoning_button:not(.active-reasoning):not(.auto-reasoning) {
+  background: rgba(200, 200, 200, 0.15);
+  border: 1px solid rgba(100, 100, 100, 0.7);
+  border-radius: 6px;
+  padding: 5px 10px;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Simplified button styles - no scaling effects */
+#reasoning_button {
+  width: auto;
+  height: auto;
+  margin-left: 8px;
+  padding: 5px 10px;
+}
+
+/* Add styling for disabled reasoning state with white border and highlight */
+#reasoning_button:not(.active-reasoning):not(.auto-reasoning) {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
+  padding: 5px 10px;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Deep search button styling - align with reasoning button */
+.active-deep-search {
+  background: rgba(0, 120, 255, 0.15);
+  border: 1px solid rgba(0, 120, 255, 0.7);
+  border-radius: 6px;
+  padding: 5px 10px;
+  transition: all 0.2s ease-in-out;
+}
+
+.active-deep-search svg {
+  filter: drop-shadow(0 0 3px rgba(66, 136, 241, 0.8));
+}
+
+.active-deep-search p {
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 5px rgba(66, 136, 241, 0.8);
+}
+
+/* Add styling for disabled deep search state with white border and highlight */
+#deep_search_button:not(.active-deep-search) {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
+  padding: 5px 10px;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Light mode styling for deep search button */
+.light-mode .active-deep-search {
+  background: rgba(0, 120, 255, 0.15);
+  border: 1px solid rgba(0, 120, 255, 0.7);
+}
+
+.light-mode .active-deep-search p {
+  color: #333;
+  text-shadow: 0 0 5px rgba(66, 136, 241, 0.4);
+}
+
+.light-mode #deep_search_button:not(.active-deep-search) {
+  background: rgba(200, 200, 200, 0.15);
+  border: 1px solid rgba(100, 100, 100, 0.7);
+}
+
+/* Mobile styles with simplified approach */
+@media (max-width: 768px) {
+  #reasoning_button,
+  #deep_search_button {
+    padding: 4px 8px;
+  }
+
+  #reasoning_button {
+    margin-left: 5px;
+  }
+
+  #deep_search_button {
+    margin-right: 5px;
+  }
+}
+
+/* Hide text labels on smaller screens to save space */
+@media (max-width: 640px) {
+  #reasoning_button p,
+  #deep_search_button p {
+    display: none;
+  }
+
+  /* Add tooltip instead */
+  #reasoning_button::after,
+  #deep_search_button::after {
+    position: absolute;
+    top: -25px;
+    background: var(--color-panel);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  #reasoning_button::after {
+    content: "Toggle Reasoning";
+    left: 0;
+  }
+
+  #deep_search_button::after {
+    content: "Toggle Deep Search";
+    right: 0;
+  }
+
+  #reasoning_button:hover::after,
+  #deep_search_button:hover::after {
+    opacity: 1;
+  }
+}
+
+/* Remove unnecessary specific media query that was causing issues */
+@media (max-width: 480px) {
+  /* Simplified smaller screen adjustments */
+  #reasoning_button,
+  #deep_search_button {
+    padding: 3px 6px;
+  }
+
+  .text-button svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Add collapsible message styles */
+.message-collapsible .message-heading {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  user-select: none;
+  position: relative;
+  padding-left: 1.5em;
+}
+
+.message-collapsible .message-heading::before {
+  content: "▼";
+  position: absolute;
+  left: 0;
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-size: 0.8em;
+  width: 1.5em;
+  text-align: center;
+}
+
+.message-collapsible.collapsed .message-heading::before {
+  transform: rotate(-90deg);
+}
+
+.message-collapsible .message-content {
+  transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+  max-height: 2000px;
+  opacity: 1;
+  overflow: hidden;
+}
+
+.message-collapsible.collapsed .message-content {
+  max-height: 0;
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.message-collapsible.collapsed .message {
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+}
+
+/* Update specific message types to be collapsible by default */
+.message-agent,
+.message-tool,
+.message-code-exe,
+.message-browser {
+  transition: padding 0.3s ease;
+}
+
+.message-agent .message-heading,
+.message-tool .message-heading,
+.message-code-exe .message-heading,
+.message-browser .message-heading {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  user-select: none;
+  position: relative;
+  padding-left: 1.5em;
+}
+
+.message-agent .message-heading::before,
+.message-tool .message-heading::before,
+.message-code-exe .message-heading::before,
+.message-browser .message-heading::before {
+  content: "▼";
+  position: absolute;
+  left: 0;
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-size: 0.8em;
+  width: 1.5em;
+  text-align: center;
+}
+
+.message-collapsible.collapsed .message-agent .message-heading::before,
+.message-collapsible.collapsed .message-tool .message-heading::before,
+.message-collapsible.collapsed .message-code-exe .message-heading::before,
+.message-collapsible.collapsed .message-browser .message-heading::before {
+  transform: rotate(-90deg);
 }

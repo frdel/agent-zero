@@ -20,7 +20,7 @@ let context = "";
 let connectionStatus = false
 
 
-// Initialize the toggle button 
+// Initialize the toggle button
 setupSidebarToggle();
 
 function isMobile() {
@@ -149,7 +149,7 @@ export async function sendMessage() {
             //     } else {
             //         toast("Undefined error.", "error");
             //     }
-            // } 
+            // }
             else {
                 setContext(jsonResponse.context);
             }
@@ -242,6 +242,15 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
         messageContainer.id = `message-${id}`;
         messageContainer.classList.add('message-container', `${sender}-container`);
         if (temp) messageContainer.classList.add("message-temp");
+
+        // Add collapsible class for specific message types
+        if (['agent', 'tool', 'code_exe', 'browser'].includes(type)) {
+            messageContainer.classList.add('message-collapsible');
+            // Check if messages should be collapsed by default
+            if (localStorage.getItem('collapseMessages') !== 'false') {
+                messageContainer.classList.add('collapsed');
+            }
+        }
     }
 
     const handler = msgs.getHandler(type);
@@ -250,6 +259,17 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
     // If the container was found, it was already in the DOM, no need to append again
     if (!document.getElementById(`message-${id}`)) {
         chatHistory.appendChild(messageContainer);
+    }
+
+    // Add click handler for collapsible messages
+    if (['agent', 'tool', 'code_exe', 'browser'].includes(type)) {
+        const messageHeading = messageContainer.querySelector('.message-heading');
+        if (messageHeading) {
+            messageHeading.addEventListener('click', (e) => {
+                e.preventDefault();
+                messageContainer.classList.toggle('collapsed');
+            });
+        }
     }
 
     if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
@@ -364,6 +384,14 @@ async function poll() {
         //set ui model vars from backend
         const inputAD = Alpine.$data(inputSection);
         inputAD.paused = response.paused;
+        inputAD.reasoning = response.reasoning;
+        inputAD.deep_search = response.deep_search;
+
+        // Important: Update Alpine store with reasoning and deep search states for the current context
+        Alpine.store('root', {
+            reasoning: response.reasoning,
+            deep_search: response.deep_search
+        });
 
         // Update status icon state
         setConnectionStatus(true)
@@ -482,6 +510,10 @@ export const setContext = function (id) {
     lastSpokenNo = 0
     const chatsAD = Alpine.$data(chatsSection);
     chatsAD.selected = id
+
+    // Immediately get the reasoning and deep search states for the new context
+    updateReasoningState(id);
+    updateDeepSearchState(id);
 }
 
 export const getContext = function () {
@@ -523,6 +555,23 @@ window.toggleSpeech = function (isOn) {
     console.log("Speech:", isOn);
     localStorage.setItem('speech', isOn);
     if (!isOn) speech.stop()
+};
+
+window.toggleCollapseMessages = function (isCollapsed) {
+    console.log("Collapse messages:", isCollapsed);
+    localStorage.setItem('collapseMessages', isCollapsed);
+
+    // Get all collapsible messages
+    const collapsibleMessages = document.querySelectorAll('.message-collapsible');
+
+    // Toggle collapse state for all messages
+    collapsibleMessages.forEach(message => {
+        if (isCollapsed) {
+            message.classList.add('collapsed');
+        } else {
+            message.classList.remove('collapsed');
+        }
+    });
 };
 
 window.nudge = async function () {
@@ -625,7 +674,7 @@ window.loadChats = async function () {
         //     } else {
         //         toast("Undefined error.", "error")
         //     }
-        // } 
+        // }
         else {
             setContext(response.ctxids[0])
             toast("Chats loaded.", "success")
@@ -870,7 +919,38 @@ async function startPolling() {
     _doPoll();
 }
 
-document.addEventListener("DOMContentLoaded", startPolling);
+document.addEventListener("DOMContentLoaded", function() {
+    // Initialize Alpine.js store if Alpine is available
+    if (window.Alpine) {
+        Alpine.store('root', {
+            reasoning: "auto",
+            deep_search: false
+        });
+
+        // Initialize reasoning and deep search states for current context
+        setTimeout(() => {
+            updateReasoningState();
+            updateDeepSearchState();
+        }, 500); // Small delay to ensure context is loaded
+    } else {
+        // If Alpine isn't loaded yet, wait for alpine:init event
+        document.addEventListener('alpine:init', () => {
+            Alpine.store('root', {
+                reasoning: "auto",
+                deep_search: false
+            });
+
+            // Initialize reasoning and deep search states for current context
+            setTimeout(() => {
+                updateReasoningState();
+                updateDeepSearchState();
+            }, 500); // Small delay to ensure context is loaded
+        });
+    }
+
+    // Start polling
+    startPolling();
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     const dragDropOverlay = document.getElementById('dragdrop-overlay');
@@ -905,7 +985,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dragDropOverlay.addEventListener('drop', (e) => {
         dragCounter = 0;
         Alpine.$data(dragDropOverlay).isVisible = false;
-        
+
         const inputAD = Alpine.$data(inputSection);
         const files = e.dataTransfer.files;
         handleFiles(files, inputAD);
@@ -916,9 +996,9 @@ document.addEventListener('DOMContentLoaded', () => {
 function handleFiles(files, inputAD) {
     Array.from(files).forEach(file => {
         const ext = file.name.split('.').pop().toLowerCase();
-       
+
             const isImage = ['jpg', 'jpeg', 'png', 'bmp'].includes(ext);
-            
+
             if (isImage) {
                 const reader = new FileReader();
                 reader.onload = e => {
@@ -941,7 +1021,7 @@ function handleFiles(files, inputAD) {
                 });
                 inputAD.hasAttachments = true;
             }
-        
+
     });
 }
 
@@ -950,4 +1030,142 @@ window.handleFileUpload = function(event) {
     const files = event.target.files;
     const inputAD = Alpine.$data(inputSection);
     handleFiles(files, inputAD);
+}
+
+// Simple toggle reasoning function - minimally invasive
+window.cycleReasoning = async function(currentState) {
+    try {
+        const contextId = getContext();
+        // Cycle through states: off -> on -> auto -> off
+        const nextState = currentState === "off" ? "on" : (currentState === "on" ? "auto" : "off");
+        console.log("Cycling reasoning to:", nextState, "for context:", contextId);
+
+        const response = await sendJsonData("/reasoning_set", {
+            reasoning: nextState,
+            context: contextId
+        });
+
+        console.log("Server response:", response);
+
+        if (response && response.context === contextId) {
+            // Get the actual state from the server response
+            const serverState = response.reasoning;
+            console.log("Setting Alpine store reasoning to:", serverState);
+
+            // Set the global Alpine store reasoning state
+            if (window.Alpine) {
+                const store = Alpine.store('root');
+                if (store) {
+                    store.reasoning = serverState;
+                }
+            }
+
+            // Show a single toast
+            toast(response.message, "success");
+        }
+    } catch (error) {
+        console.error("Error cycling reasoning:", error);
+        toast("Failed to cycle reasoning", "error");
+    }
+}
+
+// Simple function to update reasoning state when switching contexts
+async function updateReasoningState(contextId) {
+    try {
+        if (!contextId) {
+            contextId = getContext();
+        }
+        console.log("Updating reasoning state for context:", contextId);
+
+        // Fetch the current reasoning state from the server
+        const response = await sendJsonData("/reasoning_get", {
+            context: contextId
+        });
+
+        console.log("Reasoning state response:", response);
+
+        if (response && response.context === contextId) {
+            // Get the actual state from the server response
+            const serverState = response.reasoning;
+            console.log("Setting Alpine store reasoning to:", serverState);
+
+            // Set the global Alpine store reasoning state
+            if (window.Alpine) {
+                const store = Alpine.store('root');
+                if (store) {
+                    store.reasoning = serverState;
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Failed to update reasoning state:", error);
+    }
+}
+
+// Toggle deep search function
+window.toggleDeepSearch = async function(newState) {
+    try {
+        const contextId = getContext();
+        console.log("Toggling deep search to:", newState, "for context:", contextId);
+
+        const response = await sendJsonData("/deep_search_set", {
+            deep_search: newState,
+            context: contextId
+        });
+
+        console.log("Server response:", response);
+
+        if (response && response.context === contextId) {
+            // Get the actual state from the server response
+            const serverState = !!response.deep_search;
+            console.log("Setting Alpine store deep_search to:", serverState);
+
+            // Set the global Alpine store deep_search state
+            if (window.Alpine) {
+                const store = Alpine.store('root');
+                if (store) {
+                    store.deep_search = serverState;
+                }
+            }
+
+            // Show a single toast
+            toast(serverState ? "Deep search enabled" : "Deep search disabled", "success");
+        }
+    } catch (error) {
+        console.error("Error toggling deep search:", error);
+        toast("Failed to toggle deep search", "error");
+    }
+}
+
+// Function to update deep search state when switching contexts
+async function updateDeepSearchState(contextId) {
+    try {
+        if (!contextId) {
+            contextId = getContext();
+        }
+        console.log("Updating deep search state for context:", contextId);
+
+        // Fetch the current deep search state from the server
+        const response = await sendJsonData("/deep_search_get", {
+            context: contextId
+        });
+
+        console.log("Deep search state response:", response);
+
+        if (response && response.context === contextId) {
+            // Get the actual state from the server response
+            const serverState = !!response.deep_search;
+            console.log("Setting Alpine store deep_search to:", serverState);
+
+            // Set the global Alpine store deep search state
+            if (window.Alpine) {
+                const store = Alpine.store('root');
+                if (store) {
+                    store.deep_search = serverState;
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Failed to update deep search state:", error);
+    }
 }

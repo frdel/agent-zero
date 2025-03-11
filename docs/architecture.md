@@ -30,9 +30,9 @@ This architecture ensures:
 - Flexible deployment options for advanced users
 
 > [!NOTE]
-> The legacy approach of running Agent Zero directly on the host system (using Python, Conda, etc.) 
-> is still possible but requires Remote Function Calling (RFC) configuration through the Settings 
-> page. See [Full Binaries Installation](installation.md#in-depth-guide-for-full-binaries-installation) 
+> The legacy approach of running Agent Zero directly on the host system (using Python, Conda, etc.)
+> is still possible but requires Remote Function Calling (RFC) configuration through the Settings
+> page. See [Full Binaries Installation](installation.md#in-depth-guide-for-full-binaries-installation)
 > for detailed instructions.
 
 ## Implementation Details
@@ -74,7 +74,7 @@ This architecture ensures:
 | `run_ui.py` | Web UI launcher |
 
 > [!NOTE]
-> When using the Docker runtime container, these directories are mounted 
+> When using the Docker runtime container, these directories are mounted
 > within the `/a0` volume for data persistence until the container is restarted or deleted.
 
 ## Core Components
@@ -90,8 +90,11 @@ Communication flows between agents through messages, which are structured accord
 
 | Argument | Description |
 | --- | --- |
+| `Observations:` | The agent's observations of the world |
 | `Thoughts:` | The agent's Chain of Thought and planning process |
+| `Reflection:` | The agent's reflection on its thoughts and plans |
 | `Tool name:` | The specific tool used by the agent |
+| `Tool arguments:` | The arguments passed to the tool |
 | `Responses or queries:` | Results, feedback or queries from tools or other agents |
 
 #### Interaction Flow
@@ -122,7 +125,7 @@ Agent Zero comes with a set of built-in tools designed to help agents perform ta
 | knowledge_tool | Enables agents to retrieve information from memory, knowledge base or online external sources |
 | response_tool | Allows agents to output a response |
 | memory_tool | Enables agents to save, load, delete and forget information from memory |
-| webpage_content_tool | Enables agents to fetch and analyze the text content of webpages |
+| document_query | Enables agents to fetch and analyze the text content of webpages and local documents |
 
 #### Knowledge Tool
 The `knowledge_tool` uses SearXNG to search the web and retrieve information. It can also search the local knowledge base and memory for relevant information. The tool returns a summary of the information, which can be used by the agent to make decisions or answer questions.
@@ -140,8 +143,8 @@ The integration provides access to various types of content, including images, v
 In cases where SearXNG might not return satisfactory results, Agent Zero can be configured to fall back on other sources or methods, ensuring that users always have access to information.
 
 > [!NOTE]
-> The Knowledge Tool is designed to work seamlessly with both online searches through 
-> SearXNG and local knowledge base queries, providing a comprehensive information 
+> The Knowledge Tool is designed to work seamlessly with both online searches through
+> SearXNG and local knowledge base queries, providing a comprehensive information
 > retrieval system.
 
 #### Custom Tools
@@ -153,8 +156,8 @@ Users can create custom tools to extend Agent Zero's capabilities. Custom tools 
 4. Follow existing patterns for consistency
 
 > [!NOTE]
-> Tools are always present in system prompt, so you should keep them to minimum. 
-> To save yourself some tokens, use the [Instruments module](#adding-instruments) 
+> Tools are always present in system prompt, so you should keep them to minimum.
+> To save yourself some tokens, use the [Instruments module](#adding-instruments)
 > to call custom scripts or functions.
 
 ### 3. Memory System
@@ -198,7 +201,7 @@ By dynamically adjusting context windows and summarizing past interactions, Agen
 > To maximize the effectiveness of context summarization, users should provide clear and specific instructions during interactions. This helps Agent Zero understand which details are most important to retain.
 
 ### 4. Prompts
-The `prompts` directory contains various Markdown files that control agent behavior and communication. The most important file is `agent.system.main.md`, which acts as a central hub, referencing other prompt files.
+The `prompts` directory contains various Markdown files that control agent behavior and communication. The most important file is `agent.system.main.md` (or `deepsearch.system.main.md`), which acts as a central hub, referencing other prompt files.
 
 #### Core Prompt Files
 | Prompt File | Description |
@@ -225,7 +228,7 @@ The `prompts` directory contains various Markdown files that control agent behav
 4. Select your custom prompts in the Settings page (Agent Config section)
 
 #### Dynamic Behavior System
-- **Behavior Adjustment**: 
+- **Behavior Adjustment**:
   - Agents can modify their behavior in real-time based on user instructions
   - Behavior changes are automatically integrated into the system prompt
   - Behavioral rules are merged intelligently, avoiding duplicates and conflicts
@@ -249,8 +252,8 @@ The `prompts` directory contains various Markdown files that control agent behav
   - Changes are applied without disrupting other components
   - Maintains separation between core functionality and behavioral rules
 
-> [!NOTE]  
-> You can customize any of these files. Agent Zero will use the files in your custom `prompts_subdir` 
+> [!NOTE]
+> You can customize any of these files. Agent Zero will use the files in your custom `prompts_subdir`
 > if they exist, otherwise, it will fall back to the files in `prompts/default`.
 
 > [!TIP]
@@ -265,7 +268,7 @@ Knowledge refers to the user-provided information and data that agents can lever
   - Automatically imported and indexed
   - Expandable format support
 
-- **Knowledge Base**: 
+- **Knowledge Base**:
   - Can include PDFs, databases, books, documentation
   - `/docs` folder automatically added
   - Used for answering questions and decision-making
@@ -308,6 +311,6 @@ Extensions can be found in `python/extensions` directory:
 4. Ensure compatibility with main system
 5. Test thoroughly before deployment
 
-> [!NOTE]  
+> [!NOTE]
 > Consider contributing valuable custom components to the main repository.
 > See [Contributing](contribution.md) for more information.

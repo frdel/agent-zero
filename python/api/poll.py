@@ -24,6 +24,8 @@ class Poll(ApiHandler):
                     "log_version": len(ctx.log.updates),
                     "log_length": len(ctx.log.logs),
                     "paused": ctx.paused,
+                    "reasoning": ctx.reasoning,
+                    "deep_search": getattr(ctx, "deep_search", False),
                 }
             )
 
@@ -37,4 +39,6 @@ class Poll(ApiHandler):
             "log_progress": context.log.progress,
             "log_progress_active": context.log.progress_active,
             "paused": context.paused,
+            "reasoning": context.reasoning,
+            "deep_search": getattr(context, "deep_search", False),
         }
