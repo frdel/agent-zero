@@ -20,7 +20,21 @@ apt-get update && apt-get upgrade -y && apt-get install -y \
     ffmpeg \
     nginx\
     supervisor \
-    cron
+    cron \
+    libmagic-dev \
+    poppler-utils \
+    tesseract-ocr \
+    qpdf \
+    libreoffice \
+    pandoc \
+    libgtk-3-0 \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libasound2 \
+    libasound2-data \
+    cargo
 
 echo "=====MID UPDATE====="
 
