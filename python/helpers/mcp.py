@@ -1,28 +1,25 @@
-from pydantic import BaseModel, Field, Discriminator, Tag, PrivateAttr
-from typing import List, Dict, Optional, Any, Union, Literal, Annotated
-from typing import (
-    List, Dict, Optional, Any,
-    Union, Literal, Annotated, ClassVar,
-)
+from abc import ABC, abstractmethod
+from typing import List, Dict, Optional, Any, Union, Literal, Annotated, ClassVar, cast
 import threading
 import asyncio
 from contextlib import AsyncExitStack
 from shutil import which
+from datetime import timedelta
+import dirtyjson
+import json
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from mcp.client.sse import sse_client
 from mcp.types import CallToolResult, ListToolsResult, JSONRPCMessage
 from anyio.streams.memory import (
     MemoryObjectReceiveStream,
     MemoryObjectSendStream,
 )
+
+from pydantic import BaseModel, Field, Discriminator, Tag, PrivateAttr
 from python.helpers.dirty_json import DirtyJson
 from python.helpers.print_style import PrintStyle
-import dirtyjson
-
 from python.helpers.tool import Tool, Response
-from datetime import timedelta
-
-from abc import ABC, abstractmethod
 
 
 class MCPTool(Tool):
@@ -59,7 +56,7 @@ class MCPTool(Tool):
         self.log = self.get_log_object()
 
         for key, value in self.args.items():
-            PrintStyle(font_color="#85C1E9", bold=True).stream(self.nice_key(key)+": ")
+            PrintStyle(font_color="#85C1E9", bold=True).stream(self.nice_key(key) + ": ")
             PrintStyle(font_color="#85C1E9", padding=isinstance(value, str) and "\n" in value).stream(value)
             PrintStyle().print()
 
@@ -85,37 +82,46 @@ class MCPServerRemote(BaseModel):
     description: Optional[str] = Field(default="Remote SSE Server")
     url: str = Field(default_factory=str)
     headers: dict[str, Any] | None = Field(default_factory=dict[str, Any])
-    timeout: float = 5.0
-    sse_read_timeout: float = 60.0 * 5.0
-    disabled: bool = False
+    timeout: float = Field(default=5.0)
+    sse_read_timeout: float = Field(default=60.0 * 5.0)
+    disabled: bool = Field(default=False)
 
     __lock: ClassVar[threading.Lock] = PrivateAttr(default=threading.Lock())
+    __client: Optional["MCPClientRemote"] = PrivateAttr(default=None)
 
     def __init__(self, config: dict[str, Any]):
         super().__init__()
+        self.__client = MCPClientRemote(self)
         self.update(config)
 
     def get_tools(self) -> List[dict[str, Any]]:
         """Get all tools from the server"""
-        return []
+        with self.__lock:
+            return self.__client.tools  # type: ignore
 
     def has_tool(self, tool_name: str) -> bool:
         """Check if a tool is available"""
-        return False
+        with self.__lock:
+            return self.__client.has_tool(tool_name)  # type: ignore
 
     async def call_tool(self, tool_name: str, input_data: Dict[str, Any]) -> CallToolResult:
         """Call a tool with the given input data"""
-        raise NotImplementedError("MCPServerRemote does not support calling tools")
+        with self.__lock:
+            # We already run in an event loop, dont believe Pylance
+            return await self.__client.call_tool(tool_name, input_data)  # type: ignore
 
     def update(self, config: dict[str, Any]) -> "MCPServerRemote":
         with self.__lock:
             for key, value in config.items():
                 if key in ["name", "description", "url", "headers", "timeout", "sse_read_timeout", "disabled"]:
+                    if key == "name":
+                        value = value.strip().lower().replace(" ", "_").replace("-", "_").replace(".", "_")
                     setattr(self, key, value)
-        # We already run in an event loop, dont believe Pylance
-        return asyncio.run(self.__on_update())
+            # We already run in an event loop, dont believe Pylance
+            return asyncio.run(self.__on_update())
 
     async def __on_update(self) -> "MCPServerRemote":
+        await self.__client.update_tools()  # type: ignore
         return self
 
 
@@ -125,9 +131,9 @@ class MCPServerLocal(BaseModel):
     command: str = Field(default_factory=str)
     args: list[str] = Field(default_factory=list)
     env: dict[str, str] | None = Field(default_factory=dict[str, str])
-    encoding: str = "utf-8"
-    encoding_error_handler: Literal["strict", "ignore", "replace"] = "strict"
-    disabled: bool = False
+    encoding: str = Field(default="utf-8")
+    encoding_error_handler: Literal["strict", "ignore", "replace"] = Field(default="strict")
+    disabled: bool = Field(default=False)
 
     __lock: ClassVar[threading.Lock] = PrivateAttr(default=threading.Lock())
     __client: Optional["MCPClientLocal"] = PrivateAttr(default=None)
@@ -140,18 +146,18 @@ class MCPServerLocal(BaseModel):
     def get_tools(self) -> List[dict[str, Any]]:
         """Get all tools from the server"""
         with self.__lock:
-            return self.__client.tools
+            return self.__client.tools  # type: ignore
 
     def has_tool(self, tool_name: str) -> bool:
         """Check if a tool is available"""
         with self.__lock:
-            return self.__client.has_tool(tool_name)
+            return self.__client.has_tool(tool_name)  # type: ignore
 
     async def call_tool(self, tool_name: str, input_data: Dict[str, Any]) -> CallToolResult:
         """Call a tool with the given input data"""
         with self.__lock:
             # We already run in an event loop, dont believe Pylance
-            return await self.__client.call_tool(tool_name, input_data)
+            return await self.__client.call_tool(tool_name, input_data)  # type: ignore
 
     def update(self, config: dict[str, Any]) -> "MCPServerLocal":
         with self.__lock:
@@ -164,7 +170,7 @@ class MCPServerLocal(BaseModel):
             return asyncio.run(self.__on_update())
 
     async def __on_update(self) -> "MCPServerLocal":
-        await self.__client.update_tools()
+        await self.__client.update_tools()  # type: ignore
         return self
 
 
@@ -202,7 +208,7 @@ class MCPConfig(BaseModel):
                 try:
                     servers = DirtyJson.parse_string(config_str)
                 except Exception as e:
-                    raise ValueError(f"Failed to parse MCP config: {e}")
+                    raise ValueError(f"Failed to parse MCP config: {e}") from e
             cls.get_instance().__init__(servers_list=servers)
             cls.__initialized = True
             return cls.get_instance()
@@ -351,43 +357,30 @@ class MCPConfig(BaseModel):
             raise ValueError(f"Tool {tool_name} not found")
 
 
-class MCPClientLocal:
+class MCPClientBase(ABC):
     session: Optional[ClientSession] = None
     exit_stack: AsyncExitStack = AsyncExitStack()
     stdio: Optional[MemoryObjectReceiveStream[JSONRPCMessage | Exception]] = None
     write: Optional[MemoryObjectSendStream[JSONRPCMessage]] = None
 
     tools: List[dict[str, Any]] = []
-    server: Optional[MCPServerLocal] = None
+    server: Optional[Union[MCPServerLocal, MCPServerRemote]] = None
 
     __lock: ClassVar[threading.Lock] = threading.Lock()
 
-    def __init__(self, server: MCPServerLocal):
+    def __init__(self, server: Union[MCPServerLocal, MCPServerRemote]):
         self.server = server
+
+    # Protected method
+    @abstractmethod
+    async def _connect_client(self) -> tuple[MemoryObjectReceiveStream[JSONRPCMessage | Exception], MemoryObjectSendStream[JSONRPCMessage]]:
+        """Connect to an MCP server, init client and save stdio/write streams"""
+        ...
 
     async def __connect_to_server(self) -> Any:
         """Connect to an MCP server"""
-
-        if not which(self.server.command):
-            raise ValueError(f"Command {self.server.command} not found")
-
-        which_args = 0
-        for arg in self.server.args:
-            if which(arg):
-                which_args = which_args + 1
-        if which_args == 0:
-            raise ValueError(f"None of the arguments {self.server.args} is a file")
-
         with self.__lock:
-            server_params = StdioServerParameters(
-                command=self.server.command,
-                args=self.server.args,
-                env=self.server.env,
-                encoding=self.server.encoding,
-                encoding_error_handler=self.server.encoding_error_handler
-            )
-            stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
-            self.stdio, self.write = stdio_transport
+            self.stdio, self.write = await self._connect_client()
 
             self.session = (
                 await self.exit_stack.enter_async_context(
@@ -407,7 +400,6 @@ class MCPClientLocal:
         """List available tools from the server"""
         try:
             await self.__connect_to_server()
-
             with self.__lock:
                 response: ListToolsResult = await self.session.list_tools()
                 available_tools = [{
@@ -453,3 +445,39 @@ class MCPClientLocal:
                     await self.exit_stack.aclose()
                     return response
             raise ValueError(f"Tool {tool_name} not found")
+
+
+class MCPClientLocal(MCPClientBase):
+    async def _connect_client(self) -> tuple[MemoryObjectReceiveStream[JSONRPCMessage | Exception], MemoryObjectSendStream[JSONRPCMessage]]:
+        """Connect to an MCP server, init client and save stdio/write streams"""
+        server: MCPServerLocal = cast(MCPServerLocal, self.server)
+
+        if not which(server.command):
+            raise ValueError(f"Command {server.command} not found")
+
+        which_args = 0
+        for arg in server.args:
+            if which(arg):
+                which_args = which_args + 1
+        if which_args == 0:
+            raise ValueError(f"None of the arguments {server.args} is a file")
+
+        server_params = StdioServerParameters(
+            command=server.command,
+            args=server.args,
+            env=server.env,
+            encoding=server.encoding,
+            encoding_error_handler=server.encoding_error_handler
+        )
+        stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
+        return stdio_transport
+
+
+class MCPClientRemote(MCPClientBase):
+    async def _connect_client(self) -> tuple[MemoryObjectReceiveStream[JSONRPCMessage | Exception], MemoryObjectSendStream[JSONRPCMessage]]:
+        """Connect to an MCP server, init client and save stdio/write streams"""
+        server: MCPServerRemote = cast(MCPServerRemote, self.server)
+        stdio_transport = await self.exit_stack.enter_async_context(
+            sse_client(url=server.url, headers=server.headers, timeout=server.timeout, sse_read_timeout=server.sse_read_timeout)
+        )
+        return stdio_transport
