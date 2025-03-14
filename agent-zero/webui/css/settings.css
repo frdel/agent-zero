@@ -1,0 +1,240 @@
+/* Settings Modal Styles */
+
+/* Field Styles */
+.field {
+  display: grid;
+  grid-template-columns: 60% 1fr;
+  align-items: center;
+  margin-block: 1rem;
+  padding: var(--spacing-xs) 0;
+}
+
+.field.field-full {
+  grid-template-columns: 1fr;
+}
+
+/* Field Labels */
+.field-label {
+  display: flex;
+  flex-direction: column;
+  padding-right: 0.5em;
+}
+
+.field-title {
+  font-weight: bold;
+  color: var(--color-primary);
+}
+
+.field-description {
+  color: var(--color-text);
+  font-size: 0.875rem;
+  opacity: 0.8;
+  margin: 0.25rem 0 0.5rem 0;
+}
+
+/* Field Controls */
+.field-control {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* Input Styles */
+input[type="text"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--color-secondary);
+  border-radius: 0.25rem;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+  opacity: 1;
+}
+
+textarea {
+  min-height: 100px;
+  font-family: 'Roboto Mono', monospace;
+  scroll-behavior: smooth;
+  resize: none;
+  background-clip: border-box;
+  border: 6px solid transparent;
+}
+
+textarea:focus {
+  background-color: #151515;
+}
+
+/* Toggle Switch Styles */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggler {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  border-radius: 34px;
+  cursor: pointer;
+  transition: 0.4s;
+}
+
+.toggler:before {
+  content: "";
+  position: absolute;
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.4s;
+}
+
+input:checked + .toggler {
+  background-color: #2196f3;
+}
+
+input:checked + .toggler:before {
+  transform: translateX(26px);
+}
+
+/* Range Input Styles */
+input[type="range"] {
+  width: 100%;
+  cursor: grab;
+}
+
+.range-value {
+  min-width: 3em;
+  text-align: right;
+}
+
+/* Select Styles */
+select {
+  cursor: pointer;
+}
+
+select:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+/* Navigation Links */
+#settings-sections {
+  padding-bottom: 1rem;
+}
+
+nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+nav ul li {
+  display: flex;
+  font-weight: 500;
+}
+
+nav ul li a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  text-decoration: none;
+  color: var(--color-text);
+  opacity: 0.8;
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1rem;
+  width: 100%;
+  transition: all 0.2s ease-in-out;
+}
+
+nav ul li a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-secondary);
+}
+
+nav ul li a img {
+  width: 50px;
+  height: 50px;
+  margin-bottom: 0.5rem;
+  filter: var(--svg-filter);
+}
+
+.light-mode nav ul li a {
+  background-color: var(--color-panel-light);
+}
+
+.light-mode nav ul li a:hover {
+  background-color: var(--color-secondary-light);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .field-control {
+    width: 100%;
+  }
+
+  .field-description {
+    padding-bottom: var(--spacing-sm);
+  }
+
+  .field {
+    display: block;
+    align-items: center;
+    padding: var(--spacing-xs) 0;
+  }
+}
+
+@media (max-width: 640px) { 
+  nav ul {
+    grid-template-columns: repeat(2, 1.2fr);
+  }
+}
+
+@media (max-width: 480px) {
+  nav ul {
+    grid-template-columns: 1fr;
+  }
+  
+  nav ul li a {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  nav ul li a img {
+    margin-bottom: 0;
+    width: 30px;
+    height: 30px;
+  }
+}

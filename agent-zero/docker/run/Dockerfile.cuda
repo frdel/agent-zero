@@ -1,0 +1,65 @@
+# Use the NVIDIA CUDA base image with Ubuntu
+FROM nvidia/cuda:12.3.1-base-ubuntu22.04
+
+# Set non-interactive installation
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
+
+# Check if the argument is provided, else throw an error
+ARG BRANCH
+RUN if [ -z "$BRANCH" ]; then echo "ERROR: BRANCH is not set!" >&2; exit 1; fi
+ENV BRANCH=$BRANCH
+
+# Copy contents of the project to /a0
+COPY ./fs/ /
+
+# pre installation steps - use CUDA-specific script
+RUN bash /ins/pre_install_cuda.sh $BRANCH
+
+# install additional software
+RUN bash /ins/install_additional.sh $BRANCH
+
+# Install CUDA-specific dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    cuda-nvcc-12-3 \
+    cuda-cudart-dev-12-3 \
+    libcublas-dev-12-3 \
+    libcudnn8 \
+    libcudnn8-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set CUDA environment variables
+ENV PATH=/usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+
+# install A0
+RUN bash /ins/install_A0.sh $BRANCH
+
+# Special handling for GPU-specific packages
+RUN pip uninstall -y torch faiss-cpu || true && \
+    pip install torch --index-url https://download.pytorch.org/whl/cu121
+
+# Install faiss with CUDA support through conda
+RUN apt-get update && apt-get install -y wget && \
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh && \
+    bash miniconda.sh -b -p /opt/conda && \
+    rm miniconda.sh && \
+    ln -s /opt/conda/bin/conda /usr/bin/conda && \
+    /opt/conda/bin/conda install -y -c conda-forge faiss-gpu && \
+    cp -r /opt/conda/lib/python*/site-packages/faiss* /usr/local/lib/python3.12/dist-packages/ && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# cleanup repo and install A0 without caching, this speeds up builds
+ARG CACHE_DATE=none
+RUN echo "cache buster $CACHE_DATE" && bash /ins/install_A02.sh $BRANCH
+
+# post installation steps
+RUN bash /ins/post_install.sh $BRANCH
+
+# Expose ports
+EXPOSE 22 80
+
+# initialize runtime
+CMD ["/bin/bash", "-c", "/bin/bash /exe/initialize.sh $BRANCH"] 

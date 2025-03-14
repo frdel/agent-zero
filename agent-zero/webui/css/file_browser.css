@@ -1,0 +1,249 @@
+/* File Browser Styles */
+
+.files-list,
+.file-header,
+.file-item {
+  width: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Header Styles */
+.file-header {
+  display: grid;
+  grid-template-columns: 2fr 0.6fr 1fr 80px;
+  background: var(--secondary-bg);
+  padding: 8px 0;
+  font-weight: bold;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--color-primary);
+}
+
+.file-cell,
+.file-cell-size,
+.file-cell-date {
+  color: var(--color-primary);
+  padding: 4px;
+  cursor: pointer;
+}
+
+/* File Item Styles */
+.file-item {
+  display: grid;
+  grid-template-columns: 2fr 0.6fr 1fr 80px;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 0.875rem;
+  border-top: 1px solid var(--color-border);
+  transition: background-color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  color: var(--color-text);
+}
+
+.file-item:hover {
+  background-color: var(--color-secondary);
+}
+
+/* File Icon and Name */
+.file-icon {
+  width: 1.8rem;
+  height: 1.8rem;
+  margin: 0 1rem 0 0.7rem;
+  vertical-align: middle;
+  font-size: var(--font-size-sm);
+}
+
+.file-name {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  margin-right: var(--spacing-sm);
+  overflow: hidden;
+}
+
+.file-name > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-size,
+.file-date {
+  color: var(--text-secondary);
+}
+
+/* No Files Message */
+.no-files {
+  padding: 32px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* Light Mode Adjustments */
+.light-mode .file-item:hover {
+  background-color: var(--color-secondary-light);
+}
+
+/* Path Navigator Styles */
+.path-navigator {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background-color: var(--color-message-bg);
+  padding: 0.5rem var(--spacing-sm);
+  margin-bottom: 0.3rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.nav-button {
+  padding: 4px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-background);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.nav-button:hover {
+  background: var(--hover-bg);
+}
+
+.nav-button.back-button {
+  background-color: var(--color-secondary);
+  color: var(--color-text);
+}
+
+.nav-button.back-button:hover {
+  background-color: var(--color-secondary-dark);
+}
+
+#current-path {
+  opacity: 0.9;
+}
+
+#path-text {
+  font-family: 'Roboto Mono', monospace;
+  font-optical-sizing: auto;
+  -webkit-font-optical-sizing: auto;
+  opacity: 0.9;
+}
+
+/* Folder Specific Styles */
+.file-item[data-is-dir="true"] {
+  cursor: pointer;
+}
+
+.file-item[data-is-dir="true"]:hover {
+  background-color: var(--color-secondary);
+}
+
+/* Upload Button Styles */
+.upload-button,
+.btn-upload {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.btn-upload {
+  background: #4248f1;
+  gap: 0.5rem;
+  margin: 0 auto;
+}
+
+.btn-upload > svg {
+  width: 20px;
+}
+
+.upload-button:hover,
+.btn-upload:hover {
+  background-color: #353bc5;
+}
+
+.upload-button:active,
+.btn-upload:active {
+  background-color: #2b309c;
+}
+
+/* Delete Button Styles */
+.delete-button {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  width: 32px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: opacity 0.2s, background-color 0.2s;
+}
+
+.delete-button:hover {
+  color: #ff7878;
+}
+
+.delete-button:active {
+  opacity: 0.6;
+}
+
+/* File Actions */
+.file-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.action-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 32px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.download-button {
+  color: var(--color-primary);
+}
+
+.download-button:hover {
+  background-color: var(--color-border);
+}
+
+.light-mode .download-button:hover {
+  background-color: #c6d4de;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .file-header,
+  .file-item {
+    grid-template-columns: 1fr 0.5fr 80px;
+  }
+
+  .file-cell-date,
+  .file-date {
+    display: none;
+  }
+}
+
+@media (max-width: 540px) {
+  .file-header,
+  .file-item {
+    grid-template-columns: 1fr 80px;
+  }
+
+  .file-cell-size,
+  .file-size,
+  .file-cell-date,
+  .file-date {
+    display: none;
+  }
+}

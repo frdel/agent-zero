@@ -1,0 +1,25 @@
+/* History Styles */
+
+/* ACE Editor Scrollbar */
+.ace_scrollbar-v {
+    overflow-y: auto;
+  }
+  
+  /* JSON Viewer Container */
+  #json-viewer-container {
+    width: 100%;
+    height: 71vh;
+    border-radius: 0.4rem;
+    overflow: auto;
+  }
+  
+  #json-viewer-container::-webkit-scrollbar {
+    width: 0;
+  }
+  
+  /* Viewer Styles */
+  .history-viewer {
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+  }
+  

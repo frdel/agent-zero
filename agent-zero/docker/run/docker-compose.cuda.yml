@@ -1,0 +1,15 @@
+services:
+  agent-zero-cuda:
+    container_name: agent-zero-cuda
+    image: frdel/agent-zero-run-cuda:testing
+    volumes:
+      - ../../../agent-files:/a0
+    ports:
+      - "50080:80"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu] 

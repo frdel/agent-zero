@@ -1,0 +1,5 @@
+diffusers>=0.18.0
+transformers>=4.25.1
+torch>=2.0.0
+accelerate>=0.16.0
+xformers>=0.0.20  # For efficient attention computations on GPU
