@@ -185,7 +185,8 @@ class CodeExecution(Tool):
             # Check if process is still running
             process_running = hasattr(self.state.shell, 'is_process_running') and self.state.shell.is_process_running()
             
-            # Only enforce timeout if the process is not running or max_exec_time is negative (for force timeout)
+            # Only enforce timeout if the process is not running AND max_exec_time is positive
+            # Never timeout a running process - let it complete or detect a shell prompt
             if max_exec_time > 0 and elapsed_time > max_exec_time and not process_running:
                 # Add a timeout message to the output
                 timeout_msg = f"\n[Process execution timed out after {max_exec_time} seconds]\n"
@@ -231,14 +232,18 @@ class CodeExecution(Tool):
                     last_status_time = current_time
                     idle = 0  # Reset idle counter since process is still active
                     
-                # Break if:
+                # Break conditions:
                 # 1. We detected a shell prompt and waited the grace period, OR
                 # 2. Process not running AND we've been idle too long
-                if (waiting_for_process_termination and idle > 20) or \
-                   (not process_running and ((full_output and idle > wait_with_output / SLEEP_TIME) or 
-                   (not full_output and idle > wait_without_output / SLEEP_TIME))):
-                    if waiting_for_process_termination:
-                        PrintStyle(font_color="#85C1E9").stream("[Command completed, returning to agent]\n")
+                #
+                # Important: We don't break if the process is running (even if idle),
+                # unless we've found a shell prompt (waiting_for_process_termination)
+                if waiting_for_process_termination and idle > 20:
+                    PrintStyle(font_color="#85C1E9").stream("[Command completed, returning to agent]\n")
+                    break
+                elif not process_running and ((full_output and idle > wait_with_output / SLEEP_TIME) or 
+                                           (not full_output and idle > wait_without_output / SLEEP_TIME)):
+                    # Only break if the process isn't running
                     break
         return full_output
 
