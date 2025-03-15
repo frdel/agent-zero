@@ -8,6 +8,5 @@
 #
 # Example: ./sanitize_tags.sh python app.py
 
-# Execute the passed command and pipe both stdout and stderr through sed
-# to remove thinking tags while keeping the rest of the content
-exec "$@" 2> >(sed -E 's/<think(ing)?>//g;s/<\/think(ing)?>//g' >&2) > >(sed -E 's/<think(ing)?>//g;s/<\/think(ing)?>//g') 
+# Combine stdout and stderr, process once, then redirect back
+exec "$@" 2>&1 | sed -E 's/<\/?think(ing)?>//g' 

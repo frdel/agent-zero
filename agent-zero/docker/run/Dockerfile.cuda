@@ -1,5 +1,5 @@
 # Use the NVIDIA CUDA base image with Ubuntu
-FROM nvidia/cuda:12.4-base-ubuntu22.04
+FROM nvidia/cuda:12.8.1-base-ubuntu22.04
 
 # Set non-interactive installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -24,9 +24,9 @@ RUN bash /ins/install_additional.sh $BRANCH
 
 # Install CUDA-specific dependencies with version pinning
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    cuda-nvcc-12-4 \
-    cuda-cudart-dev-12-4 \
-    libcublas-dev-12-4 \
+    cuda-nvcc-12-8 \
+    cuda-cudart-dev-12-8 \
+    libcublas-dev-12-8 \
     libcudnn8 \
     libcudnn8-dev \
     && apt-get clean \
@@ -37,7 +37,7 @@ ENV PATH=/usr/local/cuda/bin:${PATH}
 ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
 ENV CUDA_HOME=/usr/local/cuda
 ENV CUDA_PATH=/usr/local/cuda
-ENV CUDA_VERSION=12.4
+ENV CUDA_VERSION=12.8.1
 
 # Install Python build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
