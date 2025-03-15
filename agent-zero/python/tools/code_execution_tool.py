@@ -173,6 +173,15 @@ class CodeExecution(Tool):
             r'[#$>]\s*$',  # Simple shell prompt
             r'bash-\d+\.\d+[#$]\s*$',  # Bash version prompt
             r'[a-zA-Z0-9_\-]+:.+?[#$]\s*$',  # Shortened prompts
+            r'\[([yY]/[nN]|[yY]|[nN])\]\s*$',  # Common y/n prompts like [y/n], [Y/n]
+            r'\(([yY]/[nN]|[yY]|[nN])\)\s*$',  # Common y/n prompts with parentheses (y/n)
+            r'(?i)\[yes/no\]\s*$',  # [yes/no] prompts (case insensitive)
+            r'(?i)\(yes/no\)\s*$',  # (yes/no) prompts (case insensitive)
+            r'Continue\?\s*\[([yY]/[nN]|[yY]|[nN])\]\s*$',  # Continue? [y/n] style prompts
+            r'Proceed\?\s*\[([yY]/[nN]|[yY]|[nN])\]\s*$',  # Proceed? [y/n] style prompts
+            r'(?i)(?:password|username|login|api[_\s]*key|token|email|name|input)[\s]*:\s*$',  # Common input prompts
+            r'(?i)(?:enter|type|provide|specify)[\s]+(?:your|the|a|an)?[\s]*(?:password|username|email|token|key|input|value)[\s]*:\s*$',  # Verbose input prompts
+            r'Press [Ee]nter to continue.*$',  # "Press enter to continue" prompts
         ]
         import re
         shell_prompt_regex = re.compile('|'.join(shell_prompt_patterns))
