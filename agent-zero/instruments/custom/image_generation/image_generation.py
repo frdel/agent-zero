@@ -199,16 +199,27 @@ def generate_image(prompt, output_dir=DEFAULT_OUTPUT_DIR, seed=None, size=(512, 
         from diffusers import StableDiffusionPipeline
         from PIL import Image
         
+        # Force a CUDA availability check to ensure we have the latest status
+        # After installing CUDA-enabled PyTorch, this should reflect the current state
+        torch.cuda.is_available()  # This refreshes the CUDA status
+        
         print(f"✅ Using PyTorch {torch.__version__}")
         print(f"✅ CUDA available: {torch.cuda.is_available()}")
         
+        # First try to use CUDA if available
         if torch.cuda.is_available():
             device = "cuda"
             print(f"✅ Using CUDA device: {torch.cuda.get_device_name(0)}")
             print(f"ℹ️ GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
         else:
-            device = "cpu"
-            print("⚠️ Using CPU (CUDA not available)")
+            # Check if NVIDIA GPU is physically available even if CUDA is not detected by PyTorch
+            has_nvidia_gpu = check_cuda()
+            if has_nvidia_gpu:
+                print("🔄 NVIDIA GPU detected but CUDA not available in PyTorch. Trying to use GPU anyway...")
+                device = "cuda"
+            else:
+                device = "cpu"
+                print("⚠️ Using CPU (CUDA not available)")
         
         # Set seed if provided
         if seed is not None:
@@ -228,20 +239,33 @@ def generate_image(prompt, output_dir=DEFAULT_OUTPUT_DIR, seed=None, size=(512, 
                 cache_dir=MODEL_CACHE_DIR
             )
             
-            # Move model to device
-            pipe = pipe.to(device)
-            
-            # Enable memory optimizations
-            pipe.enable_attention_slicing()
-            
-            # Enable xformers if available and on CUDA
-            if device == "cuda":
-                try:
-                    import xformers
-                    pipe.enable_xformers_memory_efficient_attention()
-                    print("✅ Using xformers for memory efficient attention")
-                except ImportError:
-                    print("⚠️ xformers not available, using standard attention")
+            # Try to move model to GPU if that's the intended device
+            try:
+                if device == "cuda":
+                    pipe = pipe.to(device)
+                    
+                    # Enable memory optimizations
+                    pipe.enable_attention_slicing()
+                    
+                    # Enable xformers if available and on CUDA
+                    try:
+                        import xformers
+                        pipe.enable_xformers_memory_efficient_attention()
+                        print("✅ Using xformers for memory efficient attention")
+                    except ImportError:
+                        print("⚠️ xformers not available, using standard attention")
+                else:
+                    pipe = pipe.to(device)
+                    pipe.enable_attention_slicing()
+            except RuntimeError as e:
+                if "CUDA" in str(e):
+                    print(f"⚠️ Error moving model to CUDA: {e}")
+                    print("⚠️ Falling back to CPU")
+                    device = "cpu"
+                    pipe = pipe.to(device)
+                    pipe.enable_attention_slicing()
+                else:
+                    raise
             
             print(f"✅ Model loaded in {time.time() - start_time:.2f} seconds")
             
