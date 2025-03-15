@@ -46,6 +46,9 @@ instruments/**
 # Explicitly allow the default folder in instruments
 !instruments/default/
 !instruments/default/**
+# Explicitly allow custom image generation folder
+!instruments/custom/image_generation/
+!instruments/custom/image_generation/**
 
 # Global rule to include .gitkeep files anywhere
 !**/.gitkeep
