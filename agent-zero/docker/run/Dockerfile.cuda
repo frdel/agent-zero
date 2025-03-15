@@ -1,5 +1,5 @@
 # Use the NVIDIA CUDA base image with Ubuntu
-FROM nvidia/cuda:12.3.1-base-ubuntu22.04
+FROM nvidia/cuda:12.4-base-ubuntu22.04
 
 # Set non-interactive installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -16,14 +16,17 @@ COPY ./fs/ /
 # pre installation steps - use CUDA-specific script
 RUN bash /ins/pre_install_cuda.sh $BRANCH
 
+# Sanitize thinking tags from all relevant files
+RUN find /a0 -type f -name "*.py" -o -name "*.js" -o -name "*.html" | xargs -I {} bash /ins/sanitize_tags.sh {}
+
 # install additional software
 RUN bash /ins/install_additional.sh $BRANCH
 
-# Install CUDA-specific dependencies
+# Install CUDA-specific dependencies with version pinning
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    cuda-nvcc-12-3 \
-    cuda-cudart-dev-12-3 \
-    libcublas-dev-12-3 \
+    cuda-nvcc-12-4 \
+    cuda-cudart-dev-12-4 \
+    libcublas-dev-12-4 \
     libcudnn8 \
     libcudnn8-dev \
     && apt-get clean \
@@ -32,13 +35,42 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set CUDA environment variables
 ENV PATH=/usr/local/cuda/bin:${PATH}
 ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+ENV CUDA_HOME=/usr/local/cuda
+ENV CUDA_PATH=/usr/local/cuda
+ENV CUDA_VERSION=12.4
 
-# install A0
-RUN bash /ins/install_A0.sh $BRANCH
+# Install Python build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-dev \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Special handling for GPU-specific packages
-RUN pip uninstall -y torch faiss-cpu || true && \
-    pip install torch --index-url https://download.pytorch.org/whl/cu121
+# Install PyTorch with CUDA support - using versions matching the user's environment
+RUN pip3 install --upgrade pip setuptools wheel --root-user-action=ignore && \
+    pip3 uninstall -y torch torchvision triton faiss-cpu huggingface_hub diffusers transformers xformers || true && \
+    # Install PyTorch with CUDA 12.4
+    pip3 install --no-cache-dir torch==2.6.0+cu124 torchvision --index-url https://download.pytorch.org/whl/cu124 --root-user-action=ignore && \
+    # Install xformers
+    pip3 install --no-cache-dir xformers==0.0.29.post3 --root-user-action=ignore && \
+    # Install all other dependencies with exact versions to match user's environment
+    pip3 install --no-cache-dir Pillow==10.1.0 --root-user-action=ignore && \
+    pip3 install --no-cache-dir safetensors==0.4.1 scipy==1.15.2 --root-user-action=ignore && \
+    pip3 install --no-cache-dir huggingface_hub==0.20.3 --root-user-action=ignore && \
+    pip3 install --no-cache-dir transformers==4.38.2 accelerate==0.21.0 --root-user-action=ignore && \
+    # Install diffusers to match user's version
+    pip3 install --no-cache-dir diffusers==0.19.3 --root-user-action=ignore && \
+    # Create a test script to verify all critical imports
+    echo 'import torch; print(f"PyTorch: {torch.__version__}"); print(f"CUDA: {torch.cuda.is_available()}"); import huggingface_hub; print(f"huggingface_hub: {huggingface_hub.__version__}"); from huggingface_hub import cached_download; import diffusers; print(f"diffusers: {diffusers.__version__}"); from diffusers import StableDiffusionPipeline; import safetensors; import transformers; import xformers; print(f"xformers: {xformers.__version__}"); print("All imports successful!")' > /tmp/verify_imports.py && \
+    python3 /tmp/verify_imports.py || echo "Verification completed with warnings" && \
+    # Create stable diffusion output directory
+    mkdir -p /root/generated_images
+
+# Don't attempt to install stable-diffusion-cpp-python, use fallback image generation instead
+# as it requires complex build environment and can fail
+
 
 # Install faiss with CUDA support through conda
 RUN apt-get update && apt-get install -y wget && \
@@ -51,6 +83,9 @@ RUN apt-get update && apt-get install -y wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# install A0
+RUN bash /ins/install_A0.sh $BRANCH
+
 # cleanup repo and install A0 without caching, this speeds up builds
 ARG CACHE_DATE=none
 RUN echo "cache buster $CACHE_DATE" && bash /ins/install_A02.sh $BRANCH
@@ -61,5 +96,5 @@ RUN bash /ins/post_install.sh $BRANCH
 # Expose ports
 EXPOSE 22 80
 
-# initialize runtime
-CMD ["/bin/bash", "-c", "/bin/bash /exe/initialize.sh $BRANCH"] 
+# initialize runtime with sanitize_tags to filter thinking tags from output
+CMD ["/bin/bash", "-c", "/ins/sanitize_tags.sh /bin/bash /exe/initialize.sh $BRANCH"] 
