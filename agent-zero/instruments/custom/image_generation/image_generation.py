@@ -264,6 +264,12 @@ def generate_image(prompt, output_dir=DEFAULT_OUTPUT_DIR, seed=None, size=(512, 
                     device = "cpu"
                     pipe = pipe.to(device)
                     pipe.enable_attention_slicing()
+                    
+                    # Check if we have an NVIDIA GPU but still had to fall back to CPU
+                    if check_cuda():
+                        print("🔄 NOTE: NVIDIA GPU was detected but PyTorch couldn't use CUDA.")
+                        print("🔄 Try running the script again now that dependencies are installed.")
+                        print("🔄 A restart of your Python environment might be needed for CUDA to be properly recognized.")
                 else:
                     raise
             
@@ -352,6 +358,14 @@ def main():
     if filepath:
         print(f"✨ Image generation completed successfully!")
         print_versions()  # Print versions after successful generation
+        
+        # Add a message if we used CPU but have GPU hardware
+        import torch
+        if not torch.cuda.is_available() and check_cuda():
+            print("\n🔄 NOTE: This image was generated on CPU but an NVIDIA GPU was detected.")
+            print("🔄 Try running the script again for CUDA support now that dependencies are installed.")
+            print("🔄 A restart of your Python environment might be needed for CUDA to be properly recognized.")
+        
         return 0
     else:
         print("❌ Image generation failed")
