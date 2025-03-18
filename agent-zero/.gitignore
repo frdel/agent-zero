@@ -50,6 +50,10 @@ instruments/**
 !instruments/custom/image_generation/
 !instruments/custom/image_generation/**
 
+# Explicitly allow custom music generation folder
+!instruments/custom/music_generation/
+!instruments/custom/music_generation/**
+
 # Global rule to include .gitkeep files anywhere
 !**/.gitkeep
 agent_history.gif

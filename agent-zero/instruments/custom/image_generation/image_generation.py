@@ -233,11 +233,13 @@ def generate_image(prompt, output_dir=DEFAULT_OUTPUT_DIR, seed=None, size=(512, 
         try:
             # Load the model with appropriate settings
             pipe = StableDiffusionPipeline.from_pretrained(
-                "runwayml/stable-diffusion-v1-5",
+                "stabilityai/stable-diffusion-2-1-base",
                 torch_dtype=torch.float16 if device == "cuda" else torch.float32,
                 safety_checker=None,
-                cache_dir=MODEL_CACHE_DIR
-            )
+                cache_dir=MODEL_CACHE_DIR,
+                resume_download=True,
+                use_safetensors=True
+)
             
             # Try to move model to GPU if that's the intended device
             try:
@@ -287,8 +289,8 @@ def generate_image(prompt, output_dir=DEFAULT_OUTPUT_DIR, seed=None, size=(512, 
                 with torch.inference_mode():
                     output = pipe(
                         prompt=prompt,
-                        num_inference_steps=30 if device == "cuda" else 20,
-                        guidance_scale=7.5,
+                        num_inference_steps=50 if device == "cuda" else 20,
+                        guidance_scale=9,
                         height=size[1],
                         width=size[0]
                     )
@@ -363,12 +365,20 @@ def main():
         import torch
         if not torch.cuda.is_available() and check_cuda():
             print("\n🔄 NOTE: This image was generated on CPU but an NVIDIA GPU was detected.")
-            print("🔄 Try running the script again for CUDA support now that dependencies are installed.")
-            print("🔄 A restart of your Python environment might be needed for CUDA to be properly recognized.")
+            print("🔄 CUDA support was installed successfully but requires a restart of the Python environment.")
+            print("🔄 Please run the script again to utilize GPU acceleration for faster image generation.")
         
         return 0
     else:
         print("❌ Image generation failed")
+        # Check if we installed CUDA support and a GPU is available but CUDA wasn't recognized
+        try:
+            import torch
+            if not torch.cuda.is_available() and check_cuda():
+                print("\n✅ CUDA support was installed successfully but requires a restart of the Python environment.")
+                print("✅ Please run the script again to utilize GPU acceleration for faster image generation.")
+        except ImportError:
+            pass
         return 1
 
 if __name__ == "__main__":
