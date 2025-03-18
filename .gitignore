@@ -7,6 +7,9 @@
 # ignore test files in root dir
 /*.test.py
 
+# Ignore agent-files directory
+/agent-files/
+
 # Ignore git internal files (for bundler)
 .git/
 
@@ -43,10 +46,14 @@ instruments/**
 # Explicitly allow the default folder in instruments
 !instruments/default/
 !instruments/default/**
+# Explicitly allow custom image generation folder
+!instruments/custom/image_generation/
+!instruments/custom/image_generation/**
+
+# Explicitly allow custom music generation folder
+!instruments/custom/music_generation/
+!instruments/custom/music_generation/**
 
 # Global rule to include .gitkeep files anywhere
 !**/.gitkeep
 agent_history.gif
-
-# Ignore the agent-files directory
-/agent-files/
