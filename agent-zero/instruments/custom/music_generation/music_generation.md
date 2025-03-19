@@ -1,28 +1,50 @@
-# Problem
-Generate AI music from a text prompt
+# Video Generation
 
-# Solution
-1. If folder is specified, cd to it
-2. Run instrument "bash /a0/instruments/custom/music_generation/music_generation.sh <prompt> [options]" with your desired text prompt
-3. Wait for the generation to complete
+Generate AI videos from text prompts using local stable diffusion models.
 
-## Available Options:
-- `--duration <seconds>` - Length of music in seconds (default: 30, max: 30-120 depending on model)
-- `--model <size>` - Model size: small, medium, large, melody (default: medium)
-- `--genre <genre>` - Specific genre (e.g., rock, jazz, classical)
-- `--bpm <number>` - Beats per minute
-- `--seed <number>` - Random seed for reproducibility
-- `--output-dir <path>` - Directory to save generated music (default: /root/generated_music)
+## Usage
 
-## Examples:
-```
-bash /a0/instruments/custom/music_generation/music_generation.sh "An upbeat electronic dance track with synth arpeggios" --duration 45
+```bash
+python /a0/instruments/custom/video_generation/video_generation.py "<prompt>" [options]
 ```
 
-```
-bash /a0/instruments/custom/music_generation/music_generation.sh "A smooth jazz piece with piano and saxophone" --model medium --genre jazz
+## Key Options
+- `--duration <seconds>` - Length in seconds (default: 5, recommended: 3-5s for 8GB VRAM)
+- `--width`/`--height` - Resolution (default: 512×512)
+- `--seed` - For reproducible results
+- `--output-dir` - Save location (default: /root/generated_videos)
+- `--no-enhance` - Disable frame enhancement (smoother transitions)
+
+## Prompt Tips
+Best results include:
+- Cinematic terms: "cinematic lighting", "photorealistic", "film grain"
+- Camera movements: "slow pan", "aerial view"
+- Lighting details: "golden hour", "dramatic shadows"
+
+## Example for Agent
+
+```json
+{
+    "thoughts": [
+        "Need to generate a cinematic video of an eagle"
+    ],
+    "tool_name": "code_execution_tool",
+    "tool_args": {
+        "runtime": "terminal",
+        "code": "python /a0/instruments/custom/video_generation/video_generation.py \"A majestic eagle soaring through mountain peaks, cinematic lighting\" --duration 3"
+    }
+}
 ```
 
-```
-bash /a0/instruments/custom/music_generation/music_generation.sh "Epic orchestral soundtrack with dramatic strings and percussion" --model large
-```
+## How It Works
+1. Generates a high-quality still image from your text prompt
+2. Animates the image into a short video sequence
+3. Enhances frame transitions for smoother motion
+4. Outputs an MP4 file with accompanying thumbnail
+
+## Notes
+- First run downloads models (~2GB)
+- Generation takes 2-10 minutes 
+- Output includes MP4 video, thumbnail and metadata
+- Automatically adapts to available GPU memory
+- For 8GB VRAM, expect 12-20 frames (high quality but short duration)
