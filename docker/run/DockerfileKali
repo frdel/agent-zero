@@ -29,5 +29,7 @@ RUN bash /ins/post_install.sh $BRANCH
 # Expose ports
 EXPOSE 22 80
 
-# initialize runtime
-CMD ["/bin/bash", "-c", "/bin/bash /exe/initialize.sh $BRANCH"]
+RUN chmod +x /exe/initialize.sh /exe/run_A0.sh /exe/run_searxng.sh
+
+# initialize runtime and switch to supervisord
+CMD ["/exe/initialize.sh", "$BRANCH"]

@@ -11,7 +11,9 @@ apt-get update && apt-get install -y \
     curl \
     wget \
     git \
-    ffmpeg 
+    ffmpeg \
+    supervisor \
+    cron
 
 # # Configure system alternatives so that /usr/bin/python3 points to Python 3.12
 # sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
