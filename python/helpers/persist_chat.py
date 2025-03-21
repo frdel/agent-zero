@@ -26,7 +26,7 @@ def save_tmp_chat(context: AgentContext):
 
 def load_tmp_chats():
     _convert_v080_chats()
-    folders = files.list_files("tmp/chats/", "*")
+    folders = files.list_files(CHATS_FOLDER, "*")
     json_files = []
     for folder in folders:
         json_files.append(_get_chat_file_path(folder))
@@ -48,7 +48,7 @@ def _get_chat_file_path(ctxid: str):
 
 
 def _convert_v080_chats():
-    json_files = files.list_files("tmp/chats", "*.json")
+    json_files = files.list_files(CHATS_FOLDER, "*.json")
     for file in json_files:
         path = files.get_abs_path(CHATS_FOLDER, file)
         name = file.rstrip(".json")

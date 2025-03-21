@@ -1,6 +1,4 @@
 from python.helpers.api import ApiHandler, Input, Output, Request, Response
-
-
 from agent import AgentContext
 from python.helpers import persist_chat
 

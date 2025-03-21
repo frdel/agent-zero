@@ -29,3 +29,4 @@ tiktoken==0.8.0
 unstructured==0.15.13
 unstructured-client==0.25.9
 webcolors==24.6.0
+crontab==1.0.1
