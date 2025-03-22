@@ -11,7 +11,6 @@ from python.helpers.extract_tools import load_classes_from_folder
 from python.helpers.api import ApiHandler
 from python.helpers.print_style import PrintStyle
 import sys
-import asyncio
 import socket
 import struct
 
@@ -167,6 +166,9 @@ def run():
 
         # initialize contexts from persisted chats
         persist_chat.load_tmp_chats()
+
+        # initialize contexts from persisted tasks
+        persist_chat.load_tmp_tasks()
 
     except Exception as e:
         PrintStyle().error(errors.format_error(e))

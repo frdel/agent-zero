@@ -9,27 +9,30 @@ from initialize import initialize
 from python.helpers.log import Log, LogItem
 
 CHATS_FOLDER = "tmp/chats"
+TASKS_FOLDER = "tmp/task_chats"
 LOG_SIZE = 1000
 CHAT_FILE_NAME = "chat.json"
 
 
-def get_chat_folder_path(ctxid: str):
-    return files.get_abs_path(CHATS_FOLDER, ctxid)
+def get_chat_folder_path(ctxid: str, folder: str = CHATS_FOLDER):
+    return files.get_abs_path(folder, ctxid)
 
-def save_tmp_chat(context: AgentContext):
-    path = _get_chat_file_path(context.id)
+
+def save_tmp_chat(context: AgentContext, folder: str = CHATS_FOLDER):
+    path = _get_chat_file_path(context.id, folder)
     files.make_dirs(path)
     data = _serialize_context(context)
     js = _safe_json_serialize(data, ensure_ascii=False)
     files.write_file(path, js)
 
 
-def load_tmp_chats():
-    _convert_v080_chats()
-    folders = files.list_files(CHATS_FOLDER, "*")
+def load_tmp_chats(folder: str = CHATS_FOLDER):
+    if folder == CHATS_FOLDER:
+        _convert_v080_chats()
+    folders = files.list_files(folder, "*")
     json_files = []
-    for folder in folders:
-        json_files.append(_get_chat_file_path(folder))
+    for folder_name in folders:
+        json_files.append(_get_chat_file_path(folder_name, folder))
 
     ctxids = []
     for file in json_files:
@@ -43,8 +46,8 @@ def load_tmp_chats():
     return ctxids
 
 
-def _get_chat_file_path(ctxid: str):
-    return files.get_abs_path(CHATS_FOLDER, ctxid, CHAT_FILE_NAME)
+def _get_chat_file_path(ctxid: str, folder: str = CHATS_FOLDER):
+    return files.get_abs_path(folder, ctxid, CHAT_FILE_NAME)
 
 
 def _convert_v080_chats():
@@ -52,12 +55,11 @@ def _convert_v080_chats():
     for file in json_files:
         path = files.get_abs_path(CHATS_FOLDER, file)
         name = file.rstrip(".json")
-        fold = files.get_abs_path(CHATS_FOLDER, name)
         new = _get_chat_file_path(name)
         files.move_file(path, new)
 
 
-def load_json_chats(jsons: list[str]):
+def load_json_chats(jsons: list[str], folder: str = CHATS_FOLDER):
     ctxids = []
     for js in jsons:
         data = json.loads(js)
@@ -74,9 +76,25 @@ def export_json_chat(context: AgentContext):
     return js
 
 
-def remove_chat(ctxid):
-    files.delete_dir(get_chat_folder_path(ctxid))
+def remove_chat(ctxid, folder: str = CHATS_FOLDER):
+    files.delete_dir(get_chat_folder_path(ctxid, folder))
 
+
+# Task-specific functions for convenience
+def save_tmp_task(context: AgentContext):
+    save_tmp_chat(context, TASKS_FOLDER)
+
+
+def load_tmp_tasks():
+    return load_tmp_chats(TASKS_FOLDER)
+
+
+def load_json_tasks(jsons: list[str]):
+    return load_json_chats(jsons, TASKS_FOLDER)
+
+
+def remove_task(ctxid):
+    remove_chat(ctxid, TASKS_FOLDER)
 
 
 def _serialize_context(context: AgentContext):

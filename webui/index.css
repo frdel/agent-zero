@@ -208,8 +208,57 @@ body,
 }
 
 /* Chats container */
+.chat-container {
+    display: flex;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    min-height: 30px;
+    gap: 0;
+}
+
 .chat-list-button {
+    display: block;
+    width: 100%;
+    padding: 1px 5px;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    transition: background-color 0.2s;
+    border-radius: 4px;
+}
+
+/* Subtle background on hover for the entire row */
+.chat-list-button:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.light-mode .chat-list-button:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.chat-name {
+  display: inline-block;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  margin-right: 60px; /* Make space for buttons */
+  font-size: var(--font-size-small); /* Match config button font size */
+}
+
+/* Add a nice hover effect to just the chat name */
+.chat-name:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  text-decoration: none;
+}
+
+.light-mode .chat-name:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .chats-list-container {
@@ -232,12 +281,26 @@ body,
   background: linear-gradient(to bottom, calc(100% - 20px), transparent 100%);
   /* Add padding to account for fade */
   padding-bottom: 20px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  -ms-overflow-style: auto;
 }
 
 .chats-list-container::-webkit-scrollbar {
-  width: 0px;
+  width: 5px;
+}
+
+.chats-list-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+.chats-list-container::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 6px;
+}
+
+.chats-list-container::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border);
 }
 
 /* Chats Section */
@@ -247,7 +310,7 @@ body,
   flex-direction: column;
   min-height: 0;
   flex: 1;
-  margin-top: 1.5rem;
+  margin-top: 0.5rem;
 }
 
 /* Preferences */
@@ -1178,7 +1241,7 @@ pre {
 }
 
 .text-button:active {
- opacity: 0.5; 
+ opacity: 0.5;
 }
 
 .text-button svg {
@@ -1588,7 +1651,7 @@ input:checked + .slider:before {
     display: table;
     gap: 0.1rem !important;
   }
-  
+
   .text-button {
     max-height: 25px;
   }
@@ -1603,7 +1666,7 @@ input:checked + .slider:before {
   margin-left: var(--spacing-md);
   margin-bottom: var(--spacing-md);
   }
-  
+
   .msg-kvps {
     display: flex;
     flex-direction: column;
@@ -1669,7 +1732,7 @@ input:checked + .slider:before {
   .sidebar-overlay.visible {
     display: block;
   }
-}  
+}
 
 @media (max-width: 768px) {
   #left-panel {
@@ -1699,15 +1762,15 @@ input:checked + .slider:before {
     -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
   }
-  
+
   #right-panel.expanded #logo-container {
     margin-left: 4.6rem;
   }
-  
+
   #input-section {
     align-items: start;
   }
-  
+
   .text-buttons-row {
     width: 90%;
     display: flex;
@@ -1786,7 +1849,7 @@ input:checked + .slider:before {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  
+
   #chats-section {
     min-height: 100%;
   }
@@ -2095,4 +2158,265 @@ a:active {
 /* Alpine cloak to prevent FOUC */
 [x-cloak] {
     display: none !important;
+}
+
+/* Add new styles for reasoning and deepsearchbutton */
+.ml-auto {
+  margin-left: auto;
+}
+
+/* Remove unnecessary specific media query that was causing issues */
+@media (max-width: 480px) {
+  .text-button svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Add to the existing .chat-actions class or create it */
+.chat-actions {
+    display: flex;
+    gap: 5px;
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2; /* Ensure buttons are above the edit field */
+    min-width: 70px; /* Ensure minimum width for the buttons */
+    justify-content: flex-end;
+}
+
+/* Tasks list container - similar to chats list */
+.tasks-list-container {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 10px;
+    padding-right: 5px;
+    border-radius: 5px;
+    position: relative;
+    scrollbar-width: thin;
+    -ms-overflow-style: auto;
+}
+
+.tasks-list-container::-webkit-scrollbar {
+    width: 5px;
+}
+
+.tasks-list-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+}
+
+.tasks-list-container::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: 6px;
+}
+
+.tasks-list-container::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-border);
+}
+
+.task-name {
+    display: inline-block;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    padding: 3px 5px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    margin-right: 60px; /* Make space for future buttons */
+    font-size: var(--font-size-small); /* Match config button font size */
+}
+
+.task-name:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+}
+
+.light-mode .task-name:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Dark mode overrides */
+.light-mode .tab.active {
+    color: var(--highlight-pink);
+}
+
+.light-mode .tab.active::after {
+    background-color: var(--highlight-pink);
+    box-shadow: 0 0 8px var(--highlight-pink);
+}
+/* Tabs styling */
+.tabs-container {
+  width: 100%;
+  margin-bottom: 8px; /* Reduced spacing between tabs and list */
+  padding: 0;
+  margin-top: 20px; /* Increased spacing from elements above */
+}
+
+.tabs {
+  display: flex;
+  width: 100%;
+  position: relative;
+  gap: 5px;
+  border-bottom: 3px solid var(--color-border); /* Thicker bottom line */
+  justify-content: center; /* Center the tabs */
+}
+
+.tab {
+  padding: 8px 16px;
+  cursor: pointer;
+  position: relative;
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.3s ease;
+  background-color: var(--color-panel);
+  margin-bottom: -3px; /* Match the thicker border */
+  z-index: 1;
+}
+
+.tab:not(.active) {
+  opacity: 0.8;
+  border-bottom: 3px solid var(--color-border);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.tab.active {
+  color: var(--color-primary);
+  border-color: var(--color-border);
+  box-shadow:
+    0 -4px 8px -2px var(--color-border),
+    4px 0 8px -2px var(--color-border),
+    -4px 0 8px -2px var(--color-border);
+  font-weight: bold;
+  background-color: var(--color-panel);
+}
+
+.light-mode .tab.active {
+  color: var(--color-primary);
+  box-shadow:
+    0 -4px 8px -2px var(--color-border),
+    4px 0 8px -2px var(--color-border),
+    -4px 0 8px -2px var(--color-border);
+}
+
+.light-mode .tab:not(.active) {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Remove previous tab styling that conflicts */
+.tab.active::after {
+  display: none;
+}
+
+/* Empty list message styling enhancement */
+.empty-list-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  color: var(--color-secondary);
+  text-align: center;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.light-mode .empty-list-message {
+  color: var(--color-secondary-light);
+}
+
+/* Common scrollbar styling */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--color-border);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) rgba(0, 0, 0, 0.2);
+}
+
+/* Light mode scrollbar */
+.light-mode ::-webkit-scrollbar-track {
+  background: rgba(200, 200, 200, 0.3);
+}
+
+.light-mode ::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+}
+
+.light-mode ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border);
+}
+
+.light-mode ::-webkit-scrollbar-thumb:active {
+  background-color: var(--color-border);
+}
+
+.light-mode * {
+  scrollbar-color: var(--color-border) rgba(200, 200, 200, 0.3);
+}
+
+/* Add specific styling for selected chat items */
+.chat-list-button.font-bold {
+    position: relative;
+    background-color: var(--color-border) 0.05;
+}
+
+.chat-list-button.font-bold::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background-color: var(--color-border);
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+}
+
+.light-mode .chat-list-button.font-bold {
+    background-color: var(--color-border) 0.05;
+}
+
+.light-mode .chat-list-button.font-bold::before {
+    background-color: var(--color-border);
+}
+
+/* Add some padding to the list items to accommodate the stripe */
+.chat-list-button {
+    padding-left: 5px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease-in-out;
+}
+
+/* Make sure the chat container has proper spacing */
+.chat-container, .task-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
 }

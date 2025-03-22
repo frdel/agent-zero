@@ -87,22 +87,57 @@
                         </svg>Settings</button>
 
                 </div>
+
+                <!-- Tabs container -->
+                <div class="tabs-container">
+                    <div class="tabs">
+                        <div class="tab active" id="chats-tab">Chats</div>
+                        <div class="tab" id="tasks-tab">Tasks</div>
+                    </div>
+                </div>
+
                 <!-- Chats List -->
                 <div class="config-section" id="chats-section" x-data="{ contexts: [], selected: '' }"
-                    x-show="contexts.length > 0">
-                    <h3>Chats</h3>
+                    x-show="contexts.length > 0 || true">
                     <div class="chats-list-container">
-                        <ul class="config-list">
+                        <ul class="config-list" x-show="contexts.length > 0">
                             <template x-for="context in contexts">
                                 <li>
-                                    <span :class="{'chat-list-button': true, 'font-bold': context.id === selected}"
+                                    <div :class="{'chat-list-button': true, 'font-bold': context.id === selected}"
                                         @click="selected = context.id; selectChat(context.id)">
-                                        <span x-text="context.name ? context.name : 'Chat #' + context.no"></span>
-                                    </span>
+                                        <span class="chat-name" x-text="context.name ? context.name : 'Chat #' + context.no"></span>
+                                    </div>
                                     <button class="edit-button" @click="killChat(context.id)">X</button>
                                 </li>
                             </template>
                         </ul>
+                        <div class="empty-list-message" x-show="contexts.length === 0">
+                            <p><i>No chats to list.</i></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks List -->
+                <div class="config-section" id="tasks-section" x-data="{ tasks: [], selected: '' }"
+                    style="display: none;">
+                    <div class="tasks-list-container">
+                        <ul class="config-list" x-show="tasks.length > 0">
+                            <template x-for="task in tasks">
+                                <li>
+                                    <div :class="{'chat-list-button': true, 'font-bold': task.id === selected}"
+                                        @click="selected = task.id; selectChat(task.id)">
+                                        <div class="chat-container">
+                                            <span class="task-name"
+                                                x-text="task.name || `Task #${task.id.substring(0,8)}`"
+                                                :data-task-id="task.id"></span>
+                                        </div>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                        <div class="empty-list-message" x-show="tasks.length === 0">
+                            <p><i>No tasks to list.</i></p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -216,19 +251,19 @@
                     <span id="stop-speech" @click="window.speech.stop()" style="cursor: pointer">Stop Speech</span>
                 </h4>
             </div>
-            <div id="input-section" x-data="{ 
+            <div id="input-section" x-data="{
                 paused: false,
                 attachments: [],
                 hasAttachments: false,
-                
+
                 handleFileUpload(event) {
                     const files = event.target.files;
-    
+
                     Array.from(files).forEach(file => {
                         const ext = file.name.split('.').pop().toLowerCase();
-                       
+
                             const isImage = ['jpg', 'jpeg', 'png', 'bmp'].includes(ext);
-                            
+
                             if (isImage) {
                                 // Handle image preview
                                 const reader = new FileReader();
@@ -298,7 +333,7 @@
                     <!-- Container for textarea and button -->
                     <div id="chat-input-container" style="position: relative;">
                         <textarea id="chat-input" placeholder="Type your message here..." rows="1"></textarea>
-                        
+
                         <!-- Expand button inside the textarea container -->
                         <button id="expand-button" @click="$store.fullScreenInputModal.openModal()" aria-label="Expand input">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -306,7 +341,7 @@
                             </svg>
                         </button>
                     </div>
-                    
+
                     <div id="chat-buttons-wrapper">
 
                         <!-- Send button -->
@@ -687,12 +722,12 @@
     <!-- Full Screen Input Modal -->
     <div id="fullScreenInputModal" x-data="fullScreenInputModalProxy">
         <template x-teleport="body">
-            <div x-show="isOpen" class="modal-overlay" @click.self="handleClose()" 
+            <div x-show="isOpen" class="modal-overlay" @click.self="handleClose()"
                 @keydown.escape.window="handleClose()" x-transition>
                 <div class="modal-container full-screen-input-modal">
                     <div class="modal-content">
                         <button class="modal-close" @click="handleClose()">&times;</button>
-                        
+
                         <!-- Add toolbar -->
                         <div class="editor-toolbar">
                             <div class="toolbar-group">
@@ -725,8 +760,8 @@
                             </div>
                         </div>
 
-                        <textarea id="full-screen-input" x-model="inputText" 
-                            placeholder="Type your message here..." 
+                        <textarea id="full-screen-input" x-model="inputText"
+                            placeholder="Type your message here..."
                             @keydown.ctrl.enter="handleClose()"
                             @keydown.ctrl.z.prevent="undo()"
                             @keydown.ctrl.shift.z.prevent="redo()"
@@ -744,9 +779,9 @@
     </div>
 
     <!-- Drag and Drop Overlay -->
-    <div id="dragdrop-overlay" 
+    <div id="dragdrop-overlay"
          x-cloak
-         x-data="{ isVisible: false }" 
+         x-data="{ isVisible: false }"
          x-show="isVisible"
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0"
