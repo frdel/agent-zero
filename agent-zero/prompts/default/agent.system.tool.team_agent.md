@@ -107,12 +107,27 @@ usage:
 }
 ```
 
+```json
+{
+  "thoughts": [
+    "Now that I have all the results, I need to integrate them into a cohesive final product"
+  ],
+  "tool_name": "team_agent",
+  "tool_args": {
+    "action": "integrate_results",
+    "team_id": "team_abcd1234"
+  }
+}
+```
+
 workflow sequence:
 1. create a team
 2. add specialized agents with clear roles
 3. assign specific tasks to agents
 4. execute tasks one at a time
-5. share results between agents
-6. get final combined results
+5. share results between agents as needed
+6. get all results with get_results
+7. integrate results into a final product
+8. respond to the user with the final integrated work
 
 When team agents execute tasks, they automatically respond in the proper format using the "response" tool. Team management handles all communication between agents for you - you only need to use the actions shown above.

@@ -19,6 +19,11 @@ class TeamAgent(Tool):
             team_id: ID of the team (except for 'create' action)
             **kwargs: Additional arguments based on the action
         """
+        # Parameter validation and normalization
+        if not action and "action" in kwargs:
+            action = kwargs.pop("action")
+            self.log.update(progress=f"Normalized action parameter from kwargs: {action}")
+            
         # Initialize teams data structure if not present
         if not self.agent.get_data("teams"):
             self.agent.set_data("teams", {})
@@ -26,29 +31,70 @@ class TeamAgent(Tool):
         # Use active team if not explicitly provided
         if not team_id and action != "create" and self.agent.get_data("active_team_id"):
             team_id = self.agent.get_data("active_team_id")
+            self.log.update(progress=f"Using active team ID: {team_id}")
             
         # Handle different actions
         if action == "create":
             return await self._create_team(**kwargs)
-        elif action == "add_agent":
-            return await self._add_agent(team_id, **kwargs)
-        elif action == "assign_task":
-            return await self._assign_task(team_id, **kwargs)
-        elif action == "execute_task":
-            return await self._execute_task(team_id, **kwargs)
-        elif action == "message":
-            return await self._send_message(team_id, **kwargs)
-        elif action == "get_results":
-            return await self._get_results(team_id, **kwargs)
-        elif action == "team_status":
-            return await self._team_status(team_id, **kwargs)
+        # Handle actions with better logging
+        try:
+            if action == "create":
+                return await self._create_team(**kwargs)
+            elif action == "add_agent":
+                self.log.update(progress=f"Adding agent to team {team_id}...")
+                return await self._add_agent(team_id, **kwargs)
+            elif action == "assign_task":
+                self.log.update(progress=f"Assigning task to agent in team {team_id}...")
+                return await self._assign_task(team_id, **kwargs)
+            elif action == "execute_task":
+                self.log.update(progress=f"Executing task in team {team_id}...")
+                return await self._execute_task(team_id, **kwargs)
+            elif action == "message":
+                self.log.update(progress=f"Sending message in team {team_id}...")
+                return await self._send_message(team_id, **kwargs)
+            elif action == "get_results":
+                self.log.update(progress=f"Getting results from team {team_id}...")
+                return await self._get_results(team_id, **kwargs)
+            elif action == "team_status":
+                self.log.update(progress=f"Getting status for team {team_id}...")
+                return await self._team_status(team_id, **kwargs)
+            elif action == "integrate_results":
+                self.log.update(progress=f"Integrating results from team {team_id}...")
+                return await self._integrate_results(team_id, **kwargs)
+            else:
+                self.log.update(error=f"Unknown action: {action}")
+                return Response(
+                    message=self._format_response({
+                        "error": f"Unknown action: {action}",
+                        "available_actions": [
+                            "create", "add_agent", "assign_task", 
+                            "execute_task", "message", "get_results", 
+                            "team_status", "integrate_results"
+                        ]
+                    }),
+                    break_loop=False
+                )
+        except Exception as e:
+            # Log the error and return a formatted response
+            error_message = f"Error executing {action}: {str(e)}"
+            self.log.update(error=error_message)
+            
+            return Response(
+                message=self._format_response({
+                    "error": error_message,
+                    "action_attempted": action,
+                    "next_step": "Check parameters and try again"
+                }),
+                break_loop=False
+            )
         else:
             return Response(
                 message=self._format_response({
                     "error": f"Unknown action: {action}",
                     "available_actions": [
                         "create", "add_agent", "assign_task", 
-                        "execute_task", "message", "get_results", "team_status"
+                        "execute_task", "message", "get_results", 
+                        "team_status", "integrate_results"
                     ]
                 }),
                 break_loop=False
@@ -471,13 +517,24 @@ Do not use any other format or tool - only the response tool as shown above."""
     
     async def _get_results(self, team_id, **kwargs):
         """Get results from all tasks in a team"""
-        # Get team data
-        teams = self.agent.get_data("teams")
+        # Add additional logging for debugging
+        self.log.update(progress=f"Retrieving results for team {team_id}...")
+        
+        # Get team data with better error checking
+        teams = self.agent.get_data("teams") or {}
         if not team_id or team_id not in teams:
+            available_teams = list(teams.keys())
+            error_msg = f"Team {team_id} not found"
+            self.log.update(error=error_msg)
+            
+            if available_teams:
+                self.log.update(progress=f"Available teams: {', '.join(available_teams)}")
+                
             return Response(
                 message=self._format_response({
-                    "error": f"Team {team_id} not found",
-                    "available_teams": list(teams.keys()) if teams else []
+                    "error": error_msg,
+                    "available_teams": available_teams,
+                    "next_step": "Create a team first with the 'create' action or use a valid team_id"
                 }),
                 break_loop=False
             )
@@ -528,15 +585,41 @@ Do not use any other format or tool - only the response tool as shown above."""
             break_loop=False
         )
     
+    def _find_agent_by_role(self, team_id, role):
+        """Helper to find agent by role instead of ID"""
+        teams = self.agent.get_data("teams") or {}
+        if team_id not in teams:
+            return None
+            
+        team_leader = teams[team_id]["leader_agent"]
+        team_members = team_leader.get_data("team_members") or {}
+        
+        for agent_id, agent_data in team_members.items():
+            if agent_data["role"].lower() == role.lower():
+                return agent_id
+                
+        return None
+    
     async def _team_status(self, team_id, **kwargs):
         """Get comprehensive team status"""
-        # Get team data
-        teams = self.agent.get_data("teams")
+        # Add progress logging
+        self.log.update(progress=f"Getting status for team {team_id}...")
+        
+        # Get team data with better error checking
+        teams = self.agent.get_data("teams") or {}
         if not team_id or team_id not in teams:
+            available_teams = list(teams.keys())
+            error_msg = f"Team {team_id} not found"
+            self.log.update(error=error_msg)
+            
+            if available_teams:
+                self.log.update(progress=f"Available teams: {', '.join(available_teams)}")
+                
             return Response(
                 message=self._format_response({
-                    "error": f"Team {team_id} not found",
-                    "available_teams": list(teams.keys()) if teams else []
+                    "error": error_msg,
+                    "available_teams": available_teams,
+                    "next_step": "Create a team first with the 'create' action or use a valid team_id"
                 }),
                 break_loop=False
             )
@@ -567,6 +650,31 @@ Do not use any other format or tool - only the response tool as shown above."""
                 "pending": sum(1 for t in agent_tasks if t["status"] == "assigned")
             }
         
+        # Map of tasks to their dependencies
+        task_dependencies = {}
+        for task_id, task_data in tasks.items():
+            deps = task_data.get("depends_on", [])
+            if deps:
+                task_dependencies[task_id] = {
+                    "depends_on": deps,
+                    "description": task_data.get("description", ""),
+                    "status": task_data.get("status", "unknown")
+                }
+        
+        # Find next tasks to execute based on dependencies
+        next_tasks = []
+        for task_id, task_data in tasks.items():
+            if task_data["status"] == "assigned":
+                dependencies_ready = True
+                for dep_id in task_data.get("depends_on", []):
+                    if dep_id not in tasks or tasks[dep_id]["status"] != "completed":
+                        dependencies_ready = False
+                        break
+                if dependencies_ready:
+                    next_tasks.append(task_id)
+        
+        self.log.update(progress="Team status analysis complete")
+        
         return Response(
             message=self._format_response({
                 "team_id": team_id,
@@ -580,7 +688,10 @@ Do not use any other format or tool - only the response tool as shown above."""
                     "agent_count": len(team_members),
                     "message_count": len(messages)
                 },
-                "agents": agent_workloads
+                "agents": agent_workloads,
+                "task_dependencies": task_dependencies,
+                "next_executable_tasks": next_tasks,
+                "workflow_status": "complete" if pending_tasks == 0 and in_progress_tasks == 0 else "in_progress"
             }),
             break_loop=False
         )
@@ -592,6 +703,17 @@ Do not use any other format or tool - only the response tool as shown above."""
             "Generated appropriate response"
         ]
         
+        # Add helpful next_step if not present
+        if "error" in data and "next_step" not in data:
+            if "available_teams" in data and data["available_teams"]:
+                data["next_step"] = f"Use a valid team_id from: {', '.join(data['available_teams'])}"
+            else:
+                data["next_step"] = "Create a team first with the 'create' action"
+        
+        # Add specific formatting guidance for get_results response
+        if "results" in data and "error" not in data:
+            data["next_step"] = "Format your response to the user as a properly formatted JSON message using the response tool. Synthesize the individual contributions into a cohesive final product."
+        
         formatted_response = {
             "thoughts": thoughts,
             "tool_name": "team_agent",
@@ -599,3 +721,100 @@ Do not use any other format or tool - only the response tool as shown above."""
         }
         
         return json.dumps(formatted_response, indent=2)
+
+    async def _integrate_results(self, team_id, **kwargs):
+        """Integrate results from all team members into a final product"""
+        # Get team data
+        teams = self.agent.get_data("teams") or {}
+        if not team_id or team_id not in teams:
+            available_teams = list(teams.keys())
+            error_msg = f"Team {team_id} not found"
+            self.log.update(error=error_msg)
+            
+            if available_teams:
+                self.log.update(progress=f"Available teams: {', '.join(available_teams)}")
+                
+            return Response(
+                message=self._format_response({
+                    "error": error_msg,
+                    "available_teams": available_teams,
+                    "next_step": "Create a team first with the 'create' action or use a valid team_id"
+                }),
+                break_loop=False
+            )
+            
+        team_data = teams[team_id]
+        team_leader = team_data["leader_agent"]
+        tasks = team_leader.get_data("tasks") or {}
+        team_members = team_leader.get_data("team_members") or {}
+        
+        # Collect all completed results
+        completed_results = {}
+        for task_id, task_data in tasks.items():
+            if task_data["status"] == "completed":
+                agent_id = task_data["agent_id"]
+                if agent_id in team_members:
+                    role = team_members[agent_id]["role"]
+                    completed_results[role] = {
+                        "task": task_data["description"],
+                        "result": task_data["result"]
+                    }
+        
+        if not completed_results:
+            return Response(
+                message=self._format_response({
+                    "team_id": team_id,
+                    "error": "No completed tasks found to integrate",
+                    "next_step": "Execute tasks first with the execute_task action before attempting integration"
+                }),
+                break_loop=False
+            )
+        
+        # Create integration prompt for team leader
+        integration_prompt = f"""
+        As the leader of the {team_data['name']} team, your task is to integrate the following contributions 
+        into a coherent final product that fulfills the team goal: {team_data['goal']}
+        
+        TEAM CONTRIBUTIONS:
+        {json.dumps(completed_results, indent=2)}
+        
+        Synthesize these contributions into a single cohesive response.
+        
+        IMPORTANT: You must respond using the exact response format below:
+        
+        ```json
+        {{
+            "thoughts": [
+                "Your thought process for integration",
+                "How you combined the different contributions",
+                "Your final evaluation of the integrated result"
+            ],
+            "tool_name": "response",
+            "tool_args": {{
+                "text": "Your complete integrated result here. Be thorough and properly formatted."
+            }}
+        }}
+        ```
+        """
+        
+        # Let team leader create the integrated result
+        self.log.update(progress="Asking team leader to integrate results...")
+        
+        try:
+            # Execute integration using call to team leader
+            await team_leader.hist_add_user_message(UserMessage(message=integration_prompt, attachments=[]))
+            integrated_result = await team_leader.monologue()
+            self.log.update(progress="Received integrated response from team leader")
+        except Exception as e:
+            self.log.update(error=f"Error during integration: {str(e)}")
+            integrated_result = f"Error during integration: {str(e)}"
+        
+        return Response(
+            message=self._format_response({
+                "team_id": team_id,
+                "status": "integrated",
+                "integrated_result": integrated_result,
+                "next_step": "Use the response tool to share these integrated results with the user"
+            }),
+            break_loop=False
+        )
