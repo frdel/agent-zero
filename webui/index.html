@@ -458,10 +458,28 @@
                     </div>
 
                     <div class="modal-content">
+                        <!-- Tab Navigation -->
+                        <div class="settings-tabs-container">
+                            <div class="settings-tabs">
+                                <div class="settings-tab"
+                                     :class="{'active': activeTab === 'agent'}"
+                                     @click="switchTab('agent')"
+                                     title="Agent Settings">Agent Settings</div>
+                                <div class="settings-tab"
+                                     :class="{'active': activeTab === 'external'}"
+                                     @click="switchTab('external')"
+                                     title="External Services">External Services</div>
+                                <div class="settings-tab"
+                                     :class="{'active': activeTab === 'developer'}"
+                                     @click="switchTab('developer')"
+                                     title="Developer">Developer</div>
+                            </div>
+                        </div>
+
                         <div id="settings-sections">
                             <nav>
                                 <ul>
-                                    <template x-for="(section, index) in settings.sections" :key="section.title">
+                                    <template x-for="(section, index) in filteredSections" :key="section.title">
                                         <li>
                                             <a :href="'#section' + (index + 1)">
                                                 <img :src="'/public/' + section.id +'.svg'"
@@ -473,7 +491,7 @@
                                 </ul>
                             </nav>
                         </div>
-                        <template x-for="(section, sectionIndex) in settings.sections" :key="sectionIndex">
+                        <template x-for="(section, sectionIndex) in filteredSections" :key="sectionIndex">
                             <div :id="'section' + (sectionIndex + 1)" class="section">
                                 <div class="section-title" x-text="section.title"></div>
                                 <div class="section-description" x-html="section.description"></div>

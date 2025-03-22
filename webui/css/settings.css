@@ -214,7 +214,7 @@ nav ul li a img {
   }
 }
 
-@media (max-width: 640px) { 
+@media (max-width: 640px) {
   nav ul {
     grid-template-columns: repeat(2, 1.2fr);
   }
@@ -224,17 +224,155 @@ nav ul li a img {
   nav ul {
     grid-template-columns: 1fr;
   }
-  
+
   nav ul li a {
     flex-direction: row;
     justify-content: flex-start;
     gap: 1rem;
     padding: 0.75rem 1rem;
   }
-  
+
   nav ul li a img {
     margin-bottom: 0;
     width: 30px;
     height: 30px;
+  }
+}
+
+/* Settings Tab Styles */
+.settings-tabs-container {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 0;
+  margin-top: 20px;
+  position: relative;
+  overflow: visible;
+}
+
+.settings-tabs {
+  display: flex;
+  width: 100%;
+  position: relative;
+  gap: 5px;
+  border-bottom: 3px solid var(--color-border);
+  justify-content: flex-start;
+  padding-left: 20px;
+  padding-top: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+
+.settings-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-tabs::before,
+.settings-tabs::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  bottom: 3px;
+  width: 20px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.7;
+}
+
+.settings-tabs::before {
+  left: 0;
+  background: linear-gradient(to right, var(--color-panel), transparent);
+}
+
+.settings-tabs::after {
+  right: 0;
+  background: linear-gradient(to left, var(--color-panel), transparent);
+}
+
+.settings-tab {
+  padding: 8px 16px;
+  cursor: pointer;
+  position: relative;
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.3s ease;
+  background-color: var(--color-panel);
+  margin-bottom: -3px;
+  z-index: 1;
+  min-width: min-content;
+  width: auto;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.settings-tab:not(.active) {
+  opacity: 0.8;
+  border-bottom: 3px solid var(--color-border);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.settings-tab.active {
+  color: var(--color-border);
+  border-color: var(--color-border);
+  box-shadow:
+    0 -4px 8px -2px var(--color-border) 0.5,
+    4px 0 8px -2px var(--color-border) 0.5,
+    -4px 0 8px -2px var(--color-border) 0.5;
+  font-weight: bold;
+  background-color: var(--color-panel);
+}
+
+/* Light mode overrides */
+.light-mode .settings-tab.active {
+  color: var(--color-border);
+  box-shadow:
+    0 -4px 8px -2px var(--color-border) 0.5,
+    4px 0 8px -2px var(--color-border) 0.5,
+    -4px 0 8px -2px var(--color-border) 0.5;
+}
+
+.light-mode .settings-tab:not(.active) {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.light-mode .settings-tabs::before {
+  background: linear-gradient(to right, var(--color-panel-light), transparent);
+}
+
+.light-mode .settings-tabs::after {
+  background: linear-gradient(to left, var(--color-panel-light), transparent);
+}
+
+/* Responsive Design for Settings Tabs */
+@media (max-width: 640px) {
+  .settings-tabs {
+    gap: 2px;
+    padding-left: 10px;
+  }
+
+  .settings-tab {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-tabs {
+    padding-left: 5px;
+  }
+
+  .settings-tab {
+    flex: 0 0 auto;
+    text-align: center;
+    min-width: 60px;
+    max-width: 80px;
   }
 }

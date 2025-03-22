@@ -320,15 +320,15 @@ class TaskScheduler:
 
         async def _run_task_wrapper(task: Union[ScheduledTask, AdHocTask]):
             if task.state != "idle":
-                self._printer.print(f"Scheduler Task {task.name} state is '{task.state}', skipping")
+                self._printer.print(f"Scheduler Task '{task.name}' state is '{task.state}', skipping")
                 return
 
             if task.state == "running":
-                self._printer.print(f"Scheduler Task {task.name} already running, skipping")
+                self._printer.print(f"Scheduler Task '{task.name}' already running, skipping")
                 return
 
             try:
-                self._printer.print(f"Scheduler Task {task.name} started")
+                self._printer.print(f"Scheduler Task '{task.name}' started")
 
                 task.update(state="running")
                 await self._tasks.save()
@@ -374,7 +374,7 @@ class TaskScheduler:
                 await self._persist_chat(task, context)
 
             except Exception as e:
-                self._printer.print(f"Scheduler Task {task.name} failed: {e}")
+                self._printer.print(f"Scheduler Task '{task.name}' failed: {e}")
                 task.update(last_result=f"ERROR: {str(e)}")
                 if agent:
                     agent.handle_critical_exception(e)
@@ -387,7 +387,7 @@ class TaskScheduler:
                     )
                     await self._tasks.save()
                 except Exception as e:
-                    self._printer.print(f"Scheduler Task {task.name} failed to save: {e}")
+                    self._printer.print(f"Scheduler Task '{task.name}' failed to save: {e}")
 
         deferred_task = DeferredTask(thread_name=self.__class__.__name__)
         deferred_task.start_task(_run_task_wrapper, task)

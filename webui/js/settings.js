@@ -2,7 +2,34 @@ const settingsModalProxy = {
     isOpen: false,
     settings: {},
     resolvePromise: null,
+    activeTab: 'agent', // Default tab
 
+    // Computed property for filtered sections
+    get filteredSections() {
+        if (!this.settings || !this.settings.sections) return [];
+        const filteredSections = this.settings.sections.filter(section => section.tab === this.activeTab);
+
+        // If no sections match the current tab (or all tabs are missing), show all sections
+        if (filteredSections.length === 0) {
+            return this.settings.sections;
+        }
+
+        return filteredSections;
+    },
+
+    // Switch tab method
+    switchTab(tabName) {
+        this.activeTab = tabName;
+        localStorage.setItem('settingsActiveTab', tabName);
+
+        // Auto-scroll active tab into view (added after a small delay to ensure DOM updates)
+        setTimeout(() => {
+            const activeTab = document.querySelector('.settings-tab.active');
+            if (activeTab) {
+                activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }, 10);
+    },
 
     async openModal() {
 
@@ -13,6 +40,8 @@ const settingsModalProxy = {
         try {
             const set = await sendJsonData("/settings_get", null);
 
+            // Restore active tab from localStorage or use default
+            this.activeTab = localStorage.getItem('settingsActiveTab') || 'agent';
 
             const settings = {
                 "title": "Settings",
@@ -34,8 +63,6 @@ const settingsModalProxy = {
 
             modalAD.isOpen = true; // Update directly
             modalAD.settings = settings; // Update directly
-
-
 
             return new Promise(resolve => {
                 this.resolvePromise = resolve;
