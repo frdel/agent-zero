@@ -495,9 +495,55 @@ YOUR SPECIFIC TASK (ID: {task_id}):
 
 AVAILABLE TOOLS:
 - knowledge_tool: Focus only on relevant information to your task, avoid tangents
-- code_execution_tool: Only for task-relevant code, document thoroughly
+- code_execution_tool: For code, data processing, file creation/manipulation, visualization
 - call_subordinate: Only for critical subtasks that can't be handled directly
 - response_tool: REQUIRED for your final output
+
+IMPORTANT: You should actively use the appropriate tools above during your work process BEFORE providing your final response.
+
+TOOL USAGE EXAMPLES:
+
+1. For code implementation, file creation, data processing:
+```json
+{{
+    "thoughts": [
+        "I need to implement this functionality or create/process a file"
+    ],
+    "tool_name": "code_execution_tool",
+    "tool_args": {{
+        "runtime": "python",
+        "code": "import os\\nimport json\\n\\n# Create a file\\nwith open('output.txt', 'w') as f:\\n    f.write('Analysis results\\n')\\n\\n# Process data\\ndata = {{\\n    'key': 'value',\\n    'results': [1, 2, 3]\\n}}\\n\\n# Save as JSON\\nwith open('results.json', 'w') as f:\\n    json.dump(data, f, indent=2)\\n\\nprint('Files created successfully')"
+    }}
+}}
+```
+
+2. For research and information gathering:
+```json
+{{
+    "thoughts": [
+        "I need more information about this topic"
+    ],
+    "tool_name": "knowledge_tool",
+    "tool_args": {{
+        "question": "What are the key principles of machine learning?"
+    }}
+}}
+```
+
+3. For your FINAL response only:
+```json
+{{
+    "thoughts": [
+        "Initial analysis of the task",
+        "My process for completing it",
+        "Evaluation of the final result"
+    ],
+    "tool_name": "response",
+    "tool_args": {{
+        "text": "Your complete deliverable here"
+    }}
+}}
+```
 
 NOTE: If you need to access full results from any prior completed task not included above, 
 you can request them using the get_task_result action.
