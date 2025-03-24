@@ -61,6 +61,9 @@ class TeamAgent(Tool):
             elif action == "integrate_results":
                 self.log.update(progress=f"Integrating results from team {team_id}...")
                 return await self._integrate_results(team_id, **kwargs)
+            elif action == "get_task_result":
+                self.log.update(progress=f"Getting specific task result from team {team_id}...")
+                return await self._get_task_result(team_id, **kwargs)
             else:
                 self.log.update(error=f"Unknown action: {action}")
                 return Response(
@@ -69,7 +72,7 @@ class TeamAgent(Tool):
                         "available_actions": [
                             "create", "add_agent", "assign_task", 
                             "execute_task", "message", "get_results", 
-                            "team_status", "integrate_results"
+                            "team_status", "integrate_results", "get_task_result"
                         ]
                     }),
                     break_loop=False
@@ -94,7 +97,7 @@ class TeamAgent(Tool):
                     "available_actions": [
                         "create", "add_agent", "assign_task", 
                         "execute_task", "message", "get_results", 
-                        "team_status", "integrate_results"
+                        "team_status", "integrate_results", "get_task_result"
                     ]
                 }),
                 break_loop=False
@@ -135,7 +138,7 @@ class TeamAgent(Tool):
                 "name": name,
                 "goal": goal,
                 "status": "created",
-                "next_step": "Add specialized agents with the add_agent action"
+                "next_step": "Step 1: CREATE ALL TEAM AGENTS FIRST by using add_agent multiple times to create each specialized agent needed for the task. Only proceed to assigning tasks after all agents are created."
             }),
             break_loop=False
         )
@@ -184,13 +187,18 @@ class TeamAgent(Tool):
         }
         team_leader.set_data("team_members", team_members)
         
+        # Count existing team members
+        member_count = len(team_members)
+        
+        next_step = f"Step 1 CONTINUE: ADD MORE AGENTS if needed to complete the team composition. You have {member_count} agent(s) so far. Once ALL needed agents are created, proceed to Step 2: ASSIGN TASKS to each agent using the assign_task action."
+        
         return Response(
             message=self._format_response({
                 "team_id": team_id,
                 "agent_id": agent_id,
                 "role": role,
                 "status": "added",
-                "next_step": "Assign a task to this agent with the assign_task action"
+                "next_step": next_step
             }),
             break_loop=False
         )
@@ -233,6 +241,26 @@ class TeamAgent(Tool):
                 break_loop=False
             )
         
+        # Get existing tasks to determine sequence number and auto-dependencies
+        tasks = team_leader.get_data("tasks") or {}
+        sequence_num = len(tasks) + 1  # Start from 1
+        
+        # If no dependencies were explicitly provided, automatically set the most recent task as a dependency
+        if not depends_on and tasks:
+            # Find the most recent assigned or completed task by highest sequence number
+            most_recent_task = None
+            highest_seq = 0
+            
+            for task_id, task_data in tasks.items():
+                task_seq = task_data.get("sequence_num", 0)
+                if task_seq > highest_seq:
+                    most_recent_task = task_id
+                    highest_seq = task_seq
+            
+            if most_recent_task:
+                depends_on = [most_recent_task]
+                self.log.update(progress=f"Automatically set task dependency on prior task: {most_recent_task}")
+        
         # Create task ID
         task_id = f"task_{str(uuid.uuid4())[:6]}"
         
@@ -245,14 +273,47 @@ class TeamAgent(Tool):
             "depends_on": depends_on,
             "status": "assigned",
             "created_at": time.time(),
+            "sequence_num": sequence_num,  # Add explicit sequence number
             "completed_at": None,
-            "result": None
+            "result": None,
+            "auto_dependency": True if not kwargs.get("depends_on") and depends_on else False
         }
         
         # Store task in team leader's data
-        tasks = team_leader.get_data("tasks") or {}
         tasks[task_id] = task_data
         team_leader.set_data("tasks", tasks)
+        
+        # Get the agent's role for better context
+        agent_role = team_members[agent_id]["role"] if agent_id in team_members else "unknown"
+        
+        # Create a task keywords summary
+        task_keywords = " ".join(task.split()[:7]) + "..." if len(task.split()) > 7 else task
+        
+        # Prepare dependency info if any
+        dependency_info = ""
+        if depends_on:
+            dependency_names = []
+            for dep_id in depends_on:
+                if dep_id in tasks:
+                    dep_agent_id = tasks[dep_id].get("agent_id", "unknown")
+                    dep_role = "unknown"
+                    if dep_agent_id in team_members:
+                        dep_role = team_members[dep_agent_id].get("role", "unknown")
+                    dependency_names.append(f"{dep_id} ({dep_role})")
+            
+            if dependency_names:
+                dependency_info = f", depends on: {', '.join(dependency_names)}"
+        
+        # Count remaining agents without tasks
+        agents_without_tasks = []
+        for aid, adata in team_members.items():
+            if not any(t["agent_id"] == aid for t in tasks.values()):
+                agents_without_tasks.append(f"{adata['role']} ({aid})")
+        
+        if agents_without_tasks:
+            next_step = f"Step 2 CONTINUE: ASSIGN TASKS to remaining agents ({', '.join(agents_without_tasks)}). Only after ALL agents have assigned tasks, proceed to Step 3: EXECUTE TASKS using the execute_task action."
+        else:
+            next_step = "Step 3: EXECUTE ALL TASKS by using execute_task for each task in sequence. Start with tasks that have no dependencies."
         
         return Response(
             message=self._format_response({
@@ -260,7 +321,13 @@ class TeamAgent(Tool):
                 "agent_id": agent_id,
                 "task_id": task_id,
                 "status": "assigned",
-                "next_step": "Execute this task with the execute_task action"
+                "agent_role": agent_role,
+                "task_description": task_keywords,
+                "dependencies": depends_on if depends_on else [],
+                "sequence_num": sequence_num,  # Include sequence number in response
+                "has_context": bool(context),
+                "auto_dependency": True if not kwargs.get("depends_on") and depends_on else False,
+                "next_step": next_step
             }),
             break_loop=False
         )
@@ -364,38 +431,125 @@ class TeamAgent(Tool):
         tasks[task_id] = task
         team_leader.set_data("tasks", tasks)
         
-        # Build prompt for the agent
-        prompt = f"""You are a {agent_role} agent with skills in {', '.join(agent_skills) if agent_skills else 'general tasks'}.
-You are part of the {team_data['name']} team with the goal: {team_data['goal']}.
+        # Calculate team progress for context
+        total_tasks = len(tasks)
+        completed_tasks = sum(1 for t in tasks.values() if t.get("status") == "completed")
+        
+        # Find dependent tasks for this task (tasks that depend on this one)
+        dependent_tasks = []
+        for t_id, t_data in tasks.items():
+            if task_id in t_data.get("depends_on", []):
+                if t_data["agent_id"] in team_members:
+                    dependent_role = team_members[t_data["agent_id"]].get("role", "unknown")
+                    dependent_tasks.append(f"{dependent_role} (Task {t_id}): {t_data['description'][:30]}...")
+        
+        # Create summary of completed tasks for context
+        team_results_summary = []
+        for t_id, t_data in tasks.items():
+            if t_data["status"] == "completed" and t_id != task_id:
+                # Skip direct dependencies as they will be included in full in the context
+                if t_id in task.get("depends_on", []):
+                    continue
+                    
+                if t_data["agent_id"] in team_members:
+                    task_role = team_members[t_data["agent_id"]].get("role", "unknown")
+                    # Extract a brief summary from the result (first 100 chars)
+                    result_text = str(t_data.get("result", ""))
+                    result_summary = result_text[:100] + "..." if len(result_text) > 100 else result_text
+                    team_results_summary.append(f"{task_role} (Task {t_id}): {t_data['description'][:30]}... | Result summary: {result_summary}")
+        
+        # Format dependency information
+        dependency_info = []
+        auto_dependency_note = ""
+        for dep_id in task.get("depends_on", []):
+            if dep_id in tasks:
+                dep_data = tasks[dep_id]
+                if dep_data["agent_id"] in team_members:
+                    dep_role = team_members[dep_data["agent_id"]].get("role", "unknown")
+                    # Find if this was a sequence-based automatic dependency
+                    if len(task.get("depends_on", [])) == 1 and dep_id in tasks:
+                        # Check if the current task has an auto-dependency flag
+                        if task.get("auto_dependency", False):
+                            auto_dependency_note = f"\nNOTE: Your task automatically depends on the previous task ({dep_id}) due to sequential workflow."
+                    dependency_info.append(f"{dep_role} (Task {dep_id}): {dep_data['description'][:30]}...")
+        
+        # Enhanced prompt with more comprehensive context
+        prompt = f"""You are a {agent_role} agent with specialized expertise in {', '.join(agent_skills) if agent_skills else 'general tasks'}.
+You are a key member of the {team_data['name']} team working collectively toward the goal: {team_data['goal']}.
 
-YOUR TASK (ID: {task_id}):
-{task['description']}
+TEAM CONTEXT:
+- Your role: {agent_role}
+- Team goal: {team_data['goal']}
+- Current progress: {completed_tasks}/{total_tasks} tasks completed
+- Your task dependencies: {', '.join(dependency_info) if dependency_info else "None"}{auto_dependency_note}
+- Dependent tasks: {', '.join(dependent_tasks) if dependent_tasks else "None"}
+- Team results summary: {len(team_results_summary)} other completed tasks
+{chr(10).join([f"  • {summary}" for summary in team_results_summary[:3]])}
+{f"  • ...and {len(team_results_summary) - 3} more" if len(team_results_summary) > 3 else ""}
 
-ADDITIONAL CONTEXT:
+DIRECT DEPENDENCY FULL RESULTS:
 {task['context']}
 
-IMPORTANT: You must respond using the exact response format below:
+YOUR SPECIFIC TASK (ID: {task_id}):
+{task['description']}
+
+AVAILABLE TOOLS:
+- knowledge_tool: Focus only on relevant information to your task, avoid tangents
+- code_execution_tool: Only for task-relevant code, document thoroughly
+- call_subordinate: Only for critical subtasks that can't be handled directly
+- response_tool: REQUIRED for your final output
+
+NOTE: If you need to access full results from any prior completed task not included above, 
+you can request them using the get_task_result action.
+
+TASK EXECUTION GUIDELINES:
+- Format output for team integration
+- Note key uncertainties or limitations in your approach
+- Prioritize depth on your assigned area over breadth
+- Ensure your output can be easily utilized by dependent tasks
+- Include necessary context for team members to understand your work
+
+YOUR CAPABILITIES AND APPROACH:
+As a {agent_role}, you should leverage your expertise to:
+1. Thoroughly analyze the task requirements
+2. Apply domain-specific knowledge and critical thinking
+3. Organize information in a structured, clear manner
+4. Consider the needs of the target audience
+5. Deliver a comprehensive, high-quality result
+
+WORK PROCESS GUIDELINES:
+- Begin by breaking down the problem
+- Apply structured methodology appropriate to your role
+- Consider relevant frameworks, theories, or techniques
+- Organize your response logically
+- Provide sufficient detail while maintaining focus
+- Check your work for accuracy and completeness
+
+OUTPUT FORMAT REQUIREMENTS:
+You MUST respond using the exact JSON format below. This format is required for proper integration with the team workflow:
 
 ```json
 {{
     "thoughts": [
-        "Your first thought about the task",
-        "Your analysis process",
-        "Your conclusions"
+        "Your initial thoughts and analysis of the task",
+        "Your methodology and process for completing it",
+        "Your evaluation of the final result"
     ],
     "tool_name": "response",
     "tool_args": {{
-        "text": "Your complete task result here. Be thorough and detailed. Include all relevant information."
+        "text": "Your complete, detailed result here. This should be well-structured, comprehensive, and ready for integration into the team's work."
     }}
 }}
 ```
 
-The "text" field should contain your complete analysis with all details, findings, and recommendations.
-Do not use any other format or tool - only the response tool as shown above."""
+IMPORTANT: The "text" field must contain your complete deliverable with all necessary details, formatted appropriately for your specific task. Do not use any other format or tool."""
         
         # Execute task using call_subordinate pattern
         # Let the user know we're delegating to a team member
         self.log.update(progress=f"Delegating to {agent_role} agent...")
+        
+        # Log the full prompt being sent to the agent for debugging and transparency
+        self.log.update(context=f"Task Context Being Passed:\n\n{prompt}")
         
         try:
             # Execute task using call_subordinate pattern
@@ -419,6 +573,35 @@ Do not use any other format or tool - only the response tool as shown above."""
             if task_id in t_data.get("depends_on", []) and t_data["status"] == "assigned":
                 dependent_tasks.append(t_id)
         
+        # Count remaining tasks
+        remaining_tasks = sum(1 for t in tasks.values() if t["status"] == "assigned")
+        executable_tasks = sum(1 for t_id, t_data in tasks.items() 
+                              if t_data["status"] == "assigned" and
+                              all(dep_id not in t_data.get("depends_on", []) or
+                                  tasks.get(dep_id, {}).get("status") == "completed"
+                                  for dep_id in t_data.get("depends_on", [])))
+        
+        # Get list of executable tasks
+        executable_task_list = []
+        for t_id, t_data in tasks.items():
+            if (t_data["status"] == "assigned" and
+                all(dep_id not in t_data.get("depends_on", []) or
+                    tasks.get(dep_id, {}).get("status") == "completed"
+                    for dep_id in t_data.get("depends_on", []))):
+                assigned_to = "unknown"
+                if t_data["agent_id"] in team_members:
+                    assigned_to = team_members[t_data["agent_id"]].get("role", "unknown")
+                executable_task_list.append(f"{t_id} (assigned to {assigned_to})")
+                
+        if dependent_tasks:
+            next_step = f"Step 3 CONTINUE: EXECUTE DEPENDENT TASKS that can now run: {', '.join(dependent_tasks)}. Execute ALL tasks before moving to the next step."
+        elif remaining_tasks == 0:
+            next_step = "Step 4: COMPILE AND SYNTHESIZE RESULTS using get_results action followed by integrate_results action to create a comprehensive final deliverable."
+        elif executable_tasks > 0:
+            next_step = f"Step 3 CONTINUE: EXECUTE REMAINING TASKS - {executable_tasks} tasks ready to execute: {', '.join(executable_task_list)}. Complete ALL tasks before proceeding."
+        else:
+            next_step = f"Step 3 CONTINUE: EXECUTE OTHER TASKS after their dependencies are met. {remaining_tasks} tasks remain. Complete ALL tasks before proceeding."
+        
         return Response(
             message=self._format_response({
                 "team_id": team_id,
@@ -427,7 +610,84 @@ Do not use any other format or tool - only the response tool as shown above."""
                 "status": "completed",
                 "result_summary": result[:200] + "..." if len(result) > 200 else result,
                 "dependent_tasks": dependent_tasks,
-                "next_step": "Get final results with get_results action or execute dependent tasks"
+                "remaining_tasks": remaining_tasks,
+                "next_step": next_step
+            }),
+            break_loop=False
+        )
+
+    async def _get_task_result(self, team_id, task_id="", **kwargs):
+        """Get the result of a specific task"""
+        self.log.update(progress=f"Retrieving result for task {task_id} in team {team_id}...")
+        
+        # Get team data
+        teams = self.agent.get_data("teams") or {}
+        if not team_id or team_id not in teams:
+            available_teams = list(teams.keys())
+            error_msg = f"Team {team_id} not found"
+            self.log.update(error=error_msg)
+            
+            if available_teams:
+                self.log.update(progress=f"Available teams: {', '.join(available_teams)}")
+                
+            return Response(
+                message=self._format_response({
+                    "error": error_msg,
+                    "available_teams": available_teams,
+                    "next_step": "Create a team first with the 'create' action or use a valid team_id"
+                }),
+                break_loop=False
+            )
+        
+        team_data = teams[team_id]
+        team_leader = team_data["leader_agent"]
+        
+        # Get tasks and team members
+        tasks = team_leader.get_data("tasks") or {}
+        team_members = team_leader.get_data("team_members") or {}
+        
+        # Check if task exists
+        if not task_id or task_id not in tasks:
+            return Response(
+                message=self._format_response({
+                    "error": f"Task {task_id} not found in team {team_id}",
+                    "available_tasks": list(tasks.keys()) if tasks else []
+                }),
+                break_loop=False
+            )
+        
+        task_data = tasks[task_id]
+        
+        # Check if task is completed
+        if task_data["status"] != "completed":
+            return Response(
+                message=self._format_response({
+                    "error": f"Task {task_id} is not completed (current status: {task_data['status']})",
+                    "task_id": task_id,
+                    "status": task_data["status"],
+                    "next_step": "Execute this task before trying to retrieve its result"
+                }),
+                break_loop=False
+            )
+        
+        # Get agent information
+        agent_id = task_data["agent_id"]
+        agent_role = "unknown"
+        if agent_id in team_members:
+            agent_role = team_members[agent_id]["role"]
+        
+        # Return task result
+        return Response(
+            message=self._format_response({
+                "team_id": team_id,
+                "task_id": task_id,
+                "agent_id": agent_id,
+                "agent_role": agent_role,
+                "task_description": task_data["description"],
+                "status": "completed",
+                "completed_at": task_data.get("completed_at"),
+                "result": task_data["result"],
+                "next_step": "Use this result as input for other tasks or incorporate it into your workflow"
             }),
             break_loop=False
         )
@@ -574,13 +834,29 @@ Do not use any other format or tool - only the response tool as shown above."""
         # Determine completion status
         completion_status = f"{completed_tasks}/{total_tasks} tasks completed"
         
+        # Provide appropriate next steps based on completion status
+        if completed_tasks < total_tasks:
+            pending_tasks = []
+            for task_id, task_data in tasks.items():
+                if task_data["status"] != "completed":
+                    agent_id = task_data["agent_id"]
+                    agent_role = "unknown"
+                    if agent_id in team_members:
+                        agent_role = team_members[agent_id]["role"]
+                    pending_tasks.append(f"{task_id} (assigned to {agent_role})")
+                    
+            next_step = f"Step 3 INCOMPLETE: {total_tasks - completed_tasks} TASKS STILL PENDING. Complete these tasks first: {', '.join(pending_tasks)}. Only after ALL tasks are completed, use integrate_results to synthesize the final deliverable."
+        else:
+            next_step = "Step 4: SYNTHESIZE ALL INFORMATION using the integrate_results action to create a comprehensive final deliverable that addresses the original goal."
+        
         return Response(
             message=self._format_response({
                 "team_id": team_id,
                 "name": team_data["name"],
                 "goal": team_data["goal"],
                 "completion": completion_status,
-                "results": results
+                "results": results,
+                "next_step": next_step
             }),
             break_loop=False
         )
@@ -711,8 +987,118 @@ Do not use any other format or tool - only the response tool as shown above."""
                 data["next_step"] = "Create a team first with the 'create' action"
         
         # Add specific formatting guidance for get_results response
-        if "results" in data and "error" not in data:
-            data["next_step"] = "Format your response to the user as a properly formatted JSON message using the response tool. Synthesize the individual contributions into a cohesive final product."
+        if "results" in data and "error" not in data and "next_step" not in data:
+            data["next_step"] = "Format your response to the user as a properly formatted JSON message using the response tool. Synthesize the individual contributions into a cohesive final product that addresses the user's original request."
+        
+        # Add specific guidance for integration results
+        if "integrated_result" in data and "error" not in data and "next_step" not in data:
+            data["next_step"] = "Use the response tool to share these integrated results with the user in a format that directly addresses their original request. Consider using code_execution tool if specific file output is needed."
+        
+        # Add context and summary for non-error responses to help maintain task focus
+        if "error" not in data and "team_id" in data:
+            # Get team data to add context
+            teams = self.agent.get_data("teams") or {}
+            team_id = data["team_id"]
+            
+            if team_id in teams:
+                team_data = teams[team_id]
+                
+                # Add team context if not already present
+                if "name" not in data and "goal" not in data:
+                    data["team_name"] = team_data.get("name", "Unknown Team")
+                    data["team_goal"] = team_data.get("goal", "Unknown Goal")
+                
+                # Add progress summary if team leader exists
+                if "leader_agent" in team_data:
+                    team_leader = team_data["leader_agent"]
+                    tasks = team_leader.get_data("tasks") or {}
+                    team_members = team_leader.get_data("team_members") or {}
+                    
+                    # Add team composition summary with agent IDs
+                    if team_members and "team_composition" not in data:
+                        team_composition = []
+                        for agent_id, member_data in team_members.items():
+                            if isinstance(member_data, dict) and "role" in member_data:
+                                team_composition.append(f"{member_data['role']} ({agent_id})")
+                        
+                        if team_composition:
+                            data["team_composition"] = f"{len(team_composition)} members: {', '.join(team_composition)}"
+                    
+                    # Add task progress summary
+                    if tasks and "task_progress" not in data:
+                        total = len(tasks)
+                        completed = sum(1 for t in tasks.values() if t.get("status") == "completed")
+                        executing = sum(1 for t in tasks.values() if t.get("status") == "executing")
+                        assigned = sum(1 for t in tasks.values() if t.get("status") == "assigned")
+                        
+                        data["task_progress"] = f"{completed}/{total} tasks completed, {executing} executing, {assigned} pending"
+                    
+                    # Add task details summary if relevant
+                    if "task_id" in data and data["task_id"] in tasks:
+                        task_data = tasks[data["task_id"]]
+                        agent_id = task_data.get("agent_id", "unknown")
+                        agent_role = "unknown"
+                        if agent_id in team_members and isinstance(team_members[agent_id], dict):
+                            agent_role = team_members[agent_id].get("role", "unknown")
+                        
+                        # Add a short task summary with keywords
+                        description = task_data.get("description", "")
+                        keywords = " ".join(description.split()[:5]) + "..." if len(description.split()) > 5 else description
+                        
+                        data["task_summary"] = f"Task {data['task_id']} assigned to {agent_role} ({agent_id}): {keywords}"
+                    
+                    # Add comprehensive ordered task list
+                    if tasks:
+                        # First try to sort by explicit sequence number, fall back to creation timestamp
+                        sorted_tasks = sorted(tasks.items(), key=lambda x: (
+                            x[1].get("sequence_num", float('inf')),  # Sort by sequence first
+                            x[1].get("created_at", 0)                # Then by creation time
+                        ))
+                        
+                        tasks_ordered = []
+                        for task_id, task_data in sorted_tasks:
+                            agent_id = task_data.get("agent_id", "unknown")
+                            agent_role = "unknown"
+                            if agent_id in team_members and isinstance(team_members[agent_id], dict):
+                                agent_role = team_members[agent_id].get("role", "unknown")
+                            
+                            # Create a concise description
+                            description = task_data.get("description", "")
+                            short_desc = " ".join(description.split()[:6]) + "..." if len(description.split()) > 6 else description
+                            
+                            # Add dependencies info if any
+                            deps_info = ""
+                            if task_data.get("depends_on"):
+                                deps_info = f" (depends on: {', '.join(task_data['depends_on'])})"
+                            
+                            # Format the task entry with status, sequence number, and indices
+                            status = task_data.get("status", "unknown")
+                            seq_num = task_data.get("sequence_num", "?")
+                            task_entry = f"#{seq_num} {task_id} [{status}]: {agent_role} - {short_desc}{deps_info}"
+                            tasks_ordered.append(task_entry)
+                        
+                        if tasks_ordered:
+                            data["tasks_ordered"] = tasks_ordered
+                    
+                    # Add task overview if this is a team status response (keep this for backward compatibility)
+                    if "task_overview" not in data and len(tasks) > 0 and "task_id" not in data:
+                        task_overview = []
+                        for task_id, task_data in tasks.items():
+                            agent_id = task_data.get("agent_id", "unknown")
+                            status = task_data.get("status", "unknown")
+                            description = task_data.get("description", "")
+                            short_desc = " ".join(description.split()[:3]) + "..." if len(description.split()) > 3 else description
+                            
+                            agent_role = "unknown"
+                            if agent_id in team_members and isinstance(team_members[agent_id], dict):
+                                agent_role = team_members[agent_id].get("role", "unknown")
+                                
+                            task_overview.append(f"{task_id} ({status}): {agent_role} - {short_desc}")
+                        
+                        if task_overview:
+                            data["task_overview"] = task_overview[:5]  # Limit to 5 tasks to avoid clutter
+                            if len(task_overview) > 5:
+                                data["task_overview"].append(f"...and {len(task_overview) - 5} more tasks")
         
         formatted_response = {
             "thoughts": thoughts,
@@ -770,31 +1156,66 @@ Do not use any other format or tool - only the response tool as shown above."""
                 break_loop=False
             )
         
-        # Create integration prompt for team leader
+        # Check for any pending tasks and provide warning
+        pending_tasks = sum(1 for t in tasks.values() if t["status"] != "completed")
+        pending_warning = ""
+        if pending_tasks > 0:
+            pending_warning = f"\n\nNOTE: There are still {pending_tasks} pending tasks in this team. This integration only includes completed tasks."
+
+        # Enhanced integration prompt with better guidance
         integration_prompt = f"""
-        As the leader of the {team_data['name']} team, your task is to integrate the following contributions 
-        into a coherent final product that fulfills the team goal: {team_data['goal']}
-        
-        TEAM CONTRIBUTIONS:
+        As the leader of the {team_data['name']} team, your critical responsibility is to synthesize all team contributions 
+        into a cohesive, polished final product that fulfills our goal: {team_data['goal']}
+
+        COMPLETED TEAM CONTRIBUTIONS:
         {json.dumps(completed_results, indent=2)}
-        
-        Synthesize these contributions into a single cohesive response.
-        
-        IMPORTANT: You must respond using the exact response format below:
-        
+        {pending_warning}
+
+        INTEGRATION OBJECTIVE:
+        Transform these separate contributions into a seamless, unified deliverable that achieves our team goal and meets the user's needs.
+
+        YOUR INTEGRATION ROLE:
+        1. Identify the key insights and valuable content from each contribution
+        2. Resolve any inconsistencies or conflicts between contributions
+        3. Establish a logical flow and structure for the integrated result
+        4. Ensure all critical information is included without unnecessary repetition
+        5. Maintain a consistent voice, style, and level of technical detail
+        6. Verify that the final product directly addresses the original goal
+
+        INTEGRATION METHODOLOGY:
+        - Begin with a high-level synthesis plan
+        - Extract core content from each contribution
+        - Create a unified structure that builds logically
+        - Fill gaps and eliminate redundancies 
+        - Add transitions to create seamless flow between sections
+        - Review for completeness, coherence, and alignment with the goal
+
+        QUALITY CRITERIA FOR FINAL DELIVERABLE:
+        - Comprehensiveness: Covers all essential aspects of the topic
+        - Coherence: Presents a unified perspective rather than disjointed views
+        - Clarity: Communicates ideas in a clear, accessible manner
+        - Conciseness: Avoids unnecessary repetition while maintaining completeness
+        - Alignment: Directly addresses the original goal
+        - Readability: Well-structured with appropriate transitions and flow
+
+        OUTPUT FORMAT REQUIREMENTS:
+        You MUST respond using the exact JSON format below to ensure proper delivery to the user:
+
         ```json
         {{
             "thoughts": [
-                "Your thought process for integration",
-                "How you combined the different contributions",
-                "Your final evaluation of the integrated result"
+                "Your integration strategy and approach",
+                "How you synthesized the different contributions",
+                "Your assessment of the integrated final product"
             ],
             "tool_name": "response",
             "tool_args": {{
-                "text": "Your complete integrated result here. Be thorough and properly formatted."
+                "text": "Your complete integrated result here. This should be comprehensive, cohesive, and directly address the team goal."
             }}
         }}
         ```
+
+        The "text" field must contain the complete integrated final product, ready for delivery to the user.
         """
         
         # Let team leader create the integrated result
@@ -809,12 +1230,19 @@ Do not use any other format or tool - only the response tool as shown above."""
             self.log.update(error=f"Error during integration: {str(e)}")
             integrated_result = f"Error during integration: {str(e)}"
         
+        # Create appropriate next steps based on task status
+        if pending_tasks > 0:
+            next_step = f"Step 5: DELIVER FINAL PRODUCT - Summarize and present integrated results to the user using the response tool. To get a more complete result, consider completing the remaining {pending_tasks} tasks first."
+        else:
+            next_step = "Step 5: DELIVER FINAL PRODUCT - Summarize and present these integrated results to the user as a comprehensive deliverable using the response tool. Use the text field to provide the complete answer that addresses the original request."
+        
         return Response(
             message=self._format_response({
                 "team_id": team_id,
                 "status": "integrated",
                 "integrated_result": integrated_result,
-                "next_step": "Use the response tool to share these integrated results with the user"
+                "pending_tasks": pending_tasks,
+                "next_step": next_step
             }),
             break_loop=False
         )
