@@ -4,6 +4,7 @@ services:
     image: frdel/agent-zero-run-cuda:testing
     volumes:
       - ../../../agent-files:/a0
+      - ../../../agent-files/work_dir:/root
     ports:
       - "50080:80"
     environment:
