@@ -174,8 +174,22 @@ class CodeExecution(Tool):
             r'bash-\d+\.\d+[#$]\s*$',  # Bash version prompt
             r'[a-zA-Z0-9_\-]+:.+?[#$]\s*$',  # Shortened prompts
         ]
+        
+        # Input prompt patterns to detect when a program is waiting for user input
+        input_prompt_patterns = [
+            r'.*:\s*$',  # Lines ending with colon followed by optional whitespace
+            r'.*\?\s*$',  # Lines ending with question mark
+            r'.*>\s*$',   # Lines ending with > (not captured by shell prompts)
+            r'.*[Pp]assword.*:\s*$',  # Password prompts
+            r'.*[Uu]sername.*:\s*$',  # Username prompts
+            r'.*[Cc]ontinue.*\(y/n\).*:\s*$',  # Continue prompts (y/n)
+            r'.*\(y/n\).*\s*$',  # Simple y/n prompts
+            r'.*\[y/N\].*\s*$',  # Alternative y/N format
+        ]
+        
         import re
         shell_prompt_regex = re.compile('|'.join(shell_prompt_patterns))
+        input_prompt_regex = re.compile('|'.join(input_prompt_patterns))
         
         waiting_for_process_termination = False
         
@@ -211,6 +225,15 @@ class CodeExecution(Tool):
                     waiting_for_process_termination = True
                     # Set a short grace period (2 seconds) to wait for any final output
                     idle = int(wait_with_output / SLEEP_TIME) - 20  # 20 iterations = ~2 seconds left
+            
+            # Check if there's an input prompt in the output indicating the program is waiting for input
+            last_line = full_output.rstrip().split('\n')[-1] if full_output else ""
+            if process_running and input_prompt_regex.search(last_line):
+                input_needed_msg = "\n[Input prompt detected, returning to agent]\n"
+                PrintStyle(font_color="#FFD700").stream(input_needed_msg)  # Gold color for input prompts
+                full_output += input_needed_msg
+                self.log.update(content=full_output)
+                break
 
             if partial_output:
                 PrintStyle(font_color="#85C1E9").stream(partial_output)
