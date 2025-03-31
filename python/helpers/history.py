@@ -3,11 +3,14 @@ import asyncio
 from collections import OrderedDict
 import json
 import math
+import os
 from typing import Coroutine, Literal, TypedDict, cast
 from python.helpers import messages, tokens, settings, call_llm
 from enum import Enum
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
-
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, BaseMessage
+from python.helpers.print_style import PrintStyle
+from langchain_core.prompts import HumanMessagePromptTemplate
+from typing import Any
 BULK_MERGE_COUNT = 3
 TOPICS_KEEP_COUNT = 3
 CURRENT_TOPIC_RATIO = 0.5
@@ -425,13 +428,60 @@ def group_outputs_abab(outputs: list[OutputMessage]) -> list[OutputMessage]:
     return result
 
 
-def output_langchain(messages: list[OutputMessage]):
+def output_langchain(messages: list[OutputMessage]) -> list[BaseMessage]:
     result = []
     for m in messages:
         if m["ai"]:
             result.append(AIMessage(content=serialize_content(m["content"])))
         else:
-            result.append(HumanMessage(content=serialize_content(m["content"])))
+            contents = m["content"]
+
+            # sometimes content is a list sometimes not
+            if not isinstance(contents, list):
+                contents = [contents]
+
+            PrintStyle(font_color="grey", background_color="black", bold=True, padding=True).print(
+                f"Contents: {json.dumps(contents, indent=2)}"
+            )
+
+            template: list[dict[str, str]] = []  # type: ignore
+            message = ""
+            images = {}
+            for _, content in enumerate(contents):
+                if message:
+                    # the first message is the user message, then the memory and solutions
+                    message += "\n\n--- Memory & Solutions Section: ---\n\n"
+
+                message += serialize_content(content)
+
+                if isinstance(content, dict) and "attachments" in content:
+                    attachments: list[str] = cast(list[str], content["attachments"])
+                    for attachment in attachments:
+                        if not os.path.exists(str(attachment)):
+                            continue
+                        if attachment not in images:
+                            import base64
+                            from mimetypes import guess_type
+                            mime_type, _ = guess_type(str(attachment))
+                            if mime_type.startswith("image/"):
+                                # Read and encode the image file
+                                with open(str(attachment), "rb") as image_file:
+                                    base64_encoded_data = base64.b64encode(image_file.read()).decode('utf-8')
+                                    # Construct the data URL
+                                    images[attachment] = f"data:{mime_type};base64,{base64_encoded_data}"
+
+            if message:
+                template.append({"type": "text", "text": message})
+            if images:
+                for _, image in images.items():
+                    template.append({"type": "image_url", "image_url": image})
+            if template:
+                # only jinja2 is safe for json, both mustache({{...}}) and f-string({...}) are not
+                result.append(HumanMessagePromptTemplate.from_template(template=template, partial_variables={}, template_format="jinja2"))  # type: ignore
+
+    PrintStyle(font_color="grey", background_color="black", bold=True, padding=True).print(
+        f"Result: {result}"
+    )
     return result
 
 
