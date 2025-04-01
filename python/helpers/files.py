@@ -1,6 +1,7 @@
 from fnmatch import fnmatch
 import json
 import os, re
+import base64
 
 import re
 import shutil
@@ -43,6 +44,32 @@ def read_file(_relative_path, _backup_dirs=None, _encoding="utf-8", **kwargs):
     )
 
     return content
+
+
+def read_file_bin(_relative_path, _backup_dirs=None):
+    # init backup dirs
+    if _backup_dirs is None:
+        _backup_dirs = []
+
+    # get absolute path
+    absolute_path = find_file_in_dirs(_relative_path, _backup_dirs)
+
+    # read binary content
+    with open(absolute_path, "rb") as f:
+        return f.read()
+
+
+def read_file_base64(_relative_path, _backup_dirs=None):
+    # init backup dirs
+    if _backup_dirs is None:
+        _backup_dirs = []
+
+    # get absolute path
+    absolute_path = find_file_in_dirs(_relative_path, _backup_dirs)
+
+    # read binary content and encode to base64
+    with open(absolute_path, "rb") as f:
+        return base64.b64encode(f.read()).decode('utf-8')
 
 
 def replace_placeholders_text(_content: str, **kwargs):
@@ -173,6 +200,15 @@ def write_file_bin(relative_path: str, content: bytes):
     os.makedirs(os.path.dirname(abs_path), exist_ok=True)
     with open(abs_path, "wb") as f:
         f.write(content)
+
+
+def write_file_base64(relative_path: str, content: str):
+    # decode base64 string to bytes
+    data = base64.b64decode(content)
+    abs_path = get_abs_path(relative_path)
+    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+    with open(abs_path, "wb") as f:
+        f.write(data)
 
 
 def delete_file(relative_path: str):

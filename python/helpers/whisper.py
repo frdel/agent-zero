@@ -30,7 +30,7 @@ async def _preload(model_name:str):
         is_updating_model = True
         if not _model or _model_name != model_name:
                 PrintStyle.standard(f"Loading Whisper model: {model_name}")
-                _model = whisper.load_model(model_name)
+                _model = whisper.load_model(name=model_name) # type: ignore
                 _model_name = model_name
     finally:
         is_updating_model = False
