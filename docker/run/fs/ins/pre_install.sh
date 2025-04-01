@@ -2,6 +2,7 @@
 
 # Update and install necessary packages
 apt-get update && apt-get install -y \
+    -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
     python3.12 \
     python3.12-venv \
     nodejs \
@@ -11,7 +12,21 @@ apt-get update && apt-get install -y \
     curl \
     wget \
     git \
-    ffmpeg 
+    ffmpeg \
+    libmagic-dev \
+    poppler-utils \
+    tesseract-ocr \
+    qpdf \
+    libreoffice \
+    pandoc \
+    libgtk-3-0 \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libasound2 \
+    libasound2-data \
+    cargo
 
 # Configure system alternatives so that /usr/bin/python3 points to Python 3.12
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
@@ -25,6 +40,9 @@ else
   python3 -m ensurepip --upgrade
   python3 -m pip install --upgrade pip
 fi
+
+# Install npx for use by local MCP Servers
+npm i -g npx shx
 
 # Prepare SSH daemon
 bash /ins/setup_ssh.sh "$@"
