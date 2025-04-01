@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+
 from agent import Agent
 from python.helpers.print_style import PrintStyle
 
@@ -8,8 +9,6 @@ from python.helpers.print_style import PrintStyle
 class Response:
     message:str
     break_loop: bool
-    attachments: list[str] = field(default_factory=list[str])
-
 
 class Tool:
 
@@ -34,7 +33,7 @@ class Tool:
 
     async def after_execution(self, response: Response, **kwargs):
         text = response.message.strip()
-        await self.agent.hist_add_tool_result(self.name, text, response.attachments)
+        self.agent.hist_add_tool_result(self.name, text)
         PrintStyle(font_color="#1B4F72", background_color="white", padding=True, bold=True).print(f"{self.agent.agent_name}: Response from tool '{self.name}'")
         PrintStyle(font_color="#85C1E9").print(response.message)
         self.log.update(content=response.message)

@@ -20,4 +20,4 @@ class Input(Tool):
         return self.agent.context.log.log(type="code_exe", heading=f"{self.agent.agent_name}: Using tool '{self.name}'", content="", kvps=self.args)
 
     async def after_execution(self, response, **kwargs):
-        await self.agent.hist_add_tool_result(self.name, response.message)
+        self.agent.hist_add_tool_result(self.name, response.message)
