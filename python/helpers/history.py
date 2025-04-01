@@ -4,7 +4,7 @@ from collections import OrderedDict
 from collections.abc import Mapping
 import json
 import math
-from typing import Coroutine, Literal, TypedDict, cast, Union, Dict, List, Any, override
+from typing import Coroutine, Literal, TypedDict, cast, Union, Dict, List, Any
 from python.helpers import messages, tokens, settings, call_llm
 from enum import Enum
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
@@ -82,7 +82,6 @@ class Message(Record):
         self.summary: str = ""
         self.tokens: int = tokens or self.calculate_tokens()
 
-    @override
     def get_tokens(self) -> int:
         if not self.tokens:
             self.tokens = self.calculate_tokens()
