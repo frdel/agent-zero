@@ -1,0 +1,109 @@
+/* Tunnel Modal Styles */
+.tunnel-container {
+    padding: 1rem;
+    width: 100%;
+}
+
+.tunnel-description {
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.tunnel-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+.tunnel-link-container {
+    margin-top: 1rem;
+}
+
+.tunnel-link-field {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    background-color: var(--bg-color-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.tunnel-link-input {
+    flex: 1;
+    padding: 0.75rem;
+    background-color: transparent;
+    border: none;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.copy-link-button {
+    padding: 0.5rem 0.75rem;
+    background: none;
+    border: none;
+    border-left: 1px solid var(--border-color);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.copy-link-button:hover {
+    background-color: var(--bg-color-tertiary);
+}
+
+.tunnel-link-info {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-color-secondary);
+    text-align: center;
+}
+
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 150px;
+    font-style: italic;
+    color: var(--text-color-secondary);
+}
+
+.refresh-link-button {
+    padding: 0.5rem 0.75rem;
+    background: none;
+    border: none;
+    border-left: 1px solid var(--border-color);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.refresh-link-button:hover {
+    background-color: var(--bg-color-tertiary);
+    color: var(--accent-color);
+}
+
+.tunnel-link-persistence {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--accent-color);
+    text-align: center;
+    font-style: italic;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+}
+
+.btn-danger:hover {
+    background-color: #bd2130;
+}
+
+.stop-tunnel-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}

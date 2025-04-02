@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="css/modals.css">
     <link rel="stylesheet" href="css/speech.css">
     <link rel="stylesheet" href="css/history.css">
+    <link rel="stylesheet" href="css/tunnel.css">
 
     <script>
         window.safeCall = function (name, ...args) {
@@ -40,6 +41,7 @@
     <script type="text/javascript" src="js/modal.js"></script>
     <script type="module" src="js/speech.js"></script>
     <script type="module" src="js/history.js"></script>
+    <script type="text/javascript" src="js/tunnel.js"></script>
 
 </head>
 
@@ -408,6 +410,13 @@
                         <p>Nudge</p>
                     </button>
 
+                    <button class="text-button" id="tunnel_button">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 0 26 26" fill="currentColor">
+                            <path d="M331,750 C329.343,750 328,748.657 328,747 C328,745.343 329.343,744 331,744 C332.657,744 334,745.343 334,747 C334,748.657 332.657,750 331,750 L331,750 Z M317,742 C315.343,742 314,740.657 314,739 C314,737.344 315.343,736 317,736 C318.657,736 320,737.344 320,739 C320,740.657 318.657,742 317,742 L317,742 Z M331,728 C332.657,728 334,729.343 334,731 C334,732.657 332.657,734 331,734 C329.343,734 328,732.657 328,731 C328,729.343 329.343,728 331,728 L331,728 Z M331,742 C329.23,742 327.685,742.925 326.796,744.312 L321.441,741.252 C321.787,740.572 322,739.814 322,739 C322,738.497 321.903,738.021 321.765,737.563 L327.336,734.38 C328.249,735.37 329.547,736 331,736 C333.762,736 336,733.762 336,731 C336,728.238 333.762,726 331,726 C328.238,726 326,728.238 326,731 C326,731.503 326.097,731.979 326.235,732.438 L320.664,735.62 C319.751,734.631 318.453,734 317,734 C314.238,734 312,736.238 312,739 C312,741.762 314.238,744 317,744 C318.14,744 319.179,743.604 320.02,742.962 L320,743 L326.055,746.46 C326.035,746.64 326,746.814 326,747 C326,749.762 328.238,752 331,752 C333.762,752 336,749.762 336,747 C336,744.238 333.762,742 331,742 L331,742 Z" transform="translate(-312.000000, -726.000000)"></path>
+                        </svg>
+                        <p>Tunnel</p>
+                    </button>
+
                 </div>
             </div>
         </div>
@@ -681,6 +690,68 @@
                     </div>
                 </div> -->
                 </div>
+        </template>
+    </div>
+
+    <!-- Tunnel Modal -->
+    <div id="tunnelModal" x-data="tunnelModalProxy">
+        <template x-teleport="body">
+            <div x-show="isOpen" class="modal-overlay" @click.self="handleClose()"
+                @keydown.escape.window="handleClose()" x-transition>
+                <div class="modal-container">
+                    <div class="modal-header">
+                        <h2 class="modal-title">Create Flaredantic Tunnel</h2>
+                        <button class="modal-close" @click="handleClose()">&times;</button>
+                    </div>
+                    <div class="modal-content">
+                        <div x-show="isLoading" class="loading-spinner">
+                            <span x-text="loadingText || 'Creating tunnel...'" ></span>
+                        </div>
+                        <div class="tunnel-container" x-show="!isLoading">
+                            <p class="tunnel-description">Generate a Flaredantic URL that exposes your local Agent Zero to the internet</p>
+                            
+                            <template x-if="!linkGenerated">
+                                <div class="tunnel-actions">
+                                    <button class="btn btn-primary" @click="generateLink()">Generate Tunnel Link</button>
+                                </div>
+                            </template>
+                            
+                            <template x-if="linkGenerated">
+                                <div class="tunnel-link-container">
+                                    <div class="tunnel-link-field">
+                                        <input type="text" readonly x-model="tunnelLink" class="tunnel-link-input" />
+                                        <button class="refresh-link-button" @click="refreshLink()" title="Generate new tunnel URL">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M23 4v6h-6"></path>
+                                                <path d="M1 20v-6h6"></path>
+                                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                                                <path d="M1 14L4.64 17.36a9 9 0 0 0 14.85-3.36"></path>
+                                            </svg>
+                                        </button>
+                                        <button class="copy-link-button" @click="copyToClipboard()" title="Copy to clipboard">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <p class="tunnel-link-info">Tunnel URL is exposing your local Agent Zero to the internet and will remain active until you close this application</p>
+                                    <p class="tunnel-link-persistence">Your tunnel URL is persistent and will be reused when you reopen Agent Zero</p>
+                                    
+                                    <div class="tunnel-actions stop-tunnel-container">
+                                        <button class="btn btn-danger" @click="stopTunnel()">Stop Tunnel</button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <div id="buttons-container">
+                            <button class="btn btn-cancel" @click="handleClose()">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </template>
     </div>
 
