@@ -277,7 +277,7 @@ def get_google_embedding(
 ):
     if not api_key:
         api_key = get_api_key("google")
-    return google_embeddings.GoogleGenerativeAIEmbeddings(model=model_name, api_key=api_key, **kwargs)  # type: ignore
+    return google_embeddings.GoogleGenerativeAIEmbeddings(model=model_name, google_api_key=api_key, **kwargs)  # type: ignore
 
 
 # Mistral models
