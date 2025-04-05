@@ -1,6 +1,7 @@
 import asyncio
 from collections import OrderedDict
 from dataclasses import dataclass, field
+from datetime import datetime
 import time, importlib, inspect, os, json
 import token
 from typing import Any, Awaitable, Coroutine, Optional, Dict, TypedDict
@@ -42,6 +43,7 @@ class AgentContext:
         log: Log.Log | None = None,
         paused: bool = False,
         streaming_agent: "Agent|None" = None,
+        created_at: datetime | None = None,
     ):
         # build context
         self.id = id or str(uuid.uuid4())
@@ -52,6 +54,7 @@ class AgentContext:
         self.paused = paused
         self.streaming_agent = streaming_agent
         self.task: DeferredTask | None = None
+        self.created_at = created_at or datetime.now()
         AgentContext._counter += 1
         self.no = AgentContext._counter
 
@@ -76,6 +79,9 @@ class AgentContext:
         if context and context.task:
             context.task.kill()
         return context
+
+    def get_created_at(self):
+        return self.created_at
 
     def kill_process(self):
         if self.task:
@@ -195,6 +201,7 @@ class AgentConfig:
 class UserMessage:
     message: str
     attachments: list[str] = field(default_factory=list[str])
+    system_message: list[str] = field(default_factory=list[str])
 
 
 class LoopData:
@@ -466,12 +473,14 @@ class Agent:
                 "fw.intervention.md",
                 message=message.message,
                 attachments=message.attachments,
+                system_message=message.system_message
             )
         else:
             content = self.parse_prompt(
                 "fw.user_message.md",
                 message=message.message,
                 attachments=message.attachments,
+                system_message=message.system_message
             )
 
         # remove empty attachments from template

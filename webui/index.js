@@ -392,28 +392,18 @@ async function poll() {
             const tasksAD = Alpine.$data(tasksSection);
             let tasks = response.tasks || [];
 
-            // Only update the tasks array if it's actually different
-            // This prevents unnecessary reactivity triggers
-            const currentTaskIds = new Set((tasksAD.tasks || []).map(t => t.id));
-            const newTaskIds = new Set(tasks.map(t => t.id));
+            // Always update tasks to ensure state changes are reflected
+            if (tasks.length > 0) {
+                // Sort the tasks by creation time
+                const sortedTasks = [...tasks].sort((a, b) =>
+                    (b.created_at || 0) - (a.created_at || 0)
+                );
 
-            // Check if the sets are different sizes or have different contents
-            const needsUpdate = currentTaskIds.size !== newTaskIds.size ||
-                tasks.some(task => !currentTaskIds.has(task.id));
-
-            if (needsUpdate) {
-                if (tasks.length > 0) {
-                    // Sort the tasks by creation time
-                    const sortedTasks = [...tasks].sort((a, b) =>
-                        (b.created_at || 0) - (a.created_at || 0)
-                    );
-
-                    // Use a clean array assignment to avoid duplicating elements
-                    tasksAD.tasks = sortedTasks;
-                } else {
-                    // Make sure to use a new empty array instance
-                    tasksAD.tasks = [];
-                }
+                // Assign the sorted tasks to the Alpine data
+                tasksAD.tasks = sortedTasks;
+            } else {
+                // Make sure to use a new empty array instance
+                tasksAD.tasks = [];
             }
         }
 
@@ -1251,3 +1241,57 @@ function initializeActiveTab() {
  * - Tasks use the same context system as chats for communication with the backend
  * - Future support for renaming and deletion will be implemented later
  */
+
+// Open the scheduler detail view for a specific task
+function openTaskDetail(taskId) {
+    // Wait for Alpine.js to be fully loaded
+    if (window.Alpine) {
+        // Get the settings modal button and click it to ensure all init logic happens
+        const settingsButton = document.getElementById('settings');
+        if (settingsButton) {
+            // Programmatically click the settings button
+            settingsButton.click();
+
+            // Now get a reference to the modal element
+            const modalEl = document.getElementById('settingsModal');
+            if (!modalEl) {
+                console.error('Settings modal element not found after clicking button');
+                return;
+            }
+
+            // Get the Alpine.js data for the modal
+            const modalData = Alpine.$data(modalEl);
+
+            // Use a timeout to ensure the modal is fully rendered
+            setTimeout(() => {
+                // Switch to the scheduler tab first
+                modalData.switchTab('scheduler');
+
+                // Use another timeout to ensure the scheduler component is initialized
+                setTimeout(() => {
+                    // Get the scheduler component
+                    const schedulerComponent = document.querySelector('[x-data="schedulerSettings"]');
+                    if (!schedulerComponent) {
+                        console.error('Scheduler component not found');
+                        return;
+                    }
+
+                    // Get the Alpine.js data for the scheduler component
+                    const schedulerData = Alpine.$data(schedulerComponent);
+
+                    // Show the task detail view for the specific task
+                    schedulerData.showTaskDetail(taskId);
+
+                    console.log('Task detail view opened for task:', taskId);
+                }, 50); // Give time for the scheduler tab to initialize
+            }, 25); // Give time for the modal to render
+        } else {
+            console.error('Settings button not found');
+        }
+    } else {
+        console.error('Alpine.js not loaded');
+    }
+}
+
+// Make the function available globally
+window.openTaskDetail = openTaskDetail;

@@ -11,7 +11,32 @@ class SchedulerTick(ApiHandler):
         return True
 
     async def process(self, input: Input, request: Request) -> Output:
-        # timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # PrintStyle().print(f"Scheduler tick - API: {timestamp}")
-        await TaskScheduler.get().tick()
-        return {"scheduler": "tick"}
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        printer = PrintStyle(font_color="green", padding=False)
+        printer.print(f"Scheduler tick - API: {timestamp}")
+
+        # Get the task scheduler instance and print detailed debug info
+        scheduler = TaskScheduler.get()
+        await scheduler.reload()
+
+        tasks = scheduler.get_tasks()
+        tasks_count = len(tasks)
+
+        # Log information about the tasks
+        printer.print(f"Scheduler has {tasks_count} task(s)")
+        if tasks_count > 0:
+            for task in tasks:
+                printer.print(f"Task: {task.name} (UUID: {task.uuid}, State: {task.state})")
+
+        # Run the scheduler tick
+        await scheduler.tick()
+
+        # Get updated tasks after tick
+        serialized_tasks = scheduler.serialize_all_tasks()
+
+        return {
+            "scheduler": "tick",
+            "timestamp": timestamp,
+            "tasks_count": tasks_count,
+            "tasks": serialized_tasks
+        }

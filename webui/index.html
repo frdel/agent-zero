@@ -38,6 +38,7 @@
     <script type="text/javascript" src="js/settings.js"></script>
     <script type="text/javascript" src="js/file_browser.js"></script>
     <script type="text/javascript" src="js/modal.js"></script>
+    <script type="text/javascript" src="js/scheduler.js"></script>
     <script type="module" src="js/speech.js"></script>
     <script type="module" src="js/history.js"></script>
 
@@ -118,18 +119,42 @@
                 </div>
 
                 <!-- Tasks List -->
-                <div class="config-section" id="tasks-section" x-data="{ tasks: [], selected: '' }"
+                <div class="config-section" id="tasks-section" x-data="{
+                    tasks: [],
+                    selected: '',
+                    openTaskDetail(taskId) {
+                        window.openTaskDetail(taskId);
+                    }
+                }"
                     style="display: none;">
                     <div class="tasks-list-container">
                         <ul class="config-list" x-show="tasks.length > 0">
                             <template x-for="task in tasks">
                                 <li>
-                                    <div :class="{'chat-list-button': true, 'font-bold': task.id === selected}"
+                                    <div :class="{'chat-list-button': true, 'font-bold': task.id === selected, 'has-task-container': true}"
                                         @click="selected = task.id; selectChat(task.id)">
-                                        <div class="chat-container">
+                                        <!-- Task container with a vertical layout -->
+                                        <div class="task-container task-container-vertical">
+                                            <!-- Task name on its own line with full width -->
                                             <span class="task-name"
                                                 x-text="task.name || `Task #${task.id.substring(0,8)}`"
                                                 :data-task-id="task.id"></span>
+                                            <!-- Second line with status badge and action button -->
+                                            <div class="task-info-line">
+                                                <!-- Status badge (reusing scheduler styling) -->
+                                                <span class="scheduler-status-badge scheduler-status-badge-small"
+                                                      :class="task.state ? `scheduler-status-${task.state}` : 'scheduler-status-idle'"
+                                                      x-text="task.state || 'idle'"></span>
+                                                <!-- Action button -->
+                                                <button class="task-detail-button"
+                                                    @click.stop="openTaskDetail(task.id)"
+                                                    title="View task details">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </li>
@@ -473,10 +498,15 @@
                                      :class="{'active': activeTab === 'developer'}"
                                      @click="switchTab('developer')"
                                      title="Developer">Developer</div>
+                                <div class="settings-tab"
+                                     :class="{'active': activeTab === 'scheduler'}"
+                                     @click="switchTab('scheduler')"
+                                     title="Task Scheduler">Task Scheduler</div>
                             </div>
                         </div>
 
-                        <div id="settings-sections">
+                        <!-- Display settings sections for agent, external, developer tabs -->
+                        <div id="settings-sections" x-show="activeTab !== 'scheduler'">
                             <nav>
                                 <ul>
                                     <template x-for="(section, index) in filteredSections" :key="section.title">
@@ -490,94 +520,568 @@
                                     </template>
                                 </ul>
                             </nav>
-                        </div>
-                        <template x-for="(section, sectionIndex) in filteredSections" :key="sectionIndex">
-                            <div :id="'section' + (sectionIndex + 1)" class="section">
-                                <div class="section-title" x-text="section.title"></div>
-                                <div class="section-description" x-html="section.description"></div>
 
-                                <template x-for="(field, fieldIndex) in section.fields" :key="fieldIndex">
-                                    <div :class="{'field': true, 'field-full': field.type === 'textarea'}">
-                                        <div class="field-label">
-                                            <div class="field-title" x-text="field.title"></div>
-                                            <div class="field-description" x-html="field.description || ''"></div>
-                                        </div>
+                            <template x-for="(section, sectionIndex) in filteredSections" :key="sectionIndex">
+                                <div :id="'section' + (sectionIndex + 1)" class="section">
+                                    <div class="section-title" x-text="section.title"></div>
+                                    <div class="section-description" x-html="section.description"></div>
 
-                                        <div class="field-control">
-                                            <!-- Input field -->
-                                            <template x-if="field.type === 'text'">
-                                                <input type="text" :class="field.classes" :value="field.value"
-                                                    :readonly="field.readonly === true"
-                                                    @input="field.value = $event.target.value">
-                                            </template>
+                                    <template x-for="(field, fieldIndex) in section.fields" :key="fieldIndex">
+                                        <div :class="{'field': true, 'field-full': field.type === 'textarea'}">
+                                            <div class="field-label">
+                                                <div class="field-title" x-text="field.title"></div>
+                                                <div class="field-description" x-html="field.description || ''"></div>
+                                            </div>
 
-                                            <!-- Number field -->
-                                            <template x-if="field.type === 'number'">
-                                                <input type="number" :class="field.classes" :value="field.value"
-                                                    :readonly="field.readonly === true"
-                                                    @input="field.value = $event.target.value"
-                                                    :min="field.min" :max="field.max" :step="field.step">
-                                            </template>
+                                            <div class="field-control">
+                                                <!-- Input field -->
+                                                <template x-if="field.type === 'text'">
+                                                    <input type="text" :class="field.classes" :value="field.value"
+                                                        :readonly="field.readonly === true"
+                                                        @input="field.value = $event.target.value">
+                                                </template>
 
-
-                                            <!-- Password field -->
-                                            <template x-if="field.type === 'password'">
-                                                <input type="password" :class="field.classes" :value="field.value"
-                                                    :readonly="field.readonly === true"
-                                                    @input="field.value = $event.target.value">
-                                            </template>
-
-                                            <!-- Textarea field -->
-                                            <template x-if="field.type === 'textarea'">
-                                                <textarea :class="field.classes" :value="field.value"
-                                                    :readonly="field.readonly === true"
-                                                    @input="field.value = $event.target.value"></textarea>
-                                            </template>
-
-                                            <!-- Switch field -->
-                                            <template x-if="field.type === 'switch'">
-                                                <label class="toggle">
-                                                    <input type="checkbox" :checked="field.value"
-                                                        :disabled="field.readonly === true"
-                                                        @change="field.value = $event.target.checked">
-                                                    <span class="toggler"></span>
-                                                </label>
-                                            </template>
-
-                                            <!-- Range field -->
-                                            <template x-if="field.type === 'range'">
-                                                <div class="field-control">
-                                                    <input type="range" :min="field.min" :max="field.max"
-                                                        :step="field.step" :value="field.value"
-                                                        :disabled="field.readonly === true"
+                                                <!-- Number field -->
+                                                <template x-if="field.type === 'number'">
+                                                    <input type="number" :class="field.classes" :value="field.value"
+                                                        :readonly="field.readonly === true"
                                                         @input="field.value = $event.target.value"
-                                                        :class="field.classes">
-                                                    <span class="range-value" x-text="field.value"></span>
-                                                </div>
-                                            </template>
+                                                        :min="field.min" :max="field.max" :step="field.step">
+                                                </template>
 
-                                            <!-- Button field -->
-                                            <template x-if="field.type === 'button'">
-                                                <button class="btn btn-field" :class="field.classes"
-                                                    :disabled="field.readonly === true"
-                                                    @click="handleFieldButton(field)" x-text="field.value"></button>
-                                            </template>
 
-                                            <!-- Select field -->
-                                            <template x-if="field.type === 'select'">
-                                                <select :class="field.classes" x-model="field.value"
-                                                    :disabled="field.readonly === true">
-                                                    <template x-for="option in field.options" :key="option.value">
-                                                        <option :value="option.value" x-text="option.label"
-                                                            :selected="option.value === field.value"></option>
-                                                    </template>
-                                                </select>
-                                            </template>
+                                                <!-- Password field -->
+                                                <template x-if="field.type === 'password'">
+                                                    <input type="password" :class="field.classes" :value="field.value"
+                                                        :readonly="field.readonly === true"
+                                                        @input="field.value = $event.target.value">
+                                                </template>
+
+                                                <!-- Textarea field -->
+                                                <template x-if="field.type === 'textarea'">
+                                                    <textarea :class="field.classes" :value="field.value"
+                                                        :readonly="field.readonly === true"
+                                                        @input="field.value = $event.target.value"></textarea>
+                                                </template>
+
+                                                <!-- Switch field -->
+                                                <template x-if="field.type === 'switch'">
+                                                    <label class="toggle">
+                                                        <input type="checkbox" :checked="field.value"
+                                                            :disabled="field.readonly === true"
+                                                            @change="field.value = $event.target.checked">
+                                                        <span class="toggler"></span>
+                                                    </label>
+                                                </template>
+
+                                                <!-- Range field -->
+                                                <template x-if="field.type === 'range'">
+                                                    <div class="field-control">
+                                                        <input type="range" :min="field.min" :max="field.max"
+                                                            :step="field.step" :value="field.value"
+                                                            :disabled="field.readonly === true"
+                                                            @input="field.value = $event.target.value"
+                                                            :class="field.classes">
+                                                        <span class="range-value" x-text="field.value"></span>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Button field -->
+                                                <template x-if="field.type === 'button'">
+                                                    <button class="btn btn-field" :class="field.classes"
+                                                        :disabled="field.readonly === true"
+                                                        @click="handleFieldButton(field)" x-text="field.value"></button>
+                                                </template>
+
+                                                <!-- Select field -->
+                                                <template x-if="field.type === 'select'">
+                                                    <select :class="field.classes" x-model="field.value"
+                                                        :disabled="field.readonly === true">
+                                                        <template x-for="option in field.options" :key="option.value">
+                                                            <option :value="option.value" x-text="option.label"
+                                                                :selected="option.value === field.value"></option>
+                                                        </template>
+                                                    </select>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Task Scheduler Tab Content -->
+                        <div id="scheduler-tab-content" x-show="activeTab === 'scheduler'" x-cloak>
+                            <!-- Settings section structure for task scheduler -->
+                            <nav>
+                                <ul>
+                                    <li>
+                                        <a href="#section-task-scheduler">
+                                            <img src="/public/task_scheduler.svg" alt="Task Scheduler">
+                                            <span>Task Scheduler</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+
+                            <div id="section-task-scheduler" class="section"
+                                 x-data="schedulerSettings"
+                                 x-init="$watch('activeTab', (val) => { if(val === 'scheduler') { fetchTasks(); } })">
+                                <div class="section-title">Task Scheduler</div>
+                                <div class="section-description">Manage scheduled tasks and automated processes for Agent Zero.</div>
+
+                                <!-- Create Task Form -->
+                                <div class="scheduler-form" x-show="isCreating">
+                                    <div class="scheduler-form-header">
+                                        <div class="scheduler-form-title">Create New Task</div>
+                                        <div class="scheduler-form-actions">
+                                            <button class="btn btn-ok btn-field" @click="saveTask()">
+                                                Save
+                                            </button>
+                                            <button class="btn btn-cancel" @click="cancelEdit()">
+                                                Cancel
+                                            </button>
                                         </div>
                                     </div>
-                                </template>
+
+                                    <div class="scheduler-form-grid">
+                                        <!-- Task Name -->
+                                        <div class="scheduler-form-field">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">Task Name</label>
+                                                <div class="scheduler-form-help">A unique name to identify this task</div>
+                                            </div>
+                                            <input type="text" x-model="editingTask.name" placeholder="Enter task name">
+                                        </div>
+
+                                        <!-- Task Type (only editable when creating) -->
+                                        <div class="scheduler-form-field">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">Task Type</label>
+                                                <div class="scheduler-form-help">Task type cannot be changed after creation</div>
+                                            </div>
+                                            <select x-model="editingTask.type" :disabled="!isCreating">
+                                                <option value="scheduled">Scheduled Task</option>
+                                                <option value="adhoc">Ad-hoc Task</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Task State in Create Form - Add after Task Type -->
+                                        <div class="scheduler-form-field" x-show="isCreating">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">State</label>
+                                                <div class="scheduler-form-help">Select the initial state of the task</div>
+                                            </div>
+                                            <div>
+                                                <div class="scheduler-state-selector">
+                                                    <span class="scheduler-status-badge scheduler-status-idle"
+                                                          :class="{'scheduler-status-selected': editingTask.state === 'idle'}"
+                                                          @click="editingTask.state = 'idle'">idle</span>
+                                                    <span class="scheduler-status-badge scheduler-status-running"
+                                                          :class="{'scheduler-status-selected': editingTask.state === 'running'}"
+                                                          @click="editingTask.state = 'running'">running</span>
+                                                    <span class="scheduler-status-badge scheduler-status-disabled"
+                                                          :class="{'scheduler-status-selected': editingTask.state === 'disabled'}"
+                                                          @click="editingTask.state = 'disabled'">disabled</span>
+                                                    <span class="scheduler-status-badge scheduler-status-error"
+                                                          :class="{'scheduler-status-selected': editingTask.state === 'error'}"
+                                                          @click="editingTask.state = 'error'">error</span>
+                                                </div>
+                                                <div class="scheduler-state-explanation">
+                                                    <span x-show="editingTask.state === 'idle'"><strong>idle</strong>: ready to run</span>
+                                                    <span x-show="editingTask.state === 'running'"><strong>running</strong>: currently executing</span>
+                                                    <span x-show="editingTask.state === 'disabled'"><strong>disabled</strong>: won't execute automatically</span>
+                                                    <span x-show="editingTask.state === 'error'"><strong>error</strong>: task encountered an error</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Schedule (for scheduled tasks) -->
+                                        <div class="scheduler-form-field full-width" x-show="editingTask && editingTask.type === 'scheduled'">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">Schedule (Cron Expression)</label>
+                                                <div class="scheduler-form-help">Format: minute hour day month weekday (e.g., "* * * * *" for every minute)</div>
+                                            </div>
+                                            <div class="scheduler-schedule-builder">
+                                                <div class="scheduler-schedule-field">
+                                                    <span class="scheduler-schedule-label">Minute</span>
+                                                    <input type="text" x-model="editingTask.schedule.minute" placeholder="*" maxlength="9">
+                                                </div>
+                                                <div class="scheduler-schedule-field">
+                                                    <span class="scheduler-schedule-label">Hour</span>
+                                                    <input type="text" x-model="editingTask.schedule.hour" placeholder="*" maxlength="9">
+                                                </div>
+                                                <div class="scheduler-schedule-field">
+                                                    <span class="scheduler-schedule-label">Day</span>
+                                                    <input type="text" x-model="editingTask.schedule.day" placeholder="*" maxlength="9">
+                                                </div>
+                                                <div class="scheduler-schedule-field">
+                                                    <span class="scheduler-schedule-label">Month</span>
+                                                    <input type="text" x-model="editingTask.schedule.month" placeholder="*" maxlength="9">
+                                                </div>
+                                                <div class="scheduler-schedule-field">
+                                                    <span class="scheduler-schedule-label">Weekday</span>
+                                                    <input type="text" x-model="editingTask.schedule.weekday" placeholder="*" maxlength="9">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Token (for ad-hoc tasks) -->
+                                        <div class="scheduler-form-field full-width" x-show="editingTask.type === 'adhoc'">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">Token</label>
+                                                <div class="scheduler-form-help">Token used to trigger this task externally</div>
+                                            </div>
+                                            <div class="input-group">
+                                                <input type="text" x-model="editingTask.token" placeholder="Token for ad-hoc task">
+                                                <button class="scheduler-task-action" @click="editingTask.token = generateRandomToken()">
+                                                    Generate
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- System Prompt -->
+                                        <div class="scheduler-form-field full-width">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">System Prompt</label>
+                                                <div class="scheduler-form-help">System-level instructions for the assistant</div>
+                                            </div>
+                                            <textarea x-model="editingTask.system_prompt" placeholder="System instructions for the AI"></textarea>
+                                        </div>
+
+                                        <!-- User Prompt -->
+                                        <div class="scheduler-form-field full-width">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">User Prompt</label>
+                                                <div class="scheduler-form-help">The main task prompt that will be executed</div>
+                                            </div>
+                                            <textarea x-model="editingTask.prompt" placeholder="User message for the AI"></textarea>
+                                        </div>
+
+                                        <!-- Attachments Field -->
+                                        <div class="scheduler-form-field full-width">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">Attachments</label>
+                                                <div class="scheduler-form-help">Container file paths or URLs, one per line</div>
+                                            </div>
+                                            <textarea x-model="attachmentsText" placeholder="Enter file paths or URLs, one per line"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Edit Task Form -->
+                                <div class="scheduler-form" x-show="isEditing">
+                                    <div class="scheduler-form-header">
+                                        <div class="scheduler-form-title">Edit Task</div>
+                                        <div class="scheduler-form-actions">
+                                            <button class="btn btn-ok btn-field" @click="saveTask()">
+                                                Save
+                                            </button>
+                                            <button class="btn btn-cancel" @click="cancelEdit()">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="scheduler-form-grid">
+                                        <!-- Task Name -->
+                                        <div class="scheduler-form-field">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">Task Name</label>
+                                                <div class="scheduler-form-help">A unique name to identify this task</div>
+                                            </div>
+                                            <input type="text" x-model="editingTask.name" placeholder="Enter task name">
+                                        </div>
+
+                                        <!-- Task Type (disabled when editing) -->
+                                        <div class="scheduler-form-field">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">Task Type</label>
+                                                <div class="scheduler-form-help">Task type cannot be changed after creation</div>
+                                            </div>
+                                            <select x-model="editingTask.type" disabled>
+                                                <option value="scheduled">Scheduled Task</option>
+                                                <option value="adhoc">Ad-hoc Task</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Task State in Edit Form - Add after Task Type -->
+                                        <div class="scheduler-form-field" x-show="isEditing">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">State</label>
+                                                <div class="scheduler-form-help">Change the task's state</div>
+                                            </div>
+                                            <div>
+                                                <div class="scheduler-state-selector">
+                                                    <span class="scheduler-status-badge scheduler-status-idle"
+                                                          :class="{'scheduler-status-selected': editingTask.state === 'idle'}"
+                                                          @click="editingTask.state = 'idle'">idle</span>
+                                                    <span class="scheduler-status-badge scheduler-status-running"
+                                                          :class="{'scheduler-status-selected': editingTask.state === 'running'}"
+                                                          @click="editingTask.state = 'running'">running</span>
+                                                    <span class="scheduler-status-badge scheduler-status-disabled"
+                                                          :class="{'scheduler-status-selected': editingTask.state === 'disabled'}"
+                                                          @click="editingTask.state = 'disabled'">disabled</span>
+                                                    <span class="scheduler-status-badge scheduler-status-error"
+                                                          :class="{'scheduler-status-selected': editingTask.state === 'error'}"
+                                                          @click="editingTask.state = 'error'">error</span>
+                                                </div>
+                                                <div class="scheduler-state-explanation">
+                                                    <span x-show="editingTask.state === 'idle'"><strong>idle</strong>: ready to run</span>
+                                                    <span x-show="editingTask.state === 'running'"><strong>running</strong>: currently executing</span>
+                                                    <span x-show="editingTask.state === 'disabled'"><strong>disabled</strong>: won't execute automatically</span>
+                                                    <span x-show="editingTask.state === 'error'"><strong>error</strong>: task encountered an error</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Schedule (for scheduled tasks) -->
+                                        <div class="scheduler-form-field full-width" x-show="editingTask && editingTask.type === 'scheduled'">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">Schedule (Cron Expression)</label>
+                                                <div class="scheduler-form-help">Format: minute hour day month weekday (e.g., "* * * * *" for every minute)</div>
+                                            </div>
+                                            <div class="scheduler-schedule-builder">
+                                                <div class="scheduler-schedule-field">
+                                                    <span class="scheduler-schedule-label">Minute</span>
+                                                    <input type="text" x-model="editingTask.schedule.minute" placeholder="*" maxlength="9">
+                                                </div>
+                                                <div class="scheduler-schedule-field">
+                                                    <span class="scheduler-schedule-label">Hour</span>
+                                                    <input type="text" x-model="editingTask.schedule.hour" placeholder="*" maxlength="9">
+                                                </div>
+                                                <div class="scheduler-schedule-field">
+                                                    <span class="scheduler-schedule-label">Day</span>
+                                                    <input type="text" x-model="editingTask.schedule.day" placeholder="*" maxlength="9">
+                                                </div>
+                                                <div class="scheduler-schedule-field">
+                                                    <span class="scheduler-schedule-label">Month</span>
+                                                    <input type="text" x-model="editingTask.schedule.month" placeholder="*" maxlength="9">
+                                                </div>
+                                                <div class="scheduler-schedule-field">
+                                                    <span class="scheduler-schedule-label">Weekday</span>
+                                                    <input type="text" x-model="editingTask.schedule.weekday" placeholder="*" maxlength="9">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Token (for ad-hoc tasks) -->
+                                        <div class="scheduler-form-field full-width" x-show="editingTask.type === 'adhoc'">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">Token</label>
+                                                <div class="scheduler-form-help">Token used to trigger this task externally</div>
+                                            </div>
+                                            <div class="input-group">
+                                                <input type="text" x-model="editingTask.token" placeholder="Token for ad-hoc task">
+                                                <button class="scheduler-task-action" @click="editingTask.token = generateRandomToken()">
+                                                    Generate
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- System Prompt -->
+                                        <div class="scheduler-form-field full-width">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">System Prompt</label>
+                                                <div class="scheduler-form-help">System-level instructions for the assistant</div>
+                                            </div>
+                                            <textarea x-model="editingTask.system_prompt" placeholder="System instructions for the AI"></textarea>
+                                        </div>
+
+                                        <!-- User Prompt -->
+                                        <div class="scheduler-form-field full-width">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">User Prompt</label>
+                                                <div class="scheduler-form-help">The main task prompt that will be executed</div>
+                                            </div>
+                                            <textarea x-model="editingTask.prompt" placeholder="User message for the AI"></textarea>
+                                        </div>
+
+                                        <!-- Attachments Field -->
+                                        <div class="scheduler-form-field full-width">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">Attachments</label>
+                                                <div class="scheduler-form-help">Container file paths or URLs, one per line</div>
+                                            </div>
+                                            <textarea x-model="attachmentsText" placeholder="Enter file paths or URLs, one per line"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Task List View -->
+                                <div class="scheduler-container" x-show="!isCreating && !isEditing && viewMode === 'list'">
+                                    <!-- Header with Actions -->
+                                    <div class="scheduler-header">
+                                        <h2>Task Management</h2>
+                                        <div class="scheduler-actions">
+                                            <button class="btn btn-ok" @click="startCreateTask()">
+                                                New Task
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Filters -->
+                                    <div class="scheduler-filters">
+                                        <div class="scheduler-filter-group">
+                                            <span class="scheduler-filter-label">Type:</span>
+                                            <select class="scheduler-filter-select" x-model="filterType">
+                                                <option value="all">All Types</option>
+                                                <option value="scheduled">Scheduled</option>
+                                                <option value="adhoc">Ad-hoc</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="scheduler-filter-group">
+                                            <span class="scheduler-filter-label">State:</span>
+                                            <select class="scheduler-filter-select" x-model="filterState">
+                                                <option value="all">All States</option>
+                                                <option value="idle">Idle</option>
+                                                <option value="running">Running</option>
+                                                <option value="disabled">Disabled</option>
+                                                <option value="error">Error</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- Loading State -->
+                                    <div class="scheduler-loading" x-show="isLoading">
+                                        Loading tasks...
+                                    </div>
+
+                                    <!-- Empty State -->
+                                    <div class="scheduler-empty" x-show="!isLoading && filteredTasks.length === 0">
+                                        <div class="scheduler-empty-icon">📋</div>
+                                        <div class="scheduler-empty-text">No tasks found</div>
+                                        <button class="btn btn-ok" @click="startCreateTask()">Create your first task</button>
+                                    </div>
+
+                                    <!-- Task List Table -->
+                                    <table class="scheduler-task-list" x-show="!isLoading && filteredTasks.length > 0">
+                                        <thead>
+                                            <tr>
+                                                <th @click="changeSort('name')">
+                                                    Name
+                                                    <span class="scheduler-sort-indicator" x-show="sortField === 'name'"
+                                                          :class="{'scheduler-sort-desc': sortDirection === 'desc'}">↑</span>
+                                                </th>
+                                                <th @click="changeSort('state')">
+                                                    State
+                                                    <span class="scheduler-sort-indicator" x-show="sortField === 'state'"
+                                                          :class="{'scheduler-sort-desc': sortDirection === 'desc'}">↑</span>
+                                                </th>
+                                                <th>Type</th>
+                                                <th>Schedule</th>
+                                                <th @click="changeSort('last_run')">
+                                                    Last Run
+                                                    <span class="scheduler-sort-indicator" x-show="sortField === 'last_run'"
+                                                          :class="{'scheduler-sort-desc': sortDirection === 'desc'}">↑</span>
+                                                </th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template x-for="task in filteredTasks" :key="task.uuid">
+                                                <tr @click="showTaskDetail(task.uuid)">
+                                                    <td>
+                                                        <span x-text="task.name"></span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="scheduler-status-badge" :class="getStateBadgeClass(task.state)" x-text="task.state"></span>
+                                                    </td>
+                                                    <td x-text="task.type"></td>
+                                                    <td>
+                                                        <span x-show="task.type === 'scheduled'" x-text="formatSchedule(task)"></span>
+                                                        <span x-show="task.type === 'adhoc'" class="scheduler-no-schedule">—</span>
+                                                    </td>
+                                                    <td x-text="formatDate(task.last_run)"></td>
+                                                    <td @click.stop>
+                                                        <div class="scheduler-task-actions">
+                                                            <button class="scheduler-task-action" @click="runTask(task.uuid)" title="Run Task">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                                                    <path d="M8 5v14l11-7z"/>
+                                                                </svg>
+                                                            </button>
+                                                            <button class="scheduler-task-action" @click="resetTaskState(task.uuid)" title="Reset State">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                                                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                                                                </svg>
+                                                            </button>
+                                                            <button class="scheduler-task-action" @click="startEditTask(task.uuid)" title="Edit Task">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                                                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                                                </svg>
+                                                            </button>
+                                                            <button class="scheduler-task-action" @click="deleteTask(task.uuid)" title="Delete Task">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                                                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Task Detail View -->
+                                <div class="scheduler-detail-view" x-show="!isCreating && !isEditing && viewMode === 'detail' && selectedTaskForDetail">
+                                    <div class="scheduler-detail-header">
+                                        <h2 class="scheduler-detail-title" x-text="selectedTaskForDetail ? selectedTaskForDetail.name : ''"></h2>
+                                        <div class="scheduler-status-badge"
+                                            :class="selectedTaskForDetail ? getStateBadgeClass(selectedTaskForDetail.state) : ''"
+                                            x-text="selectedTaskForDetail ? selectedTaskForDetail.state : ''">
+                                        </div>
+                                        <button class="btn btn-cancel" @click="closeTaskDetail()">Close</button>
+                                    </div>
+
+                                    <div class="scheduler-detail-content">
+                                        <div class="scheduler-details-grid">
+                                            <div class="scheduler-details-label">Type:</div>
+                                            <div class="scheduler-details-value" x-text="selectedTaskForDetail ? selectedTaskForDetail.type : ''"></div>
+
+                                            <div class="scheduler-details-label">Created:</div>
+                                            <div class="scheduler-details-value" x-text="selectedTaskForDetail ? formatDate(selectedTaskForDetail.created_at) : ''"></div>
+
+                                            <div class="scheduler-details-label">Last Updated:</div>
+                                            <div class="scheduler-details-value" x-text="selectedTaskForDetail ? formatDate(selectedTaskForDetail.updated_at) : ''"></div>
+
+                                            <div class="scheduler-details-label">Last Run:</div>
+                                            <div class="scheduler-details-value" x-text="selectedTaskForDetail ? formatDate(selectedTaskForDetail.last_run) : ''"></div>
+
+                                            <div class="scheduler-details-label" x-show="selectedTaskForDetail && selectedTaskForDetail.type === 'scheduled'">Schedule:</div>
+                                            <div class="scheduler-details-value" x-show="selectedTaskForDetail && selectedTaskForDetail.type === 'scheduled'" x-text="selectedTaskForDetail ? formatSchedule(selectedTaskForDetail) : ''"></div>
+
+                                            <div class="scheduler-details-label" x-show="selectedTaskForDetail && selectedTaskForDetail.type === 'adhoc'">Token:</div>
+                                            <div class="scheduler-details-value" x-show="selectedTaskForDetail && selectedTaskForDetail.type === 'adhoc'" x-text="selectedTaskForDetail ? selectedTaskForDetail.token : ''"></div>
+
+                                            <div class="scheduler-details-label">Last Result:</div>
+                                            <div class="scheduler-details-value" x-text="selectedTaskForDetail && selectedTaskForDetail.last_result ? selectedTaskForDetail.last_result : 'No results yet'"></div>
+
+                                            <div class="scheduler-details-label">System Prompt:</div>
+                                            <div class="scheduler-details-value" x-text="selectedTaskForDetail ? selectedTaskForDetail.system_prompt : ''"></div>
+
+                                            <div class="scheduler-details-label">User Prompt:</div>
+                                            <div class="scheduler-details-value" x-text="selectedTaskForDetail ? selectedTaskForDetail.prompt : ''"></div>
+
+                                            <div class="scheduler-details-label">Attachments:</div>
+                                            <div class="scheduler-details-value">
+                                                <template x-if="selectedTaskForDetail && selectedTaskForDetail.attachments && selectedTaskForDetail.attachments.length > 0">
+                                                    <div>
+                                                        <template x-for="(attachment, index) in selectedTaskForDetail.attachments" :key="index">
+                                                            <div x-text="attachment"></div>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                                <template x-if="!selectedTaskForDetail || !selectedTaskForDetail.attachments || selectedTaskForDetail.attachments.length === 0">
+                                                    <div>No attachments</div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </template>
+                        </div>
                     </div>
 
                     <div class="modal-footer">

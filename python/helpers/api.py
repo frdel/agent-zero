@@ -39,13 +39,21 @@ class ApiHandler:
     async def handle_request(self, request: Request) -> Response:
         try:
             # input data from request based on type
+            input_data: Input = {}
             if request.is_json:
-                input = request.get_json()
+                try:
+                    if request.data:  # Check if there's any data
+                        input_data = request.get_json()
+                    # If empty or not valid JSON, use empty dict
+                except Exception as e:
+                    # Just log the error and continue with empty input
+                    PrintStyle().print(f"Error parsing JSON: {str(e)}")
+                    input_data = {}
             else:
-                input = {"data": request.get_data(as_text=True)}
+                input_data = {"data": request.get_data(as_text=True)}
 
             # process via handler
-            output = await self.process(input, request)
+            output = await self.process(input_data, request)
 
             # return output based on type
             if isinstance(output, Response):
@@ -59,7 +67,7 @@ class ApiHandler:
             # return exceptions with 500
         except Exception as e:
             error = format_error(e)
-            PrintStyle.error(error)
+            PrintStyle.error(f"API error: {error}")
             return Response(response=error, status=500, mimetype="text/plain")
 
     # get context to run agent zero in
