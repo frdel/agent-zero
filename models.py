@@ -332,7 +332,7 @@ def get_openrouter_chat(
             dotenv.get_dotenv_value("OPEN_ROUTER_BASE_URL")
             or "https://openrouter.ai/api/v1"
         )
-    return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
+    return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, stream_usage=True, **kwargs)  # type: ignore
 
 
 def get_openrouter_embedding(
