@@ -10,8 +10,14 @@ import models
 from langchain_core.prompt_values import ChatPromptValue
 from python.helpers import extract_tools, rate_limiter, files, errors, history, tokens
 from python.helpers.print_style import PrintStyle
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+    HumanMessagePromptTemplate,
+    StringPromptTemplate,
+)
+from langchain_core.prompts.image import ImagePromptTemplate
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, BaseMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.embeddings import Embeddings
@@ -19,6 +25,7 @@ import python.helpers.log as Log
 from python.helpers.dirty_json import DirtyJson
 from python.helpers.defer import DeferredTask
 from typing import Callable
+from python.helpers.history import OutputMessage
 
 
 class AgentContext:
@@ -89,7 +96,7 @@ class AgentContext:
         else:
             current_agent = self.agent0
 
-        self.task =self.run_task(current_agent.monologue)
+        self.task = self.run_task(current_agent.monologue)
         return self.task
 
     def communicate(self, msg: "UserMessage", broadcast_level: int = 1):
@@ -128,9 +135,9 @@ class AgentContext:
     async def _process_chain(self, agent: "Agent", msg: "UserMessage|str", user=True):
         try:
             msg_template = (
-                await agent.hist_add_user_message(msg)  # type: ignore
+                agent.hist_add_user_message(msg)  # type: ignore
                 if user
-                else await agent.hist_add_tool_result(
+                else agent.hist_add_tool_result(
                     tool_name="call_subordinate", tool_result=msg  # type: ignore
                 )
             )
@@ -187,7 +194,7 @@ class AgentConfig:
 @dataclass
 class UserMessage:
     message: str
-    attachments: list[str]
+    attachments: list[str] = field(default_factory=list[str])
 
 
 class LoopData:
@@ -281,9 +288,6 @@ class Agent:
                                 printer.stream(chunk)
                                 self.log_from_stream(full, log)
 
-                        # store as last context window content
-                        self.set_data(Agent.DATA_NAME_CTX_WINDOW, prompt.format())
-
                         agent_response = await self.call_chat_model(
                             prompt, callback=stream_callback
                         )
@@ -294,10 +298,10 @@ class Agent:
                             self.loop_data.last_response == agent_response
                         ):  # if assistant_response is the same as last message in history, let him know
                             # Append the assistant's response to the history
-                            await self.hist_add_ai_response(agent_response)
+                            self.hist_add_ai_response(agent_response)
                             # Append warning message to the history
                             warning_msg = self.read_prompt("fw.msg_repeat.md")
-                            await self.hist_add_warning(message=warning_msg)
+                            self.hist_add_warning(message=warning_msg)
                             PrintStyle(font_color="orange", padding=True).print(
                                 warning_msg
                             )
@@ -305,7 +309,7 @@ class Agent:
 
                         else:  # otherwise proceed with tool
                             # Append the assistant's response to the history
-                            await self.hist_add_ai_response(agent_response)
+                            self.hist_add_ai_response(agent_response)
                             # process tools requested in agent message
                             tools_result = await self.process_tools(agent_response)
                             if tools_result:  # final response of message loop available
@@ -317,7 +321,7 @@ class Agent:
                     except RepairableException as e:
                         # Forward repairable errors to the LLM, maybe it can fix them
                         error_message = errors.format_error(e)
-                        await self.hist_add_warning(error_message)
+                        self.hist_add_warning(error_message)
                         PrintStyle(font_color="red", padding=True).print(error_message)
                         self.context.log.log(type="error", content=error_message)
                     except Exception as e:
@@ -356,19 +360,32 @@ class Agent:
             extras += history.Message(False, content=extra).output()
         loop_data.extras_temporary.clear()
 
-        # combine history and extras
-        history_combined = history.group_outputs_abab(loop_data.history_output + extras)
-
-        # convert history to LLM format
-        history_langchain = history.output_langchain(history_combined)
+        # convert history + extras to LLM format
+        history_langchain: list[BaseMessage] = history.output_langchain(
+            loop_data.history_output + extras
+        )
 
         # build chain from system prompt, message history and model
+        system_text = "\n\n".join(loop_data.system)
         prompt = ChatPromptTemplate.from_messages(
             [
-                SystemMessage(content="\n\n".join(loop_data.system)),
+                SystemMessage(content=system_text),
                 *history_langchain,
+                AIMessage(content="JSON:"), # force the LLM to start with json
             ]
         )
+
+        # store as last context window content
+        self.set_data(
+            Agent.DATA_NAME_CTX_WINDOW,
+            {
+                "text": prompt.format(),
+                "tokens": self.history.get_tokens()
+                + tokens.approximate_tokens(system_text)
+                + tokens.approximate_tokens(history.output_text(extras)),
+            },
+        )
+
         return prompt
 
     def handle_critical_exception(self, exception: Exception):
@@ -435,12 +452,12 @@ class Agent:
     def set_data(self, field: str, value):
         self.data[field] = value
 
-    def hist_add_message(self, ai: bool, content: history.MessageContent):
-        return self.history.add_message(ai=ai, content=content)
-
-    async def hist_add_user_message(
-        self, message: UserMessage, intervention: bool = False
+    def hist_add_message(
+        self, ai: bool, content: history.MessageContent, tokens: int = 0
     ):
+        return self.history.add_message(ai=ai, content=content, tokens=tokens)
+
+    def hist_add_user_message(self, message: UserMessage, intervention: bool = False):
         self.history.new_topic()  # user message starts a new topic in history
 
         # load message template based on intervention
@@ -470,16 +487,16 @@ class Agent:
         self.last_user_message = msg
         return msg
 
-    async def hist_add_ai_response(self, message: str):
+    def hist_add_ai_response(self, message: str):
         self.loop_data.last_response = message
         content = self.parse_prompt("fw.ai_response.md", message=message)
         return self.hist_add_message(True, content=content)
 
-    async def hist_add_warning(self, message: history.MessageContent):
+    def hist_add_warning(self, message: history.MessageContent):
         content = self.parse_prompt("fw.warning.md", message=message)
         return self.hist_add_message(False, content=content)
 
-    async def hist_add_tool_result(self, tool_name: str, tool_result: str):
+    def hist_add_tool_result(self, tool_name: str, tool_result: str):
         content = self.parse_prompt(
             "fw.tool_result.md", tool_name=tool_name, tool_result=tool_result
         )
@@ -613,9 +630,9 @@ class Agent:
             msg = self.intervention
             self.intervention = None  # reset the intervention message
             if progress.strip():
-                await self.hist_add_ai_response(progress)
+                self.hist_add_ai_response(progress)
             # append the intervention message
-            await self.hist_add_user_message(msg, intervention=True)
+            self.hist_add_user_message(msg, intervention=True)
             raise InterventionException(msg)
 
     async def wait_if_paused(self):
@@ -642,7 +659,7 @@ class Agent:
                 return response.message
         else:
             msg = self.read_prompt("fw.msg_misformat.md")
-            await self.hist_add_warning(msg)
+            self.hist_add_warning(msg)
             PrintStyle(font_color="red", padding=True).print(msg)
             self.context.log.log(
                 type="error", content=f"{self.agent_name}: Message misformat"
