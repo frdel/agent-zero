@@ -54,6 +54,10 @@ instruments/**
 !instruments/custom/music_generation/
 !instruments/custom/music_generation/**
 
+# Explicitly allow custom video generation folder
+!instruments/custom/video_generation/
+!instruments/custom/video_generation/**
+
 # Global rule to include .gitkeep files anywhere
 !**/.gitkeep
 agent_history.gif
