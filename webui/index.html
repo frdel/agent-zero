@@ -625,8 +625,7 @@
                             </nav>
 
                             <div id="section-task-scheduler" class="section"
-                                 x-data="schedulerSettings"
-                                 x-init="$watch('activeTab', (val) => { if(val === 'scheduler') { fetchTasks(); } })">
+                                 x-data="schedulerSettings">
                                 <div class="section-title">Task Scheduler</div>
                                 <div class="section-description">Manage scheduled tasks and automated processes for Agent Zero.</div>
 

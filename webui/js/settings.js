@@ -19,24 +19,23 @@ const settingsModalProxy = {
 
     // Switch tab method
     switchTab(tabName) {
-        console.log(`Switching tab from ${this.activeTab} to ${tabName}`);
+        // Update our component state
         this.activeTab = tabName;
+
+        // Update the store safely
+        const store = Alpine.store('root');
+        if (store) {
+            store.activeTab = tabName;
+        }
+
         localStorage.setItem('settingsActiveTab', tabName);
 
         // Auto-scroll active tab into view after a short delay to ensure DOM updates
         setTimeout(() => {
             const activeTab = document.querySelector('.settings-tab.active');
             if (activeTab) {
-                console.log(`Scrolling active tab into view: ${activeTab.textContent}`);
                 activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            } else {
-                console.warn('No active tab found to scroll into view');
             }
-
-            // Debug the scheduler tab specifically
-            const schedulerTab = document.querySelector('.settings-tab[title="Task Scheduler"]');
-            console.log('Scheduler tab:', schedulerTab);
-            console.log('Scheduler tab active?', schedulerTab && schedulerTab.classList.contains('active'));
         }, 10);
     },
 
@@ -44,6 +43,13 @@ const settingsModalProxy = {
         console.log('Settings modal opening');
         const modalEl = document.getElementById('settingsModal');
         const modalAD = Alpine.$data(modalEl);
+
+        // First, ensure the store is updated properly
+        const store = Alpine.store('root');
+        if (store) {
+            // Set isOpen first to ensure proper state
+            store.isOpen = true;
+        }
 
         //get settings from backend
         try {
@@ -81,6 +87,12 @@ const settingsModalProxy = {
 
                 // Directly set the active tab
                 modalAD.activeTab = savedTab;
+
+                // Also update the store
+                if (store) {
+                    store.activeTab = savedTab;
+                }
+
                 localStorage.setItem('settingsActiveTab', savedTab);
 
                 // Add a small delay *after* setting the tab to ensure scrolling works
@@ -157,7 +169,18 @@ const settingsModalProxy = {
         } else if (buttonId === 'cancel') {
             this.handleCancel();
         }
+
+        // First update our component state
         this.isOpen = false;
+
+        // Then safely update the store
+        const store = Alpine.store('root');
+        if (store) {
+            // Use a slight delay to avoid reactivity issues
+            setTimeout(() => {
+                store.isOpen = false;
+            }, 10);
+        }
     },
 
     async handleCancel() {
@@ -165,7 +188,18 @@ const settingsModalProxy = {
             status: 'cancelled',
             data: null
         });
+
+        // First update our component state
         this.isOpen = false;
+
+        // Then safely update the store
+        const store = Alpine.store('root');
+        if (store) {
+            // Use a slight delay to avoid reactivity issues
+            setTimeout(() => {
+                store.isOpen = false;
+            }, 10);
+        }
     },
 
     handleFieldButton(field) {
@@ -191,6 +225,7 @@ const settingsModalProxy = {
 // });
 
 document.addEventListener('alpine:init', function () {
+    // Initialize the root store first to ensure it exists before components try to access it
     Alpine.store('root', {
         activeTab: localStorage.getItem('settingsActiveTab') || 'agent',
         isOpen: false,
@@ -200,6 +235,7 @@ document.addEventListener('alpine:init', function () {
         }
     });
 
+    // Then initialize other Alpine components
     Alpine.data('settingsModal', function () {
         return {
             settingsData: {},
@@ -208,21 +244,32 @@ document.addEventListener('alpine:init', function () {
             isLoading: true,
 
             async init() {
+                // Initialize with the store value
+                this.activeTab = Alpine.store('root').activeTab || 'agent';
+
                 // Watch store tab changes
                 this.$watch('$store.root.activeTab', (newTab) => {
-                    this.activeTab = newTab;
-                    localStorage.setItem('settingsActiveTab', newTab);
-                    this.updateFilteredSections();
+                    if (typeof newTab !== 'undefined') {
+                        this.activeTab = newTab;
+                        localStorage.setItem('settingsActiveTab', newTab);
+                        this.updateFilteredSections();
+                    }
                 });
 
                 // Load settings
                 await this.fetchSettings();
-                this.activeTab = this.$store.root.activeTab;
                 this.updateFilteredSections();
             },
 
             switchTab(tab) {
-                this.$store.root.activeTab = tab;
+                // Update our component state
+                this.activeTab = tab;
+
+                // Update the store safely
+                const store = Alpine.store('root');
+                if (store) {
+                    store.activeTab = tab;
+                }
             },
 
             async fetchSettings() {

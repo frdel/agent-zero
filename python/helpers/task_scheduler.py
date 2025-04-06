@@ -1,12 +1,15 @@
 import asyncio
+from datetime import datetime, timezone, timedelta
+import json
 import os
 import random
 import threading
+from urllib.parse import urlparse
 import uuid
-from datetime import datetime, timezone, timedelta
+from dataclasses import dataclass
 from enum import Enum
 from os.path import exists
-from typing import ClassVar, Literal, Optional, Union, Dict, Any, Type, TypeVar, cast
+from typing import Any, Callable, Coroutine, Dict, Literal, Optional, Type, TypeVar, Union, cast, ClassVar
 
 import nest_asyncio
 nest_asyncio.apply()
@@ -14,12 +17,14 @@ nest_asyncio.apply()
 from crontab import CronTab
 from pydantic import BaseModel, Field, PrivateAttr
 
-from agent import Agent, AgentContext, UserMessage
+from agent import Agent, AgentConfig, AgentContext, UserMessage
 from initialize import initialize
 from python.helpers.persist_chat import load_tmp_chats, save_tmp_chat
 from python.helpers.print_style import PrintStyle
 from python.helpers.defer import DeferredTask
-from python.helpers.files import make_dirs, write_file, get_abs_path, read_file
+from python.helpers.files import get_abs_path, list_files, make_dirs, read_file, write_file
+from python.helpers.persist_chat import load_tmp_chats, save_tmp_chat
+from python.helpers.print_style import PrintStyle
 
 SCHEDULER_FOLDER = "memory/scheduler"
 
@@ -115,7 +120,7 @@ class AdHocTask(BaseModel):
                 self.token = token
                 self.updated_at = datetime.now(timezone.utc)
 
-    def check_schedule(self) -> bool:
+    def check_schedule(self, frequency_seconds: float = 60.0) -> bool:
         with self._lock:
             return False
 
@@ -287,9 +292,10 @@ class SchedulerTaskList(BaseModel):
         with self._lock:
             return self.tasks
 
-    def get_due_tasks(self) -> list[Union[ScheduledTask, AdHocTask]]:
+    async def get_due_tasks(self) -> list[Union[ScheduledTask, AdHocTask]]:
         with self._lock:
-            return [task for task in self.tasks if task.check_schedule()]
+            await self.reload()
+            return [task for task in self.tasks if task.check_schedule() and task.state == TaskState.IDLE]
 
     def get_task_by_uuid(self, task_uuid: str) -> Union[ScheduledTask, AdHocTask] | None:
         with self._lock:
@@ -356,7 +362,7 @@ class TaskScheduler:
         return self._tasks.get_task_by_name(name)
 
     async def tick(self):
-        for task in self._tasks.get_due_tasks():
+        for task in await self._tasks.get_due_tasks():
             await self._run_task(task)
 
     async def run_task_by_uuid(self, task_uuid: str):
@@ -432,14 +438,8 @@ class TaskScheduler:
             if task_snapshot is None:
                 self._printer.print(f"Scheduler Task with UUID '{task_uuid}' not found")
                 return
-            if not isinstance(task_snapshot, ScheduledTask):
-                self._printer.error(f"Scheduler Task '{task_snapshot.name}' is not an ScheduledTask, this should not happen, skipping")
-                return
             if task_snapshot.state == TaskState.RUNNING:
                 self._printer.print(f"Scheduler Task '{task_snapshot.name}' already running, skipping")
-                return
-            if task_snapshot.state != TaskState.IDLE:
-                self._printer.print(f"Scheduler Task '{task_snapshot.name}' state is '{task_snapshot.state}', skipping")
                 return
 
             # Atomically fetch and check the task's current state
@@ -456,6 +456,11 @@ class TaskScheduler:
                 self._printer.print(f"Scheduler Task '{current_task.name}' started")
 
                 context = await self._get_chat_context(current_task)
+
+                # Ensure the context is properly registered in the AgentContext._contexts
+                # This is critical for the polling mechanism to find and stream logs
+                AgentContext._contexts[context.id] = context
+
                 agent = Agent(0, context.config, context)
 
                 # Prepare attachment filenames for logging
@@ -463,7 +468,16 @@ class TaskScheduler:
                 if current_task.attachments:
                     for attachment in current_task.attachments:
                         if os.path.exists(attachment):
-                            attachment_filenames.append(os.path.basename(attachment))
+                            attachment_filenames.append(attachment)
+                        else:
+                            try:
+                                url = urlparse(attachment)
+                                if url.scheme in ["http", "https", "ftp", "ftps", "sftp"]:
+                                    attachment_filenames.append(attachment)
+                                else:
+                                    self._printer.print(f"Skipping attachment: [{attachment}]")
+                            except Exception:
+                                self._printer.print(f"Skipping attachment: [{attachment}]")
 
                 self._printer.print("User message:")
                 self._printer.print(f"> {current_task.prompt}")
@@ -485,8 +499,10 @@ class TaskScheduler:
                     UserMessage(
                         message=current_task.prompt,
                         system_message=[current_task.system_prompt],
-                        attachments=[]))
+                        attachments=attachment_filenames))
 
+                # Persist after setting up the context but before running the agent
+                # This ensures the task context is saved and can be found by polling
                 await self._persist_chat(current_task, context)
 
                 result = await agent.monologue()
@@ -578,7 +594,7 @@ def parse_task_schedule(schedule_data: Dict[str, str]) -> TaskSchedule:
             weekday=schedule_data.get('weekday', '*')
         )
     except Exception as e:
-        raise ValueError(f"Invalid schedule format: {e}")
+        raise ValueError(f"Invalid schedule format: {e}") from e
 
 
 T = TypeVar('T', bound=Union[ScheduledTask, AdHocTask])

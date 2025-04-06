@@ -5,8 +5,6 @@
 
 // Add a document ready event handler to ensure the scheduler tab can be clicked on first load
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOMContentLoaded: Setting up scheduler tab click handler');
-
     // Setup scheduler tab click handling
     const setupSchedulerTab = () => {
         const settingsModal = document.getElementById('settingsModal');
@@ -15,15 +13,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        console.log('Setting up click interceptor for scheduler tab');
-
         // Create a global event listener for clicks on the scheduler tab
         document.addEventListener('click', function(e) {
             // Find if the click was on the scheduler tab or its children
             const schedulerTab = e.target.closest('.settings-tab[title="Task Scheduler"]');
             if (!schedulerTab) return;
 
-            console.log('Intercepted click on scheduler tab');
             e.preventDefault();
             e.stopPropagation();
 
@@ -31,7 +26,6 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const modalData = Alpine.$data(settingsModal);
                 if (modalData.activeTab !== 'scheduler') {
-                    console.log(`Directly switching to scheduler tab via click interceptor.`);
                     // Directly call the modal's switchTab method
                     modalData.switchTab('scheduler');
                 }
@@ -57,6 +51,7 @@ document.addEventListener('alpine:init', () => {
         filterType: 'all',  // all, scheduled, adhoc
         filterState: 'all',  // all, idle, running, disabled, error
         pollingInterval: null,
+        pollingActive: false, // Track if polling is currently active
         editingTask: null,
         isCreating: false,
         isEditing: false,
@@ -108,32 +103,56 @@ document.addEventListener('alpine:init', () => {
             // Use a small delay to ensure Alpine.js has fully initialized
             // before fetching tasks, which helps prevent layout shift
             setTimeout(() => {
+                // Initial fetch to populate the list
                 this.fetchTasks();
-            }, 50);
 
-            // Set up polling when component is active
-            this.$watch('$store.root.activeTab', (newTab, oldTab) => {
-                if (newTab === 'scheduler') {
+                // Only start polling if the modal is actually open
+                const store = Alpine.store('root');
+                if (store && store.isOpen === true) {
                     this.startPolling();
-                } else if (oldTab === 'scheduler') {
-                    this.stopPolling();
                 }
-            });
+            }, 100);
 
-            // Initial polling if tab is active on load
-            if (this.$store.root.activeTab === 'scheduler') {
-                this.startPolling();
-            }
+            // Initialize safe watchers with defensive checks
+            this.$nextTick(() => {
+                // Watch the modal state from the root store
+                this.$watch('$store.root.isOpen', (isOpen) => {
+                    // Only proceed if the value is not undefined
+                    if (typeof isOpen !== 'undefined') {
+                        if (isOpen === true) {
+                            // Modal just opened
+                            this.startPolling();
+                        } else if (isOpen === false) {
+                            // Modal closed, stop polling
+                            this.stopPolling();
+                        }
+                    }
+                });
+            });
         },
 
         // Start polling for task updates
         startPolling() {
+            // Don't start if already polling
+            if (this.pollingInterval) {
+                return;
+            }
+
+            this.pollingActive = true;
+
+            // Fetch immediately, then set up interval for every 2 seconds
             this.fetchTasks();
-            this.pollingInterval = setInterval(() => this.fetchTasks(), 5000); // Poll every 5 seconds
+            this.pollingInterval = setInterval(() => {
+                if (this.pollingActive) {
+                    this.fetchTasks();
+                }
+            }, 2000); // Poll every 2 seconds as requested
         },
 
         // Stop polling when tab is inactive
         stopPolling() {
+            this.pollingActive = false;
+
             if (this.pollingInterval) {
                 clearInterval(this.pollingInterval);
                 this.pollingInterval = null;
@@ -142,6 +161,16 @@ document.addEventListener('alpine:init', () => {
 
         // Fetch tasks from API
         async fetchTasks() {
+            // Don't fetch if polling is inactive (prevents race conditions)
+            if (!this.pollingActive && this.pollingInterval) {
+                return;
+            }
+
+            // Don't fetch while creating/editing a task
+            if (this.isCreating || this.isEditing) {
+                return;
+            }
+
             this.isLoading = true;
             try {
                 const response = await fetch('/scheduler_tasks_list', {
@@ -160,7 +189,10 @@ document.addEventListener('alpine:init', () => {
                 this.tasks = data.tasks || [];
             } catch (error) {
                 console.error('Error fetching tasks:', error);
-                showToast('Failed to fetch tasks: ' + error.message, 'error');
+                // Only show toast for errors on manual refresh, not during polling
+                if (!this.pollingInterval) {
+                    showToast('Failed to fetch tasks: ' + error.message, 'error');
+                }
             } finally {
                 this.isLoading = false;
             }
