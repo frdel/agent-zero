@@ -1,5 +1,0 @@
-- Favor linux commands for simple tasks where possible
-- Enclose math with $...$
-- Be concise but complete in responses
-- Verify tool outcomes
-- Use step-by-step reasoning
