@@ -1,0 +1,5 @@
+{
+    "python.analysis.typeCheckingMode": "standard",
+    "windsurfPyright.analysis.diagnosticMode": "workspace",
+    "windsurfPyright.analysis.typeCheckingMode": "standard",
+}
