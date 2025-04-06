@@ -90,6 +90,30 @@ RUN bash /ins/install_A0.sh $BRANCH
 ARG CACHE_DATE=none
 RUN echo "cache buster $CACHE_DATE" && bash /ins/install_A02.sh $BRANCH
 
+# Add Playwright environment variables to ensure proper browser installation
+ENV PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
+
+# Install Playwright dependencies - these are required for browser operation
+RUN apt-get update && apt-get install -y \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libpango-1.0-0 \
+    libcairo2 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 # post installation steps
 RUN bash /ins/post_install.sh $BRANCH
 

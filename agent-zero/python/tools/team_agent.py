@@ -585,6 +585,42 @@ When working with files in the /root/ directory:
    }}
    ```
 
+5. UNIFIED COMMAND EXECUTION: Combine commands with verification
+   ```json
+   {{
+       "thoughts": ["Creating directory structure all at once"],
+       "tool_name": "code_execution_tool",
+       "tool_args": {{
+           "runtime": "terminal",
+           "code": "mkdir -p /root/myproject && ls -la /root/myproject && mkdir -p /root/myproject/subdir1 /root/myproject/subdir2 && ls -la /root/myproject"
+       }}
+   }}
+   ```
+
+6. ALTERNATIVE PATH STRATEGY: Use current directory as fallback
+   ```json
+   {{
+       "thoughts": ["Using current directory as fallback"],
+       "tool_name": "code_execution_tool",
+       "tool_args": {{
+           "runtime": "terminal",
+           "code": "pwd && mkdir -p ./myproject/subdir1 ./myproject/subdir2 && ls -la ./myproject"
+       }}
+   }}
+   ```
+
+7. PYTHON-FIRST APPROACH: Use Python for critical file operations
+   ```json
+   {{
+       "thoughts": ["Using Python for reliable directory creation"],
+       "tool_name": "code_execution_tool",
+       "tool_args": {{
+           "runtime": "python",
+           "code": "import os\\n\\n# Create all directories at once\\nos.makedirs('/root/myproject/subdir1', exist_ok=True)\\nos.makedirs('/root/myproject/subdir2', exist_ok=True)\\n\\n# Verify\\nprint(f\"Created: {{os.path.exists('/root/myproject/subdir1')}}\")"
+       }}
+   }}
+   ```
+
 IMPORTANT: Files in /root/ PERSIST between tool invocations and are accessible to other team members. Always use complete file paths and document created files for your team.
 
 EXPANDED FILE OPERATION EXAMPLES:

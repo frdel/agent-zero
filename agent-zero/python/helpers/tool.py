@@ -31,11 +31,16 @@ class Tool:
                 PrintStyle().print()
                 
     async def after_execution(self, response: Response, **kwargs):
-        text = response.message.strip()
+        # Handle None message gracefully
+        if response.message is None:
+            text = ""
+        else:
+            text = response.message.strip()
+        
         await self.agent.hist_add_tool_result(self.name, text)
         PrintStyle(font_color="#1B4F72", background_color="white", padding=True, bold=True).print(f"{self.agent.agent_name}: Response from tool '{self.name}'")
-        PrintStyle(font_color="#85C1E9").print(response.message)
-        self.log.update(content=response.message)
+        PrintStyle(font_color="#85C1E9").print(response.message if response.message is not None else "")
+        self.log.update(content=response.message if response.message is not None else "")
 
     def get_log_object(self):
         return self.agent.context.log.log(type="tool", heading=f"{self.agent.agent_name}: Using tool '{self.name}'", content="", kvps=self.args)

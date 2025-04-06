@@ -173,6 +173,16 @@ class CodeExecution(Tool):
             r'[#$>]\s*$',  # Simple shell prompt
             r'bash-\d+\.\d+[#$]\s*$',  # Bash version prompt
             r'[a-zA-Z0-9_\-]+:.+?[#$]\s*$',  # Shortened prompts
+            # Error patterns to detect process completion with errors
+            r'.*Error:\s.*$',  # Generic Error pattern
+            r'.*ValueError:\s.*$',  # ValueError
+            r'.*TypeError:\s.*$',  # TypeError 
+            r'.*KeyError:\s.*$',  # KeyError
+            r'.*NameError:\s.*$',  # NameError
+            r'.*ImportError:\s.*$',  # ImportError
+            r'.*AttributeError:\s.*$',  # AttributeError
+            r'.*Cannot dlopen some GPU libraries.*$',  # GPU libraries error
+            r'.*Process still running.*waiting for output\.\.\.$',  # Status message
         ]
         
         # Input prompt patterns to detect when a program is waiting for user input
@@ -185,6 +195,8 @@ class CodeExecution(Tool):
             r'.*[Cc]ontinue.*\(y/n\).*:\s*$',  # Continue prompts (y/n)
             r'.*\(y/n\).*\s*$',  # Simple y/n prompts
             r'.*\[y/N\].*\s*$',  # Alternative y/N format
+            r'.*\[Y/n\].*\s*$',  # Package manager confirmation prompt format
+            r'.*[Dd]o you want to continue\?.*\[Y/n\].*\s*$',  # Exact apt-get prompt
         ]
         
         import re
@@ -198,6 +210,25 @@ class CodeExecution(Tool):
             elapsed_time = time.time() - start_time
             # Check if process is still running
             process_running = hasattr(self.state.shell, 'is_process_running') and self.state.shell.is_process_running()
+            
+            # Check for error patterns in the output that would indicate the process has terminated with error
+            error_detected = False
+            if full_output and (
+                "Traceback (most recent call last)" in full_output or
+                "Error:" in full_output or
+                "ValueError:" in full_output or
+                "TypeError:" in full_output or
+                "KeyError:" in full_output or
+                "NameError:" in full_output or
+                "ImportError:" in full_output or
+                "AttributeError:" in full_output or
+                "Cannot dlopen some GPU libraries" in full_output
+            ):
+                error_detected = True
+                # If error detected but process is still marked as running, override the status
+                if process_running:
+                    process_running = False
+                    PrintStyle(font_color="#FF6347").stream("\n[Error detected, overriding process running status]\n")
             
             # Only enforce timeout if the process is not running AND max_exec_time is positive
             # Never timeout a running process - let it complete or detect a shell prompt
@@ -226,10 +257,29 @@ class CodeExecution(Tool):
                     # Set a short grace period (2 seconds) to wait for any final output
                     idle = int(wait_with_output / SLEEP_TIME) - 20  # 20 iterations = ~2 seconds left
             
+            # Also mark as terminated if we detected an error earlier
+            if error_detected and not waiting_for_process_termination:
+                PrintStyle(font_color="#FF6347").stream("\n[Error detected, command appears to have failed]\n")
+                waiting_for_process_termination = True
+                # Shorter grace period for errors
+                idle = int(wait_with_output / SLEEP_TIME) - 10  # 10 iterations = ~1 second left
+            
             # Check if there's an input prompt in the output indicating the program is waiting for input
             last_line = full_output.rstrip().split('\n')[-1] if full_output else ""
+            
+            # Debug line to help diagnose input prompt issues
+            if process_running and (("[Y/n]" in last_line) or ("Do you want to continue?" in last_line) or ("?" in last_line)):
+                PrintStyle(font_color="#FFA500").stream(f"\n[DEBUG] Checking input prompt: '{last_line}'\n")
+            
             if process_running and input_prompt_regex.search(last_line):
                 input_needed_msg = "\n[Input prompt detected, returning to agent]\n"
+                PrintStyle(font_color="#FFD700").stream(input_needed_msg)  # Gold color for input prompts
+                full_output += input_needed_msg
+                self.log.update(content=full_output)
+                break
+            elif process_running and "[Y/n]" in last_line or "Do you want to continue?" in last_line:
+                # Specific handling for package installation prompts
+                input_needed_msg = "\n[Package installation prompt detected, returning to agent]\n"
                 PrintStyle(font_color="#FFD700").stream(input_needed_msg)  # Gold color for input prompts
                 full_output += input_needed_msg
                 self.log.update(content=full_output)
