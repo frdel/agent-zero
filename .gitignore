@@ -4,6 +4,9 @@
 **/__pycache__/
 **/.conda/
 
+# Ignore docker/run/agent-zero directory
+docker/run/agent-zero/
+
 # ignore test files in root dir
 /*.test.py
 
