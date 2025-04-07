@@ -183,6 +183,8 @@ class CodeExecution(Tool):
             r'.*AttributeError:\s.*$',  # AttributeError
             r'.*Cannot dlopen some GPU libraries.*$',  # GPU libraries error
             r'.*Process still running.*waiting for output\.\.\.$',  # Status message
+            r'Successfully uninstalled.*$',  # Package uninstallation
+            r'.*Installing PyTorch with CUDA support.*$',  # PyTorch installation
         ]
         
         # Input prompt patterns to detect when a program is waiting for user input
@@ -197,6 +199,9 @@ class CodeExecution(Tool):
             r'.*\[y/N\].*\s*$',  # Alternative y/N format
             r'.*\[Y/n\].*\s*$',  # Package manager confirmation prompt format
             r'.*[Dd]o you want to continue\?.*\[Y/n\].*\s*$',  # Exact apt-get prompt
+            r'.*[Ee]nter.*start.*row.*:\s*$',  # User game input prompt
+            r'.*[Ee]nter.*col.*:\s*$',  # User game input prompt
+            r'.*[Ee]nter.*end.*row.*:\s*$',  # User game input prompt 
         ]
         
         import re
@@ -204,12 +209,42 @@ class CodeExecution(Tool):
         input_prompt_regex = re.compile('|'.join(input_prompt_patterns))
         
         waiting_for_process_termination = False
+        input_detected = False
         
         while True:
             # Check if we've exceeded max_exec_time, but only enforce if process is not running
             elapsed_time = time.time() - start_time
             # Check if process is still running
             process_running = hasattr(self.state.shell, 'is_process_running') and self.state.shell.is_process_running()
+            
+            # Special handling for long-running ML processes and installations
+            ml_process_keywords = [
+                "Installing PyTorch with CUDA support", 
+                "Successfully uninstalled",
+                "Checking dependencies",
+                "Downloading",
+                "Generating image",
+                "Loading model",
+                "Training model",
+                "Epoch",
+                "Iteration",
+                "Processing",
+                "Computing",
+                "Installing",
+                "Building wheel",
+                "Uninstalling",
+                "step",
+                "steps"
+            ]
+            
+            # Special handling for package installation messages
+            package_installation_detected = any(pattern in full_output for pattern in ml_process_keywords)
+            
+            # Additional check for installation process
+            if package_installation_detected and process_running:
+                PrintStyle(font_color="#85C1E9").stream("\n[Long-running process detected, process still considered running]\n")
+                idle = 0  # Reset idle counter since we know process is actively running
+                last_status_time = time.time()
             
             # Check for error patterns in the output that would indicate the process has terminated with error
             error_detected = False
@@ -227,8 +262,24 @@ class CodeExecution(Tool):
                 error_detected = True
                 # If error detected but process is still marked as running, override the status
                 if process_running:
-                    process_running = False
-                    PrintStyle(font_color="#FF6347").stream("\n[Error detected, overriding process running status]\n")
+                    # Don't automatically override status during package installation
+                    if not package_installation_detected:
+                        process_running = False
+                        PrintStyle(font_color="#FF6347").stream("\n[Error detected, overriding process running status]\n")
+            
+            # Detect if we're in a waiting state with an active process but no output
+            inactive_but_running = (process_running and 
+                                   idle > wait_with_output / SLEEP_TIME * 3 and 
+                                   not waiting_for_process_termination and
+                                   not package_installation_detected)
+            
+            if inactive_but_running:
+                # For long-running processes with no output, periodically ping to ensure it's still alive
+                idle_time = idle * SLEEP_TIME
+                if idle_time > 30:  # Every 30 seconds for very quiet processes
+                    PrintStyle(font_color="#FFA500").stream(f"\n[Process running but inactive for {idle_time:.1f}s - checking status]\n")
+                    # Reset the idle counter but don't break yet - wait longer for truly long-running processes
+                    idle = int(wait_with_output / SLEEP_TIME)
             
             # Only enforce timeout if the process is not running AND max_exec_time is positive
             # Never timeout a running process - let it complete or detect a shell prompt
@@ -258,28 +309,53 @@ class CodeExecution(Tool):
                     idle = int(wait_with_output / SLEEP_TIME) - 20  # 20 iterations = ~2 seconds left
             
             # Also mark as terminated if we detected an error earlier
-            if error_detected and not waiting_for_process_termination:
+            if error_detected and not waiting_for_process_termination and not package_installation_detected:
                 PrintStyle(font_color="#FF6347").stream("\n[Error detected, command appears to have failed]\n")
                 waiting_for_process_termination = True
                 # Shorter grace period for errors
                 idle = int(wait_with_output / SLEEP_TIME) - 10  # 10 iterations = ~1 second left
             
             # Check if there's an input prompt in the output indicating the program is waiting for input
-            last_line = full_output.rstrip().split('\n')[-1] if full_output else ""
+            last_lines = full_output.rstrip().split('\n')[-5:] if full_output else []
             
-            # Debug line to help diagnose input prompt issues
-            if process_running and (("[Y/n]" in last_line) or ("Do you want to continue?" in last_line) or ("?" in last_line)):
-                PrintStyle(font_color="#FFA500").stream(f"\n[DEBUG] Checking input prompt: '{last_line}'\n")
-            
-            if process_running and input_prompt_regex.search(last_line):
+            # Enhanced input prompt detection, looking at the last few lines
+            input_prompt_detected = False
+            game_input_detected = False
+
+            # Pattern for game-specific inputs
+            game_input_patterns = [
+                r'[Ee]nter.*start.*row', 
+                r'[Ee]nter.*col', 
+                r'[Ee]nter.*end.*row',
+                r'[Pp]layer.*turn'
+            ]
+
+            # First check for game-specific patterns with higher priority
+            for line in last_lines:
+                for pattern in game_input_patterns:
+                    if re.search(pattern, line):
+                        game_input_detected = True
+                        input_prompt_detected = True
+                        PrintStyle(font_color="#00FF00").stream(f"\n[Game input prompt detected: '{line.strip()}']\n")
+                        break
+                if game_input_detected:
+                    break
+
+            # If no game input detected, check for other input prompts
+            if not input_prompt_detected:
+                for line in last_lines:
+                    if input_prompt_regex.search(line) or \
+                       "[Input prompt detected]" in line or \
+                       "[Y/n]" in line or \
+                       "Do you want to continue?" in line or \
+                       "Enter" in line and ":" in line and not "error" in line.lower():
+                        input_prompt_detected = True
+                        PrintStyle(font_color="#FFA500").stream(f"\n[Generic input prompt detected: '{line.strip()}']\n")
+                        break
+
+            if process_running and input_prompt_detected and not input_detected:
+                input_detected = True  # Set flag to avoid repeated detection
                 input_needed_msg = "\n[Input prompt detected, returning to agent]\n"
-                PrintStyle(font_color="#FFD700").stream(input_needed_msg)  # Gold color for input prompts
-                full_output += input_needed_msg
-                self.log.update(content=full_output)
-                break
-            elif process_running and "[Y/n]" in last_line or "Do you want to continue?" in last_line:
-                # Specific handling for package installation prompts
-                input_needed_msg = "\n[Package installation prompt detected, returning to agent]\n"
                 PrintStyle(font_color="#FFD700").stream(input_needed_msg)  # Gold color for input prompts
                 full_output += input_needed_msg
                 self.log.update(content=full_output)
@@ -290,6 +366,7 @@ class CodeExecution(Tool):
                 self.log.update(content=full_output)
                 idle = 0
                 last_status_time = time.time()
+                input_detected = False  # Reset flag if we get new output
                 waiting_for_process_termination = False  # Reset if we get new output
             else:
                 idle += 1
