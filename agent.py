@@ -371,7 +371,7 @@ class Agent:
             [
                 SystemMessage(content=system_text),
                 *history_langchain,
-                AIMessage(content="JSON:"), # force the LLM to start with json
+                # AIMessage(content="JSON:"), # force the LLM to start with json
             ]
         )
 
