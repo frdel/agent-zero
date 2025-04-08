@@ -6,6 +6,7 @@ duckduckgo-search==6.1.12
 faiss-cpu==1.8.0.post1
 flask[async]==3.0.3
 flask-basicauth==0.2.0
+flaredantic==0.1.4
 GitPython==3.1.43
 inputimeout==1.0.4
 langchain-anthropic==0.3.3
