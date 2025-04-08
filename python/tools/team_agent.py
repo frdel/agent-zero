@@ -642,7 +642,7 @@ Remember: The response_tool is REQUIRED for your final output. Deliver your resu
         
         try:
             # Execute task using call_subordinate pattern
-            await agent_instance.hist_add_user_message(UserMessage(message=prompt, attachments=[]))
+            agent_instance.hist_add_user_message(UserMessage(message=prompt, attachments=[]))
             result = await agent_instance.monologue()
             self.log.update(progress=f"Received response from {agent_role} agent")
         except Exception as e:
