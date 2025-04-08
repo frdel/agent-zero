@@ -89,12 +89,12 @@ class CodeExecution(Tool):
     async def after_execution(self, response, **kwargs):
         self.agent.hist_add_tool_result(self.name, response.message)
 
-    async def prepare_state(self, reset=False):
+    async def prepare_state(self, reset=False, session=None):
         self.state = self.agent.get_data("_cot_state")
         if not self.state or reset:
 
             # initialize docker container if execution in docker is configured
-            if self.agent.config.code_exec_docker_enabled:
+            if not self.state and self.agent.config.code_exec_docker_enabled:
                 docker = DockerContainerManager(
                     logger=self.agent.context.log,
                     name=self.agent.config.code_exec_docker_name,
@@ -104,27 +104,43 @@ class CodeExecution(Tool):
                 )
                 docker.start_container()
             else:
-                docker = None
+                docker = self.state.docker if self.state else None
 
-            # initialize local or remote interactive shell insterface
-            if self.agent.config.code_exec_ssh_enabled:
-                pswd = (
-                    self.agent.config.code_exec_ssh_pass
-                    if self.agent.config.code_exec_ssh_pass
-                    else await rfc_exchange.get_root_password()
-                )
-                shell = SSHInteractiveSession(
-                    self.agent.context.log,
-                    self.agent.config.code_exec_ssh_addr,
-                    self.agent.config.code_exec_ssh_port,
-                    self.agent.config.code_exec_ssh_user,
-                    pswd,
-                )
-            else:
-                shell = LocalInteractiveSession()
+            # initialize shells dictionary if not exists
+            shells = {} if not self.state else self.state.shells.copy()
+            
+            # Only reset the specified session if provided
+            if session is not None and session in shells:
+                shells[session].close()
+                del shells[session]
+            elif reset and not session:
+                # Close all sessions if full reset requested
+                for s in list(shells.keys()):
+                    shells[s].close()
+                shells = {}
 
-            self.state = State(shells={0: shell}, docker=docker)
-            await shell.connect()
+            # initialize local or remote interactive shell interface for session 0 if needed
+            if 0 not in shells:
+                if self.agent.config.code_exec_ssh_enabled:
+                    pswd = (
+                        self.agent.config.code_exec_ssh_pass
+                        if self.agent.config.code_exec_ssh_pass
+                        else await rfc_exchange.get_root_password()
+                    )
+                    shell = SSHInteractiveSession(
+                        self.agent.context.log,
+                        self.agent.config.code_exec_ssh_addr,
+                        self.agent.config.code_exec_ssh_port,
+                        self.agent.config.code_exec_ssh_user,
+                        pswd,
+                    )
+                else:
+                    shell = LocalInteractiveSession()
+
+                shells[0] = shell
+                await shell.connect()
+            
+            self.state = State(shells=shells, docker=docker)
         self.agent.set_data("_cot_state", self.state)
 
     async def execute_python_code(self, session: int, code: str, reset: bool = False):
@@ -222,10 +238,8 @@ class CodeExecution(Tool):
         return full_output
 
     async def reset_terminal(self, session=0):
-        if session in self.state.shells:
-            self.state.shells[session].close()
-            del self.state.shells[session]
-        await self.prepare_state(reset=True)
+        # Only reset the specified session while preserving others
+        await self.prepare_state(reset=True, session=session)
         response = self.agent.read_prompt("fw.code_reset.md")
         self.log.update(content=response)
         return response
