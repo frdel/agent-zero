@@ -492,19 +492,46 @@ YOUR TASK (ID: {task_id}):
 
 AVAILABLE TOOLS:
 - knowledge_tool: For research and information gathering
-- code_execution_tool: For computation, data processing, file operations, visualization
+- code_execution_tool: For computation, data processing, file operations
 - response_tool: REQUIRED for your final output
+
+TERMINAL & CODE EXECUTION GUIDELINES:
+
+1. For code execution, select the appropriate runtime:
+   - "terminal": Shell commands and system operations
+   - "python": Python code execution
+   - "nodejs": JavaScript code execution
+   - "output": Wait for output from long-running processes
+   - "reset": Kill a stuck or non-responsive process
+
+2. HANDLING TERMINAL INTERACTIONS:
+   - For ANY command requiring user input (Y/N prompts, etc.), use "terminal" runtime in your next step
+   - When installation prompts appear, respond with follow-up "terminal" commands
+   - If a command seems stuck or frozen, use "reset" runtime to kill the process
+   - For long-running commands, use "output" runtime to wait for completion
+
+3. PROGRESSIVE DEVELOPMENT:
+   - Always develop incrementally, with small working steps
+   - Test each component before integrating
+   - If you encounter errors, try simplified approaches rather than repeating the same pattern
+   - Don't get stuck in loops - if something fails twice, try a different approach
+
+4. FILE OPERATIONS:
+   - Always verify file existence with "ls" before operations
+   - Use explicit paths for all file operations (prefer /root/ directory)
+   - Files in /root/ PERSIST between calls and are accessible to the team
+   - Document any files you create for other team members
 
 TOOL USAGE:
 
-For code execution (supports python, nodejs, terminal):
+For code execution:
 ```json
 {{
     "thoughts": ["I need to process data or perform calculations"],
     "tool_name": "code_execution_tool",
     "tool_args": {{
-        "runtime": "python",  // Also: "terminal", "nodejs", "output" (wait for results), "reset" (if stuck)
-        "code": "import os\\nimport json\\n\\n# Process data\\nresults = {{'key': 'value'}}\\n\\n# Save outputs to /root directory\\nwith open('/root/results.json', 'w') as f:\\n    json.dump(results, f, indent=2)\\n\\nprint('Results saved successfully')"  // Always use explicit print()/console.log()
+        "runtime": "python",  // Options: "terminal", "nodejs", "output", "reset"
+        "code": "import os\\n\\nprint('Current directory:', os.getcwd())"  // Always use explicit print()/console.log()
     }}
 }}
 ```
@@ -524,8 +551,8 @@ For your final response:
 ```json
 {{
     "thoughts": [
-        "Analysis of approach and process",
-        "Key findings and deliverables"
+        "Analysis of approach and results",
+        "Key findings and limitations"
     ],
     "tool_name": "response",
     "tool_args": {{
@@ -534,314 +561,77 @@ For your final response:
 }}
 ```
 
-FILE OPERATIONS BEST PRACTICES:
+CORE TERMINAL PATTERNS:
 
-When working with files in the /root/ directory:
-1. CHECK: Always verify file existence first with terminal commands
+1. CREATING FILES:
    ```json
    {{
-       "thoughts": ["I need to check if files exist"],
+       "thoughts": ["Creating a file with code"],
        "tool_name": "code_execution_tool",
        "tool_args": {{
            "runtime": "terminal",
-           "code": "ls -la /root/"
+           "code": "cat << 'EOF' > /root/filename.py\\n# Python code here\\ndef main():\\n    print('Hello')\\n\\nif __name__ == '__main__':\\n    main()\\nEOF"
        }}
    }}
    ```
+   IMPORTANT: The 'EOF' marker MUST be at the start of a new line with NO SPACES to properly close heredoc.
 
-2. CREATE/MODIFY: Use the terminal runtime with heredoc for reliable file creation
+2. DIRECTORY OPERATIONS:
    ```json
    {{
-       "thoughts": ["I need to save code to a file"],
+       "thoughts": ["Creating and checking directories"],
        "tool_name": "code_execution_tool",
        "tool_args": {{
            "runtime": "terminal",
-           "code": "cat << 'EOF' > /root/filename.py\\n# Your code here\\n\\ndef main():\\n    print('Hello')\\n\\nif __name__ == '__main__':\\n    main()\\nEOF"
+           "code": "mkdir -p /root/myproject && ls -la /root/myproject"
        }}
    }}
    ```
 
-3. VERIFY: Always confirm your file operations worked
+3. INSTALLING PACKAGES:
    ```json
    {{
-       "thoughts": ["Verifying the file was created properly"],
-       "tool_name": "code_execution_tool", 
-       "tool_args": {{
-           "runtime": "terminal",
-           "code": "cat /root/filename.py"
-       }}
-   }}
-   ```
-
-4. TEST: Execute your files to test functionality
-   ```json
-   {{
-       "thoughts": ["Testing the script functionality"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "python",
-           "code": "import sys\\nsys.path.append('/root')\\n\\ntry:\\n    import filename\\n    # Run tests here\\nexcept Exception as e:\\n    print(f'Error: {{e}}')"
-       }}
-   }}
-   ```
-
-5. UNIFIED COMMAND EXECUTION: Combine commands with verification
-   ```json
-   {{
-       "thoughts": ["Creating directory structure all at once"],
+       "thoughts": ["Installing required packages"],
        "tool_name": "code_execution_tool",
        "tool_args": {{
            "runtime": "terminal",
-           "code": "mkdir -p /root/myproject && ls -la /root/myproject && mkdir -p /root/myproject/subdir1 /root/myproject/subdir2 && ls -la /root/myproject"
+           "code": "pip install numpy pandas matplotlib"
        }}
    }}
    ```
 
-6. ALTERNATIVE PATH STRATEGY: Use current directory as fallback
+4. WAITING FOR OUTPUT:
    ```json
    {{
-       "thoughts": ["Using current directory as fallback"],
+       "thoughts": ["Waiting for long-running process to complete"],
        "tool_name": "code_execution_tool",
        "tool_args": {{
-           "runtime": "terminal",
-           "code": "pwd && mkdir -p ./myproject/subdir1 ./myproject/subdir2 && ls -la ./myproject"
+           "runtime": "output"
        }}
    }}
    ```
 
-7. PYTHON-FIRST APPROACH: Use Python for critical file operations
+5. RESETTING TERMINAL:
    ```json
    {{
-       "thoughts": ["Using Python for reliable directory creation"],
+       "thoughts": ["Terminal is stuck or unresponsive"],
        "tool_name": "code_execution_tool",
        "tool_args": {{
-           "runtime": "python",
-           "code": "import os\\n\\n# Create all directories at once\\nos.makedirs('/root/myproject/subdir1', exist_ok=True)\\nos.makedirs('/root/myproject/subdir2', exist_ok=True)\\n\\n# Verify\\nprint(f\"Created: {{os.path.exists('/root/myproject/subdir1')}}\")"
-       }}
-   }}
-   ```
-
-IMPORTANT: Files in /root/ PERSIST between tool invocations and are accessible to other team members. Always use complete file paths and document created files for your team.
-
-EXPANDED FILE OPERATION EXAMPLES:
-
-1. APPENDING to existing files:
-   ```json
-   {{
-       "thoughts": ["I need to append to an existing file"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "terminal",
-           "code": "cat << 'EOF' >> /root/existing_file.py\\n\\n# New content to append\\ndef new_function():\\n    return 'New functionality'\\nEOF"
-       }}
-   }}
-   ```
-
-2. READING specific lines from files:
-   ```json
-   {{
-       "thoughts": ["I need to read specific lines from a file"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "terminal",
-           "code": "sed -n '10,20p' /root/some_file.py"
-       }}
-   }}
-   ```
-
-3. SEARCHING in files:
-   ```json
-   {{
-       "thoughts": ["I need to find specific content in files"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "terminal",
-           "code": "grep -n 'function_name' /root/*.py"
-       }}
-   }}
-   ```
-
-4. RENAMING files:
-   ```json
-   {{
-       "thoughts": ["I need to rename a file"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "terminal",
-           "code": "mv /root/old_name.py /root/new_name.py && echo 'File renamed successfully'"
-       }}
-   }}
-   ```
-
-5. JSON file handling:
-   ```json
-   {{
-       "thoughts": ["I need to update a JSON configuration file"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "python",
-           "code": "import json\\n\\n# Read existing JSON\\ntry:\\n    with open('/root/config.json', 'r') as f:\\n        config = json.load(f)\\nexcept FileNotFoundError:\\n    config = {{}}\\n\\n# Update configuration\\nconfig['new_setting'] = 'new_value'\\n\\n# Write back to file\\nwith open('/root/config.json', 'w') as f:\\n    json.dump(config, f, indent=2)\\n\\nprint(f'Updated config: {{config}}')"
-       }}
-   }}
-   ```
-
-COMPREHENSIVE TESTING PROTOCOLS:
-
-1. UNIT TESTING: Test individual functions
-   ```json
-   {{
-       "thoughts": ["Testing individual functions"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "python",
-           "code": "import sys\\nsys.path.append('/root')\\n\\n# Import the module to test\\nimport my_module\\n\\ndef test_function():\\n    # Define test cases\\n    test_cases = [\\n        {{\\n            'input': 5,\\n            'expected': 25,\\n            'description': 'Testing with positive integer'\\n        }},\\n        {{\\n            'input': -3,\\n            'expected': 9,\\n            'description': 'Testing with negative integer'\\n        }},\\n        {{\\n            'input': 0,\\n            'expected': 0,\\n            'description': 'Testing with zero'\\n        }}\\n    ]\\n    \\n    # Run tests\\n    for tc in test_cases:\\n        result = my_module.square(tc['input'])\\n        if result == tc['expected']:\\n            print(f\"PASS: {{tc['description']}} - Got {{result}}\")\\n        else:\\n            print(f\"FAIL: {{tc['description']}} - Expected {{tc['expected']}}, Got {{result}}\")\\n\\ntest_function()"
-       }}
-   }}
-   ```
-
-2. INTEGRATION TESTING: Test interaction between components
-   ```json
-   {{
-       "thoughts": ["Testing integration between components"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "python",
-           "code": "import sys\\nsys.path.append('/root')\\n\\n# Import modules to test integration\\nfrom data_processor import process_data\\nfrom data_validator import validate_data\\n\\n# Test data\\ntest_input = [1, 2, 'invalid', 3]\\n\\nprint(f\"Input: {{test_input}}\")\\n\\ntry:\\n    # Test the integration flow\\n    print(\"Step 1: Validating data...\")\\n    validated_data = validate_data(test_input)\\n    print(f\"Validation result: {{validated_data}}\")\\n    \\n    print(\"Step 2: Processing validated data...\")\\n    processed_data = process_data(validated_data)\\n    print(f\"Processing result: {{processed_data}}\")\\n    \\n    print(\"✅ Integration test passed!\")\\nexcept Exception as e:\\n    print(f\"❌ Integration test failed: {{e}}\")"
-       }}
-   }}
-   ```
-
-3. ERROR HANDLING TESTS: Verify proper error handling
-   ```json
-   {{
-       "thoughts": ["Testing error handling"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "python",
-           "code": "import sys\\nsys.path.append('/root')\\n\\n# Import the module to test\\nimport file_handler\\n\\n# Test error handling\\ndef test_error_handling():\\n    # Test cases for error conditions\\n    error_tests = [\\n        {{\\n            'test': lambda: file_handler.read_file('nonexistent_file.txt'),\\n            'expected_error': FileNotFoundError,\\n            'description': 'Reading nonexistent file'\\n        }},\\n        {{\\n            'test': lambda: file_handler.parse_json('invalid_json.txt'),\\n            'expected_error': json.JSONDecodeError,\\n            'description': 'Parsing invalid JSON'\\n        }}\\n    ]\\n    \\n    # Run error tests\\n    for test in error_tests:\\n        try:\\n            result = test['test']()\\n            print(f\"FAIL: {{test['description']}} - Expected {{test['expected_error'].__name__}} but no error occurred\")\\n        except Exception as e:\\n            if isinstance(e, test['expected_error']):\\n                print(f\"PASS: {{test['description']}} - Correctly raised {{type(e).__name__}}\")\\n            else:\\n                print(f\"FAIL: {{test['description']}} - Expected {{test['expected_error'].__name__}} but got {{type(e).__name__}}\")\\n\\ntest_error_handling()"
-       }}
-   }}
-   ```
-
-4. FUNCTIONAL TESTING: End-to-end workflow testing
-   ```json
-   {{
-       "thoughts": ["Testing complete workflow"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "python",
-           "code": "import sys\\nsys.path.append('/root')\\n\\n# Import the main module that orchestrates the workflow\\nimport workflow\\n\\n# Sample input for workflow\\ninput_data = {{\\n    'user_id': 123,\\n    'parameters': {{\\n        'start_date': '2023-01-01',\\n        'end_date': '2023-01-31',\\n        'type': 'report'\\n    }}\\n}}\\n\\nprint(\"Starting functional test of complete workflow...\")\\nprint(f\"Input: {{input_data}}\")\\n\\ntry:\\n    # Run the entire workflow\\n    result = workflow.run(input_data)\\n    \\n    # Check expected output format\\n    required_keys = ['status', 'result', 'timestamp']\\n    missing_keys = [key for key in required_keys if key not in result]\\n    \\n    if missing_keys:\\n        print(f\"❌ Test failed: Missing required keys: {{missing_keys}}\")\\n    else:\\n        print(f\"✅ Workflow executed successfully with result:\\n{{result}}\\n\\nAll required keys present in output.\")\\nexcept Exception as e:\\n    print(f\"❌ Workflow test failed with error: {{e}}\")"
-       }}
-   }}
-   ```
-
-5. DATA VALIDATION TESTING: Verify input/output formats
-   ```json
-   {{
-       "thoughts": ["Testing data validation"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "python",
-           "code": "import sys\\nsys.path.append('/root')\\n\\n# Import validation module\\nfrom data_validator import validate\\n\\n# Test cases with both valid and invalid data\\ntest_cases = [\\n    {{\\n        'data': {{\\n            'name': 'Test User',\\n            'email': 'test@example.com',\\n            'age': 25\\n        }},\\n        'expected_valid': True,\\n        'description': 'Valid complete user data'\\n    }},\\n    {{\\n        'data': {{\\n            'name': 'Test User',\\n            'email': 'invalid-email'\\n        }},\\n        'expected_valid': False, \\n        'description': 'Invalid email format'\\n    }},\\n    {{\\n        'data': {{\\n            'name': '',\\n            'email': 'test@example.com'\\n        }},\\n        'expected_valid': False,\\n        'description': 'Empty required field'\\n    }}\\n]\\n\\n# Run validation tests\\nfor tc in test_cases:\\n    print(f\"Testing: {{tc['description']}}\\n  Input: {{tc['data']}}\")\\n    \\n    try:\\n        validation_result = validate(tc['data'])\\n        is_valid = validation_result.get('valid', False)\\n        \\n        if is_valid == tc['expected_valid']:\\n            print(f\"  ✅ PASS: Validation returned {{is_valid}} as expected\")\\n        else:\\n            print(f\"  ❌ FAIL: Expected {{tc['expected_valid']}} but got {{is_valid}}\")\\n        \\n        if 'errors' in validation_result and not is_valid:\\n            print(f\"  Validation errors: {{validation_result['errors']}}\")\\n            \\n    except Exception as e:\\n        print(f\"  ❌ FAIL: Validation threw unexpected exception: {{e}}\")\\n    \\n    print(\"\")"
-       }}
-   }}
-   ```
-
-CODE EXECUTION BEST PRACTICES:
-
-1. HEREDOC FORMATTING: Use the correct syntax for heredoc file creation
-   ```json
-   {{
-       "thoughts": ["Creating a Python file with proper heredoc syntax"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "terminal",
-           "code": "cat << 'EOF' > /root/example.py\\n# Python code here\\n\\ndef function():\\n    print('Success')\\n\\nfunction()\\nEOF"
-       }}
-   }}
-   ```
-   IMPORTANT: Note that the 'EOF' marker MUST be at the start of a new line with NO SPACES before it to properly close the heredoc.
-
-2. STRING ESCAPING: Handle nested quotes properly
-   ```json
-   {{
-       "thoughts": ["Handling nested quotes in strings"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "python",
-           "code": "# Single quotes inside double quotes\\nprint(\"This contains 'single quotes'\")\\n\\n# Double quotes inside single quotes\\nprint('This contains \"double quotes\"')\\n\\n# Alternative for complex strings\\nmultiline = '''\\nThis string has both 'single' and \"double\" quotes\\nand spans multiple lines\\n'''\\nprint(multiline)"
-       }}
-   }}
-   ```
-
-3. PYTHON INDENTATION: Maintain consistent indentation (4 spaces recommended)
-   ```json
-   {{
-       "thoughts": ["Using proper Python indentation"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "python",
-           "code": "def outer_function():\\n    # 4 spaces for first level indent\\n    print('First level indent')\\n    \\n    def inner_function():\\n        # 8 spaces for second level indent\\n        print('Second level indent')\\n        \\n        for i in range(3):\\n            # 12 spaces for third level indent\\n            print(f'Third level indent: {{i}}')\\n    \\n    inner_function()\\n\\nouter_function()"
-       }}
-   }}
-   ```
-
-4. INCREMENTAL DEVELOPMENT: Develop and test in small steps
-   ```json
-   {{
-       "thoughts": ["Developing incrementally"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "python",
-           "code": "# Step 1: Define basic structure\\ndef process_data(data):\\n    # TODO: Implement processing\\n    return data\\n\\n# Test simple case first\\ntest_data = ['item1', 'item2']\\nprint(f'Initial test: {{process_data(test_data)}}')"
-       }}
-   }}
-   ```
-   
-   ```json
-   {{
-       "thoughts": ["Extending functionality after testing basics"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "python",
-           "code": "# Step 2: Implement actual processing\\ndef process_data(data):\\n    # Now implementing the actual logic\\n    return [item.upper() for item in data]\\n\\n# Test again with the same data\\ntest_data = ['item1', 'item2']\\nprint(f'Enhanced test: {{process_data(test_data)}}')"
+           "runtime": "reset"
        }}
    }}
    ```
 
 EXECUTION WORKFLOW:
 
-For tasks involving code and files, follow this sequence:
-1. UNDERSTAND the task requirements and how it relates to previous work
-2. CHECK for existing files relevant to your task
-3. DEVELOP your solution incrementally
-4. SAVE your complete solution to the appropriate file
-5. VERIFY your solution works as expected
-6. DOCUMENT your work clearly for other team members
+1. UNDERSTAND: Analyze the task requirements and how they relate to previous work
+2. PLAN: Break down complex problems into smaller, manageable steps
+3. IMPLEMENT: Develop incrementally, with frequent testing and validation
+4. DOCUMENT: Ensure your solution is clear and can be integrated with the team's work
+5. FINALIZE: Submit a comprehensive response with your complete solution
 
-Remember: Your work should build upon previous tasks and enable subsequent tasks.
-
-EXECUTION APPROACH:
-1. Analyze requirements thoroughly
-2. Use appropriate tools for research and computation
-3. Structure your output for clarity and team integration
-4. Include any limitations or uncertainties in your approach
-5. Ensure your final response is comprehensive and directly addresses the task
-
-REQUIRED RESPONSE FORMAT:
-```json
-{{
-    "thoughts": [
-        "Initial analysis and approach",
-        "Implementation process and methods",
-        "Quality assessment and limitations"
-    ],
-    "tool_name": "response",
-    "tool_args": {{
-        "text": "Your complete, detailed deliverable formatted appropriately for team integration"
-    }}
-}}
-```"""
+Remember: The response_tool is REQUIRED for your final output. Deliver your results using this tool.
+"""
         
         # Execute task using call_subordinate pattern
         # Let the user know we're delegating to a team member

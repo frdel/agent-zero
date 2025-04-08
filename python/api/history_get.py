@@ -8,8 +8,8 @@ class GetHistory(ApiHandler):
         ctxid = input.get("context", [])
         context = self.get_context(ctxid)
         agent = context.streaming_agent or context.agent0
-        history = agent.history.output()
-        size = tokens.approximate_tokens(agent.history.output_text())
+        history = agent.history.output_text()
+        size = agent.history.get_tokens()
 
         return {
             "history": history,

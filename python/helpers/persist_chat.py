@@ -89,6 +89,7 @@ def _serialize_context(context: AgentContext):
 
     return {
         "id": context.id,
+        "name": context.name,
         "agents": agents,
         "streaming_agent": (
             context.streaming_agent.number if context.streaming_agent else 0
