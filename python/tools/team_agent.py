@@ -522,15 +522,23 @@ TERMINAL & CODE EXECUTION GUIDELINES:
    - Files in /root/ PERSIST between calls and are accessible to the team
    - Document any files you create for other team members
 
+5. MULTI-TERMINAL MANAGEMENT:
+   - Use the "session" parameter (0-5) to manage multiple terminals
+   - Create a new session if a terminal is waiting for input or running a long process
+   - Reset a specific session if it's stuck: `"runtime": "reset", "session": 1`
+   - Keep code editing and running in separate sessions to avoid conflicts
+   - Use session 0 for main work, other sessions for testing or parallel tasks
+
 TOOL USAGE:
 
-For code execution:
+For code execution, use this format:
 ```json
 {{
-    "thoughts": ["I need to process data or perform calculations"],
+    "thoughts": ["Brief explanation of what you need to do"],
     "tool_name": "code_execution_tool",
     "tool_args": {{
-        "runtime": "python",  // Options: "terminal", "nodejs", "output", "reset"
+        "runtime": "python",  // Options: "terminal", "python", "nodejs", "output", "reset"
+        "session": 0,  // Use different numbers (0-5) for parallel terminal sessions
         "code": "import os\\n\\nprint('Current directory:', os.getcwd())"  // Always use explicit print()/console.log()
     }}
 }}
@@ -539,7 +547,7 @@ For code execution:
 For knowledge lookup:
 ```json
 {{
-    "thoughts": ["I need specific information"],
+    "thoughts": ["Brief explanation of what information you need"],
     "tool_name": "knowledge_tool",
     "tool_args": {{
         "question": "Focused question directly related to my task"
@@ -547,7 +555,7 @@ For knowledge lookup:
 }}
 ```
 
-For your final response:
+For your final response (REQUIRED):
 ```json
 {{
     "thoughts": [
@@ -561,66 +569,19 @@ For your final response:
 }}
 ```
 
-CORE TERMINAL PATTERNS:
+KEY PATTERNS FOR FILE OPERATIONS:
+- Create files with: `cat << 'EOF' > /root/filename.py\n# code here\nEOF`
+- Create directories with: `mkdir -p /root/myproject`
+- Install packages with: `pip install package_name` or `npm install package_name`
+- For long-running processes: Use "output" runtime to check progress
+- If a process is stuck: Use "reset" runtime to kill it
+- If a script waits for input: Use a different session for your next command
 
-1. CREATING FILES:
-   ```json
-   {{
-       "thoughts": ["Creating a file with code"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "terminal",
-           "code": "cat << 'EOF' > /root/filename.py\\n# Python code here\\ndef main():\\n    print('Hello')\\n\\nif __name__ == '__main__':\\n    main()\\nEOF"
-       }}
-   }}
-   ```
-   IMPORTANT: The 'EOF' marker MUST be at the start of a new line with NO SPACES to properly close heredoc.
-
-2. DIRECTORY OPERATIONS:
-   ```json
-   {{
-       "thoughts": ["Creating and checking directories"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "terminal",
-           "code": "mkdir -p /root/myproject && ls -la /root/myproject"
-       }}
-   }}
-   ```
-
-3. INSTALLING PACKAGES:
-   ```json
-   {{
-       "thoughts": ["Installing required packages"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "terminal",
-           "code": "pip install numpy pandas matplotlib"
-       }}
-   }}
-   ```
-
-4. WAITING FOR OUTPUT:
-   ```json
-   {{
-       "thoughts": ["Waiting for long-running process to complete"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "output"
-       }}
-   }}
-   ```
-
-5. RESETTING TERMINAL:
-   ```json
-   {{
-       "thoughts": ["Terminal is stuck or unresponsive"],
-       "tool_name": "code_execution_tool",
-       "tool_args": {{
-           "runtime": "reset"
-       }}
-   }}
-   ```
+COMMON PITFALLS TO AVOID:
+- Don't edit files while another session is running an interactive prompt
+- Don't wait for output on a terminal that's expecting input
+- If you get unexpected errors, check if a previous command is still running
+- Use "reset" on a specific session before starting fresh if you encounter issues
 
 EXECUTION WORKFLOW:
 
