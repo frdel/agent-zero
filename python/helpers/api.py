@@ -20,6 +20,18 @@ class ApiHandler:
         self.app = app
         self.thread_lock = thread_lock
 
+    @classmethod
+    def requires_loopback(cls):
+        return False
+
+    @classmethod
+    def requires_api_key(cls):
+        return False
+
+    @classmethod
+    def requires_auth(cls):
+        return True
+
     @abstractmethod
     async def process(self, input: Input, request: Request) -> Output:
         pass

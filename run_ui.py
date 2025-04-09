@@ -1,6 +1,6 @@
 from functools import wraps
-import os
 import threading
+import signal
 from flask import Flask, request, Response
 from flask_basicauth import BasicAuth
 from python.helpers import errors, files, git
@@ -10,6 +10,10 @@ from python.helpers.cloudflare_tunnel import CloudflareTunnel
 from python.helpers.extract_tools import load_classes_from_folder
 from python.helpers.api import ApiHandler
 from python.helpers.print_style import PrintStyle
+import sys
+import asyncio
+import socket
+import struct
 
 
 # initialize the internal Flask server
@@ -20,6 +24,69 @@ lock = threading.Lock()
 
 # Set up basic authentication
 basic_auth = BasicAuth(app)
+
+
+def is_loopback_address(address):
+    loopback_checker = {
+        socket.AF_INET: lambda x: struct.unpack('!I', socket.inet_aton(x))[0] >> (32 - 8) == 127,
+        socket.AF_INET6: lambda x: x == '::1'
+    }
+    address_type = "hostname"
+    try:
+        socket.inet_pton(socket.AF_INET6, address)
+        address_type = "ipv6"
+    except socket.error:
+        try:
+            socket.inet_pton(socket.AF_INET, address)
+            address_type = "ipv4"
+        except socket.error:
+            address_type = "hostname"
+
+    if address_type == "ipv4":
+        return loopback_checker[socket.AF_INET](address)
+    elif address_type == "ipv6":
+        return loopback_checker[socket.AF_INET6](address)
+    else:
+        for family in (socket.AF_INET, socket.AF_INET6):
+            try:
+                r = socket.getaddrinfo(address, None, family, socket.SOCK_STREAM)
+            except socket.gaierror:
+                return False
+            for family, _, _, _, sockaddr in r:
+                if not loopback_checker[family](sockaddr[0]):
+                    return False
+        return True
+
+
+def requires_api_key(f):
+    @wraps(f)
+    async def decorated(*args, **kwargs):
+        valid_api_key = dotenv.get_dotenv_value("API_KEY")
+        if api_key := request.headers.get("X-API-KEY"):
+            if api_key != valid_api_key:
+                return Response("API key required", 401)
+        elif request.json and request.json.get("api_key"):
+            api_key = request.json.get("api_key")
+            if api_key != valid_api_key:
+                return Response("API key required", 401)
+        else:
+            return Response("API key required", 401)
+        return await f(*args, **kwargs)
+    return decorated
+
+
+# allow only loopback addresses
+def requires_loopback(f):
+    @wraps(f)
+    async def decorated(*args, **kwargs):
+        if not is_loopback_address(request.remote_addr):
+            return Response(
+                "Access denied.",
+                403,
+                {},
+            )
+        return await f(*args, **kwargs)
+    return decorated
 
 
 # require authentication for handlers
@@ -49,7 +116,7 @@ async def serve_index():
     gitinfo = None
     try:
         gitinfo = git.get_git_info()
-    except Exception as e:
+    except Exception:
         gitinfo = {
             "version": "unknown",
             "commit_time": "unknown",
@@ -110,9 +177,23 @@ def run():
         name = handler.__module__.split(".")[-1]
         instance = handler(app, lock)
 
-        @requires_auth
-        async def handle_request():
-            return await instance.handle_request(request=request)
+        if handler.requires_loopback():
+            @requires_loopback
+            async def handle_request():
+                return await instance.handle_request(request=request)
+        elif handler.requires_auth():
+            @requires_auth
+            async def handle_request():
+                return await instance.handle_request(request=request)
+        elif handler.requires_api_key():
+            @requires_api_key
+            async def handle_request():
+                return await instance.handle_request(request=request)
+        else:
+            # Fallback to requires_auth
+            @requires_auth
+            async def handle_request():
+                return await instance.handle_request(request=request)
 
         app.add_url_rule(
             f"/{name}",
@@ -134,6 +215,24 @@ def run():
             request_handler=NoRequestLoggingWSGIRequestHandler,
             threaded=True,
         )
+
+        printer = PrintStyle()
+
+        def signal_handler(sig=None, frame=None):
+            nonlocal tunnel, server, printer
+            with lock:
+                printer.print("Caught signal, stopping server...")
+                server.shutdown()
+                process.stop_server()
+                if tunnel:
+                    tunnel.stop()
+                    tunnel = None
+                printer.print("Server stopped")
+                sys.exit(0)
+
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+
         process.set_server(server)
         server.log_startup()
         server.serve_forever()
