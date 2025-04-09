@@ -17,5 +17,3 @@
 {{ include './agent.system.tool.browser.md' }}
 
 {{ include './agent.system.tool.team_agent.md' }}
-
-{{ include './agent.system.tools_vision.md' }}
