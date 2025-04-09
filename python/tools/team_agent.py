@@ -1312,7 +1312,7 @@ Remember: The response_tool is REQUIRED for your final output. Deliver your resu
         
         try:
             # Execute integration using call to team leader
-            await team_leader.hist_add_user_message(UserMessage(message=integration_prompt, attachments=[]))
+            team_leader.hist_add_user_message(UserMessage(message=integration_prompt, attachments=[]))
             integrated_result = await team_leader.monologue()
             self.log.update(progress="Received integrated response from team leader")
         except Exception as e:
