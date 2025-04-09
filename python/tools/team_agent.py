@@ -505,42 +505,36 @@ TERMINAL & CODE EXECUTION GUIDELINES:
    - "output": Wait for output from long-running processes
    - "reset": Kill a stuck or non-responsive process
 
-2. HANDLING TERMINAL INTERACTIONS:
-   - For ANY command requiring user input (Y/N prompts, etc.), use "terminal" runtime in your next step
-   - When installation prompts appear, respond with follow-up "terminal" commands
-   - If a command seems stuck or frozen, use "reset" runtime to kill the process
-   - For long-running commands, use "output" runtime to wait for completion
+2. CRITICAL MULTI-TERMINAL MANAGEMENT:
+   - ALWAYS use session 0 for file editing and non-interactive commands
+   - ALWAYS use sessions 1-10 for interactive programs that require input
+   - NEVER run new commands in a session that is waiting for input
+   - ALWAYS use the "reset" runtime BEFORE trying to run new commands in a session that was waiting for input
+   - AFTER a program ends or errors out, RESET the session before using it again
+   - If unsure about a session's state, RESET it before using
 
-3. INTERACTIVE PROGRAM HANDLING:
-   - When running programs that require user input, use a DIFFERENT session (1-10) than your main session
-   - After starting a program that expects input, use the "input" tool to provide the required input
-   - ALWAYS specify the same session number in the input tool as the session where your program is running
-   - Example workflow:
-     1. Run interactive program in session 1: `code_execution_tool with runtime: "terminal/python", session: 1`
-     2. When program waits for input, use: `input tool with keyboard: "your input", session: 1`
-   - If a terminal is waiting for input, DO NOT attempt to run other commands in that same session
-   - If you need to run commands while an interactive program is running, use a different session
-   - If a terminal gets stuck waiting for input, use "reset" BEFORE running any other commands in that session
-   - For complex interactive programs, test non-interactive parts first before adding user interaction
+3. INTERACTIVE PROGRAM WORKFLOW:
+   - Step 1: Edit files in session 0
+   - Step 2: Run interactive program in a DIFFERENT session (e.g., session 1)
+   - Step 3: Provide input using the input tool with matching session number
+   - Step 4: After program completes or if it gets stuck, RESET that session
+   - Step 5: Return to session 0 for file edits or use a fresh session for new programs
 
-4. PROGRESSIVE DEVELOPMENT:
-   - Always develop incrementally, with small working steps
-   - Test each component before integrating
-   - If you encounter errors, try simplified approaches rather than repeating the same pattern
-   - Don't get stuck in loops - if something fails twice, try a different approach
-
-5. FILE OPERATIONS:
-   - Always verify file existence with "ls" before operations
-   - Use explicit paths for all file operations (prefer /root/ directory)
-   - Files in /root/ PERSIST between calls and are accessible to the team
-   - Document any files you create for other team members
-
-6. MULTI-TERMINAL MANAGEMENT:
-   - Use the "session" parameter (0-10) to manage multiple terminals
-   - Create a new session if a terminal is waiting for input or running a long process
-   - Reset a specific session if it's stuck: `"runtime": "reset", "session": 1`
-   - Keep code editing and running in separate sessions to avoid conflicts
-   - Use session 0 for main work, other sessions for testing or parallel tasks
+4. HANDLING USER INPUT:
+   - When a program is waiting for input, use: `input tool with keyboard: "your input", session: X`
+   - ALWAYS match the session number with the session where the program is running
+   - If input isn't working, RESET the session and try a different approach
+   - For testing interactive programs, use hardcoded values first before adding user input
+   
+5. SPECIFIC PATTERNS FOR INTERACTIVE TESTING:
+   - Keep one terminal session (0) for editing code
+   - Run the program to test in a separate session (1-10)
+   - When the program requests input, use ONLY the input tool with the same session
+   - If a program crashes or input fails, ALWAYS reset that session
+   - If you need to make code changes, reset the testing session first, then edit in session 0
+   - NEVER try to edit code while a program is waiting for input
+   - NEVER try to run commands in a session that's waiting for input
+   - If a program seems stuck, use "reset" runtime FIRST before trying anything else
 
 TOOL USAGE:
 
@@ -594,36 +588,14 @@ For your final response (REQUIRED):
 }}
 ```
 
-KEY PATTERNS FOR FILE OPERATIONS:
-- Create files with: `cat << 'EOF' > /root/filename.py\n# code here\nEOF`
-- Create directories with: `mkdir -p /root/myproject`
-- Install packages with: `pip install package_name` or `npm install package_name`
-- For long-running processes: Use "output" runtime to check progress
-- If a process is stuck: Use "reset" runtime to kill it
-- If a script waits for input: Use the input tool to provide the required input
-
-COMMON PITFALLS TO AVOID:
-- Don't edit files while another session is running an interactive prompt
-- Don't wait for output on a terminal that's expecting input
-- If you get unexpected errors, check if a previous command is still running
-- Use "reset" on a specific session before starting fresh if you encounter issues
-- Never use `echo 'input' > /dev/pts/0` to send input - use the input tool instead
-- When fixing code based on terminal errors, always create a NEW terminal session first
-
-HANDLING INTERACTIVE CODE EFFECTIVELY:
-1. Use the input tool to respond to terminal prompts:
-   ```json
-   {{"tool_name": "input", "tool_args": {{"keyboard": "your response"}}}}
-   ```
-2. For developing interactive programs:
-   - Test core logic first with hardcoded values before adding interactive elements
-   - Use different sessions for running interactive code vs. editing files
-   - Function parameters can have defaults to make testing easier: `def get_input(prompt, default=None)`
-3. Proper interactive program workflow:
-   - Run program in session 1: `code_execution_tool with session: 1`
-   - Provide input when prompted: `input tool with keyboard: "your input"`
-   - Continue using input tool for additional prompts
-   - If you need to modify code, first reset session 1, then edit in session 0
+COMMON MISTAKES TO AVOID:
+- Don't run new commands in a terminal that's waiting for input - RESET first
+- Don't edit files in a session that's currently running an interactive program
+- Don't switch between sessions without tracking which one is doing what
+- If a session appears stuck or giving unexpected errors, RESET it immediately
+- Don't assume a program has finished just because you see a prompt - check output
+- For testing interactive programs, always use a dedicated session different from your editing session
+- If input tool doesn't work as expected, reset the session and try again with a different approach
 
 EXECUTION WORKFLOW:
 
