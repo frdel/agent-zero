@@ -311,3 +311,25 @@ Extensions can be found in `python/extensions` directory:
 > [!NOTE]  
 > Consider contributing valuable custom components to the main repository.
 > See [Contributing](contribution.md) for more information.
+
+### 8. Jina AI Integration
+Agent Zero integrates with Jina AI models and APIs to enhance its capabilities. Jina AI provides a range of AI models and APIs that can be used for various tasks such as embeddings, search, classification, and more.
+
+#### Jina AI Models and APIs
+Agent Zero utilizes the following Jina AI models and APIs:
+- **Embeddings API**: Converts text/images to fixed-length vectors for semantic search, similarity matching, clustering, etc.
+- **Reranker API**: Finds the most relevant search results and refines them.
+- **Reader API**: Retrieves and parses content from URLs in a format optimized for downstream tasks.
+- **Search API**: Searches the web for information and returns results in a format optimized for downstream tasks.
+- **DeepSearch API**: Combines web searching, reading, and reasoning for comprehensive investigation.
+- **Segmenter API**: Tokenizes text and divides it into chunks for downstream applications.
+- **Classifier API**: Performs zero-shot classification for text or images without training.
+
+#### Integration Details
+- **API Key**: The Jina AI API key is stored in the environment variable `JINA_API_KEY`. Get your Jina AI API key for free: https://jina.ai/?sui=apikey
+- **Requests Library**: The integration uses the `requests` library to interact with Jina AI APIs.
+- **Error Handling**: API errors are handled using try/catch blocks, and retries are implemented for network failures.
+- **Response Parsing**: The responses from Jina AI APIs are parsed to extract the required content.
+
+> [!NOTE]
+> The integration with Jina AI models and APIs enhances Agent Zero's capabilities, providing advanced AI functionalities for various tasks.

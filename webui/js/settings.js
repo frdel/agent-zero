@@ -3,16 +3,13 @@ const settingsModalProxy = {
     settings: {},
     resolvePromise: null,
 
-
     async openModal() {
-
         const modalEl = document.getElementById('settingsModal');
         const modalAD = Alpine.$data(modalEl);
 
         //get settings from backend
         try {
             const set = await sendJsonData("/settings_get", null);
-
 
             const settings = {
                 "title": "Settings",
@@ -35,8 +32,6 @@ const settingsModalProxy = {
             modalAD.isOpen = true; // Update directly
             modalAD.settings = settings; // Update directly
 
-
-
             return new Promise(resolve => {
                 this.resolvePromise = resolve;
             });
@@ -48,7 +43,6 @@ const settingsModalProxy = {
 
     async handleButton(buttonId) {
         if (buttonId === 'save') {
-
             const modalEl = document.getElementById('settingsModal');
             const modalAD = Alpine.$data(modalEl);
             try {
@@ -81,19 +75,54 @@ const settingsModalProxy = {
     }
 };
 
+// Add new input sections for the newly added tools and models
+document.addEventListener('settings-updated', (event) => {
+    const settings = event.detail;
+    const sections = settings.sections;
 
-// function initSettingsModal() {
+    // Add Jina AI API Key section
+    sections.push({
+        id: "jina-api-key",
+        title: "Jina AI API Key",
+        description: "Set your Jina AI API key. Get your Jina AI API key for free: https://jina.ai/?sui=apikey",
+        fields: [
+            {
+                type: "text",
+                title: "API Key",
+                value: "",
+                description: "Enter your Jina AI API key here."
+            }
+        ]
+    });
 
-//     window.openSettings = function () {
-//         proxy.openModal().then(result => {
-//             console.log(result);  // This will log the result when the modal is closed
-//         });
-//     }
+    // Add Jina AI Model Selector section
+    sections.push({
+        id: "jina-model-selector",
+        title: "Jina AI Model Selector",
+        description: "Select the Jina AI model you want to use.",
+        fields: [
+            {
+                type: "select",
+                title: "Model",
+                options: [
+                    { value: "jina-clip-v2", label: "Jina CLIP v2" },
+                    { value: "jina-embeddings-v3", label: "Jina Embeddings v3" },
+                    { value: "jina-reranker-v2-base-multilingual", label: "Jina Reranker v2 Base Multilingual" },
+                    { value: "jina-colbert-v2", label: "Jina ColBERT v2" }
+                ],
+                value: ""
+            }
+        ]
+    });
 
-//     return proxy
-// }
-
-
-// document.addEventListener('alpine:init', () => {
-//     Alpine.store('settingsModal', initSettingsModal());
-// });
+    // Add Jina AI as a provider to the different model selectors
+    sections.forEach(section => {
+        if (section.id === "model-provider") {
+            section.fields.forEach(field => {
+                if (field.type === "select") {
+                    field.options.push({ value: "Jina", label: "Jina AI" });
+                }
+            });
+        }
+    });
+});

@@ -26,6 +26,7 @@ from python.helpers.dirty_json import DirtyJson
 from python.helpers.defer import DeferredTask
 from typing import Callable
 from python.helpers.history import OutputMessage
+import requests  # P1dc1
 
 
 class AgentContext:
@@ -168,6 +169,8 @@ class AgentConfig:
     utility_model: ModelConfig
     embeddings_model: ModelConfig
     browser_model: ModelConfig
+    jina_chat_model: ModelConfig = None  # P8ea1
+    jina_embedding_model: ModelConfig = None  # P8ea1
     prompts_subdir: str = ""
     memory_subdir: str = ""
     knowledge_subdirs: list[str] = field(default_factory=lambda: ["default", "custom"])
@@ -531,6 +534,22 @@ class Agent:
             **self.config.embeddings_model.kwargs,
         )
 
+    def get_jina_chat_model(self):  # Pea9e
+        return models.get_model(
+            models.ModelType.CHAT,
+            self.config.jina_chat_model.provider,
+            self.config.jina_chat_model.name,
+            **self.config.jina_chat_model.kwargs,
+        )
+
+    def get_jina_embedding_model(self):  # Pea9e
+        return models.get_model(
+            models.ModelType.EMBEDDING,
+            self.config.jina_embedding_model.provider,
+            self.config.jina_embedding_model.name,
+            **self.config.jina_embedding_model.kwargs,
+        )
+
     async def call_utility_model(
         self,
         system: str,
@@ -576,6 +595,56 @@ class Agent:
 
         # rate limiter
         limiter = await self.rate_limiter(self.config.chat_model, prompt.format())
+
+        async for chunk in (prompt | model).astream({}):
+            await self.handle_intervention()  # wait for intervention and handle it, if paused
+
+            content = models.parse_chunk(chunk)
+            limiter.add(output=tokens.approximate_tokens(content))
+            response += content
+
+            if callback:
+                await callback(content, response)
+
+        return response
+
+    async def call_jina_chat_model(  # Pea9e
+        self,
+        prompt: ChatPromptTemplate,
+        callback: Callable[[str, str], Awaitable[None]] | None = None,
+    ):
+        response = ""
+
+        # model class
+        model = self.get_jina_chat_model()
+
+        # rate limiter
+        limiter = await self.rate_limiter(self.config.jina_chat_model, prompt.format())
+
+        async for chunk in (prompt | model).astream({}):
+            await self.handle_intervention()  # wait for intervention and handle it, if paused
+
+            content = models.parse_chunk(chunk)
+            limiter.add(output=tokens.approximate_tokens(content))
+            response += content
+
+            if callback:
+                await callback(content, response)
+
+        return response
+
+    async def call_jina_embedding_model(  # Pea9e
+        self,
+        prompt: ChatPromptTemplate,
+        callback: Callable[[str, str], Awaitable[None]] | None = None,
+    ):
+        response = ""
+
+        # model class
+        model = self.get_jina_embedding_model()
+
+        # rate limiter
+        limiter = await self.rate_limiter(self.config.jina_embedding_model, prompt.format())
 
         async for chunk in (prompt | model).astream({}):
             await self.handle_intervention()  # wait for intervention and handle it, if paused
