@@ -1,5 +1,6 @@
 import os
 import asyncio
+import requests
 from python.helpers import dotenv, memory, perplexity_search, duckduckgo_search
 from python.helpers.tool import Tool, Response
 from python.helpers.print_style import PrintStyle
@@ -12,27 +13,23 @@ class Knowledge(Tool):
         # Create tasks for all three search methods
         tasks = [
             self.searxng_search(question),
-            # self.perplexity_search(question),
-            # self.duckduckgo_search(question),
+            self.jina_search(question),
             self.mem_search(question),
         ]
 
         # Run all tasks concurrently
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        # perplexity_result, duckduckgo_result, memory_result = results
-        searxng_result, memory_result = results
+        searxng_result, jina_result, memory_result = results
 
         # Handle exceptions and format results
-        # perplexity_result = self.format_result(perplexity_result, "Perplexity")
-        # duckduckgo_result = self.format_result(duckduckgo_result, "DuckDuckGo")
         searxng_result = self.format_result_searxng(searxng_result, "Search Engine")
+        jina_result = self.format_result(jina_result, "Jina AI")
         memory_result = self.format_result(memory_result, "Memory")
 
         msg = self.agent.read_prompt(
             "tool.knowledge.response.md",
-            #   online_sources = ((perplexity_result + "\n\n") if perplexity_result else "") + str(duckduckgo_result),
-            online_sources=((searxng_result + "\n\n") if searxng_result else ""),
+            online_sources=((searxng_result + "\n\n") if searxng_result else "") + ((jina_result + "\n\n") if jina_result else ""),
             memory=memory_result,
         )
 
@@ -42,23 +39,24 @@ class Knowledge(Tool):
 
         return Response(message=msg, break_loop=False)
 
-    async def perplexity_search(self, question):
-        if dotenv.get_dotenv_value("API_KEY_PERPLEXITY"):
-            return await asyncio.to_thread(
-                perplexity_search.perplexity_search, question
-            )
-        else:
-            PrintStyle.hint(
-                "No API key provided for Perplexity. Skipping Perplexity search."
-            )
-            self.agent.context.log.log(
-                type="hint",
-                content="No API key provided for Perplexity. Skipping Perplexity search.",
-            )
-            return None
-
-    async def duckduckgo_search(self, question):
-        return await asyncio.to_thread(duckduckgo_search.search, question)
+    async def jina_search(self, question):
+        try:
+            url = "https://s.jina.ai/"
+            headers = {
+                "Authorization": f"Bearer {os.getenv('JINA_API_KEY')}",
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "q": question,
+                "num": SEARCH_ENGINE_RESULTS
+            }
+            response = requests.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            handle_error(e)
+            return f"Jina AI search failed: {str(e)}"
 
     async def searxng_search(self, question):
         return await searxng(question)
@@ -75,7 +73,12 @@ class Knowledge(Tool):
         if isinstance(result, Exception):
             handle_error(result)
             return f"{source} search failed: {str(result)}"
-        return result if result else ""
+
+        outputs = []
+        for item in result.get("data", []):
+            outputs.append(f"{item['title']}\n{item['url']}\n{item['content']}")
+
+        return "\n\n".join(outputs[:SEARCH_ENGINE_RESULTS]).strip()
 
     def format_result_searxng(self, result, source):
         if isinstance(result, Exception):

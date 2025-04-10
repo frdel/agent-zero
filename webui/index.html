@@ -169,6 +169,14 @@
                                     <span class="slider"></span>
                                 </label>
                             </li>
+                            <li x-data="{ showJinaTools: false }">
+                                <span>Show Jina Tools</span>
+                                <label class="switch">
+                                    <input type="checkbox" x-model="showJinaTools"
+                                        x-effect="window.safeCall('toggleJinaTools',showJinaTools)">
+                                    <span class="slider"></span>
+                                </label>
+                            </li>
                         </ul>
                     </span>
                 </div>
