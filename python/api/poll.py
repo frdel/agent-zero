@@ -19,6 +19,7 @@ class Poll(ApiHandler):
             ctxs.append(
                 {
                     "id": ctx.id,
+                    "name": ctx.name,
                     "no": ctx.no,
                     "log_guid": ctx.log.guid,
                     "log_version": len(ctx.log.updates),

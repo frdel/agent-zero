@@ -27,6 +27,24 @@ from agent import Agent
 import models
 
 
+# Custom SafeLocalFileStore to handle special characters in keys
+class SafeLocalFileStore(LocalFileStore):
+    def _sanitize_key(self, key: str) -> str:
+        # Replace colons and other problematic characters with underscores
+        return key.replace(":", "_").replace("/", "_")
+    
+    def mget(self, keys: List[str]) -> List[bytes]:
+        sanitized_keys = [self._sanitize_key(key) for key in keys]
+        return super().mget(sanitized_keys)
+    
+    def mset(self, key_value_pairs: List[tuple[str, bytes]]) -> None:
+        sanitized_pairs = [(self._sanitize_key(k), v) for k, v in key_value_pairs]
+        return super().mset(sanitized_pairs)
+    
+    def _get_full_path(self, key: str) -> str:
+        return super()._get_full_path(self._sanitize_key(key))
+
+
 class MyFaiss(FAISS):
     # override aget_by_ids
     def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
@@ -112,17 +130,22 @@ class Memory:
             store = InMemoryByteStore()
         else:
             os.makedirs(em_dir, exist_ok=True)
-            store = LocalFileStore(em_dir)
+            store = SafeLocalFileStore(em_dir)  # Use SafeLocalFileStore instead of LocalFileStore
 
         # here we setup the embeddings model with the chosen cache storage
+        # Get the model name but sanitize it to remove invalid characters for file paths
+        model_name = getattr(
+            embeddings_model,
+            "model",
+            getattr(embeddings_model, "model_name", "default"),
+        )
+        # Replace colons and other problematic characters with underscores
+        safe_namespace = model_name.replace(":", "_").replace("/", "_")
+        
         embedder = CacheBackedEmbeddings.from_bytes_store(
             embeddings_model,
             store,
-            namespace=getattr(
-                embeddings_model,
-                "model",
-                getattr(embeddings_model, "model_name", "default"),
-            ),
+            namespace=model_name,  # Use original model name, SafeLocalFileStore handles sanitization
         )
 
         # self.db = Chroma(

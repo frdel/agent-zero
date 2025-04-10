@@ -4,8 +4,13 @@
 **/__pycache__/
 **/.conda/
 
+# Ignore docker/run/agent-zero directory
+docker/run/agent-zero/
+
 # ignore test files in root dir
 /*.test.py
+
+
 
 # Ignore git internal files (for bundler)
 .git/
@@ -43,6 +48,17 @@ instruments/**
 # Explicitly allow the default folder in instruments
 !instruments/default/
 !instruments/default/**
+# Explicitly allow custom image generation folder
+!instruments/custom/image_generation/
+!instruments/custom/image_generation/**
+
+# Explicitly allow custom music generation folder
+!instruments/custom/music_generation/
+!instruments/custom/music_generation/**
+
+# Explicitly allow custom video generation folder
+!instruments/custom/video_generation/
+!instruments/custom/video_generation/**
 
 # Global rule to include .gitkeep files anywhere
 !**/.gitkeep

@@ -208,3 +208,8 @@ class SSHInteractiveSession:
                 ].rstrip()  # Overwrite with the last part after the last '\r'
 
         return "\n".join(lines)
+
+    def is_process_running(self) -> bool:
+        """Check if the SSH session is still active and shell exists.
+        For SSH, we assume the process is running if the shell is connected."""
+        return self.shell is not None and self.client.get_transport() is not None and self.client.get_transport().is_active()

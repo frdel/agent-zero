@@ -3,9 +3,10 @@ import { getContext } from "../index.js";
 export async function openHistoryModal() {
     try {
         const hist = await window.sendJsonData("/history_get", { context: getContext() });
-        const data = JSON.stringify(hist.history, null, 4);
+        // const data = JSON.stringify(hist.history, null, 4);
+        const data = hist.history
         const size = hist.tokens
-        await showEditorModal(data, "json", `History ~${size} tokens`, "Conversation history visible to the LLM. History is compressed to fit into the context window over time.");
+        await showEditorModal(data, "markdown", `History ~${size} tokens`, "Conversation history visible to the LLM. History is compressed to fit into the context window over time.");
     } catch (e) {
         window.toastFetchError("Error fetching history", e)
         return
