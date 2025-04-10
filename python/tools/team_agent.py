@@ -498,67 +498,57 @@ AVAILABLE TOOLS:
 
 TERMINAL & CODE EXECUTION GUIDELINES:
 
-1. For code execution, select the appropriate runtime:
-   - "terminal": Shell commands and system operations
-   - "python": Python code execution
-   - "nodejs": JavaScript code execution
-   - "output": Wait for output from long-running processes
-   - "reset": Kill a stuck or non-responsive process
+1. SESSION MANAGEMENT:
+   - RUNTIMES: "terminal" (shell), "python", "nodejs", "output" (for long processes), "reset" (kill stuck process)
+   - SESSION STATES: [INACTIVE (ready) | RUNNING | WAITING FOR INPUT | ERROR (crashed)]
+   - Session 0: Use for file editing and non-interactive commands
+   - Sessions 1-10: Use for interactive programs requiring input
+   - ALWAYS reset before reusing a session (after program ends or errors)
+   - NEVER run commands in sessions waiting for input - reset first
 
-2. CRITICAL MULTI-TERMINAL MANAGEMENT:
-   - ALWAYS use session 0 for file editing and non-interactive commands
-   - ALWAYS use sessions 1-10 for interactive programs that require input
-   - NEVER run new commands in a session that is waiting for input
-   - ALWAYS use the "reset" runtime BEFORE trying to run new commands in a session that was waiting for input
-   - AFTER a program ends or errors out, RESET the session before using it again
-   - If unsure about a session's state, RESET it before using
+2. INTERACTIVE WORKFLOW:
+   - Edit in session 0, run in different session (1-10), reset after completion
+   - INPUT DETECTION: Look for prompts ending with "?", ">", ":", "Input:", etc.
+   - Provide input using matching session: `input tool with keyboard: "text", session: X`
+   - For program errors/hangs: reset the session, fix in session 0, then restart
 
-3. INTERACTIVE PROGRAM WORKFLOW:
-   - Step 1: Edit files in session 0
-   - Step 2: Run interactive program in a DIFFERENT session (e.g., session 1)
-   - Step 3: Provide input using the input tool with matching session number
-   - Step 4: After program completes or if it gets stuck, RESET that session
-   - Step 5: Return to session 0 for file edits or use a fresh session for new programs
+3. DEBUGGING TIPS:
+   - Add context to prints: `print("function_name: Variable =", value)`
+   - Track state: Show before/after values, execution paths, and conditions
+   - Format debug output with separators: `print("="*40)` + `print("KEY INFO:", data)`
+   - For errors: Print full exception details with type and error message
+   - For file creation, use Python instead of echo: `with open('file.py', 'w') as f: f.write("import sys\\nprint('Hello')")`
 
-4. HANDLING USER INPUT:
-   - When a program is waiting for input, use: `input tool with keyboard: "your input", session: X`
-   - ALWAYS match the session number with the session where the program is running
-   - If input isn't working, RESET the session and try a different approach
-   - For testing interactive programs, use hardcoded values first before adding user input
-   
-5. SPECIFIC PATTERNS FOR INTERACTIVE TESTING:
-   - Keep one terminal session (0) for editing code
-   - Run the program to test in a separate session (1-10)
-   - When the program requests input, use ONLY the input tool with the same session
-   - If a program crashes or input fails, ALWAYS reset that session
-   - If you need to make code changes, reset the testing session first, then edit in session 0
-   - NEVER try to edit code while a program is waiting for input
-   - NEVER try to run commands in a session that's waiting for input
-   - If a program seems stuck, use "reset" runtime FIRST before trying anything else
+4. RESET PATTERNS:
+   - When stuck/waiting for input: Reset first, then run new command
+   - After program crashes: Reset session, fix code in session 0, rerun
+   - When switching programs: Reset old session before starting new program
+   - If input not working: Reset session and restart the program
+   - For long-running processes: Use reset to terminate before timeout
 
 TOOL USAGE:
 
-For code execution, use this format:
+For code execution:
 ```json
 {{
-    "thoughts": ["Brief explanation of what you need to do"],
+    "thoughts": ["Brief explanation"],
     "tool_name": "code_execution_tool",
     "tool_args": {{
         "runtime": "python",  // Options: "terminal", "python", "nodejs", "output", "reset"
-        "session": 0,  // Use different numbers (0-10) for parallel terminal sessions
-        "code": "import os\\n\\nprint('Current directory:', os.getcwd())"  // Always use explicit print()/console.log()
+        "session": 0,  // Sessions 0-10 for parallel execution
+        "code": "import os\\n\\nprint('Current directory:', os.getcwd())"
     }}
 }}
 ```
 
-For providing input to interactive programs, use the input tool with matching session:
+For input to interactive programs:
 ```json
 {{
-    "thoughts": ["The program is waiting for user input in session 1"],
+    "thoughts": ["Program is waiting for input"],
     "tool_name": "input",
     "tool_args": {{
         "keyboard": "your response",
-        "session": 1  // MUST match the session where the program is running
+        "session": 1  // MUST match the program's session
     }}
 }}
 ```
@@ -566,10 +556,10 @@ For providing input to interactive programs, use the input tool with matching se
 For knowledge lookup:
 ```json
 {{
-    "thoughts": ["Brief explanation of what information you need"],
+    "thoughts": ["Need specific information"],
     "tool_name": "knowledge_tool",
     "tool_args": {{
-        "question": "Focused question directly related to my task"
+        "question": "Focused question related to my task"
     }}
 }}
 ```
@@ -577,35 +567,22 @@ For knowledge lookup:
 For your final response (REQUIRED):
 ```json
 {{
-    "thoughts": [
-        "Analysis of approach and results",
-        "Key findings and limitations"
-    ],
+    "thoughts": ["Analysis of results"],
     "tool_name": "response",
     "tool_args": {{
-        "text": "Complete, well-structured deliverable with all necessary details"
+        "text": "Complete deliverable with all necessary details"
     }}
 }}
 ```
 
-COMMON MISTAKES TO AVOID:
-- Don't run new commands in a terminal that's waiting for input - RESET first
-- Don't edit files in a session that's currently running an interactive program
-- Don't switch between sessions without tracking which one is doing what
-- If a session appears stuck or giving unexpected errors, RESET it immediately
-- Don't assume a program has finished just because you see a prompt - check output
-- For testing interactive programs, always use a dedicated session different from your editing session
-- If input tool doesn't work as expected, reset the session and try again with a different approach
-
 EXECUTION WORKFLOW:
+1. UNDERSTAND the task and analyze requirements
+2. PLAN your approach with manageable steps
+3. IMPLEMENT incrementally with testing (testing terminal reset between uses, and use session 1+ for testing (not 0 which is reserved for file creation/editing)
+4. DOCUMENT your solution clearly
+5. DELIVER using the response_tool
 
-1. UNDERSTAND: Analyze the task requirements and how they relate to previous work
-2. PLAN: Break down complex problems into smaller, manageable steps
-3. IMPLEMENT: Develop incrementally, with frequent testing and validation
-4. DOCUMENT: Ensure your solution is clear and can be integrated with the team's work
-5. FINALIZE: Submit a comprehensive response with your complete solution
-
-Remember: The response_tool is REQUIRED for your final output. Deliver your results using this tool.
+Remember: The response_tool is REQUIRED for your final output.
 """
         
         # Execute task using call_subordinate pattern
