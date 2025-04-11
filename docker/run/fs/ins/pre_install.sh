@@ -1,30 +1,40 @@
 #!/bin/bash
+set -e
+
+apt-get update && apt-get install -y wget
+
+wget -qO- https://pascalroeleven.nl/deb-pascalroeleven.gpg | tee /etc/apt/keyrings/deb-pascalroeleven.gpg
+
+echo \
+  "deb [arch=amd64 signed-by=/etc/apt/keyrings/deb-pascalroeleven.gpg] http://deb.pascalroeleven.nl/python3.12 bookworm-backports main" \
+  > /etc/apt/sources.list.d/pascalroeleven.list
 
 # Update and install necessary packages
 apt-get update && apt-get install -y \
-    python3 \
-    python3-venv \
+    -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
+    python3.12 \
+    python3.12-venv \
     nodejs \
     npm \
     openssh-server \
     sudo \
     curl \
-    wget \
     git \
     ffmpeg 
 
-# # Configure system alternatives so that /usr/bin/python3 points to Python 3.12
-# sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
-# sudo update-alternatives --set python3 /usr/bin/python3.12
+# Install npx and shx for installing/executing MCP servers
+npm i -g npx shx
 
-# Update pip3 symlink: if pip3.12 exists, point pip3 to it;
-# otherwise, install pip using Python 3.12's ensurepip.
-# if [ -f /usr/bin/pip3.12 ]; then
-#   sudo ln -sf /usr/bin/pip3.12 /usr/bin/pip3
-# else
-  python3 -m ensurepip --upgrade
-  python3 -m pip install --upgrade pip
-# fi
+update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1
+update-alternatives --set python /usr/bin/python3.12
+
+wget -qO- https://bootstrap.pypa.io/get-pip.py > /tmp/get-pip.py && \
+  python /tmp/get-pip.py --force --break-system-packages && \
+  rm /tmp/get-pip.py
+
+python -m pip config set global.break-system-packages true
+
+pip install -U pip setuptools virtualenv
 
 # Prepare SSH daemon
 bash /ins/setup_ssh.sh "$@"
