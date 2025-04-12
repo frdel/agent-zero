@@ -7,10 +7,14 @@
 # Ignore docker/run/agent-zero directory
 docker/run/agent-zero/
 
+#Ignore cursor rules
+.cursor/
+
+# ignore task files in root dir
+/TASKS.md
+
 # ignore test files in root dir
 /*.test.py
-
-
 
 # Ignore git internal files (for bundler)
 .git/

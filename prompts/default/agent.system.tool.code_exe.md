@@ -1,169 +1,129 @@
 ### code_execution_tool
 
-execute terminal commands, python/nodejs code for computation or software tasks
-code: place in "code" arg; escape properly; use print()/console.log() for output
-runtime: "terminal"(shell), "python", "nodejs", "output"(wait), "reset"(kill)
-session: 0 for file ops/editing, 1-10 for interactive programs; don't mix usage
-package management: use "pip"/"npm"/"apt-get" in terminal runtime to install
-error handling: if tool errors, adjust code before retry; knowledge_tool can help
-important: replace placeholders/demo data; check dependencies; don't reuse snippets
-terminal best practices:
-- never run new commands in sessions waiting for input - reset first
-- always reset after errors, program completion, or when switching tasks
-- for interactive programs: use input tool with matching session
-- verify program completion before next command
-- file ops: use relative paths, check existence, handle errors
-- file creation: use Python for complex files with quotes/special chars, not echo
+Execute commands and code for computation, data analysis, and file operations.
 
-usage:
+**PARAMETERS:**
+- **runtime:** "terminal" (shell), "python", "nodejs", "output" (wait), "reset" (kill)
+- **session:** 0 for file operations, 1-10 for running programs (keep separate)
+- **code:** Your command or code to execute (use print/console.log for output)
 
-1 execute python code
+## CORE PATTERNS:
 
-~~~json
+### BASIC FILE OPERATIONS
+```json
 {
-    "thoughts": [
-        "Need to do...",
-        "I can use...",
-        "Then I can...",
-    ],
-    "tool_name": "code_execution_tool",
+    "thoughts": ["Creating a project structure and files"],
+    "tool_name": "code_execution_tool", 
     "tool_args": {
         "runtime": "python",
         "session": 0,
-        "code": "import os\nprint(os.getcwd())",
+        "code": "import os\n\n# Create project structure\nos.makedirs('myproject/src', exist_ok=True)\n\n# Create main file\nfile_path = 'myproject/src/main.py'\nwith open(file_path, 'w') as f:\n    f.write('def main():\\n    print(\"Program running\")\\n\\nif __name__ == \"__main__\":\\n    main()')\n\n# Verify file creation\nif os.path.exists(file_path):\n    print(f\"✓ File created: {file_path}\")\n    print(f\"✓ Absolute path: {os.path.abspath(file_path)}\")\nelse:\n    print(f\"✗ Failed to create file: {file_path}\")"
     }
 }
-~~~
+```
 
-2 execute terminal command
-~~~json
+### RUNNING CODE (USE SEPARATE SESSIONS)
+```json
 {
-    "thoughts": [
-        "Need to do...",
-        "Need to install...",
-    ],
+    "thoughts": ["Reset session before running"],
+    "tool_name": "code_execution_tool",
+    "tool_args": {
+        "runtime": "reset",
+        "session": 1
+    }
+}
+```
+```json
+{
+    "thoughts": ["Running created file in session 1"],
+    "tool_name": "code_execution_tool",
+    "tool_args": {
+        "runtime": "terminal",
+        "session": 1,
+        "code": "python myproject/src/main.py"
+    }
+}
+```
+
+### PACKAGE INSTALLATION
+```json
+{
+    "thoughts": ["Installing required packages"],
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "terminal",
         "session": 0,
-        "code": "apt-get install zip",
+        "code": "pip install pandas matplotlib"
     }
 }
-~~~
+```
 
-2.1 wait for output with long-running scripts
-~~~json
+### INTERACTIVE PROGRAMS WITH INPUT
+```json
 {
-    "thoughts": [
-        "Waiting for program to finish...",
-    ],
-    "tool_name": "code_execution_tool",
+    "thoughts": ["Creating interactive program"],
+    "tool_name": "code_execution_tool", 
     "tool_args": {
-        "runtime": "output",
+        "runtime": "python",
         "session": 0,
+        "code": "file_path = 'interactive.py'\nwith open(file_path, 'w') as f:\n    f.write('name = input(\"Enter your name: \")\\nprint(f\"Hello, {name}!\")')\nprint(f\"✓ File created: {file_path}\")"
     }
 }
-~~~
-
-2.2 reset terminal
-~~~json
+```
+```json
 {
-    "thoughts": [
-        "code_execution_tool not responding...",
-    ],
+    "thoughts": ["Running interactive program"],
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "reset",
-        "session": 0,
+        "session": 1
     }
 }
-~~~
-
-3 file operations best practices
-~~~json
+```
+```json
 {
-    "thoughts": [
-        "Need to check file exists before reading",
-    ],
+    "thoughts": ["Starting interactive program"],
     "tool_name": "code_execution_tool",
     "tool_args": {
-        "runtime": "python",
-        "session": 0,
-        "code": "import os\nfile_path = 'data.txt'\nif os.path.exists(file_path):\n    with open(file_path, 'r') as f:\n        data = f.read()\n    print(f'File content: {data[:100]}...')\nelse:\n    print(f'File {file_path} not found')",
-    }
-}
-~~~
-
-3.1 proper file creation (for complex code with special chars)
-~~~json
-{
-    "thoughts": [
-        "Need to create a Python file with special chars and quotes",
-    ],
-    "tool_name": "code_execution_tool",
-    "tool_args": {
-        "runtime": "python",
-        "session": 0,
-        "code": "with open('script.py', 'w') as f:\n    f.write(\"\"\"\nimport requests\nfrom colorama import Fore\n\ndef main():\n    print(f\"{Fore.GREEN}Starting application...\")\n    response = requests.get('https://api.example.com/data')\n    print(f\"{Fore.BLUE}Response: {response.status_code}\")\n\nif __name__ == '__main__':\n    main()\n    \"\"\".strip())\nprint('File created successfully')"
-    }
-}
-~~~
-
-3.2 running the created file in a different session
-~~~json
-{
-    "thoughts": [
-        "Now run the file in a different session",
-    ],
-    "tool_name": "code_execution_tool",
-    "tool_args": {
-        "runtime": "python",
+        "runtime": "terminal",
         "session": 1,
-        "code": "python script.py"
+        "code": "python interactive.py"
     }
 }
-~~~
-
-4 handling interactive programs
-~~~json
+```
+```json
 {
-    "thoughts": [
-        "Need to run interactive program in separate session",
-    ],
-    "tool_name": "code_execution_tool",
-    "tool_args": {
-        "runtime": "python",
-        "session": 1,
-        "code": "name = input('Enter your name: ')\nprint(f'Hello, {name}!')",
-    }
-}
-~~~
-// Then provide input with the input tool in the same session
-
-5 providing input to interactive program
-~~~json
-{
-    "thoughts": [
-        "Program in session 1 is waiting for input",
-    ],
+    "thoughts": ["Providing input to program"],
     "tool_name": "input",
     "tool_args": {
         "keyboard": "John Doe",
         "session": 1
     }
 }
-~~~
+```
 
-6 error recovery pattern
-~~~json
-{
-    "thoughts": [
-        "Program encountered an error, need to reset",
-    ],
-    "tool_name": "code_execution_tool",
-    "tool_args": {
-        "runtime": "reset",
-        "session": 1,
-    }
-}
-~~~
+## BEST PRACTICES:
+
+### FILE OPERATIONS
+- Always create files with clear paths in session 0
+- Verify file creation before attempting to run files
+- Use Python's file operations for complex files
+- Organize projects with standard directory structure
+
+### SESSION MANAGEMENT
+- Keep session 0 for file creation/editing only
+- Use sessions 1+ for running programs
+- Reset sessions before running new programs
+- Never run commands in sessions waiting for input
+
+### ERROR HANDLING
+- If file operations fail, verify the current directory and file paths
+- For import errors, check dependencies and installation
+- Reset sessions after errors before trying again
+- Use try/except in Python code to handle potential errors
+
+### DEBUGGING
+- Print absolute paths when verifying file creation
+- List directory contents to check available files
+- Create debugging scripts to test environment setup
+- Use explicit path variables for consistency

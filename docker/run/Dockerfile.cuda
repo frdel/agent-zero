@@ -121,4 +121,7 @@ RUN bash /ins/post_install.sh $BRANCH
 EXPOSE 22 80
 
 # initialize runtime with sanitize_tags to filter thinking tags from output
-CMD ["/bin/bash", "-c", "/ins/sanitize_tags.sh /bin/bash /exe/initialize.sh $BRANCH"] 
+# CMD ["/bin/bash", "-c", "/ins/sanitize_tags.sh /bin/bash /exe/initialize.sh $BRANCH"] 
+
+# initialize runtime
+CMD ["/bin/bash", "-c", "/bin/bash /exe/initialize.sh $BRANCH"]

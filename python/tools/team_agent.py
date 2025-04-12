@@ -490,76 +490,121 @@ DEPENDENCY RESULTS:
 YOUR TASK (ID: {task_id}):
 {task['description']}
 
+WORKSPACE FUNDAMENTALS:
+- Create complete, well-structured projects before execution
+- Save all code to files with logical project structure
+- Always verify file creation before trying to run files
+- Use consistent file paths throughout your workflow
+
+SESSION WORKFLOW:
+- Session 0: File creation and editing ONLY
+- Sessions 1+: Running and testing code ONLY
+- Always reset sessions before running new code
+- Use the input tool for interactive programs
+
+ERROR HANDLING STRATEGY:
+- If you encounter the same error twice when trying the same approach, switch to an alternative method
+- For library/package issues, try a different library or implement a minimal solution from scratch
+- When installation fails despite multiple attempts, use a fallback implementation as specified in your task
+- Document environment issues and your workaround strategy in your final response
+
+PROJECT CREATION PATTERN:
+1. Create directories and verify structure
+2. Create all required files with explicit paths
+3. Verify all files exist before execution
+4. Run code in separate sessions from creation
+5. ALWAYS install packages AND run scripts with terminal runtime to maintain environment consistency
+
 AVAILABLE TOOLS:
 - knowledge_tool: For research and information gathering
-- code_execution_tool: For computation, data processing, file operations
+- code_execution_tool: For computation, data processing, file operations (prioritize terminal runtime for both package installation AND script execution to maintain environment consistency)
 - input: For providing input to interactive programs
 - response_tool: REQUIRED for your final output
 
-TERMINAL & CODE EXECUTION GUIDELINES:
-
-1. SESSION MANAGEMENT:
-   - RUNTIMES: "terminal" (shell), "python", "nodejs", "output" (for long processes), "reset" (kill stuck process)
-   - SESSION STATES: [INACTIVE (ready) | RUNNING | WAITING FOR INPUT | ERROR (crashed)]
-   - Session 0: Use for file editing and non-interactive commands
-   - Sessions 1-10: Use for interactive programs requiring input
-   - ALWAYS reset before reusing a session (after program ends or errors)
-   - NEVER run commands in sessions waiting for input - reset first
-
-2. INTERACTIVE WORKFLOW:
-   - Edit in session 0, run in different session (1-10), reset after completion
-   - INPUT DETECTION: Look for prompts ending with "?", ">", ":", "Input:", etc.
-   - Provide input using matching session: `input tool with keyboard: "text", session: X`
-   - For program errors/hangs: reset the session, fix in session 0, then restart
-
-3. DEBUGGING TIPS:
-   - Add context to prints: `print("function_name: Variable =", value)`
-   - Track state: Show before/after values, execution paths, and conditions
-   - Format debug output with separators: `print("="*40)` + `print("KEY INFO:", data)`
-   - For errors: Print full exception details with type and error message
-   - For file creation, use Python instead of echo: `with open('file.py', 'w') as f: f.write("import sys\\nprint('Hello')")`
-
-4. RESET PATTERNS:
-   - When stuck/waiting for input: Reset first, then run new command
-   - After program crashes: Reset session, fix code in session 0, rerun
-   - When switching programs: Reset old session before starting new program
-   - If input not working: Reset session and restart the program
-   - For long-running processes: Use reset to terminate before timeout
-
 TOOL USAGE:
 
-For code execution:
+For file creation ONLY:
 ```json
 {{
-    "thoughts": ["Brief explanation"],
+    "thoughts": ["Creating project files"],
     "tool_name": "code_execution_tool",
     "tool_args": {{
-        "runtime": "python",  // Options: "terminal", "python", "nodejs", "output", "reset"
-        "session": 0,  // Sessions 0-10 for parallel execution
-        "code": "import os\\n\\nprint('Current directory:', os.getcwd())"
+        "runtime": "python",  // Python runtime ONLY for file creation
+        "session": 0,         // ALWAYS use session 0 for file operations
+        "code": "import os\n\n# Create directories\nos.makedirs('project/src', exist_ok=True)\n\n# Create files\nwith open('project/src/main.py', 'w') as f:\n    f.write(\"print('Hello world')\")"
     }}
 }}
 ```
 
-For input to interactive programs:
+For executing ANY Python code (imports, tests, etc):
 ```json
 {{
-    "thoughts": ["Program is waiting for input"],
-    "tool_name": "input",
+    "thoughts": ["Testing code/imports"],
+    "tool_name": "code_execution_tool", 
     "tool_args": {{
-        "keyboard": "your response",
-        "session": 1  // MUST match the program's session
+        "runtime": "terminal",  // ALWAYS use terminal for running ANY Python code
+        "session": 1,
+        "code": "python -c 'import pandas; print(pandas.__version__)'"
     }}
 }}
 ```
 
-For knowledge lookup:
+For installing packages:
 ```json
 {{
-    "thoughts": ["Need specific information"],
+    "thoughts": ["Installing required packages"],
+    "tool_name": "code_execution_tool",
+    "tool_args": {{
+        "runtime": "terminal",
+        "session": 1,
+        "code": "pip install pandas matplotlib"
+    }}
+}}
+```
+
+For running and testing code:
+```json
+{{
+    "thoughts": ["Reset session before running"],
+    "tool_name": "code_execution_tool",
+    "tool_args": {{
+        "runtime": "reset",
+        "session": 1
+    }}
+}}
+```
+```json
+{{
+    "thoughts": ["Running the created file"],
+    "tool_name": "code_execution_tool",
+    "tool_args": {{
+        "runtime": "terminal",
+        "session": 1,
+        "code": "python project/src/main.py"
+    }}
+}}
+```
+
+For checking environment:
+```json
+{{
+    "thoughts": ["Verifying Python environment"],
+    "tool_name": "code_execution_tool",
+    "tool_args": {{
+        "runtime": "terminal",
+        "session": 1,
+        "code": "which python && python --version && pip list | grep pandas"
+    }}
+}}
+```
+
+For research:
+```json
+{{
+    "thoughts": ["Need information about X"],
     "tool_name": "knowledge_tool",
     "tool_args": {{
-        "question": "Focused question related to my task"
+        "question": "Specific question about my task"
     }}
 }}
 ```
@@ -567,20 +612,23 @@ For knowledge lookup:
 For your final response (REQUIRED):
 ```json
 {{
-    "thoughts": ["Analysis of results"],
+    "thoughts": ["Task complete, delivering results"],
     "tool_name": "response",
     "tool_args": {{
-        "text": "Complete deliverable with all necessary details"
+        "text": "Complete, well-structured deliverable with all necessary details"
     }}
 }}
 ```
 
-EXECUTION WORKFLOW:
-1. UNDERSTAND the task and analyze requirements
-2. PLAN your approach with manageable steps
-3. IMPLEMENT incrementally with testing (testing terminal reset between uses, and use session 1+ for testing (not 0 which is reserved for file creation/editing)
-4. DOCUMENT your solution clearly
-5. DELIVER using the response_tool
+IMPORTANT: When executing terminal commands, monitor the output carefully for errors, especially ModuleNotFoundError or ImportError. If library imports fail after installation, verify that your terminal commands and Python code are using the same environment.
+
+EXECUTION STRATEGY:
+1. UNDERSTAND the task requirements
+2. PLAN your approach before writing any code
+3. CREATE complete project with all necessary files
+4. TEST your implementation thoroughly
+5. PIVOT quickly if you encounter repeated errors with the same approach
+6. DELIVER using the response tool
 
 Remember: The response_tool is REQUIRED for your final output.
 """
