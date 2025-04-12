@@ -97,7 +97,7 @@
                                 <li>
                                     <span :class="{'chat-list-button': true, 'font-bold': context.id === selected}"
                                         @click="selected = context.id; selectChat(context.id)">
-                                        Chat #<span x-text="context.no"></span>
+                                        <span x-text="context.name ? context.name : 'Chat #' + context.no"></span>
                                     </span>
                                     <button class="edit-button" @click="killChat(context.id)">X</button>
                                 </li>

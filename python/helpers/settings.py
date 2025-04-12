@@ -16,6 +16,7 @@ class Settings(TypedDict):
     chat_model_kwargs: dict[str, str]
     chat_model_ctx_length: int
     chat_model_ctx_history: float
+    chat_model_vision: bool
     chat_model_rl_requests: int
     chat_model_rl_input: int
     chat_model_rl_output: int
@@ -146,6 +147,17 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "max": 1,
             "step": 0.01,
             "value": settings["chat_model_ctx_history"],
+        }
+    )
+
+
+    chat_model_fields.append(
+        {
+            "id": "chat_model_vision",
+            "title": "Supports Vision",
+            "description": "Models capable of Vision can for example natively see the content of image attachments.",
+            "type": "switch",
+            "value": settings["chat_model_vision"],
         }
     )
 
@@ -777,6 +789,7 @@ def get_default_settings() -> Settings:
         chat_model_kwargs={ "temperature": "0" },
         chat_model_ctx_length=120000,
         chat_model_ctx_history=0.7,
+        chat_model_vision=False,
         chat_model_rl_requests=0,
         chat_model_rl_input=0,
         chat_model_rl_output=0,

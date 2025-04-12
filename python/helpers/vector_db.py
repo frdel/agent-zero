@@ -29,14 +29,19 @@ class VectorDB:
         self.store = InMemoryByteStore()
         self.model = agent.get_embedding_model()
 
+        # Get the model name but sanitize it to remove invalid characters for file paths
+        model_name = getattr(
+            self.model,
+            "model",
+            getattr(self.model, "model_name", "default"),
+        )
+        # Replace colons and other problematic characters with underscores
+        safe_namespace = model_name.replace(":", "_").replace("/", "_")
+        
         self.embedder = CacheBackedEmbeddings.from_bytes_store(
             self.model,
             self.store,
-            namespace=getattr(
-                self.model,
-                "model",
-                getattr(self.model, "model_name", "default"),
-            ),
+            namespace=safe_namespace,
         )
 
         self.index = faiss.IndexFlatIP(len(self.embedder.embed_query("example")))

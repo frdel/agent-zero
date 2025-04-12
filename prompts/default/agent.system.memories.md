@@ -1,4 +1,5 @@
 # Memories on the topic
-- following are your memories about current topic:
+- following are memories about current topic
+- do not overly rely on them they might not be relevant
 
 {{memories}}

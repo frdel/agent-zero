@@ -70,3 +70,9 @@ class LocalInteractiveSession:
             return self.full_output, None
         
         return self.full_output, partial_output
+        
+    def is_process_running(self) -> bool:
+        """Check if the process is still running."""
+        if not self.process:
+            return False
+        return self.process.poll() is None

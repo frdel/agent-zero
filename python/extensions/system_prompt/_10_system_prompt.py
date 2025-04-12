@@ -12,11 +12,17 @@ class SystemPrompt(Extension):
         system_prompt.append(main)
         system_prompt.append(tools)
 
+
 def get_main_prompt(agent: Agent):
     return get_prompt("agent.system.main.md", agent)
 
+
 def get_tools_prompt(agent: Agent):
-    return get_prompt("agent.system.tools.md", agent)
+    prompt = get_prompt("agent.system.tools.md", agent)
+    if agent.config.chat_model.vision:
+        prompt += '\n' + get_prompt("agent.system.tools_vision.md", agent)
+    return prompt
+
 
 def get_prompt(file: str, agent: Agent):
     # variables for system prompts
