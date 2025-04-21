@@ -25,6 +25,9 @@ RUN echo "cache buster $CACHE_DATE" && bash /ins/install_A02.sh $BRANCH
 # post installation steps
 RUN bash /ins/post_install.sh $BRANCH
 
+# Install requests library
+RUN apt-get update && apt-get install -y python3-requests
+
 # Expose ports
 EXPOSE 22 80
 

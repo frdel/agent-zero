@@ -31,6 +31,7 @@ from langchain_mistralai import ChatMistralAI
 from python.helpers import dotenv, runtime
 from python.helpers.dotenv import load_dotenv
 from python.helpers.rate_limiter import RateLimiter
+import requests
 
 # environment variables
 load_dotenv()
@@ -55,6 +56,7 @@ class ModelProvider(Enum):
     OPENROUTER = "OpenRouter"
     SAMBANOVA = "Sambanova"
     OTHER = "Other"
+    JINA = "Jina"
 
 
 rate_limiters: dict[str, RateLimiter] = {}
@@ -398,3 +400,52 @@ def get_other_chat(
 
 def get_other_embedding(model_name: str, api_key=None, base_url=None, **kwargs):
     return OpenAIEmbeddings(model=model_name, api_key=api_key, base_url=base_url, **kwargs)  # type: ignore
+
+
+# Jina models
+def get_jina_chat(
+    model_name: str,
+    api_key=None,
+    **kwargs,
+):
+    if not api_key:
+        api_key = get_api_key("jina")
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    }
+    url = "https://deepsearch.jina.ai/v1/chat/completions"
+    return {"url": url, "headers": headers, "model_name": model_name, **kwargs}
+
+
+def get_jina_embedding(
+    model_name: str,
+    api_key=None,
+    **kwargs,
+):
+    if not api_key:
+        api_key = get_api_key("jina")
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    }
+    url = "https://api.jina.ai/v1/embeddings"
+    return {"url": url, "headers": headers, "model_name": model_name, **kwargs}
+
+
+def get_jina_rate_limiter(
+    model_name: str,
+    api_key=None,
+    **kwargs,
+):
+    if not api_key:
+        api_key = get_api_key("jina")
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    }
+    url = "https://api.jina.ai/v1/rate_limit"
+    return {"url": url, "headers": headers, "model_name": model_name, **kwargs}
