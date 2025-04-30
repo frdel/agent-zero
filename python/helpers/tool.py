@@ -12,9 +12,10 @@ class Response:
 
 class Tool:
 
-    def __init__(self, agent: Agent, name: str, args: dict[str,str], message: str, **kwargs) -> None:
+    def __init__(self, agent: Agent, name: str, method: str | None, args: dict[str,str], message: str, **kwargs) -> None:
         self.agent = agent
         self.name = name
+        self.method = method
         self.args = args
         self.message = message
 
@@ -39,7 +40,11 @@ class Tool:
         self.log.update(content=response.message)
 
     def get_log_object(self):
-        return self.agent.context.log.log(type="tool", heading=f"{self.agent.agent_name}: Using tool '{self.name}'", content="", kvps=self.args)
+        if self.method:
+            heading = f"{self.agent.agent_name}: Using tool '{self.name}:{self.method}'"
+        else:
+            heading = f"{self.agent.agent_name}: Using tool '{self.name}'"
+        return self.agent.context.log.log(type="tool", heading=heading, content="", kvps=self.args)
 
     def nice_key(self, key:str):
         words = key.split('_')

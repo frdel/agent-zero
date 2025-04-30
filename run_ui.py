@@ -1,3 +1,9 @@
+import os
+import sys
+import time
+import socket
+import struct
+import asyncio
 from functools import wraps
 import threading
 import signal
@@ -10,10 +16,12 @@ from python.helpers.cloudflare_tunnel import CloudflareTunnel
 from python.helpers.extract_tools import load_classes_from_folder
 from python.helpers.api import ApiHandler
 from python.helpers.print_style import PrintStyle
-import sys
-import socket
-import struct
+from python.helpers.task_scheduler import TaskScheduler
 
+# Set the new timezone to 'UTC'
+os.environ['TZ'] = 'UTC'
+# Apply the timezone change
+time.tzset()
 
 # initialize the internal Flask server
 app = Flask("app", static_folder=get_abs_path("./webui"), static_url_path="/")
@@ -166,6 +174,9 @@ def run():
 
         # initialize contexts from persisted chats
         persist_chat.load_tmp_chats()
+        # reload scheduler
+        scheduler = TaskScheduler.get()
+        asyncio.run(scheduler.reload())
 
     except Exception as e:
         PrintStyle().error(errors.format_error(e))

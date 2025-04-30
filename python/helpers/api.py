@@ -12,7 +12,7 @@ from werkzeug.serving import make_server
 
 
 Input = dict
-Output = Union[Dict[str, Any], Response, TypedDict]
+Output = Union[Dict[str, Any], Response, TypedDict]  # type: ignore
 
 
 class ApiHandler:
@@ -21,15 +21,15 @@ class ApiHandler:
         self.thread_lock = thread_lock
 
     @classmethod
-    def requires_loopback(cls):
+    def requires_loopback(cls) -> bool:
         return False
 
     @classmethod
-    def requires_api_key(cls):
+    def requires_api_key(cls) -> bool:
         return False
 
     @classmethod
-    def requires_auth(cls):
+    def requires_auth(cls) -> bool:
         return True
 
     @abstractmethod

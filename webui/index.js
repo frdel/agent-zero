@@ -342,7 +342,17 @@ let lastSpokenNo = 0
 async function poll() {
     let updated = false
     try {
-        const response = await sendJsonData("/poll", { log_from: lastLogVersion, context });
+        // Get timezone from navigator
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        const response = await sendJsonData(
+            "/poll",
+            {
+                log_from: lastLogVersion,
+                context: context || null,
+                timezone: timezone
+            }
+        );
 
         // Check if the response is valid
         if (!response) {
@@ -421,7 +431,13 @@ async function poll() {
 
                 // If it doesn't exist in the chats list but we're in chats tab, try to select the first chat
                 if (!contextExists && contexts.length > 0) {
+                    // Check if the current context is empty before creating a new one
+                    // If there's already a current context and we're just updating UI, don't automatically
+                    // create a new context by calling setContext
                     const firstChatId = contexts[0].id;
+
+                    // Only create a new context if we're not currently in an existing context
+                    // This helps prevent duplicate contexts when switching tabs
                     setContext(firstChatId);
                     chatsAD.selected = firstChatId;
                     localStorage.setItem('lastSelectedChat', firstChatId);
@@ -454,10 +470,17 @@ async function poll() {
         } else if (contexts.length > 0 && localStorage.getItem('activeTab') === 'chats') {
             // If we're in chats tab with no selection but have chats, select the first one
             const firstChatId = contexts[0].id;
-            setContext(firstChatId);
-            chatsAD.selected = firstChatId;
-            localStorage.setItem('lastSelectedChat', firstChatId);
+
+            // Only set context if we don't already have one to avoid duplicates
+            if (!context) {
+                setContext(firstChatId);
+                chatsAD.selected = firstChatId;
+                localStorage.setItem('lastSelectedChat', firstChatId);
+            }
         }
+
+        lastLogVersion = response.log_version;
+        lastLogGuid = response.log_guid;
 
     } catch (error) {
         console.error('Error:', error);
@@ -509,12 +532,12 @@ window.pauseAgent = async function (paused) {
     }
 }
 
-window.resetChat = async function () {
+window.resetChat = async function (ctxid=null) {
     try {
-        const resp = await sendJsonData("/chat_reset", { context });
-        updateAfterScroll()
+        const resp = await sendJsonData("/chat_reset", { "context": ctxid === null ? context : ctxid });
+        if (ctxid === null) updateAfterScroll();
     } catch (e) {
-        window.toastFetchError("Error resetting chat", e)
+        window.toastFetchError("Error resetting chat", e);
     }
 }
 
@@ -1193,10 +1216,20 @@ function activateTab(tabName) {
         chatsTab.classList.add('active');
         chatsSection.style.display = '';
 
+        // Get the available contexts from Alpine.js data
+        const chatsAD = Alpine.$data(chatsSection);
+        const availableContexts = chatsAD.contexts || [];
+
         // Restore previous chat selection
         const lastSelectedChat = localStorage.getItem('lastSelectedChat');
-        if (lastSelectedChat && lastSelectedChat !== currentContext) {
-            // Only switch if there's a stored selection and it's different from current
+
+        // Only switch if:
+        // 1. lastSelectedChat exists AND
+        // 2. It's different from current context AND
+        // 3. The context actually exists in our contexts list OR there are no contexts yet
+        if (lastSelectedChat &&
+            lastSelectedChat !== currentContext &&
+            (availableContexts.some(ctx => ctx.id === lastSelectedChat) || availableContexts.length === 0)) {
             setContext(lastSelectedChat);
         }
     } else if (tabName === 'tasks') {
@@ -1204,10 +1237,20 @@ function activateTab(tabName) {
         tasksSection.style.display = 'flex';
         tasksSection.style.flexDirection = 'column';
 
+        // Get the available tasks from Alpine.js data
+        const tasksAD = Alpine.$data(tasksSection);
+        const availableTasks = tasksAD.tasks || [];
+
         // Restore previous task selection
         const lastSelectedTask = localStorage.getItem('lastSelectedTask');
-        if (lastSelectedTask && lastSelectedTask !== currentContext) {
-            // Only switch if there's a stored selection and it's different from current
+
+        // Only switch if:
+        // 1. lastSelectedTask exists AND
+        // 2. It's different from current context AND
+        // 3. The task actually exists in our tasks list
+        if (lastSelectedTask &&
+            lastSelectedTask !== currentContext &&
+            availableTasks.some(task => task.id === lastSelectedTask)) {
             setContext(lastSelectedTask);
         }
     }

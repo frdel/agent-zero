@@ -1,5 +1,5 @@
 import time
-
+from datetime import datetime
 from python.helpers.api import ApiHandler
 from flask import Request, Response
 
@@ -7,6 +7,8 @@ from agent import AgentContext
 
 from python.helpers import persist_chat
 from python.helpers.task_scheduler import TaskScheduler
+from python.helpers.localization import Localization
+from python.helpers.dotenv import get_dotenv_value
 
 
 class Poll(ApiHandler):
@@ -14,6 +16,10 @@ class Poll(ApiHandler):
     async def process(self, input: dict, request: Request) -> dict | Response:
         ctxid = input.get("context", None)
         from_no = input.get("log_from", 0)
+
+        # Get timezone from input (default to dotenv default or UTC if not provided)
+        timezone = input.get("timezone", get_dotenv_value("DEFAULT_USER_TIMEZONE", "UTC"))
+        Localization.get().set_timezone(timezone)
 
         # context instance - get or create
         context = self.get_context(ctxid)
@@ -28,7 +34,7 @@ class Poll(ApiHandler):
         # Always reload the scheduler on each poll to ensure we have the latest task state
         await scheduler.reload()
 
-        # loop AgentContext._contexts and number unnamed chats
+        # loop AgentContext._contexts and divide into contexts and tasks
 
         ctxs = []
         tasks = []
@@ -42,21 +48,15 @@ class Poll(ApiHandler):
                 continue
 
             # Create the base context data that will be returned
-            context_data = {
-                "id": ctx.id,
-                "name": ctx.name,
-                "created_at": ctx.created_at,
-                "no": ctx.no,
-                "log_guid": ctx.log.guid,
-                "log_version": len(ctx.log.updates),
-                "log_length": len(ctx.log.logs),
-                "paused": ctx.paused,
-            }
+            context_data = ctx.serialize()
 
-            # Determine if this is a task by checking if a task with this UUID exists
-            is_task = scheduler.get_task_by_uuid(ctx.id) is not None
+            context_task = scheduler.get_task_by_uuid(ctx.id)
+            # Determine if this is a task-dedicated context by checking if a task with this UUID exists
+            is_task_context = (
+                context_task is not None and context_task.context_id == ctx.id
+            )
 
-            if not is_task:
+            if not is_task_context:
                 ctxs.append(context_data)
             else:
                 # If this is a task, get task details from the scheduler
@@ -65,6 +65,7 @@ class Poll(ApiHandler):
                     # Add task details to context_data with the same field names
                     # as used in scheduler endpoints to maintain UI compatibility
                     context_data.update({
+                        "task_name": task_details.get("name"), # name is for context, task_name for the task name
                         "uuid": task_details.get("uuid"),
                         "state": task_details.get("state"),
                         "type": task_details.get("type"),
@@ -72,12 +73,15 @@ class Poll(ApiHandler):
                         "prompt": task_details.get("prompt"),
                         "last_run": task_details.get("last_run"),
                         "last_result": task_details.get("last_result"),
-                        "attachments": task_details.get("attachments", [])
+                        "attachments": task_details.get("attachments", []),
+                        "context_id": task_details.get("context_id"),
                     })
 
                     # Add type-specific fields
                     if task_details.get("type") == "scheduled":
                         context_data["schedule"] = task_details.get("schedule")
+                    elif task_details.get("type") == "planned":
+                        context_data["plan"] = task_details.get("plan")
                     else:
                         context_data["token"] = task_details.get("token")
 

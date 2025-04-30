@@ -2243,37 +2243,6 @@ a:active {
     margin-left: 5px;
 }
 
-.task-detail-button {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #999;
-    cursor: pointer;
-    padding: 5px;
-    margin-left: auto;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.task-detail-button:hover {
-    color: #fff;
-    background-color: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-.light-mode .task-detail-button {
-  color: #666;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.light-mode .task-detail-button:hover {
-  color: #222;
-  background-color: rgba(0, 0, 0, 0.08);
-  border-color: rgba(0, 0, 0, 0.2);
-}
-
 .task-name:hover {
     background-color: rgba(255, 255, 255, 0.1);
     text-decoration: none;
@@ -2330,7 +2299,6 @@ a:active {
 }
 
 .tab.active {
-  color: var(--color-primary);
   border-color: var(--color-border);
   box-shadow:
     0 -4px 8px -2px var(--color-border),
@@ -2341,7 +2309,6 @@ a:active {
 }
 
 .light-mode .tab.active {
-  color: var(--color-primary);
   box-shadow:
     0 -4px 8px -2px var(--color-border),
     4px 0 8px -2px var(--color-border),
@@ -2507,40 +2474,6 @@ a:active {
     padding: 24px;
     position: relative;
     overflow: auto;
-}
-
-/* Settings Tabs */
-.settings-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--color-border);
-    margin-bottom: 24px;
-    gap: 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-.settings-tabs::-webkit-scrollbar {
-    display: none;
-}
-
-.settings-tab {
-    padding: 8px 16px;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    color: var(--color-text-secondary);
-    transition: all 0.2s ease;
-    white-space: nowrap;
-}
-
-.settings-tab:hover {
-    color: var(--color-text);
-}
-
-.settings-tab.active {
-    border-bottom-color: var(--color-primary);
-    color: var(--color-primary);
-    font-weight: 500;
 }
 
 /* Settings Sections */

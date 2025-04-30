@@ -145,7 +145,7 @@ select {
 }
 
 select:disabled {
-  background-color: #f5f5f5;
+  background-color: var(--color-background);
   cursor: not-allowed;
 }
 
@@ -324,16 +324,15 @@ nav ul li a img {
 .settings-tab:not(.active) {
   opacity: 0.8;
   border-bottom: 3px solid var(--color-border);
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: var(--color-background);
 }
 
 .settings-tab.active {
-  color: var(--color-border);
   border-color: var(--color-border);
   box-shadow:
-    0 -4px 8px -2px var(--color-border) 0.5,
-    4px 0 8px -2px var(--color-border) 0.5,
-    -4px 0 8px -2px var(--color-border) 0.5;
+    0 -4px 8px -2px var(--color-border),
+    4px 0 8px -2px var(--color-border),
+    -4px 0 8px -2px var(--color-border);
   font-weight: bold;
   background-color: var(--color-panel);
 }
@@ -342,9 +341,9 @@ nav ul li a img {
 .light-mode .settings-tab.active {
   color: var(--color-border);
   box-shadow:
-    0 -4px 8px -2px var(--color-border) 0.5,
-    4px 0 8px -2px var(--color-border) 0.5,
-    -4px 0 8px -2px var(--color-border) 0.5;
+    0 -4px 8px -2px var(--color-border),
+    4px 0 8px -2px var(--color-border),
+    -4px 0 8px -2px var(--color-border);
 }
 
 .light-mode .settings-tab:not(.active) {
@@ -798,3 +797,155 @@ nav ul li a img {
 .light-mode .scheduler-state-explanation span {
   background-color: rgba(255, 255, 255, 0.3);
 }
+
+/* Schedule Builder (for scheduled tasks) */
+.scheduler-schedule-builder {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.scheduler-schedule-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.scheduler-schedule-label {
+    font-size: 0.8rem;
+    margin-bottom: 5px;
+    color: var(--color-text);
+    opacity: 0.8;
+}
+
+/* Plan Builder (for planned tasks) */
+.scheduler-plan-builder {
+    width: 100%;
+    margin-bottom: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.scheduler-plan-todo {
+    display: flex;
+    flex-direction: column;
+}
+
+.scheduler-plan-label {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    color: var(--color-text);
+    font-weight: bold;
+}
+
+.scheduler-todo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.scheduler-todo-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--color-background);
+    border-radius: 6px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.scheduler-todo-item span {
+    flex: 1;
+    font-size: 14px;
+}
+
+.scheduler-add-todo {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.scheduler-add-todo input[type="datetime-local"] {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-background);
+    color: var(--color-text);
+}
+
+.scheduler-add-todo-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-weight: 500;
+}
+
+.scheduler-add-todo-button:hover {
+    background-color: var(--color-accent-dark);
+}
+
+.scheduler-todo-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    color: var(--color-text);
+    border: none;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-left: 8px;
+}
+
+.scheduler-todo-remove:hover {
+    background-color: var(--color-accent-light);
+    color: var(--color-accent-dark);
+}
+
+.light-mode .scheduler-todo-item {
+    background-color: var(--color-background-light);
+    border-color: var(--color-border-light);
+}
+
+.light-mode .scheduler-todo-remove:hover {
+    background-color: #e0e0e0;
+    color: #d32f2f;
+}
+
+.scheduler-empty-plan {
+    padding: 12px;
+    color: var(--color-text-muted);
+    font-style: italic;
+    text-align: center;
+    border: 1px dashed var(--color-border);
+    border-radius: 6px;
+    margin-top: 8px;
+}
+
+/* Responsive design for plan builder */
+@media (max-width: 768px) {
+    .scheduler-add-todo {
+        flex-direction: column;
+    }
+}
+
+/* Token field (for ad-hoc tasks) */

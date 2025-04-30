@@ -36,6 +36,36 @@ const settingsModalProxy = {
             if (activeTab) {
                 activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
             }
+
+            // When switching to the scheduler tab, initialize Flatpickr components
+            if (tabName === 'scheduler') {
+                console.log('Switching to scheduler tab, initializing Flatpickr');
+                const schedulerElement = document.querySelector('[x-data="schedulerSettings"]');
+                if (schedulerElement) {
+                    const schedulerData = Alpine.$data(schedulerElement);
+                    if (schedulerData) {
+                        // Start polling
+                        if (typeof schedulerData.startPolling === 'function') {
+                            schedulerData.startPolling();
+                        }
+
+                        // Initialize Flatpickr if editing or creating
+                        if (typeof schedulerData.initFlatpickr === 'function') {
+                            // Check if we're creating or editing and initialize accordingly
+                            if (schedulerData.isCreating) {
+                                schedulerData.initFlatpickr('create');
+                            } else if (schedulerData.isEditing) {
+                                schedulerData.initFlatpickr('edit');
+                            }
+                        }
+
+                        // Force an immediate fetch
+                        if (typeof schedulerData.fetchTasks === 'function') {
+                            schedulerData.fetchTasks();
+                        }
+                    }
+                }
+            }
         }, 10);
     },
 
@@ -103,9 +133,25 @@ const settingsModalProxy = {
                     }
                     // Debug log
                     const schedulerTab = document.querySelector('.settings-tab[title="Task Scheduler"]');
-                     console.log(`Current active tab after direct set: ${modalAD.activeTab}`);
+                    console.log(`Current active tab after direct set: ${modalAD.activeTab}`);
                     console.log('Scheduler tab active after direct initialization?',
                         schedulerTab && schedulerTab.classList.contains('active'));
+
+                    // Explicitly start polling if we're on the scheduler tab
+                    if (modalAD.activeTab === 'scheduler') {
+                        console.log('Settings opened directly to scheduler tab, initializing polling');
+                        const schedulerElement = document.querySelector('[x-data="schedulerSettings"]');
+                        if (schedulerElement) {
+                            const schedulerData = Alpine.$data(schedulerElement);
+                            if (schedulerData && typeof schedulerData.startPolling === 'function') {
+                                schedulerData.startPolling();
+                                // Also force an immediate fetch
+                                if (typeof schedulerData.fetchTasks === 'function') {
+                                    schedulerData.fetchTasks();
+                                }
+                            }
+                        }
+                    }
                 }, 10); // Small delay just for scrolling
 
             }, 5); // Keep a minimal delay for modal opening reactivity
@@ -170,6 +216,9 @@ const settingsModalProxy = {
             this.handleCancel();
         }
 
+        // Stop scheduler polling if it's running
+        this.stopSchedulerPolling();
+
         // First update our component state
         this.isOpen = false;
 
@@ -189,6 +238,9 @@ const settingsModalProxy = {
             data: null
         });
 
+        // Stop scheduler polling if it's running
+        this.stopSchedulerPolling();
+
         // First update our component state
         this.isOpen = false;
 
@@ -199,6 +251,19 @@ const settingsModalProxy = {
             setTimeout(() => {
                 store.isOpen = false;
             }, 10);
+        }
+    },
+
+    // Add a helper method to stop scheduler polling
+    stopSchedulerPolling() {
+        // Find the scheduler component and stop polling if it exists
+        const schedulerElement = document.querySelector('[x-data="schedulerSettings"]');
+        if (schedulerElement) {
+            const schedulerData = Alpine.$data(schedulerElement);
+            if (schedulerData && typeof schedulerData.stopPolling === 'function') {
+                console.log('Stopping scheduler polling on modal close');
+                schedulerData.stopPolling();
+            }
         }
     },
 
@@ -463,6 +528,16 @@ document.addEventListener('alpine:init', function () {
             },
 
             closeModal() {
+                // Stop scheduler polling before closing the modal
+                const schedulerElement = document.querySelector('[x-data="schedulerSettings"]');
+                if (schedulerElement) {
+                    const schedulerData = Alpine.$data(schedulerElement);
+                    if (schedulerData && typeof schedulerData.stopPolling === 'function') {
+                        console.log('Stopping scheduler polling on modal close');
+                        schedulerData.stopPolling();
+                    }
+                }
+
                 this.$store.root.isOpen = false;
             }
         };

@@ -1,8 +1,9 @@
 from python.helpers.api import ApiHandler, Input, Output, Request
 from python.helpers.task_scheduler import (
-    TaskScheduler, ScheduledTask, AdHocTask, TaskState,
-    serialize_task, parse_task_schedule
+    TaskScheduler, ScheduledTask, AdHocTask, PlannedTask, TaskState,
+    serialize_task, parse_task_schedule, parse_task_plan
 )
+from python.helpers.localization import Localization
 
 
 class SchedulerTaskUpdate(ApiHandler):
@@ -10,6 +11,10 @@ class SchedulerTaskUpdate(ApiHandler):
         """
         Update an existing task in the scheduler
         """
+        # Get timezone from input (do not set if not provided, we then rely on poll() to set it)
+        if timezone := input.get("timezone", None):
+            Localization.get().set_timezone(timezone)
+
         scheduler = TaskScheduler.get()
         await scheduler.reload()
 
@@ -47,11 +52,28 @@ class SchedulerTaskUpdate(ApiHandler):
         if isinstance(task, ScheduledTask) and "schedule" in input:
             schedule_data = input.get("schedule", {})
             try:
-                update_params["schedule"] = parse_task_schedule(schedule_data)
+                # Parse the schedule with timezone handling
+                task_schedule = parse_task_schedule(schedule_data)
+
+                # Set the timezone from the request if not already in schedule_data
+                if not schedule_data.get('timezone', None) and timezone:
+                    task_schedule.timezone = timezone
+
+                update_params["schedule"] = task_schedule
             except ValueError as e:
                 return {"error": f"Invalid schedule format: {str(e)}"}
         elif isinstance(task, AdHocTask) and "token" in input:
-            update_params["token"] = input.get("token", "")
+            token_value = input.get("token", "")
+            if token_value:  # Only update if non-empty
+                update_params["token"] = token_value
+        elif isinstance(task, PlannedTask) and "plan" in input:
+            plan_data = input.get("plan", {})
+            try:
+                # Parse the plan data
+                task_plan = parse_task_plan(plan_data)
+                update_params["plan"] = task_plan
+            except ValueError as e:
+                return {"error": f"Invalid plan format: {str(e)}"}
 
         # Use atomic update method to apply changes
         updated_task = await scheduler.update_task(task_id, **update_params)

@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from python.helpers.extension import Extension
 from agent import Agent, LoopData
+from python.helpers.localization import Localization
 
 
 class SystemPrompt(Extension):
@@ -28,8 +29,12 @@ def get_prompt(file: str, agent: Agent):
     # variables for system prompts
     # TODO: move variables to the end of chain
     # variables in system prompt would break prompt caching, better to add them to the last message in conversation
+    # get current datetime
+    current_datetime = Localization.get().utc_dt_to_localtime_str(datetime.now(timezone.utc), sep=" ", timespec="seconds")
+    # remove timezone offset
+    current_datetime = current_datetime.split("+")[0]
     vars = {
-        "date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "date_time": current_datetime,
         "agent_name": agent.agent_name,
     }
     return agent.read_prompt(file, **vars)

@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from datetime import datetime
 from typing import Any
 import uuid
 from agent import Agent, AgentConfig, AgentContext
@@ -104,6 +105,10 @@ def _serialize_context(context: AgentContext):
     return {
         "id": context.id,
         "name": context.name,
+        "created_at": (
+            context.created_at.isoformat() if context.created_at
+            else datetime.fromtimestamp(0).isoformat()
+        ),
         "agents": agents,
         "streaming_agent": (
             context.streaming_agent.number if context.streaming_agent else 0
@@ -143,6 +148,12 @@ def _deserialize_context(data):
         config=config,
         id=data.get("id", None),  # get new id
         name=data.get("name", None),
+        created_at=(
+            datetime.fromisoformat(
+                # older chats may not have created_at - backcompat
+                data.get("created_at", datetime.fromtimestamp(0).isoformat())
+            )
+        ),
         log=log,
         paused=False,
         # agent0=agent0,
