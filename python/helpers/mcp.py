@@ -5,8 +5,6 @@ import asyncio
 from contextlib import AsyncExitStack
 from shutil import which
 from datetime import timedelta
-import dirtyjson
-import json
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.client.sse import sse_client
@@ -203,12 +201,9 @@ class MCPConfig(BaseModel):
         """Parse the MCP config string into a MCPConfig object."""
         with cls.__lock:
             try:
-                servers = dirtyjson.loads(config_str)
-            except Exception:
-                try:
-                    servers = DirtyJson.parse_string(config_str)
-                except Exception as e:
-                    raise ValueError(f"Failed to parse MCP config: {e}") from e
+                servers = DirtyJson.parse_string(config_str)
+            except Exception as e:
+                raise ValueError(f"Failed to parse MCP config: {e}") from e
             cls.get_instance().__init__(servers_list=servers)
             cls.__initialized = True
             return cls.get_instance()
