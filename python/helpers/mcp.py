@@ -66,7 +66,7 @@ class MCPTool(Tool):
         else:
             text = response.message.strip()
 
-        await self.agent.hist_add_tool_result(self.name, text)
+        self.agent.hist_add_tool_result(self.name, text)
         (
             PrintStyle(font_color="#1B4F72", background_color="white", padding=True, bold=True)
             .print(f"{self.agent.agent_name}: Response from tool '{self.name}'")
@@ -258,7 +258,7 @@ class MCPConfig(BaseModel):
         with self.__lock:
             return self.__initialized
 
-    def get_tools(self) -> List[dict[str, str | dict[str, Any] | None]]:
+    def get_tools(self) -> List[dict[str, dict[str, Any]]]:
         """Get all tools from all servers"""
         with self.__lock:
             tools = []
@@ -398,10 +398,10 @@ class MCPClientBase(ABC):
             with self.__lock:
                 response: ListToolsResult = await self.session.list_tools()
                 available_tools = [{
-                        "name": tool.name,
-                        "description": tool.description,
-                        "input_schema": tool.inputSchema
-                    } for tool in response.tools]
+                    "name": tool.name,
+                    "description": tool.description,
+                    "input_schema": tool.inputSchema
+                } for tool in response.tools]
 
                 self.tools = available_tools
                 await self.exit_stack.aclose()
