@@ -297,14 +297,15 @@ class MCPConfig(BaseModel):
                     properties: dict[str, Any] = tool["input_schema"]["properties"]
                     for key, value in properties.items():
                         tool_args += f"            \"{key}\": \"...\",\n"
+                        examples = ""
+                        description = ""
                         if "examples" in value:
-                            prompt += (
-                                f" * {key} ({value['type']}): {value['description']} (examples: {value['examples']})\n"
-                            )
-                        else:
-                            prompt += (
-                                f" * {key} ({value['type']}): {value['description']}\n"
-                            )
+                            examples = f"(examples: {value['examples']})"
+                        if "description" in value:
+                            description = f": {value['description']}"
+                        prompt += (
+                            f" * {key} ({value['type']}){description} {examples}\n"
+                        )
                     prompt += "\n"
 
                     prompt += (
@@ -450,12 +451,12 @@ class MCPClientLocal(MCPClientBase):
         if not which(server.command):
             raise ValueError(f"Command {server.command} not found")
 
-        which_args = 0
-        for arg in server.args:
-            if which(arg):
-                which_args = which_args + 1
-        if which_args == 0:
-            raise ValueError(f"None of the arguments {server.args} is a file")
+        # which_args = 0
+        # for arg in server.args:
+        #     if which(arg):
+        #         which_args = which_args + 1
+        # if which_args == 0:
+        #     raise ValueError(f"None of the arguments {server.args} is a file")
 
         server_params = StdioServerParameters(
             command=server.command,
