@@ -1,4 +1,4 @@
-import asyncio
+
 import json
 import os
 import re
@@ -8,6 +8,8 @@ from typing import Any, Literal, TypedDict
 import models
 from python.helpers import runtime, whisper, defer
 from . import files, dotenv
+from python.helpers.print_style import PrintStyle
+
 
 
 class Settings(TypedDict):
@@ -44,6 +46,7 @@ class Settings(TypedDict):
     agent_prompts_subdir: str
     agent_memory_subdir: str
     agent_knowledge_subdir: str
+    mcp_servers: str
 
     api_keys: dict[str, str]
 
@@ -523,6 +526,16 @@ def convert_out(settings: Settings) -> SettingsOutput:
         }
     )
 
+    agent_fields.append(
+        {
+            "id": "mcp_servers",
+            "title": "MCP Servers",
+            "description": "(JSON list of) >> RemoteServer <<: [name, url, headers, timeout (opt), sse_read_timeout (opt), disabled (opt)] / >> Local Server <<: [name, command, args, env, encoding (opt), encoding_error_handler (opt), disabled (opt)]",
+            "type": "textarea",
+            "value": settings["mcp_servers"],
+        }
+    )
+
     agent_section: SettingsSection = {
         "id": "agent",
         "title": "Agent Config",
@@ -817,6 +830,7 @@ def get_default_settings() -> Settings:
         agent_prompts_subdir="default",
         agent_memory_subdir="default",
         agent_knowledge_subdir="custom",
+        mcp_servers="",
         rfc_auto_docker=True,
         rfc_url="localhost",
         rfc_password="",
@@ -836,8 +850,9 @@ def _apply_settings():
         from agent import AgentContext
         from initialize import initialize
 
+        config = initialize()
         for ctx in AgentContext._contexts.values():
-            ctx.config = initialize()  # reinitialize context config with new settings
+            ctx.config = config  # reinitialize context config with new settings
             # apply config to agents
             agent = ctx.agent0
             while agent:
@@ -847,6 +862,40 @@ def _apply_settings():
         # reload whisper model if necessary
         task = defer.DeferredTask().start_task(
             whisper.preload, _settings["stt_model_size"]
+        )  # TODO overkill, replace with background task
+
+        # update mcp settings if necessary
+        from python.helpers.mcp import MCPConfig
+
+        async def update_mcp_settings(mcp_servers: str):
+            PrintStyle(background_color="black", font_color="white", padding=True).print("Updating MCP config...")
+            AgentContext.first().log.log(type="info", content="Updating MCP settings...", temp=True)
+
+            mcp_config = MCPConfig.get_instance()
+            try:
+                MCPConfig.update(mcp_servers)
+            except Exception as e:
+                AgentContext.first().log.log(type="warning", content=f"Failed to update MCP settings: {e}", temp=False)
+                (
+                    PrintStyle(background_color="red", font_color="black", padding=True)
+                    .print("Failed to update MCP settings")
+                )
+                (
+                    PrintStyle(background_color="black", font_color="red", padding=True)
+                    .print(f"{e}")
+                )
+
+            PrintStyle(
+                background_color="#6734C3", font_color="white", padding=True
+            ).print("Parsed MCP config:")
+            (
+                PrintStyle(background_color="#334455", font_color="white", padding=False)
+                .print(mcp_config.model_dump_json())
+            )
+            AgentContext.first().log.log(type="info", content="Finished updating MCP settings :)", temp=True)
+
+        task2 = defer.DeferredTask().start_task(
+            update_mcp_settings, config.mcp_servers
         )  # TODO overkill, replace with background task
 
 

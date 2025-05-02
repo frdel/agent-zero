@@ -1,4 +1,7 @@
 import asyncio
+import nest_asyncio
+nest_asyncio.apply()
+
 from collections import OrderedDict
 from dataclasses import dataclass, field
 import time, importlib, inspect, os, json
@@ -171,6 +174,25 @@ class AgentConfig:
     prompts_subdir: str = ""
     memory_subdir: str = ""
     knowledge_subdirs: list[str] = field(default_factory=lambda: ["default", "custom"])
+    mcp_servers: str = """[
+    {
+        "name": "MCP Server 1",
+        "url": "https://mcp.server.com",
+        "headers": {
+            "Authorization": "Bearer 1234567890"
+        },
+        "disabled": true,
+    },
+    {
+        "name": "MCP Server 2",
+        "command": "python3",
+        "args": ["mcp.py"],
+        "env": {
+            "PYTHONPATH": "."
+        },
+        "disabled": true,
+    }
+]"""
     code_exec_docker_enabled: bool = False
     code_exec_docker_name: str = "A0-dev"
     code_exec_docker_image: str = "frdel/agent-zero-run:development"
@@ -646,7 +668,21 @@ class Agent:
         if tool_request is not None:
             tool_name = tool_request.get("tool_name", "")
             tool_args = tool_request.get("tool_args", {})
-            tool = self.get_tool(tool_name, tool_args, msg)
+
+            try:
+                import python.helpers.mcp as mcp_helper
+                tool = mcp_helper.MCPConfig.get_instance().get_tool(self, tool_name)
+            except Exception as e:
+                tool = None
+                AgentContext.first().log.log(type="warning", content=f"Failed to get MCP tool: {e}", temp=True)
+                (
+                    PrintStyle(background_color="black", font_color="red", padding=True)
+                    .print(f"Failed to get MCP tool: {e}")
+                )
+                raise e
+
+            if not tool:
+                tool = self.get_tool(tool_name, tool_args, msg)
 
             await self.handle_intervention()  # wait if paused and handle intervention message if needed
             await tool.before_execution(**tool_args)
