@@ -11,6 +11,11 @@ dedicated_context flag then the task will run in the chat it was created in incl
 There are manual and automatically executed tasks.
 Automatic execution happens by a schedule defined when creating the task.
 
+### Important instructions
+When a task is scheduled or planned, do not manually run it, if you have no more tasks, respond to user.
+Be careful not to create recursive prompt, do not send a message that would make the agent schedule more tasks, no need to mention the interval in message, just the objective.
+
+
 ### Types of scheduler tasks
 There are 3 types of scheduler tasks:
 

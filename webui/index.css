@@ -991,6 +991,8 @@ pre {
   padding: 0.125rem 0.5rem;
   -webkit-transition: all var(--transition-speed) ease-in-out;
   transition: all var(--transition-speed) ease-in-out;
+  width: 2rem;
+  height: 2rem;
 }
 
 .edit-button:hover {

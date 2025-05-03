@@ -1418,6 +1418,7 @@ const fullComponentImplementation = function() {
     };
 };
 
+
 // Only define the component if it doesn't already exist or extend the existing one
 if (!window.schedulerSettings) {
     console.log('Defining schedulerSettings component from scratch');
@@ -1463,6 +1464,9 @@ if (!window.schedulerSettings) {
                     this[method] = fullImpl[method];
                 }
             });
+
+            // hack to expose deleteTask
+            window.deleteTaskGlobal = this.deleteTask.bind(this);
 
             // Make sure we have a filteredTasks array initialized
             this.filteredTasks = [];
