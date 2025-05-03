@@ -592,8 +592,8 @@ class DocumentQueryHelper:
                 mimetype = response.headers["content-type"]
                 if "content-length" in response.headers:
                     content_length = float(response.headers["content-length"]) / 1024 / 1024  # MB
-                    if content_length > 25.0:
-                        raise ValueError(f"Document content length exceeds max. 25MB: {content_length} MB ({document_uri})")
+                    if content_length > 50.0:
+                        raise ValueError(f"Document content length exceeds max. 50MB: {content_length} MB ({document_uri})")
                 if mimetype and '; charset=' in mimetype:
                     mimetype = mimetype.split('; charset=')[0]
 
