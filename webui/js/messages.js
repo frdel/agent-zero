@@ -149,7 +149,8 @@ export function drawMessageDefault(
     false,
     kvps,
     ["message-ai", "message-default"],
-    ["msg-json"]
+    ["msg-json"],
+    false
   );
 }
 
@@ -177,7 +178,7 @@ export function drawMessageAgent(
     kvpsFlat,
     ["message-ai", "message-agent"],
     ["msg-json"],
-    true
+    false
   );
 }
 
@@ -233,7 +234,7 @@ export function drawMessageUser(
   content,
   temp,
   kvps = null,
-  latex = true
+  latex = false
 ) {
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", "message-user");
@@ -338,7 +339,8 @@ export function drawMessageTool(
     true,
     kvps,
     ["message-ai", "message-tool"],
-    ["msg-output"]
+    ["msg-output"],
+    false
   );
 }
 
@@ -351,10 +353,17 @@ export function drawMessageCodeExe(
   temp,
   kvps = null
 ) {
-  _drawMessage(messageContainer, heading, content, temp, true, null, [
-    "message-ai",
-    "message-code-exe",
-  ]);
+  _drawMessage(
+    messageContainer,
+    heading,
+    content,
+    temp,
+    true,
+    null,
+    ["message-ai", "message-code-exe"],
+    [],
+    false
+  );
 }
 
 export function drawMessageBrowser(
@@ -374,7 +383,8 @@ export function drawMessageBrowser(
     true,
     kvps,
     ["message-ai", "message-browser"],
-    ["msg-json"]
+    ["msg-json"],
+    false
   );
 }
 
@@ -388,9 +398,17 @@ export function drawMessageAgentPlain(
   temp,
   kvps = null
 ) {
-  _drawMessage(messageContainer, heading, content, temp, false, kvps, [
-    ...classes,
-  ]);
+  _drawMessage(
+    messageContainer,
+    heading,
+    content,
+    temp,
+    false,
+    kvps,
+    [...classes],
+    [],
+    false
+  );
   messageContainer.classList.add("center-container");
 }
 
@@ -432,7 +450,8 @@ export function drawMessageUtil(
     false,
     kvps,
     ["message-util"],
-    ["msg-json"]
+    ["msg-json"],
+    false
   );
   messageContainer.classList.add("center-container");
 }
@@ -616,7 +635,7 @@ function escapeHTML(str) {
 }
 
 function convertPathsToLinks(str) {
-  function generateLinks(match,...args) {
+  function generateLinks(match, ...args) {
     const parts = match.split("/");
 
     if (!parts[0]) parts.shift();
@@ -632,9 +651,9 @@ function convertPathsToLinks(str) {
   const prefix = `(?:^|[ \`'"\\n]|&#39;|&quot;)`; // Use a non-capturing group for OR logic
   const folder = `[a-zA-Z0-9_\\/.\\-]`; // Characters allowed in folder chain
   const file = `[a-zA-Z0-9_\\-\\/]`; // Characters allowed in file names
-  const suffix = `(?<!\\.)`
+  const suffix = `(?<!\\.)`;
 
-  const regex = new RegExp(`(?<=${prefix})\\/${folder}*${file}${suffix}`, 'g');
+  const regex = new RegExp(`(?<=${prefix})\\/${folder}*${file}${suffix}`, "g");
 
   return str.replace(regex, generateLinks);
 }

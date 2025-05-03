@@ -10,7 +10,7 @@ async def run_loop():
             await scheduler_tick()
         except Exception as e:
             PrintStyle().error(errors.format_error(e))
-        await asyncio.sleep(60)
+        await asyncio.sleep(15)
 
 
 async def scheduler_tick():
