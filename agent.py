@@ -163,10 +163,10 @@ class AgentContext:
                     tool_name="call_subordinate", tool_result=msg  # type: ignore
                 )
             )
-            response = await agent.monologue()
+            response = await agent.monologue()  # type: ignore
             superior = agent.data.get(Agent.DATA_NAME_SUPERIOR, None)
             if superior:
-                response = await self._process_chain(superior, response, False)
+                response = await self._process_chain(superior, response, False)  # type: ignore
             return response
         except Exception as e:
             agent.handle_critical_exception(e)
@@ -313,7 +313,7 @@ class Agent:
 
                         agent_response = await self.call_chat_model(
                             prompt, callback=stream_callback
-                        )
+                        )  # type: ignore
 
                         await self.handle_intervention(agent_response)
 
@@ -499,13 +499,9 @@ class Agent:
                 system_message=message.system_message
             )
 
-        # remove empty attachments from template
-        if (
-            isinstance(content, dict)
-            and "attachments" in content
-            and not content["attachments"]
-        ):
-            del content["attachments"]
+        # remove empty parts from template
+        if isinstance(content, dict):
+            content = {k: v for k, v in content.items() if v}
 
         # add to history
         msg = self.hist_add_message(False, content=content)  # type: ignore

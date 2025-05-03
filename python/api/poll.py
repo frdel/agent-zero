@@ -32,7 +32,7 @@ class Poll(ApiHandler):
         scheduler = TaskScheduler.get()
 
         # Always reload the scheduler on each poll to ensure we have the latest task state
-        await scheduler.reload()
+        # await scheduler.reload() # TODO:SCHEDULER must optimize this
 
         # loop AgentContext._contexts and divide into contexts and tasks
 

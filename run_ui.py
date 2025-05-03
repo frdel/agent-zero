@@ -15,11 +15,13 @@ from python.helpers import persist_chat, runtime, dotenv, process
 from python.helpers.cloudflare_tunnel import CloudflareTunnel
 from python.helpers.extract_tools import load_classes_from_folder
 from python.helpers.api import ApiHandler
+from python.helpers.job_loop import run_loop
 from python.helpers.print_style import PrintStyle
 from python.helpers.task_scheduler import TaskScheduler
+from python.helpers.defer import DeferredTask
 
 # Set the new timezone to 'UTC'
-os.environ['TZ'] = 'UTC'
+os.environ["TZ"] = "UTC"
 # Apply the timezone change
 time.tzset()
 
@@ -35,8 +37,10 @@ basic_auth = BasicAuth(app)
 
 def is_loopback_address(address):
     loopback_checker = {
-        socket.AF_INET: lambda x: struct.unpack('!I', socket.inet_aton(x))[0] >> (32 - 8) == 127,
-        socket.AF_INET6: lambda x: x == '::1'
+        socket.AF_INET: lambda x: struct.unpack("!I", socket.inet_aton(x))[0]
+        >> (32 - 8)
+        == 127,
+        socket.AF_INET6: lambda x: x == "::1",
     }
     address_type = "hostname"
     try:
@@ -79,6 +83,7 @@ def requires_api_key(f):
         else:
             return Response("API key required", 401)
         return await f(*args, **kwargs)
+
     return decorated
 
 
@@ -93,6 +98,7 @@ def requires_loopback(f):
                 {},
             )
         return await f(*args, **kwargs)
+
     return decorated
 
 
@@ -142,6 +148,10 @@ def run():
     from werkzeug.serving import WSGIRequestHandler
     from werkzeug.serving import make_server
 
+    PrintStyle().print("Starting job loop...")
+    job_loop = DeferredTask().start_task(run_loop)
+
+    PrintStyle().print("Starting server...")
     class NoRequestLoggingWSGIRequestHandler(WSGIRequestHandler):
         def log_request(self, code="-", size="-"):
             pass  # Override to suppress request logging
@@ -188,17 +198,23 @@ def run():
         instance = handler(app, lock)
 
         if handler.requires_loopback():
+
             @requires_loopback
             async def handle_request():
                 return await instance.handle_request(request=request)
+
         elif handler.requires_auth():
+
             @requires_auth
             async def handle_request():
                 return await instance.handle_request(request=request)
+
         elif handler.requires_api_key():
+
             @requires_api_key
             async def handle_request():
                 return await instance.handle_request(request=request)
+
         else:
             # Fallback to requires_auth
             @requires_auth
@@ -232,7 +248,8 @@ def run():
             nonlocal tunnel, server, printer
             with lock:
                 printer.print("Caught signal, stopping server...")
-                server.shutdown()
+                if server:
+                    server.shutdown()
                 process.stop_server()
                 if tunnel:
                     tunnel.stop()

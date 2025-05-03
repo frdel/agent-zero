@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# fix permissions for cron files
+chmod 0644 /etc/cron.d/*
+
 # Update and install necessary packages
 apt-get update && apt-get install -y \
     python3 \

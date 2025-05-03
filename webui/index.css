@@ -2259,7 +2259,7 @@ a:active {
 
 .light-mode .tab.active::after {
     background-color: var(--highlight-pink);
-    box-shadow: 0 0 8px var(--highlight-pink);
+    /* box-shadow: 0 0 8px var(--highlight-pink); */
 }
 /* Tabs styling */
 .tabs-container {
@@ -2300,10 +2300,10 @@ a:active {
 
 .tab.active {
   border-color: var(--color-border);
-  box-shadow:
+  /* box-shadow:
     0 -4px 8px -2px var(--color-border),
     4px 0 8px -2px var(--color-border),
-    -4px 0 8px -2px var(--color-border);
+    -4px 0 8px -2px var(--color-border); */
   font-weight: bold;
   background-color: var(--color-panel);
 }

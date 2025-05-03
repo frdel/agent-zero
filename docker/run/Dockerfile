@@ -43,8 +43,5 @@ EXPOSE 22 80
 
 RUN chmod +x /exe/initialize.sh /exe/run_A0.sh /exe/run_searxng.sh
 
-# This is important or cron will not execute the file
-RUN chmod 0644 /etc/cron.d/scheduler_tick
-
 # initialize runtime and switch to supervisord
 CMD ["/exe/initialize.sh", "$BRANCH"]

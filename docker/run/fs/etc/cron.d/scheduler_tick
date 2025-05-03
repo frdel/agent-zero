@@ -1,5 +1,0 @@
-# TaskScheduler CronJob
-
-* * * * * root curl http://127.0.0.1:80/scheduler_tick
-
-# END
