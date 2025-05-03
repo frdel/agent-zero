@@ -117,17 +117,17 @@ class Knowledge(Tool):
             if "qa" in item:
                 outputs.append(
                     f"## Next Result\n"
-                    f"Title: {item['title'].strip()}\n"
-                    f"URL: {item['url'].strip()}\n"
-                    f"Search Engine Summary: {item['content'].strip()}\n"
-                    f"Query Result: {item['qa'].strip()}"
+                    f"*Title*: {item['title'].strip()}\n"
+                    f"*URL*: {item['url'].strip()}\n"
+                    f"*Search Engine Summary*:\n{item['content'].strip()}\n"
+                    f"*Query Result*:\n{item['qa'].strip()}"
                 )
             else:
                 outputs.append(
                     f"## Next Result\n"
-                    f"Title: {item['title'].strip()}\n"
-                    f"URL: {item['url'].strip()}\n"
-                    f"Search Engine Summary: {item['content'].strip()}"
+                    f"*Title*: {item['title'].strip()}\n"
+                    f"*URL*: {item['url'].strip()}\n"
+                    f"*Search Engine Summary*:\n{item['content'].strip()}"
                 )
 
         return "\n\n".join(outputs[:SEARCH_ENGINE_RESULTS]).strip()
