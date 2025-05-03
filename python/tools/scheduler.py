@@ -68,7 +68,11 @@ class SchedulerTool(Tool):
         if not task:
             return Response(message=f"Task not found: {task_uuid}", break_loop=False)
         await TaskScheduler.get().run_task_by_uuid(task_uuid)
-        return Response(message=f"Task started: {task_uuid}", break_loop=False)
+        if task.context_id == self.agent.context.id:
+            break_loop = True # break loop if task is running in the same context, otherwise it would start two conversations in one window
+        else:
+            break_loop = False
+        return Response(message=f"Task started: {task_uuid}", break_loop=break_loop)
 
     async def delete_task(self, **kwargs) -> Response:
         task_uuid: str = kwargs.get("uuid", None)
