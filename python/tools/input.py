@@ -12,7 +12,7 @@ class Input(Tool):
 
         # forward keyboard input to code execution tool
         args = {"runtime": "terminal", "code": keyboard}
-        cot = CodeExecution(self.agent, "code_execution_tool", args, self.message)
+        cot = CodeExecution(self.agent, "code_execution_tool", "", args, self.message)
         cot.log = self.log
         return await cot.execute(**args)
 

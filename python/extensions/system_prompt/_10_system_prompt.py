@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from python.helpers.extension import Extension
 from agent import Agent, LoopData
+from python.helpers.localization import Localization
 
 
 class SystemPrompt(Extension):
@@ -14,22 +15,11 @@ class SystemPrompt(Extension):
 
 
 def get_main_prompt(agent: Agent):
-    return get_prompt("agent.system.main.md", agent)
+    return agent.read_prompt("agent.system.main.md")
 
 
 def get_tools_prompt(agent: Agent):
-    prompt = get_prompt("agent.system.tools.md", agent)
+    prompt = agent.read_prompt("agent.system.tools.md")
     if agent.config.chat_model.vision:
-        prompt += '\n' + get_prompt("agent.system.tools_vision.md", agent)
+        prompt += '\n' + agent.read_prompt("agent.system.tools_vision.md")
     return prompt
-
-
-def get_prompt(file: str, agent: Agent):
-    # variables for system prompts
-    # TODO: move variables to the end of chain
-    # variables in system prompt would break prompt caching, better to add them to the last message in conversation
-    vars = {
-        "date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "agent_name": agent.agent_name,
-    }
-    return agent.read_prompt(file, **vars)

@@ -18,18 +18,31 @@
 .modal-container {
   background-color: var(--color-panel);
   border-radius: 12px;
-  width: 90%;
-  max-width: 800px;
+  width: 1100px; /* Reduced from 1200px to 1100px */
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 4px 23px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .light-mode .modal-container {
   background-color: var(--color-panel-light);
+}
+
+/* Mobile Viewport Behavior */
+@media (max-width: 1280px) {
+  .modal-container {
+    width: 95%; /* Take up most of the screen on mobile */
+    min-width: unset; /* Remove min-width constraints */
+    max-width: 95%; /* Ensure consistent width */
+  }
+
+  /* Ensure section content can scroll horizontally */
+  .section {
+    overflow-x: auto;
+  }
 }
 
 /* Modal Header */
@@ -77,21 +90,20 @@
 .modal-description {
   padding: 0.8rem 1rem 0 1rem;
   flex-grow: 1;
-  transition: all 0.3s ease;
 }
 
 /* Modal Content */
 .modal-content {
   padding: 0.5rem 1.5rem 0 1.5rem;
   overflow-y: auto;
+  overflow-x: hidden;
   height: calc(90vh);
   flex-grow: 1;
   background-clip: border-box;
   border: 6px solid transparent;
-  transition: all 0.3s ease;
   margin-bottom: 0;
-  padding-bottom: 0;
-  
+  padding-bottom: 10px;
+  box-sizing: border-box;
 }
 
 .modal-content::-webkit-scrollbar {

@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # start webapp
-sudo -H -u searxng -i
 cd /usr/local/searxng/searxng-src
 export SEARXNG_SETTINGS_PATH="/etc/searxng/settings.yml"
-python searx/webapp.py
+
+# activate venv
+source "/usr/local/searxng/searx-pyenv/bin/activate"
+
+exec python /usr/local/searxng/searxng-src/searx/webapp.py

@@ -1,0 +1,127 @@
+/* Flatpickr Customization for Scheduler */
+
+/* Custom styling wrapper */
+.scheduler-flatpickr-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: visible !important; /* Ensure dropdown can escape container */
+}
+
+/* Input styling */
+.scheduler-flatpickr-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border, #ccc);
+  border-radius: 4px;
+  background-color: var(--color-input, #fff);
+  color: var(--color-text, #333);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Calendar container customization */
+.flatpickr-calendar.scheduler-theme {
+  background: var(--color-panel, #fff);
+  border: 1px solid var(--color-border, #ccc);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: var(--color-text, #333);
+  font-size: 14px;
+  max-width: 320px;
+  padding: 0;
+  z-index: 9999 !important; /* Ensure it's above other elements */
+  position: absolute !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Month navigation */
+.flatpickr-calendar.scheduler-theme .flatpickr-months {
+  background-color: var(--color-primary, #4a90e2);
+  border-radius: 4px 4px 0 0;
+  color: var(--color-text, #333);
+  padding: 8px 0;
+}
+
+.flatpickr-calendar.scheduler-theme .flatpickr-prev-month,
+.flatpickr-calendar.scheduler-theme .flatpickr-next-month {
+  color: var(--color-text, #333);
+}
+
+.flatpickr-calendar.scheduler-theme .flatpickr-prev-month:hover,
+.flatpickr-calendar.scheduler-theme .flatpickr-next-month:hover {
+  color: var(--color-text, #333);
+}
+
+/* Days of week */
+.flatpickr-calendar.scheduler-theme .flatpickr-weekdays {
+  background-color: var(--color-panel, #fff);
+  border-bottom: 1px solid var(--color-border, #eee);
+}
+
+.flatpickr-calendar.scheduler-theme .flatpickr-weekday {
+  color: var(--color-text, #333);
+  font-weight: bold;
+}
+
+/* Day cells */
+.flatpickr-calendar.scheduler-theme .flatpickr-day {
+  border-radius: 4px;
+  color: var(--color-text, #333);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.flatpickr-calendar.scheduler-theme .flatpickr-day:hover {
+  background-color: var(--color-panel, #f0f0f0);
+}
+
+.flatpickr-calendar.scheduler-theme .flatpickr-day.selected {
+  background-color: var(--color-primary, #4a90e2);
+  border-color: var(--color-border, #ccc);
+  color: var(--color-text, #333);
+}
+
+.flatpickr-calendar.scheduler-theme .flatpickr-day.today {
+  border-color: var(--color-border, #ccc);
+  color: var(--color-text, #333);
+}
+
+/* Time picker */
+.flatpickr-calendar.scheduler-theme .flatpickr-time {
+  border-top: 1px solid var(--color-border, #eee);
+  background-color: var(--color-panel, #fff);
+}
+
+.flatpickr-calendar.scheduler-theme .numInputWrapper span {
+  border-color: var(--color-border, #eee);
+}
+
+.flatpickr-calendar.scheduler-theme .numInputWrapper span:hover {
+  background-color: var(--color-panel, #f0f0f0);
+}
+
+.flatpickr-calendar.scheduler-theme input.flatpickr-hour,
+.flatpickr-calendar.scheduler-theme input.flatpickr-minute,
+.flatpickr-calendar.scheduler-theme input.flatpickr-second {
+  color: var(--color-text, #333);
+  background-color: transparent;
+}
+
+/* Clear button in the input field */
+.scheduler-flatpickr-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  padding: 4px;
+  display: none;
+  color: var(--color-text-light, #999);
+  background: transparent;
+  border: none;
+  z-index: 1;
+}
+
+.scheduler-flatpickr-wrapper:hover .scheduler-flatpickr-clear {
+  display: block;
+}

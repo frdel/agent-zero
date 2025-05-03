@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from datetime import datetime
 from typing import Any
 import uuid
 from agent import Agent, AgentConfig, AgentContext
@@ -14,9 +15,20 @@ CHAT_FILE_NAME = "chat.json"
 
 
 def get_chat_folder_path(ctxid: str):
+    """
+    Get the folder path for any context (chat or task).
+
+    Args:
+        ctxid: The context ID
+
+    Returns:
+        The absolute path to the context folder
+    """
     return files.get_abs_path(CHATS_FOLDER, ctxid)
 
+
 def save_tmp_chat(context: AgentContext):
+    """Save context to the chats folder"""
     path = _get_chat_file_path(context.id)
     files.make_dirs(path)
     data = _serialize_context(context)
@@ -25,11 +37,12 @@ def save_tmp_chat(context: AgentContext):
 
 
 def load_tmp_chats():
+    """Load all contexts from the chats folder"""
     _convert_v080_chats()
-    folders = files.list_files("tmp/chats/", "*")
+    folders = files.list_files(CHATS_FOLDER, "*")
     json_files = []
-    for folder in folders:
-        json_files.append(_get_chat_file_path(folder))
+    for folder_name in folders:
+        json_files.append(_get_chat_file_path(folder_name))
 
     ctxids = []
     for file in json_files:
@@ -48,16 +61,16 @@ def _get_chat_file_path(ctxid: str):
 
 
 def _convert_v080_chats():
-    json_files = files.list_files("tmp/chats", "*.json")
+    json_files = files.list_files(CHATS_FOLDER, "*.json")
     for file in json_files:
         path = files.get_abs_path(CHATS_FOLDER, file)
         name = file.rstrip(".json")
-        fold = files.get_abs_path(CHATS_FOLDER, name)
         new = _get_chat_file_path(name)
         files.move_file(path, new)
 
 
 def load_json_chats(jsons: list[str]):
+    """Load contexts from JSON strings"""
     ctxids = []
     for js in jsons:
         data = json.loads(js)
@@ -69,14 +82,16 @@ def load_json_chats(jsons: list[str]):
 
 
 def export_json_chat(context: AgentContext):
+    """Export context as JSON string"""
     data = _serialize_context(context)
     js = _safe_json_serialize(data, ensure_ascii=False)
     return js
 
 
 def remove_chat(ctxid):
-    files.delete_dir(get_chat_folder_path(ctxid))
-
+    """Remove a chat or task context"""
+    path = get_chat_folder_path(ctxid)
+    files.delete_dir(path)
 
 
 def _serialize_context(context: AgentContext):
@@ -90,6 +105,10 @@ def _serialize_context(context: AgentContext):
     return {
         "id": context.id,
         "name": context.name,
+        "created_at": (
+            context.created_at.isoformat() if context.created_at
+            else datetime.fromtimestamp(0).isoformat()
+        ),
         "agents": agents,
         "streaming_agent": (
             context.streaming_agent.number if context.streaming_agent else 0
@@ -129,6 +148,12 @@ def _deserialize_context(data):
         config=config,
         id=data.get("id", None),  # get new id
         name=data.get("name", None),
+        created_at=(
+            datetime.fromisoformat(
+                # older chats may not have created_at - backcompat
+                data.get("created_at", datetime.fromtimestamp(0).isoformat())
+            )
+        ),
         log=log,
         paused=False,
         # agent0=agent0,
