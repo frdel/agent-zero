@@ -184,9 +184,9 @@ def run():
 
         # initialize contexts from persisted chats
         persist_chat.load_tmp_chats()
-        # reload scheduler
-        scheduler = TaskScheduler.get()
-        asyncio.run(scheduler.reload())
+        # # reload scheduler
+        # scheduler = TaskScheduler.get()
+        # asyncio.run(scheduler.reload())
 
     except Exception as e:
         PrintStyle().error(errors.format_error(e))
