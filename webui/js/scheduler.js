@@ -955,6 +955,10 @@ const fullComponentImplementation = function() {
             }
 
             try {
+
+                // if we delete selected context, switch to another first
+                switchFromContext(taskId);
+
                 const response = await fetch('/scheduler_task_delete', {
                     method: 'POST',
                     headers: {
@@ -972,9 +976,6 @@ const fullComponentImplementation = function() {
                 }
 
                 showToast('Task deleted successfully', 'success');
-
-                // if we deleted selected context, switch to another
-                switchFromContext(taskId);
                 
                 // If we were viewing the detail of the deleted task, close the detail view
                 if (this.selectedTaskForDetail && this.selectedTaskForDetail.uuid === taskId) {
