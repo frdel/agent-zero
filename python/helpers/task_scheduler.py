@@ -706,10 +706,10 @@ class TaskScheduler:
             raise ValueError(f"Task {task.name} has no context ID")
 
         config = initialize()
-        context: AgentContext = AgentContext(config)
-        context.id = task.context_id
+        context: AgentContext = AgentContext(config, id=task.context_id, name=task.name)
+        # context.id = task.context_id
         # initial name before renaming is same as task name
-        context.name = task.name
+        # context.name = task.name
 
         # Save the context
         save_tmp_chat(context)
@@ -772,7 +772,7 @@ class TaskScheduler:
                 # Ensure the context is properly registered in the AgentContext._contexts
                 # This is critical for the polling mechanism to find and stream logs
                 # Dict operations are atomic
-                AgentContext._contexts[context.id] = context
+                # AgentContext._contexts[context.id] = context
                 agent = context.streaming_agent or context.agent0
 
                 # Prepare attachment filenames for logging

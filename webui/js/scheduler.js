@@ -4,6 +4,7 @@
  */
 
 import { formatDateTime, getUserTimezone } from './time-utils.js';
+import { switchFromContext } from '../index.js';
 
 // Ensure the showToast function is available
 // if (typeof window.showToast !== 'function') {
@@ -652,8 +653,9 @@ const fullComponentImplementation = function() {
         // Save task (create new or update existing)
         async saveTask() {
             // Validate task data
-            if (!this.editingTask.name.trim()) {
-                showToast('Task name is required', 'error');
+            if (!this.editingTask.name.trim() || !this.editingTask.prompt.trim()) {
+                // showToast('Task name and prompt are required', 'error');
+                alert('Task name and prompt are required');
                 return;
             }
 
@@ -971,6 +973,9 @@ const fullComponentImplementation = function() {
 
                 showToast('Task deleted successfully', 'success');
 
+                // if we deleted selected context, switch to another
+                switchFromContext(taskId);
+                
                 // If we were viewing the detail of the deleted task, close the detail view
                 if (this.selectedTaskForDetail && this.selectedTaskForDetail.uuid === taskId) {
                     this.closeTaskDetail();

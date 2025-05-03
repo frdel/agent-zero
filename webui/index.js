@@ -562,24 +562,8 @@ window.killChat = async function (id) {
         const chatsAD = Alpine.$data(chatsSection);
         console.log("Current contexts before deletion:", JSON.stringify(chatsAD.contexts.map(c => ({ id: c.id, name: c.name }))));
 
-        // Find an alternate chat to switch to if we're deleting the current one
-        let alternateChat = null;
-        for (let i = 0; i < chatsAD.contexts.length; i++) {
-            if (chatsAD.contexts[i].id !== id) {
-                alternateChat = chatsAD.contexts[i];
-                break;
-            }
-        }
-
-        // If we're deleting the currently selected chat, switch to another one first
-        if (context === id) {
-            if (alternateChat) {
-                setContext(alternateChat.id);
-            } else {
-                // If no other chats, create a new empty context
-                setContext(generateGUID());
-            }
-        }
+        // switch to another context if deleting current
+        switchFromContext(id);
 
         // Delete the chat on the server
         await sendJsonData("/chat_remove", { context: id });
@@ -598,6 +582,29 @@ window.killChat = async function (id) {
     } catch (e) {
         console.error("Error deleting chat:", e);
         window.toastFetchError("Error deleting chat", e);
+    }
+}
+
+export function switchFromContext(id){
+    // If we're deleting the currently selected chat, switch to another one first
+    if (context === id) {
+        const chatsAD = Alpine.$data(chatsSection);
+        
+        // Find an alternate chat to switch to if we're deleting the current one
+        let alternateChat = null;
+        for (let i = 0; i < chatsAD.contexts.length; i++) {
+            if (chatsAD.contexts[i].id !== id) {
+                alternateChat = chatsAD.contexts[i];
+                break;
+            }
+        }
+
+        if (alternateChat) {
+            setContext(alternateChat.id);
+        } else {
+            // If no other chats, create a new empty context
+            setContext(generateGUID());
+        }
     }
 }
 

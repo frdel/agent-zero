@@ -24,7 +24,7 @@ class SchedulerTaskCreate(ApiHandler):
 
         # Get common fields from input
         name = input.get("name")
-        system_prompt = input.get("system_prompt")
+        system_prompt = input.get("system_prompt", "")
         prompt = input.get("prompt")
         attachments = input.get("attachments", [])
         context_id = input.get("context_id", None)
@@ -44,8 +44,9 @@ class SchedulerTaskCreate(ApiHandler):
         plan = input.get("plan", {})
 
         # Validate required fields
-        if not name or not system_prompt or not prompt:
-            return {"error": "Missing required fields: name, system_prompt, prompt"}
+        if not name or not prompt:
+            # return {"error": "Missing required fields: name, system_prompt, prompt"}
+            raise ValueError("Missing required fields: name, system_prompt, prompt")
 
         task = None
         if schedule:
@@ -66,9 +67,9 @@ class SchedulerTaskCreate(ApiHandler):
                 try:
                     task_schedule = parse_task_schedule(schedule)
                 except ValueError as e:
-                    return {"error": str(e)}
+                    raise ValueError(str(e))
             else:
-                return {"error": "Invalid schedule format. Must be string or object."}
+                raise ValueError("Invalid schedule format. Must be string or object.")
 
             task = ScheduledTask.create(
                 name=name,
