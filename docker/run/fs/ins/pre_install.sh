@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# fix permissions for cron files
+chmod 0644 /etc/cron.d/*
+
 # Update and install necessary packages
 apt-get update && apt-get install -y \
     python3 \
@@ -11,7 +14,9 @@ apt-get update && apt-get install -y \
     curl \
     wget \
     git \
-    ffmpeg 
+    ffmpeg \
+    supervisor \
+    cron
 
 # # Configure system alternatives so that /usr/bin/python3 points to Python 3.12
 # sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1

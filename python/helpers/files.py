@@ -250,16 +250,20 @@ def get_base_dir():
     return base_dir
 
 
-def get_subdirectories(relative_path: str, include: str = "*", exclude=None):
+def get_subdirectories(relative_path: str, include: str | list[str] = "*", exclude: str | list[str] | None = None):
     abs_path = get_abs_path(relative_path)
     if not os.path.exists(abs_path):
         return []
+    if isinstance(include, str):
+        include = [include]
+    if isinstance(exclude, str):
+        exclude = [exclude]
     return [
         subdir
         for subdir in os.listdir(abs_path)
         if os.path.isdir(os.path.join(abs_path, subdir))
-        and fnmatch(subdir, include)
-        and (exclude is None or not fnmatch(subdir, exclude))
+        and any(fnmatch(subdir, inc) for inc in include)
+        and (exclude is None or not any(fnmatch(subdir, exc) for exc in exclude))
     ]
 
 

@@ -4,7 +4,7 @@
 respond valid json with fields
 thoughts: decompose ➔ create decision trees ➔ forest of thoughts
 reflection: question logical frameworks ➔ refine thoughts ➔ perform metareflection
-math requires katex $...$ delims
+math requires katex $...$ delims, only use in response tool
 tool_name: use tool name
 tool_args: key value pairs tool arguments
 no other text

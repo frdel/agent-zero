@@ -10,6 +10,7 @@ const sendButton = document.getElementById('send-button');
 const inputSection = document.getElementById('input-section');
 const statusSection = document.getElementById('status-section');
 const chatsSection = document.getElementById('chats-section');
+const tasksSection = document.getElementById('tasks-section');
 const progressBar = document.getElementById('progress-bar');
 const autoScrollSwitch = document.getElementById('auto-scroll-switch');
 const timeDate = document.getElementById('time-date-container');
@@ -20,8 +21,10 @@ let context = "";
 let connectionStatus = false
 
 
-// Initialize the toggle button 
+// Initialize the toggle button
 setupSidebarToggle();
+// Initialize tabs
+setupTabs();
 
 function isMobile() {
     return window.innerWidth <= 768;
@@ -149,7 +152,7 @@ export async function sendMessage() {
             //     } else {
             //         toast("Undefined error.", "error");
             //     }
-            // } 
+            // }
             else {
                 setContext(jsonResponse.context);
             }
@@ -339,8 +342,23 @@ let lastSpokenNo = 0
 async function poll() {
     let updated = false
     try {
-        const response = await sendJsonData("/poll", { log_from: lastLogVersion, context });
-        //console.log(response)
+        // Get timezone from navigator
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        const response = await sendJsonData(
+            "/poll",
+            {
+                log_from: lastLogVersion,
+                context: context || null,
+                timezone: timezone
+            }
+        );
+
+        // Check if the response is valid
+        if (!response) {
+            console.error("Invalid response from poll endpoint");
+            return false;
+        }
 
         if (!context) setContext(response.context)
         if (response.context != context) return //skip late polls after context change
@@ -359,6 +377,9 @@ async function poll() {
             afterMessagesUpdate(response.logs)
         }
 
+        lastLogVersion = response.log_version;
+        lastLogGuid = response.log_guid;
+
         updateProgress(response.log_progress, response.log_progress_active)
 
         //set ui model vars from backend
@@ -368,8 +389,95 @@ async function poll() {
         // Update status icon state
         setConnectionStatus(true)
 
+        // Update chats list and sort by created_at time (newer first)
         const chatsAD = Alpine.$data(chatsSection);
-        chatsAD.contexts = response.contexts;
+        const contexts = response.contexts || [];
+        chatsAD.contexts = contexts.sort((a, b) =>
+            (b.created_at || 0) - (a.created_at || 0)
+        );
+
+        // Update tasks list and sort by creation time (newer first)
+        const tasksSection = document.getElementById('tasks-section');
+        if (tasksSection) {
+            const tasksAD = Alpine.$data(tasksSection);
+            let tasks = response.tasks || [];
+
+            // Always update tasks to ensure state changes are reflected
+            if (tasks.length > 0) {
+                // Sort the tasks by creation time
+                const sortedTasks = [...tasks].sort((a, b) =>
+                    (b.created_at || 0) - (a.created_at || 0)
+                );
+
+                // Assign the sorted tasks to the Alpine data
+                tasksAD.tasks = sortedTasks;
+            } else {
+                // Make sure to use a new empty array instance
+                tasksAD.tasks = [];
+            }
+        }
+
+        // Make sure the active context is properly selected in both lists
+        if (context) {
+            // Update selection in the active tab
+            const activeTab = localStorage.getItem('activeTab') || 'chats';
+
+            if (activeTab === 'chats') {
+                chatsAD.selected = context;
+                localStorage.setItem('lastSelectedChat', context);
+
+                // Check if this context exists in the chats list
+                const contextExists = contexts.some(ctx => ctx.id === context);
+
+                // If it doesn't exist in the chats list but we're in chats tab, try to select the first chat
+                if (!contextExists && contexts.length > 0) {
+                    // Check if the current context is empty before creating a new one
+                    // If there's already a current context and we're just updating UI, don't automatically
+                    // create a new context by calling setContext
+                    const firstChatId = contexts[0].id;
+
+                    // Only create a new context if we're not currently in an existing context
+                    // This helps prevent duplicate contexts when switching tabs
+                    setContext(firstChatId);
+                    chatsAD.selected = firstChatId;
+                    localStorage.setItem('lastSelectedChat', firstChatId);
+                }
+            } else if (activeTab === 'tasks' && tasksSection) {
+                const tasksAD = Alpine.$data(tasksSection);
+                tasksAD.selected = context;
+                localStorage.setItem('lastSelectedTask', context);
+
+                // Check if this context exists in the tasks list
+                const taskExists = response.tasks?.some(task => task.id === context);
+
+                // If it doesn't exist in the tasks list but we're in tasks tab, try to select the first task
+                if (!taskExists && response.tasks?.length > 0) {
+                    const firstTaskId = response.tasks[0].id;
+                    setContext(firstTaskId);
+                    tasksAD.selected = firstTaskId;
+                    localStorage.setItem('lastSelectedTask', firstTaskId);
+                }
+            }
+        } else if (response.tasks && response.tasks.length > 0 && localStorage.getItem('activeTab') === 'tasks') {
+            // If we're in tasks tab with no selection but have tasks, select the first one
+            const firstTaskId = response.tasks[0].id;
+            setContext(firstTaskId);
+            if (tasksSection) {
+                const tasksAD = Alpine.$data(tasksSection);
+                tasksAD.selected = firstTaskId;
+                localStorage.setItem('lastSelectedTask', firstTaskId);
+            }
+        } else if (contexts.length > 0 && localStorage.getItem('activeTab') === 'chats') {
+            // If we're in chats tab with no selection but have chats, select the first one
+            const firstChatId = contexts[0].id;
+
+            // Only set context if we don't already have one to avoid duplicates
+            if (!context) {
+                setContext(firstChatId);
+                chatsAD.selected = firstChatId;
+                localStorage.setItem('lastSelectedChat', firstChatId);
+            }
+        }
 
         lastLogVersion = response.log_version;
         lastLogGuid = response.log_guid;
@@ -424,12 +532,12 @@ window.pauseAgent = async function (paused) {
     }
 }
 
-window.resetChat = async function () {
+window.resetChat = async function (ctxid=null) {
     try {
-        const resp = await sendJsonData("/chat_reset", { context });
-        updateAfterScroll()
+        const resp = await sendJsonData("/chat_reset", { "context": ctxid === null ? context : ctxid });
+        if (ctxid === null) updateAfterScroll();
     } catch (e) {
-        window.toastFetchError("Error resetting chat", e)
+        window.toastFetchError("Error resetting chat", e);
     }
 }
 
@@ -443,45 +551,151 @@ window.newChat = async function () {
 }
 
 window.killChat = async function (id) {
+    if (!id) {
+        console.error("No chat ID provided for deletion");
+        return;
+    }
+
+    console.log("Deleting chat with ID:", id);
+
     try {
         const chatsAD = Alpine.$data(chatsSection);
-        let found, other
-        for (let i = 0; i < chatsAD.contexts.length; i++) {
-            if (chatsAD.contexts[i].id == id) {
-                found = true
-            } else {
-                other = chatsAD.contexts[i]
-            }
-            if (found && other) break
-        }
+        console.log("Current contexts before deletion:", JSON.stringify(chatsAD.contexts.map(c => ({ id: c.id, name: c.name }))));
 
-        if (context == id && found) {
-            if (other) setContext(other.id)
-            else setContext(generateGUID())
-        }
+        // switch to another context if deleting current
+        switchFromContext(id);
 
-        if (found) sendJsonData("/chat_remove", { context: id });
+        // Delete the chat on the server
+        await sendJsonData("/chat_remove", { context: id });
 
-        updateAfterScroll()
+        // Update the UI manually to ensure the correct chat is removed
+        // Deep clone the contexts array to prevent reference issues
+        const updatedContexts = chatsAD.contexts.filter(ctx => ctx.id !== id);
+        console.log("Updated contexts after deletion:", JSON.stringify(updatedContexts.map(c => ({ id: c.id, name: c.name }))));
 
+        // Force UI update by creating a new array
+        chatsAD.contexts = [...updatedContexts];
+
+        updateAfterScroll();
+
+        toast("Chat deleted successfully", "success");
     } catch (e) {
-        window.toastFetchError("Error creating new chat", e)
+        console.error("Error deleting chat:", e);
+        window.toastFetchError("Error deleting chat", e);
     }
 }
 
+export function switchFromContext(id){
+    // If we're deleting the currently selected chat, switch to another one first
+    if (context === id) {
+        const chatsAD = Alpine.$data(chatsSection);
+        
+        // Find an alternate chat to switch to if we're deleting the current one
+        let alternateChat = null;
+        for (let i = 0; i < chatsAD.contexts.length; i++) {
+            if (chatsAD.contexts[i].id !== id) {
+                alternateChat = chatsAD.contexts[i];
+                break;
+            }
+        }
+
+        if (alternateChat) {
+            setContext(alternateChat.id);
+        } else {
+            // If no other chats, create a new empty context
+            setContext(generateGUID());
+        }
+    }
+}
+
+// Function to ensure proper UI state when switching contexts
+function ensureProperTabSelection(contextId) {
+    // Get current active tab
+    const activeTab = localStorage.getItem('activeTab') || 'chats';
+
+    // First attempt to determine if this is a task or chat based on the task list
+    const tasksSection = document.getElementById('tasks-section');
+    let isTask = false;
+
+    if (tasksSection) {
+        const tasksAD = Alpine.$data(tasksSection);
+        if (tasksAD && tasksAD.tasks) {
+            isTask = tasksAD.tasks.some(task => task.id === contextId);
+        }
+    }
+
+    // If we're selecting a task but are in the chats tab, switch to tasks tab
+    if (isTask && activeTab === 'chats') {
+        // Store this as the last selected task before switching
+        localStorage.setItem('lastSelectedTask', contextId);
+        activateTab('tasks');
+        return true;
+    }
+
+    // If we're selecting a chat but are in the tasks tab, switch to chats tab
+    if (!isTask && activeTab === 'tasks') {
+        // Store this as the last selected chat before switching
+        localStorage.setItem('lastSelectedChat', contextId);
+        activateTab('chats');
+        return true;
+    }
+
+    return false;
+}
+
 window.selectChat = async function (id) {
-    setContext(id)
-    updateAfterScroll()
+    if (id === context) return //already selected
+
+    // Check if we need to switch tabs based on the context type
+    const tabSwitched = ensureProperTabSelection(id);
+
+    // If we didn't switch tabs, proceed with normal selection
+    if (!tabSwitched) {
+        // Switch to the new context - this will clear chat history and reset tracking variables
+        setContext(id);
+
+        // Update both contexts and tasks lists to reflect the selected item
+        const chatsAD = Alpine.$data(chatsSection);
+        const tasksSection = document.getElementById('tasks-section');
+        if (tasksSection) {
+            const tasksAD = Alpine.$data(tasksSection);
+            tasksAD.selected = id;
+        }
+        chatsAD.selected = id;
+
+        // Store this selection in the appropriate localStorage key
+        const activeTab = localStorage.getItem('activeTab') || 'chats';
+        if (activeTab === 'chats') {
+            localStorage.setItem('lastSelectedChat', id);
+        } else if (activeTab === 'tasks') {
+            localStorage.setItem('lastSelectedTask', id);
+        }
+
+        // Trigger an immediate poll to fetch content
+        poll();
+    }
+
+    updateAfterScroll();
 }
 
 export const setContext = function (id) {
-    if (id == context) return
-    context = id
-    lastLogGuid = ""
-    lastLogVersion = 0
-    lastSpokenNo = 0
+    if (id == context) return;
+    context = id;
+    // Always reset the log tracking variables when switching contexts
+    // This ensures we get fresh data from the backend
+    lastLogGuid = "";
+    lastLogVersion = 0;
+    lastSpokenNo = 0;
+
+    // Clear the chat history immediately to avoid showing stale content
+    chatHistory.innerHTML = "";
+
+    // Update both selected states
     const chatsAD = Alpine.$data(chatsSection);
-    chatsAD.selected = id
+    const tasksAD = Alpine.$data(tasksSection);
+
+    chatsAD.selected = id;
+    tasksAD.selected = id;
 }
 
 export const getContext = function () {
@@ -625,7 +839,7 @@ window.loadChats = async function () {
         //     } else {
         //         toast("Undefined error.", "error")
         //     }
-        // } 
+        // }
         else {
             setContext(response.ctxids[0])
             toast("Chats loaded.", "success")
@@ -905,7 +1119,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dragDropOverlay.addEventListener('drop', (e) => {
         dragCounter = 0;
         Alpine.$data(dragDropOverlay).isVisible = false;
-        
+
         const inputAD = Alpine.$data(inputSection);
         const files = e.dataTransfer.files;
         handleFiles(files, inputAD);
@@ -916,9 +1130,9 @@ document.addEventListener('DOMContentLoaded', () => {
 function handleFiles(files, inputAD) {
     Array.from(files).forEach(file => {
         const ext = file.name.split('.').pop().toLowerCase();
-       
+
             const isImage = ['jpg', 'jpeg', 'png', 'bmp'].includes(ext);
-            
+
             if (isImage) {
                 const reader = new FileReader();
                 reader.onload = e => {
@@ -941,7 +1155,7 @@ function handleFiles(files, inputAD) {
                 });
                 inputAD.hasAttachments = true;
             }
-        
+
     });
 }
 
@@ -951,3 +1165,183 @@ window.handleFileUpload = function(event) {
     const inputAD = Alpine.$data(inputSection);
     handleFiles(files, inputAD);
 }
+
+// Setup event handlers once the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    setupSidebarToggle();
+    setupTabs();
+    initializeActiveTab();
+});
+
+// Setup tabs functionality
+function setupTabs() {
+    const chatsTab = document.getElementById('chats-tab');
+    const tasksTab = document.getElementById('tasks-tab');
+
+    if (chatsTab && tasksTab) {
+        chatsTab.addEventListener('click', function() {
+            activateTab('chats');
+        });
+
+        tasksTab.addEventListener('click', function() {
+            activateTab('tasks');
+        });
+    } else {
+        console.error('Tab elements not found');
+        setTimeout(setupTabs, 100); // Retry setup
+    }
+}
+
+function activateTab(tabName) {
+    const chatsTab = document.getElementById('chats-tab');
+    const tasksTab = document.getElementById('tasks-tab');
+    const chatsSection = document.getElementById('chats-section');
+    const tasksSection = document.getElementById('tasks-section');
+
+    // Get current context to preserve before switching
+    const currentContext = context;
+
+    // Store the current selection for the active tab before switching
+    const previousTab = localStorage.getItem('activeTab');
+    if (previousTab === 'chats') {
+        localStorage.setItem('lastSelectedChat', currentContext);
+    } else if (previousTab === 'tasks') {
+        localStorage.setItem('lastSelectedTask', currentContext);
+    }
+
+    // Reset all tabs and sections
+    chatsTab.classList.remove('active');
+    tasksTab.classList.remove('active');
+    chatsSection.style.display = 'none';
+    tasksSection.style.display = 'none';
+
+    // Remember the last active tab in localStorage
+    localStorage.setItem('activeTab', tabName);
+
+    // Activate selected tab and section
+    if (tabName === 'chats') {
+        chatsTab.classList.add('active');
+        chatsSection.style.display = '';
+
+        // Get the available contexts from Alpine.js data
+        const chatsAD = Alpine.$data(chatsSection);
+        const availableContexts = chatsAD.contexts || [];
+
+        // Restore previous chat selection
+        const lastSelectedChat = localStorage.getItem('lastSelectedChat');
+
+        // Only switch if:
+        // 1. lastSelectedChat exists AND
+        // 2. It's different from current context AND
+        // 3. The context actually exists in our contexts list OR there are no contexts yet
+        if (lastSelectedChat &&
+            lastSelectedChat !== currentContext &&
+            (availableContexts.some(ctx => ctx.id === lastSelectedChat) || availableContexts.length === 0)) {
+            setContext(lastSelectedChat);
+        }
+    } else if (tabName === 'tasks') {
+        tasksTab.classList.add('active');
+        tasksSection.style.display = 'flex';
+        tasksSection.style.flexDirection = 'column';
+
+        // Get the available tasks from Alpine.js data
+        const tasksAD = Alpine.$data(tasksSection);
+        const availableTasks = tasksAD.tasks || [];
+
+        // Restore previous task selection
+        const lastSelectedTask = localStorage.getItem('lastSelectedTask');
+
+        // Only switch if:
+        // 1. lastSelectedTask exists AND
+        // 2. It's different from current context AND
+        // 3. The task actually exists in our tasks list
+        if (lastSelectedTask &&
+            lastSelectedTask !== currentContext &&
+            availableTasks.some(task => task.id === lastSelectedTask)) {
+            setContext(lastSelectedTask);
+        }
+    }
+
+    // Request a poll update
+    poll();
+}
+
+// Add function to initialize active tab and selections from localStorage
+function initializeActiveTab() {
+    // Initialize selection storage if not present
+    if (!localStorage.getItem('lastSelectedChat')) {
+        localStorage.setItem('lastSelectedChat', '');
+    }
+    if (!localStorage.getItem('lastSelectedTask')) {
+        localStorage.setItem('lastSelectedTask', '');
+    }
+
+    const activeTab = localStorage.getItem('activeTab') || 'chats';
+    activateTab(activeTab);
+}
+
+/*
+ * A0 Chat UI
+ *
+ * Tasks tab functionality:
+ * - Tasks are displayed in the Tasks tab with the same mechanics as chats
+ * - Both lists are sorted by creation time (newest first)
+ * - Selection state is preserved across tab switches
+ * - The active tab is remembered across sessions
+ * - Tasks use the same context system as chats for communication with the backend
+ * - Future support for renaming and deletion will be implemented later
+ */
+
+// Open the scheduler detail view for a specific task
+function openTaskDetail(taskId) {
+    // Wait for Alpine.js to be fully loaded
+    if (window.Alpine) {
+        // Get the settings modal button and click it to ensure all init logic happens
+        const settingsButton = document.getElementById('settings');
+        if (settingsButton) {
+            // Programmatically click the settings button
+            settingsButton.click();
+
+            // Now get a reference to the modal element
+            const modalEl = document.getElementById('settingsModal');
+            if (!modalEl) {
+                console.error('Settings modal element not found after clicking button');
+                return;
+            }
+
+            // Get the Alpine.js data for the modal
+            const modalData = Alpine.$data(modalEl);
+
+            // Use a timeout to ensure the modal is fully rendered
+            setTimeout(() => {
+                // Switch to the scheduler tab first
+                modalData.switchTab('scheduler');
+
+                // Use another timeout to ensure the scheduler component is initialized
+                setTimeout(() => {
+                    // Get the scheduler component
+                    const schedulerComponent = document.querySelector('[x-data="schedulerSettings"]');
+                    if (!schedulerComponent) {
+                        console.error('Scheduler component not found');
+                        return;
+                    }
+
+                    // Get the Alpine.js data for the scheduler component
+                    const schedulerData = Alpine.$data(schedulerComponent);
+
+                    // Show the task detail view for the specific task
+                    schedulerData.showTaskDetail(taskId);
+
+                    console.log('Task detail view opened for task:', taskId);
+                }, 50); // Give time for the scheduler tab to initialize
+            }, 25); // Give time for the modal to render
+        } else {
+            console.error('Settings button not found');
+        }
+    } else {
+        console.error('Alpine.js not loaded');
+    }
+}
+
+// Make the function available globally
+window.openTaskDetail = openTaskDetail;
