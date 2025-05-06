@@ -285,3 +285,8 @@ def move_file(relative_path: str, new_path: str):
     new_abs_path = get_abs_path(new_path)
     os.makedirs(os.path.dirname(new_abs_path), exist_ok=True)
     os.rename(abs_path, new_abs_path)
+
+def safe_file_name(filename:str)-> str:
+    # Replace any character that's not alphanumeric, dash, underscore, or dot with underscore
+    import re
+    return re.sub(r'[^a-zA-Z0-9-._]', '_', filename)
