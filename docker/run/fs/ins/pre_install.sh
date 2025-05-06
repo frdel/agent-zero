@@ -21,10 +21,12 @@ apt-get update && apt-get upgrade -y && apt-get install -y \
     supervisor \
     cron
 
-# for some reason npm conflicts with node on amd64 in this version and has to be installed separately
-apt-get install -y \
-    npm 
-    
+echo "=====MID UPDATE====="
+
+# for some reason npm crashes builds on amd64 in this version and has to be installed separately
+# A0 can install it when needed
+# apt-get install -y \
+#     npm 
 
 echo "=====AFTER UPDATE====="
 
