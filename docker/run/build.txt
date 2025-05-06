@@ -18,4 +18,4 @@ docker buildx build --build-arg BRANCH=development -t frdel/agent-zero-run:devel
 docker buildx build --build-arg BRANCH=testing -t frdel/agent-zero-run:testing --platform linux/amd64,linux/arm64 --push --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
 
 # main
-docker buildx build --build-arg BRANCH=main -t frdel/agent-zero-run:latest --platform linux/amd64,linux/arm64 --push --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
+docker buildx build --build-arg BRANCH=main -t frdel/agent-zero-run:vx.x.x  -t frdel/agent-zero-run:latest --platform linux/amd64,linux/arm64 --push --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
