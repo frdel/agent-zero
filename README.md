@@ -25,12 +25,6 @@ See [www.agent-zero.ai](https://agent-zero.ai) for more info
 
 
 
-> [!NOTE]
-> **🎉 v0.8.1 Release**: Now featuring a browser agent capable of using Chromium for web interactions! This enables Agent Zero to browse the web, gather information, and interact with web content autonomously.
-
-
-https://github.com/user-attachments/assets/c168759d-57d8-4b43-b62a-1026afcf52e6
-
 ## A personal, organic agentic framework that grows and learns with you
 
 - Agent Zero is not a predefined agentic framework. It is designed to be dynamic, organically growing, and learning as you use it.
@@ -112,8 +106,6 @@ docker run -p 50001:80 frdel/agent-zero-run
 # Visit http://localhost:50001 to start
 ```
 
-- Developers and contributors: download the full binaries for your system from the [releases page](https://github.com/frdel/agent-zero/releases) and then follow the instructions [provided here](./docs/installation.md#in-depth-guide-for-full-binaries-installation).
-
 ## 🐳 Fully Dockerized, with Speech-to-Text and TTS
 
 ![Settings](docs/res/settings-page-ui.png)
@@ -157,18 +149,32 @@ docker run -p 50001:80 frdel/agent-zero-run
 
 ## 🎯 Changelog
 
+### v0.8.3.1
+[Release video](https://youtu.be/AGNpQ3_GxFQ)
+
+- **Automatic embedding**
+
+
+
 ### v0.8.3
+[Release video](https://youtu.be/bPIZo0poalY)
+
 - ***Planning and scheduling***
 
 ### v0.8.2
+[Release video](https://youtu.be/xMUNynQ9x6Y)
+
 - **Multitasking in terminal**
 - **Chat names**
 
 ### v0.8.1
+[Release video](https://youtu.be/quv145buW74)
+
 - **Browser Agent**
 - **UX Improvements**
 
 ### v0.8
+[Release video](https://youtu.be/cHDCCSr1YRI)
 
 - **Docker Runtime**
 - **New Messages History and Summarization System**
@@ -181,6 +187,7 @@ docker run -p 50001:80 frdel/agent-zero-run
 - **In-chat File Attachments**
 
 ### v0.7
+[Release video](https://youtu.be/U_Gl0NPalKA)
 
 - **Automatic Memory**
 - **UI Improvements**
