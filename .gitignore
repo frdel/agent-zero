@@ -20,6 +20,9 @@ bundle/*/
 # Handle work_dir directory
 work_dir/*
 
+# Handle specific docker directories
+docker/run/agent-zero/**
+
 # Handle memory directory
 memory/**
 !memory/**/
