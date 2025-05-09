@@ -19,7 +19,9 @@ apt-get update && apt-get upgrade -y && apt-get install -y \
     git \
     ffmpeg \
     supervisor \
-    cron
+    cron \
+    tesseract-ocr \
+    poppler-utils
 
 echo "=====MID UPDATE====="
 
