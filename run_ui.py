@@ -12,7 +12,7 @@ from flask_basicauth import BasicAuth
 from python.helpers import errors, files, git
 from python.helpers.files import get_abs_path
 from python.helpers import persist_chat, runtime, dotenv, process
-from python.helpers.cloudflare_tunnel import CloudflareTunnel
+from flaredantic import FlareTunnel, TunnelConfig
 from python.helpers.extract_tools import load_classes_from_folder
 from python.helpers.api import ApiHandler
 from python.helpers.job_loop import run_loop
@@ -176,10 +176,11 @@ def run():
         # Initialize and start Cloudflare tunnel if enabled
         if use_cloudflare and port:
             try:
-                tunnel = CloudflareTunnel(port)
+                config = TunnelConfig(port=port)
+                tunnel = FlareTunnel(config)
                 tunnel.start()
             except Exception as e:
-                PrintStyle().error(f"Failed to start Cloudflare tunnel: {e}")
+                PrintStyle().error(f"Unexpected error starting tunnel: {str(e)}")
                 PrintStyle().print("Continuing without tunnel...")
 
         # initialize contexts from persisted chats
