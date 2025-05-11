@@ -8,6 +8,7 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
 from python.helpers.docker import DockerContainerManager
+import re
 
 
 @dataclass
@@ -218,7 +219,15 @@ class CodeExecution(Tool):
         - Each new output resets the between_output_timeout timer.
         - No hard cap on total runtime.
         - If no output for between_output_timeout after last output, or no output at all for first_output_timeout, returns.
+        - If a common shell prompt is detected, returns immediately.
         """
+        # Common shell prompt regex patterns (add more as needed)
+        prompt_patterns = [
+            re.compile(r"\\(venv\\).+[$#] ?$"),  # (venv) ...$ or (venv) ...#
+            re.compile(r"root@[^:]+:[^#]+# ?$"),    # root@container:~#
+            re.compile(r"[a-zA-Z0-9_.-]+@[^:]+:[^$#]+[$#] ?$"), # user@host:~$
+        ]
+
         start_time = time.time()
         last_output_time = start_time
         full_output = ""
@@ -239,6 +248,14 @@ class CodeExecution(Tool):
                 self.log.update(content=full_output)
                 last_output_time = now
                 got_output = True
+
+            # Check for shell prompt at the end of output
+            last_lines = full_output.splitlines()[-3:] if full_output else []
+            for line in last_lines:
+                for pat in prompt_patterns:
+                    if pat.search(line.strip()):
+                        PrintStyle(font_color="#229954").print("Detected shell prompt, returning output early.")
+                        return full_output
 
             if not got_output:
                 # Waiting for first output
