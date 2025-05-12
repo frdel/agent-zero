@@ -3,6 +3,7 @@ from python.helpers.tool import Tool, Response
 import uuid
 import json
 import time
+import os
 
 class TeamAgent(Tool):
     """
@@ -33,9 +34,73 @@ class TeamAgent(Tool):
             team_id = self.agent.get_data("active_team_id")
             self.log.update(progress=f"Using active team ID: {team_id}")
             
-        # Handle different actions
+        # Enhanced handling for create action to include document status and separate planning
         if action == "create":
-            return await self._create_team(**kwargs)
+            # Determine project name for doc path
+            project_name = kwargs.get("name", "project").replace(" ", "_").lower()
+            doc_dir = "/root/team_task"
+            doc_path = os.path.join(doc_dir, f"{project_name}.md")
+            template_path = os.path.join(doc_dir, "template_project_name.md")
+            
+            # Log start of document check and planning phase
+            self.log.update(progress=f"Starting planning phase for project: {project_name}...")
+            
+            # --- Step 1: Run Planning Phase ---
+            # The planning phase now handles doc existence checks, reading, template use, and updates internally.
+            # It returns a dictionary containing the planning summary and confirmed doc_path.
+            planning_result = await self._team_planning_phase(**kwargs)
+            
+            # Extract planning details (handle potential errors if planning fails, though _team_planning_phase should manage its errors)
+            planning_summary = planning_result.get("planning_summary", "Planning phase failed to generate summary.")
+            # Use the doc_path confirmed/returned by the planning phase
+            doc_path_from_planning = planning_result.get("doc_path", doc_path) # Fallback to original if needed
+            planning_status = planning_result.get("status", "unknown")
+            
+            self.log.update(progress=f"Planning phase complete. Status: {planning_status}. Document at: {doc_path_from_planning}")
+            
+            # --- Step 2: Create the Team ---
+            # Now that planning is done and the doc is handled, create the team structure.
+            # Pass the confirmed doc_path to _create_team.
+            self.log.update(progress="Creating team data structure...")
+            # Pass kwargs and the confirmed doc_path
+            create_response = await self._create_team(doc_path=doc_path_from_planning, **kwargs) 
+            
+            # Extract team_id from the create_response message (which should be JSON)
+            team_id_from_create = None
+            create_data = {}
+            try:
+                # Assuming create_response.message is a JSON string from _format_response
+                create_data = json.loads(create_response.message)
+                # Access the actual arguments passed to the tool via 'tool_args'
+                team_id_from_create = create_data.get("tool_args", {}).get("team_id") 
+            except (json.JSONDecodeError, AttributeError, TypeError) as e:
+                self.log.update(error=f"Failed to parse team_id from _create_team response: {e}")
+                # Handle error: maybe return an error response or log critical failure
+                return Response(
+                    message=self._format_response({
+                        "error": "Failed to create team properly - could not extract team_id.",
+                        "planning_summary": planning_summary,
+                        "doc_path": doc_path_from_planning,
+                        "next_step": "Internal error during team creation. Please report this issue."
+                    }),
+                    break_loop=True # Stop the loop on critical failure
+                )
+                
+            # --- Step 3: Combine and Return ---
+            # Combine planning info and creation info into one response for the user.
+            self.log.update(progress=f"Team {team_id_from_create} created successfully.")
+            return Response(
+                message=self._format_response({
+                    "status": "team_created",
+                    "team_id": team_id_from_create, # Use the extracted team_id
+                    "planning_summary": planning_summary, # Include the planning summary
+                    "doc_path": doc_path_from_planning, # Use the confirmed doc path
+                    "doc_status": "updated", # Indicate doc was handled in planning
+                    "next_step": f"Team created with ID '{team_id_from_create}'. Planning document updated at '{doc_path_from_planning}'.\n\nNEXT: Use 'add_agent' with team_id '{team_id_from_create}' to add ALL necessary team members BEFORE assigning any tasks. Use the 'Role-Specific Task Assignment Guidance' from the planning summary when assigning tasks later."
+                }),
+                break_loop=False # Continue after successful creation
+            )
+            
         # Handle actions with better logging
         try:
             if action == "create":
@@ -45,7 +110,8 @@ class TeamAgent(Tool):
                 return await self._add_agent(team_id, **kwargs)
             elif action == "assign_task":
                 self.log.update(progress=f"Assigning task to agent in team {team_id}...")
-                return await self._assign_task(team_id, **kwargs)
+                disable_auto_dependency = kwargs.pop("disable_auto_dependency", False)
+                return await self._assign_task(team_id, disable_auto_dependency=disable_auto_dependency, **kwargs)
             elif action == "execute_task":
                 self.log.update(progress=f"Executing task in team {team_id}...")
                 return await self._execute_task(team_id, **kwargs)
@@ -60,10 +126,30 @@ class TeamAgent(Tool):
                 return await self._team_status(team_id, **kwargs)
             elif action == "integrate_results":
                 self.log.update(progress=f"Integrating results from team {team_id}...")
-                return await self._integrate_results(team_id, **kwargs)
+                # Explicitly extract step and review_summary from kwargs
+                step = kwargs.pop("step", None)
+                review_summary = kwargs.pop("review_summary", None)
+                # Pass extracted parameters and remaining kwargs
+                response = await self._integrate_results(team_id, step=step, review_summary=review_summary, **kwargs)
+                if not isinstance(response, Response):
+                    return Response(
+                        message=self._format_response({
+                            "team_id": team_id,
+                            "error": "Integration did not return a valid Response object.",
+                            "next_step": "Check the _integrate_results implementation."
+                        }),
+                        break_loop=False
+                    )
+                return response
             elif action == "get_task_result":
                 self.log.update(progress=f"Getting specific task result from team {team_id}...")
                 return await self._get_task_result(team_id, **kwargs)
+            elif action == "delete_task":
+                self.log.update(progress=f"Deleting task in team {team_id}...")
+                return await self._delete_task(team_id, **kwargs)
+            elif action == "update_task":
+                self.log.update(progress=f"Updating task in team {team_id}...")
+                return await self._update_task(team_id, **kwargs)
             else:
                 self.log.update(error=f"Unknown action: {action}")
                 return Response(
@@ -72,7 +158,8 @@ class TeamAgent(Tool):
                         "available_actions": [
                             "create", "add_agent", "assign_task", 
                             "execute_task", "message", "get_results", 
-                            "team_status", "integrate_results", "get_task_result"
+                            "team_status", "integrate_results", "get_task_result",
+                            "delete_task", "update_task"
                         ]
                     }),
                     break_loop=False
@@ -97,7 +184,8 @@ class TeamAgent(Tool):
                     "available_actions": [
                         "create", "add_agent", "assign_task", 
                         "execute_task", "message", "get_results", 
-                        "team_status", "integrate_results", "get_task_result"
+                        "team_status", "integrate_results", "get_task_result",
+                        "delete_task", "update_task"
                     ]
                 }),
                 break_loop=False
@@ -118,27 +206,42 @@ class TeamAgent(Tool):
         team_leader.set_data("tasks", {})
         team_leader.set_data("created_at", time.time())
         
+        # Retrieve the confirmed document path passed from the execute method
+        doc_path = kwargs.get("doc_path", None) # Get doc_path from kwargs
+        if not doc_path:
+             # Fallback or log error if doc_path is missing - indicates an issue in the execute flow
+             self.log.update(error=f"Critical: doc_path missing during _create_team for {team_id}")
+             # Determine project name for fallback doc path calculation
+             project_name = kwargs.get("name", "project").replace(" ", "_").lower()
+             doc_dir = "/root/team_task" # Assuming this is the standard doc_dir
+             doc_path = os.path.join(doc_dir, f"{project_name}.md")
+             self.log.update(progress=f"Using fallback doc_path: {doc_path}")
+             
         # Store team in agent's data
-        teams = self.agent.get_data("teams")
+        teams = self.agent.get_data("teams") or {} # Ensure teams is initialized
         teams[team_id] = {
             "id": team_id,
             "name": name,
             "goal": goal,
             "leader_agent": team_leader,
-            "created_at": time.time()
+            "created_at": time.time(),
+            "doc_path": doc_path  # Store the confirmed document path
         }
         self.agent.set_data("teams", teams)
         
         # Set as the active team
         self.agent.set_data("active_team_id", team_id)
         
+        # Return response containing the team_id and next steps
+        # Note: The planning summary is handled in the main execute block
         return Response(
             message=self._format_response({
                 "team_id": team_id,
                 "name": name,
                 "goal": goal,
-                "status": "created",
-                "next_step": "Step 1: CREATE ALL TEAM AGENTS FIRST by using add_agent multiple times to create each specialized agent needed for the task. Only proceed to assigning tasks after all agents are created."
+                "doc_path": doc_path, # Include doc_path for confirmation
+                "status": "created", # Indicate team structure is created
+                "next_step": "Team structure created. Follow instructions from the previous 'create' action response to add agents." # Simplified next_step, main guidance is in execute
             }),
             break_loop=False
         )
@@ -190,7 +293,7 @@ class TeamAgent(Tool):
         # Count existing team members
         member_count = len(team_members)
         
-        next_step = f"Step 1 CONTINUE: ADD MORE AGENTS if needed to complete the team composition. You have {member_count} agent(s) so far. Once ALL needed agents are created, proceed to Step 2: ASSIGN TASKS to each agent using the assign_task action."
+        next_step = f"Step 1 CONTINUE: ADD MORE AGENTS if needed to complete the team composition. You have {member_count} agent(s) so far. Once ALL needed agents are created, proceed to Step 2: ASSIGN TASKS to each agent using the assign_task action.\n\nIMPORTANT: Assign each agent their unique, role-appropriate task as defined in the 'Role-Specific Task Assignment Guidance' section of the planning summary. Do NOT assign the same review or implementation task to multiple agents. Each agent's task should leverage their specific expertise and responsibilities."
         
         return Response(
             message=self._format_response({
@@ -203,8 +306,22 @@ class TeamAgent(Tool):
             break_loop=False
         )
     
-    async def _assign_task(self, team_id, agent_id="", task="", context="", depends_on=None, **kwargs):
-        """Assign a task to a team member"""
+    def _has_circular_dependency(self, tasks, start_task_id, new_depends_on):
+        """Detect if adding new_depends_on to start_task_id would create a cycle"""
+        visited = set()
+        stack = list(new_depends_on)
+        while stack:
+            current = stack.pop()
+            if current == start_task_id:
+                return True
+            if current in visited or current not in tasks:
+                continue
+            visited.add(current)
+            stack.extend(tasks[current].get("depends_on", []))
+        return False
+    
+    async def _assign_task(self, team_id, agent_id="", task="", context="", depends_on=None, disable_auto_dependency=False, **kwargs):
+        """Assign a task to a team member.\n\nREMINDER: When assigning a task, use the unique, role-appropriate task for this agent as defined in the planning summary's 'Role-Specific Task Assignment Guidance' section. Avoid assigning the same generic review or implementation task to multiple agents."""
         if depends_on is None:
             depends_on = []
             
@@ -246,23 +363,32 @@ class TeamAgent(Tool):
         sequence_num = len(tasks) + 1  # Start from 1
         
         # If no dependencies were explicitly provided, automatically set the most recent task as a dependency
-        if not depends_on and tasks:
+        if not disable_auto_dependency and not depends_on and tasks:
             # Find the most recent assigned or completed task by highest sequence number
             most_recent_task = None
             highest_seq = 0
-            
             for task_id, task_data in tasks.items():
                 task_seq = task_data.get("sequence_num", 0)
                 if task_seq > highest_seq:
                     most_recent_task = task_id
                     highest_seq = task_seq
-            
             if most_recent_task:
                 depends_on = [most_recent_task]
                 self.log.update(progress=f"Automatically set task dependency on prior task: {most_recent_task}")
         
         # Create task ID
         task_id = f"task_{str(uuid.uuid4())[:6]}"
+        
+        # Circular dependency check
+        if self._has_circular_dependency(tasks, task_id, depends_on):
+            return Response(
+                message=self._format_response({
+                    "error": f"Circular dependency detected: assigning these dependencies would create a cycle.",
+                    "proposed_depends_on": depends_on,
+                    "next_step": "Revise dependencies to avoid cycles. Use update_task to change dependencies, delete_task to remove problematic tasks, or use disable_auto_dependency: true in assign_task to prevent automatic dependencies."
+                }),
+                break_loop=False
+            )
         
         # Create task
         task_data = {
@@ -276,7 +402,7 @@ class TeamAgent(Tool):
             "sequence_num": sequence_num,  # Add explicit sequence number
             "completed_at": None,
             "result": None,
-            "auto_dependency": True if not kwargs.get("depends_on") and depends_on else False
+            "auto_dependency": True if not disable_auto_dependency and depends_on else False
         }
         
         # Store task in team leader's data
@@ -310,10 +436,16 @@ class TeamAgent(Tool):
             if not any(t["agent_id"] == aid for t in tasks.values()):
                 agents_without_tasks.append(f"{adata['role']} ({aid})")
         
+        # Enhanced next_step with auto-dependency context
+        auto_dep_note = ""
+        if not disable_auto_dependency and not kwargs.get("depends_on") and tasks:
+            auto_dep_note = " This task was automatically set to depend on the previous task. To prevent this in the future, use disable_auto_dependency: true in assign_task."
+        elif disable_auto_dependency and not depends_on:
+            auto_dep_note = " This task has no dependencies. If you want to automatically depend on the previous task, omit disable_auto_dependency or set it to false."
         if agents_without_tasks:
-            next_step = f"Step 2 CONTINUE: ASSIGN TASKS to remaining agents ({', '.join(agents_without_tasks)}). Only after ALL agents have assigned tasks, proceed to Step 3: EXECUTE TASKS using the execute_task action."
+            next_step = f"Step 2 CONTINUE: ASSIGN TASKS to remaining agents ({', '.join(agents_without_tasks)}). Only after ALL agents have assigned tasks, proceed to Step 3: EXECUTE TASKS using the execute_task action. If you need to change or remove a task, use update_task or delete_task.{auto_dep_note}\n\nREMINDER: Use the unique, role-appropriate task for each agent as defined in the planning summary's 'Role-Specific Task Assignment Guidance' section. Avoid assigning the same generic review or implementation task to multiple agents."
         else:
-            next_step = "Step 3: EXECUTE ALL TASKS by using execute_task for each task in sequence. Start with tasks that have no dependencies."
+            next_step = f"Step 3: EXECUTE ALL TASKS by using execute_task for each task in sequence. Start with tasks that have no dependencies. If you need to change or remove a task, use update_task or delete_task.{auto_dep_note}\n\nREMINDER: All agents should have unique, role-appropriate tasks as defined in the planning summary."
         
         return Response(
             message=self._format_response({
@@ -326,7 +458,7 @@ class TeamAgent(Tool):
                 "dependencies": depends_on if depends_on else [],
                 "sequence_num": sequence_num,  # Include sequence number in response
                 "has_context": bool(context),
-                "auto_dependency": True if not kwargs.get("depends_on") and depends_on else False,
+                "auto_dependency": True if not disable_auto_dependency and depends_on else False,
                 "next_step": next_step
             }),
             break_loop=False
@@ -503,7 +635,7 @@ SESSION WORKFLOW:
 - Use the input tool for interactive programs
 
 ERROR HANDLING STRATEGY:
-- If you encounter the same error twice when trying the same approach, switch to an alternative method
+- If you encounter the same error twice when trying the same approach, switch to an alternative, more reliable method (such as reading the entire file, editing in memory, and writing back as a single multi-line string, or using EOF CAT-style edits). Document the fallback method used in your response.
 - For library/package issues, try a different library or implement a minimal solution from scratch
 - When installation fails despite multiple attempts, use a fallback implementation as specified in your task
 - Document environment issues and your workaround strategy in your final response
@@ -631,6 +763,12 @@ EXECUTION STRATEGY:
 6. DELIVER using the response tool
 
 Remember: The response_tool is REQUIRED for your final output.
+
+CODE EDITING BEST PRACTICE:
+- Strongly discourage naive string or line replacements for code edits, especially in Python or structured files, as this can easily break indentation, structure, or introduce subtle bugs.
+- Read the file to identify the exact issues. After reviewing the content, implement the necessary fixes to ensure proper syntax throughout the file.
+- The most reliable and robust approach is to always read the entire file into memory, make your edits there, and write back the full, updated content as a single multi-line string (or using a 'cat' style overwrite). This ensures file integrity and preserves formatting.
+- For all file edits, especially in Python or markdown, always prefer this full overwrite method over partial or regex-based replacements.
 """
         
         # Execute task using call_subordinate pattern
@@ -1074,7 +1212,21 @@ Remember: The response_tool is REQUIRED for your final output.
                 data["next_step"] = f"Use a valid team_id from: {', '.join(data['available_teams'])}"
             else:
                 data["next_step"] = "Create a team first with the 'create' action"
-        
+                
+        # Add document context if applicable
+        if "doc_path" in data and "doc_status" not in data:
+            data["doc_status"] = "available" # Default status if path exists but status isn't specified
+            
+        # Add specific context for document operations
+        if "status" in data:
+            if data["status"] == "team_created":
+                if "doc_path" in data:
+                    thoughts.append(f"Team created with planning document at {data['doc_path']}")
+            elif data["status"] == "integration_review":
+                thoughts.append("Completed document review phase of integration")
+            elif data["status"] == "integrated":
+                thoughts.append("Completed document update and integration of team results")
+                
         # Add specific formatting guidance for get_results response
         if "results" in data and "error" not in data and "next_step" not in data:
             data["next_step"] = "Format your response to the user as a properly formatted JSON message using the response tool. Synthesize the individual contributions into a cohesive final product that addresses the user's original request."
@@ -1197,18 +1349,20 @@ Remember: The response_tool is REQUIRED for your final output.
         
         return json.dumps(formatted_response, indent=2)
 
-    async def _integrate_results(self, team_id, **kwargs):
-        """Integrate results from all team members into a final product"""
+    async def _integrate_results(self, team_id, step=None, review_summary=None, **kwargs):
+        """Integrate results from all team members into a final product, now as a two-step process: review, then edit/update.\\n\\nBEST PRACTICE: For all markdown or code section edits, always read the entire file into memory, construct the full updated content, and overwrite the file in one write operation (single multi-line string). After writing, read the file back to confirm the update. Do NOT use regex, partial, or line-by-line replacements for in-place section updates—these are unreliable and discouraged."""
+        # Enhanced progress tracking
+        progress_prefix = f"Team {team_id} Integration"
+        self.log.update(progress=f"{progress_prefix}: Starting integration process... Step: {step if step else 'default (review -> edit)'}")
+
         # Get team data
         teams = self.agent.get_data("teams") or {}
         if not team_id or team_id not in teams:
             available_teams = list(teams.keys())
             error_msg = f"Team {team_id} not found"
             self.log.update(error=error_msg)
-            
             if available_teams:
                 self.log.update(progress=f"Available teams: {', '.join(available_teams)}")
-                
             return Response(
                 message=self._format_response({
                     "error": error_msg,
@@ -1217,12 +1371,24 @@ Remember: The response_tool is REQUIRED for your final output.
                 }),
                 break_loop=False
             )
-            
+
         team_data = teams[team_id]
         team_leader = team_data["leader_agent"]
         tasks = team_leader.get_data("tasks") or {}
         team_members = team_leader.get_data("team_members") or {}
-        
+
+        # Calculate overall progress and pending tasks early
+        total_tasks = len(tasks)
+        completed_tasks = sum(1 for t in tasks.values() if t["status"] == "completed")
+        pending_tasks = total_tasks - completed_tasks # Define pending_tasks here
+        progress_percentage = f"{completed_tasks}/{total_tasks} tasks completed ({int(completed_tasks/total_tasks*100) if total_tasks else 0}%)"
+        self.log.update(progress=f"{progress_prefix}: {progress_percentage}")
+
+        # Initialize pending_warning
+        pending_warning = "" 
+        if pending_tasks > 0:
+            pending_warning = f"\\n\\nNOTE: There are still {pending_tasks} pending tasks in this team. This integration only includes completed tasks."
+
         # Collect all completed results
         completed_results = {}
         for task_id, task_data in tasks.items():
@@ -1234,7 +1400,8 @@ Remember: The response_tool is REQUIRED for your final output.
                         "task": task_data["description"],
                         "result": task_data["result"]
                     }
-        
+
+        # Check if there are any completed results to integrate
         if not completed_results:
             return Response(
                 message=self._format_response({
@@ -1244,24 +1411,485 @@ Remember: The response_tool is REQUIRED for your final output.
                 }),
                 break_loop=False
             )
+
+        # Retrieve stored doc_path, with fallback
+        doc_path = team_data.get("doc_path")
+        if not doc_path:
+            # Fallback calculation if doc_path wasn't stored
+            project_name_fallback = team_data.get("name", "project").replace(" ", "_").lower()
+            doc_dir = "/root/team_task" 
+            doc_path = os.path.join(doc_dir, f"{project_name_fallback}.md")
+            # Store it back for future use
+            team_data["doc_path"] = doc_path
+            teams[team_id] = team_data 
+            self.agent.set_data("teams", teams) # Ensure teams data is updated in the agent
+            self.log.update(progress=f"{progress_prefix}: doc_path was not found, using fallback and storing: {doc_path}")
+        else:
+            self.log.update(progress=f"{progress_prefix}: Using stored doc_path: {doc_path}")
+
+        # --- Step Execution Logic --- 
+
+        if step == "review":
+            # Execute only the review step
+            return await self._integrate_review_step(
+                team_id, team_data, team_leader, tasks, team_members, doc_path, progress_prefix, 
+                pending_tasks, progress_percentage
+            )
+        elif step == "edit":
+            # Execute only the edit step (requires review_summary)
+            if not review_summary:
+                return Response(
+                    message=self._format_response({
+                        "team_id": team_id,
+                        "error": "Missing review_summary for edit step.",
+                        "next_step": "Run the 'review' step first to generate a review_summary, then pass it to the 'edit' step."
+                    }),
+                    break_loop=False
+                )
+            return await self._integrate_edit_step(
+                team_id, team_data, team_leader, tasks, team_members, doc_path, progress_prefix, 
+                review_summary, completed_results, pending_tasks, progress_percentage, pending_warning
+            )
+        elif step is None:
+            # Default: Execute both steps sequentially
+            self.log.update(progress=f"{progress_prefix}: Running default two-step integration (review -> edit)...")
+            
+            # Step 1: Review
+            review_response = await self._integrate_review_step(
+                team_id, team_data, team_leader, tasks, team_members, doc_path, progress_prefix, 
+                pending_tasks, progress_percentage
+            )
+            
+            # Check review response for errors
+            try:
+                review_data = json.loads(review_response.message)
+                if "error" in review_data.get("tool_args", {}):
+                    self.log.update(error=f"{progress_prefix}: Error during review step: {review_data['tool_args']['error']}")
+                    return review_response # Return the error response from review step
+                extracted_review_summary = review_data.get("tool_args", {}).get("review_summary")
+                if not extracted_review_summary:
+                     self.log.update(error=f"{progress_prefix}: Failed to extract review_summary from review step response.")
+                     return Response(
+                        message=self._format_response({
+                            "team_id": team_id,
+                            "error": "Internal error: Could not extract review summary after review step.",
+                            "next_step": "Review step completed but summary was missing. Please report this issue."
+                        }),
+                        break_loop=False
+                    )
+            except (json.JSONDecodeError, AttributeError, TypeError) as e:
+                self.log.update(error=f"{progress_prefix}: Failed to parse review step response: {e}")
+                return Response(
+                    message=self._format_response({
+                        "team_id": team_id,
+                        "error": f"Internal error parsing review step response: {e}",
+                        "next_step": "The review step failed unexpectedly. Please report this issue."
+                    }),
+                    break_loop=False
+                )
+            
+            self.log.update(progress=f"{progress_prefix}: Review step completed successfully. Proceeding to edit step.")
+            
+            # Step 2: Edit (using extracted summary)
+            return await self._integrate_edit_step(
+                team_id, team_data, team_leader, tasks, team_members, doc_path, progress_prefix, 
+                extracted_review_summary, completed_results, pending_tasks, progress_percentage, pending_warning
+            )
+        else:
+            # Invalid step value
+            return Response(
+                message=self._format_response({
+                    "team_id": team_id,
+                    "error": f"Invalid step value: '{step}'. Must be 'review', 'edit', or omitted for default flow.",
+                    "next_step": "Provide a valid step parameter or omit it."
+                }),
+                break_loop=False
+            )
+
+    async def _delete_task(self, team_id, task_id, **kwargs):
+        """Delete a task from the team and remove it from dependencies of other tasks"""
+        teams = self.agent.get_data("teams") or {}
+        if not team_id or team_id not in teams:
+            return Response(
+                message=self._format_response({
+                    "error": f"Team {team_id} not found",
+                    "available_teams": list(teams.keys()),
+                    "next_step": "Create a team first with the 'create' action or use a valid team_id"
+                }),
+                break_loop=False
+            )
+        team_data = teams[team_id]
+        team_leader = team_data["leader_agent"]
+        tasks = team_leader.get_data("tasks") or {}
+        if not task_id or task_id not in tasks:
+            return Response(
+                message=self._format_response({
+                    "error": f"Task {task_id} not found in team {team_id}",
+                    "available_tasks": list(tasks.keys()),
+                    "next_step": "Provide a valid task_id to delete"
+                }),
+                break_loop=False
+            )
+        # Remove the task
+        del tasks[task_id]
+        # Remove this task from any other task's depends_on list
+        for t in tasks.values():
+            if "depends_on" in t and task_id in t["depends_on"]:
+                t["depends_on"] = [dep for dep in t["depends_on"] if dep != task_id]
+        team_leader.set_data("tasks", tasks)
+        return Response(
+            message=self._format_response({
+                "team_id": team_id,
+                "task_id": task_id,
+                "status": "deleted",
+                "next_step": "Task deleted. Review remaining tasks and dependencies. Use assign_task to add new tasks or update_task to modify existing ones."
+            }),
+            break_loop=False
+        )
+
+    async def _update_task(self, team_id, task_id, **kwargs):
+        """Update properties of a task (description, depends_on, context, etc.)"""
+        teams = self.agent.get_data("teams") or {}
+        if not team_id or team_id not in teams:
+            return Response(
+                message=self._format_response({
+                    "error": f"Team {team_id} not found",
+                    "available_teams": list(teams.keys()),
+                    "next_step": "Create a team first with the 'create' action or use a valid team_id"
+                }),
+                break_loop=False
+            )
+        team_data = teams[team_id]
+        team_leader = team_data["leader_agent"]
+        tasks = team_leader.get_data("tasks") or {}
+        if not task_id or task_id not in tasks:
+            return Response(
+                message=self._format_response({
+                    "error": f"Task {task_id} not found in team {team_id}",
+                    "available_tasks": list(tasks.keys()),
+                    "next_step": "Provide a valid task_id to update"
+                }),
+                break_loop=False
+            )
+        task = tasks[task_id]
+        updated_fields = []
+        # Circular dependency check if depends_on is being updated
+        if "depends_on" in kwargs:
+            if self._has_circular_dependency(tasks, task_id, kwargs["depends_on"]):
+                return Response(
+                    message=self._format_response({
+                        "error": f"Circular dependency detected: updating these dependencies would create a cycle.",
+                        "proposed_depends_on": kwargs["depends_on"],
+                        "next_step": "Revise dependencies to avoid cycles."
+                    }),
+                    break_loop=False
+                )
+        # Update allowed fields
+        for field in ["description", "depends_on", "context"]:
+            if field in kwargs:
+                task[field] = kwargs[field]
+                updated_fields.append(field)
+        tasks[task_id] = task
+        team_leader.set_data("tasks", tasks)
+        if updated_fields:
+            return Response(
+                message=self._format_response({
+                    "team_id": team_id,
+                    "task_id": task_id,
+                    "status": "updated",
+                    "updated_fields": updated_fields,
+                    "next_step": f"Task updated: {', '.join(updated_fields)}. Review dependencies and proceed as needed. You can use update_task again to make further changes or delete_task to remove this task."
+                }),
+                break_loop=False
+            )
+        else:
+            return Response(
+                message=self._format_response({
+                    "team_id": team_id,
+                    "task_id": task_id,
+                    "status": "no_changes",
+                    "next_step": "No updatable fields provided. Specify at least one of: description, depends_on, context. Use update_task to modify a task or delete_task to remove it."
+                }),
+                break_loop=False
+            )
+
+    async def _team_planning_phase(self, prior_doc="", **kwargs):
+        """Step-by-step team planning phase before agent creation, agent-driven doc management"""
+        # Initialize progress tracking
+        self.log.update(progress="Starting team planning phase...")
         
-        # Check for any pending tasks and provide warning
-        pending_tasks = sum(1 for t in tasks.values() if t["status"] != "completed")
-        pending_warning = ""
-        if pending_tasks > 0:
-            pending_warning = f"\n\nNOTE: There are still {pending_tasks} pending tasks in this team. This integration only includes completed tasks."
+        planning_context = {}
+        user_goal = kwargs.get("goal", "")
+        user_name = kwargs.get("name", "Project")
+        project_name = user_name.replace(" ", "_").lower()
+        doc_dir = "/root/team_task"
+        doc_path = os.path.join(doc_dir, f"{project_name}.md")
+        template_path = os.path.join(doc_dir, "template_project_name.md")
+        
+        # Create team leader instance for planning
+        team_leader = Agent(self.agent.number, self.agent.config, self.agent.context)
+        
+        # Step 1: Document check
+        self.log.update(progress="Planning Step 1/7: Checking for existing planning document...")
+        doc_check_prompt = (
+            f"START OF TEAM PLANNING PHASE.\\n"
+            f"Step 1: Initial Document Check (Perform ONCE)\\n"
+            f"This is the very first step. Check if the file {doc_path} exists.\\n"
+            f"- If it exists: Read the entire file and provide a structured summary of its sections and key content.\\n"
+            f"- If it does NOT exist: State that clearly, create it from the template at {template_path}, and then summarize the new file.\\n"
+            f"CRITICAL: After summarizing or creating the file THIS ONE TIME, you MUST immediately proceed to Step 2 (Project File Review). Do NOT repeat Step 1. Do NOT re-initiate team creation. Your output for Step 1 is just the summary. Now, continue to Step 2."
+        )
+        # The agent should summarize and then continue, not loop.
+        team_leader.hist_add_user_message(UserMessage(message=doc_check_prompt, attachments=[]))
+        doc_check_summary = await team_leader.monologue()
+        planning_context["doc_check_summary"] = doc_check_summary
+        self.log.update(progress="Planning Step 1/7: Document check complete: " + doc_check_summary[:100] + "...") # Add log here
+        
+        # Step 2: Project file review (as before, but reference doc)
+        self.log.update(progress="Planning Step 2/7: Reviewing project files...") # Add log here
+        file_review_prompt = (
+            f"Step 2: Project File Review\\n"
+            f"User's project goal: {user_goal}\\n"
+            f"Team/Project name: {user_name}\n"
+            "- List all directories in /root/.\n"
+            "- Infer the most relevant project directory from the user's goal or prompt.\n"
+            "- Review the contents of that directory. If it contains mostly subdirectories, look one level deeper.\n"
+            "- Summarize the directory structure and the most relevant files (not just the first level).\n"
+            "- Always state which directories and files you are reviewing in your output.\n"
+            f"If a directory path is mentioned (e.g., /root/chess/), use it as the primary context for file review. "
+            f"If the directory does not exist or is empty, propose a logical structure for the project under /root/[project_name]. "
+        )
+        team_leader.hist_add_user_message(UserMessage(message=file_review_prompt, attachments=[]))
+        file_review = await team_leader.monologue()
+        planning_context["file_review"] = file_review
+        self.log.update(progress="Planning Step 2/7: Project file review complete.") # Add log here
+        
+        # Step 3: Goal/challenge inference
+        self.log.update(progress="Planning Step 3/7: Inferring goal and challenges...") # Add log here
+        goal_prompt = (
+            "Step 3: Project Goal and Challenges\\n"
+            "Based on the files and any available project description, summarize what you believe is the main project goal and any key challenges."
+        )
+        team_leader.hist_add_user_message(UserMessage(message=goal_prompt, attachments=[]))
+        goal_summary = await team_leader.monologue()
+        planning_context["goal_summary"] = goal_summary
+        self.log.update(progress="Planning Step 3/7: Goal inference complete.") # Add log here
+        
+        # Step 4: Role/skill suggestion
+        self.log.update(progress="Planning Step 4/7: Suggesting team roles...") # Add log here
+        roles_prompt = (
+            "Step 4: Team Roles and Skills\\n"
+            "Given the project's structure and goal, suggest the roles and skills needed for the team. For each role, briefly state its purpose."
+        )
+        team_leader.hist_add_user_message(UserMessage(message=roles_prompt, attachments=[]))
+        roles_suggestion = await team_leader.monologue()
+        planning_context["roles_suggestion"] = roles_suggestion
+        self.log.update(progress="Planning Step 4/7: Role suggestion complete.") # Add log here
+        
+        # Step 4a: Role-specific task assignment guidance
+        self.log.update(progress="Planning Step 4a/7: Generating role-specific task guidance...") # Add log here
+        role_task_prompt = (
+            "Step 4a: Role-Specific Task Assignment Guidance\\n"
+            "For each team role identified, create a unique, role-appropriate task that leverages the agent's expertise. "
+            "Do NOT assign the same generic task to all agents. Instead, tailor each task to the agent's role and responsibilities. "
+            "Provide a brief description of the task for each role."
+        )
+        team_leader.hist_add_user_message(UserMessage(message=role_task_prompt, attachments=[]))
+        role_task_guidance = await team_leader.monologue()
+        planning_context["role_task_guidance"] = role_task_guidance
+        self.log.update(progress="Planning Step 4a/7: Task guidance generation complete.") # Add log here
+        
+        # Step 5: High-level task breakdown
+        self.log.update(progress="Planning Step 5/7: Breaking down tasks...") # Add log here
+        tasks_prompt = (
+            "Step 5: High-Level Task Breakdown\\n"
+            "Propose a high-level breakdown of main tasks (and possible subtasks) that the team should complete to achieve the project goal."
+        )
+        team_leader.hist_add_user_message(UserMessage(message=tasks_prompt, attachments=[]))
+        task_breakdown = await team_leader.monologue()
+        planning_context["task_breakdown"] = task_breakdown
+        self.log.update(progress="Planning Step 5/7: Task breakdown complete.") # Add log here
+        
+        # Step 6: Clarifications/questions
+        self.log.update(progress="Planning Step 6/7: Identifying clarifications...") # Add log here
+        clarifications_prompt = (
+            "Step 6: Clarifications or Questions\\n"
+            "List any questions or missing information that would help you plan more effectively."
+        )
+        team_leader.hist_add_user_message(UserMessage(message=clarifications_prompt, attachments=[]))
+        clarifications = await team_leader.monologue()
+        planning_context["clarifications"] = clarifications
+        self.log.update(progress="Planning Step 6/7: Clarification identification complete.") # Add log here
+        
+        # Step 7: Update doc with planning summary
+        self.log.update(progress=f"Planning Step 7/7: Updating planning document at {doc_path}...") # Add log here
+        # Construct the final planning summary string first
+        planning_summary_content = (
+            f"{doc_check_summary}\n\n" # Use the summary from step 1
+            f"## Project File Review\n{file_review}\n\n"
+            f"## Project Goal and Challenges\n{goal_summary}\n\n"
+            f"## Team Roles and Skills\n{roles_suggestion}\n\n"
+            f"## Role-Specific Task Assignment Guidance\n{role_task_guidance}\n\n"
+            f"## High-Level Task Breakdown\n{task_breakdown}\n\n"
+            f"## Clarifications or Questions\n{clarifications}\n"
+        )
+        
+        # Use the reliable full-overwrite method to update the document's overview section
+        doc_update_prompt = (
+            f"Step 7: Update Planning Document ({doc_path})\\n"
+            f"Task: Read the entire document at '{doc_path}'. Find the '## Project Overview' section. Replace the content *under* this header with the new planning summary provided below. If the section doesn't exist, add it. Construct the full, updated markdown content in memory. Overwrite the file at '{doc_path}' in one single write operation using the full updated content. After writing, read the file back to confirm the '## Project Overview' section contains the new summary.\\n"
+            f"CRITICAL: Use the full overwrite method (read all -> modify in memory -> write all). Do NOT use partial replacements.\\n"
+            f"\n--- New Project Overview Content ---\n{planning_summary_content}\n--- End New Content ---"
+        )
+        
+        team_leader.hist_add_user_message(UserMessage(message=doc_update_prompt, attachments=[]))
+        doc_update_confirmation = await team_leader.monologue() # This should contain confirmation from the agent
+        planning_context["doc_update_confirmation"] = doc_update_confirmation
+        self.log.update(progress=f"Planning Step 7/7: Document update requested. Confirmation: {doc_update_confirmation[:100]}...") # Add log here
+        
+        # Final step with comprehensive log update
+        self.log.update(progress=f"Planning phase complete. Planning document updated at {doc_path}") # Add final log here
+        
+        # Compose the complete planning summary for return
+        # This includes the initial doc check summary and the confirmation from the update step
+        final_planning_summary = (
+            f"{doc_check_summary}\n\n" # Include initial doc check summary
+            f"--- Planning Summary ---\n"
+            f"Project File Review:\n{file_review}\n\n"
+            f"Project Goal and Challenges:\n{goal_summary}\n\n"
+            f"Team Roles and Skills:\n{roles_suggestion}\n\n"
+            f"Role-Specific Task Assignment Guidance:\n{role_task_guidance}\n\n"
+            f"High-Level Task Breakdown:\n{task_breakdown}\n\n"
+            f"Clarifications or Questions:\n{clarifications}\n\n"
+            f"--- Document Update Confirmation ---\n{doc_update_confirmation}\n" # Include update confirmation
+        )
+        
+        # Return planning summary along with confirmed doc_path and status
+        return {
+            "planning_summary": final_planning_summary, # Return the combined summary
+            "doc_path": doc_path, # Return the confirmed doc_path used
+            "status": "planning_complete" # Indicate planning is done
+        }
+
+    async def _integrate_review_step(self, team_id, team_data, team_leader, tasks, team_members, doc_path, progress_prefix, pending_tasks, progress_percentage):
+        """Handles the 'review' step of the integration process."""
+        self.log.update(progress=f"{progress_prefix} - STEP 1/2: Starting document review...")
+        review_doc_prompt = (
+            f"Integration Step 1: Review Planning/Results Document\\\\n" # Escaped newline
+            f"Read the current planning/results document at {doc_path}. Summarize its contents, especially the Project Overview and any previous Integration Review sections.\\\\n" # Escaped newline
+            f"Then review the current project directory and files. Validate that all deliverables are present and organized. Summarize results, check for gaps, and provide recommendations.\\\\n" # Escaped newline
+            f"Your response should include:\\\\n" # Escaped newline
+            f"- Directory/file review (list and describe key files and structure)\\\\n" # Escaped newline
+            f"- Checklist of deliverables (what was expected, what is present, what is missing)\\\\n" # Escaped newline
+            f"- Summary of results (from all completed tasks)\\\\n" # Escaped newline
+            f"- Recommendations for improvement or next steps\\\\n" # Escaped newline
+            f"Always state which directories and files you are reviewing in your output."
+        )
+        team_leader.hist_add_user_message(UserMessage(message=review_doc_prompt, attachments=[]))
+        review_response = await team_leader.monologue()
+
+        self.log.update(progress=f"{progress_prefix} - STEP 1/2: Document review complete.")
+
+        return Response(
+            message=self._format_response({
+                "team_id": team_id,
+                "status": "integration_review",
+                "review_summary": review_response,
+                "pending_tasks": pending_tasks, # Use the calculated value
+                "team_progress": progress_percentage, # Add progress
+                "doc_path": doc_path, # Add doc path
+                "team_name": team_data.get("name", "Unknown"), # Add team name
+                "team_goal": team_data.get("goal", "Unknown"), # Add team goal
+                "next_step": "Step 2: Use the 'edit' step to update the document and synthesize the final integration based on this review. Pass the review_summary as input."
+            }),
+            break_loop=False
+        )
+
+    async def _integrate_edit_step(self, team_id, team_data, team_leader, tasks, team_members, doc_path, progress_prefix, review_summary, completed_results, pending_tasks, progress_percentage, pending_warning):
+        """Handles the 'edit' step of the integration process."""
+        self.log.update(progress=f"{progress_prefix} - STEP 2/2: Starting document update...")
+        if not review_summary:
+            return Response(
+                message=self._format_response({
+                    "team_id": team_id,
+                    "error": "Missing review_summary for edit step.",
+                    "next_step": "Run the 'review' step first to generate a review_summary, then pass it to the 'edit' step."
+                }),
+                break_loop=False
+            )
+
+        # Ensure doc_path is valid before proceeding
+        if not doc_path: # Check if doc_path is None or empty after potential fallback
+             return Response(
+                message=self._format_response({
+                    "team_id": team_id,
+                    "error": "Document path could not be determined for editing.",
+                    "next_step": "Verify team data and naming conventions."
+                }),
+                break_loop=False
+            )
+
+        # Update Integration Review section
+        def update_markdown_section(file_path, section_header, new_content):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+            except FileNotFoundError:
+                lines = []
+            start_idx = None
+            end_idx = None
+            for i, line in enumerate(lines):
+                if line.strip() == section_header:
+                    start_idx = i
+                    for j in range(i+1, len(lines)):
+                        if lines[j].startswith('## ') and lines[j].strip() != section_header:
+                            end_idx = j
+                            break
+                    if end_idx is None:
+                        end_idx = len(lines)
+                    break
+            section_block = [section_header + '\\n', new_content.strip() + '\\n'] # Escaped newlines
+            if start_idx is not None:
+                new_lines = lines[:start_idx] + section_block + lines[end_idx:]
+            else:
+                if lines and not lines[-1].endswith('\\n'): # Escaped newline
+                    lines[-1] += '\\n' # Escaped newline
+                new_lines = lines + ['\\n'] + section_block # Escaped newline
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.writelines(new_lines)
+
+        update_markdown_section(doc_path, '## Integration Review', review_summary)
+        # Note: doc_update_confirmation below gets overwritten by the monologue call
+        # This initial string serves mainly as a placeholder in case the monologue fails.
+        doc_update_confirmation_initial = f"Integration Review section updated in {doc_path}."
+
+        # Prompt the agent to review and update the entire document
+        doc_update_prompt = (
+            f"Integration Step 2: Update Planning/Results Document\\n" # Escaped newline
+            f"Read the entire document at {doc_path}. Review all sections, especially Project Overview and Integration Review. "
+            f"Update the document to reflect the latest results, recommendations, and integration review. "
+            f"Save the updated document, ensuring all sections are well-structured and up to date. Confirm the update."
+        )
+        team_leader.hist_add_user_message(UserMessage(message=doc_update_prompt, attachments=[]))
+        doc_update_confirmation = await team_leader.monologue()
 
         # Enhanced integration prompt with better guidance
-        integration_prompt = f"""
-        As the leader of the {team_data['name']} team, your critical responsibility is to synthesize all team contributions 
+        integration_prompt = f'''
+        As the leader of the {team_data['name']} team, your critical responsibility is to synthesize all team contributions
         into a cohesive, polished final product that fulfills our goal: {team_data['goal']}
 
         COMPLETED TEAM CONTRIBUTIONS:
         {json.dumps(completed_results, indent=2)}
-        {pending_warning}
+        {pending_warning} # Use the initialized pending_warning
+
+        INTEGRATION REVIEW:
+        {review_summary}
+
+        DOCUMENT UPDATE CONFIRMATION:
+        {doc_update_confirmation}
 
         INTEGRATION OBJECTIVE:
-        Transform these separate contributions into a seamless, unified deliverable that achieves our team goal and meets the user's needs.
+        Transform these separate contributions into a seamless, unified deliverable that achieves our team goal and meets the user\\'s needs.
 
         YOUR INTEGRATION ROLE:
         1. Identify the key insights and valuable content from each contribution
@@ -1275,7 +1903,7 @@ Remember: The response_tool is REQUIRED for your final output.
         - Begin with a high-level synthesis plan
         - Extract core content from each contribution
         - Create a unified structure that builds logically
-        - Fill gaps and eliminate redundancies 
+        - Fill gaps and eliminate redundancies
         - Add transitions to create seamless flow between sections
         - Review for completeness, coherence, and alignment with the goal
 
@@ -1305,32 +1933,32 @@ Remember: The response_tool is REQUIRED for your final output.
         ```
 
         The "text" field must contain the complete integrated final product, ready for delivery to the user.
-        """
-        
-        # Let team leader create the integrated result
-        self.log.update(progress="Asking team leader to integrate results...")
-        
+        '''
+        self.log.update(progress=f"{progress_prefix} - STEP 2/2: Document update complete. Integration in progress...")
         try:
-            # Execute integration using call to team leader
             team_leader.hist_add_user_message(UserMessage(message=integration_prompt, attachments=[]))
             integrated_result = await team_leader.monologue()
-            self.log.update(progress="Received integrated response from team leader")
+            self.log.update(progress=f"{progress_prefix}: Integration complete.") # Update log here
         except Exception as e:
             self.log.update(error=f"Error during integration: {str(e)}")
             integrated_result = f"Error during integration: {str(e)}"
-        
-        # Create appropriate next steps based on task status
-        if pending_tasks > 0:
-            next_step = f"Step 5: DELIVER FINAL PRODUCT - Summarize and present integrated results to the user using the response tool. To get a more complete result, consider completing the remaining {pending_tasks} tasks first."
+
+        if pending_tasks > 0: # Use the calculated value
+            next_step = f"Step 3: DELIVER FINAL PRODUCT - Summarize and present integrated results to the user using the response tool. To get a more complete result, consider completing the remaining {pending_tasks} tasks first."
         else:
-            next_step = "Step 5: DELIVER FINAL PRODUCT - Summarize and present these integrated results to the user as a comprehensive deliverable using the response tool. Use the text field to provide the complete answer that addresses the original request."
-        
+            next_step = "Step 3: DELIVER FINAL PRODUCT - Summarize and present these integrated results to the user as a comprehensive deliverable using the response tool. Use the text field to provide the complete answer that addresses the original request."
+
         return Response(
             message=self._format_response({
                 "team_id": team_id,
                 "status": "integrated",
+                "team_name": team_data.get("name", "Unknown"), # Add team name
+                "team_goal": team_data.get("goal", "Unknown"), # Add team goal
+                "team_progress": progress_percentage, # Add progress
+                "doc_path": doc_path, # Add doc path
+                "document_status": "updated", # Add doc status
                 "integrated_result": integrated_result,
-                "pending_tasks": pending_tasks,
+                "pending_tasks": pending_tasks, # Use the calculated value
                 "next_step": next_step
             }),
             break_loop=False
