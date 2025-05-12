@@ -12,12 +12,12 @@ Execute commands and code for computation, data analysis, and file operations.
 ### BASIC FILE OPERATIONS
 ```json
 {
-    "thoughts": ["Creating a project structure and files"],
+    "thoughts": ["Creating a project structure and files (using a single multi-line string for file content; do NOT use multiple f.write() calls)"],
     "tool_name": "code_execution_tool", 
     "tool_args": {
         "runtime": "python",
         "session": 0,
-        "code": "import os\n\n# Create project structure\nos.makedirs('myproject/src', exist_ok=True)\n\n# Create main file\nfile_path = 'myproject/src/main.py'\nwith open(file_path, 'w') as f:\n    f.write('def main():\\n    print(\"Program running\")\\n\\nif __name__ == \"__main__\":\\n    main()')\n\n# Verify file creation\nif os.path.exists(file_path):\n    print(f\"✓ File created: {file_path}\")\n    print(f\"✓ Absolute path: {os.path.abspath(file_path)}\")\nelse:\n    print(f\"✗ Failed to create file: {file_path}\")"
+        "code": "import os\n\n# Create project structure\nos.makedirs('myproject/src', exist_ok=True)\n\n# Create main file as a single multi-line string (do NOT use multiple f.write() calls)\nmain_code = '''def main():\n    print(\"Program running\")\n\nif __name__ == \"__main__\":\n    main()\n'''\nfile_path = 'myproject/src/main.py'\nwith open(file_path, 'w') as f:\n    f.write(main_code)\n\n# Verify file creation\nif os.path.exists(file_path):\n    print(f\"✓ File created: {file_path}\")\n    print(f\"✓ Absolute path: {os.path.abspath(file_path)}\")\nelse:\n    print(f\"✗ Failed to create file: {file_path}\")"
     }
 }
 ```
@@ -106,6 +106,7 @@ Execute commands and code for computation, data analysis, and file operations.
 
 ### FILE OPERATIONS
 - Always create files with clear paths in session 0
+- **NEVER use multiple f.write() calls or line-by-line file writing. Always use a single multi-line string and write it in one go.**
 - Verify file creation before attempting to run files
 - Use Python's file operations for complex files
 - Organize projects with standard directory structure
