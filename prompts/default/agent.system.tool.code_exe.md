@@ -122,9 +122,15 @@ Execute commands and code for computation, data analysis, and file operations.
 - For import errors, check dependencies and installation
 - Reset sessions after errors before trying again
 - Use try/except in Python code to handle potential errors
+- **If you encounter the same error twice with the same method, switch to a more reliable method (e.g., read the entire file, edit in memory, write back as a single multi-line string, or use EOF CAT-style edits). Document the fallback method used.**
 
 ### DEBUGGING
 - Print absolute paths when verifying file creation
 - List directory contents to check available files
 - Create debugging scripts to test environment setup
 - Use explicit path variables for consistency
+
+### CODE EDITING (PYTHON)
+- Avoid naive string or line replacements for code edits, especially in Python, as this can break indentation and structure.
+- Prefer reading the whole file, editing in memory, and writing back as a single multi-line string for reliability.
+- **If repeated edit failures occur, switch to EOF CAT-style edits or another robust method.**
