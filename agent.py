@@ -363,7 +363,19 @@ class Agent:
         loop_data.history_output = self.history.output()
 
         # and allow extensions to edit them
-        await self.call_extensions("message_loop_prompts", loop_data=loop_data)
+        try:
+            await self.call_extensions("message_loop_prompts", loop_data=loop_data)
+        except Exception as e:
+            error_message = errors.format_error(e)
+            error_text = errors.error_text(e)
+            self.context.log.log(
+                type="error",
+                heading="Extension Error",
+                content=error_message,
+                kvps={"text": error_text},
+            )
+            PrintStyle.error(error_message)
+            self.hist_add_warning(error_message)
 
         # extras (memory etc.)
         extras: list[history.OutputMessage] = []
