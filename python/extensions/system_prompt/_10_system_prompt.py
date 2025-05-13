@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Optional
 from python.helpers.extension import Extension
-from python.helpers.mcp import MCPConfig
+from python.helpers.mcp_handler import MCPConfig
 from agent import Agent, LoopData
 from python.helpers.localization import Localization
 

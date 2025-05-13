@@ -5,6 +5,10 @@ import asyncio
 from contextlib import AsyncExitStack
 from shutil import which
 from datetime import timedelta
+
+import os
+print(f"DEBUG: Listing /opt/venv/lib/python3.11/site-packages/ before mcp import: {os.listdir('/opt/venv/lib/python3.11/site-packages/')}")
+
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.client.sse import sse_client

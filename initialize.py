@@ -76,16 +76,17 @@ def initialize():
     # update config with runtime args
     args_override(config)
 
-    import python.helpers.mcp as mcp_helper
+    import python.helpers.mcp_handler as mcp_helper
     import agent as agent_helper
     import python.helpers.print_style as print_style_helper
     if not mcp_helper.MCPConfig.get_instance().is_initialized():
         try:
             mcp_helper.MCPConfig.update(config.mcp_servers)
         except Exception as e:
-            if agent_helper.AgentContext.first():
+            first_context = agent_helper.AgentContext.first()
+            if first_context:
                 (
-                    agent_helper.AgentContext.first().log
+                    first_context.log
                     .log(type="warning", content=f"Failed to update MCP settings: {e}", temp=False)
                 )
             (
