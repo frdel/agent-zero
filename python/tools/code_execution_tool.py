@@ -262,11 +262,23 @@ class CodeExecution(Tool):
                     if check_segment == expected_segment:
                         loop_detected_msg = f"Detected repeating output pattern (last {chunk_size} chars repeated {repeat_threshold} times), likely an infinite loop."
                         PrintStyle.error(f"{loop_detected_msg} Resetting session {session}.")
-                        self.log.update(content=full_output + f"\n--- LOOP DETECTED --- Session {session} reset.")
+
+                        # --- Truncate output for feedback ---
+                        max_output_length = 2048
+                        truncated_output = full_output[-max_output_length:]
+                        if len(full_output) > max_output_length:
+                            summary_prefix = f"[... Output truncated to last {max_output_length} characters ...]\n"
+                            truncated_output = summary_prefix + truncated_output
+                        else:
+                            summary_prefix = ""
+                        # --- End of truncation ---
+
+                        self.log.update(content=truncated_output + f"\n--- LOOP DETECTED --- Session {session} reset.")
                         # Automatically reset the problematic session
-                        await self.reset_terminal(session=session)
-                        # Return informative message to the agent
-                        return f"{full_output}\n--- LOOP DETECTED & SESSION RESET ---\n{loop_detected_msg}\nThe terminal session {session} was automatically reset.\nPlease review the code or command that caused the loop to prevent recurrence."
+                        reset_reason = f"Detected repeating output pattern (last {chunk_size} chars repeated {repeat_threshold} times)"
+                        await self.reset_terminal(session=session, reason=reset_reason)
+                        # Return informative message to the agent with truncated output and pattern
+                        return f"{truncated_output}\n--- LOOP DETECTED & SESSION RESET ---\n{loop_detected_msg}\nRepeating pattern identified: '{last_chunk[:128]}{'...' if len(last_chunk)>128 else ''}'\nThe terminal session {session} was automatically reset.\nPlease review the code or command that caused the loop to prevent recurrence."
                 # --- End of repetition check ---
 
 
@@ -291,9 +303,15 @@ class CodeExecution(Tool):
 
         return full_output
 
-    async def reset_terminal(self, session=0):
+    async def reset_terminal(self, session=0, reason: str | None = None):
+        # Print the reason for the reset to the console if provided
+        if reason:
+            PrintStyle(font_color="#FFA500", bold=True).print(f"Resetting terminal session {session}... Reason: {reason}")
+        else:
+            PrintStyle(font_color="#FFA500", bold=True).print(f"Resetting terminal session {session}...")
+
         # Only reset the specified session while preserving others
         await self.prepare_state(reset=True, session=session)
-        response = self.agent.read_prompt("fw.code_reset.md")
+        response = self.agent.read_prompt("fw.code_reset.md") # Standard message for agent history
         self.log.update(content=response)
         return response
