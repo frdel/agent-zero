@@ -130,7 +130,45 @@ Execute commands and code for computation, data analysis, and file operations.
 - Create debugging scripts to test environment setup
 - Use explicit path variables for consistency
 
+### FILE EDITING BEST PRACTICES
+When editing files, especially code files:
+
+1. ALWAYS use the "read entire file → modify in memory → write entire file" pattern:
+   ```python
+   # CORRECT APPROACH - Read, modify in memory, write as one operation
+   with open(file_path, 'r') as f:
+       content = f.read()  # Read the entire file
+   
+   # Make modifications to the content in memory
+   modified_content = content.replace('old_text', 'new_text')
+   # OR use regex if needed
+   import re
+   modified_content = re.sub(r'pattern', 'replacement', content)
+   
+   # Write back the entire file at once
+   with open(file_path, 'w') as f:
+       f.write(modified_content)  # Write the entire file
+   
+   # Verify changes were made
+   with open(file_path, 'r') as f:
+       verification = f.read()
+   print(f"Verification: {'new_text' in verification}")
+   ```
+
+AVOID these error-prone approaches:
+
+❌ Line-by-line reading and writing
+❌ Multiple separate f.write() calls
+❌ Complex string manipulation without testing
+
+
+For Python files specifically, preserve indentation:
+
+Use dedicated functions for Python code modification
+Be extremely careful with regex replacements
+
 ### CODE EDITING (PYTHON)
 - Avoid naive string or line replacements for code edits, especially in Python, as this can break indentation and structure.
+- Read the file to identify the exact issues. After reviewing the content, implement the necessary fixes to ensure proper syntax throughout the file.
 - Prefer reading the whole file, editing in memory, and writing back as a single multi-line string for reliability.
 - **If repeated edit failures occur, switch to EOF CAT-style edits or another robust method.**
