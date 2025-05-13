@@ -703,7 +703,7 @@ class Agent:
 
             # Try getting tool from MCP first
             try:
-                import python.helpers.mcp as mcp_helper 
+                import python.helpers.mcp_handler as mcp_helper 
                 mcp_tool_candidate = mcp_helper.MCPConfig.get_instance().get_tool(self, tool_name)
                 if mcp_tool_candidate:
                     tool = mcp_tool_candidate

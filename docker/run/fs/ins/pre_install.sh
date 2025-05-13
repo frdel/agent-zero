@@ -5,20 +5,24 @@ chmod 0644 /etc/cron.d/*
 
 echo "=====BEFORE UPDATE====="
 
+# Set DEBIAN_FRONTEND to noninteractive to prevent prompts
+export DEBIAN_FRONTEND=noninteractive
+
 # Update and install necessary packages
 apt clean
-apt-get update && apt-get upgrade -y && apt-get install -y \
+apt-get update && apt-get upgrade -y && apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y \
     python3 \
     python3-venv \
     python3-pip \
     nodejs \
+    npm \
     openssh-server \
     sudo \
     curl \
     wget \
     git \
     ffmpeg \
-    nginx\
+    nginx \
     supervisor \
     cron \
     libmagic-dev \
@@ -40,6 +44,7 @@ echo "=====MID UPDATE====="
 
 # for some reason npm crashes builds on amd64 in this version and has to be installed separately
 # A0 can install it when needed
+# The line below is now redundant as npm is included in the main install list above
 # apt-get install -y \
 #     npm 
 
@@ -59,7 +64,13 @@ echo "=====AFTER UPDATE====="
 # fi
 
 # Install npx for use by local MCP Servers
-npm i -g npx shx
+echo "DEBUG: Installing npx and shx globally using npm..."
+npm i -g npx shx || {
+    echo "CRITICAL ERROR: Failed to install npx and shx using npm."
+    # exit 1 # Optionally exit if this is critical enough
+}
+echo "DEBUG: npx and shx installation attempt finished."
+
 
 # Prepare SSH daemon
 bash /ins/setup_ssh.sh "$@"

@@ -883,7 +883,7 @@ def _apply_settings(previous: Settings | None):
             memory_reload()
 
         # update mcp settings if necessary
-        from python.helpers.mcp import MCPConfig
+        from python.helpers.mcp_handler import MCPConfig
 
         async def update_mcp_settings(mcp_servers: str):
             PrintStyle(background_color="black", font_color="white", padding=True).print("Updating MCP config...")
