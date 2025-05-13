@@ -635,66 +635,104 @@ SESSION WORKFLOW:
 - Use the input tool for interactive programs
 
 ERROR HANDLING STRATEGY:
-- If you encounter the same error twice when trying the same approach, switch to an alternative, more reliable method (such as reading the entire file, editing in memory, and writing back as a single multi-line string, or using EOF CAT-style edits). Document the fallback method used in your response.
+- If you encounter the same error twice when trying the same approach, switch to an alternative, more reliable method (such as using Python file I/O as described below). Document the fallback method used in your response.
 - For library/package issues, try a different library or implement a minimal solution from scratch
 - When installation fails despite multiple attempts, use a fallback implementation as specified in your task
 - Document environment issues and your workaround strategy in your final response
 
 PROJECT CREATION PATTERN:
 1. Create directories and verify structure
-2. Create all required files with explicit paths
+2. Create all required files with explicit paths (using reliable methods below)
 3. Verify all files exist before execution
 4. Run code in separate sessions from creation
 5. ALWAYS install packages AND run scripts with terminal runtime to maintain environment consistency
 
-AVAILABLE TOOLS:
-- knowledge_tool: For research and information gathering
-- code_execution_tool: For computation, data processing, file operations (prioritize terminal runtime for both package installation AND script execution to maintain environment consistency)
-- input: For providing input to interactive programs
-- response_tool: REQUIRED for your final output
+FILE EDITING STRATEGIES (Use Terminal First):
 
-TOOL USAGE:
+Reading Files:
+- Use `cat /path/to/file` in the terminal runtime.
 
-For file creation ONLY:
+Writing/Overwriting Files (Preferred Method for Reliability):
+- Use `cat > /path/to/file << 'EOF' ... EOF` in the terminal runtime. This is the MOST RELIABLE way to write or overwrite entire files, especially multi-line content or code.
 ```json
 {{
-    "thoughts": ["Creating project files"],
+    "thoughts": ["Overwriting file with new content using heredoc"],
     "tool_name": "code_execution_tool",
     "tool_args": {{
-        "runtime": "python",  // Python runtime ONLY for file creation
-        "session": 0,         // ALWAYS use session 0 for file operations
-        "code": "import os\n\n# Create directories\nos.makedirs('project/src', exist_ok=True)\n\n# Create files\nwith open('project/src/main.py', 'w') as f:\n    f.write(\"print('Hello world')\")"
+        "runtime": "terminal",
+        "session": 0, // Use session 0 for file ops
+        "code": "cat > /path/to/your/file.py << 'EOF'\\n# Your full new file content here\\nprint(\\'Hello Overwritten World!\\')\\nEOF"
     }}
 }}
 ```
 
-For executing ANY Python code (imports, tests, etc):
+Creating Empty Files or Simple Overwrites (Less Reliable for complex content):
+- `echo "single line" > /path/to/file` or `touch /path/to/file`
+
+Python Fallback (If Terminal Methods Fail Repeatedly):
+- ONLY if terminal methods fail, use the `python` runtime with file I/O.
+```json
+{{
+    "thoughts": ["Terminal file write failed, falling back to Python file I/O"],
+    "tool_name": "code_execution_tool",
+    "tool_args": {{
+        "runtime": "python", // Python runtime specifically for this fallback
+        "session": 0,        // Still use session 0
+        "code": "with open('/path/to/your/file.py', 'w') as f:\\n    f.write(\\'\\'\\'# Your full new file content here\\nprint(\\\\\\'Hello Python Fallback!\\\\\\')\\n\\'\\'\\')"
+    }}
+}}
+```
+
+*NEVER* use naive string/line replacements or partial edits, especially for code or structured files. Always read the necessary context, modify the content appropriately, and write back the *entire* corrected content using the `cat > ... << EOF` method or the Python fallback.
+
+AVAILABLE TOOLS:
+- knowledge_tool: For research and information gathering
+- code_execution_tool: For computation, data processing, file operations (use 'terminal' runtime for commands and file ops; use 'python' runtime ONLY for executing Python logic or the file I/O fallback)
+- input: For providing input to interactive programs
+- response_tool: REQUIRED for your final output
+
+TOOL USAGE EXAMPLES (Focus on Runtimes):
+
+Checking File Content (Terminal):
+```json
+{{
+    "thoughts": ["Checking the content of main.py"],
+    "tool_name": "code_execution_tool",
+    "tool_args": {{
+        "runtime": "terminal", // Use terminal to run cat
+        "session": 0,
+        "code": "cat project/src/main.py"
+    }}
+}}
+```
+
+Executing Python Code (Terminal):
 ```json
 {{
     "thoughts": ["Testing code/imports"],
-    "tool_name": "code_execution_tool", 
+    "tool_name": "code_execution_tool",
     "tool_args": {{
-        "runtime": "terminal",  // ALWAYS use terminal for running ANY Python code
+        "runtime": "terminal", // ALWAYS use terminal for running ANY Python code/scripts
         "session": 1,
         "code": "python -c 'import pandas; print(pandas.__version__)'"
     }}
 }}
 ```
 
-For installing packages:
+Installing Packages (Terminal):
 ```json
 {{
     "thoughts": ["Installing required packages"],
     "tool_name": "code_execution_tool",
     "tool_args": {{
-        "runtime": "terminal",
+        "runtime": "terminal", // Terminal for pip
         "session": 1,
         "code": "pip install pandas matplotlib"
     }}
 }}
 ```
 
-For running and testing code:
+Running Scripts (Terminal):
 ```json
 {{
     "thoughts": ["Reset session before running"],
@@ -710,27 +748,27 @@ For running and testing code:
     "thoughts": ["Running the created file"],
     "tool_name": "code_execution_tool",
     "tool_args": {{
-        "runtime": "terminal",
+        "runtime": "terminal", // Terminal to execute the python script
         "session": 1,
         "code": "python project/src/main.py"
     }}
 }}
 ```
 
-For checking environment:
+Checking Environment (Terminal):
 ```json
 {{
     "thoughts": ["Verifying Python environment"],
     "tool_name": "code_execution_tool",
     "tool_args": {{
-        "runtime": "terminal",
+        "runtime": "terminal", // Terminal for shell commands
         "session": 1,
         "code": "which python && python --version && pip list | grep pandas"
     }}
 }}
 ```
 
-For research:
+Research (Knowledge Tool):
 ```json
 {{
     "thoughts": ["Need information about X"],
@@ -741,7 +779,7 @@ For research:
 }}
 ```
 
-For your final response (REQUIRED):
+Final Response (Response Tool - REQUIRED):
 ```json
 {{
     "thoughts": ["Task complete, delivering results"],
@@ -752,23 +790,17 @@ For your final response (REQUIRED):
 }}
 ```
 
-IMPORTANT: When executing terminal commands, monitor the output carefully for errors, especially ModuleNotFoundError or ImportError. If library imports fail after installation, verify that your terminal commands and Python code are using the same environment.
+IMPORTANT: When executing terminal commands, monitor the output carefully for errors, especially `command not found`, `ModuleNotFoundError` or `ImportError`. If library imports fail after installation, verify that your terminal commands and Python code are using the same environment (`which python`).
 
 EXECUTION STRATEGY:
 1. UNDERSTAND the task requirements
 2. PLAN your approach before writing any code
-3. CREATE complete project with all necessary files
-4. TEST your implementation thoroughly
-5. PIVOT quickly if you encounter repeated errors with the same approach
+3. CREATE/EDIT files using reliable terminal methods (`cat`, `cat > EOF`)
+4. TEST your implementation thoroughly (using `terminal` runtime for execution)
+5. PIVOT quickly if you encounter repeated errors (try Python file I/O fallback for edits)
 6. DELIVER using the response tool
 
-Remember: The response_tool is REQUIRED for your final output.
-
-CODE EDITING BEST PRACTICE:
-- Strongly discourage naive string or line replacements for code edits, especially in Python or structured files, as this can easily break indentation, structure, or introduce subtle bugs.
-- Read the file to identify the exact issues. After reviewing the content, implement the necessary fixes to ensure proper syntax throughout the file.
-- The most reliable and robust approach is to always read the entire file into memory, make your edits there, and write back the full, updated content as a single multi-line string (or using a 'cat' style overwrite). This ensures file integrity and preserves formatting.
-- For all file edits, especially in Python or markdown, always prefer this full overwrite method over partial or regex-based replacements.
+Remember: The response_tool is REQUIRED for your final output. Avoid complex escaping; use heredocs or the Python fallback for multi-line strings.
 """
         
         # Execute task using call_subordinate pattern
@@ -1350,7 +1382,7 @@ CODE EDITING BEST PRACTICE:
         return json.dumps(formatted_response, indent=2)
 
     async def _integrate_results(self, team_id, step=None, review_summary=None, **kwargs):
-        """Integrate results from all team members into a final product, now as a two-step process: review, then edit/update.\\n\\nBEST PRACTICE: For all markdown or code section edits, always read the entire file into memory, construct the full updated content, and overwrite the file in one write operation (single multi-line string). After writing, read the file back to confirm the update. Do NOT use regex, partial, or line-by-line replacements for in-place section updates—these are unreliable and discouraged."""
+        """Integrate results from all team members into a final product, now as a two-step process: review, then edit/update.\\n\\nBEST PRACTICE: For all markdown or code section edits, always read the necessary context, construct the full updated content, and overwrite the file in one write operation using the terminal `cat > /path/to/file << 'EOF' ... EOF` method. After writing, read the file back (`cat /path/to/file`) to confirm the update. Do NOT use regex, partial, or line-by-line replacements—these are unreliable."""
         # Enhanced progress tracking
         progress_prefix = f"Team {team_id} Integration"
         self.log.update(progress=f"{progress_prefix}: Starting integration process... Step: {step if step else 'default (review -> edit)'}")
@@ -1634,10 +1666,10 @@ CODE EDITING BEST PRACTICE:
         doc_check_prompt = (
             f"START OF TEAM PLANNING PHASE.\\n"
             f"Step 1: Initial Document Check (Perform ONCE)\\n"
-            f"This is the very first step. Check if the file {doc_path} exists.\\n"
-            f"- If it exists: Read the entire file and provide a structured summary of its sections and key content.\\n"
-            f"- If it does NOT exist: State that clearly, create it from the template at {template_path}, and then summarize the new file.\\n"
-            f"CRITICAL: After summarizing or creating the file THIS ONE TIME, you MUST immediately proceed to Step 2 (Project File Review). Do NOT repeat Step 1. Do NOT re-initiate team creation. Your output for Step 1 is just the summary. Now, continue to Step 2."
+            f"This is the very first step. Check if the file {doc_path} exists using `ls {doc_path}`.\\n"
+            f"- If it exists: Read the entire file using `cat {doc_path}` and provide a structured summary of its sections and key content.\\n"
+            f"- If it does NOT exist: State that clearly. Create it by copying the template at {template_path} using the reliable `cat > {doc_path} << \\'EOF\\' ... EOF` method, reading the template content first with `cat {template_path}`. Then, read the *newly created* file back using `cat {doc_path}` and summarize it.\\n"
+            f"CRITICAL: Use the specified terminal commands (`ls`, `cat`, `cat > EOF`). After summarizing or creating the file THIS ONE TIME, you MUST immediately proceed to Step 2 (Project File Review). Do NOT repeat Step 1. Your output for Step 1 is just the summary. Now, continue to Step 2."
         )
         # The agent should summarize and then continue, not loop.
         team_leader.hist_add_user_message(UserMessage(message=doc_check_prompt, attachments=[]))
@@ -1725,23 +1757,28 @@ CODE EDITING BEST PRACTICE:
         self.log.update(progress=f"Planning Step 7/7: Updating planning document at {doc_path}...") # Add log here
         # Construct the final planning summary string first
         planning_summary_content = (
-            f"{doc_check_summary}\n\n" # Use the summary from step 1
-            f"## Project File Review\n{file_review}\n\n"
-            f"## Project Goal and Challenges\n{goal_summary}\n\n"
-            f"## Team Roles and Skills\n{roles_suggestion}\n\n"
-            f"## Role-Specific Task Assignment Guidance\n{role_task_guidance}\n\n"
-            f"## High-Level Task Breakdown\n{task_breakdown}\n\n"
-            f"## Clarifications or Questions\n{clarifications}\n"
+            f"{doc_check_summary}\\n\\n" # Use the summary from step 1 # Escaped newline
+            f"## Project File Review\\n{file_review}\\n\\n" # Escaped newline
+            f"## Project Goal and Challenges\\n{goal_summary}\\n\\n" # Escaped newline
+            f"## Team Roles and Skills\\n{roles_suggestion}\\n\\n" # Escaped newline
+            f"## Role-Specific Task Assignment Guidance\\n{role_task_guidance}\\n\\n" # Escaped newline
+            f"## High-Level Task Breakdown\\n{task_breakdown}\\n\\n" # Escaped newline
+            f"## Clarifications or Questions\\n{clarifications}\\n" # Escaped newline
         )
-        
+
         # Use the reliable full-overwrite method to update the document's overview section
+        # Escape backticks and dollar signs within the heredoc content if they were potentially present
+        escaped_planning_summary_content = planning_summary_content.replace('`', '\\`').replace('$', '\\$')
+
         doc_update_prompt = (
             f"Step 7: Update Planning Document ({doc_path})\\n"
-            f"Task: Read the entire document at '{doc_path}'. Find the '## Project Overview' section. Replace the content *under* this header with the new planning summary provided below. If the section doesn't exist, add it. Construct the full, updated markdown content in memory. Overwrite the file at '{doc_path}' in one single write operation using the full updated content. After writing, read the file back to confirm the '## Project Overview' section contains the new summary.\\n"
-            f"CRITICAL: Use the full overwrite method (read all -> modify in memory -> write all). Do NOT use partial replacements.\\n"
-            f"\n--- New Project Overview Content ---\n{planning_summary_content}\n--- End New Content ---"
+            f"Task: Read the entire document at '{doc_path}' using `cat {doc_path}`. Find the '## Project Overview' section. Replace the content *under* this header with the new planning summary provided below. If the section doesn't exist, add it at an appropriate place (e.g., after the guide). Construct the full, updated markdown content *in memory* first.\\n"
+            f"Then, overwrite the file at '{doc_path}' in ONE single write operation using the terminal heredoc method: `cat > {doc_path} << \\'EOF\\'\\n[Your FULL reconstructed file content]\\nEOF`.\\n"
+            f"After writing, read the file back using `cat {doc_path}` to confirm the '## Project Overview' section contains the new summary.\\n"
+            f"CRITICAL: Use the specified `cat` and `cat > EOF` commands. Do NOT use partial replacements or other runtimes.\\n"
+            f"\\n--- New Project Overview Content (to be inserted) ---\\n{escaped_planning_summary_content}\\n--- End New Content ---" # Use the escaped content
         )
-        
+
         team_leader.hist_add_user_message(UserMessage(message=doc_update_prompt, attachments=[]))
         doc_update_confirmation = await team_leader.monologue() # This should contain confirmation from the agent
         planning_context["doc_update_confirmation"] = doc_update_confirmation
@@ -1753,15 +1790,15 @@ CODE EDITING BEST PRACTICE:
         # Compose the complete planning summary for return
         # This includes the initial doc check summary and the confirmation from the update step
         final_planning_summary = (
-            f"{doc_check_summary}\n\n" # Include initial doc check summary
-            f"--- Planning Summary ---\n"
-            f"Project File Review:\n{file_review}\n\n"
-            f"Project Goal and Challenges:\n{goal_summary}\n\n"
-            f"Team Roles and Skills:\n{roles_suggestion}\n\n"
-            f"Role-Specific Task Assignment Guidance:\n{role_task_guidance}\n\n"
-            f"High-Level Task Breakdown:\n{task_breakdown}\n\n"
-            f"Clarifications or Questions:\n{clarifications}\n\n"
-            f"--- Document Update Confirmation ---\n{doc_update_confirmation}\n" # Include update confirmation
+            f"{doc_check_summary}\\n\\n" # Include initial doc check summary
+            f"--- Planning Summary ---\\n"
+            f"Project File Review:\\n{file_review}\\n\\n"
+            f"Project Goal and Challenges:\\n{goal_summary}\\n\\n"
+            f"Team Roles and Skills:\\n{roles_suggestion}\\n\\n"
+            f"Role-Specific Task Assignment Guidance:\\n{role_task_guidance}\\n\\n"
+            f"High-Level Task Breakdown:\\n{task_breakdown}\\n\\n"
+            f"Clarifications or Questions:\\n{clarifications}\\n\\n"
+            f"--- Document Update Confirmation ---\\n{doc_update_confirmation}\\n" # Include update confirmation
         )
         
         # Return planning summary along with confirmed doc_path and status
@@ -1775,14 +1812,14 @@ CODE EDITING BEST PRACTICE:
         """Handles the 'review' step of the integration process."""
         self.log.update(progress=f"{progress_prefix} - STEP 1/2: Starting document review...")
         review_doc_prompt = (
-            f"Integration Step 1: Review Planning/Results Document\\\\n" # Escaped newline
-            f"Read the current planning/results document at {doc_path}. Summarize its contents, especially the Project Overview and any previous Integration Review sections.\\\\n" # Escaped newline
-            f"Then review the current project directory and files. Validate that all deliverables are present and organized. Summarize results, check for gaps, and provide recommendations.\\\\n" # Escaped newline
-            f"Your response should include:\\\\n" # Escaped newline
-            f"- Directory/file review (list and describe key files and structure)\\\\n" # Escaped newline
-            f"- Checklist of deliverables (what was expected, what is present, what is missing)\\\\n" # Escaped newline
-            f"- Summary of results (from all completed tasks)\\\\n" # Escaped newline
-            f"- Recommendations for improvement or next steps\\\\n" # Escaped newline
+            f"Integration Step 1: Review Planning/Results Document\\n" # Escaped newline
+            f"Read the current planning/results document at {doc_path} using `cat {doc_path}`. Summarize its contents, especially the Project Overview and any previous Integration Review sections.\\n" # Escaped newline
+            f"Then review the current project directory and files using `ls -R` or similar terminal commands. Validate that all expected deliverables are present and organized. Summarize results, check for gaps, and provide recommendations.\\n" # Escaped newline
+            f"Your response should include:\\n" # Escaped newline
+            f"- Directory/file review (list and describe key files and structure using terminal commands)\\n" # Escaped newline
+            f"- Checklist of deliverables (what was expected, what is present, what is missing)\\n" # Escaped newline
+            f"- Summary of results (from all completed tasks)\\n" # Escaped newline
+            f"- Recommendations for improvement or next steps\\n" # Escaped newline
             f"Always state which directories and files you are reviewing in your output."
         )
         team_leader.hist_add_user_message(UserMessage(message=review_doc_prompt, attachments=[]))
