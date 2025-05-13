@@ -133,41 +133,61 @@ Execute commands and code for computation, data analysis, and file operations.
 ### FILE EDITING BEST PRACTICES
 When editing files, especially code files:
 
-1. ALWAYS use the "read entire file → modify in memory → write entire file" pattern:
-   ```python
-   # CORRECT APPROACH - Read, modify in memory, write as one operation
-   with open(file_path, 'r') as f:
-       content = f.read()  # Read the entire file
-   
-   # Make modifications to the content in memory
-   modified_content = content.replace('old_text', 'new_text')
-   # OR use regex if needed
-   import re
-   modified_content = re.sub(r'pattern', 'replacement', content)
-   
-   # Write back the entire file at once
-   with open(file_path, 'w') as f:
-       f.write(modified_content)  # Write the entire file
-   
-   # Verify changes were made
-   with open(file_path, 'r') as f:
-       verification = f.read()
-   print(f"Verification: {'new_text' in verification}")
-   ```
+1.  **RECOMMENDED METHOD (Terminal Heredoc):**
+    *   Use the `terminal` runtime (session 0) with `cat > /path/to/file << 'EOF' ... EOF`.
+    *   This is generally preferred for reliability with multi-line content and avoids Python environment issues.
+    *   **Formatting:** Ensure `\n` for newlines in your JSON `code` string and that the final `EOF` is on its own line.
+    *   **Verification:** ALWAYS verify the write immediately using `cat /path/to/file` in a subsequent `terminal` call.
+    *   **Troubleshooting Hangs:** If this command hangs (stuck on a `>` prompt and times out), it indicates the content or `EOF` marker wasn't transmitted correctly. Review your `code` string's formatting and escaping. If it repeatedly hangs, use the Python Fallback.
+    ```json
+    {
+        "thoughts": ["Writing a multi-line file using terminal heredoc"],
+        "tool_name": "code_execution_tool",
+        "tool_args": {
+            "runtime": "terminal",
+            "session": 0,
+            "code": "cat > path/to/my_script.py << 'EOF'\n# Start of script\nimport os\n\ndef main():\n    print(f"Hello from {os.getcwd()}" )\n\nif __name__ == "__main__":\n    main()\nEOF"
+        }
+    }
+    ```
+    ```json
+    {
+        "thoughts": ["Verifying the file write"],
+        "tool_name": "code_execution_tool",
+        "tool_args": {
+            "runtime": "terminal",
+            "session": 0,
+            "code": "cat path/to/my_script.py"
+        }
+    }
+    ```
 
-AVOID these error-prone approaches:
+2.  **PYTHON FALLBACK METHOD (If Terminal Heredoc Hangs):**
+    *   Use this **only if the terminal `cat > EOF` method hangs repeatedly.**
+    *   Use `runtime: python` (session 0) with `with open(...) f.write(...)`.
+    *   Ensure you write the *entire* file content as a single multi-line string.
+    ```json
+    {
+        "thoughts": ["Terminal heredoc hung, using Python fallback to write file"],
+        "tool_name": "code_execution_tool",
+        "tool_args": {
+            "runtime": "python",
+            "session": 0,
+            "code": "file_path = 'path/to/my_script.py'\ncontent = \"\"\"# Start of script\nimport os\n\ndef main():\n    print(f\"Hello from {os.getcwd()}\" )\n\nif __name__ == \"__main__\":\n    main()\"\"\"\nwith open(file_path, 'w') as f:\n    f.write(content)\nprint(f\"File {file_path} written via Python.\")"
+        }
+    }
+    ```
 
-❌ Line-by-line reading and writing
-❌ Multiple separate f.write() calls
-❌ Complex string manipulation without testing
+**Overall Strategy:**
+*   ALWAYS read necessary context first (e.g., `cat <file>`).
+*   Construct the full, new file content in memory.
+*   Attempt to write using the **Terminal Heredoc** method.
+*   **Verify** the write.
+*   If the Terminal Heredoc method hangs, use the **Python Fallback** method.
+*   Verify again.
+*   **AVOID** naive string/line replacements or partial edits for code/structured files.
 
-
-For Python files specifically, preserve indentation:
-
-Use dedicated functions for Python code modification
-Be extremely careful with regex replacements
-
-### CODE EDITING (PYTHON)
+### CODE EDITING (PYTHON SPECIFIC)
 - Avoid naive string or line replacements for code edits, especially in Python, as this can break indentation and structure.
 - Read the file to identify the exact issues. After reviewing the content, implement the necessary fixes to ensure proper syntax throughout the file.
 - Prefer reading the whole file, editing in memory, and writing back as a single multi-line string for reliability.
