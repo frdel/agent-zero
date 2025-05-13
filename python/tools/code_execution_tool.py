@@ -232,10 +232,13 @@ class CodeExecution(Tool):
         last_output_time = start_time
         full_output = ""
         got_output = False
+        # --- Configuration for repetition detection ---
+        chunk_size = 128  # Size of the block to check for repetition
+        repeat_threshold = 5  # How many times the block must repeat consecutively
 
         while True:
             await asyncio.sleep(sleep_time)
-            full_output, partial_output = await self.state.shells[session].read_output(
+            current_full_output, partial_output = await self.state.shells[session].read_output(
                 timeout=between_output_timeout, reset_full_output=reset_full_output
             )
             reset_full_output = False
@@ -245,9 +248,27 @@ class CodeExecution(Tool):
             now = time.time()
             if partial_output:
                 PrintStyle(font_color="#85C1E9").stream(partial_output)
+                full_output += partial_output # Append new output
                 self.log.update(content=full_output)
                 last_output_time = now
                 got_output = True
+
+                # --- Check for repeating output pattern ---
+                required_len = chunk_size * repeat_threshold
+                if len(full_output) >= required_len:
+                    check_segment = full_output[-required_len:]
+                    last_chunk = full_output[-chunk_size:]
+                    expected_segment = last_chunk * repeat_threshold
+                    if check_segment == expected_segment:
+                        loop_detected_msg = f"Detected repeating output pattern (last {chunk_size} chars repeated {repeat_threshold} times), likely an infinite loop."
+                        PrintStyle.error(f"{loop_detected_msg} Resetting session {session}.")
+                        self.log.update(content=full_output + f"\n--- LOOP DETECTED --- Session {session} reset.")
+                        # Automatically reset the problematic session
+                        await self.reset_terminal(session=session)
+                        # Return informative message to the agent
+                        return f"{full_output}\n--- LOOP DETECTED & SESSION RESET ---\n{loop_detected_msg}\nThe terminal session {session} was automatically reset.\nPlease review the code or command that caused the loop to prevent recurrence."
+                # --- End of repetition check ---
+
 
             # Check for shell prompt at the end of output
             last_lines = full_output.splitlines()[-3:] if full_output else []
