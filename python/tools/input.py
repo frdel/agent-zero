@@ -8,10 +8,10 @@ class Input(Tool):
     async def execute(self, keyboard="", session=0, **kwargs):
         # normalize keyboard input
         keyboard = keyboard.rstrip()
-        keyboard += "\n"
+        keyboard += "\\n"
 
         # forward keyboard input to code execution tool
-        args = {"runtime": "terminal", "code": keyboard}
+        args = {"runtime": "terminal", "code": keyboard, "session": session}
         cot = CodeExecution(self.agent, "code_execution_tool", "", args, self.message)
         cot.log = self.log
         return await cot.execute(**args)
