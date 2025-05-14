@@ -890,13 +890,16 @@ def _apply_settings(previous: Settings | None):
 
         async def update_mcp_settings(mcp_servers: str):
             PrintStyle(background_color="black", font_color="white", padding=True).print("Updating MCP config...")
-            AgentContext.first().log.log(type="info", content="Updating MCP settings...", temp=True)
+            first_context = AgentContext.first()
+            if first_context:
+                first_context.log.log(type="info", content="Updating MCP settings...", temp=True)
 
             mcp_config = MCPConfig.get_instance()
             try:
                 MCPConfig.update(mcp_servers)
             except Exception as e:
-                AgentContext.first().log.log(type="warning", content=f"Failed to update MCP settings: {e}", temp=False)
+                if first_context:
+                    first_context.log.log(type="warning", content=f"Failed to update MCP settings: {e}", temp=False)
                 (
                     PrintStyle(background_color="red", font_color="black", padding=True)
                     .print("Failed to update MCP settings")
@@ -913,7 +916,8 @@ def _apply_settings(previous: Settings | None):
                 PrintStyle(background_color="#334455", font_color="white", padding=False)
                 .print(mcp_config.model_dump_json())
             )
-            AgentContext.first().log.log(type="info", content="Finished updating MCP settings :)", temp=True)
+            if first_context:
+                first_context.log.log(type="info", content="Finished updating MCP settings :)", temp=True)
 
         task2 = defer.DeferredTask().start_task(
             update_mcp_settings, config.mcp_servers

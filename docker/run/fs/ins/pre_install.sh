@@ -14,8 +14,6 @@ apt-get update && apt-get upgrade -y && apt-get -o Dpkg::Options::="--force-conf
     python3 \
     python3-venv \
     python3-pip \
-    nodejs \
-    npm \
     openssh-server \
     sudo \
     curl \
@@ -38,15 +36,21 @@ apt-get update && apt-get upgrade -y && apt-get -o Dpkg::Options::="--force-conf
     libcups2 \
     libasound2 \
     libasound2-data \
-    cargo
+    cargo \
+    ca-certificates \
+    gnupg
 
 echo "=====MID UPDATE====="
 
-# for some reason npm crashes builds on amd64 in this version and has to be installed separately
-# A0 can install it when needed
-# The line below is now redundant as npm is included in the main install list above
-# apt-get install -y \
-#     npm 
+# Install Node.js 20.x (LTS) and a compatible npm using NodeSource
+echo "Setting up NodeSource repository for Node.js 20.x..."
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+
+echo "Installing Node.js..."
+apt-get update # Update package list again after adding new source
+apt-get install -y nodejs || { echo "CRITICAL ERROR: Failed to install Node.js from NodeSource." ; exit 1; }
 
 echo "=====AFTER UPDATE====="
 
