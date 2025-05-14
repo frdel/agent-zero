@@ -23,20 +23,6 @@ apt-get update && apt-get upgrade -y && apt-get -o Dpkg::Options::="--force-conf
     nginx \
     supervisor \
     cron \
-    libmagic-dev \
-    poppler-utils \
-    tesseract-ocr \
-    qpdf \
-    libreoffice \
-    pandoc \
-    libgtk-3-0 \
-    libnss3 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libasound2 \
-    libasound2-data \
-    cargo \
     ca-certificates \
     gnupg
 
