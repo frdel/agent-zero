@@ -326,7 +326,7 @@ class MCPConfig(BaseModel):
         from collections.abc import Mapping, Iterable
 
         # DEBUG: Print the received servers_list
-        PrintStyle(background_color="blue", font_color="white", padding=True).print(f"MCPConfig.__init__ received servers_list: {servers_list}")
+        if servers_list: PrintStyle(background_color="blue", font_color="white", padding=True).print(f"MCPConfig.__init__ received servers_list: {servers_list}")
 
         # This empties the servers list if MCPConfig is a Pydantic model and servers is a field.
         # If servers is a field like `servers: List[MCPServer] = Field(default_factory=list)`, 
@@ -501,11 +501,11 @@ class MCPClientBase(ABC):
         Creates a temporary session, executes coro_func with it, and ensures cleanup.
         """
         operation_name = coro_func.__name__ # For logging
-        PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name}): Creating new session for operation '{operation_name}'...")
+        # PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name}): Creating new session for operation '{operation_name}'...")
         async with AsyncExitStack() as temp_stack:
             try:
                 stdio, write = await self._create_stdio_transport(temp_stack)
-                PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name} - {operation_name}): Transport created. Initializing session...")
+                # PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name} - {operation_name}): Transport created. Initializing session...")
                 session = await temp_stack.enter_async_context(
                     ClientSession(
                         stdio,
@@ -514,11 +514,11 @@ class MCPClientBase(ABC):
                     )
                 )
                 await session.initialize()
-                PrintStyle(font_color="green").print(f"MCPClientBase ({self.server.name} - {operation_name}): Session initialized.")
+                # PrintStyle(font_color="green").print(f"MCPClientBase ({self.server.name} - {operation_name}): Session initialized.")
                 
                 result = await coro_func(session)
                 
-                PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name} - {operation_name}): Operation successful.")
+                # PrintStyle(font_color="green").print(f"MCPClientBase ({self.server.name} - {operation_name}): Operation successful.")
                 return result
             except Exception as e:
                 PrintStyle(background_color="#AA4455", font_color="white", padding=False).print(
@@ -534,7 +534,7 @@ class MCPClientBase(ABC):
         raise RuntimeError(f"MCPClientBase ({self.server.name} - {operation_name}): _execute_with_session exited 'async with' block unexpectedly.")
 
     async def update_tools(self) -> "MCPClientBase":
-        PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name}): Starting 'update_tools' operation...")
+        # PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name}): Starting 'update_tools' operation...")
         
         async def list_tools_op(current_session: ClientSession):
             response: ListToolsResult = await current_session.list_tools()
@@ -571,7 +571,7 @@ class MCPClientBase(ABC):
             return self.tools
 
     async def call_tool(self, tool_name: str, input_data: Dict[str, Any]) -> CallToolResult:
-        PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name}): Preparing for 'call_tool' operation for tool '{tool_name}'.")
+        # PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name}): Preparing for 'call_tool' operation for tool '{tool_name}'.")
         if not self.has_tool(tool_name):
             PrintStyle(font_color="orange").print(f"MCPClientBase ({self.server.name}): Tool '{tool_name}' not in cache for 'call_tool', refreshing tools...")
             await self.update_tools() # This will use its own properly managed session
@@ -581,9 +581,9 @@ class MCPClientBase(ABC):
             PrintStyle(font_color="green").print(f"MCPClientBase ({self.server.name}): Tool '{tool_name}' found after updating tools.")
 
         async def call_tool_op(current_session: ClientSession):
-            PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name}): Executing 'call_tool' for '{tool_name}' via MCP session...")
+            # PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name}): Executing 'call_tool' for '{tool_name}' via MCP session...")
             response: CallToolResult = await current_session.call_tool(tool_name, input_data)
-            PrintStyle(font_color="green").print(f"MCPClientBase ({self.server.name}): Tool '{tool_name}' call successful via session.")
+            # PrintStyle(font_color="green").print(f"MCPClientBase ({self.server.name}): Tool '{tool_name}' call successful via session.")
             return response
 
         try:

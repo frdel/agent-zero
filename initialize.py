@@ -8,6 +8,9 @@ import shutil
 from python.helpers.print_style import PrintStyle
 
 
+_NPM_CHECKS_DONE = False
+
+
 # Helper function to ensure an MCP package is globally installed
 def _ensure_mcp_package_globally_installed(package_name: str, executable_name: str):
     PrintStyle(background_color="blue", font_color="white", padding=True).print(
@@ -56,10 +59,11 @@ def _ensure_mcp_package_globally_installed(package_name: str, executable_name: s
         PrintStyle(font_color="red", padding=True).print(
             f"ERROR: 'npm' command not found. Cannot check for or install '{executable_name}' from '{package_name}'."
         )
-    PrintStyle().print() # For a blank line after each attempt
+    # PrintStyle().print() # For a blank line after each attempt
 
 
 def initialize():
+    global _NPM_CHECKS_DONE
     current_settings = settings.get_settings()
     mcp_servers_json_string = current_settings.get("mcp_servers", "[]")
 
@@ -76,48 +80,50 @@ def initialize():
         )
         mcp_server_configs = []
 
-    if shutil.which("npm"):
-        for server_config in mcp_server_configs:
-            if not isinstance(server_config, dict):
-                PrintStyle(font_color="orange", padding=True).print(
-                    f"Warning: Skipping MCP server config item as it's not a dictionary: {server_config}"
-                )
-                continue
+    if not _NPM_CHECKS_DONE:
+        if shutil.which("npm"):
+            for server_config in mcp_server_configs:
+                if not isinstance(server_config, dict):
+                    PrintStyle(font_color="orange", padding=True).print(
+                        f"Warning: Skipping MCP server config item as it's not a dictionary: {server_config}"
+                    )
+                    continue
 
-            command = server_config.get("command")
-            args = server_config.get("args", [])
-            server_name = server_config.get("name", "Unknown MCP Server")
+                command = server_config.get("command")
+                args = server_config.get("args", [])
+                server_name = server_config.get("name", "Unknown MCP Server")
 
-            if command == "npx" and "--package" in args:
-                try:
-                    package_keyword_index = args.index("--package")
-                    # Expect package name at +1 and executable name at +2 from "--package"
-                    if package_keyword_index + 2 < len(args):
-                        package_name = args[package_keyword_index + 1]
-                        executable_name = args[package_keyword_index + 2]
-                        if package_name and executable_name: # Ensure they are not empty strings
-                             _ensure_mcp_package_globally_installed(package_name, executable_name)
+                if command == "npx" and "--package" in args:
+                    try:
+                        package_keyword_index = args.index("--package")
+                        # Expect package name at +1 and executable name at +2 from "--package"
+                        if package_keyword_index + 2 < len(args):
+                            package_name = args[package_keyword_index + 1]
+                            executable_name = args[package_keyword_index + 2]
+                            if package_name and executable_name: # Ensure they are not empty strings
+                                 _ensure_mcp_package_globally_installed(package_name, executable_name)
+                            else:
+                                PrintStyle(font_color="orange", padding=True).print(
+                                    f"Warning: Skipping MCP server '{server_name}' due to empty package or executable name extracted from args: {args}"
+                                )
                         else:
                             PrintStyle(font_color="orange", padding=True).print(
-                                f"Warning: Skipping MCP server '{server_name}' due to empty package or executable name extracted from args: {args}"
+                                f"Warning: Skipping MCP server '{server_name}' as package name or executable name could not be determined from args: {args}"
                             )
-                    else:
+                    except ValueError: # Should not happen if "--package" is in args, but good for safety
                         PrintStyle(font_color="orange", padding=True).print(
-                            f"Warning: Skipping MCP server '{server_name}' as package name or executable name could not be determined from args: {args}"
+                            f"Warning: '--package' keyword found but .index() failed for args: {args} in server '{server_name}'"
                         )
-                except ValueError: # Should not happen if "--package" is in args, but good for safety
-                    PrintStyle(font_color="orange", padding=True).print(
-                        f"Warning: '--package' keyword found but .index() failed for args: {args} in server '{server_name}'"
-                    )
-                except Exception as e:
-                     PrintStyle(font_color="red", padding=True).print(
-                        f"Error processing npx args for server '{server_name}': {e}. Args: {args}"
-                    )
-    else:
-        PrintStyle(font_color="red", padding=True).print(
-            "ERROR: 'npm' command not found. Cannot attempt to install any MCP server packages."
-        )
-    PrintStyle().print() # Extra blank line after all attempts or npm not found message
+                    except Exception as e:
+                         PrintStyle(font_color="red", padding=True).print(
+                            f"Error processing npx args for server '{server_name}': {e}. Args: {args}"
+                        )
+        else:
+            PrintStyle(font_color="red", padding=True).print(
+                "ERROR: 'npm' command not found. Cannot attempt to install any MCP server packages."
+            )
+        PrintStyle().print() # Extra blank line after all attempts or npm not found message
+        _NPM_CHECKS_DONE = True
 
     # chat model from user settings
     chat_llm = ModelConfig(
