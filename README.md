@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/frdel-agent-zero-badge.png)](https://mseep.ai/app/frdel-agent-zero)
+
 <div align="center">
 
 ![Agent Zero](/docs/res/header.png)
