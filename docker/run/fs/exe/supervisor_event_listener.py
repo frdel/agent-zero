@@ -5,7 +5,7 @@ import logging
 import subprocess
 import time
 
-from supervisor.childutils import listener
+from supervisor.childutils import listener # type: ignore - not in requirements, installed in docker
 
 
 def main(args):

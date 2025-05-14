@@ -186,25 +186,7 @@ class AgentConfig:
     prompts_subdir: str = ""
     memory_subdir: str = ""
     knowledge_subdirs: list[str] = field(default_factory=lambda: ["default", "custom"])
-    mcp_servers: str = """[
-    {
-        "name": "MCP Server 1",
-        "url": "https://mcp.server.com",
-        "headers": {
-            "Authorization": "Bearer 1234567890"
-        },
-        "disabled": true,
-    },
-    {
-        "name": "MCP Server 2",
-        "command": "python3",
-        "args": ["mcp.py"],
-        "env": {
-            "PYTHONPATH": "."
-        },
-        "disabled": true,
-    }
-]"""
+    mcp_servers: str = ""
     code_exec_docker_enabled: bool = False
     code_exec_docker_name: str = "A0-dev"
     code_exec_docker_image: str = "frdel/agent-zero-run:development"
@@ -708,18 +690,12 @@ class Agent:
                 if mcp_tool_candidate:
                     tool = mcp_tool_candidate
             except ImportError:
-                 # Get context safely
-                 current_context = AgentContext.first()
-                 if current_context:
-                    current_context.log.log(type="warning", content="MCP helper module not found. Skipping MCP tool lookup.", temp=True)
-                 PrintStyle(background_color="black", font_color="yellow", padding=True).print(
+                self.context.log.log(type="warning", content="MCP helper module not found. Skipping MCP tool lookup.", temp=True)
+                PrintStyle(background_color="black", font_color="yellow", padding=True).print(
                     "MCP helper module not found. Skipping MCP tool lookup."
-                 )
+                )
             except Exception as e:
-                # Get context safely
-                current_context = AgentContext.first()
-                if current_context:
-                    current_context.log.log(type="warning", content=f"Failed to get MCP tool '{tool_name}': {e}", temp=True)
+                self.context.log.log(type="warning", content=f"Failed to get MCP tool '{tool_name}': {e}", temp=True)
                 PrintStyle(background_color="black", font_color="red", padding=True).print(
                     f"Failed to get MCP tool '{tool_name}': {e}"
                 )

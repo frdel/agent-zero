@@ -61,8 +61,7 @@ def _ensure_mcp_package_globally_installed(package_name: str, executable_name: s
 
 def initialize():
     current_settings = settings.get_settings()
-    mcp_servers_json_string = current_settings.get("mcp_servers", "[]")
-
+    mcp_servers_json_string = current_settings.get("mcp_servers", "[]") or "[]"
     try:
         mcp_server_configs = json.loads(mcp_servers_json_string)
         if not isinstance(mcp_server_configs, list):
