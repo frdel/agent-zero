@@ -64,23 +64,61 @@ class MCPTool(Tool):
             PrintStyle().print()
 
     async def after_execution(self, response: Response, **kwargs: Any):
-        # Check if response or message is None
-        if not response.message.strip():
-            text = ""
-            PrintStyle(font_color="red").print(f"Warning: Tool '{self.name}' returned None response or message")
-        else:
-            text = response.message.strip()
+        raw_tool_response = response.message.strip() if response.message else ""
+        if not raw_tool_response:
+            PrintStyle(font_color="red").print(f"Warning: Tool '{self.name}' returned an empty message.")
+            # Even if empty, we might still want to provide context for the agent
+            raw_tool_response = "[Tool returned no textual content]"
 
-        # Add a general contextual reminder for multi-step processes
-        text += f"\n\n[Contextual Reminder for {self.name}: If this action is part of an ongoing sequence, consider the next step with this tool. If the sequence is complete, analyze the final output and report to the user or proceed accordingly.]"
+        # Prepare user message context
+        user_message_text = "No specific user message context available for this exact step."
+        if self.agent and self.agent.last_user_message and self.agent.last_user_message.content:
+            content = self.agent.last_user_message.content
+            if isinstance(content, dict):
+                # Attempt to get a 'message' field, otherwise stringify the dict
+                user_message_text = content.get("message", json.dumps(content, indent=2))
+            elif isinstance(content, str):
+                user_message_text = content
+            else:
+                # Fallback for any other types (e.g. list, if that were possible for content)
+                user_message_text = str(content) 
+        
+        # Ensure user_message_text is a string before length check and slicing
+        user_message_text = str(user_message_text) 
 
-        self.agent.hist_add_tool_result(self.name, text)
+        # Truncate user message context if it's too long to avoid overwhelming the prompt
+        max_user_context_len = 500 # characters
+        if len(user_message_text) > max_user_context_len:
+            user_message_text = user_message_text[:max_user_context_len] + "... (truncated)"
+
+        contextual_block = f"""
+\n--- End of Results for MCP Tool: {self.name} ---
+
+**Original Tool Call Details:**
+*   **Tool:** `{self.name}`
+*   **Arguments Given:**
+    ```json
+{json.dumps(self.args, indent=2)}
+    ```
+
+**Related User Request Context:**
+{user_message_text}
+
+**Next Steps Reminder for {self.name}:**
+If this action is part of an ongoing sequence, consider the next step with this tool or another appropriate tool. If the sequence is complete or this was a one-off action, analyze the final output and report to the user or proceed with the overall plan.
+"""
+
+        final_text_for_agent = raw_tool_response + contextual_block
+
+        self.agent.hist_add_tool_result(self.name, final_text_for_agent)
         (
             PrintStyle(font_color="#1B4F72", background_color="white", padding=True, bold=True)
-            .print(f"{self.agent.agent_name}: Response from tool '{self.name}'")
+            .print(f"{self.agent.agent_name}: Response from tool '{self.name}' (plus context added)")
         )
-        PrintStyle(font_color="#85C1E9").print(text)
-        self.log.update(content=text)
+        # Print only the raw response to console for brevity, agent gets the full context.
+        PrintStyle(font_color="#85C1E9").print(raw_tool_response if raw_tool_response else "[No direct textual output from tool]")
+        if self.log:
+             self.log.update(content=final_text_for_agent) # Log includes the full context
 
 
 class MCPServerRemote(BaseModel):
