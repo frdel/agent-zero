@@ -1,31 +1,20 @@
-### code_execution_tool
+# Code Execution Tool
 
 Execute commands and code for computation, data analysis, and file operations.
 
-**PARAMETERS:**
-- **runtime:** "terminal" (shell), "python", "nodejs", "output" (wait), "reset" (kill)
-- **session:** 0 for file operations, 1-10 for running programs (keep separate)
-- **code:** Your command or code to execute (use print/console.log for output)
+## Parameters
+- **runtime:** `terminal` (shell), `python`, `nodejs`, `output` (wait), `reset` (kill)
+- **session:** `0` for file operations, `1-10` for running programs
+- **code:** Command or code to execute (use print/console.log for output)
 
-## CORE PATTERNS:
+## Core Best Practices
 
-### BASIC FILE OPERATIONS
+### 1. Session Management
+- Use session 0 **ONLY** for file operations
+- Use sessions 1-10 for running programs
+- Always reset sessions before running new programs
 ```json
 {
-    "thoughts": ["Creating a project structure and files (using a single multi-line string for file content; do NOT use multiple f.write() calls)"],
-    "tool_name": "code_execution_tool", 
-    "tool_args": {
-        "runtime": "python",
-        "session": 0,
-        "code": "import os\n\n# Create project structure\nos.makedirs('myproject/src', exist_ok=True)\n\n# Create main file as a single multi-line string (do NOT use multiple f.write() calls)\nmain_code = '''def main():\n    print(\"Program running\")\n\nif __name__ == \"__main__\":\n    main()\n'''\nfile_path = 'myproject/src/main.py'\nwith open(file_path, 'w') as f:\n    f.write(main_code)\n\n# Verify file creation\nif os.path.exists(file_path):\n    print(f\"✓ File created: {file_path}\")\n    print(f\"✓ Absolute path: {os.path.abspath(file_path)}\")\nelse:\n    print(f\"✗ Failed to create file: {file_path}\")"
-    }
-}
-```
-
-### RUNNING CODE (USE SEPARATE SESSIONS)
-```json
-{
-    "thoughts": ["Reset session before running"],
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "reset",
@@ -35,20 +24,61 @@ Execute commands and code for computation, data analysis, and file operations.
 ```
 ```json
 {
-    "thoughts": ["Running created file in session 1"],
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "terminal",
         "session": 1,
-        "code": "python myproject/src/main.py"
+        "code": "python myproject/main.py"
     }
 }
 ```
 
-### PACKAGE INSTALLATION
+### 2. File Operations (CRITICAL)
+- **NEVER use multiple f.write() calls - Always use a single multi-line string**
+- Verify file creation before running files
+- Use Python for complex file operations
+
+### 3. File Writing Methods (CRITICAL)
+
+#### Method A: Terminal Heredoc (PREFERRED)
 ```json
 {
-    "thoughts": ["Installing required packages"],
+    "tool_name": "code_execution_tool",
+    "tool_args": {
+        "runtime": "terminal",
+        "session": 0,
+        "code": "cat > file.py << 'EOF'\ndef main():\n    print(\"Hello world\")\n\nif __name__ == \"__main__\":\n    main()\nEOF"
+    }
+}
+```
+**ALWAYS verify after writing:**
+```json
+{
+    "tool_name": "code_execution_tool",
+    "tool_args": {
+        "runtime": "terminal",
+        "session": 0,
+        "code": "cat file.py"
+    }
+}
+```
+
+#### Method B: Python Single-String (FALLBACK)
+If heredoc hangs (shows `>` prompt), use:
+```json
+{
+    "tool_name": "code_execution_tool",
+    "tool_args": {
+        "runtime": "python",
+        "session": 0,
+        "code": "content = \"\"\"def main():\n    print(\"Hello world\")\n\nif __name__ == \"__main__\":\n    main()\"\"\"\nwith open('file.py', 'w') as f:\n    f.write(content)\nprint(\"File written successfully\")"
+    }
+}
+```
+
+### 4. Package Installation
+```json
+{
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "terminal",
@@ -58,21 +88,20 @@ Execute commands and code for computation, data analysis, and file operations.
 }
 ```
 
-### INTERACTIVE PROGRAMS WITH INPUT
+### 5. Interactive Programs
+Create file → Reset session → Run program → Provide input
 ```json
 {
-    "thoughts": ["Creating interactive program"],
-    "tool_name": "code_execution_tool", 
+    "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "python",
         "session": 0,
-        "code": "file_path = 'interactive.py'\nwith open(file_path, 'w') as f:\n    f.write('name = input(\"Enter your name: \")\\nprint(f\"Hello, {name}!\")')\nprint(f\"✓ File created: {file_path}\")"
+        "code": "with open('interactive.py', 'w') as f:\n    f.write('name = input(\"Enter name: \")\\nprint(f\"Hello, {name}!\")')"
     }
 }
 ```
 ```json
 {
-    "thoughts": ["Running interactive program"],
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "reset",
@@ -82,7 +111,6 @@ Execute commands and code for computation, data analysis, and file operations.
 ```
 ```json
 {
-    "thoughts": ["Starting interactive program"],
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "terminal",
@@ -93,7 +121,6 @@ Execute commands and code for computation, data analysis, and file operations.
 ```
 ```json
 {
-    "thoughts": ["Providing input to program"],
     "tool_name": "input",
     "tool_args": {
         "keyboard": "John Doe",
@@ -102,93 +129,17 @@ Execute commands and code for computation, data analysis, and file operations.
 }
 ```
 
-## BEST PRACTICES:
+## Troubleshooting
 
-### FILE OPERATIONS
-- Always create files with clear paths in session 0
-- **NEVER use multiple f.write() calls or line-by-line file writing. Always use a single multi-line string and write it in one go.**
-- Verify file creation before attempting to run files
-- Use Python's file operations for complex files
-- Organize projects with standard directory structure
+### If Files Fail
+- Verify paths with `ls -la`
+- Use absolute paths when in doubt
 
-### SESSION MANAGEMENT
-- Keep session 0 for file creation/editing only
-- Use sessions 1+ for running programs
-- Reset sessions before running new programs
-- Never run commands in sessions waiting for input
+### If Commands Fail
+- Reset session before retrying
+- Check dependencies for import errors
 
-### ERROR HANDLING
-- If file operations fail, verify the current directory and file paths
-- For import errors, check dependencies and installation
-- Reset sessions after errors before trying again
-- Use try/except in Python code to handle potential errors
-- **If you encounter the same error twice with the same method, switch to a more reliable method (e.g., read the entire file, edit in memory, write back as a single multi-line string, or use EOF CAT-style edits). Document the fallback method used.**
-
-### DEBUGGING
-- Print absolute paths when verifying file creation
-- List directory contents to check available files
-- Create debugging scripts to test environment setup
-- Use explicit path variables for consistency
-
-### FILE EDITING BEST PRACTICES
-When editing files, especially code files:
-
-1.  **RECOMMENDED METHOD (Terminal Heredoc):**
-    *   Use the `terminal` runtime (session 0) with `cat > /path/to/file << 'EOF' ... EOF`.
-    *   This is generally preferred for reliability with multi-line content and avoids Python environment issues.
-    *   **Formatting:** Ensure `\n` for newlines in your JSON `code` string and that the final `EOF` is on its own line.
-    *   **Verification:** ALWAYS verify the write immediately using `cat /path/to/file` in a subsequent `terminal` call.
-    *   **Troubleshooting Hangs:** If this command hangs (stuck on a `>` prompt and times out), it indicates the content or `EOF` marker wasn't transmitted correctly. Review your `code` string's formatting and escaping. If it repeatedly hangs, use the Python Fallback.
-    ```json
-    {
-        "thoughts": ["Writing a multi-line file using terminal heredoc"],
-        "tool_name": "code_execution_tool",
-        "tool_args": {
-            "runtime": "terminal",
-            "session": 0,
-            "code": "cat > path/to/my_script.py << 'EOF'\n# Start of script\nimport os\n\ndef main():\n    print(f"Hello from {os.getcwd()}" )\n\nif __name__ == "__main__":\n    main()\nEOF"
-        }
-    }
-    ```
-    ```json
-    {
-        "thoughts": ["Verifying the file write"],
-        "tool_name": "code_execution_tool",
-        "tool_args": {
-            "runtime": "terminal",
-            "session": 0,
-            "code": "cat path/to/my_script.py"
-        }
-    }
-    ```
-
-2.  **PYTHON FALLBACK METHOD (If Terminal Heredoc Hangs):**
-    *   Use this **only if the terminal `cat > EOF` method hangs repeatedly.**
-    *   Use `runtime: python` (session 0) with `with open(...) f.write(...)`.
-    *   Ensure you write the *entire* file content as a single multi-line string.
-    ```json
-    {
-        "thoughts": ["Terminal heredoc hung, using Python fallback to write file"],
-        "tool_name": "code_execution_tool",
-        "tool_args": {
-            "runtime": "python",
-            "session": 0,
-            "code": "file_path = 'path/to/my_script.py'\ncontent = \"\"\"# Start of script\nimport os\n\ndef main():\n    print(f\"Hello from {os.getcwd()}\" )\n\nif __name__ == \"__main__\":\n    main()\"\"\"\nwith open(file_path, 'w') as f:\n    f.write(content)\nprint(f\"File {file_path} written via Python.\")"
-        }
-    }
-    ```
-
-**Overall Strategy:**
-*   ALWAYS read necessary context first (e.g., `cat <file>`).
-*   Construct the full, new file content in memory.
-*   Attempt to write using the **Terminal Heredoc** method.
-*   **Verify** the write.
-*   If the Terminal Heredoc method hangs, use the **Python Fallback** method.
-*   Verify again.
-*   **AVOID** naive string/line replacements or partial edits for code/structured files.
-
-### CODE EDITING (PYTHON SPECIFIC)
-- Avoid naive string or line replacements for code edits, especially in Python, as this can break indentation and structure.
-- Read the file to identify the exact issues. After reviewing the content, implement the necessary fixes to ensure proper syntax throughout the file.
-- Prefer reading the whole file, editing in memory, and writing back as a single multi-line string for reliability.
-- **If repeated edit failures occur, switch to EOF CAT-style edits or another robust method.**
+### If Same Error Repeats
+- Switch methods: If file editing fails twice, use the alternative method
+- For Python code: avoid line-by-line replacements; always read, then modify, and then write entire file
+- Document any fallback methods used
