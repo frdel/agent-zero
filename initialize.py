@@ -1,4 +1,5 @@
 import asyncio
+import json
 import models
 from agent import AgentConfig, ModelConfig
 from python.helpers import dotenv, files, rfc_exchange, runtime, settings, docker, log
@@ -7,59 +8,116 @@ import shutil
 from python.helpers.print_style import PrintStyle
 
 
-def initialize():
-
+# Helper function to ensure an MCP package is globally installed
+def _ensure_mcp_package_globally_installed(package_name: str, executable_name: str):
     PrintStyle(background_color="blue", font_color="white", padding=True).print(
-        "Attempting to ensure MCP server 'mcp-server-sequential-thinking' is available..."
+        f"Attempting to ensure MCP server executable '{executable_name}' (from package '{package_name}') is available..."
     )
-    # Check if npm is available first, as it's needed for the install.
     if shutil.which("npm"):
-        if not shutil.which("mcp-server-sequential-thinking"):
+        if not shutil.which(executable_name):
             PrintStyle(font_color="yellow", padding=True).print(
-                "'mcp-server-sequential-thinking' not found in PATH. Attempting global npm install..."
+                f"'{executable_name}' not found in PATH. Attempting global npm install of '{package_name}'..."
             )
             try:
-                # Attempt to install @modelcontextprotocol/server-sequential-thinking globally
-                npm_command = ["npm", "i", "-g", "@modelcontextprotocol/server-sequential-thinking", "--no-fund", "--no-audit"]
+                npm_command = ["npm", "i", "-g", package_name, "--no-fund", "--no-audit"]
                 process = subprocess.run(npm_command, capture_output=True, text=True, check=False)
                 if process.returncode == 0:
                     PrintStyle(font_color="green", padding=True).print(
-                        "Successfully installed @modelcontextprotocol/server-sequential-thinking globally via npm."
+                        f"Successfully installed '{package_name}' globally via npm."
                     )
-                    # Re-check if it's available in PATH now. This depends on npm's global bin location being in PATH.
-                    if shutil.which("mcp-server-sequential-thinking"):
+                    if shutil.which(executable_name):
                         PrintStyle(font_color="green", padding=True).print(
-                            "'mcp-server-sequential-thinking' is now available in PATH after install."
+                            f"'{executable_name}' is now available in PATH after install."
                         )
                     else:
                         PrintStyle(font_color="orange", padding=True).print(
-                            "WARNING: npm install reported success, but 'mcp-server-sequential-thinking' still not found in PATH by shutil.which(). " +
-                            "The 'npx' command in settings.json might still be necessary and hopefully works."
+                            f"WARNING: npm install of '{package_name}' reported success, but '{executable_name}' still not found in PATH. " +
+                            "The 'npx' command in settings.json might still be necessary or there might be an issue with PATH."
                         )
                 else:
                     PrintStyle(font_color="red", padding=True).print(
-                        f"Failed to install @modelcontextprotocol/server-sequential-thinking globally via npm. Return code: {process.returncode}"
+                        f"Failed to install '{package_name}' globally via npm. Return code: {process.returncode}"
                     )
                     PrintStyle(font_color="red", padding=False).print(f"npm stdout: {process.stdout.strip()}")
                     PrintStyle(font_color="red", padding=False).print(f"npm stderr: {process.stderr.strip()}")
             except FileNotFoundError:
                  PrintStyle(font_color="red", padding=True).print(
-                    "ERROR: 'npm' command not found. Cannot attempt to install @modelcontextprotocol/server-sequential-thinking."
+                    f"ERROR: 'npm' command not found. Cannot attempt to install '{package_name}'."
                 )
             except Exception as e:
                 PrintStyle(font_color="red", padding=True).print(
-                    f"Exception during npm install of @modelcontextprotocol/server-sequential-thinking: {e}"
+                    f"Exception during npm install of '{package_name}': {e}"
                 )
         else:
             PrintStyle(font_color="green", padding=True).print(
-                "'mcp-server-sequential-thinking' already found in PATH."
+                f"'{executable_name}' (from package '{package_name}') already found in PATH."
             )
     else:
         PrintStyle(font_color="red", padding=True).print(
-            "ERROR: 'npm' command not found. Cannot check for or install 'mcp-server-sequential-thinking'."
+            f"ERROR: 'npm' command not found. Cannot check for or install '{executable_name}' from '{package_name}'."
         )
+    PrintStyle().print() # For a blank line after each attempt
 
+
+def initialize():
     current_settings = settings.get_settings()
+    mcp_servers_json_string = current_settings.get("mcp_servers", "[]")
+
+    try:
+        mcp_server_configs = json.loads(mcp_servers_json_string)
+        if not isinstance(mcp_server_configs, list):
+            PrintStyle(font_color="red", padding=True).print(
+                f"Error: Parsed mcp_servers from settings is not a list. Value: {mcp_server_configs}"
+            )
+            mcp_server_configs = []
+    except json.JSONDecodeError as e:
+        PrintStyle(font_color="red", padding=True).print(
+            f"Error decoding mcp_servers JSON string from settings: {e}. String was: '{mcp_servers_json_string}'"
+        )
+        mcp_server_configs = []
+
+    if shutil.which("npm"):
+        for server_config in mcp_server_configs:
+            if not isinstance(server_config, dict):
+                PrintStyle(font_color="orange", padding=True).print(
+                    f"Warning: Skipping MCP server config item as it's not a dictionary: {server_config}"
+                )
+                continue
+
+            command = server_config.get("command")
+            args = server_config.get("args", [])
+            server_name = server_config.get("name", "Unknown MCP Server")
+
+            if command == "npx" and "--package" in args:
+                try:
+                    package_keyword_index = args.index("--package")
+                    # Expect package name at +1 and executable name at +2 from "--package"
+                    if package_keyword_index + 2 < len(args):
+                        package_name = args[package_keyword_index + 1]
+                        executable_name = args[package_keyword_index + 2]
+                        if package_name and executable_name: # Ensure they are not empty strings
+                             _ensure_mcp_package_globally_installed(package_name, executable_name)
+                        else:
+                            PrintStyle(font_color="orange", padding=True).print(
+                                f"Warning: Skipping MCP server '{server_name}' due to empty package or executable name extracted from args: {args}"
+                            )
+                    else:
+                        PrintStyle(font_color="orange", padding=True).print(
+                            f"Warning: Skipping MCP server '{server_name}' as package name or executable name could not be determined from args: {args}"
+                        )
+                except ValueError: # Should not happen if "--package" is in args, but good for safety
+                    PrintStyle(font_color="orange", padding=True).print(
+                        f"Warning: '--package' keyword found but .index() failed for args: {args} in server '{server_name}'"
+                    )
+                except Exception as e:
+                     PrintStyle(font_color="red", padding=True).print(
+                        f"Error processing npx args for server '{server_name}': {e}. Args: {args}"
+                    )
+    else:
+        PrintStyle(font_color="red", padding=True).print(
+            "ERROR: 'npm' command not found. Cannot attempt to install any MCP server packages."
+        )
+    PrintStyle().print() # Extra blank line after all attempts or npm not found message
 
     # chat model from user settings
     chat_llm = ModelConfig(
