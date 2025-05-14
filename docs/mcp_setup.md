@@ -13,33 +13,47 @@ MCP servers are external processes or services that expose a set of tools that A
 
 Agent Zero discovers and integrates MCP tools dynamically:
 
-1.  **Configuration**: You define the MCP servers Agent Zero should connect to in its configuration.
-2.  **Tool Discovery**: Upon initialization (or when settings are updated), Agent Zero connects to each configured and enabled MCP server and queries it for the list of available tools, their descriptions, and expected parameters.
-3.  **Dynamic Prompting**: The information about these discovered tools is then dynamically injected into the agent's system prompt. A placeholder like `{{tools}}` in a system prompt template (e.g., `prompts/default/agent.system.mcp_tools.md`) is replaced with a formatted list of all available MCP tools. This allows the agent's underlying Language Model (LLM) to know which external tools it can request.
-4.  **Tool Invocation**: When the LLM decides to use an MCP tool, Agent Zero's `process_tools` method identifies it as an MCP tool and routes the request to the appropriate `MCPConfig` helper, which then communicates with the designated MCP server to execute the tool.
+1.  **Configuration**: You define the MCP servers Agent Zero should connect to in its configuration. The primary way to do this is through the Agent Zero settings UI.
+2.  **Saving Settings**: When you save your settings via the UI, Agent Zero updates the `tmp/settings.json` file, specifically the `"mcp_servers"` key.
+3.  **Automatic Installation (on Restart)**: After saving your settings and restarting Agent Zero, the system will attempt to automatically install any MCP server packages defined with `command: "npx"` and the `--package` argument in their configuration (this process is managed by `initialize.py`). You can monitor the application logs (e.g., Docker logs) for details on this installation attempt.
+4.  **Tool Discovery**: Upon initialization (or when settings are updated), Agent Zero connects to each configured and enabled MCP server and queries it for the list of available tools, their descriptions, and expected parameters.
+5.  **Dynamic Prompting**: The information about these discovered tools is then dynamically injected into the agent's system prompt. A placeholder like `{{tools}}` in a system prompt template (e.g., `prompts/default/agent.system.mcp_tools.md`) is replaced with a formatted list of all available MCP tools. This allows the agent's underlying Language Model (LLM) to know which external tools it can request.
+6.  **Tool Invocation**: When the LLM decides to use an MCP tool, Agent Zero's `process_tools` method (handled by `mcp_handler.py`) identifies it as an MCP tool and routes the request to the appropriate `MCPConfig` helper, which then communicates with the designated MCP server to execute the tool.
 
 ## Configuration
 
-### Configuration File
+### Configuration File & Method
 
-The primary location for user-specific Agent Zero settings, including MCP server configurations, is:
+The primary method for configuring MCP servers is through **Agent Zero's settings UI**.
+
+When you input and save your MCP server details in the UI, these settings are written to:
 
 *   `tmp/settings.json`
 
-This file is created or updated when you save settings, typically through Agent Zero's settings UI (if available).
-
-### The `mcp_servers` Setting
+### The `mcp_servers` Setting in `tmp/settings.json`
 
 Within `tmp/settings.json`, the MCP servers are defined under the `"mcp_servers"` key.
 
 *   **Value Type**: The value for `"mcp_servers"` must be a **JSON formatted string**. This string itself contains an **array** of server configuration objects.
-*   **Default Value**: If `tmp/settings.json` does not exist, or if it exists but does not contain the `"mcp_servers"` key, Agent Zero will use a default value of `""` (an empty string). This means no MCP servers are configured by default.
-*   **Updating**: The recommended way to set or update this value is through Agent Zero's settings UI. When you save settings via the UI, the current configuration (including your MCP server definitions) is written to `tmp/settings.json`.
-*   **For Existing `settings.json` Files (After an Upgrade)**: If you have an existing `tmp/settings.json` from a version of Agent Zero prior to MCP server support, the `"mcp_servers"` key will likely be missing. To add this key to your file (initially with an empty string value if you don't configure any servers immediately):
-    1.  Ensure you are running the version of Agent Zero that includes MCP server support. If you are using Docker, this might involve rebuilding or pulling the latest image.
-    2.  Run Agent Zero.
-    3.  Access the settings UI.
-    4.  Save the settings. Even if you don't make any changes in the UI during this session, saving will write the complete current settings structure (including `"mcp_servers": ""`) to your `tmp/settings.json` file. You can then populate it with your server configurations as needed.
+*   **Default Value**: If `tmp/settings.json` does not exist, or if it exists but does not contain the `"mcp_servers"` key, Agent Zero will use a default value of `""` (an empty string), meaning no MCP servers are configured.
+*   **Manual Editing (Advanced)**: While UI configuration is recommended, you can also manually edit `tmp/settings.json`. If you do, ensure the `"mcp_servers"` value is a valid JSON string, with internal quotes properly escaped.
+
+**Example `mcp_servers` string in `tmp/settings.json`:**
+
+```json
+{
+    // ... other settings ...
+    "mcp_servers": "[{\\\"name\\\": \\\"sequential-thinking\\\",\\\"command\\\": \\\"npx\\\",\\\"args\\\": [\\\"--yes\\\", \\\"--package\\\", \\\"@modelcontextprotocol/server-sequential-thinking\\\", \\\"mcp-server-sequential-thinking\\\"]}, {\\\"name\\\": \\\"brave-search\\\", \\\"command\\\": \\\"npx\\\", \\\"args\\\": [\\\"--yes\\\", \\\"--package\\\", \\\"@modelcontextprotocol/server-brave-search\\\", \\\"mcp-server-brave-search\\\"], \\\"env\\\": {\\\"BRAVE_API_KEY\\\": \\\"YOUR_BRAVE_KEY_HERE\\\"}}, {\\\"name\\\": \\\"fetch\\\", \\\"command\\\": \\\"npx\\\", \\\"args\\\": [\\\"--yes\\\", \\\"--package\\\", \\\"@tokenizin/mcp-npx-fetch\\\", \\\"mcp-npx-fetch\\\", \\\"--ignore-robots-txt\\\", \\\"--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36\\\"]}]",
+    // ... other settings ...
+}
+```
+*Note: In the actual `settings.json` file, the entire value for `mcp_servers` is a single string, with backslashes escaping the quotes within the array structure.*
+
+*   **Updating**: As mentioned, the recommended way to set or update this value is through Agent Zero's settings UI.
+*   **For Existing `settings.json` Files (After an Upgrade)**: If you have an existing `tmp/settings.json` from a version of Agent Zero prior to MCP server support, the `"mcp_servers"` key will likely be missing. To add this key:
+    1.  Ensure you are running a version of Agent Zero that includes MCP server support.
+    2.  Run Agent Zero and open its settings UI.
+    3.  Save the settings (even without making changes). This action will write the complete current settings structure, including a default `"mcp_servers": ""` if not otherwise populated, to `tmp/settings.json`. You can then configure your servers via the UI or by carefully editing this string.
 
 ### MCP Server Configuration Structure
 
@@ -82,8 +96,6 @@ Here are templates for configuring individual servers within the `mcp_servers` J
 
 **Example `mcp_servers` value in `tmp/settings.json`:**
 
-Remember, the entire array must be a string within the main JSON structure. Quotes within this string must be escaped.
-
 ```json
 {
     // ... other settings ...
@@ -103,10 +115,10 @@ Remember, the entire array must be a string within the main JSON structure. Quot
 
 ## Using MCP Tools
 
-Once configured and discovered:
+Once configured, successfully installed (if applicable, e.g., for `npx` based servers), and discovered by Agent Zero:
 
-*   **Tool Naming**: MCP tools will appear to the agent with a name prefixed by the server name you defined, e.g., if your server is named `"MyPythonTools"` and it offers a tool named `"calculate_sum"`, the agent will know it as `mypythontools.calculate_sum`.
-*   **Agent Interaction**: The agent's LLM can then request to use these tools like any other built-in tool, by outputting a JSON structure specifying the `tool_name` and `tool_args`.
-*   **Execution Flow**: Agent Zero's `process_tools` method prioritizes looking up the tool name in the `MCPConfig`. If found, the execution is delegated to the corresponding MCP server. If not found as an MCP tool, it then attempts to find a local/built-in tool with that name.
+*   **Tool Naming**: MCP tools will appear to the agent with a name prefixed by the server name you defined (and normalized, e.g., lowercase, underscores for spaces/hyphens). For instance, if your server is named `"sequential-thinking"` in the configuration and it offers a tool named `"run_chain"`, the agent will know it as `sequential_thinking.run_chain`.
+*   **Agent Interaction**: You can instruct the agent to use these tools. For example: "Agent, use the `sequential_thinking.run_chain` tool with the following input..." The agent's LLM will then formulate the appropriate JSON request.
+*   **Execution Flow**: Agent Zero's `process_tools` method (with logic in `python/helpers/mcp_handler.py`) prioritizes looking up the tool name in the `MCPConfig`. If found, the execution is delegated to the corresponding MCP server. If not found as an MCP tool, it then attempts to find a local/built-in tool with that name.
 
 This setup provides a flexible way to extend Agent Zero's capabilities by integrating with various external tool providers without modifying its core codebase. 
