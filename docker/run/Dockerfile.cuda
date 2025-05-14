@@ -30,18 +30,40 @@ COPY ./fs/ /
 RUN chmod 0644 /etc/cron.d/*
 
 # Install essential packages (from pre_install.sh but avoiding supervisor from apt)
-RUN apt-get update && apt-get upgrade -y && apt-get install -y \
+# Node.js and npm will be installed separately using NodeSource for a specific version
+RUN apt-get update && apt-get upgrade -y && apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y \
     python3 \
     python3-venv \
     python3-pip \
-    nodejs \
     openssh-server \
     sudo \
     curl \
     wget \
     git \
     ffmpeg \
-    cron
+    nginx \
+    cron \
+    libmagic-dev \
+    poppler-utils \
+    tesseract-ocr \
+    qpdf \
+    libreoffice \
+    pandoc \
+    libgtk-3-0 \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libasound2 \
+    libasound2-data \
+    cargo
+
+# Install Node.js 20.x (LTS) and a compatible npm
+RUN apt-get update && apt-get install -y ca-certificates curl gnupg
+RUN mkdir -p /etc/apt/keyrings
+RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+RUN apt-get update && apt-get install -y nodejs || { echo "CRITICAL ERROR: Failed to install Node.js from NodeSource." ; exit 1; }
 
 # Prepare SSH daemon (from pre_install.sh)
 RUN bash /ins/setup_ssh.sh $BRANCH

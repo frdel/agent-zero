@@ -2,9 +2,62 @@ import asyncio
 import models
 from agent import AgentConfig, ModelConfig
 from python.helpers import dotenv, files, rfc_exchange, runtime, settings, docker, log
+import subprocess
+import shutil
+from python.helpers.print_style import PrintStyle
 
 
 def initialize():
+
+    PrintStyle(background_color="blue", font_color="white", padding=True).print(
+        "Attempting to ensure MCP server 'mcp-server-sequential-thinking' is available..."
+    )
+    # Check if npm is available first, as it's needed for the install.
+    if shutil.which("npm"):
+        if not shutil.which("mcp-server-sequential-thinking"):
+            PrintStyle(font_color="yellow", padding=True).print(
+                "'mcp-server-sequential-thinking' not found in PATH. Attempting global npm install..."
+            )
+            try:
+                # Attempt to install @modelcontextprotocol/server-sequential-thinking globally
+                npm_command = ["npm", "i", "-g", "@modelcontextprotocol/server-sequential-thinking", "--no-fund", "--no-audit"]
+                process = subprocess.run(npm_command, capture_output=True, text=True, check=False)
+                if process.returncode == 0:
+                    PrintStyle(font_color="green", padding=True).print(
+                        "Successfully installed @modelcontextprotocol/server-sequential-thinking globally via npm."
+                    )
+                    # Re-check if it's available in PATH now. This depends on npm's global bin location being in PATH.
+                    if shutil.which("mcp-server-sequential-thinking"):
+                        PrintStyle(font_color="green", padding=True).print(
+                            "'mcp-server-sequential-thinking' is now available in PATH after install."
+                        )
+                    else:
+                        PrintStyle(font_color="orange", padding=True).print(
+                            "WARNING: npm install reported success, but 'mcp-server-sequential-thinking' still not found in PATH by shutil.which(). " +
+                            "The 'npx' command in settings.json might still be necessary and hopefully works."
+                        )
+                else:
+                    PrintStyle(font_color="red", padding=True).print(
+                        f"Failed to install @modelcontextprotocol/server-sequential-thinking globally via npm. Return code: {process.returncode}"
+                    )
+                    PrintStyle(font_color="red", padding=False).print(f"npm stdout: {process.stdout.strip()}")
+                    PrintStyle(font_color="red", padding=False).print(f"npm stderr: {process.stderr.strip()}")
+            except FileNotFoundError:
+                 PrintStyle(font_color="red", padding=True).print(
+                    "ERROR: 'npm' command not found. Cannot attempt to install @modelcontextprotocol/server-sequential-thinking."
+                )
+            except Exception as e:
+                PrintStyle(font_color="red", padding=True).print(
+                    f"Exception during npm install of @modelcontextprotocol/server-sequential-thinking: {e}"
+                )
+        else:
+            PrintStyle(font_color="green", padding=True).print(
+                "'mcp-server-sequential-thinking' already found in PATH."
+            )
+    else:
+        PrintStyle(font_color="red", padding=True).print(
+            "ERROR: 'npm' command not found. Cannot check for or install 'mcp-server-sequential-thinking'."
+        )
 
     current_settings = settings.get_settings()
 
