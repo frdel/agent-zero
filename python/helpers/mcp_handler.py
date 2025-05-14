@@ -5,6 +5,7 @@ import asyncio
 from contextlib import AsyncExitStack
 from shutil import which
 from datetime import timedelta
+import json
 
 import os
 # print(f"DEBUG: Listing /opt/venv/lib/python3.11/site-packages/ before mcp import: {os.listdir('/opt/venv/lib/python3.11/site-packages/')}") # This line caused FileNotFoundError, **FOR CUDA CHANGE TO '3.12'**
@@ -69,6 +70,9 @@ class MCPTool(Tool):
             PrintStyle(font_color="red").print(f"Warning: Tool '{self.name}' returned None response or message")
         else:
             text = response.message.strip()
+
+        # Add a general contextual reminder for multi-step processes
+        text += f"\n\n[Contextual Reminder for {self.name}: If this action is part of an ongoing sequence, consider the next step with this tool. If the sequence is complete, analyze the final output and report to the user or proceed accordingly.]"
 
         self.agent.hist_add_tool_result(self.name, text)
         (
@@ -487,7 +491,9 @@ class MCPClientBase(ABC):
                 PrintStyle(font_color="cyan").print(
                     f"MCPClientBase ({self.server.name} - {operation_name}): Session and transport will be closed by AsyncExitStack."
                 )
-        # temp_stack.aclose() is called automatically here.
+        # This line should ideally be unreachable if the try/except/finally logic within the 'async with' is exhaustive.
+        # Adding it to satisfy linters that might not fully trace the raise/return paths through async context managers.
+        raise RuntimeError(f"MCPClientBase ({self.server.name} - {operation_name}): _execute_with_session exited 'async with' block unexpectedly.")
 
     async def update_tools(self) -> "MCPClientBase":
         PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name}): Starting 'update_tools' operation...")
