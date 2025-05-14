@@ -183,28 +183,10 @@ class AgentConfig:
     utility_model: ModelConfig
     embeddings_model: ModelConfig
     browser_model: ModelConfig
+    mcp_servers: str
     prompts_subdir: str = ""
     memory_subdir: str = ""
     knowledge_subdirs: list[str] = field(default_factory=lambda: ["default", "custom"])
-    mcp_servers: str = """[
-    {
-        "name": "MCP Server 1",
-        "url": "https://mcp.server.com",
-        "headers": {
-            "Authorization": "Bearer 1234567890"
-        },
-        "disabled": true,
-    },
-    {
-        "name": "MCP Server 2",
-        "command": "python3",
-        "args": ["mcp.py"],
-        "env": {
-            "PYTHONPATH": "."
-        },
-        "disabled": true,
-    }
-]"""
     code_exec_docker_enabled: bool = False
     code_exec_docker_name: str = "A0-dev"
     code_exec_docker_image: str = "frdel/agent-zero-run:development"
