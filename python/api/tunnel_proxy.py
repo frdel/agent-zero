@@ -17,7 +17,7 @@ class TunnelProxy(ApiHandler):
         # first verify the service is running:
         service_ok = False
         try:
-            response = requests.post(f"http://localhost:{tunnel_api_port}/", json={"action": "verify"})
+            response = requests.post(f"http://localhost:{tunnel_api_port}/", json={"action": "health"})
             if response.status_code == 200:
                 service_ok = True
         except Exception as e:

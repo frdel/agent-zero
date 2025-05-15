@@ -177,7 +177,7 @@ document.addEventListener('alpine:init', () => {
                     },
                     body: JSON.stringify({ 
                         action: 'create',
-                        port: window.location.port || (window.location.protocol === 'https:' ? 443 : 80)
+                        // port: window.location.port || (window.location.protocol === 'https:' ? 443 : 80)
                     }),
                 });
                 

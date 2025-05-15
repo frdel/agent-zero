@@ -20,35 +20,24 @@ def run():
     from werkzeug.serving import make_server
 
     PrintStyle().print("Starting tunnel server...")
+
     class NoRequestLoggingWSGIRequestHandler(WSGIRequestHandler):
         def log_request(self, code="-", size="-"):
             pass  # Override to suppress request logging
 
     # Get configuration from environment
-    web_ui_port = (
-        runtime.get_arg("port")
-        or int(dotenv.get_dotenv_value("WEB_UI_PORT", 0))
-        or 5000
-    )
-    # Get configuration from environment
-    tunnel_api_port = (
-        runtime.get_arg("tunnel_api_port")
-        or int(dotenv.get_dotenv_value("TUNNEL_API_PORT", 0))
-        or 5070
-    )
+    tunnel_api_port = runtime.get_tunnel_api_port()
     host = (
         runtime.get_arg("host") or dotenv.get_dotenv_value("WEB_UI_HOST") or "localhost"
     )
     server = None
     lock = threading.Lock()
     tunnel = Tunnel(app, lock)
-    
 
     # handle api request
     @app.route("/", methods=["POST"])
     async def handle_request():
-        return await tunnel.handle_request(request=request) # type: ignore
-    
+        return await tunnel.handle_request(request=request)  # type: ignore
 
     try:
         server = make_server(
