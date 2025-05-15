@@ -48,9 +48,10 @@ AUTH_PASSWORD=your_password
 
 Alternatively, you can configure the username and password directly in the settings:
 
-1. Open the settings modal in the Agent Zero UI.
-2. Navigate to the "Authentication" section.
-3. Enter your desired username and password.
-4. Save the settings.
+1. Open the settings modal in the Agent Zero UI
+2. Navigate to the "External Services" tab
+3. Find the "Authentication" section
+4. Enter your desired username and password in the "UI Login" and "UI Password" fields
+5. Click the "Save" button to apply the changes
 
-This will require users to enter these credentials when accessing your tunneled Agent Zero instance.
+This will require users to enter these credentials when accessing your tunneled Agent Zero instance. When attempting to create a tunnel without authentication configured, Agent Zero will display a security warning.
