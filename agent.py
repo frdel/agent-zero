@@ -315,11 +315,21 @@ class Agent:
                             type="agent", heading=f"{self.agent_name}: Generating"
                         )
 
+                        complete_response = False
+                        last_object = None
+
                         async def stream_callback(chunk: str, full: str):
+                            nonlocal complete_response, last_object
+                            # note: thoughts are optional, tool call parameters are mandatory
+                            required_properties = ['tool_name', 'tool_args']
                             # output the agent response stream
                             if chunk:
                                 printer.stream(chunk)
-                                self.log_from_stream(full, log)
+                                complete_response, current_object = self.log_from_stream(full, log, required_properties)
+                                if complete_response:  # and last_object == current_object:
+                                    self.set_data('agent_responded', True)
+
+                                last_object = current_object
 
                         agent_response = await self.call_chat_model(
                             prompt, callback=stream_callback
@@ -395,7 +405,7 @@ class Agent:
         # for extra in loop_data.extras_temporary.values():
         #     extras += history.Message(False, content=extra).output()
         extras = history.Message(
-            False, 
+            False,
             content=self.read_prompt("agent.context.extras.md", extras=dirty_json.stringify(
                 {**loop_data.extras_persistent, **loop_data.extras_temporary}
                 ))).output()
@@ -627,6 +637,12 @@ class Agent:
             if callback:
                 await callback(content, response)
 
+            # if the agent has responded, we can break the streaming loop to forbid multiple json stanzas or plaintext comments
+            if self.get_data('agent_responded'):
+                self.set_data('agent_responded', False)
+                PrintStyle(background_color="black", font_color="grey", padding=True).print("Agent full response received, breaking streaming loop")
+                break
+
         return response
 
     async def rate_limiter(
@@ -686,19 +702,19 @@ class Agent:
         if tool_request is not None:
             raw_tool_name = tool_request.get("tool_name", "")  # Get the raw tool name
             tool_args = tool_request.get("tool_args", {})
-            
+
             tool_name = raw_tool_name  # Initialize tool_name with raw_tool_name
             tool_method = None  # Initialize tool_method
 
             # Split raw_tool_name into tool_name and tool_method if applicable
             if ":" in raw_tool_name:
                 tool_name, tool_method = raw_tool_name.split(":", 1)
-            
+
             tool = None  # Initialize tool to None
 
             # Try getting tool from MCP first
             try:
-                import python.helpers.mcp_handler as mcp_helper 
+                import python.helpers.mcp_handler as mcp_helper
                 mcp_tool_candidate = mcp_helper.MCPConfig.get_instance().get_tool(self, tool_name)
                 if mcp_tool_candidate:
                     tool = mcp_tool_candidate
@@ -748,16 +764,19 @@ class Agent:
                 type="error", content=f"{self.agent_name}: Message misformat, no valid tool request found."
             )
 
-    def log_from_stream(self, stream: str, logItem: Log.LogItem):
+    def log_from_stream(self, stream: str, logItem: Log.LogItem, required_properties: list[str] = []) -> tuple[bool, dict[str, Any]]:
         try:
             if len(stream) < 25:
-                return  # no reason to try
-            response = DirtyJson.parse_string(stream)
+                return False, {}  # no reason to try
+            is_complete, response = DirtyJson.parse_string_checked(stream, required_properties)
             if isinstance(response, dict):
                 # log if result is a dictionary already
                 logItem.update(content=stream, kvps=response)
-        except Exception as e:
-            pass
+                return is_complete, response
+            else:
+                return False, {}
+        except Exception:
+            return False, {}
 
     def get_tool(self, name: str, method: str | None, args: dict, message: str, **kwargs):
         from python.tools.unknown import Unknown
