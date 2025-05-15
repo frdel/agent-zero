@@ -25,11 +25,11 @@ COPY ./fs/ /
 # pre installation steps
 RUN bash /ins/pre_install.sh $BRANCH
 
-# install additional software
-RUN bash /ins/install_additional.sh $BRANCH
-
 # install A0
 RUN bash /ins/install_A0.sh $BRANCH
+
+# install additional software
+RUN bash /ins/install_additional.sh $BRANCH
 
 # cleanup repo and install A0 without caching, this speeds up builds
 ARG CACHE_DATE=none
