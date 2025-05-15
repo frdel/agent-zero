@@ -5,13 +5,15 @@ chmod 0644 /etc/cron.d/*
 
 echo "=====BEFORE UPDATE====="
 
+# Set DEBIAN_FRONTEND to noninteractive to prevent prompts
+export DEBIAN_FRONTEND=noninteractive
+
 # Update and install necessary packages
 apt clean
-apt-get update && apt-get upgrade -y && apt-get install -y \
+apt-get update && apt-get upgrade -y && apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y \
     python3 \
     python3-venv \
     python3-pip \
-    nodejs \
     openssh-server \
     sudo \
     curl \
@@ -19,14 +21,21 @@ apt-get update && apt-get upgrade -y && apt-get install -y \
     git \
     ffmpeg \
     supervisor \
-    cron
+    cron \
+    ca-certificates \
+    gnupg
 
 echo "=====MID UPDATE====="
 
-# for some reason npm crashes builds on amd64 in this version and has to be installed separately
-# A0 can install it when needed
-# apt-get install -y \
-#     npm 
+# Install Node.js 20.x (LTS) and a compatible npm using NodeSource
+echo "Setting up NodeSource repository for Node.js 20.x..."
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+
+echo "Installing Node.js..."
+apt-get update # Update package list again after adding new source
+apt-get install -y nodejs || { echo "CRITICAL ERROR: Failed to install Node.js from NodeSource." ; exit 1; }
 
 echo "=====AFTER UPDATE====="
 
@@ -42,6 +51,15 @@ echo "=====AFTER UPDATE====="
 #   python3 -m ensurepip --upgrade
 #   python3 -m pip install --upgrade pip
 # fi
+
+# Install npx for use by local MCP Servers
+echo "DEBUG: Installing npx and shx globally using npm..."
+npm i -g npx shx || {
+    echo "CRITICAL ERROR: Failed to install npx and shx using npm."
+    # exit 1 # Optionally exit if this is critical enough
+}
+echo "DEBUG: npx and shx installation attempt finished."
+
 
 # Prepare SSH daemon
 bash /ins/setup_ssh.sh "$@"

@@ -8,7 +8,7 @@ fi
 BRANCH="$1"
 
 # Copy all contents from persistent /per to root directory (/) without overwriting
-cp -r --no-preserve=ownership,mode /per/* /
+cp -r -f --no-preserve=ownership,mode /per/* /
 
 # allow execution of /root/.bashrc and /root/.profile
 chmod 444 /root/.bashrc

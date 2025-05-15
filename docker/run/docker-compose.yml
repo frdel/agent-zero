@@ -1,7 +1,7 @@
 services:
   agent-zero:
     container_name: agent-zero
-    image: frdel/agent-zero-run:testing
+    image: frdel/agent-zero:latest
     volumes:
       - ./agent-zero:/a0
     ports:

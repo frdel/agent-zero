@@ -1,76 +1,145 @@
-### code_execution_tool
+# Code Execution Tool
 
-execute terminal commands python nodejs code for computation or software tasks
-place code in "code" arg; escape carefully and indent properly
-select "runtime" arg: "terminal" "python" "nodejs" "output" "reset"
-select "session" number, 0 default, others for multitasking
-if code runs long, use "output" to wait, "reset" to kill process
-use "pip" "npm" "apt-get" in "terminal" to install packages
-to output, use print() or console.log()
-if tool outputs error, adjust code before retrying; knowledge_tool can help
-important: check code for placeholders or demo data; replace with real variables; don't reuse snippets
-don't use with other tools except thoughts; wait for response before using others
-check dependencies before running code
-usage:
+Execute commands and code for computation, data analysis, and file operations.
 
-1 execute python code
+## Parameters
+- **runtime:** `terminal` (shell), `python`, `nodejs`, `output` (wait), `reset` (kill)
+- **session:** `0` for file operations, `1-10` for running programs
+- **code:** Command or code to execute (use print/console.log for output)
 
-~~~json
+## Core Best Practices
+
+### 1. Session Management
+- Use session 0 **ONLY** for file operations
+- Use sessions 1-10 for running programs
+- Always reset sessions before running new programs
+```json
 {
-    "thoughts": [
-        "Need to do...",
-        "I can use...",
-        "Then I can...",
-    ],
     "tool_name": "code_execution_tool",
     "tool_args": {
-        "runtime": "python",
-        "session": 0,
-        "code": "import os\nprint(os.getcwd())",
+        "runtime": "reset",
+        "session": 1
     }
 }
-~~~
-
-2 execute terminal command
-~~~json
+```
+```json
 {
-    "thoughts": [
-        "Need to do...",
-        "Need to install...",
-    ],
+    "tool_name": "code_execution_tool",
+    "tool_args": {
+        "runtime": "terminal",
+        "session": 1,
+        "code": "python myproject/main.py"
+    }
+}
+```
+
+### 2. File Operations (CRITICAL)
+- **NEVER use multiple f.write() calls - Always use a single multi-line string**
+- Verify file creation before running files
+- Use Python for complex file operations
+
+### 3. File Writing Methods (CRITICAL)
+
+#### Method A: Terminal Heredoc (PREFERRED)
+```json
+{
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "terminal",
         "session": 0,
-        "code": "apt-get install zip",
+        "code": "cat > file.py << 'EOF'\ndef main():\n    print(\"Hello world\")\n\nif __name__ == \"__main__\":\n    main()\nEOF"
     }
 }
-~~~
-
-2.1 wait for output with long-running scripts
-~~~json
+```
+**ALWAYS verify after writing:**
+```json
 {
-    "thoughts": [
-        "Waiting for program to finish...",
-    ],
     "tool_name": "code_execution_tool",
     "tool_args": {
-        "runtime": "output",
+        "runtime": "terminal",
         "session": 0,
+        "code": "cat file.py"
     }
 }
-~~~
+```
 
-2.2 reset terminal
-~~~json
+#### Method B: Python Single-String (FALLBACK)
+If heredoc hangs (shows `>` prompt), use:
+```json
 {
-    "thoughts": [
-        "code_execution_tool not responding...",
-    ],
+    "tool_name": "code_execution_tool",
+    "tool_args": {
+        "runtime": "python",
+        "session": 0,
+        "code": "content = \"\"\"def main():\n    print(\"Hello world\")\n\nif __name__ == \"__main__\":\n    main()\"\"\"\nwith open('file.py', 'w') as f:\n    f.write(content)\nprint(\"File written successfully\")"
+    }
+}
+```
+
+### 4. Package Installation
+```json
+{
+    "tool_name": "code_execution_tool",
+    "tool_args": {
+        "runtime": "terminal",
+        "session": 0,
+        "code": "pip install pandas matplotlib"
+    }
+}
+```
+
+### 5. Interactive Programs
+Create file → Reset session → Run program → Provide input
+```json
+{
+    "tool_name": "code_execution_tool",
+    "tool_args": {
+        "runtime": "python",
+        "session": 0,
+        "code": "with open('interactive.py', 'w') as f:\n    f.write('name = input(\"Enter name: \")\\nprint(f\"Hello, {name}!\")')"
+    }
+}
+```
+```json
+{
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "reset",
-        "session": 0,
+        "session": 1
     }
 }
-~~~
+```
+```json
+{
+    "tool_name": "code_execution_tool",
+    "tool_args": {
+        "runtime": "terminal",
+        "session": 1,
+        "code": "python interactive.py"
+    }
+}
+```
+```json
+{
+    "tool_name": "input",
+    "tool_args": {
+        "keyboard": "John Doe",
+        "session": 1
+    }
+}
+```
+
+## Troubleshooting
+
+### If Files Fail
+- Verify paths with `ls -la`
+- Use absolute paths when in doubt
+
+### If Commands Fail
+- Reset session before retrying
+- Check dependencies for import errors
+
+### If Same Error Repeats
+- Switch methods: If file editing fails twice, use the alternative method
+- For Python code: avoid line-by-line replacements; always read, then modify, and then write entire file
+- Document any fallback methods used
