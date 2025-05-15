@@ -66,6 +66,19 @@ const settingsModalProxy = {
                     }
                 }
             }
+            
+            // When switching to the tunnel tab, initialize tunnelSettings
+            if (tabName === 'tunnel') {
+                console.log('Switching to tunnel tab, initializing tunnelSettings');
+                const tunnelElement = document.querySelector('[x-data="tunnelSettings"]');
+                if (tunnelElement) {
+                    const tunnelData = Alpine.$data(tunnelElement);
+                    if (tunnelData && typeof tunnelData.checkTunnelStatus === 'function') {
+                        // Check tunnel status
+                        tunnelData.checkTunnelStatus();
+                    }
+                }
+            }
         }, 10);
     },
 
