@@ -12,7 +12,7 @@ document.addEventListener('alpine:init', () => {
 
         async checkTunnelStatus() {
             try {
-                const response = await fetch('/tunnel', {
+                const response = await fetch('/tunnel_proxy', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ document.addEventListener('alpine:init', () => {
                     
                     if (storedTunnelUrl) {
                         // Use the stored URL but verify it's still valid
-                        const verifyResponse = await fetch('/tunnel', {
+                        const verifyResponse = await fetch('/tunnel_proxy', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -82,7 +82,7 @@ document.addEventListener('alpine:init', () => {
                 
                 try {
                     // First stop any existing tunnel
-                    const stopResponse = await fetch('/tunnel', {
+                    const stopResponse = await fetch('/tunnel_proxy', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -170,7 +170,7 @@ document.addEventListener('alpine:init', () => {
             
             try {
                 // Call the backend API to create a tunnel
-                const response = await fetch('/tunnel', {
+                const response = await fetch('/tunnel_proxy', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -201,7 +201,7 @@ document.addEventListener('alpine:init', () => {
                     
                     // Check if tunnel is running now
                     try {
-                        const statusResponse = await fetch('/tunnel', {
+                        const statusResponse = await fetch('/tunnel_proxy', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -253,7 +253,7 @@ document.addEventListener('alpine:init', () => {
                 
                 try {
                     // Call the backend to stop the tunnel
-                    const response = await fetch('/tunnel', {
+                    const response = await fetch('/tunnel_proxy', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

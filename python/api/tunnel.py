@@ -7,6 +7,9 @@ class Tunnel(ApiHandler):
         action = input.get("action", "get")
         
         tunnel_manager = TunnelManager.get_instance()
+
+        if action == "verify":
+            return {"success": True}
         
         if action == "create":
             # Get the port from the request or use default
@@ -25,10 +28,7 @@ class Tunnel(ApiHandler):
             }
         
         elif action == "stop":
-            success = tunnel_manager.stop_tunnel()
-            return {
-                "success": success
-            }
+            return self.stop()
         
         elif action == "get":
             tunnel_url = tunnel_manager.get_tunnel_url()
@@ -42,3 +42,10 @@ class Tunnel(ApiHandler):
             "success": False,
             "error": "Invalid action. Use 'create', 'stop', or 'get'."
         } 
+
+    def stop(self):
+        tunnel_manager = TunnelManager.get_instance()
+        tunnel_manager.stop_tunnel()
+        return {
+            "success": True
+        }
