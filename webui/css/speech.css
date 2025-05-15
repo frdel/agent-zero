@@ -2,11 +2,14 @@
 #microphone-button {  
 }
 
-#microphone-button:hover {
-  background-color: #636363;
-  transform: scale(1.05);
-  -webkit-transform: scale(1.05);
-  transform-origin: center;
+/* Only apply hover effects on devices that support hover */
+@media (hover: hover) {
+  #microphone-button:hover {
+    background-color: #636363;
+    transform: scale(1.05);
+    -webkit-transform: scale(1.05);
+    transform-origin: center;
+  }
 }
 
 #microphone-button:active {
