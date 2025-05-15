@@ -1,0 +1,178 @@
+/* Tunnel Modal Styles */
+.tunnel-container {
+    padding: 1rem;
+    width: 100%;
+}
+
+.tunnel-description {
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.tunnel-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+.tunnel-link-container {
+    margin-top: 1rem;
+}
+
+.tunnel-link-field {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    background-color: var(--bg-color-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.tunnel-link-input {
+    flex: 1;
+    padding: 0.75rem;
+    background-color: transparent;
+    border: none;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.copy-link-button {
+    padding: 0.5rem 0.75rem;
+    background: none;
+    border: none;
+    border-left: 1px solid var(--border-color);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.copy-link-button:hover {
+    background-color: var(--bg-color-tertiary);
+}
+
+.copy-link-button i, 
+.refresh-link-button i,
+.btn i {
+    margin-right: 6px;
+}
+
+.tunnel-link-info {
+    margin-top: 1rem;
+    font-size: 1rem;
+    color: var(--text-color);
+    text-align: center;
+    line-height: 1.5;
+}
+
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    min-height: 38px;
+    font-style: italic;
+    color: var(--text-color-secondary);
+}
+
+.loading-spinner i {
+    font-size: 1.5rem;
+    margin-right: 10px;
+    color: var(--accent-color);
+}
+
+.refresh-link-button {
+    padding: 0.5rem 0.75rem;
+    background: none;
+    border: none;
+    border-left: 1px solid var(--border-color);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.refresh-link-button:hover {
+    background-color: var(--bg-color-tertiary);
+    color: var(--accent-color);
+}
+
+.tunnel-link-persistence {
+    margin-top: 0.75rem;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    font-style: italic;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+}
+
+.btn-danger:hover {
+    background-color: #bd2130;
+}
+
+.stop-tunnel-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Section title icon styling */
+.section-title i {
+    margin-right: 8px;
+}
+
+/* Copy button states */
+.copy-success {
+    background-color: rgba(40, 167, 69, 0.15) !important;
+    color: #28a745 !important;
+    border-left: 1px solid rgba(40, 167, 69, 0.5) !important;
+    transition: all 0.3s ease-in-out;
+}
+
+.copy-error {
+    background-color: rgba(220, 53, 69, 0.15) !important;
+    color: #dc3545 !important;
+    border-left: 1px solid rgba(220, 53, 69, 0.5) !important;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Animation for copy button */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.copy-success, .copy-error {
+    animation: pulse 0.5s;
+}
+
+/* Refresh button state */
+.refreshing {
+    opacity: 0.7;
+    pointer-events: none;
+    background-color: rgba(108, 117, 125, 0.15) !important;
+    border-left: 1px solid rgba(108, 117, 125, 0.5) !important;
+}
+
+/* Create and Stop button states */
+.creating, .stopping {
+    opacity: 0.8;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.creating {
+    background-color: rgba(0, 123, 255, 0.7) !important;
+}
+
+.stopping {
+    background-color: rgba(220, 53, 69, 0.7) !important;
+}
