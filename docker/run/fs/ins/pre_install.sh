@@ -20,7 +20,6 @@ apt-get update && apt-get upgrade -y && apt-get -o Dpkg::Options::="--force-conf
     wget \
     git \
     ffmpeg \
-    nginx \
     supervisor \
     cron \
     ca-certificates \
