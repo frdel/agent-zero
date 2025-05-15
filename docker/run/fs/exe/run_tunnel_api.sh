@@ -9,7 +9,8 @@ python /a0/preload.py --dockerized=true
 echo "Starting A0..."
 exec python /a0/run_tunnel.py \
     --dockerized=true \
-    --port=5070 \
+    --port=80 \
+    --tunnel_api_port=5070 \
     --host="0.0.0.0" \
     --code_exec_docker_enabled=false \
     --code_exec_ssh_enabled=true \
