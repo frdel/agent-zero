@@ -581,7 +581,7 @@ class SchedulerTaskList(BaseModel):
 
     def find_task_by_name(self, name: str) -> list[Union[ScheduledTask, AdHocTask, PlannedTask]]:
         with self._lock:
-            return [task for task in self.tasks if name in task.name]
+            return [task for task in self.tasks if name.lower() in task.name.lower()]
 
     async def remove_task_by_uuid(self, task_uuid: str) -> "SchedulerTaskList":
         with self._lock:
