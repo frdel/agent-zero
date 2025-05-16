@@ -11,10 +11,12 @@ dedicated_context flag then the task will run in the chat it was created in incl
 There are manual and automatically executed tasks.
 Automatic execution happens by a schedule defined when creating the task.
 
+Tasks are run asynchronously. If you need to wait for a running task's completion or need the result of the last task run, use the scheduler:wait_for_task tool. It will wait for the task completion in case the task is currently running and will provide the result of the last execution.
+
 ### Important instructions
 When a task is scheduled or planned, do not manually run it, if you have no more tasks, respond to user.
 Be careful not to create recursive prompt, do not send a message that would make the agent schedule more tasks, no need to mention the interval in message, just the objective.
-
+!!! When the user asks you to execute a task, first check if the task already exists and do not create a new task for execution. Execute the existing task instead. If the task in question does not exist ask the user what action to take. Never create tasks if asked to execute a task.
 
 ### Types of scheduler tasks
 There are 3 types of scheduler tasks:
@@ -34,7 +36,7 @@ This type of task is run manually and does not follow any schedule. It can be ru
 
 #### scheduler:list_tasks
 List all tasks present in the system with their 'uuid', 'name', 'type', 'state', 'schedule' and 'next_run'.
-All runnable tasks can be listed and filtered here. The arbuments a filter fields.
+All runnable tasks can be listed and filtered here. The arguments are filter fields.
 
 ##### Arguments:
 * state: list(str) (Optional) - The state filter, one of "idle", "running", "disabled", "error". To only show tasks in given state.
@@ -54,6 +56,26 @@ All runnable tasks can be listed and filtered here. The arbuments a filter field
         "state": ["idle", "error"],
         "type": ["planned"],
         "next_run_within": 20
+    }
+}
+~~~
+
+
+#### scheduler:find_task_by_name
+List all tasks whose name is matching partially or fully the provided name parameter.
+
+##### Arguments:
+* name: str - The task name to look for
+
+##### Usage:
+~~~json
+{
+    "thoughts": [
+        "I must look for tasks with name XYZ"
+    ],
+    "tool_name": "scheduler:find_task_by_name",
+    "tool_args": {
+        "name": "XYZ"
     }
 }
 ~~~
@@ -84,9 +106,11 @@ Execute a task manually which is not in "running" state
 This can be used to trigger tasks manually.
 Normally you should only "run" tasks manually if they are in the "idle" state.
 It is also advised to only run "adhoc" tasks manually but every task type can be triggered by this tool.
+You can pass input data in text form as the "context" argument. The context will then be prepended to the task prompt when executed. This way you can pass for example result of one task as the input of another task or provide additional information specific to this one task run.
 
 ##### Arguments:
 * uuid: string - The uuid of the task to run. Can be retrieved for example from "scheduler:tasks_list"
+* context: (Optional) string - The context that will be prepended to the actual task prompt as contextual information.
 
 ##### Usage (execute task with uuid "xyz-123"):
 ~~~json
@@ -97,6 +121,7 @@ It is also advised to only run "adhoc" tasks manually but every task type can be
     "tool_name": "scheduler:run_task",
     "tool_args": {
         "uuid": "xyz-123",
+        "context": "This text is useful to execute the task more precisely"
     }
 }
 ~~~
@@ -215,6 +240,27 @@ The planned type of tasks is being run by a fixed plan, a list of datetimes that
         "attachments": [],
         "plan": ["2025-04-29T18:25:00"],
         "dedicated_context": false
+    }
+}
+~~~
+
+
+#### scheduler:wait_for_task
+Wait for the completion of a scheduler task identified by the uuid argument and return the result of last execution of the task.
+Attention: You can only wait for tasks running in a different chat context (dedicated). Tasks with dedicated_context=False can not be waited for.
+
+##### Arguments:
+* uuid: string - The uuid of the task to wait for. Can be retrieved for example from "scheduler:tasks_list"
+
+##### Usage (wait for task with uuid "xyz-123"):
+~~~json
+{
+    "thoughts": [
+        "I need the most current result of the task xyz-123",
+    ],
+    "tool_name": "scheduler:wait_for_task",
+    "tool_args": {
+        "uuid": "xyz-123",
     }
 }
 ~~~
