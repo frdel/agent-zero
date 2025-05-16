@@ -217,6 +217,9 @@ class SchedulerTool(Tool):
         if not task:
             return Response(message=f"Task not found: {task_uuid}", break_loop=False)
 
+        if task.context_id == self.agent.context.id:
+            return Response(message="You can only wait for tasks running in a different chat context (dedicated_context=True).", break_loop=False)
+
         done = False
         elapsed = 0
         while not done:
@@ -233,4 +236,7 @@ class SchedulerTool(Tool):
             else:
                 done = True
 
-        return Response(message=f"*Task*: {task_uuid}\n*State*: {task.state}\n*Last run*: {serialize_datetime(task.last_run)}\n*Result*:\n{task.last_result}", break_loop=False)
+        return Response(
+            message=f"*Task*: {task_uuid}\n*State*: {task.state}\n*Last run*: {serialize_datetime(task.last_run)}\n*Result*:\n{task.last_result}",
+            break_loop=False
+        )

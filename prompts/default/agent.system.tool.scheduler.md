@@ -16,6 +16,7 @@ Tasks are run asynchronously. If you need to wait for a running task's completio
 ### Important instructions
 When a task is scheduled or planned, do not manually run it, if you have no more tasks, respond to user.
 Be careful not to create recursive prompt, do not send a message that would make the agent schedule more tasks, no need to mention the interval in message, just the objective.
+When a user asks you to execute a task, first check if the task already exists and do not create a new task for execution. If the task in question does not exist ask the user what action to take.
 
 ### Types of scheduler tasks
 There are 3 types of scheduler tasks:
@@ -226,6 +227,7 @@ The planned type of tasks is being run by a fixed plan, a list of datetimes that
 
 #### scheduler:wait_for_task
 Wait for the completion of a scheduler task identified by the uuid argument and return the result of last execution of the task.
+Attention: You can only wait for tasks running in a different chat context (dedicated). Tasks with dedicated_context=False can not be waited for.
 
 ##### Arguments:
 * uuid: string - The uuid of the task to wait for. Can be retrieved for example from "scheduler:tasks_list"
