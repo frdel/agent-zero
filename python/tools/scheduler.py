@@ -19,6 +19,8 @@ class SchedulerTool(Tool):
     async def execute(self, **kwargs):
         if self.method == "list_tasks":
             return await self.list_tasks(**kwargs)
+        elif self.method == "find_task_by_name":
+            return await self.find_task_by_name(**kwargs)
         elif self.method == "show_task":
             return await self.show_task(**kwargs)
         elif self.method == "run_task":
@@ -56,6 +58,15 @@ class SchedulerTool(Tool):
             filtered_tasks.append(serialize_task(task))
 
         return Response(message=json.dumps(filtered_tasks, indent=4), break_loop=False)
+
+    async def find_task_by_name(self, **kwargs) -> Response:
+        name: str = kwargs.get("name", None)
+        if not name:
+            return Response(message="Task name is required", break_loop=False)
+        tasks: list[ScheduledTask | AdHocTask | PlannedTask] = TaskScheduler.get().find_task_by_name(name)
+        if not tasks:
+            return Response(message=f"Task not found: {name}", break_loop=False)
+        return Response(message=json.dumps([serialize_task(task) for task in tasks], indent=4), break_loop=False)
 
     async def show_task(self, **kwargs) -> Response:
         task_uuid: str = kwargs.get("uuid", None)

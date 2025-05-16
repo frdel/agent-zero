@@ -16,7 +16,7 @@ Tasks are run asynchronously. If you need to wait for a running task's completio
 ### Important instructions
 When a task is scheduled or planned, do not manually run it, if you have no more tasks, respond to user.
 Be careful not to create recursive prompt, do not send a message that would make the agent schedule more tasks, no need to mention the interval in message, just the objective.
-When a user asks you to execute a task, first check if the task already exists and do not create a new task for execution. If the task in question does not exist ask the user what action to take.
+!!! When the user asks you to execute a task, first check if the task already exists and do not create a new task for execution. Execute the existing task instead. If the task in question does not exist ask the user what action to take. Never create tasks if asked to execute a task.
 
 ### Types of scheduler tasks
 There are 3 types of scheduler tasks:
@@ -56,6 +56,26 @@ All runnable tasks can be listed and filtered here. The arguments are filter fie
         "state": ["idle", "error"],
         "type": ["planned"],
         "next_run_within": 20
+    }
+}
+~~~
+
+
+#### scheduler:find_task_by_name
+List all tasks whose name is matching partially or fully the provided name parameter.
+
+##### Arguments:
+* name: str - The task name to look for
+
+##### Usage:
+~~~json
+{
+    "thoughts": [
+        "I must look for tasks with name XYZ"
+    ],
+    "tool_name": "scheduler:find_task_by_name",
+    "tool_args": {
+        "name": "XYZ"
     }
 }
 ~~~

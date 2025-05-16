@@ -579,6 +579,10 @@ class SchedulerTaskList(BaseModel):
         with self._lock:
             return next((task for task in self.tasks if task.name == name), None)
 
+    def find_task_by_name(self, name: str) -> list[Union[ScheduledTask, AdHocTask, PlannedTask]]:
+        with self._lock:
+            return [task for task in self.tasks if name in task.name]
+
     async def remove_task_by_uuid(self, task_uuid: str) -> "SchedulerTaskList":
         with self._lock:
             self.tasks = [task for task in self.tasks if task.uuid != task_uuid]
@@ -622,7 +626,7 @@ class TaskScheduler:
 
     async def add_task(self, task: Union[ScheduledTask, AdHocTask, PlannedTask]) -> "TaskScheduler":
         await self._tasks.add_task(task)
-        ctx = await self._get_chat_context(task) # invoke context creation
+        ctx = await self._get_chat_context(task)  # invoke context creation
         return self
 
     async def remove_task_by_uuid(self, task_uuid: str) -> "TaskScheduler":
@@ -638,6 +642,9 @@ class TaskScheduler:
 
     def get_task_by_name(self, name: str) -> Union[ScheduledTask, AdHocTask, PlannedTask] | None:
         return self._tasks.get_task_by_name(name)
+
+    def find_task_by_name(self, name: str) -> list[Union[ScheduledTask, AdHocTask, PlannedTask]]:
+        return self._tasks.find_task_by_name(name)
 
     async def tick(self):
         for task in await self._tasks.get_due_tasks():
@@ -799,9 +806,11 @@ class TaskScheduler:
                     for filename in attachment_filenames:
                         self._printer.print(f"- {filename}")
 
-                task_prompt = f"# Task:\n{current_task.prompt}"
+                task_prompt = f"# Starting scheduler task '{current_task.name}' ({current_task.uuid})"
                 if task_context:
-                    task_prompt = f"# Context:\n{task_context}\n\n{task_prompt}"
+                    task_prompt = f"## Context:\n{task_context}\n\n## Task:\n{current_task.prompt}"
+                else:
+                    task_prompt = f"## Task:\n{current_task.prompt}"
 
                 # Log the message with message_id and attachments
                 context.log.log(
