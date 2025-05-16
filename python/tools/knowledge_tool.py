@@ -5,8 +5,11 @@ from python.helpers.tool import Tool, Response
 from python.helpers.print_style import PrintStyle
 from python.helpers.errors import handle_error
 from python.helpers.searxng import search as searxng
+from python.tools.memory_load import DEFAULT_THRESHOLD as DEFAULT_MEMORY_THRESHOLD
 
 SEARCH_ENGINE_RESULTS = 10
+
+
 class Knowledge(Tool):
     async def execute(self, question="", **kwargs):
         # Create tasks for all three search methods
@@ -66,7 +69,7 @@ class Knowledge(Tool):
     async def mem_search(self, question: str):
         db = await memory.Memory.get(self.agent)
         docs = await db.search_similarity_threshold(
-            query=question, limit=5, threshold=0.5
+            query=question, limit=5, threshold=DEFAULT_MEMORY_THRESHOLD
         )
         text = memory.Memory.format_docs_plain(docs)
         return "\n\n".join(text)
