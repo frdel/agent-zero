@@ -2,6 +2,7 @@
 use keyboard arg for terminal program input
 answer dialogues enter passwords etc
 not for browser
+specify session number to match the terminal session where program is running
 usage:
 ~~~json
 {
@@ -11,6 +12,7 @@ usage:
     "tool_name": "input",
     "tool_args": {
         "keyboard": "Y",
+        "session": 1
     }
 }
 ~~~
