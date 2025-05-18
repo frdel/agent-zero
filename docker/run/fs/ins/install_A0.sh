@@ -50,3 +50,6 @@ python /git/agent-zero/preload.py --dockerized=true || {
 }
 
 echo "install_A0.sh completed successfully."
+
+# install playwright
+bash /ins/install_playwright.sh "$@"
