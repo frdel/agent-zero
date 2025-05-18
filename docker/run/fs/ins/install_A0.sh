@@ -44,10 +44,8 @@ python -c "import mcp; from mcp import ClientSession; print(f'DEBUG: mcp and mcp
     exit 1
 }
 
-python /git/agent-zero/preload.py --dockerized=true || {
-    echo "CRITICAL ERROR: Failed during A0 preload."
-    exit 1
-}
+# Preload A0
+python /git/agent-zero/preload.py --dockerized=true
 
 echo "install_A0.sh completed successfully."
 
