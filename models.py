@@ -419,19 +419,4 @@ def get_chutes_chat(
     return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
 
 
-# Placeholder for Chutes embedding, if available in the future
-def get_chutes_embedding(
-    model_name: str,
-    api_key=None,
-    base_url=None,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("chutes")
-    if not base_url:
-        base_url = (
-            dotenv.get_dotenv_value("CHUTES_BASE_URL")
-            or "https://llm.chutes.ai/v1"
-        )
-    # Assuming Chutes might offer OpenAI-compatible embeddings
-    return OpenAIEmbeddings(model=model_name, api_key=api_key, base_url=base_url, **kwargs)  # type: ignore
+
