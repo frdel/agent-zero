@@ -474,6 +474,9 @@ def convert_out(settings: Settings) -> SettingsOutput:
     api_keys_fields.append(
         _get_api_key_field(settings, "huggingface", "HuggingFace API Key")
     )
+    api_keys_fields.append(  # Added Chutes API Key
+        _get_api_key_field(settings, "chutes", "Chutes API Key")
+    )
 
     api_keys_section: SettingsSection = {
         "id": "api_keys",
