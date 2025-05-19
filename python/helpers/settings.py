@@ -459,23 +459,23 @@ def convert_out(settings: Settings) -> SettingsOutput:
     api_keys_fields.append(
         _get_api_key_field(settings, "anthropic", "Anthropic API Key")
     )
-    api_keys_fields.append(_get_api_key_field(settings, "groq", "Groq API Key"))
-    api_keys_fields.append(_get_api_key_field(settings, "google", "Google API Key"))
-    api_keys_fields.append(_get_api_key_field(settings, "deepseek", "DeepSeek API Key"))
     api_keys_fields.append(
-        _get_api_key_field(settings, "openrouter", "OpenRouter API Key")
+        _get_api_key_field(settings, "chutes", "Chutes API Key")
     )
+    api_keys_fields.append(_get_api_key_field(settings, "deepseek", "DeepSeek API Key"))
+    api_keys_fields.append(_get_api_key_field(settings, "google", "Google API Key"))
+    api_keys_fields.append(_get_api_key_field(settings, "groq", "Groq API Key"))
     api_keys_fields.append(
-        _get_api_key_field(settings, "sambanova", "Sambanova API Key")
+        _get_api_key_field(settings, "huggingface", "HuggingFace API Key")
     )
     api_keys_fields.append(
         _get_api_key_field(settings, "mistralai", "MistralAI API Key")
     )
     api_keys_fields.append(
-        _get_api_key_field(settings, "huggingface", "HuggingFace API Key")
+        _get_api_key_field(settings, "openrouter", "OpenRouter API Key")
     )
-    api_keys_fields.append(  # Added Chutes API Key
-        _get_api_key_field(settings, "chutes", "Chutes API Key")
+    api_keys_fields.append(
+        _get_api_key_field(settings, "sambanova", "Sambanova API Key")
     )
 
     api_keys_section: SettingsSection = {

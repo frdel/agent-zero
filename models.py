@@ -43,6 +43,7 @@ class ModelType(Enum):
 
 class ModelProvider(Enum):
     ANTHROPIC = "Anthropic"
+    CHUTES = "Chutes"
     DEEPSEEK = "DeepSeek"
     GOOGLE = "Google"
     GROQ = "Groq"
@@ -54,7 +55,6 @@ class ModelProvider(Enum):
     OPENAI_AZURE = "OpenAI Azure"
     OPENROUTER = "OpenRouter"
     SAMBANOVA = "Sambanova"
-    CHUTES = "Chutes"  # Added Chutes
     OTHER = "Other"
 
 
