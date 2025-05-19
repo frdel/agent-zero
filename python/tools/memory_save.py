@@ -1,8 +1,6 @@
 from python.helpers.memory import Memory
 from python.helpers.tool import Tool, Response
 
-DEFAULT_THRESHOLD = 0.5
-DEFAULT_LIMIT = 5
 
 class MemorySave(Tool):
 
