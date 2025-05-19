@@ -579,6 +579,10 @@ class SchedulerTaskList(BaseModel):
         with self._lock:
             return next((task for task in self.tasks if task.name == name), None)
 
+    def find_task_by_name(self, name: str) -> list[Union[ScheduledTask, AdHocTask, PlannedTask]]:
+        with self._lock:
+            return [task for task in self.tasks if name.lower() in task.name.lower()]
+
     async def remove_task_by_uuid(self, task_uuid: str) -> "SchedulerTaskList":
         with self._lock:
             self.tasks = [task for task in self.tasks if task.uuid != task_uuid]
@@ -622,7 +626,7 @@ class TaskScheduler:
 
     async def add_task(self, task: Union[ScheduledTask, AdHocTask, PlannedTask]) -> "TaskScheduler":
         await self._tasks.add_task(task)
-        ctx = await self._get_chat_context(task) # invoke context creation
+        ctx = await self._get_chat_context(task)  # invoke context creation
         return self
 
     async def remove_task_by_uuid(self, task_uuid: str) -> "TaskScheduler":
@@ -639,11 +643,14 @@ class TaskScheduler:
     def get_task_by_name(self, name: str) -> Union[ScheduledTask, AdHocTask, PlannedTask] | None:
         return self._tasks.get_task_by_name(name)
 
+    def find_task_by_name(self, name: str) -> list[Union[ScheduledTask, AdHocTask, PlannedTask]]:
+        return self._tasks.find_task_by_name(name)
+
     async def tick(self):
         for task in await self._tasks.get_due_tasks():
             await self._run_task(task)
 
-    async def run_task_by_uuid(self, task_uuid: str):
+    async def run_task_by_uuid(self, task_uuid: str, task_context: str | None = None):
         # First reload tasks to ensure we have the latest state
         await self._tasks.reload()
 
@@ -671,13 +678,13 @@ class TaskScheduler:
                 raise ValueError(f"Task with UUID '{task_uuid}' not found after state reset")
 
         # Run the task
-        await self._run_task(task)
+        await self._run_task(task, task_context)
 
-    async def run_task_by_name(self, name: str):
+    async def run_task_by_name(self, name: str, task_context: str | None = None):
         task = self._tasks.get_task_by_name(name)
         if task is None:
             raise ValueError(f"Task with name {name} not found")
-        await self._run_task(task)
+        await self._run_task(task, task_context)
 
     async def save(self):
         await self._tasks.save()
@@ -737,9 +744,9 @@ class TaskScheduler:
             raise ValueError(f"Context ID mismatch for task {task.name}: context {context.id} != task {task.context_id}")
         save_tmp_chat(context)
 
-    async def _run_task(self, task: Union[ScheduledTask, AdHocTask, PlannedTask]):
+    async def _run_task(self, task: Union[ScheduledTask, AdHocTask, PlannedTask], task_context: str | None = None):
 
-        async def _run_task_wrapper(task_uuid: str):
+        async def _run_task_wrapper(task_uuid: str, task_context: str | None = None):
 
             # preflight checks with a snapshot of the task
             task_snapshot: Union[ScheduledTask, AdHocTask, PlannedTask] | None = self.get_task_by_uuid(task_uuid)
@@ -799,18 +806,24 @@ class TaskScheduler:
                     for filename in attachment_filenames:
                         self._printer.print(f"- {filename}")
 
+                task_prompt = f"# Starting scheduler task '{current_task.name}' ({current_task.uuid})"
+                if task_context:
+                    task_prompt = f"## Context:\n{task_context}\n\n## Task:\n{current_task.prompt}"
+                else:
+                    task_prompt = f"## Task:\n{current_task.prompt}"
+
                 # Log the message with message_id and attachments
                 context.log.log(
                     type="user",
                     heading="User message",
-                    content=current_task.prompt,
+                    content=task_prompt,
                     kvps={"attachments": attachment_filenames},
                     id=str(uuid.uuid4()),
                 )
 
                 agent.hist_add_user_message(
                     UserMessage(
-                        message=current_task.prompt,
+                        message=task_prompt,
                         system_message=[current_task.system_prompt],
                         attachments=attachment_filenames))
 
@@ -854,7 +867,7 @@ class TaskScheduler:
                 await self._tasks.save()
 
         deferred_task = DeferredTask(thread_name=self.__class__.__name__)
-        deferred_task.start_task(_run_task_wrapper, task.uuid)
+        deferred_task.start_task(_run_task_wrapper, task.uuid, task_context)
 
         # Ensure background execution doesn't exit immediately on async await, especially in script contexts
         # This helps prevent premature exits when running from non-event-loop contexts
