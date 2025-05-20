@@ -1,10 +1,6 @@
-from functools import wraps
-import signal
 import threading
-import sys
-from flask import Flask, request, Response
-from python.helpers.files import get_abs_path
-from python.helpers import persist_chat, runtime, dotenv, process
+from flask import Flask, request
+from python.helpers import runtime, dotenv, process
 from python.helpers.print_style import PrintStyle
 
 from python.api.tunnel import Tunnel
@@ -47,32 +43,10 @@ def run():
             request_handler=NoRequestLoggingWSGIRequestHandler,
             threaded=True,
         )
-
-        printer = PrintStyle()
-
-        # def signal_handler(sig=None, frame=None):
-        #     nonlocal tunnel, server, printer
-        #     with lock:
-        #         printer.print("Caught signal, stopping tunnel server...")
-        #         if server:
-        #             server.shutdown()
-        #         process.stop_server()
-        #         if tunnel:
-        #             tunnel.stop()
-        #             tunnel = None
-        #         printer.print("Tunnel server stopped")
-        #         sys.exit(0)
-
-        # signal.signal(signal.SIGINT, signal_handler)
-        # signal.signal(signal.SIGTERM, signal_handler)
-
+        
         process.set_server(server)
         # server.log_startup()
         server.serve_forever()
-        # Run Flask app
-        # app.run(
-        #     request_handler=NoRequestLoggingWSGIRequestHandler, port=port, host=host
-        # )
     finally:
         # Clean up tunnel if it was started
         if tunnel:
