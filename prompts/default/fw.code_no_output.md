@@ -1,5 +1,5 @@
 ~~~json
 {
-    "system_warning": "No output or error was returned. If you require output from the tool, you have to use use console printing in your code. Otherwise proceed."
+    "system_warning": "No output returned. If the terminal is executing previous commands, you might want to reset it or use another session number."
 }
 ~~~

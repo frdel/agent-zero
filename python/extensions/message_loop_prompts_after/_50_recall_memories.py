@@ -101,7 +101,7 @@ class RecallMemories(Extension):
         # append to prompt
         extras["memories"] = memories_prompt
 
-    # except Exception as e:
+    # except Exception as e:čč
     #     err = errors.format_error(e)
     #     self.agent.context.log.log(
     #         type="error", heading="Recall memories extension error:", content=err
