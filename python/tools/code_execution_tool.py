@@ -8,6 +8,7 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
 from python.helpers.docker import DockerContainerManager
+from python.helpers.messages import truncate_text
 
 
 @dataclass
@@ -52,8 +53,13 @@ class CodeExecution(Tool):
                 "fw.code_runtime_wrong.md", runtime=runtime
             )
 
+        # if response contains only whitespace, clear it
+        if isinstance(response, str) and response.strip() == "":
+            response = None
+
         if not response:
             response = self.agent.read_prompt("fw.code_no_output.md")
+            self.log.update(content=response)
         return Response(message=response, break_loop=False)
 
     # async def before_execution(self, **kwargs):
@@ -203,7 +209,7 @@ class CodeExecution(Tool):
         while max_exec_time <= 0 or time.time() - start_time < max_exec_time:
             await asyncio.sleep(SLEEP_TIME)  # Wait for some output to be generated
             full_output, partial_output = await self.state.shells[session].read_output(
-                timeout=max_exec_time, reset_full_output=reset_full_output
+                timeout=1, reset_full_output=reset_full_output
             )
             reset_full_output = False  # only reset once
 
@@ -211,7 +217,8 @@ class CodeExecution(Tool):
 
             if partial_output:
                 PrintStyle(font_color="#85C1E9").stream(partial_output)
-                self.log.update(content=full_output)
+                truncated_output = truncate_text(self.agent, full_output, 10_000)
+                self.log.update(content=truncated_output)
                 idle = 0
             else:
                 idle += 1

@@ -532,7 +532,7 @@ def output_text(messages: list[OutputMessage], ai_label="ai", human_label="human
 
 def _merge_outputs(a: MessageContent, b: MessageContent) -> MessageContent:
     if isinstance(a, str) and isinstance(b, str):
-        return a + b
+        return a + "\n" + b
 
     if not isinstance(a, list):
         a = [a]

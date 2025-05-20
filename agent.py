@@ -2,11 +2,13 @@ import asyncio
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime
+import json
 from typing import Any, Awaitable, Coroutine, Optional, Dict, TypedDict
 import uuid
 import models
 
 from python.helpers import extract_tools, rate_limiter, files, errors, history, tokens
+from python.helpers import dirty_json
 from python.helpers.print_style import PrintStyle
 from langchain_core.prompts import (
     ChatPromptTemplate,
@@ -358,19 +360,27 @@ class Agent:
                 await self.call_extensions("monologue_end", loop_data=self.loop_data)  # type: ignore
 
     async def prepare_prompt(self, loop_data: LoopData) -> ChatPromptTemplate:
+        # call extensions before setting prompts
+        await self.call_extensions("message_loop_prompts_before", loop_data=loop_data)
+
         # set system prompt and message history
         loop_data.system = await self.get_system_prompt(self.loop_data)
         loop_data.history_output = self.history.output()
 
         # and allow extensions to edit them
-        await self.call_extensions("message_loop_prompts", loop_data=loop_data)
+        await self.call_extensions("message_loop_prompts_after", loop_data=loop_data)
 
         # extras (memory etc.)
-        extras: list[history.OutputMessage] = []
-        for extra in loop_data.extras_persistent.values():
-            extras += history.Message(False, content=extra).output()
-        for extra in loop_data.extras_temporary.values():
-            extras += history.Message(False, content=extra).output()
+        # extras: list[history.OutputMessage] = []
+        # for extra in loop_data.extras_persistent.values():
+        #     extras += history.Message(False, content=extra).output()
+        # for extra in loop_data.extras_temporary.values():
+        #     extras += history.Message(False, content=extra).output()
+        extras = history.Message(
+            False, 
+            content=self.read_prompt("agent.context.extras.md", extras=dirty_json.stringify(
+                {**loop_data.extras_persistent, **loop_data.extras_temporary}
+                ))).output()
         loop_data.extras_temporary.clear()
 
         # convert history + extras to LLM format
