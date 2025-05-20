@@ -2,7 +2,7 @@ from collections import OrderedDict
 from datetime import datetime
 from typing import Any
 import uuid
-from agent import Agent, AgentConfig, AgentContext
+from agent import Agent, AgentConfig, AgentContext, AgentContextType
 from python.helpers import files, history
 import json
 from initialize import initialize
@@ -109,6 +109,11 @@ def _serialize_context(context: AgentContext):
             context.created_at.isoformat() if context.created_at
             else datetime.fromtimestamp(0).isoformat()
         ),
+        "type": context.type.value,
+        "last_message": (
+            context.last_message.isoformat() if context.last_message
+            else datetime.fromtimestamp(0).isoformat()
+        ),
         "agents": agents,
         "streaming_agent": (
             context.streaming_agent.number if context.streaming_agent else 0
@@ -152,6 +157,12 @@ def _deserialize_context(data):
             datetime.fromisoformat(
                 # older chats may not have created_at - backcompat
                 data.get("created_at", datetime.fromtimestamp(0).isoformat())
+            )
+        ),
+        type=AgentContextType(data.get("type", AgentContextType.USER.value)),
+        last_message=(
+            datetime.fromisoformat(
+                data.get("last_message", datetime.fromtimestamp(0).isoformat())
             )
         ),
         log=log,
