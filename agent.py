@@ -295,11 +295,20 @@ class Agent:
                             type="agent", heading=f"{self.agent_name}: Generating"
                         )
 
+                        complete_response = False
+                        last_object = None
+
                         async def stream_callback(chunk: str, full: str):
+                            nonlocal complete_response, last_object
+                            required_properties = ['thoughts', 'tool_name', 'tool_args']
                             # output the agent response stream
                             if chunk:
                                 printer.stream(chunk)
-                                self.log_from_stream(full, log)
+                                complete_response, current_object = self.log_from_stream(full, log, required_properties)
+                                if complete_response:  # and last_object == current_object:
+                                    self.set_data('agent_responded', True)
+
+                                last_object = current_object
 
                         agent_response = await self.call_chat_model(
                             prompt, callback=stream_callback
@@ -598,6 +607,12 @@ class Agent:
             if callback:
                 await callback(content, response)
 
+            # if the agent has responded, we can break the streaming loop to forbid multiple json stanzas or plaintext comments
+            if self.get_data('agent_responded'):
+                self.set_data('agent_responded', False)
+                PrintStyle(background_color="black", font_color="grey", padding=True).print("Agent full response received, breaking streaming loop")
+                break
+
         return response
 
     async def rate_limiter(
@@ -681,16 +696,19 @@ class Agent:
                 type="error", content=f"{self.agent_name}: Message misformat"
             )
 
-    def log_from_stream(self, stream: str, logItem: Log.LogItem):
+    def log_from_stream(self, stream: str, logItem: Log.LogItem, required_properties: list[str] = []) -> tuple[bool, dict[str, Any]]:
         try:
             if len(stream) < 25:
-                return  # no reason to try
-            response = DirtyJson.parse_string(stream)
+                return False, {}  # no reason to try
+            is_complete, response = DirtyJson.parse_string_checked(stream, required_properties)
             if isinstance(response, dict):
                 # log if result is a dictionary already
                 logItem.update(content=stream, kvps=response)
-        except Exception as e:
-            pass
+                return is_complete, response
+            else:
+                return False, {}
+        except Exception:
+            return False, {}
 
     def get_tool(self, name: str, method: str | None, args: dict, message: str, **kwargs):
         from python.tools.unknown import Unknown
