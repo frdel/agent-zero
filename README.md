@@ -149,11 +149,23 @@ docker run -p 50001:80 frdel/agent-zero-run
 
 ## 🎯 Changelog
 
+### v0.8.4.1
+- Various bugfixes related to context management
+- Message formatting improvements
+- Scheduler improvements
+- New model provider
+- Input tool fix
+- Compatibility and stability improvements
+
+### v0.8.4
+[Release video](https://youtu.be/QBh_h_D_E24)
+
+- **Remote access (mobile)**
+
 ### v0.8.3.1
 [Release video](https://youtu.be/AGNpQ3_GxFQ)
 
 - **Automatic embedding**
-
 
 
 ### v0.8.3
