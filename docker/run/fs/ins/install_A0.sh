@@ -15,11 +15,6 @@ git clone -b "$BRANCH" "https://github.com/frdel/agent-zero" "/git/agent-zero" |
     exit 1
 }
 
-git clone -b "$BRANCH" "https://github.com/frdel/agent-zero" "/git/agent-zero" || {
-    echo "CRITICAL ERROR: Failed to clone repository. Branch: $BRANCH"
-    exit 1
-}
-
 . "/ins/setup_venv.sh" "$@"
 
 # Ensure the virtual environment and pip setup
