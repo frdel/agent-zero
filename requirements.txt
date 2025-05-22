@@ -31,4 +31,6 @@ tiktoken==0.8.0
 unstructured==0.15.13
 unstructured-client==0.25.9
 webcolors==24.6.0
+mcp==1.3.0
+nest-asyncio==1.6.0
 crontab==1.0.1

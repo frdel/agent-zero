@@ -1,0 +1,159 @@
+# Use the NVIDIA CUDA base image with Ubuntu
+FROM nvidia/cuda:12.8.1-base-ubuntu22.04
+
+# Set non-interactive installation and timezone
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
+# Check if the argument is provided, else throw an error
+ARG BRANCH
+RUN if [ -z "$BRANCH" ]; then echo "ERROR: BRANCH is not set!" >&2; exit 1; fi
+ENV BRANCH=$BRANCH
+
+# Set locale to en_US.UTF-8 and timezone to UTC (matching main Dockerfile)
+RUN apt-get update && apt-get install -y locales tzdata
+RUN sed -i -e 's/# \(en_US\.UTF-8 .*\)/\1/' /etc/locale.gen && \
+    dpkg-reconfigure --frontend=noninteractive locales && \
+    update-locale LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
+RUN ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+RUN echo "UTC" > /etc/timezone
+RUN dpkg-reconfigure -f noninteractive tzdata
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+ENV TZ=UTC
+
+# Copy contents of the project to root directory
+COPY ./fs/ /
+
+# Fix permissions for cron files from pre_install.sh
+RUN chmod 0644 /etc/cron.d/*
+
+# Install essential packages (from pre_install.sh but avoiding supervisor from apt)
+# Node.js and npm will be installed separately using NodeSource for a specific version
+RUN apt-get update && apt-get upgrade -y && apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y \
+    python3 \
+    python3-venv \
+    python3-pip \
+    openssh-server \
+    sudo \
+    curl \
+    wget \
+    git \
+    ffmpeg \
+    cron
+
+# Install Node.js 20.x (LTS) and a compatible npm
+RUN apt-get update && apt-get install -y ca-certificates curl gnupg
+RUN mkdir -p /etc/apt/keyrings
+RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+RUN apt-get update && apt-get install -y nodejs || { echo "CRITICAL ERROR: Failed to install Node.js from NodeSource." ; exit 1; }
+
+# Prepare SSH daemon (from pre_install.sh)
+RUN bash /ins/setup_ssh.sh $BRANCH
+
+# Configure Python 3.12 (specific to Ubuntu-based CUDA image)
+RUN apt-get update && apt-get install -y \
+    software-properties-common && \
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y python3.12 python3.12-venv python3.12-dev && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 && \
+    update-alternatives --set python3 /usr/bin/python3.12
+
+# Bootstrap pip for Python 3.12 and install supervisor
+RUN python3 -m ensurepip --upgrade && \
+    python3 -m pip install --upgrade pip setuptools wheel && \
+    python3 -m pip install supervisor
+
+# Create supervisor directories
+RUN mkdir -p /var/log/supervisor /etc/supervisor/conf.d
+
+# Create root dotfiles with appropriate permissions
+RUN touch /root/.bashrc /root/.profile && \
+    chmod 644 /root/.bashrc /root/.profile
+
+# Create a symlink for supervisord to the expected location
+RUN ln -sf $(which supervisord) /usr/bin/supervisord
+
+# Install additional software
+RUN bash /ins/install_additional.sh $BRANCH
+
+# Install core CUDA dependencies (minimized to essentials)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    cuda-cudart-dev-12-8 \
+    libcublas-dev-12-8 \
+    libcudnn8 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set CUDA environment variables
+ENV PATH=/usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+ENV CUDA_HOME=/usr/local/cuda
+ENV CUDA_VERSION=12.8.1
+
+# Install A0
+RUN bash /ins/install_A0.sh $BRANCH
+
+# Create and set up the shared instruments virtual environment
+ENV INSTRUMENTS_VENV_PATH=/opt/instruments_venv
+RUN python3 -m venv $INSTRUMENTS_VENV_PATH
+
+# Switch to bash for the next RUN step (required for set -o pipefail)
+SHELL ["/bin/bash", "-c"]
+
+# Install all heavy dependencies into the instruments venv, with explicit checks
+RUN set -euxo pipefail; \
+    . $INSTRUMENTS_VENV_PATH/bin/activate; \
+    echo "=== Upgrading pip, setuptools, wheel ==="; \
+    pip install --upgrade pip setuptools wheel; \
+    echo "=== Installing PyTorch with CUDA ==="; \
+    pip install --no-cache-dir torch==2.6.0+cu124 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124; \
+    echo "=== Installing other heavy dependencies ==="; \
+    pip install --no-cache-dir \
+        huggingface-hub==0.20.3 \
+        safetensors==0.4.1 \
+        accelerate==0.21.0 \
+        diffusers==0.25.0 \
+        transformers==4.38.2 \
+        scipy==1.15.2 \
+        xformers==0.0.29.post3; \
+    echo "=== Checking all critical imports ==="; \
+    python -c "import torch; print(f'PyTorch {torch.__version__} imported successfully. CUDA: {getattr(torch, 'cuda', None) and torch.cuda.is_available()}')" || (echo 'PyTorch import failed!' && exit 1); \
+    python -c "import torchvision; print(f'Torchvision {torchvision.__version__} imported successfully.')" || (echo 'Torchvision import failed!' && exit 1); \
+    python -c "import torchaudio; print(f'Torchaudio {torchaudio.__version__} imported successfully.')" || (echo 'Torchaudio import failed!' && exit 1); \
+    python -c "import diffusers; print(f'Diffusers {diffusers.__version__} imported successfully.')" || (echo 'Diffusers import failed!' && exit 1); \
+    python -c "import transformers; print(f'Transformers {transformers.__version__} imported successfully.')" || (echo 'Transformers import failed!' && exit 1); \
+    python -c "import xformers; print(f'Xformers {xformers.__version__} imported successfully.')" || (echo 'Xformers import failed!' && exit 1); \
+    python -c "import accelerate; print(f'Accelerate {accelerate.__version__} imported successfully.')" || (echo 'Accelerate import failed!' && exit 1); \
+    python -c "import safetensors; print(f'Safetensors {safetensors.__version__} imported successfully.')" || (echo 'Safetensors import failed!' && exit 1); \
+    python -c "import scipy; print(f'Scipy {scipy.__version__} imported successfully.')" || (echo 'Scipy import failed!' && exit 1); \
+    python -c "import huggingface_hub; print(f'Huggingface_hub {huggingface_hub.__version__} imported successfully.')" || (echo 'Huggingface_hub import failed!' && exit 1); \
+    echo "=== All critical imports succeeded ==="
+
+# Optionally revert to sh for subsequent steps if needed
+SHELL ["/bin/sh", "-c"]
+
+# The existing global PyTorch install for /opt/venv (A0's main venv) is below.
+# It might be used by other core A0 components, so we keep it.
+# Our instruments will use the dedicated $INSTRUMENTS_VENV_PATH.
+RUN . /opt/venv/bin/activate && \
+    pip uninstall -y torch torchvision && \
+    pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu124
+
+# Cleanup repo and install A0 without caching, this speeds up builds
+ARG CACHE_DATE=none
+RUN echo "cache buster $CACHE_DATE" && bash /ins/install_A02.sh $BRANCH
+
+# Post installation steps
+RUN bash /ins/post_install.sh $BRANCH
+
+# Expose ports
+EXPOSE 22 80
+
+RUN chmod +x /exe/initialize.sh /exe/run_A0.sh /exe/run_searxng.sh
+
+# Initialize runtime
+CMD ["/exe/initialize.sh", "$BRANCH"]

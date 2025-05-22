@@ -290,10 +290,18 @@ class DirtyJson:
         ):
             number_str += self.current_char
             self._advance()
+        # Only try to convert if number_str is a valid number
+        if number_str in ('', '+', '-'):
+            # Not a valid number, treat as string or handle error
+            return number_str.strip()  # or raise ValueError("Invalid number format")
         try:
             return int(number_str)
         except ValueError:
-            return float(number_str)
+            try:
+                return float(number_str)
+            except ValueError:
+                # Not a valid number, treat as string or handle error
+                return number_str.strip()  # or raise ValueError("Invalid number format")
 
     def _parse_unquoted_string(self):
         result = ""

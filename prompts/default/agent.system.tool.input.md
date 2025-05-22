@@ -12,7 +12,7 @@ usage:
     "tool_name": "input",
     "tool_args": {
         "keyboard": "Y",
-        "session": 0
+        "session": 1
     }
 }
 ~~~
