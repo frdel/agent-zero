@@ -32,34 +32,42 @@ def _ensure_mcp_package_globally_installed(package_name: str, executable_name: s
                         PrintStyle(font_color="green", padding=True).print(
                             f"'{executable_name}' is now available in PATH after install."
                         )
+                        return True # Successfully installed and found
                     else:
                         PrintStyle(font_color="orange", padding=True).print(
                             f"WARNING: npm install of '{package_name}' reported success, but '{executable_name}' still not found in PATH. " +
                             "The 'npx' command in settings.json might still be necessary or there might be an issue with PATH."
                         )
+                        return False # Install reported success, but executable not found
                 else:
                     PrintStyle(font_color="red", padding=True).print(
                         f"Failed to install '{package_name}' globally via npm. Return code: {process.returncode}"
                     )
                     PrintStyle(font_color="red", padding=False).print(f"npm stdout: {process.stdout.strip()}")
                     PrintStyle(font_color="red", padding=False).print(f"npm stderr: {process.stderr.strip()}")
+                    return False # Install failed
             except FileNotFoundError:
                  PrintStyle(font_color="red", padding=True).print(
                     f"ERROR: 'npm' command not found. Cannot attempt to install '{package_name}'."
                 )
+                 return False # npm not found
             except Exception as e:
                 PrintStyle(font_color="red", padding=True).print(
                     f"Exception during npm install of '{package_name}': {e}"
                 )
+                return False # Other exception during install
         else:
             PrintStyle(font_color="green", padding=True).print(
                 f"'{executable_name}' (from package '{package_name}') already found in PATH."
             )
+            return True # Already found in PATH
     else:
         PrintStyle(font_color="red", padding=True).print(
             f"ERROR: 'npm' command not found. Cannot check for or install '{executable_name}' from '{package_name}'."
         )
-    # PrintStyle().print() # For a blank line after each attempt
+        return False # npm command not found, cannot check or install
+    # Fallback, though logic above should cover all paths to return explicitly
+    return False
 
 
 def initialize():
@@ -93,31 +101,83 @@ def initialize():
                 args = server_config.get("args", [])
                 server_name = server_config.get("name", "Unknown MCP Server")
 
-                if command == "npx" and "--package" in args:
-                    try:
-                        package_keyword_index = args.index("--package")
-                        # Expect package name at +1 and executable name at +2 from "--package"
-                        if package_keyword_index + 2 < len(args):
-                            package_name = args[package_keyword_index + 1]
-                            executable_name = args[package_keyword_index + 2]
-                            if package_name and executable_name: # Ensure they are not empty strings
-                                 _ensure_mcp_package_globally_installed(package_name, executable_name)
+                if command == "npx":
+                    package_name_for_install = None
+                    executable_name_to_check = None
+
+                    if "--package" in args: # Original logic for npx --package <pkg> <exec>
+                        try:
+                            package_keyword_index = args.index("--package")
+                            # Expect package name at +1 and executable name at +2 from "--package"
+                            if package_keyword_index + 2 < len(args):
+                                package_name_for_install = args[package_keyword_index + 1]
+                                executable_name_to_check = args[package_keyword_index + 2]
                             else:
                                 PrintStyle(font_color="orange", padding=True).print(
-                                    f"Warning: Skipping MCP server '{server_name}' due to empty package or executable name extracted from args: {args}"
+                                    f"Warning: Skipping MCP server '{server_name}' (npx --package) as package or executable name could not be determined from args: {args}"
                                 )
+                        except ValueError: # Should not happen if "--package" is in args, but good for safety
+                            PrintStyle(font_color="orange", padding=True).print(
+                                f"Warning: '--package' keyword found but .index() failed for args: {args} in server '{server_name}'"
+                            )
+                        except Exception as e:
+                             PrintStyle(font_color="red", padding=True).print(
+                                f"Error processing npx --package args for server '{server_name}': {e}. Args: {args}"
+                            )
+                    else: # New logic for npx <pkg_arg> syntax
+                        parsed_npx_pkg_arg = None
+                        arg_idx = 0
+                        while arg_idx < len(args):
+                            current_arg = args[arg_idx]
+                            # npx's own -p/--package option for temporary installs, distinct from the --package marker we check above
+                            if current_arg == "-p" or current_arg == "--package": 
+                                arg_idx += 1 # Move to the value of -p/--package
+                                if arg_idx < len(args): # Ensure there is a value
+                                    arg_idx += 1 # Skip the value itself
+                                continue
+                            
+                            if current_arg.startswith("-"): # Skip other options like -y, --yes, --no-install etc.
+                                arg_idx += 1
+                                continue
+                            
+                            # Found what we assume is the main package argument for npx
+                            parsed_npx_pkg_arg = current_arg
+                            break # Found the package, stop parsing args for this purpose
+                        
+                        if parsed_npx_pkg_arg:
+                            package_name_for_install = parsed_npx_pkg_arg
+                            # Derive assumed executable name based on convention from error: "mcp-server-google-maps" for "@.../server-google-maps"
+                            # For "@scope/pkg-name" -> "pkg-name". For "pkg-name" -> "pkg-name".
+                            name_part = parsed_npx_pkg_arg.split("/")[-1]
+                            executable_name_to_check = f"mcp-{name_part}" 
+                            PrintStyle(font_color="blue", padding=True).print(
+                                f"Info: For MCP server '{server_name}' (npx <pkg_arg> type), attempting to ensure global install of package '{package_name_for_install}' and expecting executable '{executable_name_to_check}'."
+                            )
                         else:
                             PrintStyle(font_color="orange", padding=True).print(
-                                f"Warning: Skipping MCP server '{server_name}' as package name or executable name could not be determined from args: {args}"
+                                f"Warning: Skipping MCP server '{server_name}' (npx <pkg_arg> type) as main package argument could not be identified from args: {args}"
                             )
-                    except ValueError: # Should not happen if "--package" is in args, but good for safety
-                        PrintStyle(font_color="orange", padding=True).print(
-                            f"Warning: '--package' keyword found but .index() failed for args: {args} in server '{server_name}'"
-                        )
-                    except Exception as e:
-                         PrintStyle(font_color="red", padding=True).print(
-                            f"Error processing npx args for server '{server_name}': {e}. Args: {args}"
-                        )
+
+                    # Unified call to ensure package is installed
+                    if package_name_for_install and executable_name_to_check:
+                        # Ensure they are not empty strings or just whitespace
+                        if package_name_for_install.strip() and executable_name_to_check.strip():
+                            install_successful = _ensure_mcp_package_globally_installed(package_name_for_install.strip(), executable_name_to_check.strip())
+                            if not install_successful:
+                                PrintStyle(font_color="red", padding=True).print(
+                                    f"Disabling MCP server '{server_name}' due to failed setup/validation for package '{package_name_for_install}' and/or executable '{executable_name_to_check}'."
+                                )
+                                server_config["disabled"] = True # Disable this server config
+                        else:
+                            PrintStyle(font_color="orange", padding=True).print(
+                                f"Warning: Skipping MCP server '{server_name}' due to empty package or executable name derived: pkg='{package_name_for_install}', exec='{executable_name_to_check}' from args: {args}. Not attempting install."
+                            )
+                            # Optionally, consider if these should also be marked as disabled, 
+                            # though current logic implies they weren't valid enough to attempt install.
+                            # server_config["disabled"] = True 
+                    # If package_name_for_install or executable_name_to_check are None or empty, 
+                    # it means previous logic decided not to proceed or couldn't determine them,
+                    # and appropriate warnings would have been printed.
         else:
             PrintStyle(font_color="red", padding=True).print(
                 "ERROR: 'npm' command not found. Cannot attempt to install any MCP server packages."
