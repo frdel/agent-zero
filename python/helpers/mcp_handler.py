@@ -81,10 +81,10 @@ class MCPTool(Tool):
                 user_message_text = content
             else:
                 # Fallback for any other types (e.g. list, if that were possible for content)
-                user_message_text = str(content) 
-        
+                user_message_text = str(content)
+
         # Ensure user_message_text is a string before length check and slicing
-        user_message_text = str(user_message_text) 
+        user_message_text = str(user_message_text)
 
         # Truncate user message context if it's too long to avoid overwhelming the prompt
         max_user_context_len = 500 # characters
@@ -251,8 +251,8 @@ class MCPConfig(BaseModel):
                 try:
                     # Try with standard json.loads first, as it should handle escaped strings correctly
                     import json
-                    parsed_value = json.loads(config_str) 
-                    
+                    parsed_value = json.loads(config_str)
+
                     if isinstance(parsed_value, list):
                         valid_servers = []
                         for item in parsed_value:
@@ -295,13 +295,13 @@ class MCPConfig(BaseModel):
                             f"Error parsing MCP config string with DirtyJson as well: {e_dirty}. Config string was: '{config_str}'"
                         )
                         # servers_data remains empty, allowing graceful degradation
-            
+
             # Initialize/update the singleton instance with the (potentially empty) list of server data
             instance = cls.get_instance()
             # Directly update the servers attribute of the existing instance or re-initialize carefully
             # For simplicity and to ensure __init__ logic runs if needed for setup:
             new_instance_data = {'servers': servers_data} # Prepare data for re-initialization or update
-            
+
             # Option 1: Re-initialize the existing instance (if __init__ is idempotent for other fields)
             instance.__init__(servers_list=servers_data)
 
@@ -318,7 +318,7 @@ class MCPConfig(BaseModel):
             #         PrintStyle(background_color="grey", font_color="red", padding=True).print(
             #             f"MCPConfig.update: Failed to create MCPServer from item '{server_item_data.get('name', 'Unknown')}': {e_init}"
             #         )
-            
+
             cls.__initialized = True
             return instance
 
@@ -329,13 +329,13 @@ class MCPConfig(BaseModel):
         if servers_list: PrintStyle(background_color="blue", font_color="white", padding=True).print(f"MCPConfig.__init__ received servers_list: {servers_list}")
 
         # This empties the servers list if MCPConfig is a Pydantic model and servers is a field.
-        # If servers is a field like `servers: List[MCPServer] = Field(default_factory=list)`, 
+        # If servers is a field like `servers: List[MCPServer] = Field(default_factory=list)`,
         # then super().__init__() might try to initialize it.
         # We are re-assigning self.servers later in this __init__.
-        super().__init__() 
+        super().__init__()
 
         # Clear any servers potentially initialized by super().__init__() before we populate based on servers_list
-        self.servers = [] 
+        self.servers = []
 
         if not isinstance(servers_list, Iterable):
             (
@@ -419,25 +419,42 @@ class MCPConfig(BaseModel):
                     tool_args = ""
                     properties: dict[str, Any] = tool["input_schema"]["properties"]
                     for key, value in properties.items():
-                        tool_args += f"            \"{key}\": \"...\",\n"
+                        optional = False
                         examples = ""
                         description = ""
+                        type = ""
+                        if "anyOf" in value:
+                            for nested_value in value["anyOf"]:
+                                if "type" in nested_value and nested_value["type"] != "null":
+                                    optional = True
+                                    value = nested_value
+                                    break
+                        tool_args += f"            \"{key}\": \"...\",\n"
                         if "examples" in value:
                             examples = f"(examples: {value['examples']})"
                         if "description" in value:
                             description = f": {value['description']}"
+                        if "type" in value:
+                            if optional:
+                                type = f"{value['type']}, optional"
+                            else:
+                                type = f"{value['type']}"
+                        else:
+                            if optional:
+                                type = "string, optional"
+                            else:
+                                type = "string"
                         prompt += (
-                            f" * {key} ({value['type']}){description} {examples}\n"
+                            f" * {key} ({type}){description} {examples}\n"
                         )
+
                     prompt += "\n"
 
                     prompt += (
                         f"#### Usage:\n"
                         f"~~~json\n"
                         f"{{\n"
-                        f"    \"observations\": [\"...\"],\n"
                         f"    \"thoughts\": [\"...\"],\n"
-                        f"    \"reflection\": [\"...\"],\n"
                         f"    \"tool_name\": \"{server_name}.{tool['name']}\",\n"
                         f"    \"tool_args\": {{\n"
                         f"{tool_args}"
@@ -510,14 +527,14 @@ class MCPClientBase(ABC):
                     ClientSession(
                         stdio,
                         write,
-                        read_timeout_seconds=timedelta(seconds=600) 
+                        read_timeout_seconds=timedelta(seconds=600)
                     )
                 )
                 await session.initialize()
                 # PrintStyle(font_color="green").print(f"MCPClientBase ({self.server.name} - {operation_name}): Session initialized.")
-                
+
                 result = await coro_func(session)
-                
+
                 # PrintStyle(font_color="green").print(f"MCPClientBase ({self.server.name} - {operation_name}): Operation successful.")
                 return result
             except Exception as e:
@@ -535,11 +552,11 @@ class MCPClientBase(ABC):
 
     async def update_tools(self) -> "MCPClientBase":
         # PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name}): Starting 'update_tools' operation...")
-        
+
         async def list_tools_op(current_session: ClientSession):
             response: ListToolsResult = await current_session.list_tools()
-            with self.__lock: 
-                self.tools = [{                             
+            with self.__lock:
+                self.tools = [{
                     "name": tool.name,
                     "description": tool.description,
                     "input_schema": tool.inputSchema
