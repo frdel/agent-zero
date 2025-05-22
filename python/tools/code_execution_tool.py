@@ -8,7 +8,6 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
 from python.helpers.docker import DockerContainerManager
-from python.helpers.messages import truncate_text
 import re
 
 
@@ -54,13 +53,8 @@ class CodeExecution(Tool):
                 "fw.code_runtime_wrong.md", runtime=runtime
             )
 
-        # if response contains only whitespace, clear it
-        if isinstance(response, str) and response.strip() == "":
-            response = None
-
         if not response:
             response = self.agent.read_prompt("fw.code_no_output.md")
-            self.log.update(content=response)
         return Response(message=response, break_loop=False)
 
     # async def before_execution(self, **kwargs):
@@ -237,11 +231,15 @@ class CodeExecution(Tool):
         start_time = time.time()
         last_output_time = start_time
         full_output = ""
+        got_output = False
+        # --- Configuration for repetition detection ---
+        chunk_size = 128  # Size of the block to check for repetition
+        repeat_threshold = 5  # How many times the block must repeat consecutively
 
-        while max_exec_time <= 0 or time.time() - start_time < max_exec_time:
-            await asyncio.sleep(SLEEP_TIME)  # Wait for some output to be generated
-            full_output, partial_output = await self.state.shells[session].read_output(
-                timeout=1, reset_full_output=reset_full_output
+        while True:
+            await asyncio.sleep(sleep_time)
+            current_full_output, partial_output = await self.state.shells[session].read_output(
+                timeout=between_output_timeout, reset_full_output=reset_full_output
             )
             reset_full_output = False
 
@@ -250,9 +248,53 @@ class CodeExecution(Tool):
             now = time.time()
             if partial_output:
                 PrintStyle(font_color="#85C1E9").stream(partial_output)
-                truncated_output = truncate_text(self.agent, full_output, 10_000)
-                self.log.update(content=truncated_output)
-                idle = 0
+                full_output += partial_output # Append new output
+                self.log.update(content=full_output)
+                last_output_time = now
+                got_output = True
+
+                # --- Check for repeating output pattern ---
+                required_len = chunk_size * repeat_threshold
+                if len(full_output) >= required_len:
+                    check_segment = full_output[-required_len:]
+                    last_chunk = full_output[-chunk_size:]
+                    expected_segment = last_chunk * repeat_threshold
+                    if check_segment == expected_segment:
+                        loop_detected_msg = f"Detected repeating output pattern (last {chunk_size} chars repeated {repeat_threshold} times), likely an infinite loop."
+                        PrintStyle.error(f"{loop_detected_msg} Resetting session {session}.")
+
+                        # --- Truncate output for feedback ---
+                        max_output_length = 2048
+                        truncated_output = full_output[-max_output_length:]
+                        if len(full_output) > max_output_length:
+                            summary_prefix = f"[... Output truncated to last {max_output_length} characters ...]\n"
+                            truncated_output = summary_prefix + truncated_output
+                        else:
+                            summary_prefix = ""
+                        # --- End of truncation ---
+
+                        self.log.update(content=truncated_output + f"\n--- LOOP DETECTED --- Session {session} reset.")
+                        # Automatically reset the problematic session
+                        reset_reason = f"Detected repeating output pattern (last {chunk_size} chars repeated {repeat_threshold} times)"
+                        await self.reset_terminal(session=session, reason=reset_reason)
+                        # Return informative message to the agent with truncated output and pattern
+                        return f"{truncated_output}\n--- LOOP DETECTED & SESSION RESET ---\n{loop_detected_msg}\nRepeating pattern identified: '{last_chunk[:128]}{'...' if len(last_chunk)>128 else ''}'\nThe terminal session {session} was automatically reset.\nPlease review the code or command that caused the loop to prevent recurrence."
+                # --- End of repetition check ---
+
+
+            # Check for shell prompt at the end of output
+            last_lines = full_output.splitlines()[-3:] if full_output else []
+            for line in last_lines:
+                for pat in prompt_patterns:
+                    if pat.search(line.strip()):
+                        PrintStyle(font_color="#229954").print("Detected shell prompt, returning output early.")
+                        return full_output
+
+            if not got_output:
+                # Waiting for first output
+                if now - start_time > first_output_timeout:
+                    PrintStyle.error(f"No output for {first_output_timeout}s after start, returning.")
+                    break
             else:
                 # Waiting for more output after first output
                 if now - last_output_time > between_output_timeout:
