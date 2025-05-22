@@ -7,8 +7,9 @@ const Module = require('module');
 // Enhance `require` to search CWD first, then globally
 function customRequire(moduleName) {
   try {
-    // Try resolving from CWD's node_modules
-    const cwdPath = path.resolve(process.cwd(), 'node_modules', moduleName);
+    // Try resolving from CWD's node_modules using Node's require.resolve
+    const cwdPath = require.resolve(moduleName, { paths: [path.join(process.cwd(), 'node_modules')] });
+    // console.log("resolved path:", cwdPath);
     return require(cwdPath);
   } catch (cwdErr) {
     try {

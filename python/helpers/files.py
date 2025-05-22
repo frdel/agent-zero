@@ -1,6 +1,7 @@
 from fnmatch import fnmatch
 import json
 import os, re
+import base64
 
 import re
 import shutil
@@ -43,6 +44,32 @@ def read_file(_relative_path, _backup_dirs=None, _encoding="utf-8", **kwargs):
     )
 
     return content
+
+
+def read_file_bin(_relative_path, _backup_dirs=None):
+    # init backup dirs
+    if _backup_dirs is None:
+        _backup_dirs = []
+
+    # get absolute path
+    absolute_path = find_file_in_dirs(_relative_path, _backup_dirs)
+
+    # read binary content
+    with open(absolute_path, "rb") as f:
+        return f.read()
+
+
+def read_file_base64(_relative_path, _backup_dirs=None):
+    # init backup dirs
+    if _backup_dirs is None:
+        _backup_dirs = []
+
+    # get absolute path
+    absolute_path = find_file_in_dirs(_relative_path, _backup_dirs)
+
+    # read binary content and encode to base64
+    with open(absolute_path, "rb") as f:
+        return base64.b64encode(f.read()).decode('utf-8')
 
 
 def replace_placeholders_text(_content: str, **kwargs):
@@ -175,6 +202,15 @@ def write_file_bin(relative_path: str, content: bytes):
         f.write(content)
 
 
+def write_file_base64(relative_path: str, content: str):
+    # decode base64 string to bytes
+    data = base64.b64decode(content)
+    abs_path = get_abs_path(relative_path)
+    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+    with open(abs_path, "wb") as f:
+        f.write(data)
+
+
 def delete_file(relative_path: str):
     abs_path = get_abs_path(relative_path)
     if os.path.exists(abs_path):
@@ -213,17 +249,29 @@ def get_base_dir():
     base_dir = os.path.dirname(os.path.abspath(os.path.join(__file__, "../../")))
     return base_dir
 
+def is_in_base_dir(path: str):
+    # check if the given path is within the base directory
+    base_dir = get_base_dir()
+    # normalize paths to handle relative paths and symlinks
+    abs_path = os.path.abspath(path)
+    # check if the absolute path starts with the base directory
+    return os.path.commonpath([abs_path, base_dir]) == base_dir
 
-def get_subdirectories(relative_path: str, include: str = "*", exclude=None):
+
+def get_subdirectories(relative_path: str, include: str | list[str] = "*", exclude: str | list[str] | None = None):
     abs_path = get_abs_path(relative_path)
     if not os.path.exists(abs_path):
         return []
+    if isinstance(include, str):
+        include = [include]
+    if isinstance(exclude, str):
+        exclude = [exclude]
     return [
         subdir
         for subdir in os.listdir(abs_path)
         if os.path.isdir(os.path.join(abs_path, subdir))
-        and fnmatch(subdir, include)
-        and (exclude is None or not fnmatch(subdir, exclude))
+        and any(fnmatch(subdir, inc) for inc in include)
+        and (exclude is None or not any(fnmatch(subdir, exc) for exc in exclude))
     ]
 
 
@@ -245,3 +293,8 @@ def move_file(relative_path: str, new_path: str):
     new_abs_path = get_abs_path(new_path)
     os.makedirs(os.path.dirname(new_abs_path), exist_ok=True)
     os.rename(abs_path, new_abs_path)
+
+def safe_file_name(filename:str)-> str:
+    # Replace any character that's not alphanumeric, dash, underscore, or dot with underscore
+    import re
+    return re.sub(r'[^a-zA-Z0-9-._]', '_', filename)

@@ -4,7 +4,8 @@
 
 # `Agent Zero`
 
-[![Thanks to Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-Thanks%20to%20Sponsors-FF69B4?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/frdel) [![Join our Skool Community](https://img.shields.io/badge/Skool-Join%20our%20Community-4A90E2?style=for-the-badge&logo=skool&logoColor=white)](https://www.skool.com/agent-zero) [![Join our Discord](https://img.shields.io/badge/Discord-Join%20our%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/B8KZKNsPpj) [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@AgentZeroFW) [![Connect on LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/jan-tomasek/) [![Follow on X.com](https://img.shields.io/badge/X.com-Follow-1DA1F2?style=for-the-badge&logo=x&logoColor=white)](https://x.com/JanTomasekDev)
+[![Thanks to Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-Thanks%20to%20Sponsors-FF69B4?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/frdel) [![Follow on X](https://img.shields.io/badge/X-Follow-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/Agent0ai) [![Join our Discord](https://img.shields.io/badge/Discord-Join%20our%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/B8KZKNsPpj) [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@AgentZeroFW) [![Connect on LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/jan-tomasek/) [![Follow on Warpcast](https://img.shields.io/badge/Warpcast-Follow-5A32F3?style=for-the-badge)](https://warpcast.com/agent-zero)
+
 
 [Installation](./docs/installation.md) •
 [How to update](./docs/installation.md#how-to-update-agent-zero) •
@@ -14,18 +15,15 @@
 </div>
 
 
+[![Showcase](/docs/res/showcase-thumb.png)](https://youtu.be/lazLNcEYsiQ)
+
+
+
 See [www.agent-zero.ai](https://agent-zero.ai) for more info
 
 [![Browser Agent](/docs/res/web_screenshot.jpg)](https://agent-zero.ai)
 
 
-[![Browser Agent](/docs/res/081_vid.png)](https://youtu.be/quv145buW74)
-
-> [!NOTE]
-> **🎉 v0.8.1 Release**: Now featuring a browser agent capable of using Chromium for web interactions! This enables Agent Zero to browse the web, gather information, and interact with web content autonomously.
-
-
-https://github.com/user-attachments/assets/c168759d-57d8-4b43-b62a-1026afcf52e6
 
 ## A personal, organic agentic framework that grows and learns with you
 
@@ -108,8 +106,6 @@ docker run -p 50001:80 frdel/agent-zero-run
 # Visit http://localhost:50001 to start
 ```
 
-- Developers and contributors: download the full binaries for your system from the [releases page](https://github.com/frdel/agent-zero/releases) and then follow the instructions [provided here](./docs/installation.md#in-depth-guide-for-full-binaries-installation).
-
 ## 🐳 Fully Dockerized, with Speech-to-Text and TTS
 
 ![Settings](docs/res/settings-page-ui.png)
@@ -143,27 +139,54 @@ docker run -p 50001:80 frdel/agent-zero-run
 | [Installation](./docs/installation.md) | Installation, setup and configuration |
 | [Usage](./docs/usage.md) | Basic and advanced usage |
 | [Architecture](./docs/architecture.md) | System design and components |
-| [Contributing](./docs/contributing.md) | How to contribute |
+| [Contributing](./docs/contribution.md) | How to contribute |
 | [Troubleshooting](./docs/troubleshooting.md) | Common issues and their solutions |
+
+## Coming soon
+
+- **MCP**
+- **Knowledge and RAG Tools**
 
 ## 🎯 Changelog
 
-### Coming soon
+### v0.8.4.1
+- Various bugfixes related to context management
+- Message formatting improvements
+- Scheduler improvements
+- New model provider
+- Input tool fix
+- Compatibility and stability improvements
 
-- **Knowledge and RAG Tools**
-- **Planning and Scheduling**
+### v0.8.4
+[Release video](https://youtu.be/QBh_h_D_E24)
 
-> [!IMPORTANT]
->
->**Changes to frdel/agent-zero Docker image since v0.7:**
->
-> The new Docker image `frdel/agent-zero-run` provides the new unified environment.
+- **Remote access (mobile)**
+
+### v0.8.3.1
+[Release video](https://youtu.be/AGNpQ3_GxFQ)
+
+- **Automatic embedding**
+
+
+### v0.8.3
+[Release video](https://youtu.be/bPIZo0poalY)
+
+- ***Planning and scheduling***
+
+### v0.8.2
+[Release video](https://youtu.be/xMUNynQ9x6Y)
+
+- **Multitasking in terminal**
+- **Chat names**
 
 ### v0.8.1
+[Release video](https://youtu.be/quv145buW74)
+
 - **Browser Agent**
 - **UX Improvements**
 
 ### v0.8
+[Release video](https://youtu.be/cHDCCSr1YRI)
 
 - **Docker Runtime**
 - **New Messages History and Summarization System**
@@ -176,6 +199,7 @@ docker run -p 50001:80 frdel/agent-zero-run
 - **In-chat File Attachments**
 
 ### v0.7
+[Release video](https://youtu.be/U_Gl0NPalKA)
 
 - **Automatic Memory**
 - **UI Improvements**

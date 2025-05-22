@@ -74,6 +74,14 @@ textarea:focus {
   background-color: #151515;
 }
 
+/* Button Disabled State */
+.btn-disabled,
+.btn-ok.btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* Toggle Switch Styles */
 .toggle {
   position: relative;
@@ -137,7 +145,7 @@ select {
 }
 
 select:disabled {
-  background-color: #f5f5f5;
+  background-color: var(--color-background);
   cursor: not-allowed;
 }
 
@@ -214,7 +222,7 @@ nav ul li a img {
   }
 }
 
-@media (max-width: 640px) { 
+@media (max-width: 640px) {
   nav ul {
     grid-template-columns: repeat(2, 1.2fr);
   }
@@ -224,17 +232,720 @@ nav ul li a img {
   nav ul {
     grid-template-columns: 1fr;
   }
-  
+
   nav ul li a {
     flex-direction: row;
     justify-content: flex-start;
     gap: 1rem;
     padding: 0.75rem 1rem;
   }
-  
+
   nav ul li a img {
     margin-bottom: 0;
     width: 30px;
     height: 30px;
   }
 }
+
+/* Settings Tab Styles */
+.settings-tabs-container {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 0;
+  margin-top: 20px;
+  position: relative;
+  overflow: visible;
+}
+
+.settings-tabs {
+  display: flex;
+  width: 100%;
+  position: relative;
+  gap: 5px;
+  border-bottom: 3px solid var(--color-border);
+  justify-content: flex-start;
+  padding-left: 20px;
+  padding-top: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+
+.settings-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-tabs::before,
+.settings-tabs::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  bottom: 3px;
+  width: 20px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.7;
+}
+
+.settings-tabs::before {
+  left: 0;
+  background: linear-gradient(to right, var(--color-panel), transparent);
+}
+
+.settings-tabs::after {
+  right: 0;
+  background: linear-gradient(to left, var(--color-panel), transparent);
+}
+
+.settings-tab {
+  padding: 8px 16px;
+  cursor: pointer;
+  position: relative;
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.3s ease;
+  background-color: var(--color-panel);
+  margin-bottom: -3px;
+  z-index: 1;
+  min-width: min-content;
+  width: auto;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.settings-tab:not(.active) {
+  opacity: 0.8;
+  border-bottom: 3px solid var(--color-border);
+  background-color: var(--color-background);
+}
+
+.settings-tab.active {
+  border-color: var(--color-border);
+  /* box-shadow:
+    0 -4px 8px -2px var(--color-border),
+    4px 0 8px -2px var(--color-border),
+    -4px 0 8px -2px var(--color-border); */
+  font-weight: bold;
+  background-color: var(--color-panel);
+}
+
+/* Light mode overrides */
+.light-mode .settings-tab.active {
+  /* color: var(--color-border); */
+  /* box-shadow:
+    0 -4px 8px -2px var(--color-border),
+    4px 0 8px -2px var(--color-border),
+    -4px 0 8px -2px var(--color-border); */
+}
+
+.light-mode .settings-tab:not(.active) {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.light-mode .settings-tabs::before {
+  background: linear-gradient(to right, var(--color-panel-light), transparent);
+}
+
+.light-mode .settings-tabs::after {
+  background: linear-gradient(to left, var(--color-panel-light), transparent);
+}
+
+/* Responsive Design for Settings Tabs */
+@media (max-width: 640px) {
+  .settings-tabs {
+    gap: 2px;
+    padding-left: 10px;
+  }
+
+  .settings-tab {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-tabs {
+    padding-left: 5px;
+  }
+
+  .settings-tab {
+    flex: 0 0 auto;
+    text-align: center;
+    min-width: 60px;
+    max-width: 80px;
+  }
+}
+
+/* Scheduler Task List - updated with guaranteed width handling */
+.scheduler-task-list {
+  width: 100%;
+  min-width: 100%;
+  margin: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  white-space: nowrap;
+  padding-bottom: 8px;
+  table-layout: auto;
+}
+
+.scheduler-task-list th,
+.scheduler-task-list td {
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Ensure columns have proper min-width */
+.scheduler-task-list th:nth-child(1),
+.scheduler-task-list td:nth-child(1) {
+  min-width: 150px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scheduler-task-list th:nth-child(2),
+.scheduler-task-list td:nth-child(2) {
+  min-width: 100px;
+}
+
+.scheduler-task-list th:nth-child(3),
+.scheduler-task-list td:nth-child(3) {
+  min-width: 100px;
+}
+
+.scheduler-task-list th:nth-child(4),
+.scheduler-task-list td:nth-child(4) {
+  min-width: 150px;
+}
+
+.scheduler-task-list th:nth-child(5),
+.scheduler-task-list td:nth-child(5) {
+  min-width: 180px;
+}
+
+.scheduler-task-list th:nth-child(6),
+.scheduler-task-list td:nth-child(6) {
+  min-width: 160px;
+  white-space: nowrap;
+}
+
+/* Task actions container */
+.scheduler-task-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
+/* Scheduler form styles */
+.scheduler-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.scheduler-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.scheduler-form-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.scheduler-form-actions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.scheduler-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  overflow-x: auto;
+}
+
+.scheduler-form-field {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+@media (max-width: 768px) {
+  .scheduler-form-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .scheduler-form-actions {
+    align-self: flex-end;
+  }
+
+  .scheduler-form-field {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+}
+
+/* Section Styles */
+.section {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  padding-bottom: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  overflow-x: visible; /* Desktop: No horizontal scroll */
+  width: 100%; /* Fill available width */
+  min-width: min-content;
+  display: block;
+  box-sizing: border-box;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--color-primary);
+  margin-bottom: 0.5rem;
+}
+
+.section-description {
+  color: var(--color-text);
+  margin-bottom: 1rem;
+}
+
+/* Scheduler container - updated with guaranteed width handling */
+.scheduler-container {
+  width: 100%;
+  box-sizing: border-box;
+  display: block;
+  padding: 0.5rem 0;
+}
+
+/* Scheduler task actions and buttons */
+.scheduler-task-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.scheduler-task-action:hover {
+  background-color: var(--color-secondary);
+}
+
+/* Adjust media queries to handle small screens */
+@media (max-width: 768px) {
+  .scheduler-task-list {
+    min-width: 700px;
+  }
+
+  .scheduler-detail-view {
+    min-width: 650px;
+  }
+}
+
+/* Scrollbar styling for better visibility */
+.section::-webkit-scrollbar {
+  height: 10px; /* Taller scrollbar for better usability */
+  background-color: rgba(0,0,0,0.1);
+}
+
+.section::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.7);
+  border-radius: 5px;
+}
+
+.section::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(155, 155, 155, 0.9);
+}
+
+/* Mobile styles for scheduler sections */
+@media (max-width: 1280px) {
+  .scheduler-container {
+    min-width: max-content; /* Allow expansion based on content */
+  }
+
+  .scheduler-task-list {
+    min-width: max-content; /* Expand to fit content if needed */
+  }
+
+  /* Scrollbar styling for mobile view */
+  .section::-webkit-scrollbar {
+    height: 10px;
+    background-color: rgba(0,0,0,0.1);
+  }
+
+  .section::-webkit-scrollbar-thumb {
+    background-color: rgba(155, 155, 155, 0.7);
+    border-radius: 5px;
+  }
+
+  .section::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(155, 155, 155, 0.9);
+  }
+}
+
+/* Scheduler form field styling to match standard field styling */
+.scheduler-form-label {
+  font-weight: bold;
+  color: var(--color-primary);
+  margin-bottom: 0.25rem; /* Add consistent spacing between label and help text */
+}
+
+.scheduler-form-help {
+  color: var(--color-text);
+  font-size: 0.875rem;
+  opacity: 0.8;
+  margin: 0.25rem 0 0.5rem 0; /* Match the spacing of field-description */
+}
+
+/* Label and help text wrapper for tighter grouping */
+.label-help-wrapper {
+  margin-bottom: 0.5rem;
+}
+
+.label-help-wrapper .scheduler-form-label {
+  margin-bottom: 2px;
+}
+
+.label-help-wrapper .scheduler-form-help {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* Scheduler detail header styling */
+.scheduler-detail-header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+}
+
+.scheduler-detail-header .scheduler-detail-title {
+  margin-right: auto;
+}
+
+/* Responsive adjustments for headers */
+@media (max-width: 768px) {
+  .scheduler-form-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .scheduler-form-actions {
+    align-self: flex-end;
+  }
+
+  .scheduler-detail-header {
+    flex-direction: row; /* Keep in row even on mobile */
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .scheduler-detail-header .btn {
+    margin-left: auto; /* Push to right edge */
+  }
+
+  .scheduler-form-field {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+}
+
+/* Input group for token field with generate button */
+.input-group {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.input-group input[type="text"] {
+  flex: 1;
+  min-width: 0; /* Allows the input to shrink below its content size */
+}
+
+/* Specific styling for the Generate button in token field */
+.input-group .scheduler-task-action {
+  white-space: nowrap;
+  padding: 4px 10px;
+  width: auto;
+  height: auto;
+  background-color: var(--color-secondary);
+  font-size: 0.9rem;
+}
+
+.input-group .scheduler-task-action:hover {
+  background-color: var(--color-accent);
+  color: var(--color-bg);
+}
+
+/* Ensure parent container allows proper flow */
+.scheduler-form-field .input-group {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Adjustments for mobile */
+@media (max-width: 768px) {
+  .input-group .scheduler-task-action {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .input-group {
+    flex-direction: column;
+  }
+
+  .input-group .scheduler-task-action {
+    align-self: flex-start;
+  }
+}
+
+/* Task state selector styling */
+.scheduler-state-selector {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.scheduler-state-selector .scheduler-status-badge {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+  border: 1px solid transparent;
+}
+
+.scheduler-state-selector .scheduler-status-badge:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+.scheduler-status-selected {
+  opacity: 1 !important;
+  transform: scale(1.05);
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-border);
+  border: 2px solid var(--color-border) !important;
+  outline: none;
+}
+
+/* Make status badges in selector more prominent */
+.scheduler-state-selector .scheduler-status-idle,
+.scheduler-state-selector .scheduler-status-running,
+.scheduler-state-selector .scheduler-status-disabled,
+.scheduler-state-selector .scheduler-status-error {
+  font-weight: 600;
+  padding: 6px 12px;
+}
+
+.light-mode .scheduler-status-selected {
+  box-shadow: 0 0 0 2px var(--color-bg-light), 0 0 0 4px var(--color-accent);
+}
+
+/* State explanation styling */
+.scheduler-state-explanation {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  min-height: 1.4em; /* Ensure consistent height even when changing descriptions */
+  transition: all 0.2s ease;
+}
+
+.scheduler-state-explanation span {
+  display: block;
+  padding: 4px 8px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.light-mode .scheduler-state-explanation span {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Schedule Builder (for scheduled tasks) */
+.scheduler-schedule-builder {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.scheduler-schedule-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.scheduler-schedule-label {
+    font-size: 0.8rem;
+    margin-bottom: 5px;
+    color: var(--color-text);
+    opacity: 0.8;
+}
+
+/* Plan Builder (for planned tasks) */
+.scheduler-plan-builder {
+    width: 100%;
+    margin-bottom: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.scheduler-plan-todo {
+    display: flex;
+    flex-direction: column;
+}
+
+.scheduler-plan-label {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    color: var(--color-text);
+    font-weight: bold;
+}
+
+.scheduler-todo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.scheduler-todo-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--color-background);
+    border-radius: 6px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.scheduler-todo-item span {
+    flex: 1;
+    font-size: 14px;
+}
+
+.scheduler-add-todo {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.scheduler-add-todo input[type="datetime-local"] {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-background);
+    color: var(--color-text);
+}
+
+.scheduler-add-todo-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-weight: 500;
+}
+
+.scheduler-add-todo-button:hover {
+    background-color: var(--color-accent-dark);
+}
+
+.scheduler-todo-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    color: var(--color-text);
+    border: none;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-left: 8px;
+}
+
+.scheduler-todo-remove:hover {
+    background-color: var(--color-accent-light);
+    color: var(--color-accent-dark);
+}
+
+.light-mode .scheduler-todo-item {
+    background-color: var(--color-background-light);
+    border-color: var(--color-border-light);
+}
+
+.light-mode .scheduler-todo-remove:hover {
+    background-color: #e0e0e0;
+    color: #d32f2f;
+}
+
+.scheduler-empty-plan {
+    padding: 12px;
+    color: var(--color-text-muted);
+    font-style: italic;
+    text-align: center;
+    border: 1px dashed var(--color-border);
+    border-radius: 6px;
+    margin-top: 8px;
+}
+
+/* Responsive design for plan builder */
+@media (max-width: 768px) {
+    .scheduler-add-todo {
+        flex-direction: column;
+    }
+}
+
+/* Token field (for ad-hoc tasks) */

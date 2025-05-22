@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# install playwright
+# install playwright - moved to install A0
 # bash /ins/install_playwright.sh "$@"
-#moved to post_install.sh to respect the playwright version from requirements.txt
 
 # searxng
 bash /ins/install_searxng.sh "$@"

@@ -22,5 +22,8 @@ pip install torch --index-url https://download.pytorch.org/whl/cpu
 # Install remaining A0 python packages
 pip install -r /git/agent-zero/requirements.txt
 
+# install playwright
+bash /ins/install_playwright.sh "$@"
+
 # Preload A0
 python /git/agent-zero/preload.py --dockerized=true

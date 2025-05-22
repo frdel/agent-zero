@@ -208,8 +208,64 @@ body,
 }
 
 /* Chats container */
+.chat-container {
+    display: flex;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    min-height: 30px;
+    gap: 0;
+}
+
+/* Update the chat-list-button padding to accommodate the vertical layout */
 .chat-list-button {
+    display: block;
+    width: 100%;
+    padding: 8px 5px;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    border-radius: 4px;
+    transition: background-color 0.2s ease-in-out;
+}
+
+/* Add some more padding to the list items to accommodate the vertical layout */
+.chat-list-button.has-task-container {
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+/* Subtle background on hover for the entire row */
+.chat-list-button:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.light-mode .chat-list-button:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.chat-name {
+  display: inline-block;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  margin-right: 60px; /* Make space for buttons */
+  font-size: var(--font-size-small); /* Match config button font size */
+}
+
+/* Add a nice hover effect to just the chat name */
+.chat-name:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  text-decoration: none;
+}
+
+.light-mode .chat-name:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .chats-list-container {
@@ -232,12 +288,26 @@ body,
   background: linear-gradient(to bottom, calc(100% - 20px), transparent 100%);
   /* Add padding to account for fade */
   padding-bottom: 20px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  -ms-overflow-style: auto;
 }
 
 .chats-list-container::-webkit-scrollbar {
-  width: 0px;
+  width: 5px;
+}
+
+.chats-list-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+.chats-list-container::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 6px;
+}
+
+.chats-list-container::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border);
 }
 
 /* Chats Section */
@@ -247,7 +317,7 @@ body,
   flex-direction: column;
   min-height: 0;
   flex: 1;
-  margin-top: 1.5rem;
+  margin-top: 0.5rem;
 }
 
 /* Preferences */
@@ -921,6 +991,8 @@ pre {
   padding: 0.125rem 0.5rem;
   -webkit-transition: all var(--transition-speed) ease-in-out;
   transition: all var(--transition-speed) ease-in-out;
+  width: 2rem;
+  height: 2rem;
 }
 
 .edit-button:hover {
@@ -1178,7 +1250,7 @@ pre {
 }
 
 .text-button:active {
- opacity: 0.5; 
+ opacity: 0.5;
 }
 
 .text-button svg {
@@ -1588,7 +1660,7 @@ input:checked + .slider:before {
     display: table;
     gap: 0.1rem !important;
   }
-  
+
   .text-button {
     max-height: 25px;
   }
@@ -1603,7 +1675,7 @@ input:checked + .slider:before {
   margin-left: var(--spacing-md);
   margin-bottom: var(--spacing-md);
   }
-  
+
   .msg-kvps {
     display: flex;
     flex-direction: column;
@@ -1669,7 +1741,7 @@ input:checked + .slider:before {
   .sidebar-overlay.visible {
     display: block;
   }
-}  
+}
 
 @media (max-width: 768px) {
   #left-panel {
@@ -1699,15 +1771,15 @@ input:checked + .slider:before {
     -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
   }
-  
+
   #right-panel.expanded #logo-container {
     margin-left: 4.6rem;
   }
-  
+
   #input-section {
     align-items: start;
   }
-  
+
   .text-buttons-row {
     width: 90%;
     display: flex;
@@ -1786,7 +1858,7 @@ input:checked + .slider:before {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  
+
   #chats-section {
     min-height: 100%;
   }
@@ -2095,4 +2167,804 @@ a:active {
 /* Alpine cloak to prevent FOUC */
 [x-cloak] {
     display: none !important;
+}
+
+/* Remove unnecessary specific media query that was causing issues */
+@media (max-width: 480px) {
+  .text-button svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Add to the existing .chat-actions class or create it */
+.chat-actions {
+    display: flex;
+    gap: 5px;
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2; /* Ensure buttons are above the edit field */
+    min-width: 70px; /* Ensure minimum width for the buttons */
+    justify-content: flex-end;
+}
+
+
+/* Tasks list container - similar to chats list */
+.tasks-list-container {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 10px;
+    padding-right: 5px;
+    border-radius: 5px;
+    position: relative;
+    scrollbar-width: thin;
+    -ms-overflow-style: auto;
+}
+
+.tasks-list-container::-webkit-scrollbar {
+    width: 5px;
+}
+
+.tasks-list-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+}
+
+.tasks-list-container::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: 6px;
+}
+
+.tasks-list-container::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-border);
+}
+
+.task-name {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 3px 0;
+    margin-left: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    font-size: var(--font-size-small);
+    margin-bottom: 2px;
+}
+
+.task-info-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 2px;
+    margin-left: 5px;
+}
+
+.task-name:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+}
+
+.light-mode .task-name:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Dark mode overrides */
+.light-mode .tab.active {
+    color: var(--highlight-pink);
+}
+
+.light-mode .tab.active::after {
+    background-color: var(--highlight-pink);
+    /* box-shadow: 0 0 8px var(--highlight-pink); */
+}
+/* Tabs styling */
+.tabs-container {
+  width: 100%;
+  margin-bottom: 8px; /* Reduced spacing between tabs and list */
+  padding: 0;
+  margin-top: 20px; /* Increased spacing from elements above */
+}
+
+.tabs {
+  display: flex;
+  width: 100%;
+  position: relative;
+  gap: 5px;
+  border-bottom: 3px solid var(--color-border); /* Thicker bottom line */
+  justify-content: center; /* Center the tabs */
+}
+
+.tab {
+  padding: 8px 16px;
+  cursor: pointer;
+  position: relative;
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.3s ease;
+  background-color: var(--color-panel);
+  margin-bottom: -3px; /* Match the thicker border */
+  z-index: 1;
+}
+
+.tab:not(.active) {
+  opacity: 0.8;
+  border-bottom: 3px solid var(--color-border);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.tab.active {
+  border-color: var(--color-border);
+  /* box-shadow:
+    0 -4px 8px -2px var(--color-border),
+    4px 0 8px -2px var(--color-border),
+    -4px 0 8px -2px var(--color-border); */
+  font-weight: bold;
+  background-color: var(--color-panel);
+}
+
+.light-mode .tab.active {
+  box-shadow:
+    0 -4px 8px -2px var(--color-border),
+    4px 0 8px -2px var(--color-border),
+    -4px 0 8px -2px var(--color-border);
+}
+
+.light-mode .tab:not(.active) {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Remove previous tab styling that conflicts */
+.tab.active::after {
+  display: none;
+}
+
+/* Empty list message styling enhancement */
+.empty-list-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  color: var(--color-secondary);
+  text-align: center;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.light-mode .empty-list-message {
+  color: var(--color-secondary-light);
+}
+
+/* Common scrollbar styling */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--color-border);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) rgba(0, 0, 0, 0.2);
+}
+
+/* Light mode scrollbar */
+.light-mode ::-webkit-scrollbar-track {
+  background: rgba(200, 200, 200, 0.3);
+}
+
+.light-mode ::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+}
+
+.light-mode ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border);
+}
+
+.light-mode ::-webkit-scrollbar-thumb:active {
+  background-color: var(--color-border);
+}
+
+.light-mode * {
+  scrollbar-color: var(--color-border) rgba(200, 200, 200, 0.3);
+}
+
+/* Add specific styling for selected chat items */
+.chat-list-button.font-bold {
+    position: relative;
+    background-color: var(--color-border) 0.05;
+}
+
+.chat-list-button.font-bold::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background-color: var(--color-border);
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+}
+
+.light-mode .chat-list-button.font-bold {
+    background-color: var(--color-border) 0.05;
+}
+
+.light-mode .chat-list-button.font-bold::before {
+    background-color: var(--color-border);
+}
+
+/* Make sure the chat container has proper spacing */
+.chat-container, .task-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+}
+
+/* Settings Modal Styles */
+.settings-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+    padding: 24px;
+}
+
+.settings-modal-close {
+    position: absolute;
+    top: 8px;
+    right: 16px;
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+}
+
+.settings-modal-title {
+    margin-top: 0;
+    margin-bottom: 24px;
+    font-size: 1.8rem;
+    text-align: center;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 12px;
+}
+
+.settings-modal-content {
+    background-color: var(--color-panel);
+    color: var(--color-text);
+    width: 100%;
+    max-width: 800px;
+    height: auto;
+    max-height: 90vh;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    padding: 24px;
+    position: relative;
+    overflow: auto;
+}
+
+/* Settings Sections */
+nav ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    padding: 0;
+    margin: 0 0 1rem 0;
+    list-style: none;
+}
+
+/* Add specific styling for the nav element itself to ensure spacing */
+nav {
+margin-bottom: 1rem;
+}
+
+nav ul li a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: var(--color-bg-secondary);
+    text-decoration: none;
+    color: var(--color-text);
+    transition: background-color 0.2s ease;
+}
+
+nav ul li a:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+nav ul li a img {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 0.5rem;
+    filter: var(--svg-filter);
+}
+
+.section {
+    margin-bottom: 3rem;
+    animation: fadeIn 0.3s ease;
+    width: 100%;
+}
+
+.section-title {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--color-primary);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0.5rem;
+}
+
+.section-description {
+    margin-bottom: 1.5rem;
+    color: var(--color-text-secondary);
+}
+
+.scheduler-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.scheduler-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.scheduler-filters {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.scheduler-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.scheduler-filter-label {
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.scheduler-filter-select {
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text);
+}
+
+.scheduler-task-list {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+    overflow-x: auto;
+    table-layout: fixed;
+}
+
+.scheduler-task-list th,
+.scheduler-task-list td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.scheduler-task-list th:nth-child(1), /* Name */
+.scheduler-task-list td:nth-child(1) {
+    width: 25%;
+}
+
+.scheduler-task-list th:nth-child(2), /* State */
+.scheduler-task-list td:nth-child(2) {
+    width: 10%;
+}
+
+.scheduler-task-list th:nth-child(3), /* Type */
+.scheduler-task-list td:nth-child(3) {
+    width: 10%;
+}
+
+.scheduler-task-list th:nth-child(4), /* Schedule */
+.scheduler-task-list td:nth-child(4) {
+    width: 20%;
+}
+
+.scheduler-task-list th:nth-child(5), /* Last Run */
+.scheduler-task-list td:nth-child(5) {
+    width: 20%;
+}
+
+.scheduler-task-list th:nth-child(6), /* Actions */
+.scheduler-task-list td:nth-child(6) {
+    width: 15%;
+    text-align: right;
+}
+
+.scheduler-task-list th {
+    background-color: var(--color-bg-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+}
+
+.scheduler-task-list th:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+.scheduler-task-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.scheduler-task-action {
+    padding: 4px;
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.scheduler-task-action:hover {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text);
+}
+
+.scheduler-status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: capitalize;
+    white-space: nowrap;
+}
+
+.scheduler-status-idle {
+    background-color: rgba(0, 100, 0, 0.2);
+    color: #2a9d8f; /* Dark green that works with both light and dark themes */
+    border: 1px solid rgba(42, 157, 143, 0.3);
+}
+
+.scheduler-status-running {
+    background-color: rgba(0, 60, 120, 0.2);
+    color: #4361ee; /* Dark blue that works with both light and dark themes */
+    border: 1px solid rgba(67, 97, 238, 0.3);
+}
+
+.scheduler-status-disabled {
+    background-color: rgba(70, 70, 70, 0.2);
+    color: #6c757d; /* Dark grey that works with both light and dark themes */
+    border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.scheduler-status-error {
+    background-color: rgba(120, 0, 0, 0.2);
+    color: #e63946; /* Dark red that works with both light and dark themes */
+    border: 1px solid rgba(230, 57, 70, 0.3);
+}
+
+/* Light mode adjustments */
+.light-mode .scheduler-status-idle {
+    background-color: rgba(42, 157, 143, 0.1);
+    color: #1a6f65; /* Darker green for light mode */
+}
+
+.light-mode .scheduler-status-running {
+    background-color: rgba(67, 97, 238, 0.1);
+    color: #2540b3; /* Darker blue for light mode */
+}
+
+.light-mode .scheduler-status-disabled {
+    background-color: rgba(108, 117, 125, 0.1);
+    color: #495057; /* Darker grey for light mode */
+}
+
+.light-mode .scheduler-status-error {
+    background-color: rgba(230, 57, 70, 0.1);
+    color: #c5283d; /* Darker red for light mode */
+}
+
+.scheduler-empty {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--color-text-secondary);
+}
+
+.scheduler-empty-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.scheduler-empty-text {
+    margin-bottom: 20px;
+}
+
+.scheduler-loading {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--color-text-secondary);
+}
+
+.scheduler-task-details {
+    padding: 16px;
+    background-color: var(--color-bg-secondary);
+    border-radius: 4px;
+}
+
+.scheduler-details-grid {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 8px 16px;
+    margin-bottom: 16px;
+}
+
+.scheduler-details-label {
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+}
+
+.scheduler-details-value {
+    color: var(--color-text);
+    word-break: break-word;
+}
+
+.scheduler-details-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.scheduler-form {
+    background-color: var(--color-bg-secondary);
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.scheduler-form-title {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.scheduler-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.scheduler-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.scheduler-form-label {
+    font-weight: 500;
+}
+
+.scheduler-form-help {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.scheduler-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.scheduler-schedule-builder {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+}
+
+.scheduler-schedule-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 70px; /* Limit width of schedule fields */
+}
+
+.scheduler-schedule-field input {
+    width: 100%;
+    min-width: 0; /* Allow shrinking below content size */
+    font-size: 0.9rem; /* Slightly reduce font size for better fit */
+}
+
+.scheduler-schedule-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.input-group {
+    display: flex;
+    gap: 8px;
+}
+
+/* Sort indicators */
+.scheduler-sort-indicator {
+    display: inline-block;
+    margin-left: 4px;
+    transition: transform 0.2s ease;
+}
+
+.scheduler-sort-desc {
+    transform: rotate(180deg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .scheduler-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .scheduler-schedule-builder {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .scheduler-filters {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .scheduler-task-actions {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 480px) {
+    nav ul li a {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+    }
+
+    nav ul li a img {
+        margin-bottom: 0;
+        width: 30px;
+        height: 30px;
+    }
+}
+
+/* Add row hover effect for task list rows matching left panel hover */
+.scheduler-task-list tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.scheduler-task-list tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.light-mode .scheduler-task-list tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.scheduler-task-list th {
+    background-color: var(--color-bg-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+}
+
+.scheduler-task-list th:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+/* Task detail view styling */
+.scheduler-detail-view {
+    background-color: var(--color-bg-secondary);
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.scheduler-detail-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--color-border);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.scheduler-detail-header .scheduler-detail-title {
+    font-size: 1.4rem;
+    font-weight: 500;
+    margin: 0;
+    margin-right: auto;
+}
+
+.scheduler-detail-header .scheduler-status-badge {
+    margin-right: 10px;
+}
+
+.scheduler-detail-content {
+    margin-bottom: 20px;
+}
+
+/* Task Scheduler Styles */
+
+.scheduler-no-schedule {
+    color: var(--color-text-secondary);
+    opacity: 0.7;
+    font-style: italic;
+}
+
+.task-container-vertical {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 6px;
+}
+
+/* Smaller status badge for task list */
+.scheduler-status-badge-small {
+    font-size: 10px;
+    padding: 2px 6px;
+    margin-right: 5px;
+    min-width: 40px;
+    text-align: center;
 }

@@ -8,11 +8,12 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
 from python.helpers.docker import DockerContainerManager
+from python.helpers.messages import truncate_text
 
 
 @dataclass
 class State:
-    shell: LocalInteractiveSession | SSHInteractiveSession
+    shells: dict[int, LocalInteractiveSession | SSHInteractiveSession]
     docker: DockerContainerManager | None
 
 
@@ -27,26 +28,38 @@ class CodeExecution(Tool):
         # os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
 
         runtime = self.args.get("runtime", "").lower().strip()
+        session = int(self.args.get("session", 0))
 
         if runtime == "python":
-            response = await self.execute_python_code(self.args["code"])
+            response = await self.execute_python_code(
+                code=self.args["code"], session=session
+            )
         elif runtime == "nodejs":
-            response = await self.execute_nodejs_code(self.args["code"])
+            response = await self.execute_nodejs_code(
+                code=self.args["code"], session=session
+            )
         elif runtime == "terminal":
-            response = await self.execute_terminal_command(self.args["code"])
+            response = await self.execute_terminal_command(
+                command=self.args["code"], session=session
+            )
         elif runtime == "output":
             response = await self.get_terminal_output(
-                wait_with_output=5, wait_without_output=60
+                session=session, wait_with_output=5, wait_without_output=60
             )
         elif runtime == "reset":
-            response = await self.reset_terminal()
+            response = await self.reset_terminal(session=session)
         else:
             response = self.agent.read_prompt(
                 "fw.code_runtime_wrong.md", runtime=runtime
             )
 
+        # if response contains only whitespace, clear it
+        if isinstance(response, str) and response.strip() == "":
+            response = None
+
         if not response:
             response = self.agent.read_prompt("fw.code_no_output.md")
+            self.log.update(content=response)
         return Response(message=response, break_loop=False)
 
     # async def before_execution(self, **kwargs):
@@ -72,11 +85,15 @@ class CodeExecution(Tool):
     #             PrintStyle().print()
 
     def get_log_object(self):
-        return self.agent.context.log.log(type="code_exe", heading=f"{self.agent.agent_name}: Using tool '{self.name}'", content="", kvps=self.args)
-
+        return self.agent.context.log.log(
+            type="code_exe",
+            heading=f"{self.agent.agent_name}: Using tool '{self.name}'",
+            content="",
+            kvps=self.args,
+        )
 
     async def after_execution(self, response, **kwargs):
-        await self.agent.hist_add_tool_result(self.name, response.message)
+        self.agent.hist_add_tool_result(self.name, response.message)
 
     async def prepare_state(self, reset=False):
         self.state = self.agent.get_data("_cot_state")
@@ -97,7 +114,11 @@ class CodeExecution(Tool):
 
             # initialize local or remote interactive shell insterface
             if self.agent.config.code_exec_ssh_enabled:
-                pswd = self.agent.config.code_exec_ssh_pass if self.agent.config.code_exec_ssh_pass else await rfc_exchange.get_root_password()
+                pswd = (
+                    self.agent.config.code_exec_ssh_pass
+                    if self.agent.config.code_exec_ssh_pass
+                    else await rfc_exchange.get_root_password()
+                )
                 shell = SSHInteractiveSession(
                     self.agent.context.log,
                     self.agent.config.code_exec_ssh_addr,
@@ -108,42 +129,63 @@ class CodeExecution(Tool):
             else:
                 shell = LocalInteractiveSession()
 
-            self.state = State(shell=shell, docker=docker)
+            self.state = State(shells={0: shell}, docker=docker)
             await shell.connect()
         self.agent.set_data("_cot_state", self.state)
 
-    async def execute_python_code(self, code: str, reset: bool = False):
+    async def execute_python_code(self, session: int, code: str, reset: bool = False):
         escaped_code = shlex.quote(code)
         command = f"ipython -c {escaped_code}"
-        return await self.terminal_session(command, reset)
+        return await self.terminal_session(session, command, reset)
 
-    async def execute_nodejs_code(self, code: str, reset: bool = False):
+    async def execute_nodejs_code(self, session: int, code: str, reset: bool = False):
         escaped_code = shlex.quote(code)
         command = f"node /exe/node_eval.js {escaped_code}"
-        return await self.terminal_session(command, reset)
+        return await self.terminal_session(session, command, reset)
 
-    async def execute_terminal_command(self, command: str, reset: bool = False):
-        return await self.terminal_session(command, reset)
+    async def execute_terminal_command(
+        self, session: int, command: str, reset: bool = False
+    ):
+        return await self.terminal_session(session, command, reset)
 
-    async def terminal_session(self, command: str, reset: bool = False):
+    async def terminal_session(self, session: int, command: str, reset: bool = False):
 
         await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
         # try again on lost connection
         for i in range(2):
             try:
-            
+
                 if reset:
                     await self.reset_terminal()
 
-                self.state.shell.send_command(command)
+                if session not in self.state.shells:
+                    if self.agent.config.code_exec_ssh_enabled:
+                        pswd = (
+                            self.agent.config.code_exec_ssh_pass
+                            if self.agent.config.code_exec_ssh_pass
+                            else await rfc_exchange.get_root_password()
+                        )
+                        shell = SSHInteractiveSession(
+                            self.agent.context.log,
+                            self.agent.config.code_exec_ssh_addr,
+                            self.agent.config.code_exec_ssh_port,
+                            self.agent.config.code_exec_ssh_user,
+                            pswd,
+                        )
+                    else:
+                        shell = LocalInteractiveSession()
+                    self.state.shells[session] = shell
+                    await shell.connect()
 
-                PrintStyle(background_color="white", font_color="#1B4F72", bold=True).print(
-                    f"{self.agent.agent_name} code execution output"
-                )
-                return await self.get_terminal_output()
+                self.state.shells[session].send_command(command)
+
+                PrintStyle(
+                    background_color="white", font_color="#1B4F72", bold=True
+                ).print(f"{self.agent.agent_name} code execution output")
+                return await self.get_terminal_output(session)
 
             except Exception as e:
-                if i==1:
+                if i == 1:
                     # try again on lost connection
                     PrintStyle.error(str(e))
                     await self.prepare_state(reset=True)
@@ -153,6 +195,7 @@ class CodeExecution(Tool):
 
     async def get_terminal_output(
         self,
+        session=0,
         reset_full_output=True,
         wait_with_output=3,
         wait_without_output=10,
@@ -165,16 +208,17 @@ class CodeExecution(Tool):
 
         while max_exec_time <= 0 or time.time() - start_time < max_exec_time:
             await asyncio.sleep(SLEEP_TIME)  # Wait for some output to be generated
-            full_output, partial_output = await self.state.shell.read_output(
-                timeout=max_exec_time, reset_full_output=reset_full_output
+            full_output, partial_output = await self.state.shells[session].read_output(
+                timeout=1, reset_full_output=reset_full_output
             )
-            reset_full_output = False # only reset once
+            reset_full_output = False  # only reset once
 
             await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
 
             if partial_output:
                 PrintStyle(font_color="#85C1E9").stream(partial_output)
-                self.log.update(content=full_output)
+                truncated_output = truncate_text(self.agent, full_output, 10_000)
+                self.log.update(content=truncated_output)
                 idle = 0
             else:
                 idle += 1
@@ -184,8 +228,10 @@ class CodeExecution(Tool):
                     break
         return full_output
 
-    async def reset_terminal(self):
-        self.state.shell.close()
+    async def reset_terminal(self, session=0):
+        if session in self.state.shells:
+            self.state.shells[session].close()
+            del self.state.shells[session]
         await self.prepare_state(reset=True)
         response = self.agent.read_prompt("fw.code_reset.md")
         self.log.update(content=response)

@@ -23,7 +23,7 @@ import uuid
 from python.helpers import knowledge_import
 from python.helpers.log import Log, LogItem
 from enum import Enum
-from agent import Agent
+from agent import Agent, ModelConfig
 import models
 
 
@@ -35,6 +35,9 @@ class MyFaiss(FAISS):
 
     async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
         return self.get_by_ids(ids)
+
+    def get_all_docs(self):
+        return self.docstore._dict  # type: ignore
 
 
 class Memory:
@@ -55,14 +58,9 @@ class Memory:
                 type="util",
                 heading=f"Initializing VectorDB in '/{memory_subdir}'",
             )
-            db = Memory.initialize(
+            db, created = Memory.initialize(
                 log_item,
-                models.get_model(
-                    models.ModelType.EMBEDDING,
-                    agent.config.embeddings_model.provider,
-                    agent.config.embeddings_model.name,
-                    **agent.config.embeddings_model.kwargs,
-                ),
+                agent.config.embeddings_model,
                 memory_subdir,
                 False,
             )
@@ -90,10 +88,10 @@ class Memory:
     @staticmethod
     def initialize(
         log_item: LogItem | None,
-        embeddings_model: Embeddings,
+        model_config: ModelConfig,
         memory_subdir: str,
         in_memory=False,
-    ) -> MyFaiss:
+    ) -> tuple[MyFaiss, bool]:
 
         PrintStyle.standard("Initializing VectorDB...")
 
@@ -114,20 +112,26 @@ class Memory:
             os.makedirs(em_dir, exist_ok=True)
             store = LocalFileStore(em_dir)
 
-        # here we setup the embeddings model with the chosen cache storage
-        embedder = CacheBackedEmbeddings.from_bytes_store(
-            embeddings_model,
-            store,
-            namespace=getattr(
-                embeddings_model,
-                "model",
-                getattr(embeddings_model, "model_name", "default"),
-            ),
+        embeddings_model = models.get_model(
+            models.ModelType.EMBEDDING,
+            model_config.provider,
+            model_config.name,
+            **model_config.kwargs,
+        )
+        embeddings_model_id = files.safe_file_name(
+            model_config.provider.name + "_" + model_config.name
         )
 
-        # self.db = Chroma(
-        #     embedding_function=self.embedder,
-        #     persist_directory=db_dir)
+        # here we setup the embeddings model with the chosen cache storage
+        embedder = CacheBackedEmbeddings.from_bytes_store(
+            embeddings_model, store, namespace=embeddings_model_id
+        )
+
+        # initial DB and docs variables
+        db: MyFaiss | None = None
+        docs: dict[str, Document] | None = None
+
+        created = False
 
         # if db folder exists and is not empty:
         if os.path.exists(db_dir) and files.exists(db_dir, "index.faiss"):
@@ -138,8 +142,27 @@ class Memory:
                 distance_strategy=DistanceStrategy.COSINE,
                 # normalize_L2=True,
                 relevance_score_fn=Memory._cosine_normalizer,
-            )
-        else:
+            )  # type: ignore
+
+            # if there is a mismatch in embeddings used, re-index the whole DB
+            emb_ok = False
+            emb_set_file = files.get_abs_path(db_dir, "embedding.json")
+            if files.exists(emb_set_file):
+                embedding_set = json.loads(files.read_file(emb_set_file))
+                if (
+                    embedding_set["model_provider"] == model_config.provider.name
+                    and embedding_set["model_name"] == model_config.name
+                ):
+                    # model matches
+                    emb_ok = True
+
+            # re-index -  create new DB and insert existing docs
+            if db and not emb_ok:
+                docs = db.get_all_docs()
+                db = None
+
+        # DB not loaded, create one
+        if not db:
             index = faiss.IndexFlatIP(len(embedder.embed_query("example")))
 
             db = MyFaiss(
@@ -151,7 +174,31 @@ class Memory:
                 # normalize_L2=True,
                 relevance_score_fn=Memory._cosine_normalizer,
             )
-        return db  # type: ignore
+
+            # insert docs if reindexing
+            if docs:
+                PrintStyle.standard("Indexing memories...")
+                if log_item:
+                    log_item.stream(progress="\nIndexing memories")
+                db.add_documents(documents=list(docs.values()), ids=list(docs.keys()))
+
+            # save DB
+            Memory._save_db_file(db, memory_subdir)
+            # save meta file
+            meta_file_path = files.get_abs_path(db_dir, "embedding.json")
+            files.write_file(
+                meta_file_path,
+                json.dumps(
+                    {
+                        "model_provider": model_config.provider.name,
+                        "model_name": model_config.name,
+                    }
+                ),
+            )
+
+            created = True
+
+        return db, created
 
     def __init__(
         self,
@@ -243,9 +290,10 @@ class Memory:
     ):
         comparator = Memory._get_comparator(filter) if filter else None
 
-        #rate limiter
+        # rate limiter
         await self.agent.rate_limiter(
-            model_config=self.agent.config.embeddings_model, input=query)
+            model_config=self.agent.config.embeddings_model, input=query
+        )
 
         return await self.db.asearch(
             query,
@@ -309,25 +357,30 @@ class Memory:
         ids = [str(uuid.uuid4()) for _ in range(len(docs))]
         timestamp = self.get_timestamp()
 
-        
         if ids:
             for doc, id in zip(docs, ids):
                 doc.metadata["id"] = id  # add ids to documents metadata
                 doc.metadata["timestamp"] = timestamp  # add timestamp
                 if not doc.metadata.get("area", ""):
                     doc.metadata["area"] = Memory.Area.MAIN.value
-            
-            #rate limiter
+
+            # rate limiter
             docs_txt = "".join(self.format_docs_plain(docs))
             await self.agent.rate_limiter(
-                model_config=self.agent.config.embeddings_model, input=docs_txt)
+                model_config=self.agent.config.embeddings_model, input=docs_txt
+            )
 
             self.db.add_documents(documents=docs, ids=ids)
             self._save_db()  # persist
         return ids
 
     def _save_db(self):
-        self.db.save_local(folder_path=self._abs_db_dir(self.memory_subdir))
+        Memory._save_db_file(self.db, self.memory_subdir)
+
+    @staticmethod
+    def _save_db_file(db: MyFaiss, memory_subdir: str):
+        abs_dir = Memory._abs_db_dir(memory_subdir)
+        db.save_local(folder_path=abs_dir)
 
     @staticmethod
     def _get_comparator(condition: str):
@@ -382,3 +435,8 @@ def get_custom_knowledge_subdir_abs(agent: Agent) -> str:
         if dir != "default":
             return files.get_abs_path("knowledge", dir)
     raise Exception("No custom knowledge subdir set")
+
+
+def reload():
+    # clear the memory index, this will force all DBs to reload
+    Memory.index = {}

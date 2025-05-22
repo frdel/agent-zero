@@ -20,7 +20,7 @@ from langchain_huggingface import (
     HuggingFaceEndpoint,
 )
 from langchain_google_genai import (
-    GoogleGenerativeAI,
+    ChatGoogleGenerativeAI,
     HarmBlockThreshold,
     HarmCategory,
     embeddings as google_embeddings,
@@ -43,6 +43,7 @@ class ModelType(Enum):
 
 class ModelProvider(Enum):
     ANTHROPIC = "Anthropic"
+    CHUTES = "Chutes"
     DEEPSEEK = "DeepSeek"
     GOOGLE = "Google"
     GROQ = "Groq"
@@ -65,6 +66,7 @@ def get_api_key(service):
     return (
         dotenv.get_dotenv_value(f"API_KEY_{service.upper()}")
         or dotenv.get_dotenv_value(f"{service.upper()}_API_KEY")
+        or dotenv.get_dotenv_value(f"{service.upper()}_API_TOKEN")  # Added for CHUTES_API_TOKEN
         or "None"
     )
 
@@ -267,7 +269,7 @@ def get_google_chat(
 ):
     if not api_key:
         api_key = get_api_key("google")
-    return GoogleGenerativeAI(model=model_name, google_api_key=api_key, safety_settings={HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE}, **kwargs)  # type: ignore
+    return ChatGoogleGenerativeAI(model=model_name, google_api_key=api_key, safety_settings={HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE}, **kwargs)  # type: ignore
 
 
 def get_google_embedding(
@@ -277,7 +279,7 @@ def get_google_embedding(
 ):
     if not api_key:
         api_key = get_api_key("google")
-    return google_embeddings.GoogleGenerativeAIEmbeddings(model=model_name, api_key=api_key, **kwargs)  # type: ignore
+    return google_embeddings.GoogleGenerativeAIEmbeddings(model=model_name, google_api_key=api_key, **kwargs)  # type: ignore
 
 
 # Mistral models
@@ -332,7 +334,7 @@ def get_openrouter_chat(
             dotenv.get_dotenv_value("OPEN_ROUTER_BASE_URL")
             or "https://openrouter.ai/api/v1"
         )
-    return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
+    return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, stream_usage=True, **kwargs)  # type: ignore
 
 
 def get_openrouter_embedding(
@@ -398,3 +400,23 @@ def get_other_chat(
 
 def get_other_embedding(model_name: str, api_key=None, base_url=None, **kwargs):
     return OpenAIEmbeddings(model=model_name, api_key=api_key, base_url=base_url, **kwargs)  # type: ignore
+
+
+# Chutes models
+def get_chutes_chat(
+    model_name: str,
+    api_key=None,
+    base_url=None,
+    **kwargs,
+):
+    if not api_key:
+        api_key = get_api_key("chutes")
+    if not base_url:
+        base_url = (
+            dotenv.get_dotenv_value("CHUTES_BASE_URL")
+            or "https://llm.chutes.ai/v1"
+        )
+    return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
+
+
+

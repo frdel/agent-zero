@@ -2,6 +2,9 @@ import argparse
 import inspect
 from typing import TypeVar, Callable, Awaitable, Union, overload, cast
 from python.helpers import dotenv, rfc, settings
+import asyncio
+import threading
+import queue
 
 T = TypeVar('T')
 R = TypeVar('R')
@@ -102,3 +105,39 @@ def _get_rfc_url() -> str:
     url = url+":"+str(set["rfc_port_http"])
     url += "/rfc"
     return url
+
+
+def call_development_function_sync(func: Union[Callable[..., T], Callable[..., Awaitable[T]]], *args, **kwargs) -> T:
+    # run async function in sync manner
+    result_queue = queue.Queue()
+    
+    def run_in_thread():
+        result = asyncio.run(call_development_function(func, *args, **kwargs))
+        result_queue.put(result)
+    
+    thread = threading.Thread(target=run_in_thread)
+    thread.start()
+    thread.join(timeout=30)  # wait for thread with timeout
+    
+    if thread.is_alive():
+        raise TimeoutError("Function call timed out after 30 seconds")
+    
+    result = result_queue.get_nowait()
+    return cast(T, result)
+
+
+def get_web_ui_port():
+    web_ui_port = (
+        get_arg("port")
+        or int(dotenv.get_dotenv_value("WEB_UI_PORT", 0))
+        or 5000
+    )
+    return web_ui_port
+
+def get_tunnel_api_port():
+    tunnel_api_port = (
+        get_arg("tunnel_api_port")
+        or int(dotenv.get_dotenv_value("TUNNEL_API_PORT", 0))
+        or 5070
+    )
+    return tunnel_api_port

@@ -1,5 +1,6 @@
 ### input:
 use keyboard arg for terminal program input
+use session arg for terminal session number
 answer dialogues enter passwords etc
 not for browser
 usage:
@@ -11,6 +12,7 @@ usage:
     "tool_name": "input",
     "tool_args": {
         "keyboard": "Y",
+        "session": 0
     }
 }
 ~~~

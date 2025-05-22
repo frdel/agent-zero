@@ -3,10 +3,9 @@
 execute terminal commands python nodejs code for computation or software tasks
 place code in "code" arg; escape carefully and indent properly
 select "runtime" arg: "terminal" "python" "nodejs" "output" "reset"
-for dialogues (Y/N etc.), use "terminal" runtime next step, send answer
+select "session" number, 0 default, others for multitasking
 if code runs long, use "output" to wait, "reset" to kill process
 use "pip" "npm" "apt-get" in "terminal" to install packages
-important: never use implicit print/output—it doesn't work!
 to output, use print() or console.log()
 if tool outputs error, adjust code before retrying; knowledge_tool can help
 important: check code for placeholders or demo data; replace with real variables; don't reuse snippets
@@ -26,6 +25,7 @@ usage:
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "python",
+        "session": 0,
         "code": "import os\nprint(os.getcwd())",
     }
 }
@@ -41,6 +41,7 @@ usage:
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "terminal",
+        "session": 0,
         "code": "apt-get install zip",
     }
 }
@@ -55,6 +56,7 @@ usage:
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "output",
+        "session": 0,
     }
 }
 ~~~
@@ -68,6 +70,7 @@ usage:
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "reset",
+        "session": 0,
     }
 }
 ~~~
