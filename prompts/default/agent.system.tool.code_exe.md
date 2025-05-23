@@ -6,6 +6,7 @@ select "runtime" arg: "terminal" "python" "nodejs" "output" "reset"
 select "session" number, 0 default, others for multitasking
 if code runs long, use "output" to wait, "reset" to kill process
 use "pip" "npm" "apt-get" in "terminal" to install packages
+prefer kali tools and guides for cyber security tasks
 to output, use print() or console.log()
 if tool outputs error, adjust code before retrying; knowledge_tool can help
 important: check code for placeholders or demo data; replace with real variables; don't reuse snippets
