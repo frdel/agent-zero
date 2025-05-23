@@ -4,9 +4,10 @@ nest_asyncio.apply()
 
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 from typing import Any, Awaitable, Coroutine, Optional, Dict, TypedDict
+from enum import Enum
 import uuid
 import models
 
@@ -25,6 +26,12 @@ from typing import Callable
 from python.helpers.localization import Localization
 
 
+class AgentContextType(Enum):
+    USER = "user"
+    TASK = "task"
+    MCP = "mcp"
+
+
 class AgentContext:
 
     _contexts: dict[str, "AgentContext"] = {}
@@ -40,6 +47,8 @@ class AgentContext:
         paused: bool = False,
         streaming_agent: "Agent|None" = None,
         created_at: datetime | None = None,
+        type: AgentContextType = AgentContextType.USER,
+        last_message: datetime | None = None,
     ):
         # build context
         self.id = id or str(uuid.uuid4())
@@ -50,9 +59,12 @@ class AgentContext:
         self.paused = paused
         self.streaming_agent = streaming_agent
         self.task: DeferredTask | None = None
-        self.created_at = created_at or datetime.now()
+        self.created_at = created_at or datetime.now(timezone.utc)
+        self.type = type
         AgentContext._counter += 1
         self.no = AgentContext._counter
+        # set to start of unix epoch
+        self.last_message = last_message or datetime.now(timezone.utc)
 
         existing = self._contexts.get(self.id, None)
         if existing:
@@ -89,6 +101,11 @@ class AgentContext:
             "log_version": len(self.log.updates),
             "log_length": len(self.log.logs),
             "paused": self.paused,
+            "last_message": (
+                Localization.get().serialize_datetime(self.last_message)
+                if self.last_message else Localization.get().serialize_datetime(datetime.fromtimestamp(0))
+            ),
+            "type": self.type.value,
         }
 
     def get_created_at(self):
@@ -482,6 +499,7 @@ class Agent:
     def hist_add_message(
         self, ai: bool, content: history.MessageContent, tokens: int = 0
     ):
+        self.last_message = datetime.now(timezone.utc)
         return self.history.add_message(ai=ai, content=content, tokens=tokens)
 
     def hist_add_user_message(self, message: UserMessage, intervention: bool = False):
