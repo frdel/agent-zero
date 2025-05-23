@@ -32,7 +32,7 @@ from langchain_community.vectorstores.utils import (
 from langchain_core.embeddings import Embeddings
 
 from python.helpers.print_style import PrintStyle
-from python.helpers import files
+from python.helpers import files, rfc_files
 from agent import Agent
 import models
 
@@ -641,43 +641,93 @@ class DocumentQueryHelper:
     def handle_html_document(self, document: str, scheme: str) -> str:
         if scheme in ["http", "https"]:
             loader = AsyncHtmlLoader(web_path=document)
+            parts: list[Document] = loader.load()
         elif scheme == "file":
-            loader = TextLoader(file_path=document)
+            # Use RFC file operations instead of TextLoader
+            file_content_bytes = rfc_files.read_file_binary(document)
+            file_content = file_content_bytes.decode('utf-8')
+            # Create Document manually since we're not using TextLoader
+            parts = [Document(page_content=file_content, metadata={"source": document})]
         else:
             raise ValueError(f"Unsupported scheme: {scheme}")
 
-        parts: list[Document] = loader.load()
         return "\n".join([element.page_content for element in MarkdownifyTransformer().transform_documents(parts)])
 
     def handle_text_document(self, document: str, scheme: str) -> str:
         if scheme in ["http", "https"]:
             loader = AsyncHtmlLoader(web_path=document)
+            elements: list[Document] = loader.load()
         elif scheme == "file":
-            loader = TextLoader(file_path=document)
+            # Use RFC file operations instead of TextLoader
+            file_content_bytes = rfc_files.read_file_binary(document)
+            file_content = file_content_bytes.decode('utf-8')
+            # Create Document manually since we're not using TextLoader
+            elements = [Document(page_content=file_content, metadata={"source": document})]
         else:
             raise ValueError(f"Unsupported scheme: {scheme}")
 
-        elements: list[Document] = loader.load()
         return "\n".join([element.page_content for element in elements])
 
     def handle_pdf_document(self, document: str, scheme: str) -> str:
-        if scheme not in ["file", "http", "https"]:
+        temp_file_path = ""
+        if scheme == "file":
+            # Use RFC file operations to read the PDF file as binary
+            file_content_bytes = rfc_files.read_file_binary(document)
+            # Create a temporary file for PyMuPDFLoader since it needs a file path
+            import tempfile
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+                temp_file.write(file_content_bytes)
+                temp_file_path = temp_file.name
+        elif scheme in ["http", "https"]:
+            # download the file from the web url to a temporary file using python libraries for downloading
+            import requests
+            import tempfile
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+                response = requests.get(document, timeout=10.0)
+                if response.status_code != 200:
+                    raise ValueError(f"DocumentQueryHelper::handle_pdf_document: Failed to download PDF from {document}: {response.status_code}")
+                temp_file.write(response.content)
+                temp_file_path = temp_file.name
+        else:
             raise ValueError(f"Unsupported scheme: {scheme}")
 
-        loader = PyMuPDFLoader(
-            document,
-            mode="single",
-            extract_tables="markdown",
-            extract_images=True,
-            images_inner_format="text",
-            images_parser=TesseractBlobParser(),
-            pages_delimiter="\n",
-        )
+        if not os.path.exists(temp_file_path):
+            raise ValueError(f"DocumentQueryHelper::handle_pdf_document: Temporary file not found: {temp_file_path}")
 
-        elements: list[Document] = loader.load()
-        return "\n".join([element.page_content for element in elements])
+        try:
+            try:
+                loader = PyMuPDFLoader(
+                    temp_file_path,
+                    mode="single",
+                    extract_tables="markdown",
+                    extract_images=True,
+                    images_inner_format="text",
+                    images_parser=TesseractBlobParser(),
+                    pages_delimiter="\n",
+                )
+                elements: list[Document] = loader.load()
+                contents = "\n".join([element.page_content for element in elements])
+            except Exception as e:
+                PrintStyle.error(f"DocumentQueryHelper::handle_pdf_document: Error loading with PyMuPDF: {e}")
+                contents = ""
+
+            if not contents:
+                import pdf2image
+                import pytesseract
+
+                PrintStyle.debug(f"DocumentQueryHelper::handle_pdf_document: FALLBACK Converting PDF to images: {temp_file_path}")
+
+                # Convert PDF to images
+                pages = pdf2image.convert_from_path(temp_file_path)
+                for page in pages:
+                    contents += pytesseract.image_to_string(page) + "\n\n"
+
+            return contents
+        finally:
+            os.unlink(temp_file_path)
 
     def handle_unstructured_document(self, document: str, scheme: str) -> str:
+        elements: list[Document] = []
         if scheme in ["http", "https"]:
             # loader = UnstructuredURLLoader(urls=[document], mode="single")
             loader = UnstructuredLoader(
@@ -687,16 +737,32 @@ class DocumentQueryHelper:
                 # chunking_strategy="by_page",
                 strategy="hi_res",
             )
+            elements = loader.load()
         elif scheme == "file":
-            loader = UnstructuredLoader(
-                file_path=document,
-                mode="single",
-                partition_via_api=False,
-                # chunking_strategy="by_page",
-                strategy="hi_res",
-            )
+            # Use RFC file operations to read the file as binary
+            file_content_bytes = rfc_files.read_file_binary(document)
+            # Create a temporary file for UnstructuredLoader since it needs a file path
+            import tempfile
+            import os
+            # Get file extension to preserve it for proper processing
+            _, ext = os.path.splitext(document)
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
+                temp_file.write(file_content_bytes)
+                temp_file_path = temp_file.name
+
+            try:
+                loader = UnstructuredLoader(
+                    file_path=temp_file_path,
+                    mode="single",
+                    partition_via_api=False,
+                    # chunking_strategy="by_page",
+                    strategy="hi_res",
+                )
+                elements = loader.load()
+            finally:
+                # Clean up temporary file
+                os.unlink(temp_file_path)
         else:
             raise ValueError(f"Unsupported scheme: {scheme}")
 
-        elements: list[Document] = loader.load()
         return "\n".join([element.page_content for element in elements])
