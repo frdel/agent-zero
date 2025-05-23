@@ -22,6 +22,8 @@ apt-get update && apt-get upgrade -y && apt-get -o Dpkg::Options::="--force-conf
     ffmpeg \
     supervisor \
     cron \
+    tesseract-ocr \
+    poppler-utils \
     ca-certificates \
     gnupg
 
