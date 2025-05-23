@@ -264,21 +264,21 @@ def run():
 
         printer = PrintStyle()
 
-        def signal_handler(sig=None, frame=None):
-            nonlocal tunnel, server, printer
-            with lock:
-                printer.print("Caught signal, stopping server...")
-                if server:
-                    server.shutdown()
-                process.stop_server()
-                if tunnel:
-                    tunnel.stop()
-                    tunnel = None
-                printer.print("Server stopped")
-                sys.exit(0)
+        # def signal_handler(sig=None, frame=None):
+        #     nonlocal tunnel, server, printer
+        #     with lock:
+        #         printer.print("Caught signal, stopping server...")
+        #         if server:
+        #             server.shutdown()
+        #         process.stop_server()
+        #         if tunnel:
+        #             tunnel.stop()
+        #             tunnel = None
+        #         printer.print("Server stopped")
+        #         sys.exit(0)
 
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
+        # signal.signal(signal.SIGINT, signal_handler)
+        # signal.signal(signal.SIGTERM, signal_handler)
 
         process.set_server(server)
         server.log_startup()

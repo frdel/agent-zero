@@ -218,9 +218,29 @@ def delete_file(relative_path: str):
 
 
 def delete_dir(relative_path: str):
+    # ensure deletion of directory without propagating errors
     abs_path = get_abs_path(relative_path)
     if os.path.exists(abs_path):
-        shutil.rmtree(abs_path)
+        # first try with ignore_errors=True which is the safest option
+        shutil.rmtree(abs_path, ignore_errors=True)
+        
+        # if directory still exists, try more aggressive methods
+        if os.path.exists(abs_path):
+            try:
+                # try to change permissions and delete again
+                for root, dirs, files in os.walk(abs_path, topdown=False):
+                    for name in files:
+                        file_path = os.path.join(root, name)
+                        os.chmod(file_path, 0o777)
+                    for name in dirs:
+                        dir_path = os.path.join(root, name)
+                        os.chmod(dir_path, 0o777)
+                
+                # try again after changing permissions
+                shutil.rmtree(abs_path, ignore_errors=True)
+            except:
+                # suppress all errors - we're ensuring no errors propagate
+                pass
 
 
 def list_files(relative_path: str, filter: str = "*"):
