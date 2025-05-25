@@ -19,3 +19,7 @@
 {{ include './agent.system.tool.browser.md' }}
 
 {{ include './agent.system.tool.scheduler.md' }}
+
+{{ include './agent.system.tool.document_query.md' }}
+
+{{ include './agent.system.tool.tasklist_tool.md' }}
