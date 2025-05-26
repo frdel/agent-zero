@@ -796,7 +796,7 @@ def get_default_settings() -> Settings:
     from models import ModelProvider
 
     return Settings(
-        chat_model_provider=ModelProvider.OPENROUTER.name,
+        chat_model_provider=ModelProvider.OPENAI.name,
         chat_model_name="gpt-4.1",
         chat_model_kwargs={"temperature": "0"},
         chat_model_ctx_length=100000,
@@ -805,7 +805,7 @@ def get_default_settings() -> Settings:
         chat_model_rl_requests=0,
         chat_model_rl_input=0,
         chat_model_rl_output=0,
-        util_model_provider=ModelProvider.OPENROUTER.name,
+        util_model_provider=ModelProvider.OPENAI.name,
         util_model_name="gpt-4.1-nano",
         util_model_ctx_length=100000,
         util_model_ctx_input=0.7,
