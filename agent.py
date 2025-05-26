@@ -282,6 +282,9 @@ class Agent:
                     self.context.streaming_agent = self  # mark self as current streamer
                     self.loop_data.iteration += 1
 
+                    # call message_loop_start extensions
+                    await self.call_extensions("message_loop_start", loop_data=self.loop_data)
+
                     try:
                         # prepare LLM chain (model, system, history)
                         prompt = await self.prepare_prompt(loop_data=self.loop_data)

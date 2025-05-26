@@ -343,7 +343,7 @@ def get_openrouter_chat(
         base_url=base_url,
         stream_usage=True,
         model_kwargs={
-            "headers": {
+            "extra_headers": {
                 "HTTP-Referer": "https://agent-zero.ai",
                 "X-Title": "Agent Zero",
             }
