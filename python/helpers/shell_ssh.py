@@ -196,6 +196,9 @@ class SSHInteractiveSession:
         # Replace '\r\n' with '\n'
         cleaned = cleaned.replace("\r\n", "\n")
 
+        # remove leading \r
+        cleaned = cleaned.lstrip("\r")
+
         # Split the string by newline characters to process each segment separately
         lines = cleaned.split("\n")
 

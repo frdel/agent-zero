@@ -159,9 +159,10 @@ class State:
 
 class BrowserAgent(Tool):
 
-    async def execute(self, message="", **kwargs):
+    async def execute(self, message="", reset="", **kwargs):
         self.guid = str(uuid.uuid4())
-        await self.prepare_state()
+        reset = str(reset).lower().strip() == "true"
+        await self.prepare_state(reset=reset)
         task = self.state.start_task(message)
 
         # wait for browser agent to finish and update progress

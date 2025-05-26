@@ -3,6 +3,7 @@
 ### vision_load:
 load image data to LLM
 use paths arg for attachments
+multiple images if needed
 only bitmaps supported convert first if needed
 
 **Example usage**:

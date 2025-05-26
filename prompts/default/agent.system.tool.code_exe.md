@@ -11,6 +11,7 @@ if tool outputs error, adjust code before retrying; knowledge_tool can help
 important: check code for placeholders or demo data; replace with real variables; don't reuse snippets
 don't use with other tools except thoughts; wait for response before using others
 check dependencies before running code
+output may end with [SYSTEM: ...] information comming from framework, not terminal
 usage:
 
 1 execute python code
