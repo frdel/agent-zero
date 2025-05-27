@@ -13,3 +13,6 @@ docker buildx build -t frdel/agent-zero-base:latest --platform linux/amd64,linux
 
 # without cache
 docker buildx build -t frdel/agent-zero-base:latest --platform linux/amd64,linux/arm64 --push --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) --no-cache .
+
+# plain output
+--progress=plain

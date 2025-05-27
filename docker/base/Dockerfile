@@ -18,11 +18,14 @@ ENV TZ=UTC
 # Copy contents of the project to /
 COPY ./fs/ /
 
-# install python
-RUN bash /ins/install_python.sh
-
 # install packages software
 RUN bash /ins/install_base_packages.sh
+
+# install python after packages to ensure version overriding
+RUN bash /ins/install_python.sh
+
+# install searxng
+RUN bash /ins/install_searxng.sh
 
 # configure ssh
 RUN bash /ins/configure_ssh.sh
