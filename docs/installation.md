@@ -1,24 +1,14 @@
 # Users installation guide for Windows, macOS and Linux
 
-[![Setup Guide](res/setup/thumb_setup.png)](https://www.youtube.com/watch?v=wWAqJpl3uQE)
+Click to open a video to learn how to install Agent Zero:
+
+[![Easy Installation guide](/docs/res/easy_ins_vid.png)](https://www.youtube.com/watch?v=L1_peV8szf8)
 
 The following user guide provides instructions for installing and running Agent Zero using Docker, which is the primary runtime environment for the framework. For developers and contributors, we also provide instructions for setting up the [full development environment](#in-depth-guide-for-full-binaries-installation).
 
-### Need updates from v0.7? 👉[How to update Agent Zero](#how-to-update-agent-zero)
 
 ## Windows, macOS and Linux Setup Guide
 
-### Prerequisites
-
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| RAM | 4GB | 8GB |
-| Storage | 10GB | 10GB |
-| CPU | 2 cores | 4 cores |
-| Docker | Required | Required |
-| Internet | Optional* | Required |
-
-Note*: Offline operation requires prompt adjustments
 
 1. **Install Docker Desktop:** 
 - Docker Desktop provides the runtime environment for Agent Zero, ensuring consistent behavior and security across platforms
@@ -60,8 +50,6 @@ Note*: Offline operation requires prompt adjustments
 <img src="res/setup/image-13.png" alt="docker installed" height="100"/>
 <br><br>
 
-1.5. Create a Docker Hub account when prompted and sign in. This is required to pull the Agent Zero container image.
-
 > [!IMPORTANT]  
 > **macOS Configuration:** In Docker Desktop's preferences (Docker menu) → Settings → 
 > Advanced, enable "Allow the default Docker socket to be used (requires password)."
@@ -69,6 +57,8 @@ Note*: Offline operation requires prompt adjustments
 ![docker socket macOS](res/setup/macsocket.png)
 
 2. **Run Agent Zero:**
+
+- Note: Agent Zero also offers a Hacking Edition based on Kali linux with modified prompts for cybersecurity tasks. The setup is the same as the regular version, just use the frdel/agent-zero-run:hacking image instead of frdel/agent-zero-run.
 
 2.1. Pull the Agent Zero Docker image:
 - Search for `frdel/agent-zero-run` in Docker Desktop
@@ -105,6 +95,8 @@ Note*: Offline operation requires prompt adjustments
 - Click the `Run` button next to the `frdel/agent-zero-run` image
 - Open the "Optional settings" menu
 - Set the port to `0` in the second "Host port" field (for automatic port assignment)
+
+Optionally you can map local folders for file persistence:
 - Under "Volumes", configure:
   - Host path: Your chosen directory (e.g., `C:\agent-zero-data`)
   - Container path: `/a0`
@@ -304,27 +296,21 @@ For developers or users who need to run Agent Zero directly on their system,see 
 
 # How to update Agent Zero
 
-1. **If you come from the previous version of Agent Zero (pre-0.7.1):**
+1. **If you come from the previous version of Agent Zero:**
 - Your data is safely stored across various directories and files inside the Agent Zero folder.
-- To update to the new Docker runtime version, you need to save the following files and directories:
+- To update to the new Docker runtime version, you might want to backup the following files and directories:
   - `/memory` - Agent's memory
-  - `/knowledge` - Custom knowledge base
-  - `/instruments` - Custom instruments and functions
-  - `/prompts` - Custom prompts files (if any has been created)
-  - `/work_dir` - Working directory
-  - `.env` - Your API keys
+  - `/knowledge` - Custom knowledge base (if you imported any custom knowledge files)
+  - `/instruments` - Custom instruments and functions (if you created any custom)
   - `/tmp/settings.json` - Your Agent Zero settings
+  - `/tmp/chats/` - Your chat history
 - Once you have saved these files and directories, you can proceed with the Docker runtime [installation instructions above](#windows-macos-and-linux-setup-guide) setup guide.
 - Reach for the folder where you saved your data and copy it to the new Agent Zero folder set during the installation process.
 - Agent Zero will automatically detect your saved data and use it across memory, knowledge, instruments, prompts and settings.
 
 > [!IMPORTANT]
-> Make sure to use the same embedding model you were using before, otherwise 
-> you will have to re-index all of Agent Zero's memory, therefore deleting all 
-> your custom knowledge and memory.
->
-> If you have issues loading your settings, you can try to delete the `/tmp/settings.json` 
-> file and let Agent Zero generate a new one.
+> If you have issues loading your settings, you can try to delete the `/tmp/settings.json` file and let Agent Zero generate a new one.
+> The same goes for chats in `/tmp/chats/`, they might be incompatible with the new version
 
 2. **Update Process (Docker Desktop)**
 - Go to Docker Desktop and stop the container from the "Containers" tab

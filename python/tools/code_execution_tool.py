@@ -9,6 +9,7 @@ from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
 from python.helpers.docker import DockerContainerManager
 from python.helpers.messages import truncate_text
+import re
 
 
 @dataclass
@@ -44,45 +45,20 @@ class CodeExecution(Tool):
             )
         elif runtime == "output":
             response = await self.get_terminal_output(
-                session=session, wait_with_output=5, wait_without_output=60
+                session=session, first_output_timeout=60, between_output_timeout=5
             )
         elif runtime == "reset":
             response = await self.reset_terminal(session=session)
         else:
             response = self.agent.read_prompt(
-                "fw.code_runtime_wrong.md", runtime=runtime
+                "fw.code.runtime_wrong.md", runtime=runtime
             )
 
-        # if response contains only whitespace, clear it
-        if isinstance(response, str) and response.strip() == "":
-            response = None
-
         if not response:
-            response = self.agent.read_prompt("fw.code_no_output.md")
-            self.log.update(content=response)
+            response = self.agent.read_prompt(
+                "fw.code.info.md", info=self.agent.read_prompt("fw.code.no_output.md")
+            )
         return Response(message=response, break_loop=False)
-
-    # async def before_execution(self, **kwargs):
-    #     await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
-    #     PrintStyle(
-    #         font_color="#1B4F72", padding=True, background_color="white", bold=True
-    #     ).print(f"{self.agent.agent_name}: Using tool '{self.name}'")
-    #     self.log = self.agent.context.log.log(
-    #         type="code_exe",
-    #         heading=f"{self.agent.agent_name}: Using tool '{self.name}'",
-    #         content="",
-    #         kvps=self.args,
-    #     )
-    #     if self.args and isinstance(self.args, dict):
-    #         for key, value in self.args.items():
-    #             PrintStyle(font_color="#85C1E9", bold=True).stream(
-    #                 self.nice_key(key) + ": "
-    #             )
-    #             PrintStyle(
-    #                 font_color="#85C1E9",
-    #                 padding=isinstance(value, str) and "\n" in value,
-    #             ).stream(value)
-    #             PrintStyle().print()
 
     def get_log_object(self):
         return self.agent.context.log.log(
@@ -95,12 +71,12 @@ class CodeExecution(Tool):
     async def after_execution(self, response, **kwargs):
         self.agent.hist_add_tool_result(self.name, response.message)
 
-    async def prepare_state(self, reset=False):
-        self.state = self.agent.get_data("_cot_state")
+    async def prepare_state(self, reset=False, session=None):
+        self.state = self.agent.get_data("_cet_state")
         if not self.state or reset:
 
             # initialize docker container if execution in docker is configured
-            if self.agent.config.code_exec_docker_enabled:
+            if not self.state and self.agent.config.code_exec_docker_enabled:
                 docker = DockerContainerManager(
                     logger=self.agent.context.log,
                     name=self.agent.config.code_exec_docker_name,
@@ -110,28 +86,44 @@ class CodeExecution(Tool):
                 )
                 docker.start_container()
             else:
-                docker = None
+                docker = self.state.docker if self.state else None
 
-            # initialize local or remote interactive shell insterface
-            if self.agent.config.code_exec_ssh_enabled:
-                pswd = (
-                    self.agent.config.code_exec_ssh_pass
-                    if self.agent.config.code_exec_ssh_pass
-                    else await rfc_exchange.get_root_password()
-                )
-                shell = SSHInteractiveSession(
-                    self.agent.context.log,
-                    self.agent.config.code_exec_ssh_addr,
-                    self.agent.config.code_exec_ssh_port,
-                    self.agent.config.code_exec_ssh_user,
-                    pswd,
-                )
-            else:
-                shell = LocalInteractiveSession()
+            # initialize shells dictionary if not exists
+            shells = {} if not self.state else self.state.shells.copy()
 
-            self.state = State(shells={0: shell}, docker=docker)
-            await shell.connect()
-        self.agent.set_data("_cot_state", self.state)
+            # Only reset the specified session if provided
+            if session is not None and session in shells:
+                shells[session].close()
+                del shells[session]
+            elif reset and not session:
+                # Close all sessions if full reset requested
+                for s in list(shells.keys()):
+                    shells[s].close()
+                shells = {}
+
+            # initialize local or remote interactive shell interface for session 0 if needed
+            if 0 not in shells:
+                if self.agent.config.code_exec_ssh_enabled:
+                    pswd = (
+                        self.agent.config.code_exec_ssh_pass
+                        if self.agent.config.code_exec_ssh_pass
+                        else await rfc_exchange.get_root_password()
+                    )
+                    shell = SSHInteractiveSession(
+                        self.agent.context.log,
+                        self.agent.config.code_exec_ssh_addr,
+                        self.agent.config.code_exec_ssh_port,
+                        self.agent.config.code_exec_ssh_user,
+                        pswd,
+                    )
+                else:
+                    shell = LocalInteractiveSession()
+
+                shells[0] = shell
+                await shell.connect()
+
+            self.state = State(shells=shells, docker=docker)
+        self.agent.set_data("_cet_state", self.state)
 
     async def execute_python_code(self, session: int, code: str, reset: bool = False):
         escaped_code = shlex.quote(code)
@@ -197,42 +189,104 @@ class CodeExecution(Tool):
         self,
         session=0,
         reset_full_output=True,
-        wait_with_output=3,
-        wait_without_output=10,
-        max_exec_time=60,
+        first_output_timeout=30,  # Wait up to x seconds for first output
+        between_output_timeout=15,  # Wait up to x seconds between outputs
+        max_exec_timeout=180,  #hard cap on total runtime
+        sleep_time=0.1,
     ):
-        idle = 0
-        SLEEP_TIME = 0.1
-        start_time = time.time()
-        full_output = ""
+        # Common shell prompt regex patterns (add more as needed)
+        prompt_patterns = [
+            re.compile(r"\\(venv\\).+[$#] ?$"),  # (venv) ...$ or (venv) ...#
+            re.compile(r"root@[^:]+:[^#]+# ?$"),  # root@container:~#
+            re.compile(r"[a-zA-Z0-9_.-]+@[^:]+:[^$#]+[$#] ?$"),  # user@host:~$
+        ]
 
-        while max_exec_time <= 0 or time.time() - start_time < max_exec_time:
-            await asyncio.sleep(SLEEP_TIME)  # Wait for some output to be generated
+        start_time = time.time()
+        last_output_time = start_time
+        full_output = ""
+        truncated_output = ""
+        got_output = False
+
+        while True:
+            await asyncio.sleep(sleep_time)
             full_output, partial_output = await self.state.shells[session].read_output(
-                timeout=1, reset_full_output=reset_full_output
+                timeout=3, reset_full_output=reset_full_output
             )
             reset_full_output = False  # only reset once
 
-            await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
+            await self.agent.handle_intervention()
 
+            now = time.time()
             if partial_output:
                 PrintStyle(font_color="#85C1E9").stream(partial_output)
-                truncated_output = truncate_text(self.agent, full_output, 10_000)
+                # full_output += partial_output # Append new output
+                truncated_output = truncate_text(
+                    agent=self.agent, output=full_output, threshold=10000
+                )
                 self.log.update(content=truncated_output)
-                idle = 0
-            else:
-                idle += 1
-                if (full_output and idle > wait_with_output / SLEEP_TIME) or (
-                    not full_output and idle > wait_without_output / SLEEP_TIME
-                ):
-                    break
-        return full_output
+                last_output_time = now
+                got_output = True
 
-    async def reset_terminal(self, session=0):
-        if session in self.state.shells:
-            self.state.shells[session].close()
-            del self.state.shells[session]
-        await self.prepare_state(reset=True)
-        response = self.agent.read_prompt("fw.code_reset.md")
+                # Check for shell prompt at the end of output
+                last_lines = truncated_output.splitlines()[-3:] if truncated_output else []
+                for line in last_lines:
+                    for pat in prompt_patterns:
+                        if pat.search(line.strip()):
+                            PrintStyle.info(
+                                "Detected shell prompt, returning output early."
+                            )
+                            return truncated_output
+
+            # Check for max execution time
+            if now - start_time > max_exec_timeout:
+                sysinfo = self.agent.read_prompt(
+                    "fw.code.max_time.md", timeout=max_exec_timeout
+                )
+                response = self.agent.read_prompt("fw.code.info.md", info=sysinfo)
+                if truncated_output:
+                    response = truncated_output + "\n\n" + response
+                PrintStyle.warning(sysinfo)
+                self.log.update(content=response)
+                return response
+
+            # Waiting for first output
+            if not got_output:
+                if now - start_time > first_output_timeout:
+                    sysinfo = self.agent.read_prompt(
+                        "fw.code.no_out_time.md", timeout=first_output_timeout
+                    )
+                    response = self.agent.read_prompt("fw.code.info.md", info=sysinfo)
+                    PrintStyle.warning(sysinfo)
+                    self.log.update(content=response)
+                    return response
+            else:
+                # Waiting for more output after first output
+                if now - last_output_time > between_output_timeout:
+                    sysinfo = self.agent.read_prompt(
+                        "fw.code.pause_time.md", timeout=between_output_timeout
+                    )
+                    response = self.agent.read_prompt("fw.code.info.md", info=sysinfo)
+                    if truncated_output:
+                        response = truncated_output + "\n\n" + response
+                    PrintStyle.warning(sysinfo)
+                    self.log.update(content=response)
+                    return response
+
+    async def reset_terminal(self, session=0, reason: str | None = None):
+        # Print the reason for the reset to the console if provided
+        if reason:
+            PrintStyle(font_color="#FFA500", bold=True).print(
+                f"Resetting terminal session {session}... Reason: {reason}"
+            )
+        else:
+            PrintStyle(font_color="#FFA500", bold=True).print(
+                f"Resetting terminal session {session}..."
+            )
+
+        # Only reset the specified session while preserving others
+        await self.prepare_state(reset=True, session=session)
+        response = self.agent.read_prompt(
+            "fw.code.info.md", info=self.agent.read_prompt("fw.code.reset.md")
+        )
         self.log.update(content=response)
         return response
