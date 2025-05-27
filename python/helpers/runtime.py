@@ -138,6 +138,6 @@ def get_tunnel_api_port():
     tunnel_api_port = (
         get_arg("tunnel_api_port")
         or int(dotenv.get_dotenv_value("TUNNEL_API_PORT", 0))
-        or 5070
+        or 55520
     )
     return tunnel_api_port

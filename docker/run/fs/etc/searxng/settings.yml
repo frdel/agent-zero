@@ -16,6 +16,7 @@ search:
 server:
   # Is overwritten by ${SEARXNG_SECRET}
   secret_key: "dummy"
+  port: 55510
   limiter: false
   image_proxy: false
   # public URL of the instance, to ensure correct inbound links. Is overwritten

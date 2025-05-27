@@ -1,7 +1,7 @@
 import aiohttp
 from python.helpers import runtime
 
-URL = "http://localhost:8888/search"
+URL = "http://localhost:55510/search"
 
 async def search(query:str):
     return await runtime.call_development_function(_search, query=query)
