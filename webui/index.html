@@ -584,6 +584,10 @@
                                      @click="switchTab('external')"
                                      title="External Services">External Services</div>
                                 <div class="settings-tab"
+                                     :class="{'active': activeTab === 'mcp'}"
+                                     @click="switchTab('mcp')"
+                                     title="MCP">MCP</div>
+                                <div class="settings-tab"
                                      :class="{'active': activeTab === 'developer'}"
                                      @click="switchTab('developer')"
                                      title="Developer">Developer</div>

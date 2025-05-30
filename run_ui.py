@@ -9,7 +9,7 @@ import threading
 import signal
 from flask import Flask, request, Response
 from flask_basicauth import BasicAuth
-from python.helpers import errors, files, git
+from python.helpers import errors, files, git, settings
 from python.helpers.files import get_abs_path
 from python.helpers import persist_chat, runtime, dotenv, process
 from python.helpers.cloudflare_tunnel import CloudflareTunnel
@@ -19,6 +19,9 @@ from python.helpers.job_loop import run_loop
 from python.helpers.print_style import PrintStyle
 from python.helpers.task_scheduler import TaskScheduler
 from python.helpers.defer import DeferredTask
+from starlette.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
 # Set the new timezone to 'UTC'
@@ -234,6 +237,22 @@ def run():
     for handler in handlers:
         register_api_handler(webapp, handler)
 
+        
+    # define a Starlette-compatible middleware handler
+
+
+    async def mcp_middleware(request, call_next):
+        set = settings.get_settings()
+        if not set["mcp_server_enabled"]:
+            # raise a proper Starlette HTTPException with a clear message
+            PrintStyle.error("[MCP] Access denied: MCP server is disabled in settings.")
+            raise StarletteHTTPException(status_code=403, detail="MCP server is disabled in settings.")
+        return await call_next(request)
+
+    mcp_middlewares = [
+        Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)
+    ]
+
     mcp_app = create_sse_app(
         server=mcp_server_instance,
         message_path=mcp_server_instance.settings.message_path,
@@ -242,13 +261,13 @@ def run():
         auth_settings=mcp_server_instance.settings.auth,
         debug=mcp_server_instance.settings.debug,
         routes=mcp_server_instance._additional_http_routes,
-        middleware=None
+        middleware=mcp_middlewares
     )
 
     # add the webapp and mcp to the app
     app = DispatcherMiddleware(webapp, {
-        "/mcp": ASGIMiddleware(app=mcp_app),
-    })
+        "/mcp": ASGIMiddleware(app=mcp_app), # type: ignore
+    }) # type: ignore
     PrintStyle().debug("Registered middleware for MCP")
 
     try:

@@ -13,7 +13,7 @@ from python.helpers.print_style import PrintStyle
 from langchain_core.prompts import (
     ChatPromptTemplate,
 )
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, BaseMessage
+from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
 
 import python.helpers.log as Log
 from python.helpers.dirty_json import DirtyJson
@@ -121,21 +121,16 @@ class AgentContext:
     def nudge(self):
         self.kill_process()
         self.paused = False
-        if self.streaming_agent:
-            current_agent = self.streaming_agent
-        else:
-            current_agent = self.agent0
-
-        self.task = self.run_task(current_agent.monologue)
+        self.task = self.run_task(self.get_agent().monologue)
         return self.task
+
+    def get_agent(self):
+        return self.streaming_agent or self.agent0
 
     def communicate(self, msg: "UserMessage", broadcast_level: int = 1):
         self.paused = False  # unpause if paused
 
-        if self.streaming_agent:
-            current_agent = self.streaming_agent
-        else:
-            current_agent = self.agent0
+        current_agent = self.get_agent()
 
         if self.task and self.task.is_alive():
             # set intervention messages to agent(s):

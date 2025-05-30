@@ -62,6 +62,9 @@ class Settings(TypedDict):
     stt_silence_duration: int
     stt_waiting_timeout: int
 
+    mcp_server_enabled: bool
+    
+
 
 class PartialSettings(Settings, total=False):
     pass
@@ -677,6 +680,28 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "tab": "agent",
     }
 
+    # MCP section
+    mcp_server_fields: list[SettingsField] = []
+
+    mcp_server_fields.append(
+        {
+            "id": "mcp_server_enabled",
+            "title": "Enable A0 MCP Server",
+            "description": "Expose Agent Zero as an SSE MCP server. This will make this A0 instance available to MCP clients.",
+            "type": "switch",
+            "value": settings["mcp_server_enabled"],
+        }
+    )
+
+    mcp_server_section: SettingsSection = {
+        "id": "mcp_server",
+        "title": "A0 MCP Server",
+        "description": "Agent Zero can be exposed as an SSE MCP server. It can then be accessed by MCP clients on the URL and port of the web UI + /mcp/sse, for example http://localhost:5000/mcp/sse. The same applies to public URL using Cloudflare Tunnel.",
+        "fields": mcp_server_fields,
+        "tab": "mcp",
+    }
+
+
     # Add the section to the result
     result: SettingsOutput = {
         "sections": [
@@ -689,6 +714,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             stt_section,
             api_keys_section,
             auth_section,
+            mcp_server_section,
             dev_section,
         ]
     }
@@ -839,6 +865,7 @@ def get_default_settings() -> Settings:
         stt_silence_threshold=0.3,
         stt_silence_duration=1000,
         stt_waiting_timeout=2000,
+        mcp_server_enabled=False,
     )
 
 
