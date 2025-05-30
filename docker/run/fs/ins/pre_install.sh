@@ -25,7 +25,8 @@ apt-get update && apt-get upgrade -y && apt-get -o Dpkg::Options::="--force-conf
     tesseract-ocr \
     poppler-utils \
     ca-certificates \
-    gnupg
+    gnupg \
+    tesseract-ocr-all
 
 echo "=====MID UPDATE====="
 
