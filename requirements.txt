@@ -1,5 +1,5 @@
 ansio==0.0.1
-beautifulsoup4==4.12.3
+beautifulsoup4==4.13.4
 browser-use==0.1.40
 docker==7.1.0
 duckduckgo-search==6.1.12
@@ -7,7 +7,7 @@ faiss-cpu==1.8.0.post1
 flask[async]==3.0.3
 flask-basicauth==0.2.0
 flaredantic==0.1.4
-GitPython==3.1.43
+GitPython==3.1.44
 inputimeout==1.0.4
 langchain-anthropic==0.3.3
 langchain-community==0.3.19
@@ -27,7 +27,7 @@ pypdf==4.3.1
 python-dotenv==1.1.0
 pytz==2024.2
 sentence-transformers==3.0.1
-tiktoken==0.8.0
+tiktoken==0.9.0
 unstructured==0.15.13
 unstructured-client==0.25.9
 webcolors==24.6.0
@@ -35,3 +35,4 @@ crontab==1.0.1
 fastmcp==2.3.4
 mcp==1.9.0
 a2wsgi==1.10.8
+aider-chat==0.83.2

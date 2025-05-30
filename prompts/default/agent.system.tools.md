@@ -19,3 +19,5 @@
 {{ include './agent.system.tool.browser.md' }}
 
 {{ include './agent.system.tool.scheduler.md' }}
+
+{{ include './agent.system.tool.coding_agent.md' }}
