@@ -4,6 +4,12 @@
 **/__pycache__/
 **/.conda/
 
+# Ignore docker/run/agent-zero directory
+docker/run/agent-zero/
+
+#Ignore cursor rules
+.cursor/
+
 # ignore test files in root dir
 /*.test.py
 
@@ -19,6 +25,9 @@ bundle/*/
 
 # Handle work_dir directory
 work_dir/*
+
+# Handle specific docker directories
+docker/run/agent-zero/**
 
 # Handle memory directory
 memory/**

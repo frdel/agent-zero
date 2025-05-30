@@ -1,4 +1,7 @@
 import asyncio
+import nest_asyncio
+nest_asyncio.apply()
+
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -193,6 +196,7 @@ class AgentConfig:
     utility_model: ModelConfig
     embeddings_model: ModelConfig
     browser_model: ModelConfig
+    mcp_servers: str
     prompts_subdir: str = ""
     memory_subdir: str = ""
     knowledge_subdirs: list[str] = field(default_factory=lambda: ["default", "custom"])
@@ -680,30 +684,68 @@ class Agent:
         tool_request = extract_tools.json_parse_dirty(msg)
 
         if tool_request is not None:
-            tool_name = tool_request.get("tool_name", "")
-            tool_method = None
+            raw_tool_name = tool_request.get("tool_name", "")  # Get the raw tool name
             tool_args = tool_request.get("tool_args", {})
+            
+            tool_name = raw_tool_name  # Initialize tool_name with raw_tool_name
+            tool_method = None  # Initialize tool_method
 
-            if ":" in tool_name:
-                tool_name, tool_method = tool_name.split(":", 1)
+            # Split raw_tool_name into tool_name and tool_method if applicable
+            if ":" in raw_tool_name:
+                tool_name, tool_method = raw_tool_name.split(":", 1)
+            
+            tool = None  # Initialize tool to None
 
-            tool = self.get_tool(name=tool_name, method=tool_method, args=tool_args, message=msg)
+            # Try getting tool from MCP first
+            try:
+                import python.helpers.mcp_handler as mcp_helper 
+                mcp_tool_candidate = mcp_helper.MCPConfig.get_instance().get_tool(self, tool_name)
+                if mcp_tool_candidate:
+                    tool = mcp_tool_candidate
+            except ImportError:
+                 # Get context safely
+                 current_context = AgentContext.first()
+                 if current_context:
+                    current_context.log.log(type="warning", content="MCP helper module not found. Skipping MCP tool lookup.", temp=True)
+                 PrintStyle(background_color="black", font_color="yellow", padding=True).print(
+                    "MCP helper module not found. Skipping MCP tool lookup."
+                 )
+            except Exception as e:
+                # Get context safely
+                current_context = AgentContext.first()
+                if current_context:
+                    current_context.log.log(type="warning", content=f"Failed to get MCP tool '{tool_name}': {e}", temp=True)
+                PrintStyle(background_color="black", font_color="red", padding=True).print(
+                    f"Failed to get MCP tool '{tool_name}': {e}"
+                )
 
-            await self.handle_intervention()  # wait if paused and handle intervention message if needed
-            await tool.before_execution(**tool_args)
-            await self.handle_intervention()  # wait if paused and handle intervention message if needed
-            response = await tool.execute(**tool_args)
-            await self.handle_intervention()  # wait if paused and handle intervention message if needed
-            await tool.after_execution(response)
-            await self.handle_intervention()  # wait if paused and handle intervention message if needed
-            if response.break_loop:
-                return response.message
+            # Fallback to local get_tool if MCP tool was not found or MCP lookup failed
+            if not tool:
+                tool = self.get_tool(name=tool_name, method=tool_method, args=tool_args, message=msg)
+
+            if tool:
+                await self.handle_intervention()
+                await tool.before_execution(**tool_args)
+                await self.handle_intervention()
+                response = await tool.execute(**tool_args)
+                await self.handle_intervention()
+                await tool.after_execution(response)
+                await self.handle_intervention()
+                if response.break_loop:
+                    return response.message
+            else:
+                error_detail = f"Tool '{raw_tool_name}' not found or could not be initialized."
+                self.hist_add_warning(error_detail)
+                PrintStyle(font_color="red", padding=True).print(error_detail)
+                self.context.log.log(
+                    type="error", content=f"{self.agent_name}: {error_detail}"
+                )
         else:
-            msg = self.read_prompt("fw.msg_misformat.md")
-            self.hist_add_warning(msg)
-            PrintStyle(font_color="red", padding=True).print(msg)
+            warning_msg_misformat = self.read_prompt("fw.msg_misformat.md")
+            self.hist_add_warning(warning_msg_misformat)
+            PrintStyle(font_color="red", padding=True).print(warning_msg_misformat)
             self.context.log.log(
-                type="error", content=f"{self.agent_name}: Message misformat"
+                type="error", content=f"{self.agent_name}: Message misformat, no valid tool request found."
             )
 
     def log_from_stream(self, stream: str, logItem: Log.LogItem):
