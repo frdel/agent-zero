@@ -45,7 +45,36 @@ class MemorizeMemories(Extension):
             background=True,
         )
 
-        memories = DirtyJson.parse_string(memories_json)
+        # Add validation and error handling for memories_json
+        if not memories_json or not isinstance(memories_json, str):
+            log_item.update(heading="No response from utility model.")
+            return
+
+        # Strip any whitespace that might cause issues
+        memories_json = memories_json.strip()
+
+        if not memories_json:
+            log_item.update(heading="Empty response from utility model.")
+            return
+
+        try:
+            memories = DirtyJson.parse_string(memories_json)
+        except Exception as e:
+            log_item.update(heading=f"Failed to parse memories response: {str(e)}")
+            return
+
+        # Validate that memories is a list or convertible to one
+        if memories is None:
+            log_item.update(heading="No valid memories found in response.")
+            return
+
+        # If memories is not a list, try to make it one
+        if not isinstance(memories, list):
+            if isinstance(memories, (str, dict)):
+                memories = [memories]
+            else:
+                log_item.update(heading="Invalid memories format received.")
+                return
 
         if not isinstance(memories, list) or len(memories) == 0:
             log_item.update(heading="No useful information to memorize.")
