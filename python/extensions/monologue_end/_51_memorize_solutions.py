@@ -24,8 +24,8 @@ class MemorizeSolutions(Extension):
             heading="Memorizing succesful solutions...",
         )
 
-        #memorize in background
-        asyncio.create_task(self.memorize(loop_data, log_item))        
+        # memorize in background
+        asyncio.create_task(self.memorize(loop_data, log_item))
 
     async def memorize(self, loop_data: LoopData, log_item: LogItem, **kwargs):
         # get system message and chat history for util llm
@@ -44,7 +44,36 @@ class MemorizeSolutions(Extension):
             background=True,
         )
 
-        solutions = DirtyJson.parse_string(solutions_json)
+        # Add validation and error handling for solutions_json
+        if not solutions_json or not isinstance(solutions_json, str):
+            log_item.update(heading="No response from utility model.")
+            return
+
+        # Strip any whitespace that might cause issues
+        solutions_json = solutions_json.strip()
+
+        if not solutions_json:
+            log_item.update(heading="Empty response from utility model.")
+            return
+
+        try:
+            solutions = DirtyJson.parse_string(solutions_json)
+        except Exception as e:
+            log_item.update(heading=f"Failed to parse solutions response: {str(e)}")
+            return
+
+        # Validate that solutions is a list or convertible to one
+        if solutions is None:
+            log_item.update(heading="No valid solutions found in response.")
+            return
+
+        # If solutions is not a list, try to make it one
+        if not isinstance(solutions, list):
+            if isinstance(solutions, (str, dict)):
+                solutions = [solutions]
+            else:
+                log_item.update(heading="Invalid solutions format received.")
+                return
 
         if not isinstance(solutions, list) or len(solutions) == 0:
             log_item.update(heading="No successful solutions to memorize.")
@@ -61,7 +90,13 @@ class MemorizeSolutions(Extension):
         rem = []
         for solution in solutions:
             # solution to plain text:
-            txt = f"# Problem\n {solution['problem']}\n# Solution\n {solution['solution']}"
+            if isinstance(solution, dict):
+                problem = solution.get('problem', 'Unknown problem')
+                solution_text = solution.get('solution', 'Unknown solution')
+                txt = f"# Problem\n {problem}\n# Solution\n {solution_text}"
+            else:
+                # If solution is not a dict, convert it to string
+                txt = f"# Solution\n {str(solution)}"
             solutions_txt += txt + "\n\n"
 
             # remove previous solutions too similiar to this one
