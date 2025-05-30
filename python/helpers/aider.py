@@ -366,13 +366,36 @@ def create_streaming_aider_coder(
             max_tokens,
         )
 
+        # Convert files and read_only_files to absolute paths
+        abs_files = None
+        if files:
+            abs_files = []
+            for file_path in files:
+                if file_path:
+                    path_obj = Path(file_path)
+                    if path_obj.is_absolute():
+                        abs_files.append(str(path_obj.resolve()))
+                    else:
+                        abs_files.append(str((repo_path / path_obj).resolve()))
+
+        abs_read_only_files = None
+        if read_only_files:
+            abs_read_only_files = []
+            for file_path in read_only_files:
+                if file_path:
+                    path_obj = Path(file_path)
+                    if path_obj.is_absolute():
+                        abs_read_only_files.append(str(path_obj.resolve()))
+                    else:
+                        abs_read_only_files.append(str((repo_path / path_obj).resolve()))
+
         # Create coder instance with streaming enabled and explicit root
         coder = Coder.create(
             main_model=main_model,
             io=io,
             repo=repo,
-            fnames=files,
-            read_only_fnames=read_only_files,
+            fnames=abs_files,
+            read_only_fnames=abs_read_only_files,
             show_diffs=True,
             auto_commits=auto_commits,
             dirty_commits=True,
