@@ -14,7 +14,7 @@ if you want the agent to create or edit only specific files in the root_path you
 
 #### Arguments:
 * *task* (string, mandatory) - The task description including persona, background info, requirements
-* *root_path* (string, mandatory) - The full path to the folder the agent will work in. This is the project root folder
+* *root_path* (string, mandatory) - Absolute path to the folder the agent will work in. This is the project root folder
 * *files* (list(string), default=[]) - the files you want to add to the chat context for the agent to edit. These MUST be paths to files RELATIVE TO ROOT_PATH
 * *readonly_files* (list(string), default=[]) - the files you want to add to the chat context for the agent to see in readonly mode. Gives the agent hints which files to read for the task. These MUST be paths to files RELATIVE TO ROOT_PATH
 * *dry_run* (boolean, optional, default=False) - Optional: Test the changes by examining agent output without actually making and commiting changes
