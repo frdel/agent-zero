@@ -537,16 +537,6 @@ def convert_out(settings: Settings) -> SettingsOutput:
         }
     )
 
-    agent_fields.append(
-        {
-            "id": "mcp_servers",
-            "title": "MCP Servers",
-            "description": "(JSON list of) >> RemoteServer <<: [name, url, headers, timeout (opt), sse_read_timeout (opt), disabled (opt)] / >> Local Server <<: [name, command, args, env, encoding (opt), encoding_error_handler (opt), disabled (opt)]",
-            "type": "textarea",
-            "value": settings["mcp_servers"],
-        }
-    )
-
     agent_section: SettingsSection = {
         "id": "agent",
         "title": "Agent Config",
@@ -693,7 +683,28 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "tab": "agent",
     }
 
+
     # MCP section
+    mcp_client_fields: list[SettingsField] = []
+
+    mcp_client_fields.append(
+        {
+            "id": "mcp_servers",
+            "title": "MCP Servers",
+            "description": "(JSON list of) >> RemoteServer <<: [name, url, headers, timeout (opt), sse_read_timeout (opt), disabled (opt)] / >> Local Server <<: [name, command, args, env, encoding (opt), encoding_error_handler (opt), disabled (opt)]",
+            "type": "textarea",
+            "value": settings["mcp_servers"],
+        }
+    )
+
+    mcp_client_section: SettingsSection = {
+        "id": "mcp_client",
+        "title": "External MCP Servers",
+        "description": "Agent Zero can use external MCP servers, local or remote as tools.",
+        "fields": mcp_client_fields,
+        "tab": "mcp",
+    }
+
     mcp_server_fields: list[SettingsField] = []
 
     mcp_server_fields.append(
@@ -727,6 +738,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             stt_section,
             api_keys_section,
             auth_section,
+            mcp_client_section,
             mcp_server_section,
             dev_section,
         ]
@@ -868,7 +880,6 @@ def get_default_settings() -> Settings:
         agent_prompts_subdir="default",
         agent_memory_subdir="default",
         agent_knowledge_subdir="custom",
-        mcp_servers="",
         rfc_auto_docker=True,
         rfc_url="localhost",
         rfc_password="",
@@ -879,6 +890,7 @@ def get_default_settings() -> Settings:
         stt_silence_threshold=0.3,
         stt_silence_duration=1000,
         stt_waiting_timeout=2000,
+        mcp_servers="",
         mcp_server_enabled=False,
     )
 

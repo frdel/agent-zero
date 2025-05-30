@@ -417,19 +417,20 @@ class MCPConfig(BaseModel):
                     )
 
                     tool_args = ""
-                    properties: dict[str, Any] = tool["input_schema"]["properties"]
-                    for key, value in properties.items():
-                        tool_args += f"            \"{key}\": \"...\",\n"
-                        examples = ""
-                        description = ""
-                        if "examples" in value:
-                            examples = f"(examples: {value['examples']})"
-                        if "description" in value:
-                            description = f": {value['description']}"
-                        prompt += (
-                            f" * {key} ({value['type']}){description} {examples}\n"
-                        )
-                    prompt += "\n"
+                    if "input_schema" in tool and "properties" in tool["input_schema"]:
+                        properties: dict[str, Any] = tool["input_schema"]["properties"]
+                        for key, value in properties.items():
+                            tool_args += f"            \"{key}\": \"...\",\n"
+                            examples = ""
+                            description = ""
+                            if "examples" in value:
+                                examples = f"(examples: {value['examples']})"
+                            if "description" in value:
+                                description = f": {value['description']}"
+                            prompt += (
+                                f" * {key} ({value['type']}){description} {examples}\n"
+                            )
+                        prompt += "\n"
 
                     prompt += (
                         f"#### Usage:\n"
