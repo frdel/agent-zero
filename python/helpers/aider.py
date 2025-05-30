@@ -17,7 +17,7 @@ from python.helpers.print_style import PrintStyle
 
 from models import get_api_key
 
-# Grab all the API keys and normalize them to standard environment variables
+# Grab all the API keys and normalize them to standard environment variables if not empty
 for provider in ["OPENAI", "ANTHROPIC", "GROQ", "GOOGLE", "DEEPSEEK", "OPENROUTER", "SAMBANOVA", "MISTRALAI", "HUGGINGFACE", "CHUTES"]:
     api_key = get_api_key(provider)
     if api_key:
@@ -238,7 +238,6 @@ class StreamingAiderWrapper:
 
 
 def create_streaming_aider_coder(
-    model_name: str | None = None,
     files: Optional[List[str]] = None,
     read_only_files: Optional[List[str]] = None,
     git_repo_path: Optional[str] = None,
@@ -270,11 +269,11 @@ def create_streaming_aider_coder(
         tuple: (StreamingAiderWrapper, StreamingResponseCapture)
     """
     try:
-        if not model_name:
-            conf: Settings = settings.get_settings()
-            MODEL_NAME = conf["chat_model_name"]
-            MODEL_PROVIDER = conf["chat_model_provider"]
-            model_name = MODEL_PROVIDER.lower() + "/" + MODEL_NAME
+        conf: Settings = settings.get_settings()
+        model_name = conf["coding_model_name"]
+        model_provider = conf["coding_model_provider"]
+        model_name = model_provider.lower() + "/" + model_name
+        model_ctx_history = int(conf["coding_model_ctx_history"] * conf["chat_model_ctx_length"])
 
         # Determine working directory but don't change global cwd
         if git_repo_path:
@@ -288,6 +287,7 @@ def create_streaming_aider_coder(
 
         # Create main model
         main_model = Model(model_name)
+        main_model.max_chat_history_tokens = model_ctx_history
 
         # Create InputOutput with the specific root path
         io = InputOutput(

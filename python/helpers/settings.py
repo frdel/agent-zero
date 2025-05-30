@@ -42,6 +42,11 @@ class Settings(TypedDict):
     browser_model_vision: bool
     browser_model_kwargs: dict[str, str]
 
+    coding_model_provider: str
+    coding_model_name: str
+    coding_model_ctx_length: int
+    coding_model_ctx_history: float
+
     agent_prompts_subdir: str
     agent_memory_subdir: str
     agent_knowledge_subdir: str
@@ -394,6 +399,55 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "tab": "agent",
     }
 
+    coding_model_fields: list[SettingsField] = []
+    coding_model_fields.append(
+        {
+            "id": "coding_model_provider",
+            "title": "Coding model provider",
+            "description": "Select provider for coding model used by the framework",
+            "type": "select",
+            "value": settings["coding_model_provider"],
+            "options": [{"value": p.name, "label": p.value} for p in ModelProvider],
+        }
+    )
+    coding_model_fields.append(
+        {
+            "id": "coding_model_name",
+            "title": "Coding model name",
+            "description": "Exact name of model from selected provider",
+            "type": "text",
+            "value": settings["coding_model_name"],
+        }
+    )
+    coding_model_fields.append(
+        {
+            "id": "coding_model_ctx_length",
+            "title": "Context window length",
+            "description": "Context window length for the coding model.",
+            "type": "number",
+            "value": settings["coding_model_ctx_length"],
+        }
+    )
+    coding_model_fields.append(
+        {
+            "id": "coding_model_ctx_history",
+            "title": "Context window space for chat history",
+            "description": "Portion of context window dedicated to chat history visible to the agent. Chat history will automatically be optimized to fit.",
+            "type": "range",
+            "min": 0.01,
+            "max": 1,
+            "step": 0.01,
+            "value": settings["coding_model_ctx_history"],
+        }
+    )
+    coding_model_section: SettingsSection = {
+        "id": "coding_model",
+        "title": "Coding Model",
+        "description": "Settings for the coding model used by Agent Zero.",
+        "fields": coding_model_fields,
+        "tab": "agent",
+    }
+
     # # Memory settings section
     # memory_fields: list[SettingsField] = []
     # memory_fields.append(
@@ -734,6 +788,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             util_model_section,
             embed_model_section,
             browser_model_section,
+            coding_model_section,
             # memory_section,
             stt_section,
             api_keys_section,
@@ -873,6 +928,10 @@ def get_default_settings() -> Settings:
         browser_model_name="gpt-4.1",
         browser_model_vision=True,
         browser_model_kwargs={"temperature": "0"},
+        coding_model_provider=ModelProvider.OPENAI.name,
+        coding_model_name="gpt-4.1",
+        coding_model_ctx_length=100000,
+        coding_model_ctx_history=0.7,
         api_keys={},
         auth_login="",
         auth_password="",
