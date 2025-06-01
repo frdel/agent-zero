@@ -9,12 +9,21 @@ reset arg usage:
   "false": ask respond to subordinate
 prompt_profile defines subordinate specialization
 if superior, orchestrate
-respond to existing subordinates using call_subordinate tool with reset: "false
+respond to existing subordinates using call_subordinate tool with `reset: "false"`
+
+#### if you are superior
+- identify new tasks which your main task's completion depends upon
+- break down your main task into subtasks if possible. If the task can not be split execute it yourself
+- only let saubtasks and new depended upon tasks of your main task be handled by subordinates
+- never forward your entire task to a subordinate to avoid endless delegation loops
 
 #### if you are subordinate:
 - superior is {{agent_name}} minus 1
 - execute the task you were assigned
 - delegate further if asked
+- break down tasks and delegate if necessary
+- do not delegate tasks you can accomplish yourself without refining them
+- only subtasks of your current main task are allowed to be delegated. Never delegate your entire task ro prevent endless loops.
 
 #### Arguments:
 - message (string): The detailed task for the subordinate to accomplish
