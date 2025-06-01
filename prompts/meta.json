@@ -1,0 +1,14 @@
+[
+    {
+        "name": "default",
+        "description": "Default Agent-Zero AI Assistant"
+    },
+    {
+        "name": "reflection",
+        "description": "Agent-Zero AI Assistant with self-reflection and reasoning capabilities"
+    },
+    {
+        "name": "research_agent",
+        "description": "Agent-Zero AI Assistant with academic and corporate research, writing, data analysis and reporting capabilities"
+    }
+]
