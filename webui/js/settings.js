@@ -364,6 +364,7 @@ document.addEventListener('alpine:init', function () {
                         const data = await response.json();
                         if (data && data.settings) {
                             this.settingsData = data.settings;
+                            injectModelHints(this.settingsData);
                         } else {
                             console.error('Invalid settings data format');
                         }
@@ -394,6 +395,27 @@ document.addEventListener('alpine:init', function () {
                 } else {
                     // For any other tab, show nothing since those tabs have custom UI
                     this.filteredSections = [];
+                }
+
+                // Re-inject model hints after filtering
+                this.$nextTick(() => {
+                    injectModelHints(this.settingsData);
+                });
+            },
+
+            // Handle provider change to update model hints
+            onProviderChange(sectionId, fieldId, newValue) {
+                // Find the section and update the provider value
+                const section = this.settingsData.sections?.find(s => s.id === sectionId);
+                if (section) {
+                    const field = section.fields?.find(f => f.id === fieldId);
+                    if (field) {
+                        field.value = newValue;
+                        // Re-inject model hints for this section
+                        this.$nextTick(() => {
+                            injectModelHints(this.settingsData);
+                        });
+                    }
                 }
             },
 
@@ -577,4 +599,92 @@ function showToast(message, type = 'info') {
             document.body.removeChild(toast);
         }, 300);
     }, 3000);
+}
+
+// ---------------------------------------------------------------------------
+// LiteLLM model hints for API key fields and model name fields
+// ---------------------------------------------------------------------------
+
+const LITELLM_MODEL_HINTS = {
+    openai: ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o-mini', 'text-embedding-3-small', 'text-embedding-3-large'],
+    anthropic: ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229'],
+    deepseek: ['deepseek-chat', 'deepseek-coder', 'deepseek-v2'],
+    google: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro', 'gemini-pro-vision'],
+    groq: ['llama-3.1-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it'],
+    huggingface: ['sentence-transformers/all-MiniLM-L6-v2', 'mistralai/Mixtral-8x7B-Instruct-v0.1', 'HuggingFaceH4/zephyr-7b-beta'],
+    mistralai: ['mistral-large-latest', 'mistral-small-latest', 'mistral-embed'],
+    openrouter: ['openrouter/openai/gpt-4o', 'openrouter/anthropic/claude-3.5-sonnet', 'openrouter/mistralai/mistral-large'],
+    sambanova: ['sambanova/Meta-Llama-3.1-8B-Instruct', 'sambanova/Meta-Llama-3.1-70B-Instruct'],
+    azure: ['azure/gpt-4o', 'azure/gpt-35-turbo', 'azure/text-embedding-ada-002'],
+    vertex_ai: ['vertex_ai/gemini-1.5-pro', 'vertex_ai/gemini-1.5-flash', 'vertex_ai/text-embedding-004'],
+    bedrock: ['bedrock/anthropic.claude-3-sonnet-20240229-v1:0', 'bedrock/anthropic.claude-3-haiku-20240307-v1:0'],
+    cohere: ['command-r-plus', 'command-r', 'embed-english-v3.0'],
+    together_ai: ['together_ai/meta-llama/Llama-3-70b-chat-hf', 'together_ai/mistralai/Mixtral-8x7B-Instruct-v0.1'],
+};
+
+// Model hints specifically for model name fields (with LiteLLM prefixes)
+const LITELLM_MODEL_NAME_HINTS = {
+    OPENAI: ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o-mini', 'text-embedding-3-small', 'text-embedding-3-large'],
+    ANTHROPIC: ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229'],
+    DEEPSEEK: ['deepseek-chat', 'deepseek-coder', 'deepseek-v2'],
+    GOOGLE: ['gemini/gemini-1.5-pro', 'gemini/gemini-1.5-flash', 'gemini/gemini-pro', 'gemini/gemini-pro-vision'],
+    GROQ: ['groq/llama-3.1-70b-versatile', 'groq/llama-3.1-8b-instant', 'groq/mixtral-8x7b-32768', 'groq/gemma2-9b-it'],
+    HUGGINGFACE: ['sentence-transformers/all-MiniLM-L6-v2', 'huggingface/mistralai/Mixtral-8x7B-Instruct-v0.1', 'huggingface/HuggingFaceH4/zephyr-7b-beta'],
+    MISTRALAI: ['mistral/mistral-large-latest', 'mistral/mistral-small-latest', 'mistral/mistral-embed'],
+    OPENROUTER: ['openrouter/openai/gpt-4o', 'openrouter/anthropic/claude-3.5-sonnet', 'openrouter/mistralai/mistral-large'],
+    SAMBANOVA: ['sambanova/Meta-Llama-3.1-8B-Instruct', 'sambanova/Meta-Llama-3.1-70B-Instruct'],
+    AZURE: ['azure/gpt-4o', 'azure/gpt-35-turbo', 'azure/text-embedding-ada-002'],
+    VERTEX_AI: ['vertex_ai/gemini-1.5-pro', 'vertex_ai/gemini-1.5-flash', 'vertex_ai/text-embedding-004'],
+    BEDROCK: ['bedrock/anthropic.claude-3-sonnet-20240229-v1:0', 'bedrock/anthropic.claude-3-haiku-20240307-v1:0'],
+    COHERE: ['command-r-plus', 'command-r', 'embed-english-v3.0'],
+    TOGETHER_AI: ['together_ai/meta-llama/Llama-3-70b-chat-hf', 'together_ai/mistralai/Mixtral-8x7B-Instruct-v0.1'],
+};
+
+function injectModelHints(settings) {
+    if (!settings || !settings.sections) return;
+
+    for (const section of settings.sections) {
+        if (!section.fields) continue;
+
+        // Handle API key fields
+        if (section.id === 'api_keys') {
+            for (const field of section.fields) {
+                if (!field.id || !field.id.startsWith('api_key_')) continue;
+                const provider = field.id.replace('api_key_', '');
+                const list = LITELLM_MODEL_HINTS[provider];
+                if (!list) continue;
+                const items = list.map(m => `<li>${m}</li>`).join('');
+                field.description =
+                    `<div class="model-hints"><a href="#" class="models-toggle">` +
+                    `Popular models</a><div class="models-list" style="display:none"><ul>` +
+                    items +
+                    `</ul></div></div>`;
+            }
+        }
+
+        // Handle model name fields for Chat Model, Utility Model, Embedding Model, Browser Model
+        const modelSections = ['chat_model', 'util_model', 'embed_model', 'browser_model'];
+        if (modelSections.includes(section.id)) {
+            for (const field of section.fields) {
+                if (field.id && field.id.endsWith('_model_name')) {
+                    // Find the corresponding provider field
+                    const providerFieldId = field.id.replace('_name', '_provider');
+                    const providerField = section.fields.find(f => f.id === providerFieldId);
+
+                    if (providerField && providerField.value) {
+                        const provider = providerField.value;
+                        const list = LITELLM_MODEL_NAME_HINTS[provider];
+                        if (list) {
+                            const items = list.map(m => `<li class="model-hint-item" data-model="${m}">${m}</li>`).join('');
+                            field.description = (field.description || '') +
+                                `<div class="model-hints"><a href="#" class="models-toggle">` +
+                                `LiteLLM model examples</a><div class="models-list" style="display:none"><ul>` +
+                                items +
+                                `</ul><p class="model-hint-note">Click on a model name to copy it to the field above.</p></div></div>`;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

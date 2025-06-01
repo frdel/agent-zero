@@ -2,4 +2,7 @@
     "python.analysis.typeCheckingMode": "standard",
     "windsurfPyright.analysis.diagnosticMode": "workspace",
     "windsurfPyright.analysis.typeCheckingMode": "standard",
+    "python.analysis.extraPaths": [
+        "./python/tools/browser_"
+    ],
 }

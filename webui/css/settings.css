@@ -949,3 +949,109 @@ nav ul li a img {
 }
 
 /* Token field (for ad-hoc tasks) */
+
+
+/* Model Hints Styles */
+.model-hints {
+  margin-top: 0.5rem;
+}
+
+.models-toggle {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.models-toggle:hover {
+  color: var(--color-secondary);
+  text-decoration: underline;
+}
+
+.models-toggle::after {
+  content: "▼";
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+}
+
+.models-list {
+  margin-top: 0.5rem;
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.models-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.models-list li {
+  padding: 0.375rem 0.5rem;
+  margin: 0.125rem 0;
+  border-radius: 0.25rem;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--color-text);
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.model-hint-item {
+  cursor: pointer !important;
+  border: 1px solid transparent;
+}
+
+.model-hint-item:hover {
+  background-color: var(--color-secondary);
+  color: var(--color-background);
+  border-color: var(--color-primary);
+  transform: translateX(2px);
+}
+
+.model-hint-note {
+  margin: 0.5rem 0 0 0;
+  padding: 0.375rem;
+  font-size: 0.75rem;
+  color: var(--color-text);
+  opacity: 0.7;
+  font-style: italic;
+  border-top: 1px solid var(--color-border);
+  background-color: rgba(var(--color-primary-rgb), 0.05);
+  border-radius: 0.25rem;
+}
+
+/* Light mode adjustments */
+.light-mode .models-list {
+  background-color: var(--color-panel-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.light-mode .model-hint-item:hover {
+  background-color: var(--color-secondary-light);
+  color: var(--color-text);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .models-list {
+    max-height: 150px;
+  }
+
+  .models-list li {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.375rem;
+  }
+}

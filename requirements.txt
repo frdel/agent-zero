@@ -32,3 +32,5 @@ unstructured==0.15.13
 unstructured-client==0.25.9
 webcolors==24.6.0
 crontab==1.0.1
+litellm==1.39.3
+langchain-core>=0.3.0  

@@ -1,17 +1,23 @@
 import asyncio
 import json
 import time
-from agent import Agent, InterventionException
+from agent import Agent, InterventionException  # type: ignore[import]
+
+# Setup browser_use telemetry before importing
+from python.helpers import dotenv
+dotenv.save_dotenv_value("ANONYMIZED_TELEMETRY", "false")
 
 import models
 from python.helpers.tool import Tool, Response
-from python.helpers import files, defer, persist_chat
+from python.helpers import files, defer, persist_chat, strings
 from python.helpers.browser_use import browser_use
+import browser_use  # type: ignore[import]
 from python.extensions.message_loop_start._10_iteration_no import get_iter_no
 from pydantic import BaseModel
 import uuid
 from python.helpers.dirty_json import DirtyJson
 from langchain_core.messages import SystemMessage
+
 
 class State:
     @staticmethod
@@ -183,6 +189,11 @@ class BrowserAgent(Tool):
         # collect result
         result = await task.result()
         answer = result.final_result()
+
+        # Ensure answer is not None
+        if answer is None:
+            answer = "Browser task completed but no result was returned."
+
         try:
             answer_data = DirtyJson.parse_string(answer)
             answer_text = strings.dict_to_text(answer_data)  # type: ignore

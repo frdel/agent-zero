@@ -31,6 +31,9 @@ RUN bash /ins/install_A0.sh $BRANCH
 # install additional software
 RUN bash /ins/install_additional.sh $BRANCH
 
+# ensure litellm is installed
+RUN bash -c "source /opt/venv/bin/activate && pip install litellm==1.39.3"
+
 # cleanup repo and install A0 without caching, this speeds up builds
 ARG CACHE_DATE=none
 RUN echo "cache buster $CACHE_DATE" && bash /ins/install_A02.sh $BRANCH
