@@ -10,7 +10,6 @@ from . import files, dotenv
 from python.helpers.print_style import PrintStyle
 
 
-
 class Settings(TypedDict):
     chat_model_provider: str
     chat_model_name: str
@@ -66,7 +65,6 @@ class Settings(TypedDict):
     stt_waiting_timeout: int
 
     mcp_server_enabled: bool
-    
 
 
 class PartialSettings(Settings, total=False):
@@ -82,11 +80,14 @@ class SettingsField(TypedDict, total=False):
     id: str
     title: str
     description: str
-    type: Literal["text", "number", "select", "range", "textarea", "password", "switch"]
+    type: Literal[
+        "text", "number", "select", "range", "textarea", "password", "switch", "button"
+    ]
     value: Any
     min: float
     max: float
     step: float
+    hidden: bool
     options: list[FieldOption]
 
 
@@ -465,9 +466,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     api_keys_fields.append(
         _get_api_key_field(settings, "anthropic", "Anthropic API Key")
     )
-    api_keys_fields.append(
-        _get_api_key_field(settings, "chutes", "Chutes API Key")
-    )
+    api_keys_fields.append(_get_api_key_field(settings, "chutes", "Chutes API Key"))
     api_keys_fields.append(_get_api_key_field(settings, "deepseek", "DeepSeek API Key"))
     api_keys_fields.append(_get_api_key_field(settings, "google", "Google API Key"))
     api_keys_fields.append(_get_api_key_field(settings, "groq", "Groq API Key"))
@@ -683,9 +682,18 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "tab": "agent",
     }
 
-
     # MCP section
     mcp_client_fields: list[SettingsField] = []
+
+    mcp_client_fields.append(
+        {
+            "id": "mcp_servers_config",
+            "title": "MCP Servers Configuration",
+            "description": "External MCP servers can be configured here.",
+            "type": "button",
+            "value": "Open",
+        }
+    )
 
     mcp_client_fields.append(
         {
@@ -694,6 +702,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "description": "(JSON list of) >> RemoteServer <<: [name, url, headers, timeout (opt), sse_read_timeout (opt), disabled (opt)] / >> Local Server <<: [name, command, args, env, encoding (opt), encoding_error_handler (opt), disabled (opt)]",
             "type": "textarea",
             "value": settings["mcp_servers"],
+            "hidden": True,
         }
     )
 
@@ -724,7 +733,6 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "fields": mcp_server_fields,
         "tab": "mcp",
     }
-
 
     # Add the section to the result
     result: SettingsOutput = {
@@ -789,9 +797,22 @@ def set_settings(settings: Settings):
     _apply_settings(previous)
 
 
+def set_settings_delta(delta: dict):
+    current = get_settings()
+    new = {**current, **delta}
+    set_settings(new)  # type: ignore
+
+
 def normalize_settings(settings: Settings) -> Settings:
     copy = settings.copy()
     default = get_default_settings()
+
+    # remove keys that are not in default
+    keys_to_remove = [key for key in copy if key not in default]
+    for key in keys_to_remove:
+        del copy[key]
+
+    # add missing keys and normalize types
     for key, value in default.items():
         if key not in copy:
             copy[key] = value
@@ -800,6 +821,7 @@ def normalize_settings(settings: Settings) -> Settings:
                 copy[key] = type(value)(copy[key])  # type: ignore
             except (ValueError, TypeError):
                 copy[key] = value  # make default instead
+
     return copy
 
 
@@ -922,41 +944,55 @@ def _apply_settings(previous: Settings | None):
             or _settings["embed_model_kwargs"] != previous["embed_model_kwargs"]
         ):
             from python.helpers.memory import reload as memory_reload
+
             memory_reload()
 
         # update mcp settings if necessary
         from python.helpers.mcp_handler import MCPConfig
 
         async def update_mcp_settings(mcp_servers: str):
-            PrintStyle(background_color="black", font_color="white", padding=True).print("Updating MCP config...")
+            PrintStyle(
+                background_color="black", font_color="white", padding=True
+            ).print("Updating MCP config...")
             first_context = AgentContext.first()
             if first_context:
-                first_context.log.log(type="info", content="Updating MCP settings...", temp=True)
+                first_context.log.log(
+                    type="info", content="Updating MCP settings...", temp=True
+                )
 
             mcp_config = MCPConfig.get_instance()
             try:
                 MCPConfig.update(mcp_servers)
             except Exception as e:
                 if first_context:
-                    first_context.log.log(type="warning", content=f"Failed to update MCP settings: {e}", temp=False)
+                    first_context.log.log(
+                        type="warning",
+                        content=f"Failed to update MCP settings: {e}",
+                        temp=False,
+                    )
                 (
-                    PrintStyle(background_color="red", font_color="black", padding=True)
-                    .print("Failed to update MCP settings")
+                    PrintStyle(
+                        background_color="red", font_color="black", padding=True
+                    ).print("Failed to update MCP settings")
                 )
                 (
-                    PrintStyle(background_color="black", font_color="red", padding=True)
-                    .print(f"{e}")
+                    PrintStyle(
+                        background_color="black", font_color="red", padding=True
+                    ).print(f"{e}")
                 )
 
             PrintStyle(
                 background_color="#6734C3", font_color="white", padding=True
             ).print("Parsed MCP config:")
             (
-                PrintStyle(background_color="#334455", font_color="white", padding=False)
-                .print(mcp_config.model_dump_json())
+                PrintStyle(
+                    background_color="#334455", font_color="white", padding=False
+                ).print(mcp_config.model_dump_json())
             )
             if first_context:
-                first_context.log.log(type="info", content="Finished updating MCP settings :)", temp=True)
+                first_context.log.log(
+                    type="info", content="Finished updating MCP settings :)", temp=True
+                )
 
         task2 = defer.DeferredTask().start_task(
             update_mcp_settings, config.mcp_servers

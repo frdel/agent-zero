@@ -129,30 +129,30 @@
 
 /* Full Screen Input Modal Styles */
 .full-screen-input-modal {
-    width: 90%;
-    max-width: 800px;
-    max-height: 80vh;
-    position: relative;
-    padding: 0;
-    background-color: rgb(20, 20, 20, 0.96);
-    border: 1.5px solid var(--color-border);
+  width: 90%;
+  max-width: 800px;
+  max-height: 80vh;
+  position: relative;
+  padding: 0;
+  background-color: rgb(20, 20, 20, 0.96);
+  border: 1.5px solid var(--color-border);
 }
 
 .full-screen-input-modal h2 {
-    margin: 0;
-    padding: 0;
-    font-size: 1.1rem;
-    color: var(--color-text);
-    opacity: 0.8;
+  margin: 0;
+  padding: 0;
+  font-size: 1.1rem;
+  color: var(--color-text);
+  opacity: 0.8;
 }
 
 .full-screen-input-modal .modal-close {
-    position: absolute;
-    top: 1.2rem;
-    right: 1rem;
-    font-size: 1.5rem;
-    padding: 0 0.5rem;
-    line-height: 0.8;
+  position: absolute;
+  top: 1.2rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  padding: 0 0.5rem;
+  line-height: 0.8;
 }
 
 .full-screen-input-modal .btn-ok {
@@ -160,29 +160,29 @@
 }
 
 .full-screen-input-modal .modal-content {
-    height: calc(80vh);
-    padding: 0;
-    margin: 0;
-    overflow: hidden;
+  height: calc(80vh);
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
 }
 
 .full-screen-input-modal .modal-footer {
-    background: transparent;
+  background: transparent;
   max-height: 50px;
 }
 
 #full-screen-input {
-    width: 100%;
-    height: calc(100% - 50px);
-    border: none;
-    background-color: transparent;
-    color: var(--color-text);
-    font-family: 'Roboto Mono', monospace;
-    font-optical-sizing: auto;
-    font-size: 0.955rem;
-    padding: 1.2rem 1rem;
-    resize: none;
-    outline: none;
+  width: 100%;
+  height: calc(100% - 50px);
+  border: none;
+  background-color: transparent;
+  color: var(--color-text);
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-size: 0.955rem;
+  padding: 1.2rem 1rem;
+  resize: none;
+  outline: none;
 }
 
 #full-screen-input::-webkit-scrollbar {
@@ -208,13 +208,13 @@
 }
 
 .light-mode .full-screen-input-modal {
-    background-color: rgb(220, 220, 220, 0.86);
+  background-color: rgb(220, 220, 220, 0.86);
 }
 
 .full-screen-input-modal .modal-footer {
-    padding: 1rem 0;
-    border-top: none;
-    background: transparent;
+  padding: 1rem 0;
+  border-top: none;
+  background: transparent;
 }
 
 /* Buttons Container */
@@ -263,6 +263,21 @@
   border: none;
   font-size: 0.875rem;
   font-family: "Rubik", Arial, Helvetica, sans-serif;
+}
+
+.btn.slim {
+  padding: 0.2em 0.4em;
+}
+
+.btn.primary {
+  background: #2196f3;
+  color: white;
+  width: fit-content;
+}
+
+.btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 
 .btn-ok {
@@ -391,72 +406,72 @@ h2 {
 
 /* Editor Toolbar */
 .editor-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    background-color: rgba(30, 30, 30, 0.95);
-    border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  background-color: rgba(30, 30, 30, 0.95);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .light-mode .editor-toolbar {
-    background-color: rgba(240, 240, 240, 0.95);
+  background-color: rgba(240, 240, 240, 0.95);
 }
 
 .toolbar-group {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0 0.5rem;
-    border-right: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.5rem;
+  border-right: 1px solid var(--color-border);
 }
 
 .toolbar-group:last-child {
-    border-right: none;
+  border-right: none;
 }
 
 .toolbar-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    padding: 0.4rem;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    color: var(--color-text);
-    opacity: 0.7;
-    cursor: pointer;
-    transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0.4rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--color-text);
+  opacity: 0.7;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .toolbar-button svg {
-    width: 18px;
-    height: 18px;
+  width: 18px;
+  height: 18px;
 }
 
 .toolbar-button:hover {
-    opacity: 1;
-    background-color: rgba(255, 255, 255, 0.1);
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .toolbar-button:active {
-    transform: translateY(1px);
+  transform: translateY(1px);
 }
 
 .toolbar-button.active {
-    background-color: rgba(255, 255, 255, 0.15);
-    border-color: var(--color-border);
-    opacity: 1;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--color-border);
+  opacity: 1;
 }
 
 .toolbar-button:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .toolbar-button:disabled:hover {
-    background-color: transparent;
+  background-color: transparent;
 }

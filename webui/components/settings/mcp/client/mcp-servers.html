@@ -1,0 +1,111 @@
+<html>
+
+<head>
+    <title>MCP Servers Configuration</title>
+
+    <script type="module">
+        import { store } from "/components/settings/mcp/client/mcp-servers-store.js";
+    </script>
+</head>
+
+<body>
+    <div x-data>
+        <template x-if="$store.mcpServersStore">
+            <div x-init="$store.mcpServersStore.initialize()" x-destroy="$store.mcpServersStore.onClose()">
+
+                <h3>MCP Servers Configuration JSON
+                    <button class="btn slim" style="margin-left: 0.5em;"
+                        @click="$store.mcpServersStore.formatJson()">Reformat</button>
+                    <button class="btn slim primary" :disabled="$store.mcpServersStore.loading"
+                        style="margin-left: 0.5em;" @click="$store.mcpServersStore.applyNow()">Apply now</button>
+                </h3>
+                <div id="mcp-servers-config-json"></div>
+
+                <h3 id="mcp-servers-status">Status</h3>
+
+                <div class="server-list">
+                    <template x-for="server in $store.mcpServersStore.servers" :key="server.name">
+                        <div class="server-item">
+                            <span class="status-indicator"
+                                :class="server.connected ? 'connected' : 'disconnected'"></span>
+                            <span class="server-name" x-text="server.name"></span>
+                            <span class="server-tools"
+                                x-text="'- ' + (server.tools ? server.tools : 0) + ' tools'"></span>
+                            <span class="server-error" x-show="server.error" x-text="server.error"></span>
+                        </div>
+                    </template>
+                    <div x-show="$store.mcpServersStore.servers.length === 0" class="no-servers">
+                        No servers connected
+                    </div>
+                </div>
+
+
+            </div>
+        </template>
+    </div>
+
+    <style>
+        #mcp-servers-config-json {
+            width: 100%;
+            height: 40em;
+        }
+
+        .server-list {
+            margin-top: 0.5em;
+            margin-bottom: 1em;
+        }
+
+        .server-item {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 0.5em;
+            border-bottom: 1px solid var(--c-border);
+        }
+
+        .server-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 0.8em;
+            height: 0.8em;
+            border-radius: 50%;
+            margin-right: 0.8em;
+        }
+
+        .status-indicator.connected {
+            background-color: #4CAF50;
+        }
+
+        .status-indicator.disconnected {
+            background-color: #F44336;
+        }
+
+        .server-name {
+            font-weight: 500;
+            margin-right: 0.5em;
+        }
+
+        .server-tools {
+            color: var(--c-fg2);
+            font-size: 0.9em;
+        }
+
+        .no-servers {
+            padding: 1em;
+            color: var(--c-fg2);
+            font-style: italic;
+        }
+        
+        .server-error {
+            color: #F44336;
+            font-size: 0.9em;
+            margin-left: 0.8em;
+        }
+    </style>
+
+</body>
+
+</html>
