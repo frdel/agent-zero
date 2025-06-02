@@ -1,15 +1,12 @@
 from __future__ import annotations
 from enum import Enum  
 import os  
-from typing import Any,AsyncIterator, Iterable, List, Dict, cast  
+from typing import Any,AsyncIterator, Iterable, List, Dict, Union, cast  
 
 import litellm  
 from langchain_core.embeddings import Embeddings  
-from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage, AIMessageChunk  
-from langchain_core.outputs import ChatGeneration, ChatResult, ChatGenerationChunk  
-from langchain_core.callbacks.manager import CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun
 from langchain_core.runnables import RunnableLambda
-from models_legacy import get_ollama_base_url
+from langchain_core.messages import BaseMessage
 from python.helpers import dotenv, runtime  
 from python.helpers.dotenv import load_dotenv  
 from python.helpers.rate_limiter import RateLimiter  
@@ -78,9 +75,20 @@ def parse_chunk(chunk: Any) -> str:
     """Parse a streaming chunk from LiteLLM."""
     if isinstance(chunk, str):
         return chunk
+    
+    # Handle LiteLLM ModelResponseStream objects
+    if hasattr(chunk, "choices") and chunk.choices:
+        choice = chunk.choices[0]
+        if hasattr(choice, "delta") and choice.delta:
+            delta = choice.delta
+            if hasattr(delta, "content") and delta.content:
+                return str(delta.content)
+
     # Some SDKs return an object with a `content` attribute rather than a dict.
     if hasattr(chunk, "content"):
         return str(chunk.content)
+    
+    # Handle dict format
     if isinstance(chunk, dict):
         delta = (
             chunk.get("choices", [{}])[0]
@@ -125,7 +133,16 @@ class LiteLLMEmbeddings(Embeddings):
 def _to_litellm_messages(messages: Iterable[BaseMessage]) -> List[Dict[str, str]]:
     llm_messages = []
     for m in messages:
-        role = "assistant" if m.type == "ai" else m.type
+        # Convert LangChain message types to LiteLLM/OpenAI format
+        if m.type == "ai":
+            role = "assistant"
+        elif m.type == "human":
+            role = "user"  # LiteLLM expects "user" not "human"
+        elif m.type == "system":
+            role = "system"
+        else:
+            role = "user"  # Default fallback
+
         llm_messages.append({"role": role, "content": m.content})
     return llm_messages
 
@@ -204,7 +221,7 @@ def get_embedding_model(provider: ModelProvider, name: str, **kwargs: Any) -> Li
 # public API
 # ---------------------------------------------------------------------------
 
-def get_model(type: ModelType, provider: ModelProvider, name: str, **kwargs: Any):
+def get_model(type: ModelType, provider: ModelProvider, name: str, **kwargs: Any) -> Union[RunnableLambda, LiteLLMEmbeddings]:
     if type == ModelType.CHAT:
         return get_chat_model(provider, name, **kwargs)
     elif type == ModelType.EMBEDDING:

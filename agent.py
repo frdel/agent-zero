@@ -1,32 +1,26 @@
 import asyncio
 from collections import OrderedDict
 from dataclasses import dataclass, field
-import time, importlib, inspect, os, json
-import token
-from typing import Any, Awaitable, Coroutine, Optional, Dict, TypedDict
-import uuid
 from datetime import datetime
+import json
+from typing import Any, Awaitable, Coroutine, Optional, Dict, TypedDict, cast
+import uuid
+
 import models
 
-from langchain_core.prompt_values import ChatPromptValue
 from python.helpers import extract_tools, rate_limiter, files, errors, history, tokens
+from python.helpers import dirty_json
 from python.helpers.print_style import PrintStyle
 from langchain_core.prompts import (
     ChatPromptTemplate,
-    MessagesPlaceholder,
-    HumanMessagePromptTemplate,
-    StringPromptTemplate,
 )
-from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, BaseMessage
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.language_models.llms import BaseLLM
-from langchain_core.embeddings import Embeddings
+
 import python.helpers.log as Log
 from python.helpers.dirty_json import DirtyJson
 from python.helpers.defer import DeferredTask
 from typing import Callable
-from python.helpers.history import OutputMessage
+from python.helpers.localization import Localization
 
 
 class AgentContext:
@@ -203,6 +197,7 @@ class AgentConfig:
 class UserMessage:
     message: str
     attachments: list[str] = field(default_factory=list[str])
+    system_message: list[str] = field(default_factory=list[str])
 
 
 class LoopData:
@@ -351,18 +346,24 @@ class Agent:
 
     async def prepare_prompt(self, loop_data: LoopData) -> ChatPromptTemplate:
         # set system prompt and message history
+        await self.call_extensions("message_loop_prompts_before", loop_data=loop_data)
         loop_data.system = await self.get_system_prompt(self.loop_data)
         loop_data.history_output = self.history.output()
 
         # and allow extensions to edit them
-        await self.call_extensions("message_loop_prompts", loop_data=loop_data)
+        await self.call_extensions("message_loop_prompts_after", loop_data=loop_data)
 
         # extras (memory etc.)
-        extras: list[history.OutputMessage] = []
-        for extra in loop_data.extras_persistent.values():
-            extras += history.Message(False, content=extra).output()
-        for extra in loop_data.extras_temporary.values():
-            extras += history.Message(False, content=extra).output()
+        # extras: list[history.OutputMessage] = []
+        # for extra in loop_data.extras_persistent.values():
+        #     extras += history.Message(False, content=extra).output()
+        # for extra in loop_data.extras_temporary.values():
+        #     extras += history.Message(False, content=extra).output()
+        extras = history.Message(
+            False,
+            content=self.read_prompt("agent.context.extras.md", extras=dirty_json.stringify(
+                {**loop_data.extras_persistent, **loop_data.extras_temporary}
+            ))).output()        
         loop_data.extras_temporary.clear()
 
         # convert history + extras to LLM format
@@ -471,21 +472,19 @@ class Agent:
                 "fw.intervention.md",
                 message=message.message,
                 attachments=message.attachments,
+                system_message=message.system_message
             )
         else:
             content = self.parse_prompt(
                 "fw.user_message.md",
                 message=message.message,
                 attachments=message.attachments,
+                system_message=message.system_message
             )
 
-        # remove empty attachments from template
-        if (
-            isinstance(content, dict)
-            and "attachments" in content
-            and not content["attachments"]
-        ):
-            del content["attachments"]
+        # remove empty parts from template
+        if isinstance(content, dict):
+            content = {k: v for k, v in content.items() if v}
 
         # add to history
         msg = self.hist_add_message(False, content=content)  # type: ignore
@@ -558,11 +557,12 @@ class Agent:
         )
 
         # format prompt to messages and stream from model directly
+        model_stream = cast(Any, model)
         messages = prompt.format_messages()
-        async for chunk in model.astream(messages): 
+        async for chunk in model_stream.astream(messages): 
             await self.handle_intervention()  # wait for intervention and handle it, if paused
 
-            content = models.parse_chunk(chunk)
+            content = chunk if isinstance(chunk, str) else str(chunk)
             limiter.add(output=tokens.approximate_tokens(content))
             response += content
 
@@ -586,10 +586,11 @@ class Agent:
 
         # format prompt to messages and stream from model directly
         messages = prompt.format_messages()
-        async for chunk in model.astream(messages): 
+        model_stream = cast(Any, model)
+        async for chunk in model_stream.astream(messages): 
             await self.handle_intervention()  # wait for intervention and handle it, if paused
 
-            content = models.parse_chunk(chunk)
+            content = chunk if isinstance(chunk, str) else str(chunk)
             limiter.add(output=tokens.approximate_tokens(content))
             response += content
 
