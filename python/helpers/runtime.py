@@ -124,3 +124,20 @@ def call_development_function_sync(func: Union[Callable[..., T], Callable[..., A
     
     result = result_queue.get_nowait()
     return cast(T, result)
+
+
+def get_web_ui_port():
+    web_ui_port = (
+        get_arg("port")
+        or int(dotenv.get_dotenv_value("WEB_UI_PORT", 0))
+        or 5000
+    )
+    return web_ui_port
+
+def get_tunnel_api_port():
+    tunnel_api_port = (
+        get_arg("tunnel_api_port")
+        or int(dotenv.get_dotenv_value("TUNNEL_API_PORT", 0))
+        or 5070
+    )
+    return tunnel_api_port

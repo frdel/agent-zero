@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# install playwright
-bash /ins/install_playwright.sh "$@"
+# install playwright - moved to install A0
+# bash /ins/install_playwright.sh "$@"
 
 # searxng
 bash /ins/install_searxng.sh "$@"

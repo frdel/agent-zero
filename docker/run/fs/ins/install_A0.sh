@@ -44,6 +44,9 @@ python -c "import mcp; from mcp import ClientSession; print(f'DEBUG: mcp and mcp
     exit 1
 }
 
+# install playwright
+bash /ins/install_playwright.sh "$@"
+
 # Preload A0
 python /git/agent-zero/preload.py --dockerized=true
 

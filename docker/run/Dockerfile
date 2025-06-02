@@ -25,11 +25,11 @@ COPY ./fs/ /
 # pre installation steps
 RUN bash /ins/pre_install.sh $BRANCH
 
-# install additional software
-RUN bash /ins/install_additional.sh $BRANCH
-
 # install A0
 RUN bash /ins/install_A0.sh $BRANCH
+
+# install additional software
+RUN bash /ins/install_additional.sh $BRANCH
 
 # cleanup repo and install A0 without caching, this speeds up builds
 ARG CACHE_DATE=none
@@ -41,7 +41,7 @@ RUN bash /ins/post_install.sh $BRANCH
 # Expose ports
 EXPOSE 22 80
 
-RUN chmod +x /exe/initialize.sh /exe/run_A0.sh /exe/run_searxng.sh
+RUN chmod +x /exe/initialize.sh /exe/run_A0.sh /exe/run_searxng.sh /exe/run_tunnel_api.sh
 
 # initialize runtime and switch to supervisord
 CMD ["/exe/initialize.sh", "$BRANCH"]

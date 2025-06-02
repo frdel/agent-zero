@@ -14,6 +14,10 @@
     <link rel="stylesheet" href="css/speech.css">
     <link rel="stylesheet" href="css/history.css">
     <link rel="stylesheet" href="css/scheduler-datepicker.css">
+    <link rel="stylesheet" href="css/tunnel.css">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
     <!-- Flatpickr for datetime picker -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -116,6 +120,7 @@
     <script type="text/javascript" src="js/settings.js"></script>
     <script type="text/javascript" src="js/file_browser.js"></script>
     <script type="text/javascript" src="js/modal.js"></script>
+    <script type="text/javascript" src="js/tunnel.js"></script>
 </head>
 
 <body>
@@ -602,6 +607,13 @@
                                             </a>
                                         </li>
                                     </template>
+                                    <!-- Tunnel navigation entry - only visible in the External Services tab -->
+                                    <li x-show="activeTab === 'external'">
+                                        <a href="#section-tunnel">
+                                            <img src="/public/tunnel.svg" alt="Tunnel">
+                                            <span>Flare Tunnel</span>
+                                        </a>
+                                    </li>
                                 </ul>
                             </nav>
 
@@ -692,6 +704,55 @@
                                     </template>
                                 </div>
                             </template>
+
+                            <!-- Tunnel section content - only visible in External Services tab -->
+                            <div id="section-tunnel" class="section" x-show="activeTab === 'external'">
+                                <div class="section-title">Flare Tunnel</div>
+                                <div class="section-description">Create a secure public URL to access your Agent Zero instance anytime, anywhere.</div>
+                                <div class="tunnel-container" x-data="tunnelSettings">
+                                    <!-- Loading spinner for tunnel operations -->
+                                    <div class="loading-spinner" x-show="isLoading">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                        <span x-text="loadingText || 'Processing tunnel request...'"></span>
+                                    </div>
+                                    
+                                    <!-- Tunnel content when not loading -->
+                                    <div x-show="!isLoading">
+                                        <!-- Tunnel link display when generated -->
+                                        <div class="tunnel-link-container" x-show="linkGenerated">
+                                            <div class="tunnel-link-field">
+                                                <input type="text" class="tunnel-link-input" :value="tunnelLink" readonly>
+                                                <div class="buttons-row">
+                                                    <button class="copy-link-button" @click="copyToClipboard()" title="Copy to clipboard">
+                                                        <i class="fas fa-copy"></i> Copy
+                                                    </button>
+                                                    <button class="refresh-link-button" @click="refreshLink()" title="Generate new URL">
+                                                        <i class="fas fa-sync-alt"></i> Refresh
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="tunnel-link-info">
+                                                Share this URL to allow others to access your Agent Zero instance.
+                                            </div>
+                                            <div class="tunnel-link-persistence">
+                                                This URL will persist until you stop the tunnel or restart the Docker container.
+                                            </div>
+                                            <div class="stop-tunnel-container">
+                                                <button class="btn btn-danger" @click="stopTunnel()">
+                                                    <i class="fas fa-stop-circle"></i> Stop Tunnel
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Generate tunnel button when no link exists -->
+                                        <div class="tunnel-actions" x-show="!linkGenerated">
+                                            <button class="btn btn-ok" @click="generateLink()">
+                                                <i class="fas fa-play-circle"></i> Create Tunnel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Task Scheduler Tab Content -->

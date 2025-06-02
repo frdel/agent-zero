@@ -157,11 +157,7 @@ def run():
             pass  # Override to suppress request logging
 
     # Get configuration from environment
-    port = (
-        runtime.get_arg("port")
-        or int(dotenv.get_dotenv_value("WEB_UI_PORT", 0))
-        or 5000
-    )
+    port = runtime.get_web_ui_port()
     host = (
         runtime.get_arg("host") or dotenv.get_dotenv_value("WEB_UI_HOST") or "localhost"
     )
