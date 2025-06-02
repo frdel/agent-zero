@@ -912,7 +912,7 @@ def get_default_settings() -> Settings:
         stt_silence_threshold=0.3,
         stt_silence_duration=1000,
         stt_waiting_timeout=2000,
-        mcp_servers="",
+        mcp_servers='{\n    "mcpServers": {}\n}',
         mcp_server_enabled=False,
     )
 
