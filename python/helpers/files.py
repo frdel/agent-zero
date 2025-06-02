@@ -29,39 +29,32 @@ def load_plugin_variables(file: str, backup_dirs: list[str] | None = None) -> di
         backup_dirs = []
 
     try:
-        PrintStyle().debug(f"Loading prompt variables for {file}")
         plugin_file = find_file_in_dirs(
             get_abs_path(dirname(file), basename(file, ".md") + ".py"),
             backup_dirs
         )
     except FileNotFoundError:
-        PrintStyle().debug(f"No plugin file found: {get_abs_path(dirname(file), basename(file, '.md') + '.py')}")
         plugin_file = None
 
     if plugin_file and exists(plugin_file):
         # load python code and extract variables variables from it
-        PrintStyle().debug(f"Importing module from file: {plugin_file}")
         module = None
         module_name = dirname(plugin_file).replace("/", ".") + "." + basename(plugin_file, '.py')
         try:
             spec = importlib.util.spec_from_file_location(module_name, plugin_file)
             if not spec:
-                PrintStyle().debug(f"Module not found: {plugin_file} {module_name}")
                 return {}
             module = importlib.util.module_from_spec(spec)
             sys.modules[spec.name] = module
             spec.loader.exec_module(module)  # type: ignore
         except ImportError:
-            PrintStyle().debug(f"Module not found: {plugin_file} {module_name}")
             return {}
 
         if module is None:
-            PrintStyle().debug(f"Module not found: {plugin_file} {module_name}")
             return {}
 
         # Get all classes in the module
         class_list = inspect.getmembers(module, inspect.isclass)
-        PrintStyle().debug(f"Found {len(class_list)} classes in module: {basename(plugin_file, '.py')}")
         # Filter for classes that are subclasses of VariablesPlugin
         # iterate backwards to skip imported superclasses
         for cls in reversed(class_list):
