@@ -751,7 +751,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     mcp_server_section: SettingsSection = {
         "id": "mcp_server",
         "title": "A0 MCP Server",
-        "description": "Agent Zero can be exposed as an SSE MCP server. It can then be accessed by MCP clients on the URL and port of the web UI + /mcp/sse, for example http://localhost:5000/mcp/sse. The same applies to public URL using Cloudflare Tunnel.",
+        "description": "Agent Zero can be exposed as an SSE MCP server. See <a href=\"javascript:openModal('settings/mcp/server/example.html')\">connection example</a>.",
         "fields": mcp_server_fields,
         "tab": "mcp",
     }
@@ -811,18 +811,19 @@ def get_settings() -> Settings:
     return norm
 
 
-def set_settings(settings: Settings):
+def set_settings(settings: Settings, apply: bool = True):
     global _settings
     previous = _settings
     _settings = normalize_settings(settings)
     _write_settings_file(_settings)
-    _apply_settings(previous)
+    if apply:
+        _apply_settings(previous)
 
 
-def set_settings_delta(delta: dict):
+def set_settings_delta(delta: dict, apply: bool = True):
     current = get_settings()
     new = {**current, **delta}
-    set_settings(new)  # type: ignore
+    set_settings(new, apply)  # type: ignore
 
 
 def normalize_settings(settings: Settings) -> Settings:
@@ -957,12 +958,13 @@ def _apply_settings(previous: Settings | None):
                 agent = agent.get_data(agent.DATA_NAME_SUBORDINATE)
 
         # reload whisper model if necessary
-        task = defer.DeferredTask().start_task(
-            whisper.preload, _settings["stt_model_size"]
-        )  # TODO overkill, replace with background task
+        if not previous or _settings["stt_model_size"] != previous["stt_model_size"]:
+            task = defer.DeferredTask().start_task(
+                whisper.preload, _settings["stt_model_size"]
+            )  # TODO overkill, replace with background task
 
         # force memory reload on embedding model change
-        if previous and (
+        if not previous or (
             _settings["embed_model_name"] != previous["embed_model_name"]
             or _settings["embed_model_provider"] != previous["embed_model_provider"]
             or _settings["embed_model_kwargs"] != previous["embed_model_kwargs"]
@@ -972,55 +974,56 @@ def _apply_settings(previous: Settings | None):
             memory_reload()
 
         # update mcp settings if necessary
-        from python.helpers.mcp_handler import MCPConfig
+        if not previous or _settings["mcp_servers"] != previous["mcp_servers"]:
+            from python.helpers.mcp_handler import MCPConfig
 
-        async def update_mcp_settings(mcp_servers: str):
-            PrintStyle(
-                background_color="black", font_color="white", padding=True
-            ).print("Updating MCP config...")
-            first_context = AgentContext.first()
-            if first_context:
-                first_context.log.log(
-                    type="info", content="Updating MCP settings...", temp=True
-                )
-
-            mcp_config = MCPConfig.get_instance()
-            try:
-                MCPConfig.update(mcp_servers)
-            except Exception as e:
+            async def update_mcp_settings(mcp_servers: str):
+                PrintStyle(
+                    background_color="black", font_color="white", padding=True
+                ).print("Updating MCP config...")
+                first_context = AgentContext.first()
                 if first_context:
                     first_context.log.log(
-                        type="warning",
-                        content=f"Failed to update MCP settings: {e}",
-                        temp=False,
+                        type="info", content="Updating MCP settings...", temp=True
                     )
-                (
-                    PrintStyle(
-                        background_color="red", font_color="black", padding=True
-                    ).print("Failed to update MCP settings")
-                )
-                (
-                    PrintStyle(
-                        background_color="black", font_color="red", padding=True
-                    ).print(f"{e}")
-                )
 
-            PrintStyle(
-                background_color="#6734C3", font_color="white", padding=True
-            ).print("Parsed MCP config:")
-            (
+                mcp_config = MCPConfig.get_instance()
+                try:
+                    MCPConfig.update(mcp_servers)
+                except Exception as e:
+                    if first_context:
+                        first_context.log.log(
+                            type="warning",
+                            content=f"Failed to update MCP settings: {e}",
+                            temp=False,
+                        )
+                    (
+                        PrintStyle(
+                            background_color="red", font_color="black", padding=True
+                        ).print("Failed to update MCP settings")
+                    )
+                    (
+                        PrintStyle(
+                            background_color="black", font_color="red", padding=True
+                        ).print(f"{e}")
+                    )
+
                 PrintStyle(
-                    background_color="#334455", font_color="white", padding=False
-                ).print(mcp_config.model_dump_json())
-            )
-            if first_context:
-                first_context.log.log(
-                    type="info", content="Finished updating MCP settings :)", temp=True
+                    background_color="#6734C3", font_color="white", padding=True
+                ).print("Parsed MCP config:")
+                (
+                    PrintStyle(
+                        background_color="#334455", font_color="white", padding=False
+                    ).print(mcp_config.model_dump_json())
                 )
+                if first_context:
+                    first_context.log.log(
+                        type="info", content="Finished updating MCP settings :)", temp=True
+                    )
 
-        task2 = defer.DeferredTask().start_task(
-            update_mcp_settings, config.mcp_servers
-        )  # TODO overkill, replace with background task
+            task2 = defer.DeferredTask().start_task(
+                update_mcp_settings, config.mcp_servers
+            )  # TODO overkill, replace with background task
 
 
 def _env_to_dict(data: str):

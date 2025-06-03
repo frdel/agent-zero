@@ -167,24 +167,28 @@ class MCPTool(Tool):
                 user_message_text[:max_user_context_len] + "... (truncated)"
             )
 
-        contextual_block = f"""
-\n--- End of Results for MCP Tool: {self.name} ---
+# commented out for now, output should be unified between tools and MCPs
 
-**Original Tool Call Details:**
-*   **Tool:** `{self.name}`
-*   **Arguments Given:**
-    ```json
-{json.dumps(self.args, indent=2)}
-    ```
+#         contextual_block = f"""
+# \n--- End of Results for MCP Tool: {self.name} ---
 
-**Related User Request Context:**
-{user_message_text}
+# **Original Tool Call Details:**
+# *   **Tool:** `{self.name}`
+# *   **Arguments Given:**
+#     ```json
+# {json.dumps(self.args, indent=2)}
+#     ```
 
-**Next Steps Reminder for {self.name}:**
-If this action is part of an ongoing sequence, consider the next step with this tool or another appropriate tool. If the sequence is complete or this was a one-off action, analyze the final output and report to the user or proceed with the overall plan.
-"""
+# **Related User Request Context:**
+# {user_message_text}
 
-        final_text_for_agent = raw_tool_response + contextual_block
+# **Next Steps Reminder for {self.name}:**
+# If this action is part of an ongoing sequence, consider the next step with this tool or another appropriate tool. If the sequence is complete or this was a one-off action, analyze the final output and report to the user or proceed with the overall plan.
+# """
+
+#         final_text_for_agent = raw_tool_response + contextual_block
+
+        final_text_for_agent = raw_tool_response
 
         self.agent.hist_add_tool_result(self.name, final_text_for_agent)
         (
@@ -211,8 +215,8 @@ class MCPServerRemote(BaseModel):
     description: Optional[str] = Field(default="Remote SSE Server")
     url: str = Field(default_factory=str)
     headers: dict[str, Any] | None = Field(default_factory=dict[str, Any])
-    timeout: float = Field(default=5.0)
-    sse_read_timeout: float = Field(default=60.0 * 5.0)
+    init_timeout: int = Field(default=0)
+    tool_timeout: int = Field(default=0)
     disabled: bool = Field(default=False)
 
     __lock: ClassVar[threading.Lock] = PrivateAttr(default=threading.Lock())
@@ -257,8 +261,8 @@ class MCPServerRemote(BaseModel):
                     "description",
                     "url",
                     "headers",
-                    "timeout",
-                    "sse_read_timeout",
+                    "init_timeout",
+                    "tool_timeout",
                     "disabled",
                 ]:
                     if key == "name":
@@ -282,6 +286,8 @@ class MCPServerLocal(BaseModel):
     encoding_error_handler: Literal["strict", "ignore", "replace"] = Field(
         default="strict"
     )
+    init_timeout: int = Field(default=0)
+    tool_timeout: int = Field(default=0)
     disabled: bool = Field(default=False)
 
     __lock: ClassVar[threading.Lock] = PrivateAttr(default=threading.Lock())
@@ -329,6 +335,8 @@ class MCPServerLocal(BaseModel):
                     "env",
                     "encoding",
                     "encoding_error_handler",
+                    "init_timeout",
+                    "tool_timeout",
                     "disabled",
                 ]:
                     if key == "name":
@@ -695,9 +703,9 @@ class MCPConfig(BaseModel):
                         f"#### Usage:\n"
                         f"~~~json\n"
                         f"{{\n"
-                        f'    "observations": ["..."],\n'
+                        # f'    "observations": ["..."],\n' # TODO: this should be a prompt file with placeholders
                         f'    "thoughts": ["..."],\n'
-                        f'    "reflection": ["..."],\n'
+                        # f'    "reflection": ["..."],\n' # TODO: this should be a prompt file with placeholders
                         f"    \"tool_name\": \"{server_name}.{tool['name']}\",\n"
                         f'    "tool_args": {{\n'
                         f"{tool_args}"
@@ -848,7 +856,7 @@ class MCPClientBase(ABC):
 
         try:
             set = settings.get_settings()
-            await self._execute_with_session(list_tools_op, read_timeout_seconds=set["mcp_client_init_timeout"])
+            await self._execute_with_session(list_tools_op, read_timeout_seconds=self.server.init_timeout or set["mcp_client_init_timeout"])
         except Exception as e:
             # e = eg.exceptions[0]
             error_text = errors.format_error(e, 0, 0)
@@ -989,12 +997,13 @@ class MCPClientRemote(MCPClientBase):
     ]:
         """Connect to an MCP server, init client and save stdio/write streams"""
         server: MCPServerRemote = cast(MCPServerRemote, self.server)
+        set = settings.get_settings()
         stdio_transport = await current_exit_stack.enter_async_context(
             sse_client(
                 url=server.url,
                 headers=server.headers,
-                timeout=server.timeout,
-                sse_read_timeout=server.sse_read_timeout,
+                timeout=server.init_timeout or set["mcp_client_init_timeout"],
+                sse_read_timeout=server.tool_timeout or set["mcp_client_tool_timeout"],
             )
         )
         return stdio_transport

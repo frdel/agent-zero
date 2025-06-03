@@ -83,6 +83,7 @@ const model = {
     const resp = await API.callJsonApi("mcp_servers_status", null);
     if (resp.success) {
       this.servers = resp.status;
+      this.servers.sort((a, b) => a.name.localeCompare(b.name));
     }
   },
 
@@ -98,7 +99,8 @@ const model = {
       await API.callJsonApi("mcp_servers_apply", {
         mcp_servers: this.getEditorValue(),
       });
-      scrollModal("mcp-servers-status");
+      await sleep(5000); // just to prevent user from clicking apply multiple times
+      // scrollModal("mcp-servers-status");
     } catch (error) {
       console.error("Failed to apply MCP servers:", error);
       alert("Failed to apply MCP servers: " + error.message);
