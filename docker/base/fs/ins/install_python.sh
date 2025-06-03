@@ -46,7 +46,7 @@ source /opt/venv/bin/activate
 # upgrade pip and install static packages
 pip install --upgrade pip ipython requests
 # Install some packages in specific variants
-pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install torch==2.7.0+cpu torchvision==0.22.0+cpu --index-url https://download.pytorch.org/whl/cpu
 
 
 echo "====================PYTHON END===================="
