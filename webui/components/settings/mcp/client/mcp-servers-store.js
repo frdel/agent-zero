@@ -8,6 +8,7 @@ const model = {
   servers: [],
   loading: false,
   statusCheck: false,
+  serverLog: "",
 
   async initialize() {
     // Initialize the JSON Viewer after the modal is rendered
@@ -103,6 +104,17 @@ const model = {
       alert("Failed to apply MCP servers: " + error.message);
     }
     this.loading = false;
+  },
+
+  async getServerLog(serverName) {
+    this.serverLog = "";
+    const resp = await API.callJsonApi("mcp_server_get_log", {
+      server_name: serverName,
+    });
+    if (resp.success) {
+      this.serverLog = resp.log;
+      openModal("settings/mcp/client/mcp-servers-log.html")
+    }
   },
 };
 

@@ -49,4 +49,8 @@ pip install --upgrade pip ipython requests
 pip install torch==2.7.0+cpu torchvision==0.22.0+cpu --index-url https://download.pytorch.org/whl/cpu
 
 
+echo "====================PYTHON UV ===================="
+
+curl -Ls https://astral.sh/uv/install.sh | sh
+
 echo "====================PYTHON END===================="

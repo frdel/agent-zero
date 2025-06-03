@@ -44,7 +44,6 @@ class Settings(TypedDict):
     agent_prompts_subdir: str
     agent_memory_subdir: str
     agent_knowledge_subdir: str
-    mcp_servers: str
 
     api_keys: dict[str, str]
 
@@ -64,6 +63,9 @@ class Settings(TypedDict):
     stt_silence_duration: int
     stt_waiting_timeout: int
 
+    mcp_servers: str
+    mcp_client_init_timeout: int
+    mcp_client_tool_timeout: int
     mcp_server_enabled: bool
 
 
@@ -706,6 +708,26 @@ def convert_out(settings: Settings) -> SettingsOutput:
         }
     )
 
+    mcp_client_fields.append(
+        {
+            "id": "mcp_client_init_timeout",
+            "title": "MCP Client Init Timeout",
+            "description": "Timeout for MCP client initialization (in seconds). Higher values might be required for complex MCPs, but might also slowdown system startup.",
+            "type": "number",
+            "value": settings["mcp_client_init_timeout"],
+        }
+    )
+
+    mcp_client_fields.append(
+        {
+            "id": "mcp_client_tool_timeout",
+            "title": "MCP Client Tool Timeout",
+            "description": "Timeout for MCP client tool execution. Higher values might be required for complex tools, but might also result in long responses with failing tools.",
+            "type": "number",
+            "value": settings["mcp_client_tool_timeout"],
+        }
+    )
+
     mcp_client_section: SettingsSection = {
         "id": "mcp_client",
         "title": "External MCP Servers",
@@ -913,6 +935,8 @@ def get_default_settings() -> Settings:
         stt_silence_duration=1000,
         stt_waiting_timeout=2000,
         mcp_servers='{\n    "mcpServers": {}\n}',
+        mcp_client_init_timeout=5,
+        mcp_client_tool_timeout=120,
         mcp_server_enabled=False,
     )
 

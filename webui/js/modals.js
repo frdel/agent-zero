@@ -1,7 +1,6 @@
 // Import the component loader and page utilities
 import { importComponent } from "/js/components.js";
 
-
 // Modal functionality
 const modalStack = [];
 
@@ -64,6 +63,7 @@ function createModalElement(name) {
     }
   });
 
+
   // Create modal structure
   newModal.innerHTML = `
     <div class="modal-inner">
@@ -76,6 +76,11 @@ function createModalElement(name) {
       </div>
     </div>
   `;
+
+  // Setup close button handler for this specific modal
+  const close_button = newModal.querySelector(".modal-close");
+  close_button.addEventListener("click", () => closeModal());
+
 
   // Add modal to DOM
   document.body.appendChild(newModal);
@@ -90,7 +95,7 @@ function createModalElement(name) {
     element: newModal,
     title: newModal.querySelector(".modal-title"),
     body: newModal.querySelector(".modal-bd"),
-    close: newModal.querySelector(".modal-close"),
+    close: close_button,
     styles: [],
     scripts: [],
   };
@@ -112,9 +117,6 @@ export function openModal(modalPath) {
       modal.body.innerHTML = '<div class="loading">Loading...</div>';
 
       // Already added to stack above
-
-      // Setup close button handler for this specific modal
-      modal.close.addEventListener("click", () => closeModal());
 
       // Use importComponent to load the modal content
       // This handles all HTML, styles, scripts and nested components
@@ -140,9 +142,6 @@ export function openModal(modalPath) {
 
       // Update modal z-indexes
       updateModalZIndexes();
-
-      // Setup close button handler for this specific modal
-      modal.close.addEventListener("click", () => closeModal());
     } catch (error) {
       console.error("Error loading modal content:", error);
       resolve();
@@ -151,7 +150,7 @@ export function openModal(modalPath) {
 }
 
 // Function to close modal
-export function closeModal(modalName=null) {
+export function closeModal(modalName = null) {
   if (modalStack.length === 0) return;
 
   let modalIndex = modalStack.length - 1; // Default to last modal

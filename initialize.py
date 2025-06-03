@@ -82,9 +82,10 @@ def initialize():
     args_override(config)
 
     # initialize MCP in deferred task to prevent blocking the main thread
-    async def initialize_mcp_async(mcp_servers_config: str):
-        return initialize_mcp(mcp_servers_config)
-    defer.DeferredTask(thread_name="mcp-initializer").start_task(initialize_mcp_async, config.mcp_servers)
+    # async def initialize_mcp_async(mcp_servers_config: str):
+    #     return initialize_mcp(mcp_servers_config)
+    # defer.DeferredTask(thread_name="mcp-initializer").start_task(initialize_mcp_async, config.mcp_servers)
+    initialize_mcp(config.mcp_servers)
 
     # import python.helpers.mcp_handler as mcp_helper
     # import agent as agent_helper

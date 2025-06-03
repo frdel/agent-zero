@@ -26,21 +26,24 @@
                 <div class="server-list">
                     <template x-for="server in $store.mcpServersStore.servers" :key="server.name">
                         <div class="server-item">
-                            <div class="status-icon" style="margin-right: 0.5em;" x-data="{ connected: server.connected }">
+                            <div class="status-icon" style="margin-right: 0.5em;"
+                                x-data="{ connected: server.connected }">
                                 <svg viewBox="0 0 30 30">
-                                    <!-- Connected State (filled circle) -->
-                                    <circle class="connected-circle" cx="15" cy="15" r="8"
-                                        x-bind:fill="server.connected ? '#00c340' : 'none'" x-bind:opacity="server.connected ? 1 : 0" />
+                                    <!-- Connected State (filled circle, green or orange) -->
+                                    <circle x-bind:class="server.error ? 'disconnected-circle' : 'connected-circle'" cx="15" cy="15" r="8" x-bind:fill="server.connected 
+                                        ? (server.error ? '#e40138' : (server.tool_count === 0 ? '#e40138' : '#00c340')) 
+                                        : 'none'" x-bind:opacity="server.connected ? 1 : 0" />
 
                                     <!-- Disconnected State (outline circle) -->
-                                    <circle class="disconnected-circle" cx="15" cy="15" r="9" fill="none" stroke="#e40138"
-                                        stroke-width="3" x-bind:opacity="server.connected ? 0 : 1" />
+                                    <circle x-bind:class="server.error ? 'disconnected-circle' : 'connected-circle'" cx="15" cy="15" r="9" fill="none"
+                                        stroke="#e40138" stroke-width="3" x-bind:opacity="server.connected ? 0 : 1" />
                                 </svg>
                             </div>
                             <span class="server-name" x-text="server.name"></span>
                             <span class="server-tools"
                                 x-text="'- ' + (server.tool_count ? server.tool_count : 0) + ' tools'"></span>
                             <span class="server-error" x-show="server.error" x-text="server.error"></span>
+                            <span class="server-links"><a href="#" @click="$store.mcpServersStore.getServerLog(server.name)">View Log</a></span>
                         </div>
                     </template>
                     <div x-show="$store.mcpServersStore.servers.length === 0" class="no-servers">
@@ -107,10 +110,14 @@
             color: var(--c-fg2);
             font-style: italic;
         }
-        
+
         .server-error {
             color: #F44336;
             font-size: 0.9em;
+            margin-left: 0.8em;
+        }
+
+        .server-links {
             margin-left: 0.8em;
         }
     </style>
