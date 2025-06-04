@@ -2,4 +2,4 @@
 
 # Cleanup package list
 rm -rf /var/lib/apt/lists/*
-# apt-get clean
+apt-get clean

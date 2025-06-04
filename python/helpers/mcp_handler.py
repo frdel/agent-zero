@@ -5,6 +5,7 @@ from typing import (
     Dict,
     Optional,
     Any,
+    TextIO,
     Union,
     Literal,
     Annotated,
@@ -623,6 +624,8 @@ class MCPConfig(BaseModel):
                 connected = True # tool_count > 0
                 # get error message if any
                 error = server.get_error()
+                # get log bool
+                has_log = server.get_log() != ""
 
                 # add server status to result
                 result.append(
@@ -631,6 +634,7 @@ class MCPConfig(BaseModel):
                         "connected": connected,
                         "error": error,
                         "tool_count": tool_count,
+                        "has_log": has_log,
                     }
                 )
 
@@ -642,10 +646,26 @@ class MCPConfig(BaseModel):
                         "connected": False,
                         "error": disconnected["error"],
                         "tool_count": 0,
+                        "has_log": False,
                     }
                 )
 
         return result
+
+    def get_server_detail(self, server_name: str) -> dict[str, Any]:
+        with self.__lock:
+            for server in self.servers:
+                if server.name == server_name:
+                    try:
+                        tools = server.get_tools()
+                    except Exception as e:
+                        tools = []
+                    return {
+                        "name": server.name,
+                        "description": server.description,
+                        "tools": tools,
+                    }
+            return {}
 
     def is_initialized(self) -> bool:
         """Check if the client is initialized"""
@@ -677,13 +697,16 @@ class MCPConfig(BaseModel):
         for server in self.servers:
             if server.name in server_names:
                 server_name = server.name
+                prompt += f"### {server_name}\n"
+                prompt += f"{server.description}\n\n"
+
                 for tool in server.get_tools():
                     prompt += (
                         f"### {server_name}.{tool['name']}:\n"
                         f"{tool['description']}\n\n"
-                        f"#### Categories:\n"
-                        f"* kind: MCP Server Tool\n"
-                        f'* server: "{server_name}" ({server.description})\n\n'
+                        # f"#### Categories:\n"
+                        # f"* kind: MCP Server Tool\n"
+                        # f'* server: "{server_name}" ({server.description})\n\n'
                         f"#### Arguments:\n"
                     )
 
@@ -783,6 +806,7 @@ class MCPClientBase(ABC):
         self.tools: List[dict[str, Any]] = []  # Tools are cached on the client instance
         self.error: str = ""
         self.log: List[str] = []
+        self.log_file: Optional[TextIO] = None
 
     # Protected method
     @abstractmethod
@@ -946,8 +970,6 @@ class MCPClientBase(ABC):
                 f"MCPClientBase::Failed to call tool '{tool_name}' on server '{self.server.name}'. Original error: {type(e).__name__}: {e}"
             )
 
-
-class MCPClientLocal(MCPClientBase):
     def get_log(self):
         # read and return lines from self.log_file, do not close it
         if not hasattr(self, 'log_file') or self.log_file is None:
@@ -959,6 +981,8 @@ class MCPClientLocal(MCPClientBase):
             log = ""
         return log
 
+
+class MCPClientLocal(MCPClientBase):
     def __del__(self):
         # close the log file if it exists
         if hasattr(self, 'log_file') and self.log_file is not None:
@@ -1005,9 +1029,6 @@ class MCPClientLocal(MCPClientBase):
 
 
 class MCPClientRemote(MCPClientBase):
-
-    def get_log(self):
-        return "Logging not implemented for remote servers yet"
 
     async def _create_stdio_transport(
         self, current_exit_stack: AsyncExitStack

@@ -186,8 +186,9 @@ def run():
                 PrintStyle().error(f"Failed to start Cloudflare tunnel: {e}")
                 PrintStyle().print("Continuing without tunnel...")
 
-        # initialize contexts from persisted chats
-        persist_chat.load_tmp_chats()
+        # # initialize contexts from persisted chats - moved to async task
+        # persist_chat.load_tmp_chats()
+
         # # reload scheduler
         # scheduler = TaskScheduler.get()
         # asyncio.run(scheduler.reload())
@@ -301,12 +302,20 @@ def run():
 
         process.set_server(server)
         server.log_startup()
+        
+        # Start init_a0 in a background thread when server starts
+        import threading
+        threading.Thread(target=init_a0, daemon=True).start()
+        
         server.serve_forever()
     finally:
         # Clean up tunnel if it was started
         if tunnel:
             tunnel.stop()
 
+def init_a0():
+    # initialize contexts from persisted chats
+    persist_chat.load_tmp_chats()
 
 # run the internal server
 if __name__ == "__main__":

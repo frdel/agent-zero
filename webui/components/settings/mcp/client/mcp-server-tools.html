@@ -1,0 +1,113 @@
+<html>
+
+<head>
+    <title>MCP Server Detail</title>
+
+    <script type="module">
+        import { store } from "/components/settings/mcp/client/mcp-servers-store.js";
+    </script>
+</head>
+
+<body>
+    <div x-data>
+        <template x-if="$store.mcpServersStore">
+            <div>
+                <h3 x-text="$store.mcpServersStore.serverDetail.name"></h3>
+                <p x-text="$store.mcpServersStore.serverDetail.description"></p>
+
+                <div class="tools-container">
+                    <template x-for="tool in $store.mcpServersStore.serverDetail.tools" :key="tool.name">
+                        <div class="tool-item">
+                            <h4 x-text="tool.name"></h4>
+                            <p class="tool-description" x-text="tool.description"></p>
+
+                            <template x-if="tool.input_schema?.properties">
+                                <div class="tool-properties">
+                                    <p class="properties-title">Properties:</p>
+                                    <ul>
+                                        <template x-for="(prop, propName) in tool.input_schema.properties"
+                                            :key="propName">
+                                            <li>
+                                                <span class="prop-name" x-text="propName"></span>:
+                                                <span class="prop-type" x-text="prop.type || 'any'"></span>
+                                                <template x-if="prop.description">
+                                                    <span class="prop-desc" x-text="' - ' + prop.description"></span>
+                                                </template>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <style>
+        .tools-container {
+            margin-top: 1.5em;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2em;
+        }
+
+        .tool-item {
+            padding: 1em;
+            border: 1px solid rgba(192, 192, 192, 0.16);
+            border-radius: 4px;
+        }
+
+        .tool-item h4 {
+            margin-top: 0;
+            margin-bottom: 0.5em;
+            font-size: 1.1em;
+        }
+
+        .tool-description {
+            margin-bottom: 1em;
+            color: var(--c-fg);
+            line-height: 1.4;
+        }
+
+        .tool-properties {
+            margin-top: 0.8em;
+            padding: 0.8em;
+            background-color: rgba(0, 0, 0, 0.04);
+            border-radius: 3px;
+        }
+
+        .properties-title {
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 0.5em;
+        }
+
+        .tool-properties ul {
+            margin: 0;
+            padding-left: 1.5em;
+        }
+
+        .tool-properties li {
+            margin-bottom: 0.3em;
+        }
+
+        .prop-name {
+            font-weight: 600;
+            color: var(--c-accent);
+        }
+
+        .prop-type {
+            color: var(--c-fg2);
+            font-style: italic;
+        }
+
+        .prop-desc {
+            color: var(--c-fg);
+        }
+    </style>
+
+</body>
+
+</html>
