@@ -1,16 +1,16 @@
 ### coding_agent:
 
 #### Operation Manual
-this tool controls an autonomous coding agent capable of large project development
-the underlying framework of this tool is the "aider-chat" ai development framework written in python
+this tool controls an autonomous coding agent, your professional developer assistant
+the underlying framework of this tool is the "aider-chat" - ai powered software development framework written in python
 each task for the coding agent is a new tool call
 the coding agent does not retain memories between calls
-you can give the agent development tasks he will complete in one go, further requests for same project need the full context you can provide
+you can give the agent development tasks he will complete in one go
 always provide a very comprehensive and exhaustive context and requirements in the task text
-give the agent a persona + provide all necessary background info + formulate hard and soft requirements + formulate the task in an actionable way = provide this info formatted in the task argument
+give the agent a persona + provide all necessary background info + formulate hard and soft requirements + formulate the task in an actionable way = provide this, well formatted, in the task argument
 always ensure the root_path exists for new development without existig codebase
-to first test what agent would do and examine outpt without actual changes use the dry_run boolean parameter
-if you want the agent to create or edit only specific files in the root_path you must pass the list of those files in the files parameter, path relative to root_path
+to first test the changes without changing code on disk, use the dry_run boolean parameter to simulate agent's output
+if you want the agent to create or edit only specific files in the root_path you must pass the list of those files in the "files" parameter, path relative to root_path. you can also give agent readonly files in the "readonly_files" parameter
 
 #### Arguments:
 * *task* (string, mandatory) - The task description including persona, background info, requirements
