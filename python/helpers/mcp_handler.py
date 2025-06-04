@@ -688,21 +688,38 @@ class MCPConfig(BaseModel):
                     )
 
                     tool_args = ""
-                    if "input_schema" in tool and "properties" in tool["input_schema"]:
-                        properties: dict[str, Any] = tool["input_schema"]["properties"]
-                        for key, value in properties.items():
-                            tool_args += f'            "{key}": "...",\n'
-                            examples = ""
-                            description = ""
-                            param_type = value.get("type", "any")
-                            if "examples" in value:
-                                examples = f"(examples: {value['examples']})"
-                            if "description" in value:
-                                description = f": {value['description']}"
-                            prompt += (
-                                f" * {key} ({param_type}){description} {examples}\n"
-                            )
-                        prompt += "\n"
+                    properties: dict[str, Any] = tool["input_schema"]["properties"]
+                    for key, value in properties.items():
+                        optional = False
+                        examples = ""
+                        description = ""
+                        type = ""
+                        if "anyOf" in value:
+                            for nested_value in value["anyOf"]:
+                                if "type" in nested_value and nested_value["type"] != "null":
+                                    optional = True
+                                    value = nested_value
+                                    break
+                        tool_args += f"            \"{key}\": \"...\",\n"
+                        if "examples" in value:
+                            examples = f"(examples: {value['examples']})"
+                        if "description" in value:
+                            description = f": {value['description']}"
+                        if "type" in value:
+                            if optional:
+                                type = f"{value['type']}, optional"
+                            else:
+                                type = f"{value['type']}"
+                        else:
+                            if optional:
+                                type = "string, optional"
+                            else:
+                                type = "string"
+                        prompt += (
+                            f" * {key} ({type}){description} {examples}\n"
+                        )
+
+                    prompt += "\n"
 
                     prompt += (
                         f"#### Usage:\n"
