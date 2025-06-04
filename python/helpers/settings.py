@@ -981,22 +981,19 @@ def _apply_settings(previous: Settings | None):
                 PrintStyle(
                     background_color="black", font_color="white", padding=True
                 ).print("Updating MCP config...")
-                first_context = AgentContext.first()
-                if first_context:
-                    first_context.log.log(
-                        type="info", content="Updating MCP settings...", temp=True
-                    )
+                AgentContext.log_to_all(
+                    type="info", content="Updating MCP settings...", temp=True
+                )
 
                 mcp_config = MCPConfig.get_instance()
                 try:
                     MCPConfig.update(mcp_servers)
                 except Exception as e:
-                    if first_context:
-                        first_context.log.log(
-                            type="warning",
-                            content=f"Failed to update MCP settings: {e}",
-                            temp=False,
-                        )
+                    AgentContext.log_to_all(
+                        type="error",
+                        content=f"Failed to update MCP settings: {e}",
+                        temp=False,
+                    )
                     (
                         PrintStyle(
                             background_color="red", font_color="black", padding=True
@@ -1016,10 +1013,9 @@ def _apply_settings(previous: Settings | None):
                         background_color="#334455", font_color="white", padding=False
                     ).print(mcp_config.model_dump_json())
                 )
-                if first_context:
-                    first_context.log.log(
-                        type="info", content="Finished updating MCP settings :)", temp=True
-                    )
+                AgentContext.log_to_all(
+                    type="info", content="Finished updating MCP settings.", temp=True
+                )
 
             task2 = defer.DeferredTask().start_task(
                 update_mcp_settings, config.mcp_servers

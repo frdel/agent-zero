@@ -79,6 +79,10 @@ class AgentContext:
         if not AgentContext._contexts:
             return None
         return list(AgentContext._contexts.values())[0]
+    
+    @staticmethod
+    def all():
+        return list(AgentContext._contexts.values())
 
     @staticmethod
     def remove(id: str):
@@ -107,8 +111,21 @@ class AgentContext:
             "type": self.type.value,
         }
 
-    def get_created_at(self):
-        return self.created_at
+    @staticmethod
+    def log_to_all(
+        type: Log.Type,
+        heading: str | None = None,
+        content: str | None = None,
+        kvps: dict | None = None,
+        temp: bool | None = None,
+        update_progress: Log.ProgressUpdate | None = None,
+        id: str | None = None,  # Add id parameter
+        **kwargs,
+    ) -> list[Log.LogItem]:
+        items: list[Log.LogItem] = []
+        for context in AgentContext.all():
+            items.append(context.log.log(type, heading, content, kvps, temp, update_progress, id, **kwargs))
+        return items
 
     def kill_process(self):
         if self.task:

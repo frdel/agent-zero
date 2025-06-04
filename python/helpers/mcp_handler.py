@@ -260,6 +260,7 @@ class MCPServerRemote(BaseModel):
                     "name",
                     "description",
                     "url",
+                    "serverUrl",
                     "headers",
                     "init_timeout",
                     "tool_timeout",
@@ -267,6 +268,9 @@ class MCPServerRemote(BaseModel):
                 ]:
                     if key == "name":
                         value = normalize_name(value)
+                    if key == "serverUrl":
+                        key = "url" # remap serverUrl to url
+                    
                     setattr(self, key, value)
             # We already run in an event loop, dont believe Pylance
             return asyncio.run(self.__on_update())
@@ -579,7 +583,7 @@ class MCPConfig(BaseModel):
 
             try:
                 # not generic MCPServer because: "Annotated can not be instatioated"
-                if server_item.get("url", None):
+                if server_item.get("url", None) or server_item.get("serverUrl", None):
                     self.servers.append(MCPServerRemote(server_item))
                 else:
                     self.servers.append(MCPServerLocal(server_item))
@@ -690,12 +694,13 @@ class MCPConfig(BaseModel):
                             tool_args += f'            "{key}": "...",\n'
                             examples = ""
                             description = ""
+                            param_type = value.get("type", "any")
                             if "examples" in value:
                                 examples = f"(examples: {value['examples']})"
                             if "description" in value:
                                 description = f": {value['description']}"
                             prompt += (
-                                f" * {key} ({value['type']}){description} {examples}\n"
+                                f" * {key} ({param_type}){description} {examples}\n"
                             )
                         prompt += "\n"
 
@@ -789,9 +794,6 @@ class MCPClientBase(ABC):
         try:
             async with AsyncExitStack() as temp_stack:
                 try:
-                    async def log_callback(params):
-                        msg = getattr(params, "message", str(params))
-                        self.log.append(f"[{self.server.name}] [session]: {msg}")
 
                     stdio, write = await self._create_stdio_transport(temp_stack)
                     # PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name} - {operation_name}): Transport created. Initializing session...")
@@ -800,19 +802,20 @@ class MCPClientBase(ABC):
                             stdio,  # type: ignore
                             write,  # type: ignore
                             read_timeout_seconds=timedelta(seconds=read_timeout_seconds),
-                            # logging_callback=log_callback,
                         )
                     )
                     await session.initialize()
-                    # PrintStyle(font_color="green").print(f"MCPClientBase ({self.server.name} - {operation_name}): Session initialized.")
 
                     result = await coro_func(session)
 
-                    # PrintStyle(font_color="green").print(f"MCPClientBase ({self.server.name} - {operation_name}): Operation successful.")
                     return result
                 except Exception as e:
                     # Store the original exception and raise a dummy exception
-                    original_exception = e
+                    excs = getattr(e, "exceptions", None) # Python 3.11+ ExceptionGroup
+                    if excs:
+                        original_exception = excs[0]
+                    else:
+                        original_exception = e
                     # Create a dummy exception to break out of the async block
                     raise RuntimeError("Dummy exception to break out of async block")
         except Exception as e:

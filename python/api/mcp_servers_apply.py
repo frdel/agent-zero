@@ -12,6 +12,7 @@ class McpServersApply(ApiHandler):
         mcp_servers = input["mcp_servers"]
         try:
             # MCPConfig.update(mcp_servers) # done in settings automatically
+            set_settings_delta({"mcp_servers": "[]"}) # to force reinitialization
             set_settings_delta({"mcp_servers": mcp_servers})
 
         except Exception as e:
