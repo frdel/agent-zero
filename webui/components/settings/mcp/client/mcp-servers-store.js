@@ -6,7 +6,7 @@ import * as API from "/js/api.js";
 const model = {
   editor: null,
   servers: [],
-  loading: false,
+  loading: true,
   statusCheck: false,
   serverLog: "",
 
@@ -72,9 +72,14 @@ const model = {
 
   async startStatusCheck() {
     this.statusCheck = true;
+    const firstLoad = true;
 
     while (this.statusCheck) {
       await this._statusCheck();
+      if (firstLoad) {
+        this.loading = false;
+        firstLoad = false;
+      }
       await sleep(3000);
     }
   },
@@ -99,8 +104,9 @@ const model = {
       await API.callJsonApi("mcp_servers_apply", {
         mcp_servers: this.getEditorValue(),
       });
-      await sleep(5000); // just to prevent user from clicking apply multiple times
-      // scrollModal("mcp-servers-status");
+      // await sleep(5000); // just to prevent user from clicking apply multiple times
+      // api now waits for config locks automatically
+      scrollModal("mcp-servers-status");
     } catch (error) {
       console.error("Failed to apply MCP servers:", error);
       alert("Failed to apply MCP servers: " + error.message);

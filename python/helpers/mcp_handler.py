@@ -378,6 +378,11 @@ class MCPConfig(BaseModel):
         return cls.__instance
 
     @classmethod
+    def wait_for_lock(cls):
+        with cls.__lock:
+            return
+
+    @classmethod
     def update(cls, config_str: str) -> Any:
         with cls.__lock:
             servers_data: List[Dict[str, Any]] = []  # Default to empty list
