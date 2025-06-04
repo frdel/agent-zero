@@ -72,7 +72,7 @@ const model = {
 
   async startStatusCheck() {
     this.statusCheck = true;
-    const firstLoad = true;
+    let firstLoad = true;
 
     while (this.statusCheck) {
       await this._statusCheck();
@@ -101,11 +101,15 @@ const model = {
     this.loading = true;
     try {
       scrollModal("mcp-servers-status");
-      await API.callJsonApi("mcp_servers_apply", {
+      const resp = await API.callJsonApi("mcp_servers_apply", {
         mcp_servers: this.getEditorValue(),
       });
-      // await sleep(5000); // just to prevent user from clicking apply multiple times
-      // api now waits for config locks automatically
+      if (resp.success) {
+        this.servers = resp.status;
+        this.servers.sort((a, b) => a.name.localeCompare(b.name));
+      }
+      this.loading = false;
+      await sleep(100); // wait for ui and scroll
       scrollModal("mcp-servers-status");
     } catch (error) {
       console.error("Failed to apply MCP servers:", error);
