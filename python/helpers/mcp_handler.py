@@ -703,12 +703,12 @@ class MCPConfig(BaseModel):
             if server.name in server_names:
                 server_name = server.name
                 prompt += f"### {server_name}\n"
-                prompt += f"{server.description}\n\n"
+                prompt += f"{server.description}\n"
                 tools = server.get_tools()
 
                 for tool in tools:
                     prompt += (
-                        f"### {server_name}.{tool['name']}:\n"
+                        f"\n### {server_name}.{tool['name']}:\n"
                         f"{tool['description']}\n\n"
                         # f"#### Categories:\n"
                         # f"* kind: MCP Server Tool\n"
