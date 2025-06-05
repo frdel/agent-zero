@@ -10,5 +10,9 @@
     {
         "name": "research_agent",
         "description": "Agent-Zero AI Assistant with academic and corporate research, writing, data analysis and reporting capabilities"
+    },
+    {
+        "name": "developer",
+        "description": "Agent-Zero AI Assistant with strong coding capabilities and project management capabilities, use this profile always for software development tasks."
     }
 ]
