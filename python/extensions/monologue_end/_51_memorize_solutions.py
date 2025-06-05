@@ -15,13 +15,13 @@ class MemorizeSolutions(Extension):
 
         # show temp info message
         self.agent.context.log.log(
-            type="info", content="Memorizing succesful solutions...", temp=True
+            type="info", content="Memorizing successful solutions...", temp=True
         )
 
         # show full util message, this will hide temp message immediately if turned on
         log_item = self.agent.context.log.log(
             type="util",
-            heading="Memorizing succesful solutions...",
+            heading="Memorizing successful solutions...",
         )
 
         #memorize in background
@@ -64,7 +64,7 @@ class MemorizeSolutions(Extension):
             txt = f"# Problem\n {solution['problem']}\n# Solution\n {solution['solution']}"
             solutions_txt += txt + "\n\n"
 
-            # remove previous solutions too similiar to this one
+            # remove previous solutions too similar to this one
             if self.REPLACE_THRESHOLD > 0:
                 rem += await db.delete_documents_by_query(
                     query=txt,
