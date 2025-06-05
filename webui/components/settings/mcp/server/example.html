@@ -9,19 +9,20 @@
     <div x-data>
         <p>Agent Zero MCP Server is an SSE MCP running on the same URL and port as the Web UI + /mcp/sse path.</p>
         <p>The same applies if you run A0 on a public URL using a tunnel.</p>
-        
+
         <h3>Example MCP Server Configuration JSON</h3>
         <div id="mcp-server-example"></div>
 
         <script>
             setTimeout(() => {
                 const url = window.location.origin;
+                const token = settingsModalProxy.settings.sections.filter(x => x.id == "mcp_server")[0].fields.filter(x => x.id == "mcp_server_token")[0].value;
                 const jsonExample = JSON.stringify({
                     "mcpServers":
                     {
                         "agent-zero": {
                             "type": "sse",
-                            "serverUrl": `${url}/mcp/sse`
+                            "serverUrl": `${url}/mcp/t-${token}/sse`
                         }
                     }
                 }, null, 2);

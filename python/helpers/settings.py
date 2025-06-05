@@ -1,3 +1,5 @@
+import base64
+import hashlib
 import json
 import os
 import re
@@ -67,6 +69,7 @@ class Settings(TypedDict):
     mcp_client_init_timeout: int
     mcp_client_tool_timeout: int
     mcp_server_enabled: bool
+    mcp_server_token: str
 
 
 class PartialSettings(Settings, total=False):
@@ -748,6 +751,17 @@ def convert_out(settings: Settings) -> SettingsOutput:
         }
     )
 
+    mcp_server_fields.append(
+        {
+            "id": "mcp_server_token",
+            "title": "MCP Server Token",
+            "description": "Token for MCP server authentication.",
+            "type": "text",
+            "hidden": True,
+            "value": settings["mcp_server_token"],
+        }
+    )
+
     mcp_server_section: SettingsSection = {
         "id": "mcp_server",
         "title": "A0 MCP Server",
@@ -845,6 +859,9 @@ def normalize_settings(settings: Settings) -> Settings:
             except (ValueError, TypeError):
                 copy[key] = value  # make default instead
 
+    # mcp server token is set automatically
+    copy["mcp_server_token"] = create_token()
+
     return copy
 
 
@@ -939,6 +956,7 @@ def get_default_settings() -> Settings:
         mcp_client_init_timeout=5,
         mcp_client_tool_timeout=120,
         mcp_server_enabled=False,
+        mcp_server_token=create_token(),
     )
 
 
@@ -1075,3 +1093,15 @@ def get_runtime_config(set: Settings):
             "code_exec_http_port": set["rfc_port_http"],
             "code_exec_ssh_user": "root",
         }
+
+
+def create_token() -> str:
+    username = dotenv.get_dotenv_value(dotenv.KEY_AUTH_LOGIN) or ""
+    password = dotenv.get_dotenv_value(dotenv.KEY_AUTH_PASSWORD) or ""
+    if not username or not password:
+        return "0"
+    # use base64 encoding for a more compact token with alphanumeric chars
+    hash_bytes = hashlib.sha256(f"{username}:{password}".encode()).digest()
+    # encode as base64 and remove any non-alphanumeric chars (like +, /, =)
+    b64_token = base64.urlsafe_b64encode(hash_bytes).decode().replace('=', '')
+    return b64_token[:16]

@@ -240,19 +240,46 @@ def run():
 
         
     # define a Starlette-compatible middleware handler
+    from starlette.requests import Request
+    import re
 
-
-    async def mcp_middleware(request, call_next):
-        set = settings.get_settings()
-        if not set["mcp_server_enabled"]:
-            # raise a proper Starlette HTTPException with a clear message
+    async def mcp_middleware(request: Request, call_next):
+        
+        # check if MCP server is enabled
+        cfg = settings.get_settings()
+        if not cfg["mcp_server_enabled"]:
             PrintStyle.error("[MCP] Access denied: MCP server is disabled in settings.")
-            raise StarletteHTTPException(status_code=403, detail="MCP server is disabled in settings.")
+            raise StarletteHTTPException(status_code=403,
+                                        detail="MCP server is disabled in settings.")
+
+        # get auth token from path
+        full_path = request.url.path
+        if not full_path.startswith("/mcp/t-"):
+            raise StarletteHTTPException(status_code=401,
+                                        detail="Missing token.")            
+        pattern = r'^/mcp/t-([^/]+)/(.+)$'
+        match = re.match(pattern, full_path)
+        if not match:
+            raise StarletteHTTPException(status_code=401,
+                                        detail="Missing token.")            
+        token = match.group(1)     
+        remainder = match.group(2)  
+        
+        # validate token
+        if token != cfg["mcp_server_token"]:
+            raise StarletteHTTPException(status_code=401,
+                                        detail="Invalid token.")
+
+        # rewrite path to standard MCP path and continue
+        new_path = f"/mcp/{remainder}"
+        request.scope["path"] = new_path
+        request.scope["raw_path"] = new_path.encode()
+        # request.state.token = token
+
         return await call_next(request)
 
-    mcp_middlewares = [
-        Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)
-    ]
+
+    mcp_middlewares = [Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)]
 
     mcp_app = create_sse_app(
         server=mcp_server_instance,
@@ -269,7 +296,7 @@ def run():
     app = DispatcherMiddleware(webapp, {
         "/mcp": ASGIMiddleware(app=mcp_app), # type: ignore
     }) # type: ignore
-    PrintStyle().debug("Registered middleware for MCP")
+    PrintStyle().debug("Registered middleware for MCP and MCP token")
 
     try:
         PrintStyle().debug(f"Starting server at {host}:{port}...")
