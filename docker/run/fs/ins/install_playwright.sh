@@ -4,7 +4,7 @@
 . "/ins/setup_venv.sh" "$@"
 
 # install playwright if not installed (should be from requirements.txt)
-pip install playwright
+uv pip install playwright
 
 # install chromium with dependencies
 # for kali-based

@@ -24,7 +24,7 @@ git clone -b "$BRANCH" "https://github.com/frdel/agent-zero" "/git/agent-zero" |
 # # Install some packages in specific variants
 # pip install torch --index-url https://download.pytorch.org/whl/cpu
 
-pip install -v mcp==1.3.0 || {
+uv pip install -v mcp==1.3.0 || {
     echo "ERROR: Failed during separate attempt to install mcp==1.3.0. Will proceed to full requirements.txt install anyway."
 }
 python -c "import mcp; from mcp import ClientSession; print(f'DEBUG: mcp and mcp.ClientSession imported successfully after separate install. mcp path: {mcp.__file__}')" || {
@@ -32,7 +32,7 @@ python -c "import mcp; from mcp import ClientSession; print(f'DEBUG: mcp and mcp
 }
 
 # Install remaining A0 python packages
-pip install -r /git/agent-zero/requirements.txt
+uv pip install -r /git/agent-zero/requirements.txt
 
 python -c "import mcp; from mcp import ClientSession; print(f'DEBUG: mcp and mcp.ClientSession imported successfully after requirements.txt. mcp path: {mcp.__file__}')" || {
     echo "CRITICAL ERROR: mcp package or mcp.ClientSession not found or failed to import after requirements.txt processing."
