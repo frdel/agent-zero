@@ -1,0 +1,15 @@
+[program:whatsapp-bridge]
+command=/a0/supervisor.conf.d/whatsapp-bridge.sh
+directory=/a0/share/mcp/whatsapp-mcp/whatsapp-bridge
+autostart=true
+autorestart=true
+environment=
+stopwaitsecs=1
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autorestart=true
+startretries=3
+stopasgroup=true
+killasgroup=true

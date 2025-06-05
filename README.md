@@ -71,6 +71,7 @@
 - The framework does not guide or limit the agent in any way. There are no hard-coded rails that agents have to follow.
 - Every prompt, every small message template sent to the agent in its communication loop can be found in the **prompts/** folder and changed.
 - Every default tool can be found in the **python/tools/** folder and changed or copied to create new predefined tools.
+- Every custom service config file drop-in can be placed in the **supervisor.conf.d/** folder with .conf extension to create new custom supervisord services.
 
 ![Prompts](/docs/res/prompts.png)
 
