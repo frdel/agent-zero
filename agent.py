@@ -684,8 +684,8 @@ class Agent:
             await self.handle_intervention()  # wait if paused and handle intervention message if needed
             await tool.after_execution(response)
             await self.handle_intervention()  # wait if paused and handle intervention message if needed
-            if response.break_loop:
-                return response.message
+            if response and getattr(response, "break_loop", False):
+                return getattr(response, "message", "")
         else:
             msg = self.read_prompt("fw.msg_misformat.md")
             self.hist_add_warning(msg)
