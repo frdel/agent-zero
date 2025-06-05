@@ -5,7 +5,7 @@ from agent import Agent, InterventionException
 
 import models
 from python.helpers.tool import Tool, Response
-from python.helpers import files, defer, persist_chat
+from python.helpers import files, defer, persist_chat, strings
 from python.helpers.browser_use import browser_use
 from python.extensions.message_loop_start._10_iteration_no import get_iter_no
 from pydantic import BaseModel
@@ -184,10 +184,13 @@ class BrowserAgent(Tool):
         result = await task.result()
         answer = result.final_result()
         try:
-            answer_data = DirtyJson.parse_string(answer)
-            answer_text = strings.dict_to_text(answer_data)  # type: ignore
+            if answer and isinstance(answer, str) and answer.strip():
+                answer_data = DirtyJson.parse_string(answer)
+                answer_text = strings.dict_to_text(answer_data)  # type: ignore
+            else:
+                answer_text = str(answer) if answer else "No result returned"
         except Exception as e:
-            answer_text = answer
+            answer_text = str(answer) if answer else f"Error processing result: {str(e)}"
         self.log.update(answer=answer_text)
         return Response(message=answer, break_loop=False)
 

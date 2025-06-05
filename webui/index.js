@@ -726,7 +726,9 @@ window.toggleUtils = async function (showUtils) {
 window.toggleDarkMode = function (isDark) {
     if (isDark) {
         document.body.classList.remove('light-mode');
-    } else {
+        document.body.classList.add('dark-mode');
+       } else {
+        document.body.classList.remove('dark-mode');
         document.body.classList.add('light-mode');
     }
     console.log("Dark mode:", isDark);
@@ -791,15 +793,6 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleDarkMode(isDarkMode);
 });
 
-window.toggleDarkMode = function (isDark) {
-    if (isDark) {
-        document.body.classList.remove('light-mode');
-    } else {
-        document.body.classList.add('light-mode');
-    }
-    console.log("Dark mode:", isDark);
-    localStorage.setItem('darkMode', isDark);
-};
 
 function toggleCssProperty(selector, property, value) {
     // Get the stylesheet that contains the class

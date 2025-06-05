@@ -34,9 +34,19 @@ class DirtyJson:
     def parse(self, json_string):
         self._reset()
         self.json_string = json_string
-        self.index = self.get_start_pos(
-            self.json_string
-        )  # skip any text up to the first brace
+
+        # Add bounds checking to prevent IndexError
+        if not json_string:
+            # Return None for empty strings
+            return None
+
+        self.index = self.get_start_pos(self.json_string)
+
+        # Ensure index is within bounds
+        if self.index >= len(self.json_string):
+            # If start position is beyond string length, return None
+            return None
+
         self.current_char = self.json_string[self.index]
         self._parse()
         return self.result

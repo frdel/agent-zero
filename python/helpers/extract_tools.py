@@ -6,10 +6,17 @@ import regex
 from fnmatch import fnmatch
 
 def json_parse_dirty(json:str) -> dict[str,Any] | None:
-    ext_json = extract_json_object_string(json)
+    if not json or not isinstance(json, str):
+        return None
+
+    ext_json = extract_json_object_string(json.strip())
     if ext_json:
-        data = DirtyJson.parse_string(ext_json)
-        if isinstance(data,dict): return data
+        try:
+            data = DirtyJson.parse_string(ext_json)
+            if isinstance(data,dict): return data
+        except Exception:
+            # If parsing fails, return None instead of crashing
+            return None
     return None
 
 def extract_json_object_string(content):
@@ -29,10 +36,10 @@ def extract_json_object_string(content):
 def extract_json_string(content):
     # Regular expression pattern to match a JSON object
     pattern = r'\{(?:[^{}]|(?R))*\}|\[(?:[^\[\]]|(?R))*\]|"(?:\\.|[^"\\])*"|true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?'
-    
+
     # Search for the pattern in the content
     match = regex.search(pattern, content)
-    
+
     if match:
         # Return the matched JSON string
         return match.group(0)

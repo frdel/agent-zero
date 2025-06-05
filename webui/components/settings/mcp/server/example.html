@@ -1,0 +1,55 @@
+<html>
+
+<head>
+    <title>Connection to A0 MCP Server</title>
+
+</head>
+
+<body>
+    <div x-data>
+        <p>Agent Zero MCP Server is an SSE MCP running on the same URL and port as the Web UI + /mcp/sse path.</p>
+        <p>The same applies if you run A0 on a public URL using a tunnel.</p>
+
+        <h3>Example MCP Server Configuration JSON</h3>
+        <div id="mcp-server-example"></div>
+
+        <script>
+            setTimeout(() => {
+                const url = window.location.origin;
+                const token = settingsModalProxy.settings.sections.filter(x => x.id == "mcp_server")[0].fields.filter(x => x.id == "mcp_server_token")[0].value;
+                const jsonExample = JSON.stringify({
+                    "mcpServers":
+                    {
+                        "agent-zero": {
+                            "type": "sse",
+                            "serverUrl": `${url}/mcp/t-${token}/sse`
+                        }
+                    }
+                }, null, 2);
+
+                const editor = ace.edit("mcp-server-example");
+                const dark = localStorage.getItem("darkMode");
+                if (dark != "false") {
+                    editor.setTheme("ace/theme/github_dark");
+                } else {
+                    editor.setTheme("ace/theme/tomorrow");
+                }
+                editor.session.setMode("ace/mode/json");
+                editor.setValue(jsonExample);
+                editor.clearSelection();
+                editor.setReadOnly(true);
+            }, 0);
+        </script>
+        <!-- </template> -->
+    </div>
+
+    <style>
+        #mcp-server-example {
+            width: 100%;
+            height: 15em;
+        }
+    </style>
+
+</body>
+
+</html>

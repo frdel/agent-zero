@@ -6,8 +6,6 @@
 
 {{ include './agent.system.tool.behaviour.md' }}
 
-{{ include './agent.system.tool.knowledge.md' }}
-
 {{ include './agent.system.tool.search_engine.md' }}
 
 {{ include './agent.system.tool.memory.md' }}

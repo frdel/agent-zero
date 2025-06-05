@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "Running initialization script..."
+
 # branch from parameter
 if [ -z "$1" ]; then
     echo "Error: Branch parameter is empty. Please provide a valid branch name."
@@ -17,4 +19,5 @@ chmod 444 /root/.profile
 # update package list to save time later
 apt-get update > /dev/null 2>&1 &
 
+# let supervisord handle the services
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
