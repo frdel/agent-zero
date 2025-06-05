@@ -4,15 +4,20 @@ from typing import Annotated, Literal, Union
 from urllib.parse import urlparse
 from openai import BaseModel
 from pydantic import Field
-import uuid
-import asyncio
 from fastmcp import FastMCP
 
 from agent import AgentContext, AgentContextType, UserMessage
 from python.helpers.persist_chat import save_tmp_chat, remove_chat
 from initialize import initialize
 from python.helpers.print_style import PrintStyle
-from python.helpers.task_scheduler import DeferredTask
+from python.helpers import settings
+from starlette.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.types import ASGIApp, Receive, Scope, Send
+from fastmcp.server.http import create_sse_app
+from starlette.requests import Request
+import threading
 
 _PRINTER = PrintStyle(italic=True, font_color="green", padding=False)
 
@@ -260,3 +265,65 @@ async def _run_chat(
         _PRINTER.print(f"MCP Chat message failed: {e}")
 
         raise RuntimeError(f"MCP Chat message failed: {e}") from e
+
+
+class DynamicMcpProxy:
+    _instance: "DynamicMcpProxy | None" = None
+
+    """A dynamic proxy that allows swapping the underlying MCP application on the fly."""
+
+    def __init__(self):
+        cfg = settings.get_settings()
+        self.app: ASGIApp | None = None
+        self._lock = threading.RLock()  # Use RLock to avoid deadlocks
+        self.reconfigure(cfg["mcp_server_token"])
+
+    @staticmethod
+    def get_instance():
+        if DynamicMcpProxy._instance is None:
+            DynamicMcpProxy._instance = DynamicMcpProxy()
+        return DynamicMcpProxy._instance
+
+    def reconfigure(self, token: str):
+        self.token = token
+        sse_path = f"/t-{self.token}/sse"
+        message_path = f"/t-{self.token}/messages/"
+
+        # Update settings in the MCP server instance if provided
+        mcp_server.settings.message_path = message_path
+        mcp_server.settings.sse_path = sse_path
+
+        # Create a new MCP app with updated settings
+        with self._lock:
+            self.app = create_sse_app(
+                server=mcp_server,
+                message_path=mcp_server.settings.message_path,
+                sse_path=mcp_server.settings.sse_path,
+                auth_server_provider=mcp_server._auth_server_provider,
+                auth_settings=mcp_server.settings.auth,
+                debug=mcp_server.settings.debug,
+                routes=mcp_server._additional_http_routes,
+                middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
+            )
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Forward the ASGI calls to the current app"""
+        with self._lock:
+            app = self.app
+        if app:
+            await app(scope, receive, send)
+        else:
+            raise RuntimeError("MCP app not initialized")
+
+
+async def mcp_middleware(request: Request, call_next):
+
+    # check if MCP server is enabled
+    cfg = settings.get_settings()
+    if not cfg["mcp_server_enabled"]:
+        PrintStyle.error("[MCP] Access denied: MCP server is disabled in settings.")
+        raise StarletteHTTPException(
+            status_code=403, detail="MCP server is disabled in settings."
+        )
+
+    return await call_next(request)

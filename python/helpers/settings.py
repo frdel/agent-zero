@@ -860,7 +860,7 @@ def normalize_settings(settings: Settings) -> Settings:
                 copy[key] = value  # make default instead
 
     # mcp server token is set automatically
-    copy["mcp_server_token"] = create_token()
+    copy["mcp_server_token"] = create_auth_token()
 
     return copy
 
@@ -887,6 +887,7 @@ def _remove_sensitive_settings(settings: Settings):
     settings["auth_password"] = ""
     settings["rfc_password"] = ""
     settings["root_password"] = ""
+    settings["mcp_server_token"] = ""
 
 
 def _write_sensitive_settings(settings: Settings):
@@ -956,7 +957,7 @@ def get_default_settings() -> Settings:
         mcp_client_init_timeout=5,
         mcp_client_tool_timeout=120,
         mcp_server_enabled=False,
-        mcp_server_token=create_token(),
+        mcp_server_token=create_auth_token(),
     )
 
 
@@ -1039,6 +1040,21 @@ def _apply_settings(previous: Settings | None):
                 update_mcp_settings, config.mcp_servers
             )  # TODO overkill, replace with background task
 
+        # update token in mcp server
+        current_token = create_auth_token() #TODO - ugly, token in settings is generated from dotenv and does not always correspond
+        if (
+            not previous
+            or current_token != previous["mcp_server_token"]
+        ):
+
+            async def update_mcp_token(token: str):
+                from python.helpers.mcp_server import DynamicMcpProxy
+                DynamicMcpProxy.get_instance().reconfigure(token=token)
+
+            task3 = defer.DeferredTask().start_task(
+                update_mcp_token, current_token
+            )  # TODO overkill, replace with background task
+
 
 def _env_to_dict(data: str):
     env_dict = {}
@@ -1095,7 +1111,7 @@ def get_runtime_config(set: Settings):
         }
 
 
-def create_token() -> str:
+def create_auth_token() -> str:
     username = dotenv.get_dotenv_value(dotenv.KEY_AUTH_LOGIN) or ""
     password = dotenv.get_dotenv_value(dotenv.KEY_AUTH_PASSWORD) or ""
     if not username or not password:
@@ -1103,5 +1119,5 @@ def create_token() -> str:
     # use base64 encoding for a more compact token with alphanumeric chars
     hash_bytes = hashlib.sha256(f"{username}:{password}".encode()).digest()
     # encode as base64 and remove any non-alphanumeric chars (like +, /, =)
-    b64_token = base64.urlsafe_b64encode(hash_bytes).decode().replace('=', '')
+    b64_token = base64.urlsafe_b64encode(hash_bytes).decode().replace("=", "")
     return b64_token[:16]

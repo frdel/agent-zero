@@ -3,13 +3,12 @@ import sys
 import time
 import socket
 import struct
-import asyncio
 from functools import wraps
 import threading
 import signal
 from flask import Flask, request, Response
 from flask_basicauth import BasicAuth
-from python.helpers import errors, files, git, settings
+from python.helpers import errors, files, git, mcp_server
 from python.helpers.files import get_abs_path
 from python.helpers import persist_chat, runtime, dotenv, process
 from python.helpers.cloudflare_tunnel import CloudflareTunnel
@@ -17,11 +16,7 @@ from python.helpers.extract_tools import load_classes_from_folder
 from python.helpers.api import ApiHandler
 from python.helpers.job_loop import run_loop
 from python.helpers.print_style import PrintStyle
-from python.helpers.task_scheduler import TaskScheduler
 from python.helpers.defer import DeferredTask
-from starlette.middleware import Middleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
 # Set the new timezone to 'UTC'
@@ -160,6 +155,7 @@ def run():
     job_loop = DeferredTask().start_task(run_loop)
 
     PrintStyle().print("Starting server...")
+
     class NoRequestLoggingWSGIRequestHandler(WSGIRequestHandler):
         def log_request(self, code="-", size="-"):
             pass  # Override to suppress request logging
@@ -238,64 +234,13 @@ def run():
     for handler in handlers:
         register_api_handler(webapp, handler)
 
-        
-    # define a Starlette-compatible middleware handler
-    from starlette.requests import Request
-    import re
-
-    async def mcp_middleware(request: Request, call_next):
-        
-        # check if MCP server is enabled
-        cfg = settings.get_settings()
-        if not cfg["mcp_server_enabled"]:
-            PrintStyle.error("[MCP] Access denied: MCP server is disabled in settings.")
-            raise StarletteHTTPException(status_code=403,
-                                        detail="MCP server is disabled in settings.")
-
-        # get auth token from path
-        full_path = request.url.path
-        if not full_path.startswith("/mcp/t-"):
-            raise StarletteHTTPException(status_code=401,
-                                        detail="Missing token.")            
-        pattern = r'^/mcp/t-([^/]+)/(.+)$'
-        match = re.match(pattern, full_path)
-        if not match:
-            raise StarletteHTTPException(status_code=401,
-                                        detail="Missing token.")            
-        token = match.group(1)     
-        remainder = match.group(2)  
-        
-        # validate token
-        if token != cfg["mcp_server_token"]:
-            raise StarletteHTTPException(status_code=401,
-                                        detail="Invalid token.")
-
-        # rewrite path to standard MCP path and continue
-        new_path = f"/mcp/{remainder}"
-        request.scope["path"] = new_path
-        request.scope["raw_path"] = new_path.encode()
-        # request.state.token = token
-
-        return await call_next(request)
-
-
-    mcp_middlewares = [Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)]
-
-    mcp_app = create_sse_app(
-        server=mcp_server_instance,
-        message_path=mcp_server_instance.settings.message_path,
-        sse_path=mcp_server_instance.settings.sse_path,
-        auth_server_provider=mcp_server_instance._auth_server_provider,
-        auth_settings=mcp_server_instance.settings.auth,
-        debug=mcp_server_instance.settings.debug,
-        routes=mcp_server_instance._additional_http_routes,
-        middleware=mcp_middlewares
-    )
-
     # add the webapp and mcp to the app
-    app = DispatcherMiddleware(webapp, {
-        "/mcp": ASGIMiddleware(app=mcp_app), # type: ignore
-    }) # type: ignore
+    app = DispatcherMiddleware(
+        webapp,
+        {
+            "/mcp": ASGIMiddleware(app=mcp_server.DynamicMcpProxy.get_instance()),  # type: ignore
+        },
+    )
     PrintStyle().debug("Registered middleware for MCP and MCP token")
 
     try:
@@ -329,20 +274,23 @@ def run():
 
         process.set_server(server)
         server.log_startup()
-        
+
         # Start init_a0 in a background thread when server starts
         import threading
+
         threading.Thread(target=init_a0, daemon=True).start()
-        
+
         server.serve_forever()
     finally:
         # Clean up tunnel if it was started
         if tunnel:
             tunnel.stop()
 
+
 def init_a0():
     # initialize contexts from persisted chats
     persist_chat.load_tmp_chats()
+
 
 # run the internal server
 if __name__ == "__main__":
