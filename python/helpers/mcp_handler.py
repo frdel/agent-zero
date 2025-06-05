@@ -168,26 +168,26 @@ class MCPTool(Tool):
                 user_message_text[:max_user_context_len] + "... (truncated)"
             )
 
-# commented out for now, output should be unified between tools and MCPs
+        # commented out for now, output should be unified between tools and MCPs
 
-#         contextual_block = f"""
-# \n--- End of Results for MCP Tool: {self.name} ---
+        #         contextual_block = f"""
+        # \n--- End of Results for MCP Tool: {self.name} ---
 
-# **Original Tool Call Details:**
-# *   **Tool:** `{self.name}`
-# *   **Arguments Given:**
-#     ```json
-# {json.dumps(self.args, indent=2)}
-#     ```
+        # **Original Tool Call Details:**
+        # *   **Tool:** `{self.name}`
+        # *   **Arguments Given:**
+        #     ```json
+        # {json.dumps(self.args, indent=2)}
+        #     ```
 
-# **Related User Request Context:**
-# {user_message_text}
+        # **Related User Request Context:**
+        # {user_message_text}
 
-# **Next Steps Reminder for {self.name}:**
-# If this action is part of an ongoing sequence, consider the next step with this tool or another appropriate tool. If the sequence is complete or this was a one-off action, analyze the final output and report to the user or proceed with the overall plan.
-# """
+        # **Next Steps Reminder for {self.name}:**
+        # If this action is part of an ongoing sequence, consider the next step with this tool or another appropriate tool. If the sequence is complete or this was a one-off action, analyze the final output and report to the user or proceed with the overall plan.
+        # """
 
-#         final_text_for_agent = raw_tool_response + contextual_block
+        #         final_text_for_agent = raw_tool_response + contextual_block
 
         final_text_for_agent = raw_tool_response
 
@@ -270,8 +270,8 @@ class MCPServerRemote(BaseModel):
                     if key == "name":
                         value = normalize_name(value)
                     if key == "serverUrl":
-                        key = "url" # remap serverUrl to url
-                    
+                        key = "url"  # remap serverUrl to url
+
                     setattr(self, key, value)
             # We already run in an event loop, dont believe Pylance
             return asyncio.run(self.__on_update())
@@ -306,7 +306,7 @@ class MCPServerLocal(BaseModel):
     def get_error(self) -> str:
         with self.__lock:
             return self.__client.error  # type: ignore
-   
+
     def get_log(self) -> str:
         with self.__lock:
             return self.__client.get_log()  # type: ignore
@@ -612,7 +612,7 @@ class MCPConfig(BaseModel):
         with self.__lock:
             for server in self.servers:
                 if server.name == server_name:
-                    return server.get_log() # type: ignore
+                    return server.get_log()  # type: ignore
             return ""
 
     def get_servers_status(self) -> list[dict[str, Any]]:
@@ -626,7 +626,7 @@ class MCPConfig(BaseModel):
                 # get tool count
                 tool_count = len(server.get_tools())
                 # check if server is connected
-                connected = True # tool_count > 0
+                connected = True  # tool_count > 0
                 # get error message if any
                 error = server.get_error()
                 # get log bool
@@ -717,7 +717,9 @@ class MCPConfig(BaseModel):
                     )
 
                     tool_args = ""
-                    input_schema = json.dumps(tool["input_schema"]) if tool["input_schema"] else ""
+                    input_schema = (
+                        json.dumps(tool["input_schema"]) if tool["input_schema"] else ""
+                    )
                     # properties: dict[str, Any] = tool["input_schema"]["properties"]
                     # for key, value in properties.items():
                     #     optional = False
@@ -847,7 +849,9 @@ class MCPClientBase(ABC):
                         ClientSession(
                             stdio,  # type: ignore
                             write,  # type: ignore
-                            read_timeout_seconds=timedelta(seconds=read_timeout_seconds),
+                            read_timeout_seconds=timedelta(
+                                seconds=read_timeout_seconds
+                            ),
                         )
                     )
                     await session.initialize()
@@ -857,7 +861,7 @@ class MCPClientBase(ABC):
                     return result
                 except Exception as e:
                     # Store the original exception and raise a dummy exception
-                    excs = getattr(e, "exceptions", None) # Python 3.11+ ExceptionGroup
+                    excs = getattr(e, "exceptions", None)  # Python 3.11+ ExceptionGroup
                     if excs:
                         original_exception = excs[0]
                     else:
@@ -875,10 +879,10 @@ class MCPClientBase(ABC):
                 f"MCPClientBase ({self.server.name} - {operation_name}): Error during operation: {type(e).__name__}: {e}"
             )
             raise e  # Re-raise the original exception
-        finally:
-            PrintStyle(font_color="cyan").print(
-                f"MCPClientBase ({self.server.name} - {operation_name}): Session and transport will be closed by AsyncExitStack."
-            )
+        # finally:
+        #     PrintStyle(font_color="cyan").print(
+        #         f"MCPClientBase ({self.server.name} - {operation_name}): Session and transport will be closed by AsyncExitStack."
+        #     )
         # This line should ideally be unreachable if the try/except/finally logic within the 'async with' is exhaustive.
         # Adding it to satisfy linters that might not fully trace the raise/return paths through async context managers.
         raise RuntimeError(
@@ -905,7 +909,11 @@ class MCPClientBase(ABC):
 
         try:
             set = settings.get_settings()
-            await self._execute_with_session(list_tools_op, read_timeout_seconds=self.server.init_timeout or set["mcp_client_init_timeout"])
+            await self._execute_with_session(
+                list_tools_op,
+                read_timeout_seconds=self.server.init_timeout
+                or set["mcp_client_init_timeout"],
+            )
         except Exception as e:
             # e = eg.exceptions[0]
             error_text = errors.format_error(e, 0, 0)
@@ -917,7 +925,7 @@ class MCPClientBase(ABC):
             )
             with self.__lock:
                 self.tools = []  # Ensure tools are cleared on failure
-                self.error = f"Failed to initialize. {error_text}"  # store error from tools fetch
+                self.error = f"Failed to initialize. {error_text[:200]}{'...' if len(error_text) > 200 else ''}"  # store error from tools fetch
         return self
 
     def has_tool(self, tool_name: str) -> bool:
@@ -957,7 +965,9 @@ class MCPClientBase(ABC):
             set = settings.get_settings()
             # PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name}): Executing 'call_tool' for '{tool_name}' via MCP session...")
             response: CallToolResult = await current_session.call_tool(
-                tool_name, input_data, read_timeout_seconds=timedelta(seconds=set["mcp_client_tool_timeout"])
+                tool_name,
+                input_data,
+                read_timeout_seconds=timedelta(seconds=set["mcp_client_tool_timeout"]),
             )
             # PrintStyle(font_color="green").print(f"MCPClientBase ({self.server.name}): Tool '{tool_name}' call successful via session.")
             return response
@@ -977,7 +987,7 @@ class MCPClientBase(ABC):
 
     def get_log(self):
         # read and return lines from self.log_file, do not close it
-        if not hasattr(self, 'log_file') or self.log_file is None:
+        if not hasattr(self, "log_file") or self.log_file is None:
             return ""
         self.log_file.seek(0)
         try:
@@ -990,7 +1000,7 @@ class MCPClientBase(ABC):
 class MCPClientLocal(MCPClientBase):
     def __del__(self):
         # close the log file if it exists
-        if hasattr(self, 'log_file') and self.log_file is not None:
+        if hasattr(self, "log_file") and self.log_file is not None:
             try:
                 self.log_file.close()
             except Exception:
@@ -1022,7 +1032,7 @@ class MCPClientLocal(MCPClientBase):
         import tempfile
 
         # use a temporary file for error logging (text mode) if not already present
-        if not hasattr(self, 'log_file') or self.log_file is None:
+        if not hasattr(self, "log_file") or self.log_file is None:
             self.log_file = tempfile.TemporaryFile(mode="w+", encoding="utf-8")
 
         # use the stdio_client with our error log file

@@ -14,7 +14,8 @@ def error_text(e: Exception):
 
 
 def format_error(e: Exception, start_entries=6, end_entries=4):
-    traceback_text = traceback.format_exc()
+    # format traceback from the provided exception instead of the most recent one
+    traceback_text = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
     # Split the traceback into lines
     lines = traceback_text.split("\n")
 
@@ -44,7 +45,8 @@ def format_error(e: Exception, start_entries=6, end_entries=4):
     # Find the error message at the end
     error_message = ""
     for line in reversed(lines):
-        if re.match(r"\w+Error:", line):
+        # match both simple errors and module.path.Error patterns
+        if re.match(r"[\w\.]+Error:", line):
             error_message = line
             break
 
