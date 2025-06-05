@@ -704,48 +704,52 @@ class MCPConfig(BaseModel):
                 server_name = server.name
                 prompt += f"### {server_name}\n"
                 prompt += f"{server.description}\n\n"
+                tools = server.get_tools()
 
-                for tool in server.get_tools():
+                for tool in tools:
                     prompt += (
                         f"### {server_name}.{tool['name']}:\n"
                         f"{tool['description']}\n\n"
                         # f"#### Categories:\n"
                         # f"* kind: MCP Server Tool\n"
                         # f'* server: "{server_name}" ({server.description})\n\n'
-                        f"#### Arguments:\n"
+                        # f"#### Arguments:\n"
                     )
 
                     tool_args = ""
-                    properties: dict[str, Any] = tool["input_schema"]["properties"]
-                    for key, value in properties.items():
-                        optional = False
-                        examples = ""
-                        description = ""
-                        type = ""
-                        if "anyOf" in value:
-                            for nested_value in value["anyOf"]:
-                                if "type" in nested_value and nested_value["type"] != "null":
-                                    optional = True
-                                    value = nested_value
-                                    break
-                        tool_args += f"            \"{key}\": \"...\",\n"
-                        if "examples" in value:
-                            examples = f"(examples: {value['examples']})"
-                        if "description" in value:
-                            description = f": {value['description']}"
-                        if "type" in value:
-                            if optional:
-                                type = f"{value['type']}, optional"
-                            else:
-                                type = f"{value['type']}"
-                        else:
-                            if optional:
-                                type = "string, optional"
-                            else:
-                                type = "string"
-                        prompt += (
-                            f" * {key} ({type}){description} {examples}\n"
-                        )
+                    input_schema = json.dumps(tool["input_schema"]) if tool["input_schema"] else ""
+                    # properties: dict[str, Any] = tool["input_schema"]["properties"]
+                    # for key, value in properties.items():
+                    #     optional = False
+                    #     examples = ""
+                    #     description = ""
+                    #     type = ""
+                    #     if "anyOf" in value:
+                    #         for nested_value in value["anyOf"]:
+                    #             if "type" in nested_value and nested_value["type"] != "null":
+                    #                 optional = True
+                    #                 value = nested_value
+                    #                 break
+                    #     tool_args += f"            \"{key}\": \"...\",\n"
+                    #     if "examples" in value:
+                    #         examples = f"(examples: {value['examples']})"
+                    #     if "description" in value:
+                    #         description = f": {value['description']}"
+                    #     if "type" in value:
+                    #         if optional:
+                    #             type = f"{value['type']}, optional"
+                    #         else:
+                    #             type = f"{value['type']}"
+                    #     else:
+                    #         if optional:
+                    #             type = "string, optional"
+                    #         else:
+                    #             type = "string"
+                    #     prompt += (
+                    #         f" * {key} ({type}){description} {examples}\n"
+                    #     )
+
+                    prompt += f"#### Input schema for tool_args:\n{input_schema}\n"
 
                     prompt += "\n"
 
@@ -757,9 +761,9 @@ class MCPConfig(BaseModel):
                         f'    "thoughts": ["..."],\n'
                         # f'    "reflection": ["..."],\n' # TODO: this should be a prompt file with placeholders
                         f"    \"tool_name\": \"{server_name}.{tool['name']}\",\n"
-                        f'    "tool_args": {{\n'
-                        f"{tool_args}"
-                        f"    }}\n"
+                        f'    "tool_args": {{ !follow schema above }}\n'
+                        # f"{tool_args}"
+                        # f"    }}\n"
                         f"}}\n"
                         f"~~~\n"
                     )
