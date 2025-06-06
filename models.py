@@ -10,6 +10,8 @@ from langchain_openai import (
     AzureOpenAI,
 )
 from langchain_community.llms.ollama import Ollama
+from langchain_community.chat_models import ChatOCIGenAI
+from langchain_community.embeddings import OCIGenAIEmbeddings
 from langchain_ollama import ChatOllama
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_anthropic import ChatAnthropic
@@ -55,6 +57,7 @@ class ModelProvider(Enum):
     OPENAI_AZURE = "OpenAI Azure"
     OPENROUTER = "OpenRouter"
     SAMBANOVA = "Sambanova"
+    OCI = "meta.llama-3.3-70b-instruct"
     OTHER = "Other"
 
 
@@ -100,6 +103,53 @@ def parse_chunk(chunk: Any):
     else:
         content = str(chunk)
     return content
+
+
+# OCI Models
+def get_oci_chat(
+    model_name: str,
+    compartment_id=None,
+    base_url=None,
+    **kwargs,
+):
+    if not compartment_id:
+        compartment_id = dotenv.get_dotenv_value("OCI_COMPARTMENT_OCID")
+    if not base_url:
+        base_url = (
+            dotenv.get_dotenv_value("OCI_BASE_URL") \
+                or "https://inference.generativeai.eu-frankfurt-1.oci.oraclecloud.com"
+        )
+
+    return ChatOCIGenAI(
+            model_id=model_name,
+            service_endpoint=base_url,
+            compartment_id=compartment_id,
+            model_kwargs={"temperature": 0.7, "max_tokens": 500},
+            provider="meta"
+        )
+
+    # return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
+
+
+def get_oci_embedding(
+    model_name: str,
+    api_key=None,
+    base_url=None,
+    **kwargs,
+):
+    if not api_key:
+        api_key = get_api_key("oci")
+    if not base_url:
+        base_url = (
+            dotenv.get_dotenv_value("OCI_BASE_URL") or "https://api.oci.com"
+        )
+    return OCIGenAIEmbeddings(
+        model_id=model_name,
+        service_endpoint=base_url,
+        compartment_id=os.getenv("TF_VAR_compartment_ocid"),
+        auth_type="INSTANCE_PRINCIPAL",
+    )
+    # return OpenAIEmbeddings(model=model_name, api_key=api_key, base_url=base_url, **kwargs)  # type: ignore
 
 
 # Ollama models
