@@ -13,6 +13,7 @@
             Local servers are defined by a "command", "args", "env" variables.<br>
             Remote servers are defined by a "url", "headers".<br>
             "disabled" can be set to true to disable a server without removing config.<br>
+            Custom "description" can be set to provide additional information about the server to A0.<br>
             All servers can also define "init_timeout" and "tool_timeout" which override global settings.</p>
 
 
@@ -45,9 +46,9 @@
                                 "mcp-server-sequential-thinking"
                             ]
                         },
-                        "agent-zero": {
-                            "type": "sse",
-                            "serverUrl": `${url}/mcp/sse`
+                        "deep-wiki": {
+                            "description": "Use this MCP to analyze github repositories",
+                            "url": "https://mcp.deepwiki.com/sse"
                         }
                     }
                 }, null, 2);
