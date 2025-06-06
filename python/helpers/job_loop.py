@@ -1,11 +1,13 @@
 import asyncio
 from datetime import datetime
 import time
-from python.helpers.task_scheduler import TaskScheduler
+from typing import Any
 from python.helpers.print_style import PrintStyle
 from python.helpers import errors
+from agent import Agent, LoopData
+from initialize import initialize
+from python.helpers import extract_tools
 from python.helpers import runtime
-
 
 SLEEP_TIME = 60
 
@@ -15,7 +17,8 @@ pause_time = 0
 
 async def run_loop():
     global pause_time, keep_running
-
+    config = initialize()
+    agent = Agent(0, config)
     while True:
         if runtime.is_development():
             # Signal to container that the job loop should be paused
@@ -27,18 +30,20 @@ async def run_loop():
         if not keep_running and (time.time() - pause_time) > (SLEEP_TIME * 2):
             resume_loop()
         if keep_running:
-            try:
-                await scheduler_tick()
-            except Exception as e:
-                PrintStyle().error(errors.format_error(e))
+            await call_extensions(agent, "job_loop", loop_data=LoopData())
         await asyncio.sleep(SLEEP_TIME)  # TODO! - if we lower it under 1min, it can run a 5min job multiple times in it's target minute
 
 
-async def scheduler_tick():
-    # Get the task scheduler instance and print detailed debug info
-    scheduler = TaskScheduler.get()
-    # Run the scheduler tick
-    await scheduler.tick()
+async def call_extensions(agent: Agent, folder: str, **kwargs) -> Any:
+    from python.helpers.extension import Extension
+    classes = extract_tools.load_classes_from_folder(
+        "python/extensions/" + folder, "*", Extension
+    )
+    for cls in classes:
+        try:
+            await cls(agent=agent).execute(**kwargs)
+        except Exception as e:
+            PrintStyle().error("Error calling job_loop extension: " + errors.format_error(e))
 
 
 def pause_loop():
