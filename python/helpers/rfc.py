@@ -1,4 +1,3 @@
-import importlib
 import inspect
 import json
 from typing import Any, TypedDict
@@ -11,6 +10,61 @@ from python.helpers import dotenv
 # Remote Function Call library
 # Call function via http request
 # Secured by pre-shared key
+
+
+import importlib
+import re
+from typing import Set, Optional
+
+# Define allowed modules whitelist
+ALLOWED_MODULES: Set[str] = {
+    'json',
+    'os',
+    'sys',
+    'datetime',
+    'collections',
+    'itertools',
+    'functools',
+    'operator',
+    'math',
+    'random',
+    'string',
+    'urllib.parse',
+    'base64',
+    'hashlib',
+    'uuid',
+    'pathlib',
+    'typing'
+}
+
+def safe_import_module(module_name: str, package: Optional[str] = None):
+    """
+    Safely import a module using a whitelist approach.
+    
+    Args:
+        module_name: Name of the module to import
+        package: Package name for relative imports
+        
+    Returns:
+        The imported module
+        
+    Raises:
+        SecurityError: If module is not in whitelist
+        ImportError: If module cannot be imported
+    """
+    # Validate module name format
+    if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_.]*$', module_name):
+        raise SecurityError(f"Invalid module name format: {module_name}")
+    
+    # Check against whitelist
+    if module_name not in ALLOWED_MODULES:
+        raise SecurityError(f"Module '{module_name}' is not in the allowed whitelist")
+    
+    return importlib.import_module(module_name, package)
+
+class SecurityError(Exception):
+    """Custom exception for security-related errors"""
+    pass
 
 
 class RFCInput(TypedDict):
@@ -61,7 +115,7 @@ async def _call_function(module: str, function_name: str, *args, **kwargs):
 
 def _get_function(module: str, function_name: str):
     # import module
-    imp = importlib.import_module(module)
+    imp = safe_import_module(module)
     # get function by the name
     func = getattr(imp, function_name)
     return func
