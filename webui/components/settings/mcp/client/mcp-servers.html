@@ -49,9 +49,6 @@
                                     @click="$store.mcpServersStore.onToolCountClick && $store.mcpServersStore.onToolCountClick(server.name)"
                                     x-text="server.tool_count + ' tools'"></span>
 
-                                <!-- Disabled in config message -->
-                                <span class="config-status" x-show="server.disabled_in_config">Disabled in config</span>
-
                                 <!-- Log button (only shown if has_log is true) -->
                                 <span class="log-btn" x-show="server.has_log"
                                     @click="$store.mcpServersStore.getServerLog(server.name)">Log</span>

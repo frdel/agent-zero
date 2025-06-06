@@ -129,16 +129,6 @@ const model = {
     }
   },
 
-  async onServerClick(serverName) {
-    const resp = await API.callJsonApi("mcp_server_get_detail", {
-      server_name: serverName,
-    });
-    if (resp.success) {
-      this.serverDetail = resp.detail;
-      openModal("settings/mcp/client/mcp-server-description.html");
-    }
-  },
-
   async onToolCountClick(serverName) {
     const resp = await API.callJsonApi("mcp_server_get_detail", {
       server_name: serverName,
