@@ -162,6 +162,8 @@ docker run -p 50001:80 frdel/agent-zero-run
 ## 🎯 Changelog
 
 ### v0.8.5 - **MCP Server + Client**
+[Release video](https://youtu.be/pM5f4Vz3_IQ)
+
 - Agent Zero can now act as MCP Server
 - Agent Zero can use external MCP servers as tools
 
