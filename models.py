@@ -57,7 +57,7 @@ class ModelProvider(Enum):
     OPENAI_AZURE = "OpenAI Azure"
     OPENROUTER = "OpenRouter"
     SAMBANOVA = "Sambanova"
-    OCI = "meta.llama-3.1-70b-instruct"
+    OCI = "meta.llama-3.3-70b-instruct"
     OTHER = "Other"
 
 
@@ -124,7 +124,8 @@ def get_oci_chat(
             model_id=model_name,
             service_endpoint=base_url,
             compartment_id=compartment_id,
-            model_kwargs={"temperature": 0.7, "max_tokens": 400}
+            model_kwargs={"temperature": 0.7, "max_tokens": 500},
+            provider="meta"
         )
 
     # return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
