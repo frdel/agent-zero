@@ -735,7 +735,6 @@ class Agent:
                 PrintStyle(background_color="black", font_color="red", padding=True).print(
                     f"Failed to get MCP tool '{tool_name}': {e}"
                 )
-
             # Fallback to local get_tool if MCP tool was not found or MCP lookup failed
             if not tool:
                 tool = self.get_tool(name=tool_name, method=tool_method, args=tool_args, message=msg)
@@ -757,6 +756,7 @@ class Agent:
                 self.context.log.log(
                     type="error", content=f"{self.agent_name}: {error_detail}"
                 )
+
         else:
             warning_msg_misformat = self.read_prompt("fw.msg_misformat.md")
             self.hist_add_warning(warning_msg_misformat)
