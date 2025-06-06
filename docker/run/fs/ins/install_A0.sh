@@ -34,6 +34,8 @@ python -c "import mcp; from mcp import ClientSession; print(f'DEBUG: mcp and mcp
 # Install remaining A0 python packages
 uv pip install -r /git/agent-zero/requirements.txt
 
+uv pip install langchain-anthropic==0.3.15 # TODO: remove after browser-use update
+
 python -c "import mcp; from mcp import ClientSession; print(f'DEBUG: mcp and mcp.ClientSession imported successfully after requirements.txt. mcp path: {mcp.__file__}')" || {
     echo "CRITICAL ERROR: mcp package or mcp.ClientSession not found or failed to import after requirements.txt processing."
 }
