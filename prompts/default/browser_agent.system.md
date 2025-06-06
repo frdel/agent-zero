@@ -20,6 +20,6 @@ The response JSON must contain at least the following fields: "title", "response
 ## Example response
 {
   "title": "Google Search",
-  "response": "I have succesfully navigated to the response page.",
+  "response": "I have successfully navigated to the response page.",
   "page_summary": "The page contains a menu bar with ... and a search input field. Under the search field there are two buttons with ... and ..."
 }

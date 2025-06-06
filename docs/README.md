@@ -49,7 +49,7 @@ To begin with Agent Zero, follow the links below for detailed guides on various 
     - [Tools](architecture.md#2-tools)
     - [SearXNG Integration](architecture.md#searxng-integration)
     - [Memory System](architecture.md#3-memory-system)
-    - [Messages History and Summarization](archicture.md#messages-history-and-summarization)
+    - [Messages History and Summarization](architecture.md#messages-history-and-summarization)
     - [Prompts](architecture.md#4-prompts)
     - [Knowledge](architecture.md#5-knowledge)
     - [Instruments](architecture.md#6-instruments)

@@ -31,6 +31,6 @@ consolidate explain status
 present results verify with tools
 don't accept failure retry with fixes be high-agency
 save useful info with memorize tool
-fullfil initial user task
+fulfill initial user task
 response_tool reports final result
 responses need response_tool
