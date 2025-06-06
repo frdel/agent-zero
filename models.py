@@ -200,6 +200,54 @@ def get_anthropic_chat(
     base_url=None,
     **kwargs,
 ):
+    # Apply patch for langchain-anthropic 0.3.3 bug before creating model
+    try:
+        import langchain_anthropic.chat_models as chat_models
+        
+        # Store original function
+        original_create_usage_metadata = chat_models._create_usage_metadata
+        
+        def patched_create_usage_metadata(anthropic_usage):
+            if anthropic_usage is None:
+                return None
+            
+            # The bug is that one of these getattr calls returns None
+            # and then it tries to add None + 0
+            input_tokens = getattr(anthropic_usage, "input_tokens", 0)
+            output_tokens = getattr(anthropic_usage, "output_tokens", 0)
+            
+            # Handle None values
+            if input_tokens is None:
+                input_tokens = 0
+            if output_tokens is None:
+                output_tokens = 0
+            
+            return {
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "total_tokens": input_tokens + output_tokens
+            }
+        
+        # Replace the function
+        chat_models._create_usage_metadata = patched_create_usage_metadata
+        
+        # Also patch _make_message_chunk_from_anthropic_event to handle None usage
+        original_make_message = chat_models._make_message_chunk_from_anthropic_event
+        
+        def patched_make_message_chunk(event, *args, **kwargs):
+            # If event.usage is None, temporarily set it to a dummy object
+            if hasattr(event, 'usage') and event.usage is None:
+                class DummyUsage:
+                    input_tokens = 0
+                    output_tokens = 0
+                event.usage = DummyUsage()
+            return original_make_message(event, *args, **kwargs)
+        
+        chat_models._make_message_chunk_from_anthropic_event = patched_make_message_chunk
+        
+    except Exception as e:
+        print(f"Warning: Failed to patch langchain-anthropic: {e}")
+    
     if not api_key:
         api_key = get_api_key("anthropic")
     if not base_url:
