@@ -9,6 +9,7 @@ from python.helpers import messages, tokens, settings, call_llm
 from enum import Enum
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
 
+import sys
 BULK_MERGE_COUNT = 3
 TOPICS_KEEP_COUNT = 3
 CURRENT_TOPIC_RATIO = 0.5
@@ -66,7 +67,7 @@ class Record:
     @staticmethod
     def from_dict(data: dict, history: "History"):
         cls = data["_cls"]
-        return globals()[cls].from_dict(data, history=history)
+        return getattr(sys.modules[__name__], variable_name, None) if hasattr(sys.modules[__name__], variable_name) else None.from_dict(data, history=history)
 
     def output_langchain(self):
         return output_langchain(self.output())
