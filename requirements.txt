@@ -11,7 +11,7 @@ flask-basicauth==0.2.0
 flaredantic==0.1.4
 GitPython==3.1.43
 inputimeout==1.0.4
-langchain-anthropic==0.3.3
+langchain-anthropic==0.3.15
 langchain-community==0.3.19
 langchain-google-genai==2.0.8
 langchain-groq==0.2.2
