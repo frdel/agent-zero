@@ -62,20 +62,16 @@ def initialize_mcp(mcp_servers_config: str):
         except Exception as e:
             from agent import AgentContext
 
-            first_context = AgentContext.first()  # TODO replace with better reporting
-            if first_context:
-                (
-                    first_context.log.log(
-                        type="warning",
-                        content=f"Failed to update MCP settings: {e}",
-                        temp=False,
-                    )
-                )
-            (
-                PrintStyle(
-                    background_color="black", font_color="red", padding=True
-                ).print(f"Failed to update MCP settings: {e}")
+            AgentContext.log_to_all(
+                type="warning",
+                content=f"Failed to update MCP settings: {e}",
+                temp=False,
             )
+            
+            PrintStyle(
+                background_color="black", font_color="red", padding=True
+            ).print(f"Failed to update MCP settings: {e}")
+            
 
 
 class MCPTool(Tool):
@@ -373,9 +369,10 @@ class MCPConfig(BaseModel):
 
     @classmethod
     def get_instance(cls) -> "MCPConfig":
-        if cls.__instance is None:
-            cls.__instance = cls(servers_list=[])
-        return cls.__instance
+        # with cls.__lock:
+            if cls.__instance is None:
+                cls.__instance = cls(servers_list=[])
+            return cls.__instance
 
     @classmethod
     def wait_for_lock(cls):
@@ -690,6 +687,11 @@ class MCPConfig(BaseModel):
 
     def get_tools_prompt(self, server_name: str = "") -> str:
         """Get a prompt for all tools"""
+
+        # just to wait for pending initialization
+        with self.__lock:
+            pass
+
         prompt = '## "Remote (MCP Server) Agent Tools" available:\n\n'
         server_names = []
         for server in self.servers:

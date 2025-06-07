@@ -8,7 +8,7 @@ from fastmcp import FastMCP
 
 from agent import AgentContext, AgentContextType, UserMessage
 from python.helpers.persist_chat import save_tmp_chat, remove_chat
-from initialize import initialize
+from initialize import initialize_agent
 from python.helpers.print_style import PrintStyle
 from python.helpers import settings
 from starlette.middleware import Middleware
@@ -139,7 +139,7 @@ async def send_message(
             # If we continue a conversation, it must be persistent
             persistent_chat = True
     else:
-        config = initialize()
+        config = initialize_agent()
         context = AgentContext(config=config, type=AgentContextType.MCP)
 
     if not message:

@@ -16,7 +16,7 @@ from crontab import CronTab
 from pydantic import BaseModel, Field, PrivateAttr
 
 from agent import Agent, AgentContext, UserMessage
-from initialize import initialize
+from initialize import initialize_agent
 from python.helpers.persist_chat import save_tmp_chat
 from python.helpers.print_style import PrintStyle
 from python.helpers.defer import DeferredTask
@@ -713,7 +713,7 @@ class TaskScheduler:
         if not task.context_id:
             raise ValueError(f"Task {task.name} has no context ID")
 
-        config = initialize()
+        config = initialize_agent()
         context: AgentContext = AgentContext(config, id=task.context_id, name=task.name)
         # context.id = task.context_id
         # initial name before renaming is same as task name

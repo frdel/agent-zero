@@ -965,9 +965,9 @@ def _apply_settings(previous: Settings | None):
     global _settings
     if _settings:
         from agent import AgentContext
-        from initialize import initialize
+        from initialize import initialize_agent
 
-        config = initialize()
+        config = initialize_agent()
         for ctx in AgentContext._contexts.values():
             ctx.config = config  # reinitialize context config with new settings
             # apply config to agents

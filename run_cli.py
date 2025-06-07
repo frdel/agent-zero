@@ -8,7 +8,7 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.files import read_file
 from python.helpers import files
 import python.helpers.timed_input as timed_input
-from initialize import initialize
+from initialize import initialize_agent
 from python.helpers.dotenv import load_dotenv
 
 
@@ -102,7 +102,7 @@ def run():
     load_dotenv()
 
     # initialize context
-    config = initialize()
+    config = initialize_agent()
     context = AgentContext(config)
 
     # Start the key capture thread for user intervention during agent streaming

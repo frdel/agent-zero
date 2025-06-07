@@ -1,16 +1,10 @@
-import asyncio
-import json
 import models
 from agent import AgentConfig, ModelConfig
-from python.helpers import dotenv, files, rfc_exchange, runtime, settings, docker, log, defer
-import subprocess
-import shutil
+from python.helpers import runtime, settings, defer
 from python.helpers.print_style import PrintStyle
-from python.helpers.mcp_handler import initialize_mcp
 
 
-
-def initialize():
+def initialize_agent():
     current_settings = settings.get_settings()
 
     # chat model from user settings
@@ -76,16 +70,16 @@ def initialize():
     )
 
     # update SSH and docker settings
-    set_runtime_config(config, current_settings)
+    _set_runtime_config(config, current_settings)
 
     # update config with runtime args
-    args_override(config)
+    _args_override(config)
 
     # initialize MCP in deferred task to prevent blocking the main thread
     # async def initialize_mcp_async(mcp_servers_config: str):
     #     return initialize_mcp(mcp_servers_config)
     # defer.DeferredTask(thread_name="mcp-initializer").start_task(initialize_mcp_async, config.mcp_servers)
-    initialize_mcp(config.mcp_servers)
+    # initialize_mcp(config.mcp_servers)
 
     # import python.helpers.mcp_handler as mcp_helper
     # import agent as agent_helper
@@ -108,8 +102,25 @@ def initialize():
     # return config object
     return config
 
+def initialize_chats():
+    from python.helpers import persist_chat
+    async def initialize_chats_async():
+        persist_chat.load_tmp_chats()
+    return defer.DeferredTask().start_task(initialize_chats_async)
 
-def args_override(config):
+def initialize_mcp():
+    set = settings.get_settings()
+    async def initialize_mcp_async():
+        from python.helpers.mcp_handler import initialize_mcp as _initialize_mcp
+        return _initialize_mcp(set["mcp_servers"])
+    return defer.DeferredTask().start_task(initialize_mcp_async)
+
+def initialize_job_loop():
+    from python.helpers.job_loop import run_loop
+    return defer.DeferredTask("JobLoop").start_task(run_loop)
+
+
+def _args_override(config):
     # update config with runtime args
     for key, value in runtime.args.items():
         if hasattr(config, key):
@@ -130,7 +141,7 @@ def args_override(config):
             setattr(config, key, value)
 
 
-def set_runtime_config(config: AgentConfig, set: settings.Settings):
+def _set_runtime_config(config: AgentConfig, set: settings.Settings):
     ssh_conf = settings.get_runtime_config(set)
     for key, value in ssh_conf.items():
         if hasattr(config, key):

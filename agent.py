@@ -395,6 +395,8 @@ class Agent:
                 await self.call_extensions("monologue_end", loop_data=self.loop_data)  # type: ignore
 
     async def prepare_prompt(self, loop_data: LoopData) -> ChatPromptTemplate:
+        self.context.log.set_progress("Building prompt")
+
         # call extensions before setting prompts
         await self.call_extensions("message_loop_prompts_before", loop_data=loop_data)
 
@@ -720,18 +722,10 @@ class Agent:
                 if mcp_tool_candidate:
                     tool = mcp_tool_candidate
             except ImportError:
-                 # Get context safely
-                 current_context = AgentContext.first()
-                 if current_context:
-                    current_context.log.log(type="warning", content="MCP helper module not found. Skipping MCP tool lookup.", temp=True)
-                 PrintStyle(background_color="black", font_color="yellow", padding=True).print(
+                PrintStyle(background_color="black", font_color="yellow", padding=True).print(
                     "MCP helper module not found. Skipping MCP tool lookup."
                  )
             except Exception as e:
-                # Get context safely
-                current_context = AgentContext.first()
-                if current_context:
-                    current_context.log.log(type="warning", content=f"Failed to get MCP tool '{tool_name}': {e}", temp=True)
                 PrintStyle(background_color="black", font_color="red", padding=True).print(
                     f"Failed to get MCP tool '{tool_name}': {e}"
                 )
