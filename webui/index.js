@@ -762,7 +762,7 @@ window.restart = async function () {
         toast("Restarting...", "info", 0);
 
         let retries = 0;
-        const maxRetries = 60; // Maximum number of retries (15 seconds with 250ms interval)
+        const maxRetries = 240; // Maximum number of retries (60 seconds with 250ms interval)
 
         while (retries < maxRetries) {
             try {
