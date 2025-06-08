@@ -14,7 +14,8 @@ class Tunnel(ApiHandler):
         
         if action == "create":
             port = runtime.get_web_ui_port()
-            tunnel_url = tunnel_manager.start_tunnel(port)
+            provider = input.get("provider", "serveo")  # Default to serveo
+            tunnel_url = tunnel_manager.start_tunnel(port, provider)
             if tunnel_url is None:
                 # Add a little delay and check again - tunnel might be starting
                 import time
