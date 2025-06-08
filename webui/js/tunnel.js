@@ -159,6 +159,11 @@ document.addEventListener('alpine:init', () => {
             
             this.isLoading = true;
             this.loadingText = 'Creating tunnel...';
+
+            // Get provider from the parent settings modal scope
+            const modalEl = document.getElementById('settingsModal');
+            const modalAD = Alpine.$data(modalEl);
+            const provider = modalAD.provider || 'serveo'; // Default to serveo if not set
             
             // Change create button appearance
             const createButton = document.querySelector('.tunnel-actions .btn-ok');
@@ -177,6 +182,7 @@ document.addEventListener('alpine:init', () => {
                     },
                     body: JSON.stringify({ 
                         action: 'create',
+                        provider: provider
                         // port: window.location.port || (window.location.protocol === 'https:' ? 443 : 80)
                     }),
                 });
