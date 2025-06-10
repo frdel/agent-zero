@@ -114,12 +114,28 @@ export function _drawMessage(
     addCopyButtonToElement(preElement);
     messageDiv.appendChild(preElement);
 
-    // Render LaTeX math within the span
-    if (window.renderMathInElement && latex) {
-      renderMathInElement(spanElement, {
-        delimiters: [{ left: "$", right: "$", display: true }],
-        throwOnError: false,
-      });
+    // Render LaTeX math within the span - always try to render math
+    if (window.renderMathInElement) {
+      // Use setTimeout to ensure DOM is ready and content is fully processed
+      setTimeout(() => {
+        renderMathInElement(spanElement, {
+          delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false }
+          ],
+          throwOnError: false,
+          errorColor: '#cc0000',
+          strict: false,
+          trust: true,
+          macros: {
+            "\\RR": "\\mathbb{R}",
+            "\\NN": "\\mathbb{N}",
+            "\\ZZ": "\\mathbb{Z}",
+            "\\QQ": "\\mathbb{Q}",
+            "\\CC": "\\mathbb{C}"
+          }
+        });
+      }, 100);
     }
   }
 
@@ -554,11 +570,27 @@ function drawKvps(container, kvps, latex) {
             copyText(span.textContent, span);
           });
 
-          if (window.renderMathInElement && latex) {
-            renderMathInElement(span, {
-              delimiters: [{ left: "$", right: "$", display: true }],
-              throwOnError: false,
-            });
+          if (window.renderMathInElement) {
+            // Use setTimeout to ensure DOM is ready and content is fully processed
+            setTimeout(() => {
+              renderMathInElement(span, {
+                delimiters: [
+                  { left: "$$", right: "$$", display: true },
+                  { left: "$", right: "$", display: false }
+                ],
+                throwOnError: false,
+                errorColor: '#cc0000',
+                strict: false,
+                trust: true,
+                macros: {
+                  "\\RR": "\\mathbb{R}",
+                  "\\NN": "\\mathbb{N}",
+                  "\\ZZ": "\\mathbb{Z}",
+                  "\\QQ": "\\mathbb{Q}",
+                  "\\CC": "\\mathbb{C}"
+                }
+              });
+            }, 100);
           }
         }
       }
@@ -617,10 +649,72 @@ async function copyText(text, element) {
 function convertHTML(str) {
   if (typeof str !== "string") str = JSON.stringify(str, null, 2);
 
-  let result = escapeHTML(str);
-  result = convertPathsToLinks(result);
-  result = convertImageTags(result);
-  return result;
+  // Check if marked library is available
+  if (typeof marked !== 'undefined') {
+    try {
+      // Configure marked options for better rendering
+      marked.setOptions({
+        breaks: true,        // Convert \n to <br>
+        gfm: true,          // GitHub Flavored Markdown
+        tables: true,       // Enable table support
+        sanitize: false,    // We'll handle sanitization ourselves
+        smartypants: true,  // Smart quotes and dashes
+        xhtml: false,       // Don't use XHTML self-closing tags
+        headerIds: false,   // Don't generate header IDs
+        mangle: false,      // Don't mangle email addresses
+        highlight: function(code, lang) {
+          // Basic syntax highlighting for common languages
+          if (lang === 'python') {
+            return code
+              .replace(/\b(def|class|import|from|return|if|else|elif|for|while|try|except|with|as)\b/g, '<span style="color: #569cd6;">$1</span>')
+              .replace(/\b(True|False|None)\b/g, '<span style="color: #4fc1ff;">$1</span>')
+              .replace(/(#.*$)/gm, '<span style="color: #6a9955;">$1</span>');
+          } else if (lang === 'javascript' || lang === 'js') {
+            return code
+              .replace(/\b(function|const|let|var|return|if|else|for|while|class|extends)\b/g, '<span style="color: #569cd6;">$1</span>')
+              .replace(/\b(true|false|null|undefined)\b/g, '<span style="color: #4fc1ff;">$1</span>')
+              .replace(/(\/\/.*$)/gm, '<span style="color: #6a9955;">$1</span>');
+          } else if (lang === 'bash' || lang === 'sh') {
+            return code
+              .replace(/^(\$|#)\s*/gm, '<span style="color: #569cd6;">$1</span>')
+              .replace(/(#.*$)/gm, '<span style="color: #6a9955;">$1</span>');
+          }
+          return code;
+        }
+      });
+      
+      // Detect if content looks like markdown (excluding LaTeX expressions)
+      const hasMarkdownSyntax = /(\*\*[^$]*?\*\*|\*[^$]*?\*|__[^$]*?__|_[^$]*?_|`[^$]*?`|^#{1,6}\s|^\s*[-*+]\s|^\s*\d+\.\s|^>|^\|.*\||```)/m.test(str);
+      
+      let result;
+      if (hasMarkdownSyntax) {
+        // Parse as markdown if it contains markdown syntax
+        result = marked.parse(str);
+      } else {
+        // For plain text, escape HTML but preserve line breaks
+        result = escapeHTML(str).replace(/\n/g, '<br>');
+      }
+      
+      // Apply our custom conversions
+      result = convertPathsToLinks(result);
+      result = convertImageTags(result);
+      
+      return result;
+    } catch (error) {
+      console.warn('Markdown parsing failed, falling back to plain text:', error);
+      // Fallback to original behavior if markdown parsing fails
+      let result = escapeHTML(str);
+      result = convertPathsToLinks(result);
+      result = convertImageTags(result);
+      return result;
+    }
+  } else {
+    // Fallback to original behavior if marked is not available
+    let result = escapeHTML(str);
+    result = convertPathsToLinks(result);
+    result = convertImageTags(result);
+    return result;
+  }
 }
 
 function escapeHTML(str) {
@@ -632,6 +726,10 @@ function escapeHTML(str) {
     '"': "&quot;",
   };
   return str.replace(/[&<>'"]/g, (char) => escapeChars[char]);
+}
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function convertPathsToLinks(str) {

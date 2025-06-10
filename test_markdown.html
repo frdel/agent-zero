@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Test</title>
+    <!-- Load the same CSS and JS as the main app -->
+    <link rel="stylesheet" href="webui/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+</head>
+<body class="dark-mode">
+    <div style="padding: 20px; max-width: 800px; margin: 0 auto;">
+        <h1>Teste de Renderização de Markdown</h1>
+        
+        <div id="test-container" class="message message-ai" style="margin: 20px 0;">
+            <h4>Mensagem de Teste</h4>
+            <pre class="msg-content">
+                <span id="test-content"></span>
+            </pre>
+        </div>
+
+        <button onclick="testMarkdown()" style="padding: 10px 20px; margin: 10px 0;">Testar Markdown</button>
+        <button onclick="testPlainText()" style="padding: 10px 20px; margin: 10px 0;">Testar Texto Simples</button>
+    </div>
+
+    <script>
+        // Copy the convertHTML function from messages.js
+        function convertHTML(str) {
+          if (typeof str !== "string") str = JSON.stringify(str, null, 2);
+
+          // Check if marked library is available
+          if (typeof marked !== 'undefined') {
+            try {
+              // Configure marked options for better rendering
+              marked.setOptions({
+                breaks: true, // Convert \n to <br>
+                gfm: true,    // GitHub Flavored Markdown
+                sanitize: false, // We'll handle sanitization ourselves
+                highlight: function(code, lang) {
+                  // Basic syntax highlighting could be added here
+                  return code;
+                }
+              });
+              
+              // First convert markdown to HTML
+              let result = marked.parse(str);
+              
+              // Then apply our custom conversions (simplified for test)
+              return result;
+            } catch (error) {
+              console.warn('Markdown parsing failed, falling back to plain text:', error);
+              return escapeHTML(str);
+            }
+          } else {
+            // Fallback to original behavior if marked is not available
+            return escapeHTML(str);
+          }
+        }
+
+        function escapeHTML(str) {
+          const escapeChars = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "'": "&#39;",
+            '"': "&quot;",
+          };
+          return str.replace(/[&<>'"]/g, (char) => escapeChars[char]);
+        }
+
+        function testMarkdown() {
+            const markdownText = `# Título Principal
+
+## Subtítulo
+
+Este é um **texto em negrito** e este é um *texto em itálico*.
+
+### Lista de itens:
+- Item 1
+- Item 2
+- Item 3
+
+### Lista numerada:
+1. Primeiro item
+2. Segundo item
+3. Terceiro item
+
+### Código inline
+Aqui temos \`código inline\` no meio do texto.
+
+### Bloco de código:
+\`\`\`python
+def hello_world():
+    print("Hello, World!")
+    return True
+\`\`\`
+
+### Citação:
+> Esta é uma citação importante
+> que continua na próxima linha.
+
+### Tabela:
+| Nome | Idade | Cidade |
+|------|-------|--------|
+| João | 25 | São Paulo |
+| Maria | 30 | Rio de Janeiro |
+
+### Link:
+[Clique aqui](https://example.com) para visitar o site.
+
+---
+
+**Teste concluído!**`;
+
+            document.getElementById('test-content').innerHTML = convertHTML(markdownText);
+        }
+
+        function testPlainText() {
+            const plainText = "Este é apenas texto simples sem formatação markdown.";
+            document.getElementById('test-content').innerHTML = convertHTML(plainText);
+        }
+
+        // Test on page load
+        window.onload = function() {
+            console.log('Marked library available:', typeof marked !== 'undefined');
+            testMarkdown();
+        };
+    </script>
+</body>
+</html>

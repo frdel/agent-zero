@@ -1611,17 +1611,40 @@ if (!window.schedulerSettings) {
     };
 }
 
-// Force Alpine.js to register the component immediately
-if (window.Alpine) {
-    // Alpine is already loaded, register now
-    console.log('Alpine already loaded, registering schedulerSettings component now');
-    window.Alpine.data('schedulerSettings', window.schedulerSettings);
-} else {
-    // Wait for Alpine to load
+// Safely register Alpine.js component
+function registerSchedulerComponent() {
+    if (typeof Alpine !== 'undefined' && Alpine.data && typeof window.schedulerSettings === 'function') {
+        try {
+            console.log('Registering schedulerSettings component');
+            Alpine.data('schedulerSettings', window.schedulerSettings);
+            return true;
+        } catch (error) {
+            console.error('Error registering schedulerSettings component:', error);
+            return false;
+        }
+    }
+    return false;
+}
+
+// Try to register immediately if Alpine is available
+if (!registerSchedulerComponent()) {
+    // Wait for Alpine to initialize
     document.addEventListener('alpine:init', () => {
-        console.log('Alpine:init - immediately registering schedulerSettings component');
-        Alpine.data('schedulerSettings', window.schedulerSettings);
+        console.log('Alpine:init - registering schedulerSettings component');
+        registerSchedulerComponent();
     });
+    
+    // Fallback: wait for Alpine to be available
+    const waitForAlpine = setInterval(() => {
+        if (registerSchedulerComponent()) {
+            clearInterval(waitForAlpine);
+        }
+    }, 100);
+    
+    // Clear interval after 10 seconds to prevent infinite waiting
+    setTimeout(() => {
+        clearInterval(waitForAlpine);
+    }, 10000);
 }
 
 // Add a document ready event handler to ensure the scheduler tab can be clicked on first load

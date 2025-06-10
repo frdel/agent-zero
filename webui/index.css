@@ -2968,3 +2968,307 @@ nav ul li a img {
     min-width: 40px;
     text-align: center;
 }
+
+/* Markdown Rendering Styles */
+.msg-content h1, .msg-content h2, .msg-content h3, .msg-content h4, .msg-content h5, .msg-content h6 {
+    color: var(--color-text);
+    margin: 1em 0 0.5em 0;
+    line-height: 1.3;
+}
+
+.msg-content h1 { font-size: 1.8em; border-bottom: 2px solid var(--color-border); padding-bottom: 0.3em; }
+.msg-content h2 { font-size: 1.5em; border-bottom: 1px solid var(--color-border); padding-bottom: 0.3em; }
+.msg-content h3 { font-size: 1.3em; }
+.msg-content h4 { font-size: 1.1em; }
+.msg-content h5 { font-size: 1em; font-weight: bold; }
+.msg-content h6 { font-size: 0.9em; font-weight: bold; color: var(--color-secondary); }
+
+.msg-content p {
+    margin: 0.8em 0;
+    line-height: 1.6;
+}
+
+.msg-content ul, .msg-content ol {
+    margin: 0.8em 0;
+    padding-left: 2em;
+}
+
+.msg-content li {
+    margin: 0.3em 0;
+    line-height: 1.5;
+}
+
+.msg-content blockquote {
+    margin: 1em 0;
+    padding: 0.5em 1em;
+    border-left: 4px solid var(--color-accent);
+    background: var(--color-panel);
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+.msg-content code {
+    background: var(--color-panel);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.9em;
+    color: var(--color-accent);
+}
+
+.msg-content pre {
+    background: var(--color-panel);
+    padding: 1em;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 1em 0;
+    border: 1px solid var(--color-border);
+}
+
+.msg-content pre code {
+    background: none;
+    padding: 0;
+    color: var(--color-text);
+}
+
+.msg-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+
+.msg-content th, .msg-content td {
+    border: 1px solid var(--color-border);
+    padding: 0.5em;
+    text-align: left;
+}
+
+.msg-content th {
+    background: var(--color-panel);
+    font-weight: bold;
+}
+
+.msg-content hr {
+    border: none;
+    border-top: 2px solid var(--color-border);
+    margin: 1.5em 0;
+}
+
+.msg-content a {
+    color: var(--color-accent);
+    text-decoration: none;
+}
+
+.msg-content a:hover {
+    text-decoration: underline;
+}
+
+.msg-content strong {
+    font-weight: bold;
+    color: var(--color-text);
+}
+
+.msg-content em {
+    font-style: italic;
+}
+
+/* Apply similar styles to kvps values */
+.kvps-val h1, .kvps-val h2, .kvps-val h3, .kvps-val h4, .kvps-val h5, .kvps-val h6,
+.kvps-val p, .kvps-val ul, .kvps-val ol, .kvps-val li, .kvps-val blockquote,
+.kvps-val code, .kvps-val pre, .kvps-val table, .kvps-val th, .kvps-val td,
+.kvps-val hr, .kvps-val a, .kvps-val strong, .kvps-val em {
+    color: inherit;
+    margin: 0.5em 0;
+}
+
+.kvps-val h1 { font-size: 1.4em; }
+.kvps-val h2 { font-size: 1.2em; }
+.kvps-val h3 { font-size: 1.1em; }
+
+/* KaTeX Math Expressions Styling */
+.msg-content .katex-display, .kvps-val .katex-display {
+    margin: 1em 0 !important;
+    text-align: center;
+    overflow-x: auto;
+}
+
+.msg-content .katex-display > .katex, .kvps-val .katex-display > .katex {
+    text-align: center;
+    white-space: normal;
+}
+
+.msg-content .katex, .kvps-val .katex {
+    font-size: 1.1em;
+    line-height: 1.4;
+}
+
+.msg-content .katex-display .katex, .kvps-val .katex-display .katex {
+    font-size: 1.2em;
+}
+
+/* Ensure math expressions don't break layout */
+.msg-content .katex-html, .kvps-val .katex-html {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* Improve readability of fractions and complex expressions */
+.msg-content .katex .frac-line, .kvps-val .katex .frac-line {
+    border-bottom-width: 0.08em;
+}
+
+/* Style for mathematical calculations in lists */
+.msg-content li .katex, .kvps-val li .katex {
+    margin: 0.2em 0;
+}
+
+/* Better spacing for inline math within paragraphs */
+.msg-content p .katex, .kvps-val p .katex {
+    margin: 0 0.2em;
+    vertical-align: baseline;
+}
+
+/* Ensure proper spacing around equals signs and operators */
+.msg-content .katex .mrel, .kvps-val .katex .mrel {
+    margin: 0 0.2777em;
+}
+
+/* Style for error rendering */
+.msg-content .katex-error, .kvps-val .katex-error {
+    color: var(--color-accent) !important;
+    background: rgba(204, 0, 0, 0.1);
+    padding: 0.2em;
+    border-radius: 3px;
+}
+
+/* Advanced Markdown Features Styling */
+
+/* Task Lists (GitHub Flavored Markdown) */
+.msg-content ul li[data-task], .kvps-val ul li[data-task] {
+    list-style: none;
+    position: relative;
+    padding-left: 1.5em;
+}
+
+.msg-content input[type="checkbox"], .kvps-val input[type="checkbox"] {
+    position: absolute;
+    left: 0;
+    top: 0.3em;
+    margin: 0;
+    cursor: pointer;
+}
+
+/* Strikethrough text */
+.msg-content del, .kvps-val del {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+/* Definition lists */
+.msg-content dl, .kvps-val dl {
+    margin: 1em 0;
+}
+
+.msg-content dt, .kvps-val dt {
+    font-weight: bold;
+    margin-top: 1em;
+}
+
+.msg-content dd, .kvps-val dd {
+    margin-left: 2em;
+    margin-bottom: 0.5em;
+}
+
+/* Enhanced code syntax highlighting */
+.msg-content pre code .highlight, .kvps-val pre code .highlight {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.1em 0.2em;
+    border-radius: 2px;
+}
+
+/* Footnotes */
+.msg-content .footnote-ref, .kvps-val .footnote-ref {
+    color: var(--color-accent);
+    text-decoration: none;
+    font-size: 0.8em;
+    vertical-align: super;
+}
+
+.msg-content .footnote-ref:hover, .kvps-val .footnote-ref:hover {
+    text-decoration: underline;
+}
+
+/* Keyboard keys */
+.msg-content kbd, .kvps-val kbd {
+    background: var(--color-panel);
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    box-shadow: 0 1px 0 var(--color-border);
+    display: inline-block;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.85em;
+    line-height: 1;
+    padding: 2px 4px;
+    white-space: nowrap;
+}
+
+/* Mark/Highlight text */
+.msg-content mark, .kvps-val mark {
+    background: rgba(255, 255, 0, 0.3);
+    padding: 0.1em 0.2em;
+    border-radius: 2px;
+}
+
+/* Abbreviations */
+.msg-content abbr, .kvps-val abbr {
+    border-bottom: 1px dotted var(--color-text);
+    cursor: help;
+}
+
+/* Enhanced table styling for complex tables */
+.msg-content table.table-striped tbody tr:nth-child(even), 
+.kvps-val table.table-striped tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.msg-content table.table-bordered, .kvps-val table.table-bordered {
+    border: 2px solid var(--color-border);
+}
+
+.msg-content table.table-bordered th, .msg-content table.table-bordered td,
+.kvps-val table.table-bordered th, .kvps-val table.table-bordered td {
+    border: 1px solid var(--color-border);
+}
+
+/* Smart typography (smartypants) */
+.msg-content .smart-quote, .kvps-val .smart-quote {
+    font-style: italic;
+}
+
+/* Enhanced list styling */
+.msg-content ol.decimal, .kvps-val ol.decimal {
+    list-style-type: decimal;
+}
+
+.msg-content ol.lower-alpha, .kvps-val ol.lower-alpha {
+    list-style-type: lower-alpha;
+}
+
+.msg-content ol.upper-alpha, .kvps-val ol.upper-alpha {
+    list-style-type: upper-alpha;
+}
+
+.msg-content ol.lower-roman, .kvps-val ol.lower-roman {
+    list-style-type: lower-roman;
+}
+
+.msg-content ol.upper-roman, .kvps-val ol.upper-roman {
+    list-style-type: upper-roman;
+}
+
+/* Nested lists spacing */
+.msg-content li > ul, .msg-content li > ol,
+.kvps-val li > ul, .kvps-val li > ol {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}

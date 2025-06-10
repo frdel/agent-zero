@@ -30,88 +30,37 @@
         }
     </script>
 
-    <!-- Pre-initialize schedulerSettings to ensure Alpine doesn't miss it -->
+    <!-- Scheduler component will be initialized by scheduler.js -->
     <script>
-        // Pre-define schedulerSettings skeleton to ensure it's available to Alpine
-        window.schedulerSettings = function() {
-            return {
-                tasks: [],
-                isLoading: true,
-                selectedTask: null,
-                expandedTaskId: null,
-                sortField: 'name',
-                sortDirection: 'asc',
-                filterType: 'all',
-                filterState: 'all',
-                pollingInterval: null,
-                pollingActive: false,
-                editingTask: {
-                    name: '',
-                    type: 'scheduled',
-                    state: 'idle',
-                    schedule: {
-                        minute: '*',
-                        hour: '*',
-                        day: '*',
-                        month: '*',
-                        weekday: '*',
-                        timezone: ''
-                    },
-                    token: '',
-                    plan: {
-                        todo: [],
-                        in_progress: null,
-                        done: []
-                    },
-                    system_prompt: '',
-                    prompt: '',
-                    attachments: []
-                },
-                isCreating: false,
-                isEditing: false,
-                showLoadingState: false,
-                viewMode: 'list',
-                selectedTaskForDetail: null,
-                attachmentsText: '',
-                filteredTasks: [],
-                // Minimal init to avoid errors
-                init() {
-                    console.log('Basic schedulerSettings initialized');
-                    // Watch for task type changes
-                    this.$watch('editingTask.type', (newType) => {
-                        if (newType === 'planned') {
-                            // When switching to planned task type, initialize the datetime picker
-                            this.$nextTick(() => {
-                                if (this.initFlatpickr) {
-                                    if (this.isCreating) {
-                                        this.initFlatpickr('create');
-                                    } else if (this.isEditing) {
-                                        this.initFlatpickr('edit');
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
-            };
-        };
+        // Ensure window.schedulerSettings is undefined initially to prevent conflicts
+        if (typeof window.schedulerSettings !== 'undefined') {
+            console.warn('schedulerSettings already defined, clearing for clean initialization');
+            delete window.schedulerSettings;
+        }
     </script>
 
-    <!-- Load module scripts first -->
+    <!-- Load Alpine.js plugins first -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.3/dist/cdn.min.js"></script>
+    
+    <!-- Load module scripts -->
     <script type="module" src="js/scheduler.js"></script>
     <script type="module" src="js/speech.js"></script>
     <script type="module" src="js/history.js"></script>
     <script type="module" src="index.js"></script>
-
-    <!-- Then load Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.3/dist/cdn.min.js"></script>
-    <!-- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script> -->
+    
+    <!-- Initialize Alpine.js after modules are loaded -->
     <script type="module" src="js/initFw.js"></script>
+    
+    <!-- Load Alpine.js core last -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.36.5/src-noconflict/ace.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/ace-builds@1.36.5/css/ace.min.css" rel="stylesheet">
     <!-- KaTeX CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
+
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
 
     <!-- KaTeX javascript -->
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" crossorigin="anonymous"></script>

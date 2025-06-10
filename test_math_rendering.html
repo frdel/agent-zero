@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Renderização Matemática</title>
+    <!-- Load the same CSS and JS as the main app -->
+    <link rel="stylesheet" href="webui/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
+    <!-- KaTeX javascript -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+</head>
+<body class="dark-mode">
+    <div style="padding: 20px; max-width: 900px; margin: 0 auto;">
+        <h1>Teste de Renderização de Cálculos Matemáticos</h1>
+        
+        <div id="test-container" class="message message-ai" style="margin: 20px 0;">
+            <h4>Cálculo Passo a Passo - IBS/CBS</h4>
+            <pre class="msg-content">
+                <span id="test-content"></span>
+            </pre>
+        </div>
+
+        <button onclick="testMathMarkdown()" style="padding: 10px 20px; margin: 10px 0;">Testar Cálculo Completo</button>
+        <button onclick="testSimpleMath()" style="padding: 10px 20px; margin: 10px 0;">Testar Matemática Simples</button>
+    </div>
+
+    <script>
+        // Copy the enhanced convertHTML function from messages.js
+        function convertHTML(str) {
+          if (typeof str !== "string") str = JSON.stringify(str, null, 2);
+
+          // Check if marked library is available
+          if (typeof marked !== 'undefined') {
+            try {
+              // Configure marked options for better rendering
+              marked.setOptions({
+                breaks: true,
+                gfm: true,
+                sanitize: false,
+                highlight: function(code, lang) {
+                  return code;
+                }
+              });
+              
+              // Detect if content looks like markdown (excluding LaTeX expressions)
+              const hasMarkdownSyntax = /(\*\*[^$]*?\*\*|\*[^$]*?\*|__[^$]*?__|_[^$]*?_|`[^$]*?`|^#{1,6}\s|^\s*[-*+]\s|^\s*\d+\.\s|^>|^\|.*\||```)/m.test(str);
+              
+              let result;
+              if (hasMarkdownSyntax) {
+                // Parse as markdown if it contains markdown syntax
+                result = marked.parse(str);
+              } else {
+                // For plain text, escape HTML but preserve line breaks
+                result = escapeHTML(str).replace(/\n/g, '<br>');
+              }
+              
+              return result;
+            } catch (error) {
+              console.warn('Markdown parsing failed, falling back to plain text:', error);
+              return escapeHTML(str);
+            }
+          } else {
+            return escapeHTML(str);
+          }
+        }
+
+        function escapeHTML(str) {
+          const escapeChars = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "'": "&#39;",
+            '"': "&quot;",
+          };
+          return str.replace(/[&<>'"]/g, (char) => escapeChars[char]);
+        }
+
+        function renderMathInElement(element) {
+            if (window.renderMathInElement) {
+                setTimeout(() => {
+                    window.renderMathInElement(element, {
+                        delimiters: [
+                            { left: "$$", right: "$$", display: true },
+                            { left: "$", right: "$", display: false }
+                        ],
+                        throwOnError: false,
+                        errorColor: '#cc0000',
+                        strict: false,
+                        trust: true,
+                        macros: {
+                            "\\RR": "\\mathbb{R}",
+                            "\\NN": "\\mathbb{N}",
+                            "\\ZZ": "\\mathbb{Z}",
+                            "\\QQ": "\\mathbb{Q}",
+                            "\\CC": "\\mathbb{C}"
+                        }
+                    });
+                }, 200);
+            }
+        }
+
+        function testMathMarkdown() {
+            const mathText = `# O Cálculo Passo a Passo
+
+O novo sistema funciona no modelo de **Débito e Crédito**.
+
+- **Débito**: É o imposto que você calcula sobre a sua venda.
+- **Crédito**: É o imposto que você já pagou na compra dos seus insumos e que pode abater do seu débito.
+
+## Passo 1: Calcular o CRÉDITO (O imposto que você recupera)
+
+Você terá direito a um crédito de 26,5% sobre o valor base de todos os insumos que comprou.
+
+**Crédito sobre o Xarope:** 
+$$R\\$ 1,00 \\times 26,5\\% = R\\$ 0,265$$
+
+**Crédito sobre o Gás:** 
+$$R\\$ 0,20 \\times 26,5\\% = R\\$ 0,053$$
+
+**Crédito sobre o Copo:** 
+$$R\\$ 0,30 \\times 26,5\\% = R\\$ 0,080$$
+
+**Crédito sobre Energia/Água:** 
+$$R\\$ 0,10 \\times 26,5\\% = R\\$ 0,027$$
+
+**TOTAL DE CRÉDITOS:** $R\\$ 0,425$
+
+## Passo 2: Calcular o DÉBITO (O imposto sobre sua venda)
+
+O imposto de 26,5% já está incluído no seu preço final de R$ 8,00. O cálculo para descobrir o valor do imposto é:
+
+$$\\text{Valor do imposto na venda} = \\text{Preço de Venda} - \\left(\\frac{\\text{Preço de Venda}}{1 + \\text{Alíquota}}\\right)$$
+
+$$\\text{Valor do imposto na venda} = R\\$ 8,00 - \\left(\\frac{R\\$ 8,00}{1,265}\\right) = R\\$ 8,00 - R\\$ 6,32 = \\textbf{R\\$ 1,68}$$
+
+**TOTAL DO DÉBITO:** $\\textbf{R\\$ 1,68}$
+
+## Passo 3: Calcular o Imposto a Pagar
+
+Agora, basta subtrair seus créditos do seu débito:
+
+$$\\text{Imposto a Pagar} = \\text{Total do Débito} - \\text{Total de Créditos}$$
+
+$$\\text{Imposto a Pagar} = R\\$ 1,68 - R\\$ 0,425 = \\textbf{R\\$ 1,255}$$
+
+Este é o valor de IBS/CBS que você efetivamente irá recolher para o governo por cada copo vendido.`;
+
+            const contentElement = document.getElementById('test-content');
+            contentElement.innerHTML = convertHTML(mathText);
+            renderMathInElement(contentElement);
+        }
+
+        function testSimpleMath() {
+            const simpleMath = `## Cálculos Simples
+
+### Fração simples:
+A fração $\\frac{1}{2}$ representa meio.
+
+### Operações básicas:
+- Soma: $2 + 3 = 5$
+- Multiplicação: $4 \\times 5 = 20$
+- Porcentagem: $100 \\times 25\\% = 25$
+
+### Fórmula em bloco:
+$$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
+
+### Texto com matemática inline:
+O resultado de $\\sqrt{16}$ é $4$.`;
+
+            const contentElement = document.getElementById('test-content');
+            contentElement.innerHTML = convertHTML(simpleMath);
+            renderMathInElement(contentElement);
+        }
+
+        // Test on page load
+        window.onload = function() {
+            console.log('Marked library available:', typeof marked !== 'undefined');
+            console.log('KaTeX library available:', typeof katex !== 'undefined');
+            
+            // Wait for KaTeX to load
+            setTimeout(() => {
+                testMathMarkdown();
+            }, 500);
+        };
+    </script>
+</body>
+</html>
