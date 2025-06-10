@@ -5,7 +5,7 @@ nest_asyncio.apply()
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Awaitable, Coroutine, Dict
+from typing import Any, Awaitable, Coroutine, Optional, Dict, TypedDict, cast
 from enum import Enum
 import uuid
 import models
@@ -45,9 +45,9 @@ class AgentContext:
         log: Log.Log | None = None,
         paused: bool = False,
         streaming_agent: "Agent|None" = None,
-        created_at: datetime | None = None,
+        created_at: "datetime|None" = None,
         type: AgentContextType = AgentContextType.USER,
-        last_message: datetime | None = None,
+        last_message: datetime |None = None,
     ):
         # build context
         self.id = id or str(uuid.uuid4())
@@ -110,6 +110,7 @@ class AgentContext:
             ),
             "type": self.type.value,
         }
+
 
     @staticmethod
     def log_to_all(
@@ -611,10 +612,14 @@ class Agent:
             self.config.utility_model, prompt.format(), background
         )
 
-        async for chunk in (prompt | model).astream({}):
+        # async for chunk in (prompt | model).astream({}):
+        #     await self.handle_intervention()  # wait for intervention and handle it, if paused
+        # format prompt to messages and stream from model directly
+        model_stream = cast(Any, model)
+        messages = prompt.format_messages()
+        async for chunk in model_stream.astream(messages): 
             await self.handle_intervention()  # wait for intervention and handle it, if paused
-
-            content = models.parse_chunk(chunk)
+            content = chunk if isinstance(chunk, str) else str(chunk)
             limiter.add(output=tokens.approximate_tokens(content))
             response += content
 
@@ -636,12 +641,19 @@ class Agent:
         # rate limiter
         limiter = await self.rate_limiter(self.config.chat_model, prompt.format())
 
-        async for chunk in (prompt | model).astream({}):
+        # async for chunk in (prompt | model).astream({}):
+        #     await self.handle_intervention()  # wait for intervention and handle it, if paused
+        # format prompt to messages and stream from model directly
+        messages = prompt.format_messages()
+        model_stream = cast(Any, model)
+        async for chunk in model_stream.astream(messages): 
             await self.handle_intervention()  # wait for intervention and handle it, if paused
 
             content = models.parse_chunk(chunk)
+            content = chunk if isinstance(chunk, str) else str(chunk)
             limiter.add(output=tokens.approximate_tokens(content))
             response += content
+
 
             if callback:
                 await callback(content, response)
@@ -713,7 +725,8 @@ class Agent:
             if ":" in raw_tool_name:
                 tool_name, tool_method = raw_tool_name.split(":", 1)
             
-            tool = None  # Initialize tool to None
+            tool = None
+            # tool = self.get_tool(name=tool_name, method=tool_method, args=tool_args, message=msg)
 
             # Try getting tool from MCP first
             try:
