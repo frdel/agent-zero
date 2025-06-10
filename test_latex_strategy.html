@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste da Estratégia LaTeX</title>
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <!-- KaTeX JavaScript -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-case {
+            background: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .original {
+            background: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-family: monospace;
+        }
+        .corrected {
+            background: #e8f5e8;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-family: monospace;
+        }
+        .rendered {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+            border: 1px solid #bbdefb;
+        }
+        h1 { color: #333; text-align: center; }
+        h2 { color: #666; border-bottom: 2px solid #ddd; }
+        .status { font-weight: bold; }
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste da Estratégia Robusta de Correção LaTeX</h1>
+    
+    <div id="results"></div>
+
+    <script>
+        // COPIA DAS FUNÇÕES DE CORREÇÃO DO messages.js
+        const latexCorrections = [
+          {
+            pattern: /(?<!\\)\brac\s*\{([^}]*)\}\s*\{([^}]*)\}/g,
+            replacement: '\\frac{$1}{$2}',
+            needsDelimiters: true,
+            priority: 1,
+            description: 'Corrige rac{}{} para \\frac{}{}'
+          },
+          {
+            pattern: /(?<!\\)\bextbf\s*\{([^}]*)\}/g,
+            replacement: '**$1**',
+            needsDelimiters: false,
+            priority: 2,
+            description: 'Converte extbf{} para **bold**'
+          },
+          {
+            pattern: /(?<!\\)\bimes\s*([0-9]+(?:[,\.][0-9]+)*)/g,
+            replacement: '\\times $1',
+            needsDelimiters: true,
+            priority: 3,
+            description: 'Corrige imes + números para \\times + números'
+          },
+          {
+            pattern: /(?<!\\)\bimes\b/g,
+            replacement: '\\times',
+            needsDelimiters: true,
+            priority: 4,
+            description: 'Corrige imes isolado para \\times'
+          },
+          {
+            pattern: /\\rac\s*\{([^}]*)\}\s*\{([^}]*)\}/g,
+            replacement: '\\frac{$1}{$2}',
+            needsDelimiters: true,
+            priority: 5,
+            description: 'Corrige \\rac{}{} para \\frac{}{}'
+          },
+          {
+            pattern: /\\extbf\s*\{([^}]*)\}/g,
+            replacement: '**$1**',
+            needsDelimiters: false,
+            priority: 6,
+            description: 'Converte \\extbf{} para **bold**'
+          },
+          {
+            pattern: /\\imes\b/g,
+            replacement: '\\times',
+            needsDelimiters: true,
+            priority: 7,
+            description: 'Corrige \\imes para \\times'
+          },
+          {
+            pattern: /(?<!\\)\bqrt\s*\{([^}]*)\}/g,
+            replacement: '\\sqrt{$1}',
+            needsDelimiters: true,
+            priority: 8,
+            description: 'Corrige qrt{} para \\sqrt{}'
+          },
+          {
+            pattern: /(?<!\\)\bum\s*\{([^}]*)\}/g,
+            replacement: '\\sum{$1}',
+            needsDelimiters: true,
+            priority: 9,
+            description: 'Corrige um{} para \\sum{}'
+          }
+        ];
+
+        function applyMathDelimiters(text, command, commandPosition) {
+          const beforeCommand = text.substring(0, commandPosition);
+          const dollarsBeforeCount = (beforeCommand.match(/\$/g) || []).length;
+          const isInMath = dollarsBeforeCount % 2 !== 0;
+          
+          if (isInMath) {
+            return command;
+          }
+          
+          return `$${command}$`;
+        }
+
+        function normalizeDelimiters(text) {
+          let result = text;
+          result = result.replace(/\$\s*\$/g, '');
+          result = result.replace(/\$+/g, '$');
+          result = result.replace(/\$\s+/g, '$');
+          result = result.replace(/\s+\$/g, '$');
+          result = result.replace(/\$\s*\$+/g, '$');
+          return result;
+        }
+
+        function balanceDelimiters(text) {
+          const dollars = text.match(/\$/g);
+          if (!dollars) return text;
+          
+          if (dollars.length % 2 !== 0) {
+            return text + '$';
+          }
+          
+          return text;
+        }
+
+        function validateAndCleanup(text) {
+          let result = text;
+          
+          result = result.replace(/(?<!\$)\\(?:frac|times|sqrt|sum|alpha|beta|gamma|delta|pi|theta|sigma|phi|psi|omega)\b(?:[^$]|$)/g, match => {
+            if (match.endsWith('$')) {
+              return match;
+            }
+            return `$${match}$`;
+          });
+          
+          result = normalizeDelimiters(result);
+          result = balanceDelimiters(result);
+          
+          return result;
+        }
+
+        function processLatexCorrections(str) {
+          let result = str;
+          
+          latexCorrections
+            .sort((a, b) => a.priority - b.priority)
+            .forEach(correction => {
+              let match;
+              const matches = [];
+              
+              correction.pattern.lastIndex = 0;
+              
+              while ((match = correction.pattern.exec(result)) !== null) {
+                matches.push({
+                  match: match[0],
+                  index: match.index,
+                  replacement: match[0].replace(correction.pattern, correction.replacement)
+                });
+                
+                if (!correction.pattern.global) break;
+              }
+              
+              matches.reverse().forEach(matchInfo => {
+                const startPos = matchInfo.index;
+                const endPos = matchInfo.index + matchInfo.match.length;
+                
+                let finalReplacement = matchInfo.replacement;
+                if (correction.needsDelimiters) {
+                  finalReplacement = applyMathDelimiters(result, matchInfo.replacement, startPos);
+                }
+                
+                result = result.substring(0, startPos) + finalReplacement + result.substring(endPos);
+              });
+              
+              correction.pattern.lastIndex = 0;
+            });
+          
+          result = normalizeDelimiters(result);
+          result = validateAndCleanup(result);
+          
+          return result;
+        }
+
+        // CASOS DE TESTE BASEADOS NOS PROBLEMAS IDENTIFICADOS
+        const testCases = [
+          {
+            name: "Problema Principal: rac{8,00}{1,265}",
+            original: "O resultado é rac{8,00}{1,265} = 6,32",
+            expected: "O resultado é $\\frac{8,00}{1,265}$ = 6,32"
+          },
+          {
+            name: "Problema Principal: imes26,5",
+            original: "A multiplicação é imes26,5 metros",
+            expected: "A multiplicação é $\\times 26,5$ metros"
+          },
+          {
+            name: "Problema Principal: extbf{$ 1,68}",
+            original: "O valor extbf{$ 1,68} está correto",
+            expected: "O valor **$ 1,68** está correto"
+          },
+          {
+            name: "Comando isolado: imes",
+            original: "Símbolo de multiplicação: imes",
+            expected: "Símbolo de multiplicação: $\\times$"
+          },
+          {
+            name: "Múltiplos comandos",
+            original: "Calcular rac{10}{5} imes 3 com extbf{resultado}",
+            expected: "Calcular $\\frac{10}{5}$ $\\times$ 3 com **resultado**"
+          },
+          {
+            name: "Comando com barra: \\rac",
+            original: "Fração \\rac{1}{2} + \\imes 3",
+            expected: "Fração $\\frac{1}{2}$ + $\\times$ 3"
+          },
+          {
+            name: "Comando já correto",
+            original: "Fração $\\frac{1}{2}$ já correta",
+            expected: "Fração $\\frac{1}{2}$ já correta"
+          },
+          {
+            name: "Comandos adicionais: qrt e um",
+            original: "Raiz qrt{16} e somatório um{n=1}",
+            expected: "Raiz $\\sqrt{16}$ e somatório $\\sum{n=1}$"
+          },
+          {
+            name: "Caso complexo misto",
+            original: "Cálculo: rac{a+b}{c} imes qrt{d} = extbf{resultado final}",
+            expected: "Cálculo: $\\frac{a+b}{c}$ $\\times$ $\\sqrt{d}$ = **resultado final**"
+          },
+          {
+            name: "Texto normal sem LaTeX",
+            original: "Este é um texto normal sem comandos LaTeX",
+            expected: "Este é um texto normal sem comandos LaTeX"
+          }
+        ];
+
+        function runTests() {
+          const resultsDiv = document.getElementById('results');
+          let totalTests = testCases.length;
+          let passedTests = 0;
+
+          testCases.forEach((testCase, index) => {
+            const corrected = processLatexCorrections(testCase.original);
+            const passed = corrected === testCase.expected;
+            
+            if (passed) passedTests++;
+
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test-case';
+            
+            testDiv.innerHTML = `
+              <h3>${testCase.name} <span class="status ${passed ? 'success' : 'error'}">${passed ? '✅ PASSOU' : '❌ FALHOU'}</span></h3>
+              <div><strong>Original:</strong></div>
+              <div class="original">${escapeHtml(testCase.original)}</div>
+              <div><strong>Esperado:</strong></div>
+              <div class="corrected">${escapeHtml(testCase.expected)}</div>
+              <div><strong>Resultado:</strong></div>
+              <div class="corrected">${escapeHtml(corrected)}</div>
+              <div><strong>Renderizado:</strong></div>
+              <div class="rendered" id="render-${index}">${corrected}</div>
+            `;
+            
+            resultsDiv.appendChild(testDiv);
+          });
+
+          // Sumário
+          const summaryDiv = document.createElement('div');
+          summaryDiv.innerHTML = `
+            <h2>📊 Resumo dos Testes</h2>
+            <div class="test-case">
+              <p><strong>Total de testes:</strong> ${totalTests}</p>
+              <p><strong>Passou:</strong> <span class="success">${passedTests}</span></p>
+              <p><strong>Falhou:</strong> <span class="error">${totalTests - passedTests}</span></p>
+              <p><strong>Taxa de sucesso:</strong> <span class="${passedTests === totalTests ? 'success' : 'warning'}">${Math.round((passedTests/totalTests)*100)}%</span></p>
+            </div>
+          `;
+          resultsDiv.insertBefore(summaryDiv, resultsDiv.firstChild);
+
+          // Renderizar matemática com KaTeX
+          setTimeout(() => {
+            if (window.renderMathInElement) {
+              document.querySelectorAll('.rendered').forEach(element => {
+                renderMathInElement(element, {
+                  delimiters: [
+                    { left: "$$", right: "$$", display: true },
+                    { left: "$", right: "$", display: false }
+                  ],
+                  throwOnError: false,
+                  errorColor: '#cc0000',
+                  strict: false,
+                  trust: true
+                });
+              });
+            }
+          }, 100);
+        }
+
+        function escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+
+        // Executar testes quando a página carregar
+        document.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>

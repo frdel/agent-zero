@@ -646,6 +646,57 @@ async function copyText(text, element) {
   }
 }
 
+// SOLUÇÃO DEFINITIVA: CORREÇÃO ROBUSTA DE COMANDOS LATEX TRUNCADOS
+// Implementação sistemática sem loops infinitos
+
+function processLatexCorrections(str) {
+  let result = str;
+  
+  // ========== ETAPA 1: CORREÇÃO DE COMANDOS TRUNCADOS (ABORDAGEM SIMPLES) ==========
+  
+  // 1.1 - Corrigir rac{x}{y} → $\frac{x}{y}$ (frações)
+  result = result.replace(/\brac\{([^}]*)\}\{([^}]*)\}/g, '$\\frac{$1}{$2}$');
+  
+  // 1.2 - Corrigir extbf{texto} → **texto** (negrito)
+  result = result.replace(/\bextbf\{([^}]*)\}/g, '**$1**');
+  
+  // 1.3 - Corrigir imes seguido de números
+  result = result.replace(/\bimes\s*([0-9]+(?:[,\.]\d+)*)/g, '$\\times$ $1');
+  
+  // 1.4 - Corrigir imes isolado
+  result = result.replace(/\bimes(?![0-9])/g, '$\\times$');
+  
+  // ========== ETAPA 2: NORMALIZAÇÃO DE COMANDOS COM BARRA ==========
+  
+  // 2.1 - Corrigir comandos já com barra mas incorretos
+  result = result.replace(/\\rac\{([^}]*)\}\{([^}]*)\}/g, '$\\frac{$1}{$2}$');
+  result = result.replace(/\\extbf\{([^}]*)\}/g, '**$1**');
+  result = result.replace(/\\imes\b/g, '$\\times$');
+  
+  // ========== ETAPA 3: OUTROS COMANDOS TRUNCADOS ==========
+  
+  // 3.1 - Corrigir qrt{} → $\sqrt{}$
+  result = result.replace(/\bqrt\{([^}]*)\}/g, '$\\sqrt{$1}$');
+  
+  // 3.2 - Corrigir um{} → $\sum{}$
+  result = result.replace(/\bum\{([^}]*)\}/g, '$\\sum{$1}$');
+  
+  // ========== ETAPA 4: LIMPEZA E CONSOLIDAÇÃO ==========
+  
+  // 4.1 - Consolidar delimitadores $ múltiplos
+  result = result.replace(/\$+/g, '$');
+  
+  // 4.3 - NÃO limpar espaços - preservar formatação original
+  
+  // 4.4 - Balancear delimitadores finais
+  const dollarCount = (result.match(/\$/g) || []).length;
+  if (dollarCount % 2 !== 0) {
+    result += '$';
+  }
+  
+  return result;
+}
+
 function convertHTML(str) {
   if (typeof str !== "string") str = JSON.stringify(str, null, 2);
 
@@ -658,7 +709,7 @@ function convertHTML(str) {
         gfm: true,          // GitHub Flavored Markdown
         tables: true,       // Enable table support
         sanitize: false,    // We'll handle sanitization ourselves
-        smartypants: true,  // Smart quotes and dashes
+        smartypants: false, // Disable smartypants to avoid conflicts with LaTeX
         xhtml: false,       // Don't use XHTML self-closing tags
         headerIds: false,   // Don't generate header IDs
         mangle: false,      // Don't mangle email addresses
@@ -683,16 +734,20 @@ function convertHTML(str) {
         }
       });
       
-      // Detect if content looks like markdown (excluding LaTeX expressions)
-      const hasMarkdownSyntax = /(\*\*[^$]*?\*\*|\*[^$]*?\*|__[^$]*?__|_[^$]*?_|`[^$]*?`|^#{1,6}\s|^\s*[-*+]\s|^\s*\d+\.\s|^>|^\|.*\||```)/m.test(str);
+      // SOLUÇÃO DEFINITIVA: Processar correções LaTeX de forma robusta
+      let processedStr = processLatexCorrections(str);
+      
+      // Detect if content looks like markdown (after LaTeX pre-processing)
+      const hasMarkdownSyntax = /(\*\*[^*]*?\*\*|\*[^*]*?\*|__[^_]*?__|_[^_]*?_|`[^`]*?`|^#{1,6}\s|^\s*[-*+]\s|^\s*\d+\.\s|^>|^\|.*\||```)/m.test(processedStr);
       
       let result;
       if (hasMarkdownSyntax) {
-        // Parse as markdown if it contains markdown syntax
-        result = marked.parse(str);
+        // For markdown content, let marked.js handle it normally
+        // LaTeX math will be processed later by KaTeX
+        result = marked.parse(processedStr);
       } else {
         // For plain text, escape HTML but preserve line breaks
-        result = escapeHTML(str).replace(/\n/g, '<br>');
+        result = escapeHTML(processedStr).replace(/\n/g, '<br>');
       }
       
       // Apply our custom conversions

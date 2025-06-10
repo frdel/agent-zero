@@ -7,6 +7,14 @@ tool_args: key value pairs tool arguments
 
 no other text
 
+## Mathematical and Currency Formatting Rules
+When displaying mathematical expressions or Brazilian currency:
+- Brazilian currency: Use "$ 10,50" NOT "R$ 10,50" or "R\ 10,50" (R letter conflicts with LaTeX)
+- Mathematical fractions: Use $\frac{numerator}{denominator}$ format with numbers only
+- Mathematical multiplication: ALWAYS use $\times$ NOT \times (example: "$ 1,00 $\times$ 26,5%")
+- Mathematical expressions: Always wrap in $ delimiters for proper rendering
+- Bold text in math: Use $\textbf{text}$ format
+
 ### Response example
 ~~~json
 {
