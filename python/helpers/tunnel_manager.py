@@ -1,4 +1,4 @@
-from flaredantic import FlareTunnel, FlareConfig
+from flaredantic import FlareTunnel, FlareConfig, ServeoConfig, ServeoTunnel
 import threading
 
 
@@ -24,18 +24,24 @@ class TunnelManager:
         if self.is_running and self.tunnel_url:
             return self.tunnel_url
 
+
+        # switched to serveo to support SSE MCP server
+
         # Create and start a new tunnel
-        config = FlareConfig(
-            port=port,
-            verbose=True,
-            timeout=60,  # Increase timeout from default 30 to 60 seconds
-        )
+        # config = FlareConfig(
+        #     port=port,
+        #     verbose=True,
+        #     timeout=60,  # Increase timeout from default 30 to 60 seconds
+        # )
+
+        config = ServeoConfig(port=port) # type: ignore
 
         try:
             # Start tunnel in a separate thread to avoid blocking
             def run_tunnel():
                 try:
-                    self.tunnel = FlareTunnel(config)
+                    # self.tunnel = FlareTunnel(config)
+                    self.tunnel = ServeoTunnel(config)
                     self.tunnel.start()
                     self.tunnel_url = self.tunnel.tunnel_url
                     self.is_running = True

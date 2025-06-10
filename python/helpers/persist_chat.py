@@ -5,7 +5,7 @@ import uuid
 from agent import Agent, AgentConfig, AgentContext, AgentContextType
 from python.helpers import files, history
 import json
-from initialize import initialize
+from initialize import initialize_agent
 
 from python.helpers.log import Log, LogItem
 
@@ -146,7 +146,7 @@ def _serialize_log(log: Log):
 
 
 def _deserialize_context(data):
-    config = initialize()
+    config = initialize_agent()
     log = _deserialize_log(data.get("log", None))
 
     context = AgentContext(

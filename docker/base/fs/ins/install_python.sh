@@ -49,4 +49,8 @@ pip install --upgrade pip ipython requests
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 
 
+echo "====================PYTHON UV ===================="
+
+curl -Ls https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
+
 echo "====================PYTHON END===================="

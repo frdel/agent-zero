@@ -1,3 +1,4 @@
+
 const settingsModalProxy = {
     isOpen: false,
     settings: {},
@@ -280,8 +281,12 @@ const settingsModalProxy = {
         }
     },
 
-    handleFieldButton(field) {
-        console.log(`Button clicked: ${field.action}`);
+    async handleFieldButton(field) {
+        console.log(`Button clicked: ${field.id}`);
+
+        if (field.id === "mcp_servers_config") {
+            openModal("settings/mcp/client/mcp-servers.html");
+        }
     }
 };
 

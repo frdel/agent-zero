@@ -19,7 +19,9 @@ ENV TZ=UTC
 COPY ./fs/ /
 
 # install packages software
-RUN bash /ins/install_base_packages.sh
+RUN bash /ins/install_base_packages1.sh
+RUN bash /ins/install_base_packages2.sh
+RUN bash /ins/install_base_packages3.sh
 
 # install python after packages to ensure version overriding
 RUN bash /ins/install_python.sh

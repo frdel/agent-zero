@@ -3,25 +3,18 @@ import sys
 import time
 import socket
 import struct
-import asyncio
 from functools import wraps
 import threading
 import signal
 from flask import Flask, request, Response
 from flask_basicauth import BasicAuth
-from python.helpers import errors, files, git, settings
+import initialize
+from python.helpers import errors, files, git, mcp_server
 from python.helpers.files import get_abs_path
-from python.helpers import persist_chat, runtime, dotenv, process
-from python.helpers.cloudflare_tunnel import CloudflareTunnel
+from python.helpers import runtime, dotenv, process
 from python.helpers.extract_tools import load_classes_from_folder
 from python.helpers.api import ApiHandler
-from python.helpers.job_loop import run_loop
 from python.helpers.print_style import PrintStyle
-from python.helpers.task_scheduler import TaskScheduler
-from python.helpers.defer import DeferredTask
-from starlette.middleware import Middleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
 # Set the new timezone to 'UTC'
@@ -153,13 +146,9 @@ def run():
     from werkzeug.serving import make_server
     from werkzeug.middleware.dispatcher import DispatcherMiddleware
     from a2wsgi import ASGIMiddleware, WSGIMiddleware
-    from fastmcp.server.http import create_sse_app
-    from python.helpers.mcp_server import mcp_server as mcp_server_instance
-
-    PrintStyle().print("Starting job loop...")
-    job_loop = DeferredTask().start_task(run_loop)
 
     PrintStyle().print("Starting server...")
+
     class NoRequestLoggingWSGIRequestHandler(WSGIRequestHandler):
         def log_request(self, code="-", size="-"):
             pass  # Override to suppress request logging
@@ -169,32 +158,6 @@ def run():
     host = (
         runtime.get_arg("host") or dotenv.get_dotenv_value("WEB_UI_HOST") or "localhost"
     )
-    use_cloudflare = (
-        runtime.get_arg("cloudflare_tunnel")
-        or dotenv.get_dotenv_value("USE_CLOUDFLARE", "false").lower()
-    ) == "true"
-
-    tunnel = None
-
-    try:
-        # Initialize and start Cloudflare tunnel if enabled
-        if use_cloudflare and port:
-            try:
-                tunnel = CloudflareTunnel(port)
-                tunnel.start()
-            except Exception as e:
-                PrintStyle().error(f"Failed to start Cloudflare tunnel: {e}")
-                PrintStyle().print("Continuing without tunnel...")
-
-        # initialize contexts from persisted chats
-        persist_chat.load_tmp_chats()
-        # # reload scheduler
-        # scheduler = TaskScheduler.get()
-        # asyncio.run(scheduler.reload())
-
-    except Exception as e:
-        PrintStyle().error(errors.format_error(e))
-
     server = None
 
     def register_api_handler(app, handler: type[ApiHandler]):
@@ -237,75 +200,44 @@ def run():
     for handler in handlers:
         register_api_handler(webapp, handler)
 
-        
-    # define a Starlette-compatible middleware handler
-
-
-    async def mcp_middleware(request, call_next):
-        set = settings.get_settings()
-        if not set["mcp_server_enabled"]:
-            # raise a proper Starlette HTTPException with a clear message
-            PrintStyle.error("[MCP] Access denied: MCP server is disabled in settings.")
-            raise StarletteHTTPException(status_code=403, detail="MCP server is disabled in settings.")
-        return await call_next(request)
-
-    mcp_middlewares = [
-        Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)
-    ]
-
-    mcp_app = create_sse_app(
-        server=mcp_server_instance,
-        message_path=mcp_server_instance.settings.message_path,
-        sse_path=mcp_server_instance.settings.sse_path,
-        auth_server_provider=mcp_server_instance._auth_server_provider,
-        auth_settings=mcp_server_instance.settings.auth,
-        debug=mcp_server_instance.settings.debug,
-        routes=mcp_server_instance._additional_http_routes,
-        middleware=mcp_middlewares
-    )
-
     # add the webapp and mcp to the app
-    app = DispatcherMiddleware(webapp, {
-        "/mcp": ASGIMiddleware(app=mcp_app), # type: ignore
-    }) # type: ignore
-    PrintStyle().debug("Registered middleware for MCP")
+    app = DispatcherMiddleware(
+        webapp,
+        {
+            "/mcp": ASGIMiddleware(app=mcp_server.DynamicMcpProxy.get_instance()),  # type: ignore
+        },
+    )
+    PrintStyle().debug("Registered middleware for MCP and MCP token")
 
-    try:
-        PrintStyle().debug(f"Starting server at {host}:{port}...")
+    PrintStyle().debug(f"Starting server at {host}:{port}...")
 
-        server = make_server(
-            host=host,
-            port=port,
-            app=app,
-            request_handler=NoRequestLoggingWSGIRequestHandler,
-            threaded=True,
-        )
+    server = make_server(
+        host=host,
+        port=port,
+        app=app,
+        request_handler=NoRequestLoggingWSGIRequestHandler,
+        threaded=True,
+    )
+    process.set_server(server)
+    server.log_startup()
 
-        printer = PrintStyle()
+    # Start init_a0 in a background thread when server starts
+    # threading.Thread(target=init_a0, daemon=True).start()
+    init_a0()
 
-        def signal_handler(sig=None, frame=None):
-            nonlocal tunnel, server, printer
-            with lock:
-                printer.print("Caught signal, stopping server...")
-                if server:
-                    server.shutdown()
-                process.stop_server()
-                if tunnel:
-                    tunnel.stop()
-                    tunnel = None
-                printer.print("Server stopped")
-                sys.exit(0)
+    # run the server
+    server.serve_forever()
 
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
 
-        process.set_server(server)
-        server.log_startup()
-        server.serve_forever()
-    finally:
-        # Clean up tunnel if it was started
-        if tunnel:
-            tunnel.stop()
+def init_a0():
+    # initialize contexts and MCP
+    init_chats = initialize.initialize_chats()
+    initialize.initialize_mcp()
+    # start job loop
+    initialize.initialize_job_loop()
+
+    # only wait for init chats, otherwise they would seem to dissapear for a while on restart
+    init_chats.result_sync()
 
 
 # run the internal server

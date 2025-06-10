@@ -2,6 +2,7 @@
 
 # `Agent Zero`
 
+
 [![Agent Zero Website](https://img.shields.io/badge/Website-agent--zero.ai-0A192F?style=for-the-badge&logo=vercel&logoColor=white)](https://agent-zero.ai) [![Thanks to Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-Thanks%20to%20Sponsors-FF69B4?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/frdel) [![Follow on X](https://img.shields.io/badge/X-Follow-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/Agent0ai) [![Join our Discord](https://img.shields.io/badge/Discord-Join%20our%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/B8KZKNsPpj) [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@AgentZeroFW) [![Connect on LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/jan-tomasek/) [![Follow on Warpcast](https://img.shields.io/badge/Warpcast-Follow-5A32F3?style=for-the-badge)](https://warpcast.com/agent-zero)
 
 [Introduction](#a-personal-organic-agentic-framework-that-grows-and-learns-with-you) •
@@ -14,13 +15,23 @@
 </div>
 
 
+<div align="center">
+
+> ### 📢 **NEWS: Agent Zero now includes MCP Server & Client functionality!** 📢
+>
+> Agent Zero can now act as an MCP Server for other LLM tools and use external MCP servers as tools
+
+</div>
+
+
+
 [![Showcase](/docs/res/showcase-thumb.png)](https://youtu.be/lazLNcEYsiQ)
 
 
 
-
-
 ## A personal, organic agentic framework that grows and learns with you
+
+
 
 - Agent Zero is not a predefined agentic framework. It is designed to be dynamic, organically growing, and learning as you use it.
 - Agent Zero is fully transparent, readable, comprehensible, customizable, and interactive.
@@ -85,6 +96,7 @@
 # Hacking Edition
 - Agent Zero also offers a Hacking Edition based on Kali linux with modified prompts for cybersecurity tasks
 - The setup is the same as the regular version, just use the frdel/agent-zero-run:hacking image instead of frdel/agent-zero-run
+> **Note:** The Hacking Edition and all its prompts and features will be merged into the main branch in the following release.
 
 
 # ⚙️ Installation
@@ -149,7 +161,17 @@ docker run -p 50001:80 frdel/agent-zero-run
 
 ## 🎯 Changelog
 
-### v0.8.4.1
+### v0.8.5 - **MCP Server + Client**
+[Release video](https://youtu.be/pM5f4Vz3_IQ)
+
+- Agent Zero can now act as MCP Server
+- Agent Zero can use external MCP servers as tools
+
+### v0.8.4.1 - 2
+Default models set to gpt-4.1
+- Code execution tool improvements
+- Browser agent improvements
+- Memory improvements
 - Various bugfixes related to context management
 - Message formatting improvements
 - Scheduler improvements

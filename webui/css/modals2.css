@@ -1,0 +1,190 @@
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2000;
+}
+
+.modal.show {
+  display: block;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1;
+  cursor: pointer;
+}
+
+.modal-inner {
+display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--color-background-light);
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+
+.dark-mode .modal-inner {
+  background-color: var(--color-background-dark);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Mobile Viewport Behavior */
+@media (max-width: 1280px) {
+    .modal-inner {
+      width: 95%; /* Take up most of the screen on mobile */
+      min-width: unset; /* Remove min-width constraints */
+      max-width: 95%; /* Ensure consistent width */
+    }
+  
+    /* Ensure section content can scroll horizontally */
+    .section {
+      overflow-x: auto;
+    }
+  }
+
+.modal-scroll {
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 0 1rem 1rem 1rem;
+}
+
+.modal-x {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-primary-light);
+  padding: 0.5rem;
+  line-height: 1;
+  z-index: 3;
+}
+
+.dark-mode .modal-x {
+  color: var(--text-primary-dark);
+}
+
+.modal-title {
+  /* margin: 0 0 1.5rem 0;
+  padding-right: 3rem;
+  color: var(--text-primary-light);
+  font-size: 1.75rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding-bottom: 1rem; */
+}
+
+.dark-mode .modal-title {
+  color: var(--text-primary-dark);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.modal-button-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.modal-button-container .button {
+  flex: 1;
+  min-width: 0;
+  padding: 10px;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 0.9em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading {
+  width: calc(100% - 4rem);
+  max-width: 1200px;
+  min-height: 50px;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  margin: 2rem auto;
+  opacity: 0;
+  animation: fadeIn 500ms ease-out 500ms forwards;
+}
+
+.light-mode .loading {
+  background: var(--color-border-light);
+}
+
+.dark-mode .loading {
+  background: var(--color-border-dark);
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.loading::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.dark-mode .loading::before {
+  background: linear-gradient(
+    90deg,
+    var(--color-background-dark),
+    var(--color-border-dark),
+    var(--color-background-dark)
+  );
+  animation: shimmer 2s infinite;
+  animation-delay: 250ms;
+  background-size: 200% 100%;
+}
+
+.light-mode .loading::before {
+  background: linear-gradient(
+    90deg,
+    var(--color-background-light),
+    color-mix(in srgb, var(--color-border-light) 95%, black),
+    var(--color-background-light)
+  );
+  animation: shimmer 2s infinite;
+  animation-delay: 250ms;
+  background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

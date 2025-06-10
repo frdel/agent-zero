@@ -16,7 +16,8 @@ class SystemPrompt(Extension):
 
         system_prompt.append(main)
         system_prompt.append(tools)
-        system_prompt.append(mcp_tools)
+        if mcp_tools:
+            system_prompt.append(mcp_tools)
 
 
 def get_main_prompt(agent: Agent):
@@ -31,4 +32,12 @@ def get_tools_prompt(agent: Agent):
 
 
 def get_mcp_tools_prompt(agent: Agent):
-    return MCPConfig.get_instance().get_tools_prompt()
+    mcp_config = MCPConfig.get_instance()
+    if mcp_config.servers:
+        pre_progress = agent.context.log.progress
+        agent.context.log.set_progress("Collecting MCP tools") # MCP might be initializing, better inform via progress bar
+        tools = MCPConfig.get_instance().get_tools_prompt()
+        agent.context.log.set_progress(pre_progress) # return original progress
+        return tools
+    return ""
+        
