@@ -11,9 +11,14 @@ flask-basicauth==0.2.0
 flaredantic==0.1.4
 GitPython==3.1.43
 inputimeout==1.0.4
-langchain-core>=0.3.0
+langchain-anthropic==0.3.3
 langchain-community==0.3.19
-litellm==1.39.3
+langchain-google-genai==2.0.8
+langchain-groq==0.2.2
+langchain-huggingface==0.1.2
+langchain-mistralai==0.2.4
+langchain-ollama==0.2.2
+langchain-openai==0.3.1
 openai-whisper==20240930
 lxml_html_clean==0.3.1
 markdown==3.7

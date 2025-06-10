@@ -183,16 +183,14 @@ class BrowserAgent(Tool):
         # collect result
         result = await task.result()
         answer = result.final_result()
-
-        # Ensure answer is not None
-        if answer is None:
-            answer = "Browser task completed but no result was returned."
-
         try:
-            answer_data = DirtyJson.parse_string(answer)
-            answer_text = strings.dict_to_text(answer_data)  # type: ignore
+            if answer and isinstance(answer, str) and answer.strip():
+                answer_data = DirtyJson.parse_string(answer)
+                answer_text = strings.dict_to_text(answer_data)  # type: ignore
+            else:
+                answer_text = str(answer) if answer else "No result returned"
         except Exception as e:
-            answer_text = answer
+            answer_text = str(answer) if answer else f"Error processing result: {str(e)}"
         self.log.update(answer=answer_text)
         return Response(message=answer, break_loop=False)
 
