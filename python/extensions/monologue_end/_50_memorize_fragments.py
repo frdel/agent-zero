@@ -4,11 +4,10 @@ from python.helpers.memory import Memory
 from python.helpers.dirty_json import DirtyJson
 from agent import LoopData
 from python.helpers.log import LogItem
+from python.tools.memory_load import DEFAULT_THRESHOLD as DEFAULT_MEMORY_THRESHOLD
 
 
 class MemorizeMemories(Extension):
-
-    REPLACE_THRESHOLD = 0.9
 
     async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
         # try:
@@ -20,7 +19,8 @@ class MemorizeMemories(Extension):
         )
 
         # memorize in background
-        asyncio.create_task(self.memorize(loop_data, log_item))
+        task = asyncio.create_task(self.memorize(loop_data, log_item))
+        return task
 
     async def memorize(self, loop_data: LoopData, log_item: LogItem, **kwargs):
 
@@ -77,37 +77,75 @@ class MemorizeMemories(Extension):
         else:
             log_item.update(heading=f"{len(memories)} entries to memorize.")
 
-        # save chat history
-        db = await Memory.get(self.agent)
-
+        # Process memories with intelligent consolidation
         memories_txt = ""
-        rem = []
+        total_processed = 0
+        total_consolidated = 0
+
         for memory in memories:
-            # solution to plain text:
+            # Convert memory to plain text
             txt = f"{memory}"
             memories_txt += "\n\n" + txt
-            log_item.update(memories=memories_txt.strip())
 
-            # remove previous fragments too similiar to this one
-            if self.REPLACE_THRESHOLD > 0:
-                rem += await db.delete_documents_by_query(
-                    query=txt,
-                    threshold=self.REPLACE_THRESHOLD,
-                    filter=f"area=='{Memory.Area.FRAGMENTS.value}'",
+            try:
+                # Use intelligent consolidation system
+                from python.helpers.memory_consolidation import create_memory_consolidator
+                consolidator = create_memory_consolidator(
+                    self.agent,
+                    similarity_threshold=DEFAULT_MEMORY_THRESHOLD,  # More permissive for discovery
+                    max_similar_memories=8,
+                    max_llm_context_memories=4
                 )
-                if rem:
-                    rem_txt = "\n\n".join(Memory.format_docs_plain(rem))
-                    log_item.update(replaced=rem_txt)
 
-            # insert new solution
-            await db.insert_text(text=txt, metadata={"area": Memory.Area.FRAGMENTS.value})
+                # Create memory item-specific log for detailed tracking
+                memory_log = self.agent.context.log.log(
+                    type="util",
+                    heading=f"Processing memory fragment: {txt[:50]}...",
+                    temp=False,
+                    update_progress="none"  # Don't affect status bar
+                )
 
+                # Process with intelligent consolidation
+                result_obj = await consolidator.process_new_memory(
+                    new_memory=txt,
+                    area=Memory.Area.FRAGMENTS.value,
+                    metadata={"area": Memory.Area.FRAGMENTS.value},
+                    log_item=memory_log
+                )
+
+                # Update the individual log item with completion status but keep it temporary
+                if result_obj.get("success"):
+                    total_consolidated += 1
+                    memory_log.update(
+                        result="Fragment processed successfully",
+                        heading=f"Memory fragment completed: {txt[:50]}...",
+                        temp=False,  # Show completion message
+                        update_progress="none"  # Show briefly then disappear
+                    )
+                else:
+                    memory_log.update(
+                        result="Fragment processing failed",
+                        heading=f"Memory fragment failed: {txt[:50]}...",
+                        temp=False,  # Show completion message
+                        update_progress="none"  # Show briefly then disappear
+                    )
+                total_processed += 1
+
+            except Exception as e:
+                # Log error but continue processing
+                log_item.update(consolidation_error=str(e))
+                total_processed += 1
+
+        # Update final results with structured logging
+        memories_txt = memories_txt.strip()
         log_item.update(
-            result=f"{len(memories)} entries memorized.",
-            heading=f"{len(memories)} entries memorized.",
+            heading=f"Memorization completed: {total_processed} memories processed, {total_consolidated} intelligently consolidated",
+            memories=memories_txt,
+            result=f"{total_processed} memories processed, {total_consolidated} intelligently consolidated",
+            memories_processed=total_processed,
+            memories_consolidated=total_consolidated,
+            update_progress="none"
         )
-        if rem:
-            log_item.stream(result=f"\nReplaced {len(rem)} previous memories.")
 
     # except Exception as e:
     #     err = errors.format_error(e)

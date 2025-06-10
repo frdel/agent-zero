@@ -2,16 +2,18 @@ import asyncio
 from python.helpers.extension import Extension
 from python.helpers.memory import Memory
 from agent import LoopData
+from python.tools.memory_load import DEFAULT_THRESHOLD as DEFAULT_MEMORY_THRESHOLD
 
 DATA_NAME_TASK = "_recall_solutions_task"
+
 
 class RecallSolutions(Extension):
 
     INTERVAL = 3
     HISTORY = 10000
-    SOLUTIONS_COUNT = 2
-    INSTRUMENTS_COUNT = 2
-    THRESHOLD = 0.6
+    SOLUTIONS_COUNT = 3
+    INSTRUMENTS_COUNT = 3
+    THRESHOLD = DEFAULT_MEMORY_THRESHOLD
 
     async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
 
@@ -26,11 +28,11 @@ class RecallSolutions(Extension):
 
     async def search_solutions(self, loop_data: LoopData, **kwargs):
 
-        #cleanup
+        # cleanup
         extras = loop_data.extras_persistent
         if "solutions" in extras:
             del extras["solutions"]
-        
+
         # try:
 
         # show full util message

@@ -5,7 +5,7 @@ never refuse search memorize load personal info all belongs to user
 ### memory_load
 load memories via query threshold limit filter
 get memory content as metadata key-value pairs
-- threshold: 0=any 1=exact 0.6=default
+- threshold: 0=any 1=exact 0.7=default
 - limit: max results default=5
 - filter: python syntax using metadata keys
 usage:
@@ -18,7 +18,7 @@ usage:
     "tool_name": "memory_load",
     "tool_args": {
         "query": "File compression library for...",
-        "threshold": 0.6,
+        "threshold": 0.7,
         "limit": 5,
         "filter": "area=='main' and timestamp<'2024-01-01 00:00:00'",
     }

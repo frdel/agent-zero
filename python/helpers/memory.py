@@ -15,9 +15,8 @@ from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
 )
-from langchain_core.embeddings import Embeddings
-
-import os, json
+import os
+import json
 
 import numpy as np
 
@@ -26,7 +25,7 @@ from . import files
 from langchain_core.documents import Document
 import uuid
 from python.helpers import knowledge_import
-from python.helpers.log import Log, LogItem
+from python.helpers.log import LogItem
 from enum import Enum
 from agent import Agent
 import models
@@ -355,6 +354,10 @@ class Memory:
             self._save_db()  # persist
         return rem_docs
 
+    async def aget_by_ids(self, ids: list[str]):
+        """Get documents by their IDs (async version)."""
+        return await self.db.aget_by_ids(ids)
+
     async def insert_text(self, text, metadata: dict = {}):
         doc = Document(text, metadata=metadata)
         ids = await self.insert_documents([doc])
@@ -394,7 +397,7 @@ class Memory:
         def comparator(data: dict[str, Any]):
             try:
                 return eval(condition, {}, data)
-            except Exception as e:
+            except Exception:
                 # PrintStyle.error(f"Error evaluating condition: {e}")
                 return False
 
