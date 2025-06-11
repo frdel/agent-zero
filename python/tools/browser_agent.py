@@ -41,9 +41,13 @@ class State:
                 headless=True,
                 disable_security=True,
                 chromium_sandbox=False,
+                accept_downloads=True,
+                keep_alive=True,
                 minimum_wait_page_load_time=1.0,
                 wait_for_network_idle_page_load_time=2.0,
                 maximum_wait_page_load_time=10.0,
+                screen={'width': 1024, 'height': 1024},
+                viewport={'width': 1024, 'height': 1024},
                 args=['--headless=new'],
             )
         )
@@ -126,17 +130,18 @@ class State:
 
         self.iter_no = get_iter_no(self.agent)
 
-        try:
-            result = await self.use_agent.run(max_steps=50)
-            return result
-        finally:
-            if self.browser_session:
-                try:
-                    await self.browser_session.close()
-                except Exception as e:
-                    PrintStyle().error(f"Error closing browser session in task cleanup: {e}")
-                finally:
-                    self.browser_session = None
+        # try:
+        result = await self.use_agent.run(max_steps=50)
+        return result
+        # finally:
+        #     # if self.browser_session:
+        #     #     try:
+        #     #         await self.browser_session.close()
+        #     #     except Exception as e:
+        #     #         PrintStyle().error(f"Error closing browser session in task cleanup: {e}")
+        #     #     finally:
+        #     #         self.browser_session = None
+        #     pass
 
     def override_hooks(self):
         def override_hook(func):
@@ -188,7 +193,9 @@ class BrowserAgent(Tool):
 
             await self.agent.handle_intervention()
             await asyncio.sleep(1)
-            try:
+            try: 
+                if task.is_ready(): # otherwise get_update hangs
+                    break
                 update = await self.get_update()
                 log = update.get("log")
                 if log:
@@ -196,26 +203,26 @@ class BrowserAgent(Tool):
                 screenshot = update.get("screenshot", None)
                 if screenshot:
                     self.log.update(screenshot=screenshot)
-            except Exception:
-                pass
+            except Exception as e:
+                PrintStyle().error(f"Error getting update: {str(e)}")
 
         # collect result with error handling
         try:
             result = await task.result()
-            PrintStyle().debug(f"Browser agent task completed, is_done: {result['is_done']}")
         except Exception as e:
             PrintStyle().error(f"Error getting browser agent task result: {str(e)}")
             # Return a timeout response if task.result() fails
             answer_text = f"Browser agent task failed to return result: {str(e)}"
             self.log.update(answer=answer_text)
             return Response(message=answer_text, break_loop=False)
-        finally:
-            # Stop any further browser access after task completion
-            self.state.kill_task()
+        # finally:
+        #     # Stop any further browser access after task completion
+        #     # self.state.kill_task()
+        #     pass
 
         # Check if task completed successfully
-        if result['is_done']:
-            answer = result['final_result']
+        if result.is_done():
+            answer = result.final_result()
             try:
                 if answer and isinstance(answer, str) and answer.strip():
                     answer_data = DirtyJson.parse_string(answer)
@@ -226,7 +233,7 @@ class BrowserAgent(Tool):
                 answer_text = str(answer) if answer else f"Task completed with parse error: {str(e)}"
         else:
             # Task hit max_steps without calling done()
-            urls = result['urls']
+            urls = result.urls()
             current_url = urls[-1] if urls else "unknown"
             answer_text = (f"Task reached step limit without completion. Last page: {current_url}. "
                            f"The browser agent may need clearer instructions on when to finish.")
@@ -258,26 +265,34 @@ class BrowserAgent(Tool):
                     await agent.wait_if_paused()
 
                     log = []
+    
 
-                    for message in ua.message_manager.get_messages():
-                        if message.type == "system":
-                            continue
-                        if message.type == "ai":
-                            try:
-                                data = json.loads(message.content)  # type: ignore
-                                cs = data.get("current_state")
-                                if cs:
-                                    log.append("AI:" + cs["memory"])
-                                    log.append("AI:" + cs["next_goal"])
-                            except Exception:
-                                pass
-                        if message.type == "human":
-                            content = str(message.content).strip()
-                            part = content.split("\n", 1)[0].split(",", 1)[0]
-                            if part:
-                                if len(part) > 150:
-                                    part = part[:150] + "..."
-                                log.append("FW:" + part)
+                    # for message in ua.message_manager.get_messages():
+                    #     if message.type == "system":
+                    #         continue
+                    #     if message.type == "ai":
+                    #         try:
+                    #             data = json.loads(message.content)  # type: ignore
+                    #             cs = data.get("current_state")
+                    #             if cs:
+                    #                 log.append("AI:" + cs["memory"])
+                    #                 log.append("AI:" + cs["next_goal"])
+                    #         except Exception:
+                    #             pass
+                    #     if message.type == "human":
+                    #         content = str(message.content).strip()
+                    #         part = content.split("\n", 1)[0].split(",", 1)[0]
+                    #         if part:
+                    #             if len(part) > 150:
+                    #                 part = part[:150] + "..."
+                    #             log.append("FW:" + part)
+
+                    # for hist in ua.state.history.history:
+                    #     for res in hist.result:
+                    #         log.append(res.extracted_content)
+                    log = ua.state.history.extracted_content()
+
+
                     result["log"] = log
 
                     path = files.get_abs_path(
@@ -290,7 +305,7 @@ class BrowserAgent(Tool):
                     await page.screenshot(path=path, full_page=False, timeout=3000)
                     result["screenshot"] = f"img://{path}&t={str(time.time())}"
 
-                if self.state.task:
+                if self.state.task and not self.state.task.is_ready():
                     await self.state.task.execute_inside(_get_update)
 
             except Exception:
@@ -300,6 +315,8 @@ class BrowserAgent(Tool):
 
     async def prepare_state(self, reset=False):
         self.state = self.agent.get_data("_browser_agent_state")
+        if reset and self.state:
+            self.state.kill_task()
         if not self.state or reset:
             self.state = await State.create(self.agent)
         self.agent.set_data("_browser_agent_state", self.state)
