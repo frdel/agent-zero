@@ -1,6 +1,5 @@
 a2wsgi==1.10.8
 ansio==0.0.1
-beautifulsoup4==4.13.4
 browser-use==0.2.5
 docker==7.1.0
 duckduckgo-search==6.1.12

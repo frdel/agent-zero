@@ -3,13 +3,15 @@ import json
 import time
 from typing import Optional
 from agent import Agent, InterventionException
+from pathlib import Path
+
 
 import models
 from python.helpers.tool import Tool, Response
 from python.helpers import files, defer, persist_chat, strings
 from python.helpers.browser_use import browser_use
 from python.helpers.print_style import PrintStyle
-
+from python.helpers.playwright import ensure_playwright_binary
 from python.extensions.message_loop_start._10_iteration_no import get_iter_no
 from pydantic import BaseModel
 import uuid
@@ -36,19 +38,23 @@ class State:
         if self.browser_session:
             return
 
+        # for some reason we need to provide exact path to headless shell, otherwise it looks for headed browser
+        pw_binary = ensure_playwright_binary()
+
         self.browser_session = browser_use.BrowserSession(
             browser_profile=browser_use.BrowserProfile(
                 headless=True,
                 disable_security=True,
                 chromium_sandbox=False,
                 accept_downloads=True,
+                executable_path=pw_binary,
                 keep_alive=True,
                 minimum_wait_page_load_time=1.0,
                 wait_for_network_idle_page_load_time=2.0,
                 maximum_wait_page_load_time=10.0,
-                screen={'width': 1024, 'height': 1024},
-                viewport={'width': 1024, 'height': 1024},
-                args=['--headless=new'],
+                screen={"width": 1024, "height": 1024},
+                viewport={"width": 1024, "height": 1024},
+                args=["--headless=new"],
             )
         )
 
@@ -79,6 +85,7 @@ class State:
         if self.browser_session:
             try:
                 import asyncio
+
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 loop.run_until_complete(self.browser_session.close())
@@ -105,9 +112,7 @@ class State:
         @controller.registry.action("Complete task", param_model=DoneResult)
         async def complete_task(params: DoneResult):
             result = browser_use.ActionResult(
-                is_done=True,
-                success=True,
-                extracted_content=params.model_dump_json()
+                is_done=True, success=True, extracted_content=params.model_dump_json()
             )
             return result
 
@@ -123,9 +128,12 @@ class State:
             browser_session=self.browser_session,
             llm=model,
             use_vision=self.agent.config.browser_model.vision,
-            extend_system_message=self.agent.read_prompt("prompts/browser_agent.system.md"),
+            extend_system_message=self.agent.read_prompt(
+                "prompts/browser_agent.system.md"
+            ),
             controller=controller,
             enable_memory=False,  # Disable memory to avoid state conflicts
+            # available_file_paths=[],
         )
 
         self.iter_no = get_iter_no(self.agent)
@@ -150,10 +158,13 @@ class State:
                 if self.iter_no != get_iter_no(self.agent):
                     raise InterventionException("Task cancelled")
                 return await func(*args, **kwargs)
+
             return wrapper
 
-        if self.browser_session and hasattr(self.browser_session, 'remove_highlights'):
-            self.browser_session.remove_highlights = override_hook(self.browser_session.remove_highlights)
+        if self.browser_session and hasattr(self.browser_session, "remove_highlights"):
+            self.browser_session.remove_highlights = override_hook(
+                self.browser_session.remove_highlights
+            )
 
     async def get_page(self):
         if self.use_agent and self.browser_session:
@@ -167,7 +178,9 @@ class State:
     async def get_selector_map(self):
         """Get the selector map for the current page state."""
         if self.use_agent:
-            await self.use_agent.browser_session.get_state_summary(cache_clickable_elements_hashes=True)
+            await self.use_agent.browser_session.get_state_summary(
+                cache_clickable_elements_hashes=True
+            )
             return await self.use_agent.browser_session.get_selector_map()
         return {}
 
@@ -187,14 +200,16 @@ class BrowserAgent(Tool):
         while not task.is_ready():
             # Check for timeout to prevent infinite waiting
             if time.time() - start_time > timeout_seconds:
-                PrintStyle().warning(f"Browser agent task timeout after {timeout_seconds} seconds, forcing completion")
+                PrintStyle().warning(
+                    f"Browser agent task timeout after {timeout_seconds} seconds, forcing completion"
+                )
                 self.state.kill_task()
                 break
 
             await self.agent.handle_intervention()
             await asyncio.sleep(1)
-            try: 
-                if task.is_ready(): # otherwise get_update hangs
+            try:
+                if task.is_ready():  # otherwise get_update hangs
                     break
                 update = await self.get_update()
                 log = update.get("log")
@@ -228,15 +243,23 @@ class BrowserAgent(Tool):
                     answer_data = DirtyJson.parse_string(answer)
                     answer_text = strings.dict_to_text(answer_data)  # type: ignore
                 else:
-                    answer_text = str(answer) if answer else "Task completed successfully"
+                    answer_text = (
+                        str(answer) if answer else "Task completed successfully"
+                    )
             except Exception as e:
-                answer_text = str(answer) if answer else f"Task completed with parse error: {str(e)}"
+                answer_text = (
+                    str(answer)
+                    if answer
+                    else f"Task completed with parse error: {str(e)}"
+                )
         else:
             # Task hit max_steps without calling done()
             urls = result.urls()
             current_url = urls[-1] if urls else "unknown"
-            answer_text = (f"Task reached step limit without completion. Last page: {current_url}. "
-                           f"The browser agent may need clearer instructions on when to finish.")
+            answer_text = (
+                f"Task reached step limit without completion. Last page: {current_url}. "
+                f"The browser agent may need clearer instructions on when to finish."
+            )
 
         self.log.update(answer=answer_text)
         return Response(message=answer_text, break_loop=False)
@@ -265,7 +288,6 @@ class BrowserAgent(Tool):
                     await agent.wait_if_paused()
 
                     log = []
-    
 
                     # for message in ua.message_manager.get_messages():
                     #     if message.type == "system":
@@ -291,9 +313,11 @@ class BrowserAgent(Tool):
                     #     for res in hist.result:
                     #         log.append(res.extracted_content)
                     log = ua.state.history.extracted_content()
-
-
-                    result["log"] = log
+                    short_log = []
+                    for item in log:
+                        first_line = str(item).split("\n", 1)[0][:200]
+                        short_log.append(first_line)
+                    result["log"] = short_log
 
                     path = files.get_abs_path(
                         persist_chat.get_chat_folder_path(agent.context.id),
