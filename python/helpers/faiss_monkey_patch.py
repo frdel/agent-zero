@@ -1,28 +1,36 @@
-import sys
-from types import ModuleType, SimpleNamespace
+# import sys
+# from types import ModuleType, SimpleNamespace
 
-import numpy  # real numpy
+# import numpy  # real numpy
 
-# for python 3.12 on arm, faiss needs a fake cpuinfo module
+# # for python 3.12 on arm, faiss needs a fake cpuinfo module
 
 
-""" This disgusting hack was brought to you by:
-https://github.com/facebookresearch/faiss/issues/3936
-"""
+# """ This disgusting hack was brought to you by:
+# https://github.com/facebookresearch/faiss/issues/3936
+# """
 
-def hack_faiss_for_python_3_12() -> None:
-    # Create a fake 'cpuinfo' module
-    fake_cpuinfo_module = ModuleType("numpy.distutils.cpuinfo")
-    fake_cpu_module = SimpleNamespace()
-    fake_cpu_module.info = [{"Features": "asimd fp"}]  # No 'sve'
-    setattr(fake_cpuinfo_module, "cpu", fake_cpu_module)
+# faiss_monkey_patch.py  – import this before faiss -----------------
+import sys, types, numpy as np
+from types import SimpleNamespace
 
-    # Create a fake 'distutils' module and assign the cpuinfo module
-    fake_distutils_module = ModuleType("numpy.distutils")
-    setattr(fake_distutils_module, "cpuinfo", fake_cpuinfo_module)
+# fake numpy.distutils and numpy.distutils.cpuinfo packages
+dist = types.ModuleType("numpy.distutils")
+cpuinfo = types.ModuleType("numpy.distutils.cpuinfo")
 
-    # Inject the fake modules into sys.modules
-    sys.modules["numpy.distutils"] = fake_distutils_module
-    sys.modules["numpy.distutils.cpuinfo"] = fake_cpuinfo_module
+# cpu attribute that looks like the real one
+cpuinfo.cpu = SimpleNamespace( # type: ignore
+    # FAISS only does   .info[0].get('Features', '')
+    info=[{}]
+)
 
-hack_faiss_for_python_3_12()
+# register in sys.modules
+dist.cpuinfo = cpuinfo # type: ignore
+sys.modules["numpy.distutils"] = dist
+sys.modules["numpy.distutils.cpuinfo"] = cpuinfo
+
+# crucial: expose it as an *attribute* of the already-imported numpy package
+np.distutils = dist # type: ignore
+# -------------------------------------------------------------------
+
+import faiss
