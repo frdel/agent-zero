@@ -59,7 +59,7 @@ class State:
         )
 
         await self.browser_session.start()
-        self.override_hooks()
+        # self.override_hooks()
 
         # Add init script to the browser session
         if self.browser_session.browser_context:
@@ -106,7 +106,7 @@ class State:
             page_summary: str
 
         # Initialize controller
-        controller = browser_use.Controller()
+        controller = browser_use.Controller(output_model=DoneResult)
 
         # Register custom completion action with proper ActionResult fields
         @controller.registry.action("Complete task", param_model=DoneResult)
@@ -138,8 +138,15 @@ class State:
 
         self.iter_no = get_iter_no(self.agent)
 
+        async def hook(agent: browser_use.Agent):
+            await self.agent.wait_if_paused()
+            if self.iter_no != get_iter_no(self.agent):
+                raise InterventionException("Task cancelled")
+
         # try:
-        result = await self.use_agent.run(max_steps=50)
+        result = await self.use_agent.run(
+            max_steps=50, on_step_start=hook, on_step_end=hook
+        )
         return result
         # finally:
         #     # if self.browser_session:
@@ -151,20 +158,20 @@ class State:
         #     #         self.browser_session = None
         #     pass
 
-    def override_hooks(self):
-        def override_hook(func):
-            async def wrapper(*args, **kwargs):
-                await self.agent.wait_if_paused()
-                if self.iter_no != get_iter_no(self.agent):
-                    raise InterventionException("Task cancelled")
-                return await func(*args, **kwargs)
+    # def override_hooks(self):
+    #     def override_hook(func):
+    #         async def wrapper(*args, **kwargs):
+    #             await self.agent.wait_if_paused()
+    #             if self.iter_no != get_iter_no(self.agent):
+    #                 raise InterventionException("Task cancelled")
+    #             return await func(*args, **kwargs)
 
-            return wrapper
+    #         return wrapper
 
-        if self.browser_session and hasattr(self.browser_session, "remove_highlights"):
-            self.browser_session.remove_highlights = override_hook(
-                self.browser_session.remove_highlights
-            )
+    #     if self.browser_session and hasattr(self.browser_session, "remove_highlights"):
+    #         self.browser_session.remove_highlights = override_hook(
+    #             self.browser_session.remove_highlights
+    #         )
 
     async def get_page(self):
         if self.use_agent and self.browser_session:
@@ -197,13 +204,13 @@ class BrowserAgent(Tool):
         timeout_seconds = 300  # 5 minute timeout
         start_time = time.time()
 
+        fail_counter = 0
         while not task.is_ready():
             # Check for timeout to prevent infinite waiting
             if time.time() - start_time > timeout_seconds:
                 PrintStyle().warning(
                     f"Browser agent task timeout after {timeout_seconds} seconds, forcing completion"
                 )
-                self.state.kill_task()
                 break
 
             await self.agent.handle_intervention()
@@ -211,15 +218,40 @@ class BrowserAgent(Tool):
             try:
                 if task.is_ready():  # otherwise get_update hangs
                     break
-                update = await self.get_update()
-                log = update.get("log")
-                if log:
-                    self.update_progress("\n".join(log))
+                try:
+                    update = await asyncio.wait_for(self.get_update(), timeout=10)
+                    fail_counter = 0  # reset on success
+                except asyncio.TimeoutError:
+                    fail_counter += 1
+                    PrintStyle().warning(
+                        f"browser_agent.get_update timed out ({fail_counter}/3)"
+                    )
+                    if fail_counter >= 3:
+                        PrintStyle().warning(
+                            "3 consecutive browser_agent.get_update timeouts, breaking loop"
+                        )
+                        break
+                    continue
+                log = update.get("log", get_use_agent_log(None))
+                self.update_progress("\n".join(log))
                 screenshot = update.get("screenshot", None)
                 if screenshot:
                     self.log.update(screenshot=screenshot)
             except Exception as e:
                 PrintStyle().error(f"Error getting update: {str(e)}")
+
+        if not task.is_ready():
+            PrintStyle().warning("browser_agent.get_update timed out, killing the task")
+            self.state.kill_task()
+            return Response(
+                message="Browser agent task timed out, not output provided.",
+                break_loop=False,
+            )
+
+        # final progress update
+        if self.state.use_agent:
+            log = get_use_agent_log(self.state.use_agent)
+            self.update_progress("\n".join(log))
 
         # collect result with error handling
         try:
@@ -260,8 +292,16 @@ class BrowserAgent(Tool):
                 f"Task reached step limit without completion. Last page: {current_url}. "
                 f"The browser agent may need clearer instructions on when to finish."
             )
-
+        
+        # update the log (without screenshot path here, user can click)
         self.log.update(answer=answer_text)
+
+        # add screenshot to the answer if we have it
+        if self.log.kvps and "screenshot" in self.log.kvps and self.log.kvps['screenshot']:
+            path = self.log.kvps['screenshot'].split('//', 1)[-1].split('&', 1)[0]
+            answer_text += f"\n\nScreenshot: {path}"
+
+        # respond (with screenshot path)
         return Response(message=answer_text, break_loop=False)
 
     def get_log_object(self):
@@ -285,7 +325,7 @@ class BrowserAgent(Tool):
 
                 async def _get_update():
 
-                    await agent.wait_if_paused()
+                    # await agent.wait_if_paused() # no need here
 
                     log = []
 
@@ -312,12 +352,12 @@ class BrowserAgent(Tool):
                     # for hist in ua.state.history.history:
                     #     for res in hist.result:
                     #         log.append(res.extracted_content)
-                    log = ua.state.history.extracted_content()
-                    short_log = []
-                    for item in log:
-                        first_line = str(item).split("\n", 1)[0][:200]
-                        short_log.append(first_line)
-                    result["log"] = short_log
+                    # log = ua.state.history.extracted_content()
+                    # short_log = []
+                    # for item in log:
+                    #     first_line = str(item).split("\n", 1)[0][:200]
+                    #     short_log.append(first_line)
+                    result["log"] = get_use_agent_log(ua)
 
                     path = files.get_abs_path(
                         persist_chat.get_chat_folder_path(agent.context.id),
@@ -357,3 +397,26 @@ class BrowserAgent(Tool):
     # def __del__(self):
     #     if self.state:
     #         self.state.kill_task()
+
+
+def get_use_agent_log(use_agent: browser_use.Agent | None):
+    result = ["🚦 Starting task"]
+    if use_agent:
+        action_results = use_agent.state.history.action_results()
+        short_log = []
+        for item in action_results:
+            # final results
+            if item.is_done:
+                if item.success:
+                    short_log.append(f"✅ Done")
+                else:
+                    short_log.append(f"❌ Error: {item.error or item.extracted_content or 'Unknown error'}")
+
+            # progress messages
+            else:
+                text = item.extracted_content
+                if text:
+                    first_line = text.split("\n", 1)[0][:200]
+                    short_log.append(first_line)
+        result.extend(short_log)
+    return result

@@ -8,6 +8,8 @@ import shutil
 import tempfile
 import zipfile
 
+from python.helpers.strings import sanitize_string
+
 
 def parse_file(_relative_path, _backup_dirs=None, _encoding="utf-8", **kwargs):
     content = read_file(_relative_path, _backup_dirs, _encoding)
@@ -191,6 +193,7 @@ def is_full_json_template(text):
 def write_file(relative_path: str, content: str, encoding: str = "utf-8"):
     abs_path = get_abs_path(relative_path)
     os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+    content = sanitize_string(content, encoding)
     with open(abs_path, "w", encoding=encoding) as f:
         f.write(content)
 
