@@ -4,7 +4,7 @@ beautifulsoup4==4.13.4
 browser-use==0.2.5
 docker==7.1.0
 duckduckgo-search==6.1.12
-faiss-cpu==1.9.0
+faiss-cpu==1.11.0
 fastmcp==2.3.4
 flask[async]==3.0.3
 flask-basicauth==0.2.0
