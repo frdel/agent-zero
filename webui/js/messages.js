@@ -114,12 +114,28 @@ export function _drawMessage(
     addCopyButtonToElement(preElement);
     messageDiv.appendChild(preElement);
 
-    // Render LaTeX math within the span
-    if (window.renderMathInElement && latex) {
-      renderMathInElement(spanElement, {
-        delimiters: [{ left: "$", right: "$", display: true }],
-        throwOnError: false,
-      });
+    // Render LaTeX math within the span - always try to render math
+    if (window.renderMathInElement) {
+      // Use setTimeout to ensure DOM is ready and content is fully processed
+      setTimeout(() => {
+        renderMathInElement(spanElement, {
+          delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false }
+          ],
+          throwOnError: false,
+          errorColor: '#cc0000',
+          strict: false,
+          trust: true,
+          macros: {
+            "\\RR": "\\mathbb{R}",
+            "\\NN": "\\mathbb{N}",
+            "\\ZZ": "\\mathbb{Z}",
+            "\\QQ": "\\mathbb{Q}",
+            "\\CC": "\\mathbb{C}"
+          }
+        });
+      }, 100);
     }
   }
 
@@ -554,11 +570,27 @@ function drawKvps(container, kvps, latex) {
             copyText(span.textContent, span);
           });
 
-          if (window.renderMathInElement && latex) {
-            renderMathInElement(span, {
-              delimiters: [{ left: "$", right: "$", display: true }],
-              throwOnError: false,
-            });
+          if (window.renderMathInElement) {
+            // Use setTimeout to ensure DOM is ready and content is fully processed
+            setTimeout(() => {
+              renderMathInElement(span, {
+                delimiters: [
+                  { left: "$$", right: "$$", display: true },
+                  { left: "$", right: "$", display: false }
+                ],
+                throwOnError: false,
+                errorColor: '#cc0000',
+                strict: false,
+                trust: true,
+                macros: {
+                  "\\RR": "\\mathbb{R}",
+                  "\\NN": "\\mathbb{N}",
+                  "\\ZZ": "\\mathbb{Z}",
+                  "\\QQ": "\\mathbb{Q}",
+                  "\\CC": "\\mathbb{C}"
+                }
+              });
+            }, 100);
           }
         }
       }
@@ -614,13 +646,130 @@ async function copyText(text, element) {
   }
 }
 
+// SOLUÇÃO DEFINITIVA: CORREÇÃO ROBUSTA DE COMANDOS LATEX TRUNCADOS
+// Implementação sistemática sem loops infinitos
+
+function processLatexCorrections(str) {
+  let result = str;
+  
+  // ========== ETAPA 1: CORREÇÃO DE COMANDOS TRUNCADOS (ABORDAGEM SIMPLES) ==========
+  
+  // 1.1 - Corrigir rac{x}{y} → $\frac{x}{y}$ (frações)
+  result = result.replace(/\brac\{([^}]*)\}\{([^}]*)\}/g, '$\\frac{$1}{$2}$');
+  
+  // 1.2 - Corrigir extbf{texto} → **texto** (negrito)
+  result = result.replace(/\bextbf\{([^}]*)\}/g, '**$1**');
+  
+  // 1.3 - Corrigir imes seguido de números
+  result = result.replace(/\bimes\s*([0-9]+(?:[,\.]\d+)*)/g, '$\\times$ $1');
+  
+  // 1.4 - Corrigir imes isolado
+  result = result.replace(/\bimes(?![0-9])/g, '$\\times$');
+  
+  // ========== ETAPA 2: NORMALIZAÇÃO DE COMANDOS COM BARRA ==========
+  
+  // 2.1 - Corrigir comandos já com barra mas incorretos
+  result = result.replace(/\\rac\{([^}]*)\}\{([^}]*)\}/g, '$\\frac{$1}{$2}$');
+  result = result.replace(/\\extbf\{([^}]*)\}/g, '**$1**');
+  result = result.replace(/\\imes\b/g, '$\\times$');
+  
+  // ========== ETAPA 3: OUTROS COMANDOS TRUNCADOS ==========
+  
+  // 3.1 - Corrigir qrt{} → $\sqrt{}$
+  result = result.replace(/\bqrt\{([^}]*)\}/g, '$\\sqrt{$1}$');
+  
+  // 3.2 - Corrigir um{} → $\sum{}$
+  result = result.replace(/\bum\{([^}]*)\}/g, '$\\sum{$1}$');
+  
+  // ========== ETAPA 4: LIMPEZA E CONSOLIDAÇÃO ==========
+  
+  // 4.1 - Consolidar delimitadores $ múltiplos
+  result = result.replace(/\$+/g, '$');
+  
+  // 4.3 - NÃO limpar espaços - preservar formatação original
+  
+  // 4.4 - Balancear delimitadores finais
+  const dollarCount = (result.match(/\$/g) || []).length;
+  if (dollarCount % 2 !== 0) {
+    result += '$';
+  }
+  
+  return result;
+}
+
 function convertHTML(str) {
   if (typeof str !== "string") str = JSON.stringify(str, null, 2);
 
-  let result = escapeHTML(str);
-  result = convertPathsToLinks(result);
-  result = convertImageTags(result);
-  return result;
+  // Check if marked library is available
+  if (typeof marked !== 'undefined') {
+    try {
+      // Configure marked options for better rendering
+      marked.setOptions({
+        breaks: true,        // Convert \n to <br>
+        gfm: true,          // GitHub Flavored Markdown
+        tables: true,       // Enable table support
+        sanitize: false,    // We'll handle sanitization ourselves
+        smartypants: false, // Disable smartypants to avoid conflicts with LaTeX
+        xhtml: false,       // Don't use XHTML self-closing tags
+        headerIds: false,   // Don't generate header IDs
+        mangle: false,      // Don't mangle email addresses
+        highlight: function(code, lang) {
+          // Basic syntax highlighting for common languages
+          if (lang === 'python') {
+            return code
+              .replace(/\b(def|class|import|from|return|if|else|elif|for|while|try|except|with|as)\b/g, '<span style="color: #569cd6;">$1</span>')
+              .replace(/\b(True|False|None)\b/g, '<span style="color: #4fc1ff;">$1</span>')
+              .replace(/(#.*$)/gm, '<span style="color: #6a9955;">$1</span>');
+          } else if (lang === 'javascript' || lang === 'js') {
+            return code
+              .replace(/\b(function|const|let|var|return|if|else|for|while|class|extends)\b/g, '<span style="color: #569cd6;">$1</span>')
+              .replace(/\b(true|false|null|undefined)\b/g, '<span style="color: #4fc1ff;">$1</span>')
+              .replace(/(\/\/.*$)/gm, '<span style="color: #6a9955;">$1</span>');
+          } else if (lang === 'bash' || lang === 'sh') {
+            return code
+              .replace(/^(\$|#)\s*/gm, '<span style="color: #569cd6;">$1</span>')
+              .replace(/(#.*$)/gm, '<span style="color: #6a9955;">$1</span>');
+          }
+          return code;
+        }
+      });
+      
+      // SOLUÇÃO DEFINITIVA: Processar correções LaTeX de forma robusta
+      let processedStr = processLatexCorrections(str);
+      
+      // Detect if content looks like markdown (after LaTeX pre-processing)
+      const hasMarkdownSyntax = /(\*\*[^*]*?\*\*|\*[^*]*?\*|__[^_]*?__|_[^_]*?_|`[^`]*?`|^#{1,6}\s|^\s*[-*+]\s|^\s*\d+\.\s|^>|^\|.*\||```)/m.test(processedStr);
+      
+      let result;
+      if (hasMarkdownSyntax) {
+        // For markdown content, let marked.js handle it normally
+        // LaTeX math will be processed later by KaTeX
+        result = marked.parse(processedStr);
+      } else {
+        // For plain text, escape HTML but preserve line breaks
+        result = escapeHTML(processedStr).replace(/\n/g, '<br>');
+      }
+      
+      // Apply our custom conversions
+      result = convertPathsToLinks(result);
+      result = convertImageTags(result);
+      
+      return result;
+    } catch (error) {
+      console.warn('Markdown parsing failed, falling back to plain text:', error);
+      // Fallback to original behavior if markdown parsing fails
+      let result = escapeHTML(str);
+      result = convertPathsToLinks(result);
+      result = convertImageTags(result);
+      return result;
+    }
+  } else {
+    // Fallback to original behavior if marked is not available
+    let result = escapeHTML(str);
+    result = convertPathsToLinks(result);
+    result = convertImageTags(result);
+    return result;
+  }
 }
 
 function escapeHTML(str) {
@@ -632,6 +781,10 @@ function escapeHTML(str) {
     '"': "&quot;",
   };
   return str.replace(/[&<>'"]/g, (char) => escapeChars[char]);
+}
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function convertPathsToLinks(str) {

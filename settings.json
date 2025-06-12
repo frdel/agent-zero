@@ -1,0 +1,16 @@
+{
+    "python.analysis.typeCheckingMode": "standard",
+    "windsurfPyright.analysis.diagnosticMode": "workspace",
+    "windsurfPyright.analysis.typeCheckingMode": "standard",
+    // Enable JavaScript linting
+    "eslint.enable": true,
+    "eslint.validate": ["javascript", "javascriptreact"],
+    // Set import root for JS/TS
+    "javascript.preferences.importModuleSpecifier": "relative",
+    "js/ts.implicitProjectConfig.checkJs": true,
+    "jsconfig.paths": {
+        "*": ["webui/*"]
+    },
+    // Optional: point VSCode to jsconfig.json if you add one
+    "jsconfig.json": "${workspaceFolder}/jsconfig.json"
+}

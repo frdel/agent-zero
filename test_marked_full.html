@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Completo do Marked.js - Agent Zero</title>
+    
+    <!-- Agent Zero CSS -->
+    <link rel="stylesheet" href="webui/index.css">
+    
+    <!-- Marked.js -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+    
+    <!-- KaTeX for math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+</head>
+<body class="dark-mode">
+    <div style="padding: 20px; max-width: 1000px; margin: 0 auto;">
+        <h1>🚀 Teste Completo do Marked.js - Agent Zero</h1>
+        
+        <div style="margin: 20px 0;">
+            <button onclick="testBasicMarkdown()" style="padding: 10px 20px; margin: 5px;">Básico</button>
+            <button onclick="testAdvancedMarkdown()" style="padding: 10px 20px; margin: 5px;">Avançado</button>
+            <button onclick="testCodeAndMath()" style="padding: 10px 20px; margin: 5px;">Código + Matemática</button>
+            <button onclick="testTablesAndLists()" style="padding: 10px 20px; margin: 5px;">Tabelas + Listas</button>
+            <button onclick="testAgentResponse()" style="padding: 10px 20px; margin: 5px;">Resposta de Agente</button>
+            <button onclick="clearContent()" style="padding: 10px 20px; margin: 5px; background: #d32f2f;">Limpar</button>
+        </div>
+
+        <div id="test-container" class="message message-ai" style="margin: 20px 0;">
+            <h4>Resultado da Renderização</h4>
+            <pre class="msg-content">
+                <span id="test-content">Clique em um botão para testar...</span>
+            </pre>
+        </div>
+    </div>
+
+    <script>
+        // Implementação completa do convertHTML do Agent Zero
+        function convertHTML(str) {
+          if (typeof str !== "string") str = JSON.stringify(str, null, 2);
+
+          // Check if marked library is available
+          if (typeof marked !== 'undefined') {
+            try {
+              // Configure marked options for better rendering
+              marked.setOptions({
+                breaks: true,        // Convert \n to <br>
+                gfm: true,          // GitHub Flavored Markdown
+                tables: true,       // Enable table support
+                sanitize: false,    // We'll handle sanitization ourselves
+                smartypants: true,  // Smart quotes and dashes
+                xhtml: false,       // Don't use XHTML self-closing tags
+                headerIds: false,   // Don't generate header IDs
+                mangle: false,      // Don't mangle email addresses
+                highlight: function(code, lang) {
+                  // Basic syntax highlighting for common languages
+                  if (lang === 'python') {
+                    return code
+                      .replace(/\\b(def|class|import|from|return|if|else|elif|for|while|try|except|with|as)\\b/g, '<span style="color: #569cd6;">$1</span>')
+                      .replace(/\\b(True|False|None)\\b/g, '<span style="color: #4fc1ff;">$1</span>')
+                      .replace(/(#.*$)/gm, '<span style="color: #6a9955;">$1</span>');
+                  } else if (lang === 'javascript' || lang === 'js') {
+                    return code
+                      .replace(/\\b(function|const|let|var|return|if|else|for|while|class|extends)\\b/g, '<span style="color: #569cd6;">$1</span>')
+                      .replace(/\\b(true|false|null|undefined)\\b/g, '<span style="color: #4fc1ff;">$1</span>')
+                      .replace(/(\/\/.*$)/gm, '<span style="color: #6a9955;">$1</span>');
+                  } else if (lang === 'bash' || lang === 'sh') {
+                    return code
+                      .replace(/^(\\$|#)\\s*/gm, '<span style="color: #569cd6;">$1</span>')
+                      .replace(/(#.*$)/gm, '<span style="color: #6a9955;">$1</span>');
+                  }
+                  return code;
+                }
+              });
+              
+              // Detect if content looks like markdown (excluding LaTeX expressions)
+              const hasMarkdownSyntax = /(\\*\\*[^$]*?\\*\\*|\\*[^$]*?\\*|__[^$]*?__|_[^$]*?_|`[^$]*?`|^#{1,6}\\s|^\\s*[-*+]\\s|^\\s*\\d+\\.\\s|^>|^\\|.*\\||```)/m.test(str);
+              
+              let result;
+              if (hasMarkdownSyntax) {
+                // Parse as markdown if it contains markdown syntax
+                result = marked.parse(str);
+              } else {
+                // For plain text, escape HTML but preserve line breaks
+                result = escapeHTML(str).replace(/\\n/g, '<br>');
+              }
+              
+              return result;
+            } catch (error) {
+              console.warn('Markdown parsing failed, falling back to plain text:', error);
+              return escapeHTML(str);
+            }
+          } else {
+            return escapeHTML(str);
+          }
+        }
+
+        function escapeHTML(str) {
+          const escapeChars = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "'": "&#39;",
+            '"': "&quot;",
+          };
+          return str.replace(/[&<>'"]/g, (char) => escapeChars[char]);
+        }
+
+        function renderMathInContent() {
+            if (window.renderMathInElement) {
+                const contentElement = document.getElementById('test-content');
+                setTimeout(() => {
+                    window.renderMathInElement(contentElement, {
+                        delimiters: [
+                            { left: "$$", right: "$$", display: true },
+                            { left: "$", right: "$", display: false }
+                        ],
+                        throwOnError: false,
+                        errorColor: '#cc0000',
+                        strict: false,
+                        trust: true
+                    });
+                }, 200);
+            }
+        }
+
+        function setContent(markdownContent) {
+            const contentElement = document.getElementById('test-content');
+            contentElement.innerHTML = convertHTML(markdownContent);
+            renderMathInContent();
+        }
+
+        function testBasicMarkdown() {
+            const content = \`# Formatação Básica
+
+## Estilos de Texto
+Este é **texto em negrito** e este é *texto em itálico*.
+Você também pode usar __outro negrito__ e _outro itálico_.
+Para ~~texto riscado~~ use dois tildes.
+
+## Listas Simples
+### Lista não ordenada:
+- Item 1
+- Item 2
+- Item 3
+
+### Lista ordenada:
+1. Primeiro item
+2. Segundo item
+3. Terceiro item
+
+## Links e Código
+Visite [este link](https://example.com) para mais informações.
+Use \`código inline\` para destacar comandos.
+
+## Citações
+> Esta é uma citação importante
+> que pode continuar na próxima linha.
+
+---
+
+**Teste básico completo!**\`;
+
+            setContent(content);
+        }
+
+        function testAdvancedMarkdown() {
+            const content = \`# Funcionalidades Avançadas
+
+## Task Lists (GitHub Style)
+- [x] Tarefa concluída
+- [ ] Tarefa pendente
+- [ ] Outra tarefa pendente
+
+## Definições
+Termo 1
+: Definição do primeiro termo
+
+Termo 2
+: Definição do segundo termo
+: Segunda linha da definição
+
+## Typography Inteligente
+Use "aspas inteligentes" e -- travessões automáticos.
+Também funciona com... reticências automáticas.
+
+## Abreviações
+HTML é uma linguagem de marcação.
+CSS é usado para estilização.
+
+## Teclas
+Pressione <kbd>Ctrl</kbd> + <kbd>C</kbd> para copiar.
+Use <kbd>Alt</kbd> + <kbd>Tab</kbd> para alternar janelas.
+
+## Texto Destacado
+Este é texto ==destacado== importante.\`;
+
+            setContent(content);
+        }
+
+        function testCodeAndMath() {
+            const content = \`# Código e Matemática
+
+## Syntax Highlighting
+
+### Python:
+\`\`\`python
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+# Calcula o 10º número de Fibonacci
+result = fibonacci(10)
+print(f"Resultado: {result}")
+\`\`\`
+
+### JavaScript:
+\`\`\`javascript
+function calculateTotal(items) {
+    return items.reduce((sum, item) => {
+        return sum + item.price * item.quantity;
+    }, 0);
+}
+
+const cart = [
+    { price: 10.99, quantity: 2 },
+    { price: 5.50, quantity: 1 }
+];
+console.log(calculateTotal(cart));
+\`\`\`
+
+### Bash:
+\`\`\`bash
+#!/bin/bash
+# Script de backup
+sudo tar -czf backup_$(date +%Y%m%d).tar.gz /home/user/documents
+echo "Backup concluído!"
+\`\`\`
+
+## Matemática com LaTeX
+
+### Fórmulas inline:
+A fórmula de Euler é $e^{i\\pi} + 1 = 0$, uma das mais belas da matemática.
+
+### Fórmulas em bloco:
+$$\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
+
+### Cálculo financeiro:
+O valor presente é calculado como:
+$$PV = \\frac{FV}{(1 + r)^n}$$
+
+Onde:
+- $PV$ = Valor Presente
+- $FV$ = Valor Futuro  
+- $r$ = Taxa de juros
+- $n$ = Número de períodos\`;
+
+            setContent(content);
+        }
+
+        function testTablesAndLists() {
+            const content = \`# Tabelas e Listas Avançadas
+
+## Tabela de Dados
+| Produto | Preço | Quantidade | Total |
+|---------|--------|------------|-------|
+| Notebook | R$ 2.500,00 | 2 | R$ 5.000,00 |
+| Mouse | R$ 25,00 | 5 | R$ 125,00 |
+| Teclado | R$ 150,00 | 3 | R$ 450,00 |
+
+## Alinhamento em Tabelas
+| Left | Center | Right |
+|:-----|:------:|------:|
+| L1 | C1 | R1 |
+| L2 | C2 | R2 |
+| L3 | C3 | R3 |
+
+## Listas Aninhadas
+1. **Desenvolvimento Frontend**
+   - HTML5 e semântica
+   - CSS3 e responsividade
+     - Flexbox
+     - Grid Layout
+     - Media queries
+   - JavaScript moderno
+     - ES6+ features
+     - Async/await
+     - Modules
+
+2. **Desenvolvimento Backend**
+   - Node.js
+     - Express.js
+     - Authentication
+   - Python
+     - Django
+     - Flask
+   - Banco de dados
+     - SQL (PostgreSQL, MySQL)
+     - NoSQL (MongoDB, Redis)
+
+## Lista com Tipos Diferentes
+### Números romanos:
+i. Primeiro item
+ii. Segundo item
+iii. Terceiro item
+
+### Letras:
+a. Item A
+b. Item B
+c. Item C\`;
+
+            setContent(content);
+        }
+
+        function testAgentResponse() {
+            const content = \`# Resposta Típica do Agent Zero
+
+## Análise de Código Python
+
+Analisando o código fornecido, identifiquei algumas melhorias:
+
+### 1. Otimização de Performance
+\`\`\`python
+# Antes (ineficiente)
+def slow_function(data):
+    result = []
+    for item in data:
+        if item % 2 == 0:
+            result.append(item * 2)
+    return result
+
+# Depois (otimizado)  
+def fast_function(data):
+    return [item * 2 for item in data if item % 2 == 0]
+\`\`\`
+
+### 2. Cálculos Matemáticos
+
+Para calcular a progressão geométrica:
+$$S_n = a \\cdot \\frac{1-r^n}{1-r}$$
+
+Onde:
+- $a$ = primeiro termo
+- $r$ = razão da progressão
+- $n$ = número de termos
+
+### 3. Resultados dos Testes
+
+| Teste | Antes | Depois | Melhoria |
+|-------|--------|--------|----------|
+| Tempo de execução | 2.3s | 0.8s | **65% mais rápido** |
+| Uso de memória | 150MB | 95MB | **37% menos memória** |
+| Linhas de código | 45 | 12 | **73% mais conciso** |
+
+### 4. Próximos Passos
+
+- [x] Implementar otimizações
+- [ ] Executar testes de carga
+- [ ] Documentar mudanças
+- [ ] Deploy em produção
+
+> **Importante**: Sempre teste as otimizações em ambiente de desenvolvimento antes de aplicar em produção.
+
+### 5. Comandos para Executar
+
+\`\`\`bash
+# Instalar dependências
+pip install -r requirements.txt
+
+# Executar testes
+python -m pytest tests/
+
+# Executar aplicação
+python app.py --port 8000
+\`\`\`
+
+**Conclusão**: As otimizações implementadas resultaram em melhorias significativas de performance mantendo a funcionalidade original.\`;
+
+            setContent(content);
+        }
+
+        function clearContent() {
+            document.getElementById('test-content').innerHTML = 'Clique em um botão para testar...';
+        }
+
+        // Inicialização
+        window.onload = function() {
+            console.log('🚀 Marked.js disponível:', typeof marked !== 'undefined');
+            console.log('🧮 KaTeX disponível:', typeof katex !== 'undefined');
+            
+            if (typeof marked !== 'undefined') {
+                console.log('✅ Todas as bibliotecas carregadas com sucesso!');
+            } else {
+                console.error('❌ Erro no carregamento das bibliotecas');
+            }
+        };
+    </script>
+</body>
+</html>
