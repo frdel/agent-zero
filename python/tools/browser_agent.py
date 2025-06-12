@@ -52,8 +52,8 @@ class State:
                 minimum_wait_page_load_time=1.0,
                 wait_for_network_idle_page_load_time=2.0,
                 maximum_wait_page_load_time=10.0,
-                screen={"width": 1024, "height": 1024},
-                viewport={"width": 1024, "height": 1024},
+                screen={"width": 1024, "height": 2048},
+                viewport={"width": 1024, "height": 2048},
                 args=["--headless=new"],
             )
         )
