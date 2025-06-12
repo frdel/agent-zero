@@ -58,3 +58,4 @@ instruments/**
 agent_history.gif
 
 litellm-build-docs/
+tests/
