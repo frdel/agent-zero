@@ -24,25 +24,30 @@ class VisionLoad(Tool):
             if path not in self.images_dict:
                 mime_type, _ = guess_type(str(path))
                 if mime_type and mime_type.startswith("image/"):
-                    # Read binary file
-                    file_content = await runtime.call_development_function(
-                        files.read_file_base64, str(path)
-                    )
-                    file_content = base64.b64decode(file_content)
-                    # Compress and convert to JPEG
-                    compressed = images.compress_image(
-                        file_content, max_pixels=MAX_PIXELS, quality=QUALITY
-                    )
-                    # Encode as base64
-                    file_content_b64 = base64.b64encode(compressed).decode("utf-8")
+                    try:
+                        # Read binary file
+                        file_content = await runtime.call_development_function(
+                            files.read_file_base64, str(path)
+                        )
+                        file_content = base64.b64decode(file_content)
+                        # Compress and convert to JPEG
+                        compressed = images.compress_image(
+                            file_content, max_pixels=MAX_PIXELS, quality=QUALITY
+                        )
+                        # Encode as base64
+                        file_content_b64 = base64.b64encode(compressed).decode("utf-8")
 
-                    # DEBUG: Save compressed image
-                    # await runtime.call_development_function(
-                    #     files.write_file_base64, str(path), file_content_b64
-                    # )
+                        # DEBUG: Save compressed image
+                        # await runtime.call_development_function(
+                        #     files.write_file_base64, str(path), file_content_b64
+                        # )
 
-                    # Construct the data URL (always JPEG after compression)
-                    self.images_dict[path] = file_content_b64
+                        # Construct the data URL (always JPEG after compression)
+                        self.images_dict[path] = file_content_b64
+                    except Exception as e:
+                        self.images_dict[path] = None
+                        PrintStyle().error(f"Error processing image {path}: {e}")
+                        self.agent.context.log.log("warning", f"Error processing image {path}: {e}")
 
         return Response(message="dummy", break_loop=False)
 
@@ -51,13 +56,21 @@ class VisionLoad(Tool):
         # build image data messages for LLMs, or error message
         content = []
         if self.images_dict:
-            for _, image in self.images_dict.items():
-                content.append(
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image}"},
-                    }
-                )
+            for path, image in self.images_dict.items():
+                if image:
+                    content.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{image}"},
+                        }
+                    )
+                else:
+                    content.append(
+                        {
+                            "type": "text",
+                            "text": "Error processing image " + path,
+                        }
+                    )
             # append as raw message content for LLMs with vision tokens estimate
             msg = history.RawMessage(raw_content=content, preview="<Base64 encoded image data>")
             self.agent.hist_add_message(

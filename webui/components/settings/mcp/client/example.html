@@ -1,0 +1,81 @@
+<html>
+
+<head>
+    <title>Configuring MCP Servers</title>
+
+</head>
+
+<body>
+    <div x-data>
+        <p>Agent Zero uses standard JSON configuration known from other AI applications.<br>
+            The configuration is a JSON object containing "mcpServers" object where each key is an individual MCP
+            server.<br>
+            Local servers are defined by a "command", "args", "env" variables.<br>
+            Remote servers are defined by a "url", "headers".<br>
+            "disabled" can be set to true to disable a server without removing config.<br>
+            Custom "description" can be set to provide additional information about the server to A0.<br>
+            All servers can also define "init_timeout" and "tool_timeout" which override global settings.</p>
+
+
+        <h3>Example MCP Servers Configuration JSON</h3>
+        <div id="mcp-servers-example"></div>
+
+        <script>
+            setTimeout(() => {
+                const url = window.location.origin;
+                const jsonExample = JSON.stringify({
+                    "mcpServers":
+                    {
+                        "sqlite": {
+                            "command": "uvx",
+                            "args": [
+                                "mcp-server-sqlite",
+                                "--db-path",
+                                "/root/db.sqlite"
+                            ],
+                            "init_timeout": 10,
+                            "tool_timeout": 200
+                        },
+                        "sequential-thinking": {
+                            "disabled": true,
+                            "command": "npx",
+                            "args": [
+                                "--yes",
+                                "--package",
+                                "@modelcontextprotocol/server-sequential-thinking",
+                                "mcp-server-sequential-thinking"
+                            ]
+                        },
+                        "deep-wiki": {
+                            "description": "Use this MCP to analyze github repositories",
+                            "url": "https://mcp.deepwiki.com/sse"
+                        }
+                    }
+                }, null, 2);
+
+                const editor = ace.edit("mcp-servers-example");
+                const dark = localStorage.getItem("darkMode");
+                if (dark != "false") {
+                    editor.setTheme("ace/theme/github_dark");
+                } else {
+                    editor.setTheme("ace/theme/tomorrow");
+                }
+                editor.session.setMode("ace/mode/json");
+                editor.setValue(jsonExample);
+                editor.clearSelection();
+                editor.setReadOnly(true);
+            }, 0);
+        </script>
+        <!-- </template> -->
+    </div>
+
+    <style>
+        #mcp-servers-example {
+            width: 100%;
+            height: 40em;
+        }
+    </style>
+
+</body>
+
+</html>

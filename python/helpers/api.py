@@ -5,7 +5,7 @@ from typing import Union, TypedDict, Dict, Any
 from attr import dataclass
 from flask import Request, Response, jsonify, Flask
 from agent import AgentContext
-from initialize import initialize
+from initialize import initialize_agent
 from python.helpers.print_style import PrintStyle
 from python.helpers.errors import format_error
 from werkzeug.serving import make_server
@@ -77,8 +77,8 @@ class ApiHandler:
                 first = AgentContext.first()
                 if first:
                     return first
-                return AgentContext(config=initialize())
+                return AgentContext(config=initialize_agent())
             got = AgentContext.get(ctxid)
             if got:
                 return got
-            return AgentContext(config=initialize(), id=ctxid)
+            return AgentContext(config=initialize_agent(), id=ctxid)

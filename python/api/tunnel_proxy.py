@@ -11,7 +11,7 @@ class TunnelProxy(ApiHandler):
         tunnel_api_port = (
             runtime.get_arg("tunnel_api_port")
             or int(dotenv.get_dotenv_value("TUNNEL_API_PORT", 0))
-            or 5070
+            or 55520
         )
 
         # first verify the service is running:

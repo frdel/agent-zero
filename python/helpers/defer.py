@@ -10,12 +10,12 @@ class EventLoopThread:
     _instances = {}
     _lock = threading.Lock()
 
-    def __init__(self, thread_name: str = "default") -> None:
+    def __init__(self, thread_name: str = "Background") -> None:
         """Initialize the event loop thread."""
         self.thread_name = thread_name
         self._start()
 
-    def __new__(cls, thread_name: str = "default"):
+    def __new__(cls, thread_name: str = "Background"):
         with cls._lock:
             if thread_name not in cls._instances:
                 instance = super(EventLoopThread, cls).__new__(cls)
@@ -59,7 +59,7 @@ class ChildTask:
 class DeferredTask:
     def __init__(
         self,
-        thread_name: str = "default",
+        thread_name: str = "Background",
     ):
         self.event_loop_thread = EventLoopThread(thread_name)
         self._future: Optional[Future] = None
@@ -72,6 +72,7 @@ class DeferredTask:
         self.args = args
         self.kwargs = kwargs
         self._start_task()
+        return self
 
     def __del__(self):
         self.kill()

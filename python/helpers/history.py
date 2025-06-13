@@ -248,6 +248,12 @@ class Bulk(Record):
         self.summary: str = ""
         self.records: list[Record] = []
 
+    def get_tokens(self):
+        if self.summary:
+            return tokens.approximate_tokens(self.summary)
+        else:
+            return sum([r.get_tokens() for r in self.records])
+
     def output(
         self, human_label: str = "user", ai_label: str = "ai"
     ) -> list[OutputMessage]:
@@ -402,7 +408,8 @@ class History(Record):
                 await bulk.summarize()
             self.bulks.append(bulk)
             self.topics.remove(topic)
-        return True
+            return True
+        return False
 
     async def compress_bulks(self):
         # merge bulks if possible
@@ -410,11 +417,14 @@ class History(Record):
         # remove oldest bulk if necessary
         if not compressed:
             self.bulks.pop(0)
+            return True
         return compressed
 
     async def merge_bulks_by(self, count: int):
-        if len(self.bulks) > 0:
+        # if bulks is empty, return False
+        if len(self.bulks) == 0:
             return False
+        # merge bulks in groups of count, even if there are fewer than count
         bulks = await asyncio.gather(
             *[
                 self.merge_bulks(self.bulks[i : i + count])
@@ -522,7 +532,7 @@ def output_text(messages: list[OutputMessage], ai_label="ai", human_label="human
 
 def _merge_outputs(a: MessageContent, b: MessageContent) -> MessageContent:
     if isinstance(a, str) and isinstance(b, str):
-        return a + b
+        return a + "\n" + b
 
     if not isinstance(a, list):
         a = [a]

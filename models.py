@@ -43,6 +43,7 @@ class ModelType(Enum):
 
 class ModelProvider(Enum):
     ANTHROPIC = "Anthropic"
+    CHUTES = "Chutes"
     DEEPSEEK = "DeepSeek"
     GOOGLE = "Google"
     GROQ = "Groq"
@@ -65,6 +66,9 @@ def get_api_key(service):
     return (
         dotenv.get_dotenv_value(f"API_KEY_{service.upper()}")
         or dotenv.get_dotenv_value(f"{service.upper()}_API_KEY")
+        or dotenv.get_dotenv_value(
+            f"{service.upper()}_API_TOKEN"
+        )  # Added for CHUTES_API_TOKEN
         or "None"
     )
 
@@ -315,9 +319,10 @@ def get_deepseek_chat(
         base_url = (
             dotenv.get_dotenv_value("DEEPSEEK_BASE_URL") or "https://api.deepseek.com"
         )
-    
+
     return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
-    
+
+
 # OpenRouter models
 def get_openrouter_chat(
     model_name: str,
@@ -332,7 +337,19 @@ def get_openrouter_chat(
             dotenv.get_dotenv_value("OPEN_ROUTER_BASE_URL")
             or "https://openrouter.ai/api/v1"
         )
-    return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, stream_usage=True, **kwargs)  # type: ignore
+    return ChatOpenAI(
+        api_key=api_key, # type: ignore
+        model=model_name,
+        base_url=base_url,
+        stream_usage=True,
+        model_kwargs={
+            "extra_headers": {
+                "HTTP-Referer": "https://agent-zero.ai",
+                "X-Title": "Agent Zero",
+            }
+        },
+        **kwargs,
+    )
 
 
 def get_openrouter_embedding(
@@ -398,3 +415,19 @@ def get_other_chat(
 
 def get_other_embedding(model_name: str, api_key=None, base_url=None, **kwargs):
     return OpenAIEmbeddings(model=model_name, api_key=api_key, base_url=base_url, **kwargs)  # type: ignore
+
+
+# Chutes models
+def get_chutes_chat(
+    model_name: str,
+    api_key=None,
+    base_url=None,
+    **kwargs,
+):
+    if not api_key:
+        api_key = get_api_key("chutes")
+    if not base_url:
+        base_url = (
+            dotenv.get_dotenv_value("CHUTES_BASE_URL") or "https://llm.chutes.ai/v1"
+        )
+    return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore

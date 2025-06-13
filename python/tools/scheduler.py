@@ -1,13 +1,17 @@
+import asyncio
 from datetime import datetime
 import json
 import random
 import re
 from python.helpers.tool import Tool, Response
 from python.helpers.task_scheduler import (
-    TaskScheduler, ScheduledTask, AdHocTask, PlannedTask, serialize_task, TaskState, TaskSchedule, TaskPlan, parse_datetime
+    TaskScheduler, ScheduledTask, AdHocTask, PlannedTask,
+    serialize_task, TaskState, TaskSchedule, TaskPlan, parse_datetime, serialize_datetime
 )
 from agent import AgentContext
 from python.helpers import persist_chat
+
+DEFAULT_WAIT_TIMEOUT = 300
 
 
 class SchedulerTool(Tool):
@@ -15,6 +19,8 @@ class SchedulerTool(Tool):
     async def execute(self, **kwargs):
         if self.method == "list_tasks":
             return await self.list_tasks(**kwargs)
+        elif self.method == "find_task_by_name":
+            return await self.find_task_by_name(**kwargs)
         elif self.method == "show_task":
             return await self.show_task(**kwargs)
         elif self.method == "run_task":
@@ -27,6 +33,8 @@ class SchedulerTool(Tool):
             return await self.create_adhoc_task(**kwargs)
         elif self.method == "create_planned_task":
             return await self.create_planned_task(**kwargs)
+        elif self.method == "wait_for_task":
+            return await self.wait_for_task(**kwargs)
         else:
             return Response(message=f"Unknown method '{self.name}:{self.method}'", break_loop=False)
 
@@ -51,6 +59,15 @@ class SchedulerTool(Tool):
 
         return Response(message=json.dumps(filtered_tasks, indent=4), break_loop=False)
 
+    async def find_task_by_name(self, **kwargs) -> Response:
+        name: str = kwargs.get("name", None)
+        if not name:
+            return Response(message="Task name is required", break_loop=False)
+        tasks: list[ScheduledTask | AdHocTask | PlannedTask] = TaskScheduler.get().find_task_by_name(name)
+        if not tasks:
+            return Response(message=f"Task not found: {name}", break_loop=False)
+        return Response(message=json.dumps([serialize_task(task) for task in tasks], indent=4), break_loop=False)
+
     async def show_task(self, **kwargs) -> Response:
         task_uuid: str = kwargs.get("uuid", None)
         if not task_uuid:
@@ -64,12 +81,13 @@ class SchedulerTool(Tool):
         task_uuid: str = kwargs.get("uuid", None)
         if not task_uuid:
             return Response(message="Task UUID is required", break_loop=False)
+        task_context: str | None = kwargs.get("context", None)
         task: ScheduledTask | AdHocTask | PlannedTask | None = TaskScheduler.get().get_task_by_uuid(task_uuid)
         if not task:
             return Response(message=f"Task not found: {task_uuid}", break_loop=False)
-        await TaskScheduler.get().run_task_by_uuid(task_uuid)
+        await TaskScheduler.get().run_task_by_uuid(task_uuid, task_context)
         if task.context_id == self.agent.context.id:
-            break_loop = True # break loop if task is running in the same context, otherwise it would start two conversations in one window
+            break_loop = True  # break loop if task is running in the same context, otherwise it would start two conversations in one window
         else:
             break_loop = False
         return Response(message=f"Task started: {task_uuid}", break_loop=break_loop)
@@ -199,3 +217,37 @@ class SchedulerTool(Tool):
         )
         await TaskScheduler.get().add_task(task)
         return Response(message=f"Planned task '{name}' created: {task.uuid}", break_loop=False)
+
+    async def wait_for_task(self, **kwargs) -> Response:
+        task_uuid: str = kwargs.get("uuid", None)
+        if not task_uuid:
+            return Response(message="Task UUID is required", break_loop=False)
+
+        scheduler = TaskScheduler.get()
+        task: ScheduledTask | AdHocTask | PlannedTask | None = scheduler.get_task_by_uuid(task_uuid)
+        if not task:
+            return Response(message=f"Task not found: {task_uuid}", break_loop=False)
+
+        if task.context_id == self.agent.context.id:
+            return Response(message="You can only wait for tasks running in a different chat context (dedicated_context=True).", break_loop=False)
+
+        done = False
+        elapsed = 0
+        while not done:
+            await scheduler.reload()
+            task = scheduler.get_task_by_uuid(task_uuid)
+            if not task:
+                return Response(message=f"Task not found: {task_uuid}", break_loop=False)
+
+            if task.state == TaskState.RUNNING:
+                await asyncio.sleep(1)
+                elapsed += 1
+                if elapsed > DEFAULT_WAIT_TIMEOUT:
+                    return Response(message=f"Task wait timeout ({DEFAULT_WAIT_TIMEOUT} seconds): {task_uuid}", break_loop=False)
+            else:
+                done = True
+
+        return Response(
+            message=f"*Task*: {task_uuid}\n*State*: {task.state}\n*Last run*: {serialize_datetime(task.last_run)}\n*Result*:\n{task.last_result}",
+            break_loop=False
+        )

@@ -1,8 +1,10 @@
+
 const settingsModalProxy = {
     isOpen: false,
     settings: {},
     resolvePromise: null,
     activeTab: 'agent', // Default tab
+    provider: 'serveo',
 
     // Computed property for filtered sections
     get filteredSections() {
@@ -280,8 +282,12 @@ const settingsModalProxy = {
         }
     },
 
-    handleFieldButton(field) {
-        console.log(`Button clicked: ${field.action}`);
+    async handleFieldButton(field) {
+        console.log(`Button clicked: ${field.id}`);
+
+        if (field.id === "mcp_servers_config") {
+            openModal("settings/mcp/client/mcp-servers.html");
+        }
     }
 };
 

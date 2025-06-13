@@ -4,23 +4,31 @@ nest_asyncio.apply()
 
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, Awaitable, Coroutine, Optional, Dict, TypedDict
+from datetime import datetime, timezone
+from typing import Any, Awaitable, Coroutine, Dict
+from enum import Enum
 import uuid
 import models
 
-from python.helpers import extract_tools, rate_limiter, files, errors, history, tokens
+from python.helpers import extract_tools, files, errors, history, tokens
+from python.helpers import dirty_json
 from python.helpers.print_style import PrintStyle
 from langchain_core.prompts import (
     ChatPromptTemplate,
 )
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, BaseMessage
+from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
 
 import python.helpers.log as Log
 from python.helpers.dirty_json import DirtyJson
 from python.helpers.defer import DeferredTask
 from typing import Callable
 from python.helpers.localization import Localization
+
+
+class AgentContextType(Enum):
+    USER = "user"
+    TASK = "task"
+    MCP = "mcp"
 
 
 class AgentContext:
@@ -38,6 +46,8 @@ class AgentContext:
         paused: bool = False,
         streaming_agent: "Agent|None" = None,
         created_at: datetime | None = None,
+        type: AgentContextType = AgentContextType.USER,
+        last_message: datetime | None = None,
     ):
         # build context
         self.id = id or str(uuid.uuid4())
@@ -48,9 +58,12 @@ class AgentContext:
         self.paused = paused
         self.streaming_agent = streaming_agent
         self.task: DeferredTask | None = None
-        self.created_at = created_at or datetime.now()
+        self.created_at = created_at or datetime.now(timezone.utc)
+        self.type = type
         AgentContext._counter += 1
         self.no = AgentContext._counter
+        # set to start of unix epoch
+        self.last_message = last_message or datetime.now(timezone.utc)
 
         existing = self._contexts.get(self.id, None)
         if existing:
@@ -66,6 +79,10 @@ class AgentContext:
         if not AgentContext._contexts:
             return None
         return list(AgentContext._contexts.values())[0]
+    
+    @staticmethod
+    def all():
+        return list(AgentContext._contexts.values())
 
     @staticmethod
     def remove(id: str):
@@ -87,10 +104,28 @@ class AgentContext:
             "log_version": len(self.log.updates),
             "log_length": len(self.log.logs),
             "paused": self.paused,
+            "last_message": (
+                Localization.get().serialize_datetime(self.last_message)
+                if self.last_message else Localization.get().serialize_datetime(datetime.fromtimestamp(0))
+            ),
+            "type": self.type.value,
         }
 
-    def get_created_at(self):
-        return self.created_at
+    @staticmethod
+    def log_to_all(
+        type: Log.Type,
+        heading: str | None = None,
+        content: str | None = None,
+        kvps: dict | None = None,
+        temp: bool | None = None,
+        update_progress: Log.ProgressUpdate | None = None,
+        id: str | None = None,  # Add id parameter
+        **kwargs,
+    ) -> list[Log.LogItem]:
+        items: list[Log.LogItem] = []
+        for context in AgentContext.all():
+            items.append(context.log.log(type, heading, content, kvps, temp, update_progress, id, **kwargs))
+        return items
 
     def kill_process(self):
         if self.task:
@@ -106,21 +141,16 @@ class AgentContext:
     def nudge(self):
         self.kill_process()
         self.paused = False
-        if self.streaming_agent:
-            current_agent = self.streaming_agent
-        else:
-            current_agent = self.agent0
-
-        self.task = self.run_task(current_agent.monologue)
+        self.task = self.run_task(self.get_agent().monologue)
         return self.task
+
+    def get_agent(self):
+        return self.streaming_agent or self.agent0
 
     def communicate(self, msg: "UserMessage", broadcast_level: int = 1):
         self.paused = False  # unpause if paused
 
-        if self.streaming_agent:
-            current_agent = self.streaming_agent
-        else:
-            current_agent = self.agent0
+        current_agent = self.get_agent()
 
         if self.task and self.task.is_alive():
             # set intervention messages to agent(s):
@@ -284,6 +314,9 @@ class Agent:
                     self.context.streaming_agent = self  # mark self as current streamer
                     self.loop_data.iteration += 1
 
+                    # call message_loop_start extensions
+                    await self.call_extensions("message_loop_start", loop_data=self.loop_data)
+
                     try:
                         # prepare LLM chain (model, system, history)
                         prompt = await self.prepare_prompt(loop_data=self.loop_data)
@@ -362,31 +395,29 @@ class Agent:
                 await self.call_extensions("monologue_end", loop_data=self.loop_data)  # type: ignore
 
     async def prepare_prompt(self, loop_data: LoopData) -> ChatPromptTemplate:
+        self.context.log.set_progress("Building prompt")
+
+        # call extensions before setting prompts
+        await self.call_extensions("message_loop_prompts_before", loop_data=loop_data)
+
         # set system prompt and message history
         loop_data.system = await self.get_system_prompt(self.loop_data)
         loop_data.history_output = self.history.output()
 
         # and allow extensions to edit them
-        try:
-            await self.call_extensions("message_loop_prompts", loop_data=loop_data)
-        except Exception as e:
-            error_message = errors.format_error(e)
-            error_text = errors.error_text(e)
-            self.context.log.log(
-                type="error",
-                heading="Extension Error",
-                content=error_message,
-                kvps={"text": error_text},
-            )
-            PrintStyle.error(error_message)
-            self.hist_add_warning(error_message)
+        await self.call_extensions("message_loop_prompts_after", loop_data=loop_data)
 
         # extras (memory etc.)
-        extras: list[history.OutputMessage] = []
-        for extra in loop_data.extras_persistent.values():
-            extras += history.Message(False, content=extra).output()
-        for extra in loop_data.extras_temporary.values():
-            extras += history.Message(False, content=extra).output()
+        # extras: list[history.OutputMessage] = []
+        # for extra in loop_data.extras_persistent.values():
+        #     extras += history.Message(False, content=extra).output()
+        # for extra in loop_data.extras_temporary.values():
+        #     extras += history.Message(False, content=extra).output()
+        extras = history.Message(
+            False, 
+            content=self.read_prompt("agent.context.extras.md", extras=dirty_json.stringify(
+                {**loop_data.extras_persistent, **loop_data.extras_temporary}
+                ))).output()
         loop_data.extras_temporary.clear()
 
         # convert history + extras to LLM format
@@ -484,6 +515,7 @@ class Agent:
     def hist_add_message(
         self, ai: bool, content: history.MessageContent, tokens: int = 0
     ):
+        self.last_message = datetime.now(timezone.utc)
         return self.history.add_message(ai=ai, content=content, tokens=tokens)
 
     def hist_add_user_message(self, message: UserMessage, intervention: bool = False):
@@ -690,18 +722,10 @@ class Agent:
                 if mcp_tool_candidate:
                     tool = mcp_tool_candidate
             except ImportError:
-                 # Get context safely
-                 current_context = AgentContext.first()
-                 if current_context:
-                    current_context.log.log(type="warning", content="MCP helper module not found. Skipping MCP tool lookup.", temp=True)
-                 PrintStyle(background_color="black", font_color="yellow", padding=True).print(
+                PrintStyle(background_color="black", font_color="yellow", padding=True).print(
                     "MCP helper module not found. Skipping MCP tool lookup."
                  )
             except Exception as e:
-                # Get context safely
-                current_context = AgentContext.first()
-                if current_context:
-                    current_context.log.log(type="warning", content=f"Failed to get MCP tool '{tool_name}': {e}", temp=True)
                 PrintStyle(background_color="black", font_color="red", padding=True).print(
                     f"Failed to get MCP tool '{tool_name}': {e}"
                 )

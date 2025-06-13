@@ -8,6 +8,7 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
 from python.helpers.docker import DockerContainerManager
+from python.helpers.messages import truncate_text
 import re
 
 
@@ -50,34 +51,14 @@ class CodeExecution(Tool):
             response = await self.reset_terminal(session=session)
         else:
             response = self.agent.read_prompt(
-                "fw.code_runtime_wrong.md", runtime=runtime
+                "fw.code.runtime_wrong.md", runtime=runtime
             )
 
         if not response:
-            response = self.agent.read_prompt("fw.code_no_output.md")
+            response = self.agent.read_prompt(
+                "fw.code.info.md", info=self.agent.read_prompt("fw.code.no_output.md")
+            )
         return Response(message=response, break_loop=False)
-
-    # async def before_execution(self, **kwargs):
-    #     await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
-    #     PrintStyle(
-    #         font_color="#1B4F72", padding=True, background_color="white", bold=True
-    #     ).print(f"{self.agent.agent_name}: Using tool '{self.name}'")
-    #     self.log = self.agent.context.log.log(
-    #         type="code_exe",
-    #         heading=f"{self.agent.agent_name}: Using tool '{self.name}'",
-    #         content="",
-    #         kvps=self.args,
-    #     )
-    #     if self.args and isinstance(self.args, dict):
-    #         for key, value in self.args.items():
-    #             PrintStyle(font_color="#85C1E9", bold=True).stream(
-    #                 self.nice_key(key) + ": "
-    #             )
-    #             PrintStyle(
-    #                 font_color="#85C1E9",
-    #                 padding=isinstance(value, str) and "\n" in value,
-    #             ).stream(value)
-    #             PrintStyle().print()
 
     def get_log_object(self):
         return self.agent.context.log.log(
@@ -91,7 +72,7 @@ class CodeExecution(Tool):
         self.agent.hist_add_tool_result(self.name, response.message)
 
     async def prepare_state(self, reset=False, session=None):
-        self.state = self.agent.get_data("_cot_state")
+        self.state = self.agent.get_data("_cet_state")
         if not self.state or reset:
 
             # initialize docker container if execution in docker is configured
@@ -109,7 +90,7 @@ class CodeExecution(Tool):
 
             # initialize shells dictionary if not exists
             shells = {} if not self.state else self.state.shells.copy()
-            
+
             # Only reset the specified session if provided
             if session is not None and session in shells:
                 shells[session].close()
@@ -140,9 +121,9 @@ class CodeExecution(Tool):
 
                 shells[0] = shell
                 await shell.connect()
-            
+
             self.state = State(shells=shells, docker=docker)
-        self.agent.set_data("_cot_state", self.state)
+        self.agent.set_data("_cet_state", self.state)
 
     async def execute_python_code(self, session: int, code: str, reset: bool = False):
         escaped_code = shlex.quote(code)
@@ -208,48 +189,43 @@ class CodeExecution(Tool):
         self,
         session=0,
         reset_full_output=True,
-        first_output_timeout=30,   # Wait up to 60s for first output
-        between_output_timeout=10, # Wait up to 10s between outputs
+        first_output_timeout=30,  # Wait up to x seconds for first output
+        between_output_timeout=15,  # Wait up to x seconds between outputs
+        max_exec_timeout=180,  #hard cap on total runtime
         sleep_time=0.1,
+        chunk_size=100,  # Size of chunk to check for repeating patterns
+        repeat_threshold=10,  # Number of repetitions to trigger loop detection
     ):
-        """
-        Waits for terminal output with a sliding window idle timeout:
-        - Waits up to first_output_timeout (default 60s) for the first output.
-        - After any output, waits up to between_output_timeout (default 10s) for more output.
-        - Each new output resets the between_output_timeout timer.
-        - No hard cap on total runtime.
-        - If no output for between_output_timeout after last output, or no output at all for first_output_timeout, returns.
-        - If a common shell prompt is detected, returns immediately.
-        """
         # Common shell prompt regex patterns (add more as needed)
         prompt_patterns = [
             re.compile(r"\\(venv\\).+[$#] ?$"),  # (venv) ...$ or (venv) ...#
-            re.compile(r"root@[^:]+:[^#]+# ?$"),    # root@container:~#
-            re.compile(r"[a-zA-Z0-9_.-]+@[^:]+:[^$#]+[$#] ?$"), # user@host:~$
+            re.compile(r"root@[^:]+:[^#]+# ?$"),  # root@container:~#
+            re.compile(r"[a-zA-Z0-9_.-]+@[^:]+:[^$#]+[$#] ?$"),  # user@host:~$
         ]
 
         start_time = time.time()
         last_output_time = start_time
         full_output = ""
+        truncated_output = ""
         got_output = False
-        # --- Configuration for repetition detection ---
-        chunk_size = 128  # Size of the block to check for repetition
-        repeat_threshold = 5  # How many times the block must repeat consecutively
 
         while True:
             await asyncio.sleep(sleep_time)
-            current_full_output, partial_output = await self.state.shells[session].read_output(
-                timeout=between_output_timeout, reset_full_output=reset_full_output
+            full_output, partial_output = await self.state.shells[session].read_output(
+                timeout=3, reset_full_output=reset_full_output
             )
-            reset_full_output = False
+            reset_full_output = False  # only reset once
 
             await self.agent.handle_intervention()
 
             now = time.time()
             if partial_output:
                 PrintStyle(font_color="#85C1E9").stream(partial_output)
-                full_output += partial_output # Append new output
-                self.log.update(content=full_output)
+                # full_output += partial_output # Append new output
+                truncated_output = truncate_text(
+                    agent=self.agent, output=full_output, threshold=10000
+                )
+                self.log.update(content=truncated_output)
                 last_output_time = now
                 got_output = True
 
@@ -281,37 +257,66 @@ class CodeExecution(Tool):
                         return f"{truncated_output}\n--- LOOP DETECTED & SESSION RESET ---\n{loop_detected_msg}\nRepeating pattern identified: '{last_chunk[:128]}{'...' if len(last_chunk)>128 else ''}'\nThe terminal session {session} was automatically reset.\nPlease review the code or command that caused the loop to prevent recurrence."
                 # --- End of repetition check ---
 
+                # Check for shell prompt at the end of output
+                last_lines = truncated_output.splitlines()[-3:] if truncated_output else []
+                for line in last_lines:
+                    for pat in prompt_patterns:
+                        if pat.search(line.strip()):
+                            PrintStyle.info(
+                                "Detected shell prompt, returning output early."
+                            )
+                            return truncated_output
 
-            # Check for shell prompt at the end of output
-            last_lines = full_output.splitlines()[-3:] if full_output else []
-            for line in last_lines:
-                for pat in prompt_patterns:
-                    if pat.search(line.strip()):
-                        PrintStyle(font_color="#229954").print("Detected shell prompt, returning output early.")
-                        return full_output
+            # Check for max execution time
+            if now - start_time > max_exec_timeout:
+                sysinfo = self.agent.read_prompt(
+                    "fw.code.max_time.md", timeout=max_exec_timeout
+                )
+                response = self.agent.read_prompt("fw.code.info.md", info=sysinfo)
+                if truncated_output:
+                    response = truncated_output + "\n\n" + response
+                PrintStyle.warning(sysinfo)
+                self.log.update(content=response)
+                return response
 
+            # Waiting for first output
             if not got_output:
-                # Waiting for first output
                 if now - start_time > first_output_timeout:
-                    PrintStyle.error(f"No output for {first_output_timeout}s after start, returning.")
-                    break
+                    sysinfo = self.agent.read_prompt(
+                        "fw.code.no_out_time.md", timeout=first_output_timeout
+                    )
+                    response = self.agent.read_prompt("fw.code.info.md", info=sysinfo)
+                    PrintStyle.warning(sysinfo)
+                    self.log.update(content=response)
+                    return response
             else:
                 # Waiting for more output after first output
                 if now - last_output_time > between_output_timeout:
-                    PrintStyle.error(f"No output for {between_output_timeout}s after last output, returning.")
-                    break
-
-        return full_output
+                    sysinfo = self.agent.read_prompt(
+                        "fw.code.pause_time.md", timeout=between_output_timeout
+                    )
+                    response = self.agent.read_prompt("fw.code.info.md", info=sysinfo)
+                    if truncated_output:
+                        response = truncated_output + "\n\n" + response
+                    PrintStyle.warning(sysinfo)
+                    self.log.update(content=response)
+                    return response
 
     async def reset_terminal(self, session=0, reason: str | None = None):
         # Print the reason for the reset to the console if provided
         if reason:
-            PrintStyle(font_color="#FFA500", bold=True).print(f"Resetting terminal session {session}... Reason: {reason}")
+            PrintStyle(font_color="#FFA500", bold=True).print(
+                f"Resetting terminal session {session}... Reason: {reason}"
+            )
         else:
-            PrintStyle(font_color="#FFA500", bold=True).print(f"Resetting terminal session {session}...")
+            PrintStyle(font_color="#FFA500", bold=True).print(
+                f"Resetting terminal session {session}..."
+            )
 
         # Only reset the specified session while preserving others
         await self.prepare_state(reset=True, session=session)
-        response = self.agent.read_prompt("fw.code_reset.md") # Standard message for agent history
+        response = self.agent.read_prompt(
+            "fw.code.info.md", info=self.agent.read_prompt("fw.code.reset.md")
+        )
         self.log.update(content=response)
         return response

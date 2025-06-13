@@ -1,0 +1,34 @@
+<html>
+
+<head>
+    <title>MCP Server Log</title>
+
+    <script type="module">
+        import { store } from "/components/settings/mcp/client/mcp-servers-store.js";
+    </script>
+</head>
+
+<body>
+    <div x-data>
+        <template x-if="$store.mcpServersStore">
+            <div id="mcp-servers-log">
+                <p x-text="$store.mcpServersStore.serverLog && $store.mcpServersStore.serverLog.trim() ? $store.mcpServersStore.serverLog : 'Log empty'"></p>
+            </div>
+        </template>
+    </div>
+
+    <style>
+        #mcp-servers-log {
+            width: 100%;
+        }
+
+        #mcp-servers-log p {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 0.8em;
+            white-space: pre-wrap;
+        }
+    </style>
+
+</body>
+
+</html>

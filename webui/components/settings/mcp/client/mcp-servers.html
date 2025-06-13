@@ -1,0 +1,182 @@
+<html>
+
+<head>
+    <title>MCP Servers Configuration</title>
+
+    <script type="module">
+        import { store } from "/components/settings/mcp/client/mcp-servers-store.js";
+    </script>
+</head>
+
+<body>
+    <div x-data>
+        <template x-if="$store.mcpServersStore">
+            <div x-init="$store.mcpServersStore.initialize()" x-destroy="$store.mcpServersStore.onClose()">
+
+                <h3>MCP Servers Configuration JSON
+                    <button class="btn slim" style="margin-left: 0.5em;"
+                        onclick="openModal('settings/mcp/client/example.html')">Examples</button>
+                    <button class="btn slim" style="margin-left: 0.5em;"
+                        @click="$store.mcpServersStore.formatJson()">Reformat</button>
+                    <button class="btn slim primary" :disabled="$store.mcpServersStore.loading"
+                        style="margin-left: 0.5em;" @click="$store.mcpServersStore.applyNow()">Apply now</button>
+                </h3>
+                <div id="mcp-servers-config-json"></div>
+
+                <h3 id="mcp-servers-status">Servers status (refreshing automatically)</h3>
+
+
+                <div class="server-list" x-show="!$store.mcpServersStore.loading">
+                    <template x-for="server in $store.mcpServersStore.servers" :key="server.name">
+                        <div class="server-item">
+                            <div class="server-main-row">
+                                <!-- Status indicator -->
+                                <div class="status-dot" x-data="{ connected: server.connected }">
+                                    <svg viewBox="0 0 16 16" width="12" height="12">
+                                        <circle cx="8" cy="8" r="6" x-bind:fill="server.connected 
+                                                ? (server.error ? '#e40138' : (server.tool_count > 0 ? '#00c340' : '#e40138')) 
+                                                : 'none'" x-bind:opacity="server.connected ? 1 : 0" />
+                                        <circle cx="8" cy="8" r="6" fill="none" stroke="#e40138" stroke-width="2"
+                                            x-bind:opacity="server.connected ? 0 : 1" />
+                                    </svg>
+                                </div>
+
+                                <!-- Server name -->
+                                <span class="server-name" x-text="server.name"></span>
+
+                                <!-- Tool count (clickable if > 0, only for connected servers without errors) -->
+                                <span class="tool-count" x-show="server.tool_count > 0"
+                                    @click="$store.mcpServersStore.onToolCountClick && $store.mcpServersStore.onToolCountClick(server.name)"
+                                    x-text="server.tool_count + ' tools'"></span>
+
+                                <!-- Log button (only shown if has_log is true) -->
+                                <span class="log-btn" x-show="server.has_log"
+                                    @click="$store.mcpServersStore.getServerLog(server.name)">Log</span>
+                            </div>
+
+                            <!-- Error message (if any) -->
+                            <div class="server-error-row" x-show="server.error">
+                                <span class="server-error" x-text="server.error"></span>
+                            </div>
+                        </div>
+                    </template>
+                    <div x-show="$store.mcpServersStore.servers.length === 0" class="mcp-servers-loading">
+                        No servers
+                    </div>
+                </div>
+
+                <div x-show="$store.mcpServersStore.loading" class="mcp-servers-loading">
+                    Loading servers status...
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <style>
+
+    .mcp-servers-loading {
+        width: 100%;
+        text-align: center;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+        #mcp-servers-config-json {
+            width: 100%;
+            height: 40em;
+        }
+
+        .server-list {
+            margin-top: 0.5em;
+            margin-bottom: 1em;
+        }
+
+        .server-item {
+            display: flex;
+            flex-direction: column;
+            padding: 0.5em 0.7em;
+            margin-bottom: 0.4em;
+            min-height: 2.2em;
+            /* Ensure consistent height even without errors */
+            border: 1px solid rgba(192, 192, 192, 0.161);
+            /* Silver with 30% opacity */
+            border-radius: 4px;
+        }
+
+        .server-list {
+            margin-top: 0.5em;
+            margin-bottom: 1em;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2em;
+        }
+
+        .server-main-row {
+            display: flex;
+            align-items: center;
+            gap: 0.8em;
+            width: 100%;
+        }
+
+        .status-dot {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .server-name {
+            font-weight: 600;
+            min-width: 12em;
+        }
+
+        .tool-count {
+            color: var(--c-fg2);
+            font-size: 0.9em;
+            user-select: none;
+        }
+
+        .tool-count {
+            cursor: default;
+        }
+
+        .tool-count:hover {
+            opacity: 0.8;
+            cursor: pointer;
+        }
+
+        .config-status {
+            color: #e40138;
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .log-btn {
+            margin-left: auto;
+            font-size: 0.9em;
+            cursor: pointer;
+            text-decoration: none;
+            opacity: 0.85;
+        }
+
+        .log-btn:hover {
+            opacity: 1;
+        }
+
+        .server-error-row {
+            margin-left: 1.8em;
+            margin-top: 0.1em;
+            font-size: 0.8em;
+            color: #F44336;
+            opacity: 0.85;
+            line-height: 1.2;
+        }
+
+        .no-servers {
+            padding: 0.5em;
+            color: var(--c-fg2);
+            font-style: italic;
+        }
+    </style>
+
+</body>
+
+</html>

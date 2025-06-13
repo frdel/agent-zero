@@ -1,23 +1,11 @@
-# Use the latest slim version of Debian
-FROM debian:bookworm-slim
+# Use the pre-built base image for A0
+# FROM agent-zero-base:local
+FROM frdel/agent-zero-base:latest
 
 # Check if the argument is provided, else throw an error
 ARG BRANCH
 RUN if [ -z "$BRANCH" ]; then echo "ERROR: BRANCH is not set!" >&2; exit 1; fi
 ENV BRANCH=$BRANCH
-
-# Set locale to en_US.UTF-8 and timezone to UTC
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y locales tzdata
-RUN sed -i -e 's/# \(en_US\.UTF-8 .*\)/\1/' /etc/locale.gen && \
-    dpkg-reconfigure --frontend=noninteractive locales && \
-    update-locale LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
-RUN ln -sf /usr/share/zoneinfo/UTC /etc/localtime
-RUN echo "UTC" > /etc/timezone
-RUN dpkg-reconfigure -f noninteractive tzdata
-ENV LANG=en_US.UTF-8
-ENV LANGUAGE=en_US:en
-ENV LC_ALL=en_US.UTF-8
-ENV TZ=UTC
 
 # Copy contents of the project to /a0
 COPY ./fs/ /
@@ -39,7 +27,7 @@ RUN echo "cache buster $CACHE_DATE" && bash /ins/install_A02.sh $BRANCH
 RUN bash /ins/post_install.sh $BRANCH
 
 # Expose ports
-EXPOSE 22 80
+EXPOSE 22 80 9000-9009
 
 RUN chmod +x /exe/initialize.sh /exe/run_A0.sh /exe/run_searxng.sh /exe/run_tunnel_api.sh
 

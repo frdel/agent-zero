@@ -2,7 +2,11 @@ import re
 import sys
 import time
 
-from python.helpers import files
+def sanitize_string(s: str, encoding: str = "utf-8") -> str:
+    # Replace surrogates and invalid unicode with replacement character
+    if not isinstance(s, str):
+        s = str(s)
+    return s.encode(encoding, 'replace').decode(encoding, 'replace')
 
 def calculate_valid_match_lengths(first: bytes | str, second: bytes | str, 
                                   deviation_threshold: int = 5, 

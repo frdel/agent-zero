@@ -1,2 +1,1 @@
-- Favor linux commands for simple tasks where possible instead of python
-- Enclose any math with $...$
+- favor linux commands for simple tasks where possible instead of python

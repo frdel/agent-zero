@@ -1,129 +1,11 @@
-import asyncio
-import json
 import models
 from agent import AgentConfig, ModelConfig
-from python.helpers import dotenv, files, rfc_exchange, runtime, settings, docker, log
-import subprocess
-import shutil
+from python.helpers import runtime, settings, defer
 from python.helpers.print_style import PrintStyle
 
 
-_NPM_CHECKS_DONE = False
-
-
-# Helper function to ensure an MCP package is globally installed
-def _ensure_mcp_package_globally_installed(package_name: str, executable_name: str):
-    PrintStyle(background_color="blue", font_color="white", padding=True).print(
-        f"Attempting to ensure MCP server executable '{executable_name}' (from package '{package_name}') is available..."
-    )
-    if shutil.which("npm"):
-        if not shutil.which(executable_name):
-            PrintStyle(font_color="yellow", padding=True).print(
-                f"'{executable_name}' not found in PATH. Attempting global npm install of '{package_name}'..."
-            )
-            try:
-                npm_command = ["npm", "i", "-g", package_name, "--no-fund", "--no-audit"]
-                process = subprocess.run(npm_command, capture_output=True, text=True, check=False)
-                if process.returncode == 0:
-                    PrintStyle(font_color="green", padding=True).print(
-                        f"Successfully installed '{package_name}' globally via npm."
-                    )
-                    if shutil.which(executable_name):
-                        PrintStyle(font_color="green", padding=True).print(
-                            f"'{executable_name}' is now available in PATH after install."
-                        )
-                    else:
-                        PrintStyle(font_color="orange", padding=True).print(
-                            f"WARNING: npm install of '{package_name}' reported success, but '{executable_name}' still not found in PATH. " +
-                            "The 'npx' command in settings.json might still be necessary or there might be an issue with PATH."
-                        )
-                else:
-                    PrintStyle(font_color="red", padding=True).print(
-                        f"Failed to install '{package_name}' globally via npm. Return code: {process.returncode}"
-                    )
-                    PrintStyle(font_color="red", padding=False).print(f"npm stdout: {process.stdout.strip()}")
-                    PrintStyle(font_color="red", padding=False).print(f"npm stderr: {process.stderr.strip()}")
-            except FileNotFoundError:
-                 PrintStyle(font_color="red", padding=True).print(
-                    f"ERROR: 'npm' command not found. Cannot attempt to install '{package_name}'."
-                )
-            except Exception as e:
-                PrintStyle(font_color="red", padding=True).print(
-                    f"Exception during npm install of '{package_name}': {e}"
-                )
-        else:
-            PrintStyle(font_color="green", padding=True).print(
-                f"'{executable_name}' (from package '{package_name}') already found in PATH."
-            )
-    else:
-        PrintStyle(font_color="red", padding=True).print(
-            f"ERROR: 'npm' command not found. Cannot check for or install '{executable_name}' from '{package_name}'."
-        )
-    # PrintStyle().print() # For a blank line after each attempt
-
-
-def initialize():
-    global _NPM_CHECKS_DONE
+def initialize_agent():
     current_settings = settings.get_settings()
-    mcp_servers_json_string = current_settings.get("mcp_servers", "[]")
-
-    try:
-        mcp_server_configs = json.loads(mcp_servers_json_string)
-        if not isinstance(mcp_server_configs, list):
-            PrintStyle(font_color="red", padding=True).print(
-                f"Error: Parsed mcp_servers from settings is not a list. Value: {mcp_server_configs}"
-            )
-            mcp_server_configs = []
-    except json.JSONDecodeError as e:
-        PrintStyle(font_color="red", padding=True).print(
-            f"Error decoding mcp_servers JSON string from settings: {e}. String was: '{mcp_servers_json_string}'"
-        )
-        mcp_server_configs = []
-
-    if not _NPM_CHECKS_DONE:
-        if shutil.which("npm"):
-            for server_config in mcp_server_configs:
-                if not isinstance(server_config, dict):
-                    PrintStyle(font_color="orange", padding=True).print(
-                        f"Warning: Skipping MCP server config item as it's not a dictionary: {server_config}"
-                    )
-                    continue
-
-                command = server_config.get("command")
-                args = server_config.get("args", [])
-                server_name = server_config.get("name", "Unknown MCP Server")
-
-                if command == "npx" and "--package" in args:
-                    try:
-                        package_keyword_index = args.index("--package")
-                        # Expect package name at +1 and executable name at +2 from "--package"
-                        if package_keyword_index + 2 < len(args):
-                            package_name = args[package_keyword_index + 1]
-                            executable_name = args[package_keyword_index + 2]
-                            if package_name and executable_name: # Ensure they are not empty strings
-                                 _ensure_mcp_package_globally_installed(package_name, executable_name)
-                            else:
-                                PrintStyle(font_color="orange", padding=True).print(
-                                    f"Warning: Skipping MCP server '{server_name}' due to empty package or executable name extracted from args: {args}"
-                                )
-                        else:
-                            PrintStyle(font_color="orange", padding=True).print(
-                                f"Warning: Skipping MCP server '{server_name}' as package name or executable name could not be determined from args: {args}"
-                            )
-                    except ValueError: # Should not happen if "--package" is in args, but good for safety
-                        PrintStyle(font_color="orange", padding=True).print(
-                            f"Warning: '--package' keyword found but .index() failed for args: {args} in server '{server_name}'"
-                        )
-                    except Exception as e:
-                         PrintStyle(font_color="red", padding=True).print(
-                            f"Error processing npx args for server '{server_name}': {e}. Args: {args}"
-                        )
-        else:
-            PrintStyle(font_color="red", padding=True).print(
-                "ERROR: 'npm' command not found. Cannot attempt to install any MCP server packages."
-            )
-        PrintStyle().print() # Extra blank line after all attempts or npm not found message
-        _NPM_CHECKS_DONE = True
 
     # chat model from user settings
     chat_llm = ModelConfig(
@@ -188,34 +70,57 @@ def initialize():
     )
 
     # update SSH and docker settings
-    set_runtime_config(config, current_settings)
+    _set_runtime_config(config, current_settings)
 
     # update config with runtime args
-    args_override(config)
+    _args_override(config)
 
-    import python.helpers.mcp_handler as mcp_helper
-    import agent as agent_helper
-    import python.helpers.print_style as print_style_helper
-    if not mcp_helper.MCPConfig.get_instance().is_initialized():
-        try:
-            mcp_helper.MCPConfig.update(config.mcp_servers)
-        except Exception as e:
-            first_context = agent_helper.AgentContext.first()
-            if first_context:
-                (
-                    first_context.log
-                    .log(type="warning", content=f"Failed to update MCP settings: {e}", temp=False)
-                )
-            (
-                print_style_helper.PrintStyle(background_color="black", font_color="red", padding=True)
-                .print(f"Failed to update MCP settings: {e}")
-            )
+    # initialize MCP in deferred task to prevent blocking the main thread
+    # async def initialize_mcp_async(mcp_servers_config: str):
+    #     return initialize_mcp(mcp_servers_config)
+    # defer.DeferredTask(thread_name="mcp-initializer").start_task(initialize_mcp_async, config.mcp_servers)
+    # initialize_mcp(config.mcp_servers)
+
+    # import python.helpers.mcp_handler as mcp_helper
+    # import agent as agent_helper
+    # import python.helpers.print_style as print_style_helper
+    # if not mcp_helper.MCPConfig.get_instance().is_initialized():
+    #     try:
+    #         mcp_helper.MCPConfig.update(config.mcp_servers)
+    #     except Exception as e:
+    #         first_context = agent_helper.AgentContext.first()
+    #         if first_context:
+    #             (
+    #                 first_context.log
+    #                 .log(type="warning", content=f"Failed to update MCP settings: {e}", temp=False)
+    #             )
+    #         (
+    #             print_style_helper.PrintStyle(background_color="black", font_color="red", padding=True)
+    #             .print(f"Failed to update MCP settings: {e}")
+    #         )
 
     # return config object
     return config
 
+def initialize_chats():
+    from python.helpers import persist_chat
+    async def initialize_chats_async():
+        persist_chat.load_tmp_chats()
+    return defer.DeferredTask().start_task(initialize_chats_async)
 
-def args_override(config):
+def initialize_mcp():
+    set = settings.get_settings()
+    async def initialize_mcp_async():
+        from python.helpers.mcp_handler import initialize_mcp as _initialize_mcp
+        return _initialize_mcp(set["mcp_servers"])
+    return defer.DeferredTask().start_task(initialize_mcp_async)
+
+def initialize_job_loop():
+    from python.helpers.job_loop import run_loop
+    return defer.DeferredTask("JobLoop").start_task(run_loop)
+
+
+def _args_override(config):
     # update config with runtime args
     for key, value in runtime.args.items():
         if hasattr(config, key):
@@ -236,7 +141,7 @@ def args_override(config):
             setattr(config, key, value)
 
 
-def set_runtime_config(config: AgentConfig, set: settings.Settings):
+def _set_runtime_config(config: AgentConfig, set: settings.Settings):
     ssh_conf = settings.get_runtime_config(set)
     for key, value in ssh_conf.items():
         if hasattr(config, key):

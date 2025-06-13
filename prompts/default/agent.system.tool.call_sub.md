@@ -6,14 +6,9 @@ message field: always describe role, task details goal overview for new subordin
 delegate specific subtasks not entire task
 reset arg usage:
   "true": spawn new subordinate
-  "false": ask respond to subordinate
+  "false": continue existing subordinate
 if superior, orchestrate
-respond to existing subordinates using call_subordinate tool with reset: "false
-
-### if you are subordinate:
-- superior is {{agent_name}} minus 1
-- execute the task you were assigned
-- delegate further if asked
+respond to existing subordinates using call_subordinate tool with reset false
 
 example usage
 ~~~json
