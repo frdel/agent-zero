@@ -108,8 +108,8 @@ function injectConsoleControls(messageDiv, command) {
   setState("scroll");
 }
 
-function wrapInScrollable(element, skip = false) {
-  if (skip) return element;
+function wrapInScrollable(element, disableWrapping = false) {
+  if (disableWrapping) return element;
 
   const wrapper = document.createElement("div");
   wrapper.classList.add("scrollable-content");
