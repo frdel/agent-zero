@@ -17,6 +17,8 @@ const timeDate = document.getElementById('time-date-container');
 
 
 let autoScroll = true;
+let savedScrollOffset = null;
+let savedScrollAtBottom = true;
 let context = "";
 let connectionStatus = false
 
@@ -231,6 +233,11 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
     // Search for the existing message container by id
     let messageContainer = document.getElementById(`message-${id}`);
 
+    // Save chat scroll position before modifying DOM
+    const chatHistory = document.getElementById('chat-history');
+    savedScrollOffset = chatHistory.scrollHeight - chatHistory.scrollTop;
+    savedScrollAtBottom = autoScroll;
+
     if (messageContainer) {
         // Don't re-render user messages
         if (type === 'user') {
@@ -254,8 +261,6 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
     if (!document.getElementById(`message-${id}`)) {
         chatHistory.appendChild(messageContainer);
     }
-
-    if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
 
@@ -491,6 +496,15 @@ async function poll() {
 }
 
 function afterMessagesUpdate(logs) {
+    if (savedScrollOffset !== null) {
+        if (savedScrollAtBottom) {
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        } else {
+            chatHistory.scrollTop = chatHistory.scrollHeight - savedScrollOffset;
+        }
+        updateAfterScroll();
+        savedScrollOffset = null;
+    }
     if (localStorage.getItem('speech') == 'true') {
         speakMessages(logs)
     }
