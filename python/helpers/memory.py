@@ -1,4 +1,3 @@
-import ast
 from datetime import datetime
 from typing import Any, List, Sequence
 from langchain.storage import InMemoryByteStore, LocalFileStore
@@ -392,7 +391,7 @@ class Memory:
     def _get_comparator(condition: str):
         def comparator(data: dict[str, Any]):
             try:
-                return ast.literal_eval(condition, {}, data)
+                return eval(condition, {}, data)
             except Exception as e:
                 # PrintStyle.error(f"Error evaluating condition: {e}")
                 return False
