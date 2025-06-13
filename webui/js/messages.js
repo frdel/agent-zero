@@ -1,5 +1,6 @@
 // copy button
 import { openImageModal } from "./image_modal.js";
+import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
 
 function createCopyButton() {
   const button = document.createElement("button");
@@ -12,11 +13,11 @@ function createCopyButton() {
     let textToCopy;
 
     if (container.classList.contains("kvps-row")) {
-      textToCopy = container.querySelector(".kvps-val").textContent;
+      textToCopy = container.querySelector(".kvps-val").innerText;
     } else if (container.classList.contains("message-text")) {
-      textToCopy = container.querySelector("span").textContent;
+      textToCopy = container.querySelector("span").innerText;
     } else {
-      textToCopy = container.querySelector("span").textContent;
+      textToCopy = container.querySelector("span").innerText;
     }
 
     try {
@@ -83,7 +84,8 @@ export function _drawMessage(
   kvps = null,
   messageClasses = [],
   contentClasses = [],
-  latex = false
+  latex = false,
+  markdown = false
 ) {
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", ...messageClasses);
@@ -97,6 +99,30 @@ export function _drawMessage(
   drawKvps(messageDiv, kvps, latex);
 
   if (content && content.trim().length > 0) {
+    if (markdown) {
+      const contentDiv = document.createElement("div");
+      contentDiv.classList.add("msg-content", ...contentClasses);
+      
+      const spanElement = document.createElement("span"); // Wrapper span
+      spanElement.innerHTML = marked.parse(content, { breaks: true });
+      contentDiv.appendChild(spanElement);
+      
+      addCopyButtonToElement(contentDiv);
+      messageDiv.appendChild(contentDiv);
+
+      // KaTeX rendering for markdown
+      if (window.renderMathInElement && latex) {
+        renderMathInElement(contentDiv, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\(', right: '\\)', display: false },
+            { left: '\\[', right: '\\]', display: true }
+          ],
+          throwOnError: false,
+        });
+      }
+    } else {
     const preElement = document.createElement("pre");
     preElement.classList.add("msg-content", ...contentClasses);
     preElement.style.whiteSpace = "pre-wrap";
@@ -120,6 +146,7 @@ export function _drawMessage(
         delimiters: [{ left: "$", right: "$", display: true }],
         throwOnError: false,
       });
+      }
     }
   }
 
@@ -150,6 +177,7 @@ export function drawMessageDefault(
     kvps,
     ["message-ai", "message-default"],
     ["msg-json"],
+    false,
     false
   );
 }
@@ -178,6 +206,7 @@ export function drawMessageAgent(
     kvpsFlat,
     ["message-ai", "message-agent"],
     ["msg-json"],
+    false,
     false
   );
 }
@@ -200,6 +229,7 @@ export function drawMessageResponse(
     null,
     ["message-ai", "message-agent-response"],
     [],
+    true,
     true
   );
 }
@@ -216,13 +246,14 @@ export function drawMessageDelegation(
   _drawMessage(
     messageContainer,
     heading,
-    messageContent,
+    content,
     temp,
     true,
     kvps,
     ["message-ai", "message-agent", "message-agent-delegation"],
     [],
-    true
+    true,
+    false
   );
 }
 
@@ -340,6 +371,7 @@ export function drawMessageTool(
     kvps,
     ["message-ai", "message-tool"],
     ["msg-output"],
+    false,
     false
   );
 }
@@ -362,6 +394,7 @@ export function drawMessageCodeExe(
     null,
     ["message-ai", "message-code-exe"],
     [],
+    false,
     false
   );
 }
@@ -384,6 +417,7 @@ export function drawMessageBrowser(
     kvps,
     ["message-ai", "message-browser"],
     ["msg-json"],
+    false,
     false
   );
 }
@@ -407,6 +441,7 @@ export function drawMessageAgentPlain(
     kvps,
     [...classes],
     [],
+    false,
     false
   );
   messageContainer.classList.add("center-container");
@@ -451,6 +486,7 @@ export function drawMessageUtil(
     kvps,
     ["message-util"],
     ["msg-json"],
+    false,
     false
   );
   messageContainer.classList.add("center-container");
@@ -556,7 +592,12 @@ function drawKvps(container, kvps, latex) {
 
           if (window.renderMathInElement && latex) {
             renderMathInElement(span, {
-              delimiters: [{ left: "$", right: "$", display: true }],
+              delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\(", right: "\\)", display: false },
+                { left: "\\[", right: "\\]", display: true }
+              ],
               throwOnError: false,
             });
           }
