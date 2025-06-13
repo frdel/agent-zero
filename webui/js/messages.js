@@ -47,6 +47,7 @@ function createControlButton(label, title, handler) {
   btn.className = "message-button";
   btn.textContent = label;
   btn.title = title;
+  btn.setAttribute("aria-label", title);
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
     handler();
