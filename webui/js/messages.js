@@ -42,6 +42,126 @@ function addCopyButtonToElement(element) {
   }
 }
 
+function createControlButton(label, title, handler) {
+  const btn = document.createElement("button");
+  btn.className = "message-button";
+  btn.textContent = label;
+  btn.title = title;
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    handler();
+  });
+  return btn;
+}
+
+function injectMessageControls(messageDiv) {
+  const controls = document.createElement("div");
+  controls.className = "message-controls";
+
+  const toggleCollapse = () => {
+    messageDiv.classList.toggle("message-collapsed");
+  };
+  const toggleExpand = () => {
+    messageDiv.classList.toggle("message-expanded");
+  };
+
+  const minBtn = createControlButton("\u2212", "Minimize", toggleCollapse); // − is minus sign
+  const maxBtn = createControlButton("\u25A1", "Maximize", toggleExpand); // □ is empty square
+
+  controls.appendChild(minBtn);
+  controls.appendChild(maxBtn);
+  messageDiv.prepend(controls);
+}
+
+function injectConsoleControls(messageDiv, command) {
+  const controls = document.createElement("div");
+  controls.className = "message-controls console-controls";
+
+  const setState = (state) => {
+    messageDiv.classList.remove(
+      "console-collapsed",
+      "console-scroll",
+      "console-expanded"
+    );
+    messageDiv.classList.add(`console-${state}`);
+  };
+
+  const btnCollapsed = createControlButton("\u25BC", "Collapsed view", () =>
+    setState("collapsed")
+  );
+  const btnScroll = createControlButton("\u25A0", "Scrollable view", () =>
+    setState("scroll")
+  );
+  const btnExpanded = createControlButton("\u25B2", "Expanded view", () =>
+    setState("expanded")
+  );
+
+  controls.append(btnCollapsed, btnScroll, btnExpanded);
+  messageDiv.prepend(controls);
+
+  const summary = document.createElement("pre");
+  summary.className = "console-summary";
+  summary.textContent = command.split("\n")[0];
+  messageDiv.insertBefore(summary, controls.nextSibling);
+
+  setState("scroll");
+}
+
+function wrapInScrollable(element, skip = false) {
+  if (skip) return element;
+
+  const wrapper = document.createElement("div");
+  wrapper.classList.add("scrollable-content");
+
+  const indTop = document.createElement("div");
+  indTop.className = "scroll-indicator top";
+  indTop.textContent = "\u25B2"; // ▲
+
+  const indBottom = document.createElement("div");
+  indBottom.className = "scroll-indicator bottom";
+  indBottom.textContent = "\u25BC"; // ▼
+
+  wrapper.appendChild(indTop);
+  wrapper.appendChild(indBottom);
+  wrapper.appendChild(element);
+
+  function updateIndicators() {
+    if (wrapper.scrollTop > 0) {
+      wrapper.classList.add("show-top");
+    } else {
+      wrapper.classList.remove("show-top");
+    }
+
+    if (wrapper.scrollTop + wrapper.clientHeight < wrapper.scrollHeight - 1) {
+      wrapper.classList.add("show-bottom");
+    } else {
+      wrapper.classList.remove("show-bottom");
+    }
+  }
+
+  wrapper.addEventListener("scroll", () => {
+    updateIndicators();
+    const nearBottom =
+      wrapper.scrollTop + wrapper.clientHeight >= wrapper.scrollHeight - 1;
+    wrapper.dataset.userScrolled = nearBottom ? "false" : "true";
+  });
+
+  // Scroll to bottom initially
+  requestAnimationFrame(() => {
+    wrapper.scrollTop = wrapper.scrollHeight;
+    wrapper.dataset.userScrolled = "false";
+    updateIndicators();
+  });
+
+  return wrapper;
+}
+
+function scrollToEndIfNeeded(wrapper) {
+  if (!wrapper || wrapper.dataset.userScrolled === "true") return;
+  wrapper.scrollTop = wrapper.scrollHeight;
+  wrapper.dispatchEvent(new Event("scroll"));
+}
+
 export function getHandler(type) {
   switch (type) {
     case "user":
@@ -87,6 +207,8 @@ export function _drawMessage(
 ) {
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", ...messageClasses);
+  injectMessageControls(messageDiv);
+  const skipScroll = messageClasses.includes("message-agent-response");
 
   if (heading) {
     const headingElement = document.createElement("h4");
@@ -112,7 +234,9 @@ export function _drawMessage(
 
     preElement.appendChild(spanElement);
     addCopyButtonToElement(preElement);
-    messageDiv.appendChild(preElement);
+
+    const wrapper = wrapInScrollable(preElement, skipScroll);
+    messageDiv.appendChild(wrapper);
 
     // Render LaTeX math within the span
     if (window.renderMathInElement && latex) {
@@ -238,6 +362,7 @@ export function drawMessageUser(
 ) {
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", "message-user");
+  injectMessageControls(messageDiv);
 
   const headingElement = document.createElement("h4");
   headingElement.textContent = "User message";
@@ -258,7 +383,8 @@ export function drawMessageUser(
     });
 
     addCopyButtonToElement(textDiv);
-    messageDiv.appendChild(textDiv);
+    const wrapper = wrapInScrollable(textDiv, false);
+    messageDiv.appendChild(wrapper);
   }
 
   // Handle attachments
@@ -353,7 +479,7 @@ export function drawMessageCodeExe(
   temp,
   kvps = null
 ) {
-  _drawMessage(
+  const div = _drawMessage(
     messageContainer,
     heading,
     content,
@@ -364,6 +490,7 @@ export function drawMessageCodeExe(
     [],
     false
   );
+  injectConsoleControls(div, content || "");
 }
 
 export function drawMessageBrowser(
@@ -542,11 +669,20 @@ function drawKvps(container, kvps, latex) {
         } else {
           const pre = document.createElement("pre");
           pre.classList.add("kvps-val");
-          //   if (row.classList.contains("msg-thoughts")) {
+
+          if (row.classList.contains("msg-thoughts")) {
+            pre.style.whiteSpace = "pre-wrap";
+            pre.style.wordBreak = "break-word";
+          } else {
+            pre.style.whiteSpace = "pre";
+            pre.style.overflowX = "auto";
+          }
+
           const span = document.createElement("span");
           span.innerHTML = convertHTML(value);
           pre.appendChild(span);
-          td.appendChild(pre);
+          const wrap = wrapInScrollable(pre, container.classList.contains("message-agent-response"));
+          td.appendChild(wrap);
           addCopyButtonToElement(row);
 
           // Add click handler

@@ -57,7 +57,7 @@
   --font-size-large: 1.2rem;
 
   /* Other variables */
-  --border-radius: 1.125rem;
+  --border-radius: 0.75rem;
   --transition-speed: 0.3s;
   --svg-filter: brightness(0) saturate(100%) var(--color-primary-filter);
   --color-primary-filter: invert(73%) sepia(17%) saturate(360%) hue-rotate(177deg) brightness(87%) contrast(85%);
@@ -563,15 +563,57 @@ pre {
 
 /* Message Styles */
 .message-container {
-  animation: fadeIn 0.5s;
-  -webkit-animation: fadeIn 0.5s;
+  animation: fadeIn 0.4s ease-out;
+  -webkit-animation: fadeIn 0.4s ease-out;
   margin-bottom: var(--spacing-sm);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .message {
   background-color: var(--color-message-bg);
   border-radius: var(--border-radius);
-  padding: 0.9rem var(--spacing-md) 0.7rem var(--spacing-md);
+  padding: 0.6rem var(--spacing-md);
+  position: relative;
+  font-size: var(--font-size-normal);
+  line-height: 1.4;
+}
+
+.message-controls {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  display: flex;
+  gap: 0.25rem;
+  z-index: 2;
+}
+
+.message-button {
+  font-size: 0.75rem;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+  padding: 0;
+  transition: opacity var(--transition-speed);
+}
+
+.console-controls .message-button {
+  font-size: 0.7rem;
+}
+
+.message-button:hover {
+  opacity: 1;
+}
+
+.message-collapsed .scrollable-content,
+.message-collapsed .msg-kvps,
+.message-collapsed .attachments-container {
+  display: none;
+}
+
+.message-expanded .scrollable-content {
+  max-height: 30rem;
 }
 
 .user-container {
@@ -668,7 +710,39 @@ pre {
 }
 
 .message-code-exe {
-  background-color: #4b3a69;
+  background-color: #1e1e1e;
+  color: #00ff00;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.light-mode .message-code-exe {
+  background-color: #f8f8f8;
+  color: #008000;
+}
+
+.message-code-exe .console-summary {
+  display: none;
+  white-space: pre;
+  overflow-x: auto;
+  margin-top: 0.3rem;
+}
+
+.message-code-exe.console-collapsed .console-summary {
+  display: block;
+}
+
+.message-code-exe.console-collapsed .scrollable-content,
+.message-code-exe.console-collapsed .msg-kvps,
+.message-code-exe.console-collapsed .attachments-container {
+  display: none;
+}
+
+.message-code-exe.console-scroll .scrollable-content {
+  max-height: 20rem;
+}
+
+.message-code-exe.console-expanded .scrollable-content {
+  max-height: none;
 }
 
 .message-browser {
@@ -705,6 +779,8 @@ pre {
   margin: 0.5rem 0 0.55rem 0;
   border-collapse: collapse;
   width: 100%;
+  display: block;
+  overflow-x: auto;
 }
 
 .msg-kvps th,
@@ -1526,7 +1602,38 @@ input:checked + .slider:before {
 
 .kvps-val {
   margin: 0.65rem 0 0.65rem 0.4rem;
-  white-space: pre-wrap;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.scrollable-content {
+  max-height: 15rem;
+  overflow-y: auto;
+  overflow-x: auto;
+  position: relative;
+}
+
+.scroll-indicator {
+  position: absolute;
+  right: 4px;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.scroll-indicator.top {
+  top: 2px;
+}
+
+.scroll-indicator.bottom {
+  bottom: 2px;
+}
+
+.scrollable-content.show-top .scroll-indicator.top,
+.scrollable-content.show-bottom .scroll-indicator.bottom {
+  opacity: 0.7;
 }
 
 .kvps-img {
@@ -1606,7 +1713,7 @@ input:checked + .slider:before {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(var(--spacing-sm));
+    transform: translateY(0.5rem);
   }
   to {
     opacity: 1;
@@ -1617,8 +1724,8 @@ input:checked + .slider:before {
 @-webkit-keyframes fadeIn { /* Safari and older Chrome */
   from {
     opacity: 0;
-    -webkit-transform: translateY(var(--spacing-sm));
-            transform: translateY(var(--spacing-sm));
+    -webkit-transform: translateY(0.5rem);
+            transform: translateY(0.5rem);
   }
   to {
     opacity: 1;
@@ -1681,6 +1788,7 @@ input:checked + .slider:before {
     flex-direction: column;
     border-collapse: separate;
     border-spacing: 0 0.5rem;
+    overflow-x: auto;
   }
 
   .msg-kvps tr {
@@ -1707,6 +1815,8 @@ input:checked + .slider:before {
 
   .kvps-val {
   margin: 0 0 0.4rem 0;
+  white-space: pre;
+  overflow-x: auto;
   }
 }
 
@@ -1909,6 +2019,10 @@ a:active {
   --color-border: var(--color-border-light);
   --color-input: var(--color-input-light);
   --color-input-focus: var(--color-input-focus-light);
+}
+
+.light-mode .message-container {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .light-mode .msg-kvps tr {
