@@ -1,23 +1,35 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim
+# Use the pre-built base image for A0
+# FROM agent-zero-base:local
+FROM frdel/agent-zero-base:latest
 
-# Set working directory in the container
-WORKDIR /app
+# Check if the argument is provided, else throw an error
+ARG BRANCH
+RUN if [ -z "$BRANCH" ]; then echo "ERROR: BRANCH is not set!" >&2; exit 1; fi
+ENV BRANCH=$BRANCH
 
-# Copy the requirements file into the container
-COPY requirements.txt .
+# Copy contents of the project to /a0
+COPY ./fs/ /
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# pre installation steps
+RUN bash /ins/pre_install.sh $BRANCH
 
-# Copy the rest of the application code
-COPY . .
+# install A0
+RUN bash /ins/install_A0.sh $BRANCH
 
-# Make port 8000 available to the world outside this container
-EXPOSE 8000
+# install additional software
+RUN bash /ins/install_additional.sh $BRANCH
 
-# Define environment variable
-ENV NAME World
+# cleanup repo and install A0 without caching, this speeds up builds
+ARG CACHE_DATE=none
+RUN echo "cache buster $CACHE_DATE" && bash /ins/install_A02.sh $BRANCH
 
-# Run the application when the container launches
-CMD ["python", "app.py"]
+# post installation steps
+RUN bash /ins/post_install.sh $BRANCH
+
+# Expose ports
+EXPOSE 22 80 9000-9009
+
+RUN chmod +x /exe/initialize.sh /exe/run_A0.sh /exe/run_searxng.sh /exe/run_tunnel_api.sh
+
+# initialize runtime and switch to supervisord
+CMD ["/exe/initialize.sh", "$BRANCH"]
