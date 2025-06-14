@@ -87,12 +87,12 @@ function injectConsoleControls(messageDiv, command, type) {
           
           console.log(`Message height: ${totalHeight}px`);
           
-          // Simple logic with buffer to prevent flashing: if total height > 295px, add scroll
-          if (totalHeight > 295) {
-            console.log('Case: >295px → Compact scroll');
+          // Simple logic with buffer to prevent flashing: if total height > 300px, add scroll
+          if (totalHeight > 300) {
+            console.log('Case: >300px → Compact scroll');
             resolve('compact');
           } else {
-            console.log('Case: ≤295px → Natural (no scroll)');
+            console.log('Case: ≤300px → Natural (no scroll)');
             resolve('natural');
           }
           

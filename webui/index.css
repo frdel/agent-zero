@@ -3648,6 +3648,10 @@ nav ul li a img {
 
 /* Color-matched scrollbars by message type - CORRECTED SELECTORS */
 /* Agent messages - blue scrollbars */
+.message-agent {
+  scrollbar-color: rgba(59, 130, 246, 0.8) transparent;
+}
+
 .message-agent::-webkit-scrollbar-thumb {
   background: rgba(59, 130, 246, 0.8) !important;
   border: 1px solid rgba(59, 130, 246, 0.5) !important;
@@ -3661,6 +3665,10 @@ nav ul li a img {
 }
 
 /* Tool messages - purple scrollbars */
+.message-tool {
+  scrollbar-color: rgba(168, 85, 247, 0.8) transparent;
+}
+
 .message-tool::-webkit-scrollbar-thumb {
   background: rgba(168, 85, 247, 0.8) !important;
   border: 1px solid rgba(168, 85, 247, 0.5) !important;
@@ -3674,6 +3682,10 @@ nav ul li a img {
 }
 
 /* Agent response messages - green scrollbars */
+.message-agent-response {
+  scrollbar-color: rgba(34, 197, 94, 0.8) transparent;
+}
+
 .message-agent-response::-webkit-scrollbar-thumb {
   background: rgba(34, 197, 94, 0.8) !important;
   border: 1px solid rgba(34, 197, 94, 0.5) !important;
@@ -3687,6 +3699,10 @@ nav ul li a img {
 }
 
 /* Code execution messages - yellow scrollbars */
+.message-code-exe {
+  scrollbar-color: rgba(251, 191, 36, 0.8) transparent;
+}
+
 .message-code-exe::-webkit-scrollbar-thumb {
   background: rgba(251, 191, 36, 0.8) !important;
   border: 1px solid rgba(251, 191, 36, 0.5) !important;
@@ -3700,6 +3716,10 @@ nav ul li a img {
 }
 
 /* Browser messages - purple variant */
+.message-browser {
+  scrollbar-color: rgba(147, 51, 234, 0.8) transparent;
+}
+
 .message-browser::-webkit-scrollbar-thumb {
   background: rgba(147, 51, 234, 0.8) !important;
   border: 1px solid rgba(147, 51, 234, 0.5) !important;
@@ -3713,6 +3733,10 @@ nav ul li a img {
 }
 
 /* Warning messages - orange scrollbars */
+.message-warning {
+  scrollbar-color: rgba(245, 158, 11, 0.8) transparent;
+}
+
 .message-warning::-webkit-scrollbar-thumb {
   background: rgba(245, 158, 11, 0.8) !important;
   border: 1px solid rgba(245, 158, 11, 0.5) !important;
@@ -3726,6 +3750,10 @@ nav ul li a img {
 }
 
 /* Error messages - red scrollbars */
+.message-error {
+  scrollbar-color: rgba(239, 68, 68, 0.8) transparent;
+}
+
 .message-error::-webkit-scrollbar-thumb {
   background: rgba(239, 68, 68, 0.8) !important;
   border: 1px solid rgba(239, 68, 68, 0.5) !important;
@@ -3739,6 +3767,9 @@ nav ul li a img {
 }
 
 /* Info messages - subtle gray scrollbars */
+.message-info {
+  scrollbar-color: rgba(107, 114, 128, 0.8) transparent;
+}
 .message-info::-webkit-scrollbar-thumb {
   background: rgba(107, 114, 128, 0.8) !important;
   border: 1px solid rgba(107, 114, 128, 0.5) !important;
@@ -3752,6 +3783,10 @@ nav ul li a img {
 }
 
 /* Default messages - subtle gray scrollbars */
+.message-default {
+  scrollbar-color: rgba(107, 114, 128, 0.8) transparent;
+}
+
 .message-default::-webkit-scrollbar-thumb {
   background: rgba(107, 114, 128, 0.8) !important;
   border: 1px solid rgba(107, 114, 128, 0.5) !important;
@@ -3765,6 +3800,9 @@ nav ul li a img {
 }
 
 /* User messages - neutral gray scrollbars */
+.message-user {
+  scrollbar-color: rgba(156, 163, 175, 0.8) transparent;
+}
 .message-user::-webkit-scrollbar-thumb {
   background: rgba(156, 163, 175, 0.8) !important;
   border: 1px solid rgba(156, 163, 175, 0.5) !important;
@@ -3778,9 +3816,17 @@ nav ul li a img {
 }
 
 /* Light mode adjustments for color-matched scrollbars */
+.light-mode .message-agent {
+  scrollbar-color: rgba(37, 99, 235, 0.7) transparent;
+}
+
 .light-mode .message-agent::-webkit-scrollbar-thumb {
   background: rgba(37, 99, 235, 0.7) !important;
   border: 1px solid rgba(37, 99, 235, 0.4) !important;
+}
+
+.light-mode .message-tool {
+  scrollbar-color: rgba(147, 51, 234, 0.7) transparent;
 }
 
 .light-mode .message-tool::-webkit-scrollbar-thumb {
@@ -3788,9 +3834,17 @@ nav ul li a img {
   border: 1px solid rgba(147, 51, 234, 0.4) !important;
 }
 
+.light-mode .message-agent-response {
+  scrollbar-color: rgba(22, 163, 74, 0.7) transparent;
+}
+
 .light-mode .message-agent-response::-webkit-scrollbar-thumb {
   background: rgba(22, 163, 74, 0.7) !important;
   border: 1px solid rgba(22, 163, 74, 0.4) !important;
+}
+
+.light-mode .message-code-exe {
+  scrollbar-color: rgba(217, 119, 6, 0.7) transparent;
 }
 
 .light-mode .message-code-exe::-webkit-scrollbar-thumb {
@@ -3798,9 +3852,17 @@ nav ul li a img {
   border: 1px solid rgba(217, 119, 6, 0.4) !important;
 }
 
+.light-mode .message-browser {
+  scrollbar-color: rgba(126, 34, 206, 0.7) transparent;
+}
+
 .light-mode .message-browser::-webkit-scrollbar-thumb {
   background: rgba(126, 34, 206, 0.7) !important;
   border: 1px solid rgba(126, 34, 206, 0.4) !important;
+}
+
+.light-mode .message-warning {
+  scrollbar-color: rgba(180, 83, 9, 0.7) transparent;
 }
 
 .light-mode .message-warning::-webkit-scrollbar-thumb {
@@ -3808,14 +3870,25 @@ nav ul li a img {
   border: 1px solid rgba(180, 83, 9, 0.4) !important;
 }
 
+.light-mode .message-error {
+  scrollbar-color: rgba(220, 38, 38, 0.7) transparent;
+}
+
 .light-mode .message-error::-webkit-scrollbar-thumb {
   background: rgba(220, 38, 38, 0.7) !important;
   border: 1px solid rgba(220, 38, 38, 0.4) !important;
 }
 
+.light-mode .message-info {
+  scrollbar-color: rgba(75, 85, 99, 0.7) transparent;
+}
 .light-mode .message-info::-webkit-scrollbar-thumb {
   background: rgba(75, 85, 99, 0.7) !important;
   border: 1px solid rgba(75, 85, 99, 0.4) !important;
+}
+
+.light-mode .message-default {
+  scrollbar-color: rgba(75, 85, 99, 0.7) transparent;
 }
 
 .light-mode .message-default::-webkit-scrollbar-thumb {
@@ -3823,6 +3896,9 @@ nav ul li a img {
   border: 1px solid rgba(75, 85, 99, 0.4) !important;
 }
 
+.light-mode .message-user {
+  scrollbar-color: rgba(107, 114, 128, 0.7) transparent;
+}
 .light-mode .message-user::-webkit-scrollbar-thumb {
   background: rgba(107, 114, 128, 0.7) !important;
   border: 1px solid rgba(107, 114, 128, 0.4) !important;
