@@ -82,17 +82,58 @@ function injectConsoleControls(messageDiv, command, type) {
     return new Promise((resolve) => {
       requestAnimationFrame(() => {
         try {
-          // Get total message height
+          // Ensure message is in natural state for accurate measurement
+          const originalMaxHeight = msg.style.maxHeight;
+          const originalOverflow = msg.style.overflow;
+          const originalOverflowY = msg.style.overflowY;
+          
+          // Temporarily remove height constraints for accurate measurement
+          msg.style.maxHeight = 'none';
+          msg.style.overflow = 'visible';
+          msg.style.overflowY = 'visible';
+          
+          // Also temporarily remove any compact/expanded classes for pure measurement
+          const wasCompact = msg.classList.contains('message-compact');
+          const wasExpanded = msg.classList.contains('message-expanded');
+          msg.classList.remove('message-compact', 'message-expanded');
+          
+          // Force reflow to get accurate height
+          msg.offsetHeight;
+          
+          // Get total message height including all content
           const totalHeight = msg.scrollHeight || 0;
           
-          console.log(`Message height: ${totalHeight}px`);
+          // Also check the content specifically for tool messages
+          let contentHeight = 0;
+          const scrollableContent = msg.querySelector('.scrollable-content');
+          const kvpsTable = msg.querySelector('.msg-kvps');
+          
+          if (scrollableContent) {
+            contentHeight = Math.max(contentHeight, scrollableContent.scrollHeight || 0);
+          }
+          if (kvpsTable) {
+            contentHeight = Math.max(contentHeight, kvpsTable.scrollHeight || 0);
+          }
+          
+          const finalHeight = Math.max(totalHeight, contentHeight);
+          
+          // Restore original state
+          msg.style.maxHeight = originalMaxHeight;
+          msg.style.overflow = originalOverflow;
+          msg.style.overflowY = originalOverflowY;
+          
+          // Restore classes if they were there
+          if (wasCompact) msg.classList.add('message-compact');
+          if (wasExpanded) msg.classList.add('message-expanded');
+          
+          console.log(`📏 Message height analysis: total=${totalHeight}px, content=${contentHeight}px, final=${finalHeight}px`);
           
           // Simple logic with buffer to prevent flashing: if total height > 300px, add scroll
-          if (totalHeight > 300) {
-            console.log('Case: >300px → Compact scroll');
+          if (finalHeight > 300) {
+            console.log('📏 Case: >300px → Compact scroll');
             resolve('compact');
           } else {
-            console.log('Case: ≤300px → Natural (no scroll)');
+            console.log('📏 Case: ≤300px → Natural (no scroll)');
             resolve('natural');
           }
           
@@ -194,15 +235,17 @@ function injectConsoleControls(messageDiv, command, type) {
         // Remove preview when showing content
         removeContentPreview(msg);
         
-        // Check user preferences
+        // Check user preferences - ALWAYS re-read from localStorage for real-time updates
         const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
         
         if (isFullHeight) {
           // User explicitly wants full height
           msg.classList.add("message-expanded");
         } else if (isFixedHeightGlobal) {
-          // Apply intelligent height management
+          // Apply intelligent height management - force re-evaluation
           try {
+            // Force a small delay to ensure DOM is stable, then re-measure
+            await new Promise(resolve => setTimeout(resolve, 10));
             const optimalState = await determineMessageState(msg);
             switch (optimalState) {
               case 'natural':
@@ -435,8 +478,10 @@ function injectConsoleControls(messageDiv, command, type) {
   updateButtonState(heightBtn, isFullHeight, type, 'height');
   updateButtonState(copyBtn, false, type, 'copy');
 
-  // Initialize button states and apply to messages
-  updateAllMessagesOfType();
+  // Initialize button states and apply to messages - delay to ensure DOM is ready
+  setTimeout(() => {
+    updateAllMessagesOfType();
+  }, 100);
 }
 
 // Create modern button with proper SVG icons
@@ -521,6 +566,126 @@ function updateButtonState(button, isActive, type, buttonType) {
 
 // Make updateButtonState globally available
 window.updateButtonState = updateButtonState;
+
+// Function to re-evaluate message states after new messages are added
+window.reevaluateMessageStates = (delay = 200) => {
+  console.log('🔄 Re-evaluating message states after new content');
+  setTimeout(() => {
+    // Get all messages that might need state updates
+    const allMessages = document.querySelectorAll('.message');
+    
+    allMessages.forEach(async (msg) => {
+      // Skip if message is already collapsed (hidden)
+      if (msg.classList.contains('message-collapsed')) return;
+      
+      // Check if this message has controls (meaning it participates in our system)
+      const controls = msg.querySelector('.message-controls');
+      if (!controls) return;
+      
+      // Determine message type from classes
+      let messageType = 'default';
+      if (msg.classList.contains('message-agent')) messageType = 'agent';
+      else if (msg.classList.contains('message-tool')) messageType = 'tool';
+      else if (msg.classList.contains('message-code-exe')) messageType = 'code_exe';
+      else if (msg.classList.contains('message-browser')) messageType = 'browser';
+      else if (msg.classList.contains('message-info')) messageType = 'info';
+      else if (msg.classList.contains('message-warning')) messageType = 'warning';
+      else if (msg.classList.contains('message-error')) messageType = 'error';
+      else if (msg.classList.contains('message-user')) messageType = 'user';
+      else if (msg.classList.contains('message-agent-response')) messageType = 'response';
+      
+      // Get current preferences
+      const isFullHeight = localStorage.getItem(`msgFullHeight_${messageType}`) === 'true';
+      const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+      
+      // Only re-evaluate if not manually expanded and fixed height is on
+      if (!isFullHeight && isFixedHeightGlobal) {
+        // Remove current state classes
+        msg.classList.remove('message-compact', 'message-expanded');
+        
+        // Re-evaluate after a short delay to ensure content is stable
+        setTimeout(async () => {
+          try {
+            const optimalState = await determineMessageState(msg);
+            if (optimalState === 'compact') {
+              msg.classList.add('message-compact');
+              console.log(`📏 Applied compact to ${messageType} message after re-evaluation`);
+            }
+          } catch (error) {
+            console.warn('Error in re-evaluation:', error);
+          }
+        }, 50);
+      }
+    });
+  }, delay);
+};
+
+// Global function to trigger re-evaluation of all messages when fixed height setting changes
+window.updateAllMessageStates = () => {
+  console.log('🔄 Updating all message states for fixed height toggle');
+  
+  // Get all message types that have controls
+  const messageTypes = ['agent', 'response', 'tool', 'code_exe', 'browser', 'info', 'warning', 'error', 'user', 'default'];
+  
+  // Trigger update for each message type
+  messageTypes.forEach(async (type) => {
+    const messageSelector = getMessageSelectorForType(type);
+    const messagesOfType = document.querySelectorAll(messageSelector);
+    
+    console.log(`📋 Found ${messagesOfType.length} messages of type ${type}`);
+    
+    if (messagesOfType.length > 0) {
+      // Re-trigger the update for this message type
+      const { isHidden, isFullHeight } = {
+        isHidden: localStorage.getItem(`msgHidden_${type}`) === 'true',
+        isFullHeight: localStorage.getItem(`msgFullHeight_${type}`) === 'true'
+      };
+      
+      for (const msg of messagesOfType) {
+        // Remove all state classes
+        msg.classList.remove(
+          "message-collapsed", "message-compact", "message-expanded",
+          "message-scroll", "message-smart-scroll", "message-upper-overflow", "message-auto"
+        );
+        
+        // Apply current state based on fresh localStorage read
+        if (isHidden) {
+          msg.classList.add("message-collapsed");
+        } else {
+          const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+          console.log(`🔧 Fixed height global setting: ${isFixedHeightGlobal} for ${type}`);
+          
+          if (isFullHeight) {
+            msg.classList.add("message-expanded");
+            console.log(`📏 Applied expanded to ${type} message`);
+          } else if (isFixedHeightGlobal) {
+            // Re-evaluate message state - use a short delay to ensure DOM is stable
+            setTimeout(async () => {
+              try {
+                // Force reflow before measuring
+                msg.offsetHeight;
+                const optimalState = await determineMessageState(msg);
+                msg.classList.remove("message-compact", "message-expanded");
+                if (optimalState === 'compact') {
+                  msg.classList.add("message-compact");
+                  console.log(`📏 Applied compact to ${type} message (${msg.scrollHeight}px)`);
+                } else {
+                  console.log(`📏 Applied natural to ${type} message (${msg.scrollHeight}px)`);
+                }
+              } catch (error) {
+                console.warn('Error re-evaluating message state:', error);
+                msg.classList.add("message-compact");
+              }
+            }, 50); // Increased delay for better stability
+          } else {
+            msg.classList.add("message-expanded");
+            console.log(`📏 Applied expanded (global off) to ${type} message`);
+          }
+        }
+      }
+    }
+  });
+};
 
 // Helper function to get CSS selector for message type
 function getMessageSelectorForType(type) {
@@ -755,6 +920,24 @@ export function drawMessageAgent(
     false  // addControls = false to prevent basic buttons
   );
   injectConsoleControls(div, content || "", 'agent');
+  
+  // Re-evaluate this specific message after it's fully rendered
+  setTimeout(() => {
+    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+    const isFullHeight = localStorage.getItem('msgFullHeight_agent') === 'true';
+    
+    if (isFixedHeightGlobal && !isFullHeight && !div.classList.contains('message-collapsed')) {
+      determineMessageState(div).then(optimalState => {
+        if (optimalState === 'compact') {
+          div.classList.remove('message-expanded');
+          div.classList.add('message-compact');
+          console.log('📏 Applied compact to agent message after creation');
+        }
+      }).catch(error => {
+        console.warn('Error evaluating agent message state:', error);
+      });
+    }
+  }, 150);
 }
 
 export function drawMessageResponse(
@@ -781,6 +964,24 @@ export function drawMessageResponse(
   
   // Add proper controls for agent response messages
   injectConsoleControls(messageDiv, content || "", 'response');
+  
+  // Re-evaluate this specific message after it's fully rendered
+  setTimeout(() => {
+    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+    const isFullHeight = localStorage.getItem('msgFullHeight_response') === 'true';
+    
+    if (isFixedHeightGlobal && !isFullHeight && !messageDiv.classList.contains('message-collapsed')) {
+      determineMessageState(messageDiv).then(optimalState => {
+        if (optimalState === 'compact') {
+          messageDiv.classList.remove('message-expanded');
+          messageDiv.classList.add('message-compact');
+          console.log('📏 Applied compact to response message after creation');
+        }
+      }).catch(error => {
+        console.warn('Error evaluating response message state:', error);
+      });
+    }
+  }, 150);
   
   return messageDiv;
 }
@@ -927,6 +1128,24 @@ export function drawMessageTool(
     false  // addControls = false to prevent basic buttons
   );
   injectConsoleControls(div, content || "", 'tool');
+  
+  // Re-evaluate this specific message after it's fully rendered
+  setTimeout(() => {
+    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+    const isFullHeight = localStorage.getItem('msgFullHeight_tool') === 'true';
+    
+    if (isFixedHeightGlobal && !isFullHeight && !div.classList.contains('message-collapsed')) {
+      determineMessageState(div).then(optimalState => {
+        if (optimalState === 'compact') {
+          div.classList.remove('message-expanded');
+          div.classList.add('message-compact');
+          console.log('📏 Applied compact to tool message after creation');
+        }
+      }).catch(error => {
+        console.warn('Error evaluating tool message state:', error);
+      });
+    }
+  }, 150);
 }
 
 export function drawMessageCodeExe(

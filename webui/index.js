@@ -837,35 +837,25 @@ window.toggleFixedHeight = function (isFixedHeight) {
     // Store the preference
     localStorage.setItem('fixedHeight', isFixedHeight);
     
-    // Apply the global setting immediately to all existing messages
+    // Apply the global setting immediately to all existing messages using the new unified system
     if (isFixedHeight) {
-        // Fixed height mode: all messages get 300px scroll unless individually overridden
+        // Fixed height mode: remove long-form class
         document.body.classList.remove('long-form');
-        applyGlobalMessageState('scroll');
     } else {
-        // Long form mode: all messages get unlimited height
+        // Long form mode: add long-form class for unlimited height
         document.body.classList.add('long-form');
-        applyGlobalMessageState('expanded');
+    }
+    
+    // Trigger re-evaluation of all message states using the new system
+    if (window.updateAllMessageStates) {
+        window.updateAllMessageStates();
     }
     
     // Update all button states to reflect the new global preference
     updateAllButtonStates();
 };
 
-// Apply global message state based on preference
-function applyGlobalMessageState(state) {
-    const allMessages = document.querySelectorAll('.message');
-    allMessages.forEach(msg => {
-        // Only apply global state if message isn't individually hidden
-        const messageClasses = Array.from(msg.classList);
-        const isCollapsed = messageClasses.includes('message-collapsed');
-        
-        if (!isCollapsed) {
-            msg.classList.remove('message-scroll', 'message-expanded');
-            msg.classList.add(`message-${state}`);
-        }
-    });
-}
+// Legacy function removed - now using unified message state system in messages.js
 
 // Update all button states globally
 function updateAllButtonStates() {

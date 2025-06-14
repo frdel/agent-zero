@@ -3647,172 +3647,172 @@ nav ul li a img {
    ======================================== */
 
 /* Color-matched scrollbars by message type - CORRECTED SELECTORS */
-/* Agent messages - blue scrollbars */
+/* Agent messages - muted blue scrollbars */
 .message-agent {
-  scrollbar-color: rgba(59, 130, 246, 0.8) transparent;
+  scrollbar-color: rgba(59, 130, 246, 0.4) transparent;
 }
 
 .message-agent::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.8) !important;
-  border: 1px solid rgba(59, 130, 246, 0.5) !important;
-  box-shadow: 0 0 4px rgba(59, 130, 246, 0.4) !important;
+  background: rgba(59, 130, 246, 0.4) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  box-shadow: 0 0 3px rgba(59, 130, 246, 0.2) !important;
 }
 
 .message-agent::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 1.0) !important;
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(59, 130, 246, 0.6) !important;
+  box-shadow: 0 0 5px rgba(59, 130, 246, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Tool messages - purple scrollbars */
+/* Tool messages - muted purple scrollbars */
 .message-tool {
-  scrollbar-color: rgba(168, 85, 247, 0.8) transparent;
+  scrollbar-color: rgba(168, 85, 247, 0.4) transparent;
 }
 
 .message-tool::-webkit-scrollbar-thumb {
-  background: rgba(168, 85, 247, 0.8) !important;
-  border: 1px solid rgba(168, 85, 247, 0.5) !important;
-  box-shadow: 0 0 4px rgba(168, 85, 247, 0.4) !important;
+  background: rgba(168, 85, 247, 0.4) !important;
+  border: 1px solid rgba(168, 85, 247, 0.2) !important;
+  box-shadow: 0 0 3px rgba(168, 85, 247, 0.2) !important;
 }
 
 .message-tool::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 1.0) !important;
-  box-shadow: 0 0 8px rgba(168, 85, 247, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(168, 85, 247, 0.6) !important;
+  box-shadow: 0 0 5px rgba(168, 85, 247, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Agent response messages - green scrollbars */
+/* Agent response messages - muted green scrollbars */
 .message-agent-response {
-  scrollbar-color: rgba(34, 197, 94, 0.8) transparent;
+  scrollbar-color: rgba(34, 197, 94, 0.4) transparent;
 }
 
 .message-agent-response::-webkit-scrollbar-thumb {
-  background: rgba(34, 197, 94, 0.8) !important;
-  border: 1px solid rgba(34, 197, 94, 0.5) !important;
-  box-shadow: 0 0 4px rgba(34, 197, 94, 0.4) !important;
+  background: rgba(34, 197, 94, 0.4) !important;
+  border: 1px solid rgba(34, 197, 94, 0.2) !important;
+  box-shadow: 0 0 3px rgba(34, 197, 94, 0.2) !important;
 }
 
 .message-agent-response::-webkit-scrollbar-thumb:hover {
-  background: rgba(34, 197, 94, 1.0) !important;
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(34, 197, 94, 0.6) !important;
+  box-shadow: 0 0 5px rgba(34, 197, 94, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Code execution messages - yellow scrollbars */
+/* Code execution messages - muted yellow scrollbars */
 .message-code-exe {
-  scrollbar-color: rgba(251, 191, 36, 0.8) transparent;
+  scrollbar-color: rgba(251, 191, 36, 0.4) transparent;
 }
 
 .message-code-exe::-webkit-scrollbar-thumb {
-  background: rgba(251, 191, 36, 0.8) !important;
-  border: 1px solid rgba(251, 191, 36, 0.5) !important;
-  box-shadow: 0 0 4px rgba(251, 191, 36, 0.4) !important;
+  background: rgba(251, 191, 36, 0.4) !important;
+  border: 1px solid rgba(251, 191, 36, 0.2) !important;
+  box-shadow: 0 0 3px rgba(251, 191, 36, 0.2) !important;
 }
 
 .message-code-exe::-webkit-scrollbar-thumb:hover {
-  background: rgba(251, 191, 36, 1.0) !important;
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(251, 191, 36, 0.6) !important;
+  box-shadow: 0 0 5px rgba(251, 191, 36, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Browser messages - purple variant */
+/* Browser messages - muted purple variant */
 .message-browser {
-  scrollbar-color: rgba(147, 51, 234, 0.8) transparent;
+  scrollbar-color: rgba(147, 51, 234, 0.4) transparent;
 }
 
 .message-browser::-webkit-scrollbar-thumb {
-  background: rgba(147, 51, 234, 0.8) !important;
-  border: 1px solid rgba(147, 51, 234, 0.5) !important;
-  box-shadow: 0 0 4px rgba(147, 51, 234, 0.4) !important;
+  background: rgba(147, 51, 234, 0.4) !important;
+  border: 1px solid rgba(147, 51, 234, 0.2) !important;
+  box-shadow: 0 0 3px rgba(147, 51, 234, 0.2) !important;
 }
 
 .message-browser::-webkit-scrollbar-thumb:hover {
-  background: rgba(147, 51, 234, 1.0) !important;
-  box-shadow: 0 0 8px rgba(147, 51, 234, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(147, 51, 234, 0.6) !important;
+  box-shadow: 0 0 5px rgba(147, 51, 234, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Warning messages - orange scrollbars */
+/* Warning messages - muted orange scrollbars */
 .message-warning {
-  scrollbar-color: rgba(245, 158, 11, 0.8) transparent;
+  scrollbar-color: rgba(245, 158, 11, 0.4) transparent;
 }
 
 .message-warning::-webkit-scrollbar-thumb {
-  background: rgba(245, 158, 11, 0.8) !important;
-  border: 1px solid rgba(245, 158, 11, 0.5) !important;
-  box-shadow: 0 0 4px rgba(245, 158, 11, 0.4) !important;
+  background: rgba(245, 158, 11, 0.4) !important;
+  border: 1px solid rgba(245, 158, 11, 0.2) !important;
+  box-shadow: 0 0 3px rgba(245, 158, 11, 0.2) !important;
 }
 
 .message-warning::-webkit-scrollbar-thumb:hover {
-  background: rgba(245, 158, 11, 1.0) !important;
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(245, 158, 11, 0.6) !important;
+  box-shadow: 0 0 5px rgba(245, 158, 11, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Error messages - red scrollbars */
+/* Error messages - muted red scrollbars */
 .message-error {
-  scrollbar-color: rgba(239, 68, 68, 0.8) transparent;
+  scrollbar-color: rgba(239, 68, 68, 0.4) transparent;
 }
 
 .message-error::-webkit-scrollbar-thumb {
-  background: rgba(239, 68, 68, 0.8) !important;
-  border: 1px solid rgba(239, 68, 68, 0.5) !important;
-  box-shadow: 0 0 4px rgba(239, 68, 68, 0.4) !important;
+  background: rgba(239, 68, 68, 0.4) !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+  box-shadow: 0 0 3px rgba(239, 68, 68, 0.2) !important;
 }
 
 .message-error::-webkit-scrollbar-thumb:hover {
-  background: rgba(239, 68, 68, 1.0) !important;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(239, 68, 68, 0.6) !important;
+  box-shadow: 0 0 5px rgba(239, 68, 68, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Info messages - subtle gray scrollbars */
+/* Info messages - muted gray scrollbars */
 .message-info {
-  scrollbar-color: rgba(107, 114, 128, 0.8) transparent;
+  scrollbar-color: rgba(107, 114, 128, 0.4) transparent;
 }
 .message-info::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.8) !important;
-  border: 1px solid rgba(107, 114, 128, 0.5) !important;
-  box-shadow: 0 0 4px rgba(107, 114, 128, 0.4) !important;
+  background: rgba(107, 114, 128, 0.4) !important;
+  border: 1px solid rgba(107, 114, 128, 0.2) !important;
+  box-shadow: 0 0 3px rgba(107, 114, 128, 0.2) !important;
 }
 
 .message-info::-webkit-scrollbar-thumb:hover {
-  background: rgba(107, 114, 128, 1.0) !important;
-  box-shadow: 0 0 8px rgba(107, 114, 128, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(107, 114, 128, 0.6) !important;
+  box-shadow: 0 0 5px rgba(107, 114, 128, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Default messages - subtle gray scrollbars */
+/* Default messages - muted gray scrollbars */
 .message-default {
-  scrollbar-color: rgba(107, 114, 128, 0.8) transparent;
+  scrollbar-color: rgba(107, 114, 128, 0.4) transparent;
 }
 
 .message-default::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.8) !important;
-  border: 1px solid rgba(107, 114, 128, 0.5) !important;
-  box-shadow: 0 0 4px rgba(107, 114, 128, 0.4) !important;
+  background: rgba(107, 114, 128, 0.4) !important;
+  border: 1px solid rgba(107, 114, 128, 0.2) !important;
+  box-shadow: 0 0 3px rgba(107, 114, 128, 0.2) !important;
 }
 
 .message-default::-webkit-scrollbar-thumb:hover {
-  background: rgba(107, 114, 128, 1.0) !important;
-  box-shadow: 0 0 8px rgba(107, 114, 128, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(107, 114, 128, 0.6) !important;
+  box-shadow: 0 0 5px rgba(107, 114, 128, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* User messages - neutral gray scrollbars */
+/* User messages - muted gray scrollbars */
 .message-user {
-  scrollbar-color: rgba(156, 163, 175, 0.8) transparent;
+  scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
 }
 .message-user::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.8) !important;
-  border: 1px solid rgba(156, 163, 175, 0.5) !important;
-  box-shadow: 0 0 4px rgba(156, 163, 175, 0.4) !important;
+  background: rgba(156, 163, 175, 0.4) !important;
+  border: 1px solid rgba(156, 163, 175, 0.2) !important;
+  box-shadow: 0 0 3px rgba(156, 163, 175, 0.2) !important;
 }
 
 .message-user::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 1.0) !important;
-  box-shadow: 0 0 8px rgba(156, 163, 175, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(156, 163, 175, 0.6) !important;
+  box-shadow: 0 0 5px rgba(156, 163, 175, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
 /* Light mode adjustments for color-matched scrollbars */
@@ -3909,142 +3909,142 @@ nav ul li a img {
    These rules target .scrollable-content inside messages
    ======================================== */
 
-/* Agent messages - blue scrollable content */
+/* Agent messages - muted blue scrollable content */
 .message-agent .scrollable-content::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.8) !important;
-  border: 1px solid rgba(59, 130, 246, 0.5) !important;
-  box-shadow: 0 0 4px rgba(59, 130, 246, 0.4) !important;
+  background: rgba(59, 130, 246, 0.4) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  box-shadow: 0 0 3px rgba(59, 130, 246, 0.2) !important;
   border-radius: 4px !important;
 }
 
 .message-agent .scrollable-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 1.0) !important;
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(59, 130, 246, 0.6) !important;
+  box-shadow: 0 0 5px rgba(59, 130, 246, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Tool messages - purple scrollable content */
+/* Tool messages - muted purple scrollable content */
 .message-tool .scrollable-content::-webkit-scrollbar-thumb {
-  background: rgba(168, 85, 247, 0.8) !important;
-  border: 1px solid rgba(168, 85, 247, 0.5) !important;
-  box-shadow: 0 0 4px rgba(168, 85, 247, 0.4) !important;
+  background: rgba(168, 85, 247, 0.4) !important;
+  border: 1px solid rgba(168, 85, 247, 0.2) !important;
+  box-shadow: 0 0 3px rgba(168, 85, 247, 0.2) !important;
   border-radius: 4px !important;
 }
 
 .message-tool .scrollable-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 1.0) !important;
-  box-shadow: 0 0 8px rgba(168, 85, 247, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(168, 85, 247, 0.6) !important;
+  box-shadow: 0 0 5px rgba(168, 85, 247, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Agent response messages - green scrollable content */
+/* Agent response messages - muted green scrollable content */
 .message-agent-response .scrollable-content::-webkit-scrollbar-thumb {
-  background: rgba(34, 197, 94, 0.8) !important;
-  border: 1px solid rgba(34, 197, 94, 0.5) !important;
-  box-shadow: 0 0 4px rgba(34, 197, 94, 0.4) !important;
+  background: rgba(34, 197, 94, 0.4) !important;
+  border: 1px solid rgba(34, 197, 94, 0.2) !important;
+  box-shadow: 0 0 3px rgba(34, 197, 94, 0.2) !important;
   border-radius: 4px !important;
 }
 
 .message-agent-response .scrollable-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(34, 197, 94, 1.0) !important;
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(34, 197, 94, 0.6) !important;
+  box-shadow: 0 0 5px rgba(34, 197, 94, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Code execution messages - yellow scrollable content */
+/* Code execution messages - muted yellow scrollable content */
 .message-code-exe .scrollable-content::-webkit-scrollbar-thumb {
-  background: rgba(251, 191, 36, 0.8) !important;
-  border: 1px solid rgba(251, 191, 36, 0.5) !important;
-  box-shadow: 0 0 4px rgba(251, 191, 36, 0.4) !important;
+  background: rgba(251, 191, 36, 0.4) !important;
+  border: 1px solid rgba(251, 191, 36, 0.2) !important;
+  box-shadow: 0 0 3px rgba(251, 191, 36, 0.2) !important;
   border-radius: 4px !important;
 }
 
 .message-code-exe .scrollable-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(251, 191, 36, 1.0) !important;
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(251, 191, 36, 0.6) !important;
+  box-shadow: 0 0 5px rgba(251, 191, 36, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Browser messages - purple variant scrollable content */
+/* Browser messages - muted purple variant scrollable content */
 .message-browser .scrollable-content::-webkit-scrollbar-thumb {
-  background: rgba(147, 51, 234, 0.8) !important;
-  border: 1px solid rgba(147, 51, 234, 0.5) !important;
-  box-shadow: 0 0 4px rgba(147, 51, 234, 0.4) !important;
+  background: rgba(147, 51, 234, 0.4) !important;
+  border: 1px solid rgba(147, 51, 234, 0.2) !important;
+  box-shadow: 0 0 3px rgba(147, 51, 234, 0.2) !important;
   border-radius: 4px !important;
 }
 
 .message-browser .scrollable-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(147, 51, 234, 1.0) !important;
-  box-shadow: 0 0 8px rgba(147, 51, 234, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(147, 51, 234, 0.6) !important;
+  box-shadow: 0 0 5px rgba(147, 51, 234, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Warning messages - orange scrollable content */
+/* Warning messages - muted orange scrollable content */
 .message-warning .scrollable-content::-webkit-scrollbar-thumb {
-  background: rgba(245, 158, 11, 0.8) !important;
-  border: 1px solid rgba(245, 158, 11, 0.5) !important;
-  box-shadow: 0 0 4px rgba(245, 158, 11, 0.4) !important;
+  background: rgba(245, 158, 11, 0.4) !important;
+  border: 1px solid rgba(245, 158, 11, 0.2) !important;
+  box-shadow: 0 0 3px rgba(245, 158, 11, 0.2) !important;
   border-radius: 4px !important;
 }
 
 .message-warning .scrollable-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(245, 158, 11, 1.0) !important;
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(245, 158, 11, 0.6) !important;
+  box-shadow: 0 0 5px rgba(245, 158, 11, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Error messages - red scrollable content */
+/* Error messages - muted red scrollable content */
 .message-error .scrollable-content::-webkit-scrollbar-thumb {
-  background: rgba(239, 68, 68, 0.8) !important;
-  border: 1px solid rgba(239, 68, 68, 0.5) !important;
-  box-shadow: 0 0 4px rgba(239, 68, 68, 0.4) !important;
+  background: rgba(239, 68, 68, 0.4) !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+  box-shadow: 0 0 3px rgba(239, 68, 68, 0.2) !important;
   border-radius: 4px !important;
 }
 
 .message-error .scrollable-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(239, 68, 68, 1.0) !important;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(239, 68, 68, 0.6) !important;
+  box-shadow: 0 0 5px rgba(239, 68, 68, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Info messages - subtle gray scrollable content */
+/* Info messages - muted gray scrollable content */
 .message-info .scrollable-content::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.8) !important;
-  border: 1px solid rgba(107, 114, 128, 0.5) !important;
-  box-shadow: 0 0 4px rgba(107, 114, 128, 0.4) !important;
+  background: rgba(107, 114, 128, 0.4) !important;
+  border: 1px solid rgba(107, 114, 128, 0.2) !important;
+  box-shadow: 0 0 3px rgba(107, 114, 128, 0.2) !important;
   border-radius: 4px !important;
 }
 
 .message-info .scrollable-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(107, 114, 128, 1.0) !important;
-  box-shadow: 0 0 8px rgba(107, 114, 128, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(107, 114, 128, 0.6) !important;
+  box-shadow: 0 0 5px rgba(107, 114, 128, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* Default messages - subtle gray scrollable content */
+/* Default messages - muted gray scrollable content */
 .message-default .scrollable-content::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.8) !important;
-  border: 1px solid rgba(107, 114, 128, 0.5) !important;
-  box-shadow: 0 0 4px rgba(107, 114, 128, 0.4) !important;
+  background: rgba(107, 114, 128, 0.4) !important;
+  border: 1px solid rgba(107, 114, 128, 0.2) !important;
+  box-shadow: 0 0 3px rgba(107, 114, 128, 0.2) !important;
   border-radius: 4px !important;
 }
 
 .message-default .scrollable-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(107, 114, 128, 1.0) !important;
-  box-shadow: 0 0 8px rgba(107, 114, 128, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(107, 114, 128, 0.6) !important;
+  box-shadow: 0 0 5px rgba(107, 114, 128, 0.3) !important;
+  transform: scale(1.03) !important;
 }
 
-/* User messages - gray scrollable content */
+/* User messages - muted gray scrollable content */
 .message-user .scrollable-content::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.8) !important;
-  border: 1px solid rgba(156, 163, 175, 0.5) !important;
-  box-shadow: 0 0 4px rgba(156, 163, 175, 0.4) !important;
+  background: rgba(156, 163, 175, 0.4) !important;
+  border: 1px solid rgba(156, 163, 175, 0.2) !important;
+  box-shadow: 0 0 3px rgba(156, 163, 175, 0.2) !important;
   border-radius: 4px !important;
 }
 
 .message-user .scrollable-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 1.0) !important;
-  box-shadow: 0 0 8px rgba(156, 163, 175, 0.6) !important;
-  transform: scale(1.05) !important;
+  background: rgba(156, 163, 175, 0.6) !important;
+  box-shadow: 0 0 5px rgba(156, 163, 175, 0.3) !important;
+  transform: scale(1.03) !important;
 }
