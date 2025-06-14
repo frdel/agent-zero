@@ -1,0 +1,260 @@
+/* webui/css/themes/_light.css */
+
+:root {
+  
+  --color-background-light: #dbdbdb;
+  --color-text-light: #333333;
+  --color-primary-light: #384653;
+  --color-secondary-light: #e8eaf6;
+  --color-accent-light: #b00020;
+  --color-message-bg-light: #ffffff;
+  --color-message-text-light: #333333;
+  --color-panel-light: #f0f0f0;
+  --color-border-light: #e0e0e0c7;
+  --color-input-light: #e4e4e4;
+  --color-input-focus-light: #dadada;
+  --time-date-bg-light: rgba(240, 240, 240, 0.75); /* Derived from --color-panel-light #f0f0f0 */
+  --time-date-border-light: rgba(240, 240, 240, 0.75); /* Matches background */
+}
+
+
+.light-mode {
+  --color-background: var(--color-background-light);
+  --color-text: var(--color-text-light);
+  --color-primary: var(--color-primary-light);
+  --color-secondary: var(--color-secondary-light);
+  --color-accent: var(--color-accent-light);
+  --color-message-bg: var(--color-message-bg-light);
+  --color-message-text: var(--color-message-text-light);
+  --color-panel: var(--color-panel-light);
+  --color-border: var(--color-border-light);
+  --color-input: var(--color-input-light);
+  --color-input-focus: var(--color-input-focus-light);
+  --time-date-bg: var(--time-date-bg-light);
+  --time-date-border: var(--time-date-border-light);
+}
+
+.light-mode .chat-list-button:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.light-mode .chat-name:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.light-mode .msg-kvps tr {
+  border-bottom: 1px solid rgb(192 192 192 / 50%)
+}
+
+.light-mode .message-default {
+  background-color: #f3f3f3;
+  color: #1a242f;
+}
+
+.light-mode .message-agent {
+  background-color: #f3f3f3;
+  color: #356ca3;
+}
+
+.light-mode .message-agent-response {
+  background-color: #f3f3f3;
+  color: #188216;
+}
+
+.light-mode .message-agent-delegation {
+  background-color: #f3f3f3;
+  color: #12685e;
+}
+
+.light-mode .message-tool {
+  background-color: #f3f3f3;
+  color: #1c3c88;
+}
+
+.light-mode .message-code-exe {
+  background-color: #f3f3f3;
+  color: #6c43b0;
+}
+
+.light-mode .message-browser {
+  background-color: #ffffff;
+  color: #6c43b0;
+}
+
+.light-mode .message-info {
+  background-color: #f3f3f3;
+  color: #3f3f3f;
+}
+
+.light-mode .message-util {
+  background-color: #f3f3f3;
+  color: #5b5540;
+}
+
+.light-mode .message-warning {
+  background-color: #f3f3f3;
+  color: #8f4800;
+}
+
+.light-mode .message-error {
+  background-color: #f3f3f3;
+  color: #8f1010;
+}
+
+.light-mode .message-user {
+  background-color: #f3f3f3;
+  color: #4e4e4e;
+}
+
+.light-mode .connected {
+  color: #4caf50;
+}
+
+.light-mode .disconnected {
+  color: #f44336;
+}
+
+.light-mode #left-panel {
+  box-shadow: 1px 0 25px rgba(0, 0, 0, 0.05);
+}
+
+.light-mode .config-button {
+  background-color: var(--color-background);
+  color: #333333;
+}
+
+.light-mode .config-button:hover {
+  background-color: #d6dae8;
+}
+
+.light-mode .config-button:active {
+  background-color: #bdc0cb;
+}
+
+.light-mode .edit-button {
+  border-color: var(--color-primary-light);
+  color: var(--color-primary-light);
+}
+
+.light-mode .edit-button:hover {
+  background-color: #e4e7f0;
+}
+
+.light-mode .edit-button:active {
+  background-color: #979fb9;
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.light-mode #progress-bar-i {
+  color: var(--color-border-dark);
+  opacity: 0.5;
+}
+
+.light-mode .slider {
+  background-color: #f1f1f1;
+  border: 1px solid #dddddd;
+}
+
+.light-mode .slider:before {
+  background-color: #838383;
+}
+
+.light-mode input:checked + .slider {
+  background-color: #e6e6e6;
+}
+
+.light-mode #logo-container img {
+  -webkit-filter: invert(100%) grayscale(100%);
+          filter: invert(100%) grayscale(100%);
+}
+
+.light-mode .extension {
+  background: var(--color-primary);
+  color: var(--color-background);
+  opacity: 0.7;
+}
+
+.light-mode .dragdrop-overlay {
+    background: rgba(255, 255, 255, 0.92);
+}
+
+.light-mode .dragdrop-icon {
+    filter: none;
+}
+
+.light-mode .tab.active {
+    color: var(--highlight-pink); 
+}
+
+.light-mode .tab.active::after {
+    background-color: var(--highlight-pink); 
+}
+
+.light-mode .tab.active { 
+  box-shadow:
+    0 -4px 8px -2px var(--color-border),
+    4px 0 8px -2px var(--color-border),
+    -4px 0 8px -2px var(--color-border);
+}
+
+.light-mode .tab:not(.active) {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.light-mode .empty-list-message {
+  color: var(--color-secondary-light);
+}
+
+
+.light-mode ::-webkit-scrollbar-track {
+  background: rgba(200, 200, 200, 0.3);
+}
+
+.light-mode ::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+}
+
+.light-mode ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border);
+}
+
+.light-mode ::-webkit-scrollbar-thumb:active {
+  background-color: var(--color-border);
+}
+
+.light-mode * {
+  scrollbar-color: var(--color-border) rgba(200, 200, 200, 0.3);
+}
+
+.light-mode .chat-list-button.font-bold {
+    background-color: rgba(0, 0, 0, 0.02); 
+}
+
+.light-mode .chat-list-button.font-bold::before {
+    background-color: var(--color-border);
+}
+
+
+.light-mode .scheduler-status-idle {
+    background-color: rgba(42, 157, 143, 0.1);
+    color: #1a6f65;
+}
+
+.light-mode .scheduler-status-running {
+    background-color: rgba(67, 97, 238, 0.1);
+    color: #2540b3;
+}
+
+.light-mode .scheduler-status-disabled {
+    background-color: rgba(108, 117, 125, 0.1);
+    color: #495057;
+}
+
+.light-mode .scheduler-status-error {
+    background-color: rgba(230, 57, 70, 0.1);
+    color: #c5283d;
+}
+
+.light-mode .scheduler-task-list tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}

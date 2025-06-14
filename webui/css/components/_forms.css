@@ -1,0 +1,133 @@
+/* === Forms === */
+
+/* General Input/Textarea Styling (derived from #chat-input) */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+textarea {
+  background-color: var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: 8px; /* Consistent with #chat-input */
+  color: var(--color-text);
+  font-family: 'Roboto Mono', monospace; /* Consistent with #chat-input */
+  font-optical-sizing: auto;
+  -webkit-font-optical-sizing: auto;
+  font-size: 0.90rem; /* Consistent with #chat-input */
+  padding: var(--spacing-sm); /* General padding */
+  width: 100%; /* Default to full width */
+  box-sizing: border-box; /* Ensure padding and border are inside the element's width/height */
+  transition: all 0.3s ease;
+  -webkit-transition: all 0.3s ease;
+  resize: vertical; /* Allow vertical resize for textareas, none for inputs by default */
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"] {
+  min-height: 3.05rem; /* Consistent with #chat-input min-height */
+  resize: none;
+}
+
+textarea {
+  max-height: 7rem; /* Consistent with #chat-input */
+  min-height: 3.05rem; /* Consistent with #chat-input */
+  overflow-y: auto; /* Consistent with #chat-input */
+  scroll-behavior: smooth; /* Consistent with #chat-input */
+  align-content: start; /* Consistent with #chat-input */
+  
+  
+  padding: 0.48rem var(--spacing-sm) var(--spacing-sm) var(--spacing-sm); /* Adjusted from #chat-input */
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus,
+input[type="tel"]:focus,
+input[type="url"]:focus,
+textarea:focus {
+  outline: 1px solid var(--color-primary); /* Using primary color for focus, or use --color-input-focus */
+  border-color: var(--color-primary); /* Or var(--color-input-focus-dark) if more subtle focus is needed */
+  box-shadow: 0 0 0 2px var(--color-primary-filter); /* Optional focus ring */
+}
+
+/* General Select Styling (derived from .scheduler-filter-select) */
+select {
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-input); /* Using --color-input instead of --color-bg-secondary for general forms */
+  color: var(--color-text);
+  width: 100%; /* Default to full width */
+  box-sizing: border-box;
+  font-family: "Rubik", Arial, Helvetica, sans-serif; /* Match other UI elements */
+  font-size: 0.9rem; /* Match other UI elements */
+}
+
+select:focus {
+  outline: 1px solid var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-filter);
+}
+
+/* Form Layouts and Containers (derived from .scheduler-form) */
+.form-container { /* Generalized from .scheduler-form */
+  background-color: var(--color-panel); /* Using panel color for general forms */
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--color-border); /* Added border for better definition */
+}
+
+.form-title { /* Generalized from .scheduler-form-title */
+  font-size: 1.2rem;
+  font-weight: 500;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-primary);
+}
+
+.form-grid { /* Generalized from .scheduler-form-grid */
+  display: grid;
+  grid-template-columns: 1fr; /* Default to single column */
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+/* Example for two-column grid, can be applied as needed */
+.form-grid-2-col {
+  grid-template-columns: 1fr 1fr;
+}
+
+
+.form-field, .form-group { /* Generalized from .scheduler-form-field, added .form-group as common alternative */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field.full-width, .form-group.full-width { /* Generalized from .full-width */
+  grid-column: 1 / -1; /* For use within .form-grid */
+}
+
+/* Labels (derived from .scheduler-form-label) */
+label, .form-label { /* Added .form-label as common alternative */
+  font-weight: 500;
+  color: var(--color-text);
+  font-size: var(--font-size-small);
+  margin-bottom: 4px; /* Added small margin */
+}
+
+/* Form Validation States (Placeholder - to be implemented based on JS logic) */
+
+/* Form Helpers (Placeholder - for text like "Optional" or hints) */

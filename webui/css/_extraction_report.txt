@@ -1,0 +1,128 @@
+# CSS Extraction Report for webui/index.css - Phase 5
+
+Date: 2025-06-14
+
+This report details the content remaining in `webui/index.css` after the extraction of:
+- `webui/css/themes/_light.css`
+- `webui/css/utils/_helpers.css`
+- `webui/css/responsive/_main.css`
+
+The original `webui/index.css` file was not modified during this process.
+
+## Remaining CSS Content in webui/index.css:
+
+The following categories of CSS rules and declarations remain in `webui/index.css`:
+
+1.  **Global Styles & Imports:**
+    *   `@import` rule for Google Fonts (Roboto Mono, Rubik).
+    *   Global `box-sizing: border-box;` for all elements (`*, *::before, *::after`).
+
+2.  **Root Variables (Dark Theme Defaults & General UI Variables):**
+    *   Dark mode color variables (e.g., `--color-background-dark`, `--color-text-dark`).
+    *   Default theme variable assignments, which point to the dark mode variables (e.g., `--color-background: var(--color-background-dark);`).
+    *   Spacing variables (e.g., `--spacing-xs`, `--spacing-md`).
+    *   Font size variables (e.g., `--font-size-small`, `--font-size-normal`).
+    *   Other general UI variables (e.g., `--border-radius`, `--transition-speed`, `--svg-filter`).
+
+3.  **Reset and Base Styles:**
+    *   Base styles for `body` and `html` (background, color, font-family, dimensions, overflow, etc.).
+    *   Default transition properties applied to `body`, `#left-panel`, `#chat-input`, etc.
+
+4.  **Layout Styles:**
+    *   `.container` flexbox styles.
+    *   `.panel` flexbox and overflow styles.
+    *   `#left-panel` styles (background, border, dimensions, flex properties, shadow, transitions).
+    *   `.left-panel-top` and `.left-panel-bottom` structural styles.
+    *   `#status-section` and `.config-section:not(#chats-section)` flex properties.
+    *   `#right-panel` styles (dimensions, flex properties, transitions).
+    *   `#time-date-container`, `#time-date`, `#user-date` positioning and typography.
+
+5.  **Component Styles (Primarily Dark Theme / Default Appearance):**
+    *   **Sidebar Toggle Button:** `.toggle-sidebar-button`, `#sidebar-hamburger-svg`.
+    *   **Switch Label:** `.switch-label`.
+    *   **Chats List:** `.chat-container`, `.chat-list-button` (base and non-light hover), `.chat-name` (base and non-light hover), `.chats-list-container` (including scrollbar and mask), `#chats-section`.
+    *   **Preferences Section:** `.pref-header`, `.arrow-icon`, `.pref-section`.
+    *   **Version Info:** `.version-info`, `#a0version`.
+    *   **Typography:** Default styles for `h2`, `h3`, `h4`, `pre`.
+    *   **Chat History:** `#chat-history` styles (flex, overflow, padding, scrollbar).
+    *   **Logo Container:** `#logo-container`, `#logo-container img` (default filter).
+    *   **Progress Bar:** `#progress-bar-box`, `#progress-bar-h`, `#progress-bar-i`, `.progress-bar h4`, `.shiny-text` animation.
+    *   **Message Styles:**
+        *   Base styles for `.message-container`, `.message`.
+        *   Container alignment: `.user-container`, `.ai-container`, `.center-container`.
+        *   Specific message types: `.message-user` (base), `.message-ai` (base), `.message-center`, `.message-followup`.
+        *   Dark mode specific colors for various message types (e.g., `.message-default`, `.message-agent`, `.message-error`).
+        *   `.agent-start`, `.msg-kvps` (base table styles), `.message-actions`.
+    *   **Input Section:**
+        *   `#input-section` base styles.
+        *   `.preview-section`, `.preview-item` (base styles for attachments/images before sending).
+        *   `.remove-attachment`, `.remove-image` (base styles).
+        *   `.image-error` (base style).
+        *   `#chat-input-container`, `#chat-input` (base styles, focus, placeholder, scrollbar).
+        *   `#expand-button`.
+    *   **Config Section (Left Panel):** `.config-section > h4`, `.config-list`, `#pref-list li`, `.config-button` (base styles), `#settings`, `.edit-button` (base styles).
+    *   **Attachment Icon & Styles:** `.attachment-wrapper`, `.attachment-icon`, `.attachments-container` (in messages), `.attachment-item`, `.attachment-preview`, `.attachment-info`, `.file-info`, `.attachment-name`, `.filename`, `.file-name`, `.attachment-ext`, `.extension`, `.file-ext`.
+    *   **Text Buttons (e.g., Clear, Stop):** `.text-buttons-row`, `.text-button`.
+    *   **Chat Buttons (Send, Mic):** `#chat-buttons-wrapper`, `.chat-button`, `#send-button`.
+    *   **Tooltip:** `.tooltip` styles.
+    *   **Toggle Switch:** `.switch`, `.slider`.
+    *   **Copy Buttons:** `.copy-button` and its contextual variations.
+    *   **Math (KaTeX):** `.katex` styling.
+    *   **Drag & Drop Overlay:** `.dragdrop-overlay`, `.dragdrop-icon` (default filter), `.dragdrop-text`, `.dragdrop-subtext` (excluding light mode overrides).
+    *   **Link Styling:** Default `a` tag styles.
+    *   **Chat Actions (Edit/Delete on Chat List):** `.chat-actions`.
+    *   **Tasks List (Left Panel):** `.tasks-list-container` (scrollbar), `.task-name` (base and non-light hover), `.task-info-line`.
+    *   **Tabs (Chats/Tasks):** `.tabs-container`, `.tabs`, `.tab` (base and non-light active/inactive states).
+    *   **Empty List Message:** `.empty-list-message` (default).
+    *   **Selected Chat Item Indicator:** `.chat-list-button.font-bold` (default).
+    *   **Settings Modal:** All styles related to `.settings-modal`, its content, navigation (`nav ul li a`), sections (`.section`, `.section-title`), and specific settings components within the modal that are not theme-dependent.
+    *   **Scheduler View:** All base styles for the scheduler list, filters, headers, task items, status badges (default colors), form elements, and detail views that are not theme-dependent or responsive overrides. (e.g., `.scheduler-header`, `.scheduler-task-list`, `.scheduler-status-badge` base, `.scheduler-form`, etc.)
+
+6.  **Animations:**
+    *   `@keyframes fadeIn`, `@-webkit-keyframes fadeIn`.
+    *   `@keyframes shine`.
+    *   `@keyframes heartbeat`.
+    (Note: These keyframes were duplicated in the original file; one set remains).
+
+7.  **General Scrollbar Styling:**
+    *   Global `::-webkit-scrollbar`, `::-webkit-scrollbar-track`, `::-webkit-scrollbar-thumb` styles.
+    *   Firefox global scrollbar style `* { scrollbar-width: thin; ... }`.
+
+## Edge Cases or Unusual Selectors Found:
+
+*   `.config-section:not(#chats-section)`: Uses the `:not()` pseudo-class to exclude a specific ID.
+*   `.message-temp:not([style*="display: none"]):last-of-type`: This selector is highly specific and relies on inline styles, which can be brittle. It targets the last visible temporary message.
+*   Duplicated `@keyframes` definitions for `fadeIn`, `shine`, and `heartbeat`. Only one set of these definitions is necessary.
+*   Duplicated `.tooltip` style block.
+*   Some selectors for preview items appeared multiple times with slight variations (e.g., `.preview-section`, `.preview-item`). These have been rationalized during extraction where possible, but the original `index.css` contains these.
+
+## Recommendations for Handling Remaining Content:
+
+The remaining CSS in `webui/index.css` constitutes the primary styling for the application, including its default (dark) theme, core layout, component appearances, and functional styles like animations and scrollbars.
+
+This content should be further modularized into the existing CSS structure. Potential next steps could include:
+
+1.  **Base Styles:**
+    *   Move font imports and global box-sizing to a new `webui/css/base/_globals.css` or merge into `_reset.css`.
+    *   Consolidate all root variables (dark defaults, spacing, typography, etc.) into `webui/css/base/_variables.css`. Ensure no conflicts with already extracted light mode variables.
+    *   Move base element styles (`body`, `html`, `h*`, `pre`, `a`) to `webui/css/base/_typography.css` or a new `_base-elements.css`.
+    *   Move general transition styles to `webui/css/base/_animations.css` or a dedicated transitions module.
+    *   Move general scrollbar styles to `webui/css/base/_scrollbars.css`.
+    *   Move keyframe animations to `webui/css/base/_animations.css`.
+
+2.  **Layout Styles:**
+    *   Extract remaining layout rules (e.g., for `.container`, `#left-panel`, `#right-panel`) into the appropriate files within `webui/css/layout/` (e.g., `_main.css`, `_left-panel.css`, `_right-panel.css`).
+
+3.  **Component Styles:**
+    *   Extract styles for individual UI components (buttons, messages, forms, modals, tabs, chat elements, config sections, scheduler, settings modal, etc.) into their respective files in `webui/css/components/`. For example:
+        *   `.message-*` styles (dark defaults) to `webui/css/components/_messages.css`.
+        *   `#chat-input` styles to `webui/css/components/_forms.css` or `_chat.css`.
+        *   `.config-button` styles to `webui/css/components/_buttons.css`.
+        *   Modal styles to `webui/css/components/_modals.css`.
+        *   Scheduler styles to `webui/css/components/_scheduler.css`.
+
+4.  **Dark Theme Specifics (Optional):**
+    *   Consider if any remaining styles are purely for the dark theme and not covered by CSS variables. These could potentially go into a `webui/css/themes/_dark.css` if a more explicit separation than just relying on default variables is desired.
+
+The goal would be to leave `webui/index.css` with only `@import` statements for the newly created modules, or to have a main application CSS file that imports all these modules.
+The current structure of many specific component styles remaining in `index.css` suggests that the existing component CSS files (`_buttons.css`, `_messages.css`, etc.) are not yet comprehensive.

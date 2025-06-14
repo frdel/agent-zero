@@ -1,0 +1,61 @@
+:root {
+  /* Dark mode */
+  --color-background-dark: #131313;
+  --color-text-dark: #d4d4d4;
+  --color-primary-dark: #737a81;
+  --color-secondary-dark: #656565;
+  --color-accent-dark: #cf6679;
+  --color-message-bg-dark: #2d2d2d;
+  --color-message-text-dark: #e0e0e0;
+  --color-panel-dark: #171717;
+  --color-border-dark: #444444a8;
+  --color-input-dark: #131313;
+  --color-input-focus-dark: #101010;
+  --time-date-bg-dark: rgba(23, 23, 23, 0.75); /* Derived from --color-panel-dark #171717 */
+  --time-date-border-dark: rgba(23, 23, 23, 0.75); /* Matches background */
+
+/* Light mode */
+  --color-background-light: #dbdbdb;
+  --color-text-light: #333333;
+  --color-primary-light: #384653;
+  --color-secondary-light: #e8eaf6;
+  --color-accent-light: #b00020;
+  --color-message-bg-light: #ffffff;
+  --color-message-text-light: #333333;
+  --color-panel-light: #f0f0f0;
+  --color-border-light: #e0e0e0c7;
+  --color-input-light: #e4e4e4;
+  --color-input-focus-light: #dadada;
+
+  /* Default to dark mode */
+  --color-background: var(--color-background-dark);
+  --color-text: var(--color-text-dark);
+  --color-primary: var(--color-primary-dark);
+  --color-secondary: var(--color-secondary-dark);
+  --color-accent: var(--color-accent-dark);
+  --color-message-bg: var(--color-message-bg-dark);
+  --color-message-text: var(--color-message-text-dark);
+  --color-panel: var(--color-panel-dark);
+  --color-border: var(--color-border-dark);
+  --color-input: var(--color-input-dark);
+  --color-input-focus: var(--color-input-focus-dark);
+  --time-date-bg: var(--time-date-bg-dark);
+  --time-date-border: var(--time-date-border-dark);
+
+/* Spacing variables */
+  --spacing-xs: 0.3125rem;
+  --spacing-sm: 0.625rem;
+  --spacing-md: 1.25rem;
+  --spacing-lg: 2rem;
+
+  /* Font sizes */
+  --font-size-small: 0.8rem;
+  --font-size-normal: 1rem;
+  --font-size-large: 1.2rem;
+
+  /* Other variables */
+  --border-radius: 1.125rem;
+  --transition-speed: 0.3s;
+  --svg-filter: brightness(0) saturate(100%) var(--color-primary-filter);
+  --color-primary-filter: invert(73%) sepia(17%) saturate(360%) hue-rotate(177deg) brightness(87%) contrast(85%);
+}

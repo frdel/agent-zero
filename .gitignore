@@ -56,3 +56,6 @@ instruments/**
 # Global rule to include .gitkeep files anywhere
 !**/.gitkeep
 agent_history.gif
+# Ignore specific planning files
+CSS_Cleanup_Plan.md
+webui/css/_extraction_report.txt

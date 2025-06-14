@@ -211,7 +211,7 @@
                     style="display: none;">
                     <div class="tasks-list-container">
                         <ul class="config-list" x-show="tasks.length > 0">
-                            <template x-for="task in tasks">
+                            <template x-for="task in tasks" x-bind:key="task.uuid">
                                 <li>
                                     <div :class="{'chat-list-button': true, 'font-bold': task.id === selected, 'has-task-container': true}"
                                         @click="selected = task.id; selectChat(task.id)">
@@ -1325,7 +1325,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <template x-for="task in filteredTasks" :key="task.uuid">
+                                            <template x-for="task in filteredTasks" x-bind:key="task.uuid">
                                                 <tr @click="showTaskDetail(task.uuid)">
                                                     <td>
                                                         <span x-text="task.name"></span>
