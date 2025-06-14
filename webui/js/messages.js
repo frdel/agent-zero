@@ -113,12 +113,7 @@ export function _drawMessage(
       // KaTeX rendering for markdown
       if (window.renderMathInElement && latex) {
         renderMathInElement(contentDiv, {
-          delimiters: [
-            { left: '$$', right: '$$', display: true },
-            { left: '$', right: '$', display: false },
-            { left: '\\(', right: '\\)', display: false },
-            { left: '\\[', right: '\\]', display: true }
-          ],
+          delimiters: [{ left: "$", right: "$", display: true }],
           throwOnError: false,
         });
       }
@@ -592,12 +587,7 @@ function drawKvps(container, kvps, latex) {
 
           if (window.renderMathInElement && latex) {
             renderMathInElement(span, {
-              delimiters: [
-                { left: "$$", right: "$$", display: true },
-                { left: "$", right: "$", display: false },
-                { left: "\\(", right: "\\)", display: false },
-                { left: "\\[", right: "\\]", display: true }
-              ],
+              delimiters: [{ left: "$", right: "$", display: true }],
               throwOnError: false,
             });
           }
