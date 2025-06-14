@@ -43,9 +43,10 @@ async function initializeApp() {
             }
         }
     }
-    const initialLang = preferredLanguage || 'en';
+    // Default to 'zh' if no preference found or supported
+    const initialLang = preferredLanguage || 'zh'; // Changed 'en' to 'zh'
 
-    // Store the chosen language
+    // Store the chosen language (or the new default)
     localStorage.setItem('preferredLanguage', initialLang);
 
     // Set the lang attribute on the HTML element as early as possible
