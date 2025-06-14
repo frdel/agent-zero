@@ -596,15 +596,124 @@ pre {
   contain: layout style;
 }
 
+/* Sticky message header so controls remain visible */
+.message-header {
+  position: sticky;
+  top: -10px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  margin: 0 calc(-1 * var(--spacing-md)); /* Expand to full width of chat bubble */
+  padding: 0 var(--spacing-md); /* Restore internal padding */
+  margin-top: calc(-0.6rem - 12px); /* Reach to very top of message, no gap */
+  padding-top: calc(0.6rem + 12px); /* Restore top padding for content */
+  padding-bottom: 8px; /* Extra padding for fade effect */
+  /* Default background with fade effect */
+  background: linear-gradient(
+    to bottom,
+    var(--color-message-bg) 0%,
+    var(--color-message-bg) 70%,
+    transparent 100%
+  );
+}
+
+/* Message type specific header backgrounds with fade effects */
+.message-user .message-header {
+  background: linear-gradient(
+    to bottom,
+    #4a4a4a 0%,
+    #4a4a4a 70%,
+    transparent 100%
+  );
+}
+
+.message-agent .message-header {
+  background: linear-gradient(
+    to bottom,
+    #34506b 0%,
+    #34506b 70%,
+    transparent 100%
+  );
+}
+
+.message-agent-response .message-header {
+  background: linear-gradient(
+    to bottom,
+    #1f3c1e 0%,
+    #1f3c1e 70%,
+    transparent 100%
+  );
+}
+
+.message-tool .message-header {
+  background: linear-gradient(
+    to bottom,
+    #2a4170 0%,
+    #2a4170 70%,
+    transparent 100%
+  );
+}
+
+.message-code-exe .message-header {
+  background: linear-gradient(
+    to bottom,
+    #1e1e1e 0%,
+    #1e1e1e 70%,
+    transparent 100%
+  );
+}
+
+.message-browser .message-header {
+  background: linear-gradient(
+    to bottom,
+    var(--color-message-bg) 0%,
+    var(--color-message-bg) 70%,
+    transparent 100%
+  );
+}
+
+.message-warning .message-header {
+  background: linear-gradient(
+    to bottom,
+    var(--color-message-bg) 0%,
+    var(--color-message-bg) 70%,
+    transparent 100%
+  );
+}
+
+.message-error .message-header {
+  background: linear-gradient(
+    to bottom,
+    var(--color-message-bg) 0%,
+    var(--color-message-bg) 70%,
+    transparent 100%
+  );
+}
+
+.message-info .message-header {
+  background: linear-gradient(
+    to bottom,
+    var(--color-message-bg) 0%,
+    var(--color-message-bg) 70%,
+    transparent 100%
+  );
+}
+
+.message-default .message-header {
+  background: linear-gradient(
+    to bottom,
+    #1a242f 0%,
+    #1a242f 70%,
+    transparent 100%
+  );
+}
+
 /* Message Controls Positioning */
 .message-controls {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
   display: flex;
   gap: 0.25rem;
-  z-index: 10;
-  margin-bottom: 1rem; /* Add bottom margin to prevent copy button collision */
+  margin-left: auto;
+  transform: translateY(-8px); /* Move buttons up 5px in header */
 }
 
 /* Add extra padding to message headers when controls are present */
@@ -624,6 +733,10 @@ pre {
   text-align: left; /* Left align user message headers */
   padding-bottom: 0.75rem; /* Extra bottom padding for user messages */
   padding-top: 0.2rem; /* Extra top padding to give copy button space */
+  min-width: 0; /* Allow header text to use available width */
+  flex: 1; /* Take up available space not used by controls */
+  font-size: 1rem; /* Match standard header font size */
+  font-weight: bold; /* Make user message headers bold like other headers */
 }
 
 /* Hide all old copy buttons - we now use the unified copy button */

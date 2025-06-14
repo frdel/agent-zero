@@ -545,7 +545,16 @@ function injectConsoleControls(messageDiv, command, type) {
   };
 
   controls.append(hideBtn, heightBtn, copyBtn);
-  messageDiv.prepend(controls);
+
+  let headerDiv = messageDiv.querySelector('.message-header');
+  if (!headerDiv) {
+    headerDiv = document.createElement('div');
+    headerDiv.classList.add('message-header');
+    const existingHeading = messageDiv.querySelector('h4');
+    if (existingHeading) headerDiv.appendChild(existingHeading);
+    messageDiv.prepend(headerDiv);
+  }
+  headerDiv.appendChild(controls);
 
   // Only add console summary for actual console/code execution messages
   if (type === 'code_exe' && command && command.trim().length > 0) {
@@ -1188,11 +1197,12 @@ export function drawMessageUser(
 ) {
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", "message-user");
-  injectConsoleControls(messageDiv, content || "", 'user');
-
+  
   const headingElement = document.createElement("h4");
   headingElement.textContent = "User message";
   messageDiv.appendChild(headingElement);
+  
+  injectConsoleControls(messageDiv, content || "", 'user');
 
   if (content && content.trim().length > 0) {
     const textDiv = document.createElement("div");
