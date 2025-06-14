@@ -77,15 +77,113 @@ function injectConsoleControls(messageDiv, command, type) {
     isFullHeight: localStorage.getItem(`msgFullHeight_${type}`) === 'true'
   });
 
+  // Function to determine optimal message height state - simplified with smooth transitions
+  const determineMessageState = (msg) => {
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        try {
+          // Get total message height
+          const totalHeight = msg.scrollHeight || 0;
+          
+          console.log(`Message height: ${totalHeight}px`);
+          
+          // Simple logic with buffer to prevent flashing: if total height > 295px, add scroll
+          if (totalHeight > 295) {
+            console.log('Case: >295px → Compact scroll');
+            resolve('compact');
+          } else {
+            console.log('Case: ≤295px → Natural (no scroll)');
+            resolve('natural');
+          }
+          
+        } catch (error) {
+          console.warn('Error determining message state:', error);
+          resolve('natural');
+        }
+      });
+    });
+  };
+
+  // Debounced state update to prevent flashing during streaming
+  const stateUpdateTimeouts = new Map();
+  
+  const debouncedStateUpdate = (messageElement, delay = 100) => {
+    const messageId = messageElement.id || messageElement.className || Math.random().toString();
+    
+    // Clear existing timeout for this message
+    if (stateUpdateTimeouts.has(messageId)) {
+      clearTimeout(stateUpdateTimeouts.get(messageId));
+    }
+    
+    // Set new timeout
+    const timeoutId = setTimeout(async () => {
+      try {
+        const newState = await determineMessageState(messageElement);
+        // Apply state smoothly
+        messageElement.style.transition = 'max-height 0.2s ease-out, opacity 0.15s ease-in-out';
+        
+        // Remove existing state classes
+        messageElement.classList.remove("message-compact", "message-expanded");
+        
+        // Apply new state
+        if (newState === 'compact') {
+          messageElement.classList.add("message-compact");
+        }
+        
+        stateUpdateTimeouts.delete(messageId);
+      } catch (error) {
+        console.warn('Error in debounced state update:', error);
+        stateUpdateTimeouts.delete(messageId);
+      }
+    }, delay);
+    
+    stateUpdateTimeouts.set(messageId, timeoutId);
+  };
+
+  // Global observer for streaming message updates
+  if (!window.streamingObserver) {
+    window.streamingObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList' || mutation.type === 'characterData') {
+          const target = mutation.target;
+          
+          // Find the closest message element
+          let messageElement = target.closest('.message');
+          if (!messageElement && target.classList && target.classList.contains('message')) {
+            messageElement = target;
+          }
+          
+          // If this is a streaming message (has message-temp class), debounce the update
+          if (messageElement && messageElement.classList.contains('message-temp')) {
+            debouncedStateUpdate(messageElement, 150); // Longer delay for streaming
+          }
+        }
+      });
+    });
+    
+    // Start observing the chat history for streaming updates
+    const chatHistory = document.getElementById('chat-history');
+    if (chatHistory) {
+      window.streamingObserver.observe(chatHistory, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+    }
+  }
+
   // Function to apply state to ALL messages of this type
-  const updateAllMessagesOfType = () => {
+  const updateAllMessagesOfType = async () => {
     const { isHidden, isFullHeight } = getCurrentStates();
     const messageSelector = getMessageSelectorForType(type);
     const allMessagesOfType = document.querySelectorAll(messageSelector);
     
-    allMessagesOfType.forEach(msg => {
-      // Remove all state classes
-      msg.classList.remove("message-collapsed", "message-scroll", "message-expanded");
+    for (const msg of allMessagesOfType) {
+      // Remove all state classes (including legacy ones)
+      msg.classList.remove(
+        "message-collapsed", "message-compact", "message-expanded",
+        "message-scroll", "message-smart-scroll", "message-upper-overflow", "message-auto" // Legacy classes
+      );
       
       // Apply current state
       if (isHidden) {
@@ -96,17 +194,37 @@ function injectConsoleControls(messageDiv, command, type) {
         // Remove preview when showing content
         removeContentPreview(msg);
         
-        // Check global preference
+        // Check user preferences
         const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
-        if (isFixedHeightGlobal && !isFullHeight) {
-          // Global preference: use scroll height
-          msg.classList.add("message-scroll");
+        
+        if (isFullHeight) {
+          // User explicitly wants full height
+          msg.classList.add("message-expanded");
+        } else if (isFixedHeightGlobal) {
+          // Apply intelligent height management
+          try {
+            const optimalState = await determineMessageState(msg);
+            switch (optimalState) {
+              case 'natural':
+                // No class needed - natural height
+                break;
+              case 'compact':
+                msg.classList.add("message-compact");
+                break;
+              default:
+                // Fallback to compact
+                msg.classList.add("message-compact");
+            }
+          } catch (error) {
+            console.warn('Error applying message state:', error);
+            msg.classList.add("message-compact");
+          }
         } else {
-          // Either global is off OR user overrode with full height
+          // Global preference is off - show full height
           msg.classList.add("message-expanded");
         }
       }
-    });
+    }
 
     // Update ALL button visual states for this type
     updateAllButtonStatesForType(type);
@@ -118,22 +236,89 @@ function injectConsoleControls(messageDiv, command, type) {
     const existingPreview = msg.querySelector('.content-preview');
     if (existingPreview) existingPreview.remove();
 
-    // Get the last line of content for preview
+    // Get meaningful content for preview
     let previewText = '';
     const scrollableContent = msg.querySelector('.scrollable-content');
     const msgContent = msg.querySelector('.msg-content');
+    const kvpsRows = msg.querySelectorAll('.kvps-row');
     
-    if (scrollableContent && msgContent) {
-      const textContent = msgContent.textContent || msgContent.innerText || '';
-      const lines = textContent.trim().split('\n').filter(line => line.trim());
-      
-      if (msgType === 'code_exe') {
-        // For code execution, show last output line
+    if (msgType === 'code_exe') {
+      // For code execution, show last output line
+      if (scrollableContent && msgContent) {
+        const textContent = msgContent.textContent || msgContent.innerText || '';
+        const lines = textContent.trim().split('\n').filter(line => line.trim());
         previewText = lines.length > 0 ? `Last: ${lines[lines.length - 1].trim()}` : 'No output';
-      } else {
-        // For other types, show first line or truncated content
+      }
+    } else if (msgType === 'agent') {
+      // For blue agent messages, try to get meaningful content from kvps first
+      if (kvpsRows.length > 0) {
+        // Look for thoughts, text, or other meaningful content
+        for (const row of kvpsRows) {
+          const keyCell = row.querySelector('.kvps-key');
+          const valCell = row.querySelector('.kvps-val');
+          if (keyCell && valCell) {
+            const key = keyCell.textContent.toLowerCase();
+            const val = valCell.textContent.trim();
+            
+            // Prioritize thoughts, text, or tool name
+            if (key.includes('thought') || key.includes('text') || key.includes('tool')) {
+              if (val && val.length > 0 && !val.startsWith('{') && !val.startsWith('[')) {
+                previewText = val.length > 80 ? val.substring(0, 80) + '...' : val;
+                break;
+              }
+            }
+          }
+        }
+        
+        // If no meaningful kvp content found, use first non-JSON kvp
+        if (!previewText) {
+          for (const row of kvpsRows) {
+            const valCell = row.querySelector('.kvps-val');
+            if (valCell) {
+              const val = valCell.textContent.trim();
+              if (val && val.length > 0 && !val.startsWith('{') && !val.startsWith('[')) {
+                previewText = val.length > 80 ? val.substring(0, 80) + '...' : val;
+                break;
+              }
+            }
+          }
+        }
+      }
+      
+      // Fallback to regular content if no kvps
+      if (!previewText && scrollableContent && msgContent) {
+        const textContent = msgContent.textContent || msgContent.innerText || '';
+        const lines = textContent.trim().split('\n').filter(line => line.trim());
         const firstLine = lines[0] || '';
-        previewText = firstLine.length > 60 ? firstLine.substring(0, 60) + '...' : firstLine;
+        if (firstLine && !firstLine.startsWith('{') && !firstLine.startsWith('[')) {
+          previewText = firstLine.length > 80 ? firstLine.substring(0, 80) + '...' : firstLine;
+        }
+      }
+      
+      // Final fallback
+      if (!previewText) {
+        previewText = 'Agent message content';
+      }
+    } else if (msgType === 'response') {
+      // For green agent response messages, show beginning of message content
+      if (scrollableContent && msgContent) {
+        const textContent = msgContent.textContent || msgContent.innerText || '';
+        const lines = textContent.trim().split('\n').filter(line => line.trim());
+        const firstLine = lines[0] || '';
+        previewText = firstLine.length > 80 ? firstLine.substring(0, 80) + '...' : firstLine;
+      }
+      
+      // Fallback
+      if (!previewText) {
+        previewText = 'Agent response content';
+      }
+    } else {
+      // For other types, show first meaningful line
+      if (scrollableContent && msgContent) {
+        const textContent = msgContent.textContent || msgContent.innerText || '';
+        const lines = textContent.trim().split('\n').filter(line => line.trim());
+        const firstLine = lines[0] || '';
+        previewText = firstLine.length > 80 ? firstLine.substring(0, 80) + '...' : firstLine;
       }
     }
 
@@ -341,6 +526,7 @@ window.updateButtonState = updateButtonState;
 function getMessageSelectorForType(type) {
   switch (type) {
     case 'agent': return '.message-agent';
+    case 'response': return '.message-agent-response';
     case 'tool': return '.message-tool';
     case 'code_exe': return '.message-code-exe';
     case 'browser': return '.message-browser';
@@ -589,10 +775,13 @@ export function drawMessageResponse(
     null,
     ["message-ai", "message-agent-response"],
     [],
-    true
+    true,
+    false  // addControls = false to prevent basic buttons
   );
   
-  // Agent response messages only need the main copy button (no inline copy)
+  // Add proper controls for agent response messages
+  injectConsoleControls(messageDiv, content || "", 'response');
+  
   return messageDiv;
 }
 
