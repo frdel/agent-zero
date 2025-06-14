@@ -55,57 +55,137 @@ function createControlButton(label, title, handler) {
   return btn;
 }
 
+// Legacy function - replaced by injectConsoleControls for all message types
 function injectMessageControls(messageDiv) {
-  const controls = document.createElement("div");
-  controls.className = "message-controls";
-
-  const toggleCollapse = () => {
-    messageDiv.classList.toggle("message-collapsed");
-  };
-  const toggleExpand = () => {
-    messageDiv.classList.toggle("message-expanded");
-  };
-
-  const minBtn = createControlButton("\u2212", "Minimize", toggleCollapse); // − is minus sign
-  const maxBtn = createControlButton("\u25A1", "Maximize", toggleExpand); // □ is empty square
-
-  controls.appendChild(minBtn);
-  controls.appendChild(maxBtn);
-  messageDiv.prepend(controls);
+  // This function is deprecated - all messages now use injectConsoleControls
+  console.warn("injectMessageControls is deprecated, use injectConsoleControls instead");
 }
 
-function injectConsoleControls(messageDiv, command) {
+function injectConsoleControls(messageDiv, command, type) {
   const controls = document.createElement("div");
   controls.className = "message-controls console-controls";
 
-  const setState = (state) => {
-    messageDiv.classList.remove(
-      "console-collapsed",
-      "console-scroll",
-      "console-expanded"
-    );
-    messageDiv.classList.add(`console-${state}`);
+  // Get current states from localStorage
+  let isHidden = localStorage.getItem(`msgHidden_${type}`) === 'true';
+  let isFullHeight = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
+
+  // Function to apply state to ALL messages of this type
+  const updateAllMessagesOfType = () => {
+    const messageSelector = getMessageSelectorForType(type);
+    const allMessagesOfType = document.querySelectorAll(messageSelector);
+    
+    allMessagesOfType.forEach(msg => {
+      // Remove all state classes
+      msg.classList.remove("message-collapsed", "message-scroll", "message-expanded");
+      
+      // Apply current state
+      if (isHidden) {
+        msg.classList.add("message-collapsed");
+      } else {
+        // Check global preference
+        const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+        if (isFixedHeightGlobal) {
+          // Global preference overrides: always use scroll
+          msg.classList.add("message-scroll");
+        } else if (isFullHeight) {
+          // Global allows expansion and user wants full height
+          msg.classList.add("message-expanded");
+        } else {
+          // Default to expanded when global preference is off
+          msg.classList.add("message-expanded");
+        }
+      }
+    });
+
+    // Update button visual states
+    updateButtonStates();
   };
 
-  const btnCollapsed = createControlButton("\u25BC", "Collapsed view", () =>
-    setState("collapsed")
-  );
-  const btnScroll = createControlButton("\u25A0", "Scrollable view", () =>
-    setState("scroll")
-  );
-  const btnExpanded = createControlButton("\u25B2", "Expanded view", () =>
-    setState("expanded")
-  );
+  // Toggle hide/show content
+  const toggleVisibility = () => {
+    isHidden = !isHidden;
+    localStorage.setItem(`msgHidden_${type}`, isHidden);
+    updateAllMessagesOfType();
+  };
 
-  controls.append(btnCollapsed, btnScroll, btnExpanded);
+  // Toggle height (works as local override)
+  const toggleHeight = () => {
+    isFullHeight = !isFullHeight;
+    localStorage.setItem(`msgFullHeight_${type}`, isFullHeight);
+    updateAllMessagesOfType();
+  };
+
+  // Create buttons with clear, intuitive icons
+  const hideBtn = createControlButton("", "", toggleVisibility);
+  const heightBtn = createControlButton("", "", toggleHeight);
+
+  hideBtn.classList.add('message-hide-btn');
+  heightBtn.classList.add('message-height-btn');
+
+  const updateButtonStates = () => {
+    // Update hide/show button with better icons
+    hideBtn.classList.toggle('active', isHidden);
+    if (isHidden) {
+      hideBtn.innerHTML = '👁️'; // Eye open - click to show
+      hideBtn.style.color = '#10b981'; // Green when showing
+      hideBtn.title = `Show all ${type} messages`;
+    } else {
+      hideBtn.innerHTML = '🫥'; // Hidden face - click to hide
+      hideBtn.style.color = '#6b7280'; // Gray when visible
+      hideBtn.title = `Hide all ${type} messages (show headings only)`;
+    }
+
+    // Update height button with better icons
+    heightBtn.classList.toggle('active', isFullHeight);
+    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+    
+    if (isFixedHeightGlobal && !isFullHeight) {
+      // Global fixed height mode, not expanded
+      heightBtn.innerHTML = '📋'; // Clipboard - fixed height
+      heightBtn.style.color = '#3b82f6'; // Blue for fixed
+      heightBtn.title = `Expand all ${type} messages (override global setting)`;
+    } else if (isFullHeight) {
+      // Expanded mode
+      heightBtn.innerHTML = '📄'; // Page - full height
+      heightBtn.style.color = '#10b981'; // Green for expanded
+      heightBtn.title = `Set all ${type} messages to scroll height`;
+    } else {
+      // Default expanded when global is off
+      heightBtn.innerHTML = '📄'; // Page - full height
+      heightBtn.style.color = '#10b981'; // Green for expanded
+      heightBtn.title = `Set all ${type} messages to scroll height`;
+    }
+  };
+
+  controls.append(hideBtn, heightBtn);
   messageDiv.prepend(controls);
 
-  const summary = document.createElement("pre");
-  summary.className = "console-summary";
-  summary.textContent = command.split("\n")[0];
-  messageDiv.insertBefore(summary, controls.nextSibling);
+  // Only add console summary for actual console/code execution messages
+  if (type === 'code_exe' && command && command.trim().length > 0) {
+    const summary = document.createElement("pre");
+    summary.className = "console-summary";
+    summary.textContent = command.split("\n")[0];
+    messageDiv.insertBefore(summary, controls.nextSibling);
+  }
 
-  setState("scroll");
+  // Initialize button states and apply to messages
+  updateAllMessagesOfType();
+}
+
+// Helper function to get CSS selector for message type
+function getMessageSelectorForType(type) {
+  switch (type) {
+    case 'agent': return '.message-agent';
+    case 'tool': return '.message-tool';
+    case 'code_exe': return '.message-code-exe';
+    case 'browser': return '.message-browser';
+    case 'info': return '.message-info';
+    case 'warning': return '.message-warning';
+    case 'error': return '.message-error';
+    case 'user': return '.message-user';
+    case 'default': return '.message-default';
+    default: return `.message-${type}`;
+  }
 }
 
 function wrapInScrollable(element, disableWrapping = false) {
@@ -211,7 +291,18 @@ export function _drawMessage(
   messageDiv.classList.add("message", ...messageClasses);
 
   if (addControls) {
-    injectMessageControls(messageDiv);
+    // Determine message type from classes
+    let messageType = 'default';
+    if (messageClasses.includes('message-agent')) messageType = 'agent';
+    else if (messageClasses.includes('message-tool')) messageType = 'tool';
+    else if (messageClasses.includes('message-code-exe')) messageType = 'code_exe';
+    else if (messageClasses.includes('message-browser')) messageType = 'browser';
+    else if (messageClasses.includes('message-info')) messageType = 'info';
+    else if (messageClasses.includes('message-warning')) messageType = 'warning';
+    else if (messageClasses.includes('message-error')) messageType = 'error';
+    else if (messageClasses.includes('message-user')) messageType = 'user';
+    
+    injectConsoleControls(messageDiv, '', messageType);
   }
   const skipScroll = messageClasses.includes("message-agent-response");
 
@@ -270,7 +361,7 @@ export function drawMessageDefault(
   temp,
   kvps = null
 ) {
-  _drawMessage(
+  const div = _drawMessage(
     messageContainer,
     heading,
     content,
@@ -279,8 +370,10 @@ export function drawMessageDefault(
     kvps,
     ["message-ai", "message-default"],
     ["msg-json"],
-    false
+    false,
+    false  // addControls = false to prevent basic buttons
   );
+  injectConsoleControls(div, content || "", 'default');
 }
 
 export function drawMessageAgent(
@@ -298,7 +391,7 @@ export function drawMessageAgent(
     delete kvpsFlat["tool_args"];
   }
 
-  _drawMessage(
+  const div = _drawMessage(
     messageContainer,
     heading,
     content,
@@ -307,8 +400,10 @@ export function drawMessageAgent(
     kvpsFlat,
     ["message-ai", "message-agent"],
     ["msg-json"],
-    false
+    false,
+    false  // addControls = false to prevent basic buttons
   );
+  injectConsoleControls(div, content || "", 'agent');
 }
 
 export function drawMessageResponse(
@@ -367,7 +462,7 @@ export function drawMessageUser(
 ) {
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", "message-user");
-  injectMessageControls(messageDiv);
+  injectConsoleControls(messageDiv, content || "", 'user');
 
   const headingElement = document.createElement("h4");
   headingElement.textContent = "User message";
@@ -462,7 +557,7 @@ export function drawMessageTool(
   temp,
   kvps = null
 ) {
-  _drawMessage(
+  const div = _drawMessage(
     messageContainer,
     heading,
     content,
@@ -471,8 +566,10 @@ export function drawMessageTool(
     kvps,
     ["message-ai", "message-tool"],
     ["msg-output"],
-    false
+    false,
+    false  // addControls = false to prevent basic buttons
   );
+  injectConsoleControls(div, content || "", 'tool');
 }
 
 export function drawMessageCodeExe(
@@ -496,7 +593,7 @@ export function drawMessageCodeExe(
     false,
     false
   );
-  injectConsoleControls(div, content || "");
+  injectConsoleControls(div, content || "", 'code_exe');
 }
 
 export function drawMessageBrowser(
@@ -508,7 +605,7 @@ export function drawMessageBrowser(
   temp,
   kvps = null
 ) {
-  _drawMessage(
+  const div = _drawMessage(
     messageContainer,
     heading,
     content,
@@ -517,8 +614,10 @@ export function drawMessageBrowser(
     kvps,
     ["message-ai", "message-browser"],
     ["msg-json"],
-    false
+    false,
+    false  // addControls = false to prevent basic buttons
   );
+  injectConsoleControls(div, content || "", 'browser');
 }
 
 export function drawMessageAgentPlain(
@@ -554,7 +653,7 @@ export function drawMessageInfo(
   temp,
   kvps = null
 ) {
-  return drawMessageAgentPlain(
+  const div = drawMessageAgentPlain(
     ["message-info"],
     messageContainer,
     id,
@@ -564,6 +663,12 @@ export function drawMessageInfo(
     temp,
     kvps
   );
+  // Find the message div inside the container and add controls
+  const messageDiv = messageContainer.querySelector('.message');
+  if (messageDiv) {
+    injectConsoleControls(messageDiv, content || "", 'info');
+  }
+  return div;
 }
 
 export function drawMessageUtil(
@@ -598,7 +703,7 @@ export function drawMessageWarning(
   temp,
   kvps = null
 ) {
-  return drawMessageAgentPlain(
+  const div = drawMessageAgentPlain(
     ["message-warning"],
     messageContainer,
     id,
@@ -608,6 +713,12 @@ export function drawMessageWarning(
     temp,
     kvps
   );
+  // Find the message div inside the container and add controls
+  const messageDiv = messageContainer.querySelector('.message');
+  if (messageDiv) {
+    injectConsoleControls(messageDiv, content || "", 'warning');
+  }
+  return div;
 }
 
 export function drawMessageError(
@@ -619,7 +730,7 @@ export function drawMessageError(
   temp,
   kvps = null
 ) {
-  return drawMessageAgentPlain(
+  const div = drawMessageAgentPlain(
     ["message-error"],
     messageContainer,
     id,
@@ -629,6 +740,12 @@ export function drawMessageError(
     temp,
     kvps
   );
+  // Find the message div inside the container and add controls
+  const messageDiv = messageContainer.querySelector('.message');
+  if (messageDiv) {
+    injectConsoleControls(messageDiv, content || "", 'error');
+  }
+  return div;
 }
 
 function drawKvps(container, kvps, latex) {

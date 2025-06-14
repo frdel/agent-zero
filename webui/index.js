@@ -755,14 +755,54 @@ window.toggleSpeech = function (isOn) {
     if (!isOn) speech.stop()
 };
 
-window.toggleFixedHeight = function (isLongFormEnabled) {
-    if (isLongFormEnabled) {
-        document.body.classList.add('long-form');
-    } else {
+window.toggleFixedHeight = function (isFixedHeight) {
+    // Store the preference
+    localStorage.setItem('fixedHeight', isFixedHeight);
+    
+    // Apply the global setting immediately
+    if (isFixedHeight) {
+        // Fixed height mode: all messages get 300px scroll
         document.body.classList.remove('long-form');
+        applyGlobalMessageState('scroll');
+    } else {
+        // Long form mode: all messages get unlimited height
+        document.body.classList.add('long-form');
+        applyGlobalMessageState('expanded');
     }
-    localStorage.setItem('longFormEnabled', isLongFormEnabled);
 };
+
+// Apply global message state based on preference
+function applyGlobalMessageState(state) {
+    const allMessages = document.querySelectorAll('.message');
+    allMessages.forEach(msg => {
+        msg.classList.remove('message-collapsed', 'message-scroll', 'message-expanded');
+        msg.classList.add(`message-${state}`);
+    });
+}
+
+// Reset all message states and update button visibility
+function resetAllMessageStates() {
+    // Clear all stored individual message states
+    const messageTypes = ['agent', 'tool', 'code_exe', 'browser', 'info', 'warning', 'error', 'user', 'default'];
+    messageTypes.forEach(type => {
+        localStorage.removeItem(`msgHidden_${type}`);
+        localStorage.removeItem(`msgFullHeight_${type}`);
+    });
+    
+    // Apply the current global preference
+    const isFixedHeight = localStorage.getItem('fixedHeight') !== 'false';
+    if (isFixedHeight) {
+        applyGlobalMessageState('scroll');
+    } else {
+        applyGlobalMessageState('expanded');
+    }
+    
+    // Update all button states to reflect reset
+    const allButtons = document.querySelectorAll('.message-hide-btn, .message-height-btn');
+    allButtons.forEach(button => {
+        button.classList.remove('active');
+    });
+}
 
 window.nudge = async function () {
     try {

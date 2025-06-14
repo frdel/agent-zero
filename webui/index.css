@@ -580,11 +580,11 @@ pre {
 
 .message-controls {
   position: absolute;
-  top: 0.25rem;
-  right: 0.25rem;
+  top: 0.5rem;
+  right: 0.5rem;
   display: flex;
   gap: 0.25rem;
-  z-index: 3;
+  z-index: 10;
 }
 
 .message-button {
@@ -604,6 +604,48 @@ pre {
 
 .message-button:hover {
   opacity: 1;
+}
+
+/* Modern button styling for two-button system */
+.message-button {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 4px 6px;
+  min-width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.message-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.message-button svg {
+  transition: all 0.2s ease;
+}
+
+/* Button styling is now handled inline via JavaScript for better control */
+
+/* Legacy button state support */
+.message-button.active {
+  opacity: 1;
+  font-weight: bold;
+}
+
+.message-collapse-btn.active {
+  background-color: #ff6b6b;
+}
+
+.message-expand-btn.active {
+  background-color: #4ecdc4;
 }
 
 .message-collapsed .scrollable-content,
@@ -743,6 +785,73 @@ pre {
 
 .message-code-exe.console-expanded .scrollable-content {
   max-height: none;
+}
+
+/* Unified Message States - All message types */
+/* Collapsed state: Show only heading and controls */
+.message-collapsed .scrollable-content,
+.message-collapsed .msg-kvps,
+.message-collapsed .attachments-container,
+.message-collapsed .msg-content,
+.message-collapsed .message-text {
+  display: none !important;
+}
+
+/* Show console summary for code execution messages when collapsed */
+.message-collapsed .console-summary {
+  display: block;
+  font-size: 0.85em;
+  opacity: 0.7;
+  margin: 0.5rem 0;
+}
+
+/* Visual indicator when content is hidden */
+.message-collapsed::after {
+  content: "📄 Content hidden - click to show";
+  display: block;
+  font-size: 0.8em;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  padding: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 0.5rem;
+}
+
+/* Normal/Scroll state: 300px max height with scrollbar */
+.message-scroll .scrollable-content {
+  max-height: 300px !important;
+  overflow-y: auto;
+}
+
+/* Expanded state: Unlimited height */
+.message-expanded .scrollable-content {
+  max-height: none !important;
+  overflow-y: visible;
+}
+
+/* Ensure default scrollable content has proper height */
+.scrollable-content:not(.message-collapsed):not(.message-expanded) {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Smooth transitions between states */
+.scrollable-content {
+  transition: max-height 0.2s ease-in-out, opacity 0.2s ease-in-out;
+}
+
+/* Visual feedback for different states */
+.message-collapsed {
+  opacity: 0.8;
+  border-left: 3px solid var(--color-accent);
+  padding-left: calc(var(--spacing-md) + 3px);
+  margin-left: -3px;
+}
+
+.message-expanded {
+  border-left: 3px solid var(--color-primary);
+  padding-left: calc(var(--spacing-md) + 3px);
+  margin-left: -3px;
 }
 
 .message-browser {
@@ -1607,10 +1716,24 @@ input:checked + .slider:before {
 }
 
 .scrollable-content {
-  max-height: 15rem;
+  max-height: 300px; /* Default scroll height */
   overflow-y: auto;
   overflow-x: auto;
   position: relative;
+}
+
+/* Ensure horizontal scrolling for long lines */
+.msg-content {
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.msg-content span {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 body.long-form .scrollable-content {
