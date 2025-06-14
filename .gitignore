@@ -13,6 +13,10 @@ docker/run/agent-zero/
 # ignore test files in root dir
 /*.test.py
 
+# ignore configs in supervisor.conf.d directory
+/supervisor.conf.d/*.conf
+/supervisor.conf.d/*.sh
+
 # Ignore git internal files (for bundler)
 .git/
 
