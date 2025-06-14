@@ -987,7 +987,7 @@ export function drawMessageAgentPlain(
   temp,
   kvps = null
 ) {
-  _drawMessage(
+  const div = _drawMessage(
     messageContainer,
     heading,
     content,
@@ -999,6 +999,7 @@ export function drawMessageAgentPlain(
     false
   );
   messageContainer.classList.add("center-container");
+  return div;
 }
 
 export function drawMessageInfo(
@@ -1020,11 +1021,7 @@ export function drawMessageInfo(
     temp,
     kvps
   );
-  // Find the message div inside the container and add controls
-  const messageDiv = messageContainer.querySelector('.message');
-  if (messageDiv) {
-    injectConsoleControls(messageDiv, content || "", 'info');
-  }
+  injectConsoleControls(div, content || "", 'info');
   return div;
 }
 
@@ -1070,11 +1067,7 @@ export function drawMessageWarning(
     temp,
     kvps
   );
-  // Find the message div inside the container and add controls
-  const messageDiv = messageContainer.querySelector('.message');
-  if (messageDiv) {
-    injectConsoleControls(messageDiv, content || "", 'warning');
-  }
+  injectConsoleControls(div, content || "", 'warning');
   return div;
 }
 
@@ -1097,11 +1090,7 @@ export function drawMessageError(
     temp,
     kvps
   );
-  // Find the message div inside the container and add controls
-  const messageDiv = messageContainer.querySelector('.message');
-  if (messageDiv) {
-    injectConsoleControls(messageDiv, content || "", 'error');
-  }
+  injectConsoleControls(div, content || "", 'error');
   return div;
 }
 
