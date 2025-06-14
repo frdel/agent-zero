@@ -578,6 +578,7 @@ pre {
   line-height: 1.4;
 }
 
+/* Message Controls Positioning */
 .message-controls {
   position: absolute;
   top: 0.5rem;
@@ -585,17 +586,129 @@ pre {
   display: flex;
   gap: 0.25rem;
   z-index: 10;
+  margin-bottom: 1rem; /* Add bottom margin to prevent copy button collision */
 }
 
+/* Add extra padding to message headers when controls are present */
+.message h4 {
+  margin: auto 0;
+  padding-right: 110px; /* Make room for three buttons */
+  padding-bottom: 0.5rem; /* Extra bottom padding to avoid copy button overlap */
+}
+
+/* User message specific adjustments */
+.message-user {
+  padding-top: 1.25rem; /* Extra padding for user messages and copy button space */
+}
+
+.message-user h4 {
+  padding-right: 110px; /* Ensure user message headers have button space for three buttons */
+  text-align: left; /* Left align user message headers */
+  padding-bottom: 0.75rem; /* Extra bottom padding for user messages */
+  padding-top: 0.2rem; /* Extra top padding to give copy button space */
+}
+
+/* Hide all old copy buttons - we now use the unified copy button */
+.copy-button {
+  display: none !important;
+}
+
+/* Small inline copy icons for agent response sections */
+.inline-copy-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  opacity: 0.5;
+  margin-left: 0.5rem;
+  transition: opacity 0.2s ease;
+  vertical-align: middle;
+}
+
+.inline-copy-icon:hover {
+  opacity: 0.8;
+}
+
+.inline-copy-icon svg {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2;
+}
+
+/* Show inline copy icons on hover for relevant content areas */
+.msg-content:hover .inline-copy-icon,
+.kvps-row:hover .inline-copy-icon,
+.message-text:hover .inline-copy-icon {
+  opacity: 0.6;
+}
+
+.inline-copy-icon.copied {
+  opacity: 1;
+  color: #10b981;
+}
+
+/* Collapsed message adjustments */
+.message-collapsed {
+  opacity: 0.8;
+  border-left: 3px solid var(--color-accent);
+  padding-left: calc(var(--spacing-md) + 3px);
+  margin-left: -3px;
+  padding-top: 1rem; /* Extra padding when collapsed */
+  padding-bottom: 1rem; /* Extra bottom padding when collapsed */
+}
+
+/* Modern button styling - clean, no rectangles */
 .message-button {
   font-size: 0.75rem;
   background: transparent;
   border: none;
   color: inherit;
   cursor: pointer;
-  opacity: 0.7;
-  padding: 0;
-  transition: opacity var(--transition-speed);
+  opacity: 0.6;
+  padding: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.modern-button {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  width: 32px;
+  height: 32px;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+}
+
+.modern-button:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.modern-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.modern-button.active {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.modern-button svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
 }
 
 .console-controls .message-button {
@@ -604,28 +717,236 @@ pre {
 
 .message-button:hover {
   opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-/* Modern button styling for two-button system */
-.message-button {
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+/* Light mode button adjustments */
+.light-mode .modern-button:hover {
+  background: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.light-mode .modern-button:active {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.light-mode .modern-button.active {
+  background: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.light-mode .message-button:hover {
+  background: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Improved scrollbar styling per message type */
+.scrollable-content {
+  max-height: 300px; /* Default scroll height */
+  overflow-y: auto;
+  overflow-x: auto;
+  position: relative;
+  scrollbar-width: thin;
+}
+
+/* Default scrollbar (works well for code execution - dark background) */
+.scrollable-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollable-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
-  padding: 4px 6px;
-  min-width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  font-size: 12px;
-  line-height: 1;
 }
 
-.message-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
+.scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(34, 197, 94, 0.6);
+  border-radius: 4px;
+  border: none;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.8);
+}
+
+.scrollable-content::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Agent message scrollbars (blue background) */
+.message-agent .scrollable-content::-webkit-scrollbar-track {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.message-agent .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.6);
+}
+
+.message-agent .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.8);
+}
+
+/* Tool message scrollbars (darker blue background) */
+.message-tool .scrollable-content::-webkit-scrollbar-track {
+  background: rgba(168, 85, 247, 0.1);
+}
+
+.message-tool .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.6);
+}
+
+.message-tool .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.8);
+}
+
+/* Agent response scrollbars (green background) */
+.message-agent-response .scrollable-content::-webkit-scrollbar-track {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.message-agent-response .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(34, 197, 94, 0.6);
+}
+
+.message-agent-response .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.8);
+}
+
+/* User message scrollbars (if any) */
+.message-user .scrollable-content::-webkit-scrollbar-track {
+  background: rgba(107, 114, 128, 0.1);
+}
+
+.message-user .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.6);
+}
+
+.message-user .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.8);
+}
+
+/* Light mode scrollbar adjustments */
+.light-mode .scrollable-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.light-mode .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.light-mode .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Additional message type scrollbars */
+.message-browser .scrollable-content::-webkit-scrollbar-track {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.message-browser .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.6);
+}
+
+.message-browser .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.8);
+}
+
+.message-info .scrollable-content::-webkit-scrollbar-track {
+  background: rgba(14, 165, 233, 0.1);
+}
+
+.message-info .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(14, 165, 233, 0.6);
+}
+
+.message-info .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(14, 165, 233, 0.8);
+}
+
+.message-warning .scrollable-content::-webkit-scrollbar-track {
+  background: rgba(251, 146, 60, 0.1);
+}
+
+.message-warning .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(251, 146, 60, 0.6);
+}
+
+.message-warning .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(251, 146, 60, 0.8);
+}
+
+.message-error .scrollable-content::-webkit-scrollbar-track {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.message-error .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(239, 68, 68, 0.6);
+}
+
+.message-error .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(239, 68, 68, 0.8);
+}
+
+.light-mode .message-agent .scrollable-content::-webkit-scrollbar-thumb,
+.light-mode .message-tool .scrollable-content::-webkit-scrollbar-thumb,
+.light-mode .message-agent-response .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.light-mode .message-agent .scrollable-content::-webkit-scrollbar-thumb:hover,
+.light-mode .message-tool .scrollable-content::-webkit-scrollbar-thumb:hover,
+.light-mode .message-agent-response .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* Content Preview Styling */
+.content-preview {
+  font-size: 0.85em;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0 1rem 0;
+  font-family: 'Roboto Mono', monospace;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  position: relative;
+}
+
+.content-preview::before {
+  content: "Preview:";
+  position: absolute;
+  top: -8px;
+  left: 12px;
+  background: var(--color-message-bg);
+  padding: 0 6px;
+  font-size: 0.7em;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.light-mode .content-preview {
+  color: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.light-mode .content-preview::before {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+/* Enhanced message states */
+.message-collapsed .content-preview {
+  display: block;
+}
+
+.message-collapsed::after {
+  content: "";
+  display: none;
 }
 
 .message-button svg {
@@ -841,13 +1162,6 @@ pre {
 }
 
 /* Visual feedback for different states */
-.message-collapsed {
-  opacity: 0.8;
-  border-left: 3px solid var(--color-accent);
-  padding-left: calc(var(--spacing-md) + 3px);
-  margin-left: -3px;
-}
-
 .message-expanded {
   border-left: 3px solid var(--color-primary);
   padding-left: calc(var(--spacing-md) + 3px);
@@ -1629,48 +1943,51 @@ input:checked + .slider:before {
   /* Already defined above */
 }
 
-/* Copy button styles */
-.copy-button {
-  position: absolute;
-  right: 0;
-  top: var(--spacing-sm);
-  background: none;
-  border: none;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  padding-right: 0;
-  cursor: pointer;
-  text-decoration: underline;
-  text-wrap: nowrap;
-  opacity: 0;
-  -webkit-transition: opacity var(--transition-speed) ease-in-out;
-  transition: opacity var(--transition-speed) ease-in-out;
-  color: inherit;
-  font-size: 12px;
-  font-family: "Rubik", Arial, Helvetica, sans-serif;
+/* Copy button styles - only for kvp rows */
+.kvps-row .copy-button {
+  position: absolute !important;
+  top: 4px !important;
+  right: 4px !important;
+  background: none !important;
+  border: none !important;
+  color: var(--color-text) !important;
+  padding: 2px !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+  font-size: 10px !important;
+  opacity: 0 !important;
+  display: inline-block !important;
+  width: 16px !important;
+  height: 16px !important;
+  transition: opacity 0.2s ease !important;
+  z-index: 10 !important;
 }
 
-.copy-button:hover {
-  opacity: 0.8 !important;
+/* Hide copy buttons in other contexts */
+.copy-button:not(.kvps-row .copy-button) {
+  display: none !important;
 }
 
-.msg-content:hover .copy-button,
-.kvps-row:hover .copy-button,
-.message-text:hover .copy-button {
-  opacity: 0.6;
+/* Show copy buttons only on row hover */
+.kvps-row:hover .copy-button {
+  opacity: 0.7 !important;
 }
 
-.copy-button.copied {
-  font-family: "Rubik", Arial, Helvetica, sans-serif !important;
+.kvps-row .copy-button:hover {
+  opacity: 1 !important;
+}
+
+.kvps-row .copy-button.copied {
   opacity: 1 !important;
 }
 
 .msg-thoughts .copy-button {
-  top: -12px !important;
+  top: -8px !important;
 }
 
 .message-user .copy-button {
-  top: -15px !important;
-  left: -13px !important;
+  top: -12px !important;
+  left: -10px !important;
   right: 99% !important;
 }
 
@@ -1703,6 +2020,17 @@ input:checked + .slider:before {
   position: relative;
 }
 
+/* Ensure kvp rows and cells have proper positioning context */
+.kvps-row,
+.kvps-row td {
+  position: relative;
+}
+
+/* Position copy button lower for the first kvp row to prevent overlap */
+.kvps-row:first-child .copy-button {
+  top: 12px !important;
+}
+
 /* Utility Classes */
 .kvps-key {
   font-weight: 500;
@@ -1713,13 +2041,6 @@ input:checked + .slider:before {
   margin: 0.65rem 0 0.65rem 0.4rem;
   white-space: pre;
   overflow-x: auto;
-}
-
-.scrollable-content {
-  max-height: 300px; /* Default scroll height */
-  overflow-y: auto;
-  overflow-x: auto;
-  position: relative;
 }
 
 /* Ensure horizontal scrolling for long lines */
@@ -3214,3 +3535,8 @@ nav ul li a img {
     min-width: 40px;
     text-align: center;
 }
+
+/* Inline copy icons for agent response sections */
+/* Removed - was for broken inline copy system */
+
+/* Removed broken inline copy system - using original copy buttons */

@@ -4,7 +4,10 @@ import { openImageModal } from "./image_modal.js";
 function createCopyButton() {
   const button = document.createElement("button");
   button.className = "copy-button";
-  button.textContent = "Copy";
+  button.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+    <path d="m4 16-2-2v-10c0-1.1.9-2 2-2h10l2 2"/>
+  </svg>`;
 
   button.addEventListener("click", async function (e) {
     e.stopPropagation();
@@ -21,12 +24,14 @@ function createCopyButton() {
 
     try {
       await navigator.clipboard.writeText(textToCopy);
-      const originalText = button.textContent;
+      const originalHTML = button.innerHTML;
       button.classList.add("copied");
-      button.textContent = "Copied!";
+      button.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20,6 9,17 4,12"/>
+      </svg>`;
       setTimeout(() => {
         button.classList.remove("copied");
-        button.textContent = originalText;
+        button.innerHTML = originalHTML;
       }, 2000);
     } catch (err) {
       console.error("Failed to copy text:", err);
@@ -38,7 +43,8 @@ function createCopyButton() {
 
 function addCopyButtonToElement(element) {
   if (!element.querySelector(".copy-button")) {
-    element.appendChild(createCopyButton());
+    const button = createCopyButton();
+    element.appendChild(button);
   }
 }
 
@@ -65,12 +71,15 @@ function injectConsoleControls(messageDiv, command, type) {
   const controls = document.createElement("div");
   controls.className = "message-controls console-controls";
 
-  // Get current states from localStorage
-  let isHidden = localStorage.getItem(`msgHidden_${type}`) === 'true';
-  let isFullHeight = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
+  // Function to get current states from localStorage (always fresh)
+  const getCurrentStates = () => ({
+    isHidden: localStorage.getItem(`msgHidden_${type}`) === 'true',
+    isFullHeight: localStorage.getItem(`msgFullHeight_${type}`) === 'true'
+  });
 
   // Function to apply state to ALL messages of this type
   const updateAllMessagesOfType = () => {
+    const { isHidden, isFullHeight } = getCurrentStates();
     const messageSelector = getMessageSelectorForType(type);
     const allMessagesOfType = document.querySelectorAll(messageSelector);
     
@@ -81,83 +90,150 @@ function injectConsoleControls(messageDiv, command, type) {
       // Apply current state
       if (isHidden) {
         msg.classList.add("message-collapsed");
+        // Add preview for hidden content
+        addContentPreview(msg, type);
       } else {
+        // Remove preview when showing content
+        removeContentPreview(msg);
+        
         // Check global preference
         const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
-        if (isFixedHeightGlobal) {
-          // Global preference overrides: always use scroll
+        if (isFixedHeightGlobal && !isFullHeight) {
+          // Global preference: use scroll height
           msg.classList.add("message-scroll");
-        } else if (isFullHeight) {
-          // Global allows expansion and user wants full height
-          msg.classList.add("message-expanded");
         } else {
-          // Default to expanded when global preference is off
+          // Either global is off OR user overrode with full height
           msg.classList.add("message-expanded");
         }
       }
     });
 
-    // Update button visual states
-    updateButtonStates();
+    // Update ALL button visual states for this type
+    updateAllButtonStatesForType(type);
   };
 
-  // Toggle hide/show content
+  // Add content preview functionality
+  const addContentPreview = (msg, msgType) => {
+    // Remove existing preview
+    const existingPreview = msg.querySelector('.content-preview');
+    if (existingPreview) existingPreview.remove();
+
+    // Get the last line of content for preview
+    let previewText = '';
+    const scrollableContent = msg.querySelector('.scrollable-content');
+    const msgContent = msg.querySelector('.msg-content');
+    
+    if (scrollableContent && msgContent) {
+      const textContent = msgContent.textContent || msgContent.innerText || '';
+      const lines = textContent.trim().split('\n').filter(line => line.trim());
+      
+      if (msgType === 'code_exe') {
+        // For code execution, show last output line
+        previewText = lines.length > 0 ? `Last: ${lines[lines.length - 1].trim()}` : 'No output';
+      } else {
+        // For other types, show first line or truncated content
+        const firstLine = lines[0] || '';
+        previewText = firstLine.length > 60 ? firstLine.substring(0, 60) + '...' : firstLine;
+      }
+    }
+
+    if (previewText) {
+      const preview = document.createElement('div');
+      preview.className = 'content-preview';
+      preview.textContent = previewText;
+      msg.appendChild(preview);
+    }
+  };
+
+  const removeContentPreview = (msg) => {
+    const preview = msg.querySelector('.content-preview');
+    if (preview) preview.remove();
+  };
+
+  // Toggle hide/show content - ALWAYS read from localStorage
   const toggleVisibility = () => {
-    isHidden = !isHidden;
-    localStorage.setItem(`msgHidden_${type}`, isHidden);
+    const currentState = localStorage.getItem(`msgHidden_${type}`) === 'true';
+    const newState = !currentState;
+    localStorage.setItem(`msgHidden_${type}`, newState);
     updateAllMessagesOfType();
   };
 
-  // Toggle height (works as local override)
+  // Toggle height - ALWAYS read from localStorage
   const toggleHeight = () => {
-    isFullHeight = !isFullHeight;
-    localStorage.setItem(`msgFullHeight_${type}`, isFullHeight);
+    const currentState = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
+    const newState = !currentState;
+    localStorage.setItem(`msgFullHeight_${type}`, newState);
     updateAllMessagesOfType();
   };
 
-  // Create buttons with clear, intuitive icons
-  const hideBtn = createControlButton("", "", toggleVisibility);
-  const heightBtn = createControlButton("", "", toggleHeight);
+  // Copy message content
+  const copyMessage = () => {
+    let textToCopy = '';
+    
+    // Get text content from the message, excluding hidden copy buttons
+    const msgContent = messageDiv.querySelector('.msg-content');
+    const msgText = messageDiv.querySelector('.message-text');
+    const scrollableContent = messageDiv.querySelector('.scrollable-content');
+    
+    if (msgContent) {
+      // Clone the element to avoid modifying original
+      const clone = msgContent.cloneNode(true);
+      // Remove any copy buttons and inline copy icons
+      clone.querySelectorAll('.copy-button, .inline-copy-icon').forEach(el => el.remove());
+      textToCopy = clone.textContent || clone.innerText || '';
+    } else if (msgText) {
+      const clone = msgText.cloneNode(true);
+      clone.querySelectorAll('.copy-button, .inline-copy-icon').forEach(el => el.remove());
+      textToCopy = clone.textContent || clone.innerText || '';
+    } else if (scrollableContent) {
+      const clone = scrollableContent.cloneNode(true);
+      clone.querySelectorAll('.copy-button, .inline-copy-icon').forEach(el => el.remove());
+      textToCopy = clone.textContent || clone.innerText || '';
+    }
+    
+    if (textToCopy.trim()) {
+      navigator.clipboard.writeText(textToCopy.trim()).then(() => {
+        // Flash the copy button to show success
+        const copyBtn = messageDiv.querySelector('.message-copy-btn');
+        if (copyBtn) {
+          copyBtn.style.color = '#10b981';
+          setTimeout(() => {
+            updateButtonState(copyBtn, false, type, 'copy');
+          }, 500);
+        }
+      }).catch(err => {
+        console.error('Failed to copy text: ', err);
+      });
+    }
+  };
+
+  // Create modern SVG buttons
+  const hideBtn = createModernButton('hide', toggleVisibility);
+  const heightBtn = createModernButton('height', toggleHeight);
+  const copyBtn = createModernButton('copy', copyMessage);
 
   hideBtn.classList.add('message-hide-btn');
   heightBtn.classList.add('message-height-btn');
+  copyBtn.classList.add('message-copy-btn');
 
-  const updateButtonStates = () => {
-    // Update hide/show button with better icons
-    hideBtn.classList.toggle('active', isHidden);
-    if (isHidden) {
-      hideBtn.innerHTML = '👁️'; // Eye open - click to show
-      hideBtn.style.color = '#10b981'; // Green when showing
-      hideBtn.title = `Show all ${type} messages`;
-    } else {
-      hideBtn.innerHTML = '🫥'; // Hidden face - click to hide
-      hideBtn.style.color = '#6b7280'; // Gray when visible
-      hideBtn.title = `Hide all ${type} messages (show headings only)`;
-    }
+  // Store type on buttons for global state updates
+  hideBtn.dataset.type = type;
+  heightBtn.dataset.type = type;
+  copyBtn.dataset.type = type;
 
-    // Update height button with better icons
-    heightBtn.classList.toggle('active', isFullHeight);
-    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+  // Update ALL buttons of this type across all messages
+  const updateAllButtonStatesForType = (msgType) => {
+    const { isHidden, isFullHeight } = getCurrentStates();
+    const allHideButtons = document.querySelectorAll(`.message-hide-btn[data-type="${msgType}"]`);
+    const allHeightButtons = document.querySelectorAll(`.message-height-btn[data-type="${msgType}"]`);
+    const allCopyButtons = document.querySelectorAll(`.message-copy-btn[data-type="${msgType}"]`);
     
-    if (isFixedHeightGlobal && !isFullHeight) {
-      // Global fixed height mode, not expanded
-      heightBtn.innerHTML = '📋'; // Clipboard - fixed height
-      heightBtn.style.color = '#3b82f6'; // Blue for fixed
-      heightBtn.title = `Expand all ${type} messages (override global setting)`;
-    } else if (isFullHeight) {
-      // Expanded mode
-      heightBtn.innerHTML = '📄'; // Page - full height
-      heightBtn.style.color = '#10b981'; // Green for expanded
-      heightBtn.title = `Set all ${type} messages to scroll height`;
-    } else {
-      // Default expanded when global is off
-      heightBtn.innerHTML = '📄'; // Page - full height
-      heightBtn.style.color = '#10b981'; // Green for expanded
-      heightBtn.title = `Set all ${type} messages to scroll height`;
-    }
+    allHideButtons.forEach(btn => updateButtonState(btn, isHidden, msgType, 'hide'));
+    allHeightButtons.forEach(btn => updateButtonState(btn, isFullHeight, msgType, 'height'));
+    allCopyButtons.forEach(btn => updateButtonState(btn, false, msgType, 'copy'));
   };
 
-  controls.append(hideBtn, heightBtn);
+  controls.append(hideBtn, heightBtn, copyBtn);
   messageDiv.prepend(controls);
 
   // Only add console summary for actual console/code execution messages
@@ -168,9 +244,98 @@ function injectConsoleControls(messageDiv, command, type) {
     messageDiv.insertBefore(summary, controls.nextSibling);
   }
 
+  // Initialize button states immediately to prevent empty buttons
+  const { isHidden, isFullHeight } = getCurrentStates();
+  updateButtonState(hideBtn, isHidden, type, 'hide');
+  updateButtonState(heightBtn, isFullHeight, type, 'height');
+  updateButtonState(copyBtn, false, type, 'copy');
+
   // Initialize button states and apply to messages
   updateAllMessagesOfType();
 }
+
+// Create modern button with proper SVG icons
+function createModernButton(buttonType, handler) {
+  const btn = document.createElement("button");
+  btn.className = "message-button modern-button";
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    handler();
+  });
+  return btn;
+}
+
+// Update individual button state with proper icons and colors
+function updateButtonState(button, isActive, type, buttonType) {
+  button.classList.toggle('active', isActive);
+  
+  if (buttonType === 'hide') {
+    if (isActive) {
+      // Hidden state - show eye icon to indicate "click to show"
+      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>`;
+      button.style.color = '#10b981'; // Green - click to show
+      button.title = `Show all ${type} messages`;
+    } else {
+      // Visible state - show eye-off icon to indicate "click to hide"  
+      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 8 11 8a13.16 13.16 0 0 1-1.67 2.68"/>
+        <path d="M6.61 6.61A13.526 13.526 0 0 0 1 12s4 8 11 8a9.74 9.74 0 0 0 5.39-1.61"/>
+        <line x1="2" y1="2" x2="22" y2="22"/>
+      </svg>`;
+      button.style.color = '#6b7280'; // Gray - click to hide
+      button.title = `Hide all ${type} messages (show preview only)`;
+    }
+  } else if (buttonType === 'height') {
+    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+    
+    if (isFixedHeightGlobal && !isActive) {
+      // Global fixed height mode, not expanded - show expand icon
+      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15,3 21,3 21,9"/>
+        <polyline points="9,21 3,21 3,15"/>
+        <line x1="21" y1="3" x2="14" y2="10"/>
+        <line x1="3" y1="21" x2="10" y2="14"/>
+      </svg>`;
+      button.style.color = '#f59e0b'; // Amber - expand available
+      button.title = `Expand all ${type} messages (unlimited height)`;
+    } else if (isActive) {
+      // Expanded mode - show compress icon
+      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="4,14 10,14 10,20"/>
+        <polyline points="20,10 14,10 14,4"/>
+        <line x1="14" y1="10" x2="21" y2="3"/>
+        <line x1="3" y1="21" x2="10" y2="14"/>
+      </svg>`;
+      button.style.color = '#10b981'; // Green - expanded
+      button.title = `Set all ${type} messages to scroll height`;
+    } else {
+      // Default state when global is off - show compress icon
+      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="4,14 10,14 10,20"/>
+        <polyline points="20,10 14,10 14,4"/>
+        <line x1="14" y1="10" x2="21" y2="3"/>
+        <line x1="3" y1="21" x2="10" y2="14"/>
+      </svg>`;
+      button.style.color = '#6b7280'; // Gray - scroll mode
+      button.title = `Set all ${type} messages to scroll height`;
+    }
+  } else if (buttonType === 'copy') {
+    // Copy button - always same icon, no active state needed
+    button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+    </svg>`;
+    button.style.color = '#6b7280'; // Gray - default
+    button.title = `Copy ${type} message content`;
+  }
+}
+
+// Make updateButtonState globally available
+window.updateButtonState = updateButtonState;
 
 // Helper function to get CSS selector for message type
 function getMessageSelectorForType(type) {
@@ -415,7 +580,7 @@ export function drawMessageResponse(
   temp,
   kvps = null
 ) {
-  _drawMessage(
+  const messageDiv = _drawMessage(
     messageContainer,
     heading,
     content,
@@ -426,6 +591,9 @@ export function drawMessageResponse(
     [],
     true
   );
+  
+  // Agent response messages only need the main copy button (no inline copy)
+  return messageDiv;
 }
 
 export function drawMessageDelegation(
@@ -806,7 +974,7 @@ function drawKvps(container, kvps, latex) {
           pre.appendChild(span);
           const wrap = wrapInScrollable(pre, container.classList.contains("message-agent-response"));
           td.appendChild(wrap);
-          addCopyButtonToElement(row);
+          addCopyButtonToElement(td);
 
           // Add click handler
           span.addEventListener("click", () => {
@@ -916,3 +1084,5 @@ function convertPathsToLinks(str) {
 
   return str.replace(regex, generateLinks);
 }
+
+// Removed broken inline copy system - using original copy buttons instead
