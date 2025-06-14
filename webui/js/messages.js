@@ -388,9 +388,16 @@ function injectConsoleControls(messageDiv, command, type) {
 
   // Toggle height - ALWAYS read from localStorage
   const toggleHeight = () => {
+    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
     const currentState = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
+    
+    // Logic for toggling depends on global mode:
+    // - When global fixed height is ON: toggle between compact (false) and expanded (true)  
+    // - When global fixed height is OFF: toggle between expanded (false) and compact (true)
     const newState = !currentState;
     localStorage.setItem(`msgFullHeight_${type}`, newState);
+    
+    console.log(`🔧 Toggle height for ${type}: ${currentState} -> ${newState} (global fixed: ${isFixedHeightGlobal})`);
     updateAllMessagesOfType();
   };
 
@@ -522,36 +529,57 @@ function updateButtonState(button, isActive, type, buttonType) {
   } else if (buttonType === 'height') {
     const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
     
-    if (isFixedHeightGlobal && !isActive) {
-      // Global fixed height mode, not expanded - show expand icon
-      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="15,3 21,3 21,9"/>
-        <polyline points="9,21 3,21 3,15"/>
-        <line x1="21" y1="3" x2="14" y2="10"/>
-        <line x1="3" y1="21" x2="10" y2="14"/>
-      </svg>`;
-      button.style.color = '#f59e0b'; // Amber - expand available
-      button.title = `Expand all ${type} messages (unlimited height)`;
-    } else if (isActive) {
-      // Expanded mode - show compress icon
-      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="4,14 10,14 10,20"/>
-        <polyline points="20,10 14,10 14,4"/>
-        <line x1="14" y1="10" x2="21" y2="3"/>
-        <line x1="3" y1="21" x2="10" y2="14"/>
-      </svg>`;
-      button.style.color = '#10b981'; // Green - expanded
-      button.title = `Set all ${type} messages to scroll height`;
+    // Logic: 
+    // - When global fixed height is OFF: messages are expanded by default, show compress icon
+    // - When global fixed height is ON and message type is not expanded: show expand icon  
+    // - When message type is explicitly expanded (isActive=true): show compress icon
+    
+    if (!isFixedHeightGlobal) {
+      // Global fixed height mode is OFF - messages are expanded by default
+      if (isActive) {
+        // User has set this type to compact mode - show expand icon
+        button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15,3 21,3 21,9"/>
+          <polyline points="9,21 3,21 3,15"/>
+          <line x1="21" y1="3" x2="14" y2="10"/>
+          <line x1="3" y1="21" x2="10" y2="14"/>
+        </svg>`;
+        button.style.color = '#f59e0b'; // Amber - expand available
+        button.title = `Expand all ${type} messages (unlimited height)`;
+      } else {
+        // Default state - show compress icon (currently expanded)
+        button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="4,14 10,14 10,20"/>
+          <polyline points="20,10 14,10 14,4"/>
+          <line x1="14" y1="10" x2="21" y2="3"/>
+          <line x1="3" y1="21" x2="10" y2="14"/>
+        </svg>`;
+        button.style.color = '#10b981'; // Green - expanded, can compress
+        button.title = `Set all ${type} messages to scroll height`;
+      }
     } else {
-      // Default state when global is off - show compress icon
-      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="4,14 10,14 10,20"/>
-        <polyline points="20,10 14,10 14,4"/>
-        <line x1="14" y1="10" x2="21" y2="3"/>
-        <line x1="3" y1="21" x2="10" y2="14"/>
-      </svg>`;
-      button.style.color = '#6b7280'; // Gray - scroll mode
-      button.title = `Set all ${type} messages to scroll height`;
+      // Global fixed height mode is ON - messages are compact by default
+      if (isActive) {
+        // User has set this type to expanded mode - show compress icon
+        button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="4,14 10,14 10,20"/>
+          <polyline points="20,10 14,10 14,4"/>
+          <line x1="14" y1="10" x2="21" y2="3"/>
+          <line x1="3" y1="21" x2="10" y2="14"/>
+        </svg>`;
+        button.style.color = '#10b981'; // Green - expanded
+        button.title = `Set all ${type} messages to scroll height`;
+      } else {
+        // Default state - show expand icon (currently compact)
+        button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15,3 21,3 21,9"/>
+          <polyline points="9,21 3,21 3,15"/>
+          <line x1="21" y1="3" x2="14" y2="10"/>
+          <line x1="3" y1="21" x2="10" y2="14"/>
+        </svg>`;
+        button.style.color = '#f59e0b'; // Amber - expand available
+        button.title = `Expand all ${type} messages (unlimited height)`;
+      }
     }
   } else if (buttonType === 'copy') {
     // Copy button - always same icon, no active state needed
@@ -655,31 +683,61 @@ window.updateAllMessageStates = () => {
           const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
           console.log(`🔧 Fixed height global setting: ${isFixedHeightGlobal} for ${type}`);
           
-          if (isFullHeight) {
-            msg.classList.add("message-expanded");
-            console.log(`📏 Applied expanded to ${type} message`);
-          } else if (isFixedHeightGlobal) {
-            // Re-evaluate message state - use a short delay to ensure DOM is stable
-            setTimeout(async () => {
-              try {
-                // Force reflow before measuring
-                msg.offsetHeight;
-                const optimalState = await determineMessageState(msg);
-                msg.classList.remove("message-compact", "message-expanded");
-                if (optimalState === 'compact') {
+          // Logic depends on global fixed height mode:
+          // When global fixed height ON: isFullHeight=true means expand override
+          // When global fixed height OFF: isFullHeight=true means compact override
+          
+          if (isFixedHeightGlobal) {
+            // Global fixed height mode ON - messages are compact by default
+            if (isFullHeight) {
+              // User override to expand
+              msg.classList.add("message-expanded");
+              console.log(`📏 Applied expanded override to ${type} message`);
+            } else {
+              // Default behavior - evaluate if compact needed
+              setTimeout(async () => {
+                try {
+                  // Force reflow before measuring
+                  msg.offsetHeight;
+                  const optimalState = await determineMessageState(msg);
+                  msg.classList.remove("message-compact", "message-expanded");
+                  if (optimalState === 'compact') {
+                    msg.classList.add("message-compact");
+                    console.log(`📏 Applied compact to ${type} message (${msg.scrollHeight}px)`);
+                  } else {
+                    console.log(`📏 Applied natural to ${type} message (${msg.scrollHeight}px)`);
+                  }
+                } catch (error) {
+                  console.warn('Error re-evaluating message state:', error);
                   msg.classList.add("message-compact");
-                  console.log(`📏 Applied compact to ${type} message (${msg.scrollHeight}px)`);
-                } else {
-                  console.log(`📏 Applied natural to ${type} message (${msg.scrollHeight}px)`);
                 }
-              } catch (error) {
-                console.warn('Error re-evaluating message state:', error);
-                msg.classList.add("message-compact");
-              }
-            }, 50); // Increased delay for better stability
+              }, 50);
+            }
           } else {
-            msg.classList.add("message-expanded");
-            console.log(`📏 Applied expanded (global off) to ${type} message`);
+            // Global fixed height mode OFF - messages are expanded by default  
+            if (isFullHeight) {
+              // User override to compact
+              setTimeout(async () => {
+                try {
+                  msg.offsetHeight;
+                  const optimalState = await determineMessageState(msg);
+                  msg.classList.remove("message-compact", "message-expanded");
+                  if (optimalState === 'compact') {
+                    msg.classList.add("message-compact");
+                    console.log(`📏 Applied compact override to ${type} message (${msg.scrollHeight}px)`);
+                  } else {
+                    console.log(`📏 Applied natural override to ${type} message (${msg.scrollHeight}px)`);
+                  }
+                } catch (error) {
+                  console.warn('Error re-evaluating message state:', error);
+                  msg.classList.add("message-compact");
+                }
+              }, 50);
+            } else {
+              // Default behavior - fully expanded
+              msg.classList.add("message-expanded");
+              console.log(`📏 Applied expanded (global off) to ${type} message`);
+            }
           }
         }
       }
@@ -1386,17 +1444,6 @@ function drawKvps(container, kvps, latex) {
           }
         }
       }
-      //   } else {
-      //     pre.textContent = value;
-
-      //     // Add click handler
-      //     pre.addEventListener("click", () => {
-      //       copyText(value, pre);
-      //     });
-
-      //     td.appendChild(pre);
-      //     addCopyButtonToElement(row);
-      //   }
     }
     container.appendChild(table);
   }
