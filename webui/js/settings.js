@@ -101,17 +101,18 @@ const settingsModalProxy = {
             const set = await sendJsonData("/settings_get", null);
 
             // First load the settings data without setting the active tab
+            const __ = window.i18n.translate;
             const settings = {
-                "title": "Settings",
+                "title": __("settingsTitle"),
                 "buttons": [
                     {
                         "id": "save",
-                        "title": "Save",
+                        "title": __("save"),
                         "classes": "btn btn-ok"
                     },
                     {
                         "id": "cancel",
-                        "title": "Cancel",
+                        "title": __("cancel"),
                         "type": "secondary",
                         "classes": "btn btn-cancel"
                     }
@@ -207,11 +208,12 @@ const settingsModalProxy = {
             });
 
         } catch (e) {
-            window.toastFetchError("Error getting settings", e)
+            window.toastFetchError(__("settingsErrorGet"), e)
         }
     },
 
     async handleButton(buttonId) {
+        const __ = window.i18n.translate;
         if (buttonId === 'save') {
 
             const modalEl = document.getElementById('settingsModal');
@@ -219,7 +221,7 @@ const settingsModalProxy = {
             try {
                 resp = await window.sendJsonData("/settings_set", modalAD.settings);
             } catch (e) {
-                window.toastFetchError("Error saving settings", e)
+                window.toastFetchError(__("settingsErrorSave"), e)
                 return
             }
             document.dispatchEvent(new CustomEvent('settings-updated', { detail: resp.settings }));
@@ -409,7 +411,7 @@ document.addEventListener('alpine:init', function () {
                     for (const section of this.settingsData.sections) {
                         for (const field of section.fields) {
                             if (field.required && (!field.value || field.value.trim() === '')) {
-                                showToast(`${field.title} in ${section.title} is required`, 'error');
+                                showToast(__('fieldRequired', { field: field.title, section: section.title }), 'error');
                                 return;
                             }
                         }
@@ -433,16 +435,16 @@ document.addEventListener('alpine:init', function () {
                     });
 
                     if (response.ok) {
-                        showToast('Settings saved successfully', 'success');
+                        showToast(__('settingsSuccessSave'), 'success');
                         // Refresh settings
                         await this.fetchSettings();
                     } else {
                         const errorData = await response.json();
-                        throw new Error(errorData.error || 'Failed to save settings');
+                        throw new Error(errorData.error || __('settingsErrorSaveDefault'));
                     }
                 } catch (error) {
                     console.error('Error saving settings:', error);
-                    showToast('Failed to save settings: ' + error.message, 'error');
+                    showToast(__('settingsErrorSaveFailed', { message: error.message }), 'error');
                 }
             },
 
@@ -461,8 +463,9 @@ document.addEventListener('alpine:init', function () {
 
             // Test API connection
             async testConnection(field) {
+                const __ = window.i18n.translate;
                 try {
-                    field.testResult = 'Testing...';
+                    field.testResult = __('testingConnection');
                     field.testStatus = 'loading';
 
                     // Find the API key field
@@ -477,7 +480,7 @@ document.addEventListener('alpine:init', function () {
                     }
 
                     if (!apiKey) {
-                        throw new Error('API key is required');
+                        throw new Error('API key is required'); // This error is primarily for console
                     }
 
                     // Send test request
@@ -495,20 +498,21 @@ document.addEventListener('alpine:init', function () {
                     const data = await response.json();
 
                     if (response.ok && data.success) {
-                        field.testResult = 'Connection successful!';
+                        field.testResult = __('connectionSuccessful');
                         field.testStatus = 'success';
                     } else {
-                        throw new Error(data.error || 'Connection failed');
+                        throw new Error(data.error || __('connectionFailedDefault'));
                     }
                 } catch (error) {
                     console.error('Connection test failed:', error);
-                    field.testResult = `Failed: ${error.message}`;
+                    field.testResult = __('connectionFailed', { message: error.message });
                     field.testStatus = 'error';
                 }
             },
 
             // Reveal token temporarily
             revealToken(field) {
+                const __ = window.i18n.translate;
                 // Find target field
                 for (const section of this.settingsData.sections) {
                     for (const f of section.fields) {
@@ -517,7 +521,7 @@ document.addEventListener('alpine:init', function () {
                             f.type = f.type === 'password' ? 'text' : 'password';
 
                             // Update button text
-                            field.value = f.type === 'password' ? 'Show' : 'Hide';
+                            field.value = f.type === 'password' ? __('showToken') : __('hideToken');
 
                             break;
                         }
