@@ -53,7 +53,7 @@ const fileBrowserModalProxy = {
         this.browser.entries = [];
       }
     } catch (error) {
-      window.toastFetchError("Error fetching files", error);
+      window.toastFetchError(window.i18n.t('fileBrowser.errorFetchingFiles', "Error fetching files"), error);
       this.browser.entries = [];
     } finally {
       this.isLoading = false;
@@ -108,7 +108,7 @@ const fileBrowserModalProxy = {
   },
 
   async deleteFile(file) {
-    if (!confirm(`Are you sure you want to delete ${file.name}?`)) {
+    if (!confirm(window.i18n.t('fileBrowser.confirmDelete', "Are you sure you want to delete {filename}?", { filename: file.name }))) {
       return;
     }
 
@@ -129,13 +129,13 @@ const fileBrowserModalProxy = {
         this.browser.entries = this.browser.entries.filter(
           (entry) => entry.path !== file.path
         );
-        alert("File deleted successfully.");
+        alert(window.i18n.t('fileBrowser.fileDeletedSuccess', "File deleted successfully."));
       } else {
-        alert(`Error deleting file: ${await response.text()}`);
+        alert(window.i18n.t('fileBrowser.errorDeletingFile', "Error deleting file: {errorText}", { errorText: await response.text() }));
       }
     } catch (error) {
-      window.toastFetchError("Error deleting file", error);
-      alert("Error deleting file");
+      window.toastFetchError(window.i18n.t('fileBrowser.errorDeletingFileJs', "Error deleting file"), error);
+      alert(window.i18n.t('fileBrowser.errorDeletingFileGeneric', "Error deleting file"));
     }
   },
 
@@ -152,9 +152,7 @@ const fileBrowserModalProxy = {
         if (!["zip", "tar", "gz", "rar", "7z"].includes(ext)) {
           if (files[i].size > 100 * 1024 * 1024) {
             // 100MB
-            alert(
-              `File ${files[i].name} exceeds the maximum allowed size of 100MB.`
-            );
+            alert(window.i18n.t('fileBrowser.fileTooLarge', "File {filename} exceeds the maximum allowed size of 100MB.", { filename: files[i].name }));
             continue;
           }
         }
@@ -182,14 +180,14 @@ const fileBrowserModalProxy = {
           const failedFiles = data.failed
             .map((file) => `${file.name}: ${file.error}`)
             .join("\n");
-          alert(`Some files failed to upload:\n${failedFiles}`);
+          alert(window.i18n.t('fileBrowser.someFilesFailedUpload', "Some files failed to upload:\n{failedFiles}", { failedFiles: failedFiles }));
         }
       } else {
-        alert(data.message);
+        alert(data.message); // Server message
       }
     } catch (error) {
-      window.toastFetchError("Error uploading files", error);
-      alert("Error uploading files");
+      window.toastFetchError(window.i18n.t('fileBrowser.errorUploadingFiles', "Error uploading files"), error);
+      alert(window.i18n.t('fileBrowser.errorUploadingFilesGeneric', "Error uploading files"));
     }
   },
 
@@ -215,8 +213,8 @@ const fileBrowserModalProxy = {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(link.href);
     } catch (error) {
-      window.toastFetchError("Error downloading file", error);
-      alert("Error downloading file");
+      window.toastFetchError(window.i18n.t('fileBrowser.errorDownloadingFile', "Error downloading file"), error);
+      alert(window.i18n.t('fileBrowser.errorDownloadingFileGeneric', "Error downloading file"));
     }
   },
 
@@ -267,7 +265,7 @@ openFileLink = async function (path) {
   try {
     const resp = await window.sendJsonData("/file_info", { path });
     if (!resp.exists) {
-      window.toast("File does not exist.", "error");
+      window.toast(window.i18n.t('fileBrowser.fileDoesNotExist', "File does not exist."), "error");
       return;
     }
 
@@ -280,7 +278,7 @@ openFileLink = async function (path) {
       });
     }
   } catch (e) {
-    window.toastFetchError("Error opening file", e);
+    window.toastFetchError(window.i18n.t('fileBrowser.errorOpeningFile', "Error opening file"), e);
   }
 };
 window.openFileLink = openFileLink;

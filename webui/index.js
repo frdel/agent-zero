@@ -144,7 +144,7 @@ export async function sendMessage() {
             // Handle response
             const jsonResponse = await response.json();
             if (!jsonResponse) {
-                toast("No response returned.", "error");
+                toast(window.i18n.t('noResponseReturned', "No response returned."), "error");
             }
             // else if (!jsonResponse.ok) {
             //     if (jsonResponse.message) {
@@ -164,15 +164,15 @@ export async function sendMessage() {
             adjustTextareaHeight();
         }
     } catch (e) {
-        toastFetchError("Error sending message", e)
+        toastFetchError(window.i18n.t('errorSendingMessage', "Error sending message"), e);
     }
 }
 
 function toastFetchError(text, error) {
     if (getConnectionStatus()) {
-        toast(`${text}: ${error.message}`, "error");
+        toast(window.i18n.t('fetchError', '{originalText}: {errorMessage}', { originalText: text, errorMessage: error.message }), "error");
     } else {
-        toast(`${text} (it seems the backend is not running): ${error.message}`, "error");
+        toast(window.i18n.t('fetchErrorBackendDown', '{originalText} (it seems the backend is not running): {errorMessage}', { originalText: text, errorMessage: error.message }), "error");
     }
     console.error(text, error);
 }
@@ -280,13 +280,13 @@ window.loadKnowledge = async function () {
         });
 
         if (!response.ok) {
-            toast(await response.text(), "error");
+            toast(await response.text(), "error"); // Server message, potentially not translated by client
         } else {
             const data = await response.json();
-            toast("Knowledge files imported: " + data.filenames.join(", "), "success");
+            toast(window.i18n.t('knowledgeFilesImported', "Knowledge files imported: {filenames}", { filenames: data.filenames.join(", ") }), "success");
         }
         } catch (e) {
-            toastFetchError("Error loading knowledge", e)
+            toastFetchError(window.i18n.t('errorLoadingKnowledge', "Error loading knowledge"), e);
         }
     };
 
@@ -528,7 +528,7 @@ window.pauseAgent = async function (paused) {
     try {
         const resp = await sendJsonData("/pause", { paused: paused, context });
     } catch (e) {
-        window.toastFetchError("Error pausing agent", e)
+        window.toastFetchError(window.i18n.t('errorPausingAgent', "Error pausing agent"), e);
     }
 }
 
@@ -537,7 +537,7 @@ window.resetChat = async function (ctxid=null) {
         const resp = await sendJsonData("/chat_reset", { "context": ctxid === null ? context : ctxid });
         if (ctxid === null) updateAfterScroll();
     } catch (e) {
-        window.toastFetchError("Error resetting chat", e);
+        window.toastFetchError(window.i18n.t('errorResettingChat', "Error resetting chat"), e);
     }
 }
 
@@ -546,7 +546,7 @@ window.newChat = async function () {
         setContext(generateGUID());
         updateAfterScroll()
     } catch (e) {
-        window.toastFetchError("Error creating new chat", e)
+        window.toastFetchError(window.i18n.t('errorCreatingNewChat', "Error creating new chat"), e);
     }
 }
 
@@ -578,10 +578,10 @@ window.killChat = async function (id) {
 
         updateAfterScroll();
 
-        toast("Chat deleted successfully", "success");
+        toast(window.i18n.t('chatDeletedSuccess', "Chat deleted successfully"), "success");
     } catch (e) {
         console.error("Error deleting chat:", e);
-        window.toastFetchError("Error deleting chat", e);
+        window.toastFetchError(window.i18n.t('errorDeletingChat', "Error deleting chat"), e);
     }
 }
 
@@ -745,21 +745,21 @@ window.nudge = async function () {
     try {
         const resp = await sendJsonData("/nudge", { ctxid: getContext() });
     } catch (e) {
-        toastFetchError("Error nudging agent", e)
+        toastFetchError(window.i18n.t('errorNudgingAgent', "Error nudging agent"), e);
     }
 }
 
 window.restart = async function () {
     try {
         if (!getConnectionStatus()) {
-            toast("Backend disconnected, cannot restart.", "error");
+            toast(window.i18n.t('backendDisconnectedCannotRestart', "Backend disconnected, cannot restart."), "error");
             return
         }
         // First try to initiate restart
         const resp = await sendJsonData("/restart", {});
     } catch (e) {
         // Show restarting message
-        toast("Restarting...", "info", 0);
+        toast(window.i18n.t('restarting', "Restarting..."), "info", 0);
 
         let retries = 0;
         const maxRetries = 240; // Maximum number of retries (60 seconds with 250ms interval)
@@ -771,7 +771,7 @@ window.restart = async function () {
                 await new Promise(resolve => setTimeout(resolve, 250));
                 hideToast();
                 await new Promise(resolve => setTimeout(resolve, 400));
-                toast("Restarted", "success", 5000);
+                toast(window.i18n.t('restartedSuccess', "Restarted"), "success", 5000);
                 return;
             } catch (e) {
                 // Server still down, keep waiting
@@ -783,7 +783,7 @@ window.restart = async function () {
         // If we get here, restart failed or took too long
         hideToast();
         await new Promise(resolve => setTimeout(resolve, 400));
-        toast("Restart timed out or failed", "error", 5000);
+        toast(window.i18n.t('restartTimeout', "Restart timed out or failed"), "error", 5000);
     }
 }
 
@@ -824,7 +824,7 @@ window.loadChats = async function () {
         const response = await sendJsonData("/chat_load", { chats: fileContents });
 
         if (!response) {
-            toast("No response returned.", "error")
+            toast(window.i18n.t('noResponseReturned', "No response returned."), "error");
         }
         // else if (!response.ok) {
         //     if (response.message) {
@@ -835,11 +835,11 @@ window.loadChats = async function () {
         // }
         else {
             setContext(response.ctxids[0])
-            toast("Chats loaded.", "success")
+            toast(window.i18n.t('chatsLoadedSuccess', "Chats loaded."), "success");
         }
 
     } catch (e) {
-        toastFetchError("Error loading chats", e)
+        toastFetchError(window.i18n.t('errorLoadingChats', "Error loading chats"), e);
     }
 }
 
@@ -848,7 +848,7 @@ window.saveChat = async function () {
         const response = await sendJsonData("/chat_export", { ctxid: context });
 
         if (!response) {
-            toast("No response returned.", "error")
+            toast(window.i18n.t('noResponseReturned', "No response returned."), "error");
         }
         //  else if (!response.ok) {
         //     if (response.message) {
@@ -859,11 +859,11 @@ window.saveChat = async function () {
         // }
         else {
             downloadFile(response.ctxid + ".json", response.content)
-            toast("Chat file downloaded.", "success")
+            toast(window.i18n.t('chatFileDownloaded', "Chat file downloaded."), "success");
         }
 
     } catch (e) {
-        toastFetchError("Error saving chat", e)
+        toastFetchError(window.i18n.t('errorSavingChat', "Error saving chat"), e);
     }
 }
 
@@ -952,7 +952,7 @@ function toast(text, type = 'info', timeout = 5000) {
     // Function to update toast content and show it
     const updateAndShowToast = () => {
         // Update the toast content and type
-        const title = type.charAt(0).toUpperCase() + type.slice(1);
+        const title = window.i18n.t('toast.' + type, type.charAt(0).toUpperCase() + type.slice(1));
         toast.querySelector('.toast__title').textContent = title;
         toast.querySelector('.toast__message').textContent = text;
 
@@ -973,9 +973,9 @@ function toast(text, type = 'info', timeout = 5000) {
         // Add the copy button event listener
         copyButton.onclick = () => {
             navigator.clipboard.writeText(text);
-            copyButton.textContent = 'Copied!';
+            copyButton.textContent = window.i18n.t('copied', 'Copied!');
             setTimeout(() => {
-                copyButton.textContent = 'Copy';
+                copyButton.textContent = window.i18n.t('copy', 'Copy');
             }, 2000);
         };
 

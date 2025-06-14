@@ -70,6 +70,7 @@ class Settings(TypedDict):
     mcp_client_tool_timeout: int
     mcp_server_enabled: bool
     mcp_server_token: str
+    default_user_language: str
 
 
 class PartialSettings(Settings, total=False):
@@ -771,9 +772,35 @@ def convert_out(settings: Settings) -> SettingsOutput:
     }
 
     # Add the section to the result
+
+    # UI settings section
+    ui_settings_fields: list[SettingsField] = []
+    ui_settings_fields.append(
+        {
+            "id": "default_user_language",
+            "title": "Default User Language",
+            "description": "The default language for the user interface. (e.g., 'en', 'zh')",
+            "type": "select",
+            "value": settings["default_user_language"],
+            "options": [
+                {"value": "en", "label": "English"},
+                {"value": "zh", "label": "中文 (Chinese)"},
+            ],
+        }
+    )
+
+    ui_section: SettingsSection = {
+        "id": "ui_settings",
+        "title": "User Interface Settings",
+        "description": "Settings related to the user interface appearance and language.",
+        "fields": ui_settings_fields,
+        "tab": "agent",
+    }
+
     result: SettingsOutput = {
         "sections": [
             agent_section,
+            ui_section, # Inserted UI settings section
             chat_model_section,
             util_model_section,
             embed_model_section,
@@ -905,6 +932,8 @@ def _write_sensitive_settings(settings: Settings):
     if settings["root_password"]:
         set_root_password(settings["root_password"])
 
+    dotenv.save_dotenv_value(dotenv.KEY_DEFAULT_USER_LANGUAGE, settings["default_user_language"])
+
 
 def get_default_settings() -> Settings:
     from models import ModelProvider
@@ -958,6 +987,7 @@ def get_default_settings() -> Settings:
         mcp_client_tool_timeout=120,
         mcp_server_enabled=False,
         mcp_server_token=create_auth_token(),
+        default_user_language=dotenv.get_dotenv_value(dotenv.KEY_DEFAULT_USER_LANGUAGE, "zh"),
     )
 
 

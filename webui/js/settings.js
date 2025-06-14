@@ -102,16 +102,16 @@ const settingsModalProxy = {
 
             // First load the settings data without setting the active tab
             const settings = {
-                "title": "Settings",
+                "title": window.i18n.t('settingsTitle', "Settings"),
                 "buttons": [
                     {
                         "id": "save",
-                        "title": "Save",
+                        "title": window.i18n.t('save', "Save"),
                         "classes": "btn btn-ok"
                     },
                     {
                         "id": "cancel",
-                        "title": "Cancel",
+                        "title": window.i18n.t('cancel', "Cancel"),
                         "type": "secondary",
                         "classes": "btn btn-cancel"
                     }
@@ -207,7 +207,7 @@ const settingsModalProxy = {
             });
 
         } catch (e) {
-            window.toastFetchError("Error getting settings", e)
+            window.toastFetchError(window.i18n.t('settingsErrorGet', "Error getting settings"), e);
         }
     },
 
@@ -219,7 +219,7 @@ const settingsModalProxy = {
             try {
                 resp = await window.sendJsonData("/settings_set", modalAD.settings);
             } catch (e) {
-                window.toastFetchError("Error saving settings", e)
+                window.toastFetchError(window.i18n.t('settingsErrorSave', "Error saving settings"), e);
                 return
             }
             document.dispatchEvent(new CustomEvent('settings-updated', { detail: resp.settings }));
@@ -409,7 +409,9 @@ document.addEventListener('alpine:init', function () {
                     for (const section of this.settingsData.sections) {
                         for (const field of section.fields) {
                             if (field.required && (!field.value || field.value.trim() === '')) {
-                                showToast(`${field.title} in ${section.title} is required`, 'error');
+                                // Assuming field.title and section.title are either already translated or are keys themselves
+                                // For this message, we provide a translatable format string.
+                                showToast(window.i18n.t('fieldRequired', '{fieldName} in {sectionName} is required', { fieldName: field.title, sectionName: section.title }), 'error');
                                 return;
                             }
                         }
@@ -433,16 +435,16 @@ document.addEventListener('alpine:init', function () {
                     });
 
                     if (response.ok) {
-                        showToast('Settings saved successfully', 'success');
+                        showToast(window.i18n.t('settingsSavedSuccess', 'Settings saved successfully'), 'success');
                         // Refresh settings
                         await this.fetchSettings();
                     } else {
                         const errorData = await response.json();
-                        throw new Error(errorData.error || 'Failed to save settings');
+                        throw new Error(errorData.error || window.i18n.t('settingsSaveFailedFallback', 'Failed to save settings'));
                     }
                 } catch (error) {
                     console.error('Error saving settings:', error);
-                    showToast('Failed to save settings: ' + error.message, 'error');
+                    showToast(window.i18n.t('settingsSaveFailed', 'Failed to save settings: {error}', { error: error.message }), 'error');
                 }
             },
 
@@ -462,7 +464,7 @@ document.addEventListener('alpine:init', function () {
             // Test API connection
             async testConnection(field) {
                 try {
-                    field.testResult = 'Testing...';
+                    field.testResult = window.i18n.t('testingConnection', 'Testing...');
                     field.testStatus = 'loading';
 
                     // Find the API key field
@@ -477,7 +479,7 @@ document.addEventListener('alpine:init', function () {
                     }
 
                     if (!apiKey) {
-                        throw new Error('API key is required');
+                        throw new Error(window.i18n.t('apiKeyRequired', 'API key is required'));
                     }
 
                     // Send test request
@@ -495,14 +497,14 @@ document.addEventListener('alpine:init', function () {
                     const data = await response.json();
 
                     if (response.ok && data.success) {
-                        field.testResult = 'Connection successful!';
+                        field.testResult = window.i18n.t('connectionSuccessful', 'Connection successful!');
                         field.testStatus = 'success';
                     } else {
-                        throw new Error(data.error || 'Connection failed');
+                        throw new Error(data.error || window.i18n.t('connectionFailed', 'Connection failed'));
                     }
                 } catch (error) {
                     console.error('Connection test failed:', error);
-                    field.testResult = `Failed: ${error.message}`;
+                    field.testResult = window.i18n.t('connectionFailedWithError', 'Failed: {error}', { error: error.message });
                     field.testStatus = 'error';
                 }
             },
@@ -517,7 +519,7 @@ document.addEventListener('alpine:init', function () {
                             f.type = f.type === 'password' ? 'text' : 'password';
 
                             // Update button text
-                            field.value = f.type === 'password' ? 'Show' : 'Hide';
+                            field.value = window.i18n.t(f.type === 'password' ? 'show' : 'hide', f.type === 'password' ? 'Show' : 'Hide');
 
                             break;
                         }
