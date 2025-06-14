@@ -47,6 +47,7 @@ function createControlButton(label, title, handler) {
   btn.className = "message-button";
   btn.textContent = label;
   btn.title = title;
+  btn.setAttribute("aria-label", title);
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
     handler();
@@ -107,8 +108,8 @@ function injectConsoleControls(messageDiv, command) {
   setState("scroll");
 }
 
-function wrapInScrollable(element, skip = false) {
-  if (skip) return element;
+function wrapInScrollable(element, disableWrapping = false) {
+  if (disableWrapping) return element;
 
   const wrapper = document.createElement("div");
   wrapper.classList.add("scrollable-content");
@@ -208,6 +209,7 @@ export function _drawMessage(
 ) {
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", ...messageClasses);
+
   if (addControls) {
     injectMessageControls(messageDiv);
   }
