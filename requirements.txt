@@ -18,6 +18,7 @@ langchain-huggingface==0.1.2
 langchain-mistralai==0.2.4
 langchain-ollama==0.3.0
 langchain-openai==0.3.11
+langchain-unstructured[all-docs]==0.1.6
 openai-whisper==20240930
 lxml_html_clean==0.3.1
 markdown==3.7
@@ -30,8 +31,12 @@ python-dotenv==1.1.0
 pytz==2024.2
 sentence-transformers==3.0.1
 tiktoken==0.8.0
-unstructured==0.15.13
-unstructured-client==0.25.9
+unstructured[all-docs]==0.16.23
+unstructured-client==0.31.0
 webcolors==24.6.0
 nest-asyncio==1.6.0
+markdownify==1.1.0
+pymupdf==1.25.3
+pytesseract==0.3.13
+pdf2image==1.17.0
 crontab==1.0.1
