@@ -1722,7 +1722,7 @@ body.long-form .scroll-indicator {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(0.5rem);
+    transform: translateY(var(--spacing-small));
   }
   to {
     opacity: 1;
