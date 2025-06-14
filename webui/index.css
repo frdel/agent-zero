@@ -3648,97 +3648,121 @@ nav ul li a img {
 
 /* Color-matched scrollbars by message type - CORRECTED SELECTORS */
 /* Agent messages - blue scrollbars */
-.message-ai.message-agent::-webkit-scrollbar-thumb {
+.message-agent {
+  scrollbar-color: rgba(59, 130, 246, 0.8) transparent;
+}
+.message-agent::-webkit-scrollbar-thumb {
   background: rgba(59, 130, 246, 0.8) !important;
   border: 1px solid rgba(59, 130, 246, 0.5) !important;
   box-shadow: 0 0 4px rgba(59, 130, 246, 0.4) !important;
 }
 
-.message-ai.message-agent::-webkit-scrollbar-thumb:hover {
+.message-agent::-webkit-scrollbar-thumb:hover {
   background: rgba(59, 130, 246, 1.0) !important;
   box-shadow: 0 0 8px rgba(59, 130, 246, 0.6) !important;
   transform: scale(1.05) !important;
 }
 
 /* Tool messages - purple scrollbars */
-.message-ai.message-tool::-webkit-scrollbar-thumb {
+.message-tool {
+  scrollbar-color: rgba(168, 85, 247, 0.8) transparent;
+}
+.message-tool::-webkit-scrollbar-thumb {
   background: rgba(168, 85, 247, 0.8) !important;
   border: 1px solid rgba(168, 85, 247, 0.5) !important;
   box-shadow: 0 0 4px rgba(168, 85, 247, 0.4) !important;
 }
 
-.message-ai.message-tool::-webkit-scrollbar-thumb:hover {
+.message-tool::-webkit-scrollbar-thumb:hover {
   background: rgba(168, 85, 247, 1.0) !important;
   box-shadow: 0 0 8px rgba(168, 85, 247, 0.6) !important;
   transform: scale(1.05) !important;
 }
 
 /* Agent response messages - green scrollbars */
-.message-ai.message-agent-response::-webkit-scrollbar-thumb {
+.message-agent-response {
+  scrollbar-color: rgba(34, 197, 94, 0.8) transparent;
+}
+.message-agent-response::-webkit-scrollbar-thumb {
   background: rgba(34, 197, 94, 0.8) !important;
   border: 1px solid rgba(34, 197, 94, 0.5) !important;
   box-shadow: 0 0 4px rgba(34, 197, 94, 0.4) !important;
 }
 
-.message-ai.message-agent-response::-webkit-scrollbar-thumb:hover {
+.message-agent-response::-webkit-scrollbar-thumb:hover {
   background: rgba(34, 197, 94, 1.0) !important;
   box-shadow: 0 0 8px rgba(34, 197, 94, 0.6) !important;
   transform: scale(1.05) !important;
 }
 
 /* Code execution messages - yellow scrollbars */
-.message-ai.message-code-exe::-webkit-scrollbar-thumb {
+.message-code-exe {
+  scrollbar-color: rgba(251, 191, 36, 0.8) transparent;
+}
+.message-code-exe::-webkit-scrollbar-thumb {
   background: rgba(251, 191, 36, 0.8) !important;
   border: 1px solid rgba(251, 191, 36, 0.5) !important;
   box-shadow: 0 0 4px rgba(251, 191, 36, 0.4) !important;
 }
 
-.message-ai.message-code-exe::-webkit-scrollbar-thumb:hover {
+.message-code-exe::-webkit-scrollbar-thumb:hover {
   background: rgba(251, 191, 36, 1.0) !important;
   box-shadow: 0 0 8px rgba(251, 191, 36, 0.6) !important;
   transform: scale(1.05) !important;
 }
 
 /* Browser messages - purple variant */
-.message-ai.message-browser::-webkit-scrollbar-thumb {
+.message-browser {
+  scrollbar-color: rgba(147, 51, 234, 0.8) transparent;
+}
+.message-browser::-webkit-scrollbar-thumb {
   background: rgba(147, 51, 234, 0.8) !important;
   border: 1px solid rgba(147, 51, 234, 0.5) !important;
   box-shadow: 0 0 4px rgba(147, 51, 234, 0.4) !important;
 }
 
-.message-ai.message-browser::-webkit-scrollbar-thumb:hover {
+.message-browser::-webkit-scrollbar-thumb:hover {
   background: rgba(147, 51, 234, 1.0) !important;
   box-shadow: 0 0 8px rgba(147, 51, 234, 0.6) !important;
   transform: scale(1.05) !important;
 }
 
 /* Warning messages - orange scrollbars */
-.message-ai.message-warning::-webkit-scrollbar-thumb {
+.message-warning {
+  scrollbar-color: rgba(245, 158, 11, 0.8) transparent;
+}
+.message-warning::-webkit-scrollbar-thumb {
   background: rgba(245, 158, 11, 0.8) !important;
   border: 1px solid rgba(245, 158, 11, 0.5) !important;
   box-shadow: 0 0 4px rgba(245, 158, 11, 0.4) !important;
 }
 
-.message-ai.message-warning::-webkit-scrollbar-thumb:hover {
+.message-warning::-webkit-scrollbar-thumb:hover {
   background: rgba(245, 158, 11, 1.0) !important;
   box-shadow: 0 0 8px rgba(245, 158, 11, 0.6) !important;
   transform: scale(1.05) !important;
 }
 
 /* Error messages - red scrollbars */
-.message-ai.message-error::-webkit-scrollbar-thumb {
+.message-error {
+  scrollbar-color: rgba(239, 68, 68, 0.8) transparent;
+}
+.message-error::-webkit-scrollbar-thumb {
   background: rgba(239, 68, 68, 0.8) !important;
   border: 1px solid rgba(239, 68, 68, 0.5) !important;
   box-shadow: 0 0 4px rgba(239, 68, 68, 0.4) !important;
 }
 
-.message-ai.message-error::-webkit-scrollbar-thumb:hover {
+.message-error::-webkit-scrollbar-thumb:hover {
   background: rgba(239, 68, 68, 1.0) !important;
   box-shadow: 0 0 8px rgba(239, 68, 68, 0.6) !important;
   transform: scale(1.05) !important;
 }
 
 /* Info messages - subtle gray scrollbars */
+.message-info {
+  scrollbar-color: rgba(107, 114, 128, 0.8) transparent;
+}
 .message-info::-webkit-scrollbar-thumb {
   background: rgba(107, 114, 128, 0.8) !important;
   border: 1px solid rgba(107, 114, 128, 0.5) !important;
@@ -3752,19 +3776,25 @@ nav ul li a img {
 }
 
 /* Default messages - subtle gray scrollbars */
-.message-ai.message-default::-webkit-scrollbar-thumb {
+.message-default {
+  scrollbar-color: rgba(107, 114, 128, 0.8) transparent;
+}
+.message-default::-webkit-scrollbar-thumb {
   background: rgba(107, 114, 128, 0.8) !important;
   border: 1px solid rgba(107, 114, 128, 0.5) !important;
   box-shadow: 0 0 4px rgba(107, 114, 128, 0.4) !important;
 }
 
-.message-ai.message-default::-webkit-scrollbar-thumb:hover {
+.message-default::-webkit-scrollbar-thumb:hover {
   background: rgba(107, 114, 128, 1.0) !important;
   box-shadow: 0 0 8px rgba(107, 114, 128, 0.6) !important;
   transform: scale(1.05) !important;
 }
 
 /* User messages - neutral gray scrollbars */
+.message-user {
+  scrollbar-color: rgba(156, 163, 175, 0.8) transparent;
+}
 .message-user::-webkit-scrollbar-thumb {
   background: rgba(156, 163, 175, 0.8) !important;
   border: 1px solid rgba(156, 163, 175, 0.5) !important;
@@ -3778,51 +3808,81 @@ nav ul li a img {
 }
 
 /* Light mode adjustments for color-matched scrollbars */
-.light-mode .message-ai.message-agent::-webkit-scrollbar-thumb {
+.light-mode .message-agent {
+  scrollbar-color: rgba(37, 99, 235, 0.7) transparent;
+}
+.light-mode .message-agent::-webkit-scrollbar-thumb {
   background: rgba(37, 99, 235, 0.7) !important;
   border: 1px solid rgba(37, 99, 235, 0.4) !important;
 }
 
-.light-mode .message-ai.message-tool::-webkit-scrollbar-thumb {
+.light-mode .message-tool {
+  scrollbar-color: rgba(147, 51, 234, 0.7) transparent;
+}
+.light-mode .message-tool::-webkit-scrollbar-thumb {
   background: rgba(147, 51, 234, 0.7) !important;
   border: 1px solid rgba(147, 51, 234, 0.4) !important;
 }
 
-.light-mode .message-ai.message-agent-response::-webkit-scrollbar-thumb {
+.light-mode .message-agent-response {
+  scrollbar-color: rgba(22, 163, 74, 0.7) transparent;
+}
+.light-mode .message-agent-response::-webkit-scrollbar-thumb {
   background: rgba(22, 163, 74, 0.7) !important;
   border: 1px solid rgba(22, 163, 74, 0.4) !important;
 }
 
-.light-mode .message-ai.message-code-exe::-webkit-scrollbar-thumb {
+.light-mode .message-code-exe {
+  scrollbar-color: rgba(217, 119, 6, 0.7) transparent;
+}
+.light-mode .message-code-exe::-webkit-scrollbar-thumb {
   background: rgba(217, 119, 6, 0.7) !important;
   border: 1px solid rgba(217, 119, 6, 0.4) !important;
 }
 
-.light-mode .message-ai.message-browser::-webkit-scrollbar-thumb {
+.light-mode .message-browser {
+  scrollbar-color: rgba(126, 34, 206, 0.7) transparent;
+}
+.light-mode .message-browser::-webkit-scrollbar-thumb {
   background: rgba(126, 34, 206, 0.7) !important;
   border: 1px solid rgba(126, 34, 206, 0.4) !important;
 }
 
-.light-mode .message-ai.message-warning::-webkit-scrollbar-thumb {
+.light-mode .message-warning {
+  scrollbar-color: rgba(180, 83, 9, 0.7) transparent;
+}
+.light-mode .message-warning::-webkit-scrollbar-thumb {
   background: rgba(180, 83, 9, 0.7) !important;
   border: 1px solid rgba(180, 83, 9, 0.4) !important;
 }
 
-.light-mode .message-ai.message-error::-webkit-scrollbar-thumb {
+.light-mode .message-error {
+  scrollbar-color: rgba(220, 38, 38, 0.7) transparent;
+}
+.light-mode .message-error::-webkit-scrollbar-thumb {
   background: rgba(220, 38, 38, 0.7) !important;
   border: 1px solid rgba(220, 38, 38, 0.4) !important;
 }
 
+.light-mode .message-info {
+  scrollbar-color: rgba(75, 85, 99, 0.7) transparent;
+}
 .light-mode .message-info::-webkit-scrollbar-thumb {
   background: rgba(75, 85, 99, 0.7) !important;
   border: 1px solid rgba(75, 85, 99, 0.4) !important;
 }
 
-.light-mode .message-ai.message-default::-webkit-scrollbar-thumb {
+.light-mode .message-default {
+  scrollbar-color: rgba(75, 85, 99, 0.7) transparent;
+}
+.light-mode .message-default::-webkit-scrollbar-thumb {
   background: rgba(75, 85, 99, 0.7) !important;
   border: 1px solid rgba(75, 85, 99, 0.4) !important;
 }
 
+.light-mode .message-user {
+  scrollbar-color: rgba(107, 114, 128, 0.7) transparent;
+}
 .light-mode .message-user::-webkit-scrollbar-thumb {
   background: rgba(107, 114, 128, 0.7) !important;
   border: 1px solid rgba(107, 114, 128, 0.4) !important;
@@ -3834,98 +3894,98 @@ nav ul li a img {
    ======================================== */
 
 /* Agent messages - blue scrollable content */
-.message-ai.message-agent .scrollable-content::-webkit-scrollbar-thumb {
+.message-agent .scrollable-content::-webkit-scrollbar-thumb {
   background: rgba(59, 130, 246, 0.8) !important;
   border: 1px solid rgba(59, 130, 246, 0.5) !important;
   box-shadow: 0 0 4px rgba(59, 130, 246, 0.4) !important;
   border-radius: 4px !important;
 }
 
-.message-ai.message-agent .scrollable-content::-webkit-scrollbar-thumb:hover {
+.message-agent .scrollable-content::-webkit-scrollbar-thumb:hover {
   background: rgba(59, 130, 246, 1.0) !important;
   box-shadow: 0 0 8px rgba(59, 130, 246, 0.6) !important;
   transform: scale(1.05) !important;
 }
 
 /* Tool messages - purple scrollable content */
-.message-ai.message-tool .scrollable-content::-webkit-scrollbar-thumb {
+.message-tool .scrollable-content::-webkit-scrollbar-thumb {
   background: rgba(168, 85, 247, 0.8) !important;
   border: 1px solid rgba(168, 85, 247, 0.5) !important;
   box-shadow: 0 0 4px rgba(168, 85, 247, 0.4) !important;
   border-radius: 4px !important;
 }
 
-.message-ai.message-tool .scrollable-content::-webkit-scrollbar-thumb:hover {
+.message-tool .scrollable-content::-webkit-scrollbar-thumb:hover {
   background: rgba(168, 85, 247, 1.0) !important;
   box-shadow: 0 0 8px rgba(168, 85, 247, 0.6) !important;
   transform: scale(1.05) !important;
 }
 
 /* Agent response messages - green scrollable content */
-.message-ai.message-agent-response .scrollable-content::-webkit-scrollbar-thumb {
+.message-agent-response .scrollable-content::-webkit-scrollbar-thumb {
   background: rgba(34, 197, 94, 0.8) !important;
   border: 1px solid rgba(34, 197, 94, 0.5) !important;
   box-shadow: 0 0 4px rgba(34, 197, 94, 0.4) !important;
   border-radius: 4px !important;
 }
 
-.message-ai.message-agent-response .scrollable-content::-webkit-scrollbar-thumb:hover {
+.message-agent-response .scrollable-content::-webkit-scrollbar-thumb:hover {
   background: rgba(34, 197, 94, 1.0) !important;
   box-shadow: 0 0 8px rgba(34, 197, 94, 0.6) !important;
   transform: scale(1.05) !important;
 }
 
 /* Code execution messages - yellow scrollable content */
-.message-ai.message-code-exe .scrollable-content::-webkit-scrollbar-thumb {
+.message-code-exe .scrollable-content::-webkit-scrollbar-thumb {
   background: rgba(251, 191, 36, 0.8) !important;
   border: 1px solid rgba(251, 191, 36, 0.5) !important;
   box-shadow: 0 0 4px rgba(251, 191, 36, 0.4) !important;
   border-radius: 4px !important;
 }
 
-.message-ai.message-code-exe .scrollable-content::-webkit-scrollbar-thumb:hover {
+.message-code-exe .scrollable-content::-webkit-scrollbar-thumb:hover {
   background: rgba(251, 191, 36, 1.0) !important;
   box-shadow: 0 0 8px rgba(251, 191, 36, 0.6) !important;
   transform: scale(1.05) !important;
 }
 
 /* Browser messages - purple variant scrollable content */
-.message-ai.message-browser .scrollable-content::-webkit-scrollbar-thumb {
+.message-browser .scrollable-content::-webkit-scrollbar-thumb {
   background: rgba(147, 51, 234, 0.8) !important;
   border: 1px solid rgba(147, 51, 234, 0.5) !important;
   box-shadow: 0 0 4px rgba(147, 51, 234, 0.4) !important;
   border-radius: 4px !important;
 }
 
-.message-ai.message-browser .scrollable-content::-webkit-scrollbar-thumb:hover {
+.message-browser .scrollable-content::-webkit-scrollbar-thumb:hover {
   background: rgba(147, 51, 234, 1.0) !important;
   box-shadow: 0 0 8px rgba(147, 51, 234, 0.6) !important;
   transform: scale(1.05) !important;
 }
 
 /* Warning messages - orange scrollable content */
-.message-ai.message-warning .scrollable-content::-webkit-scrollbar-thumb {
+.message-warning .scrollable-content::-webkit-scrollbar-thumb {
   background: rgba(245, 158, 11, 0.8) !important;
   border: 1px solid rgba(245, 158, 11, 0.5) !important;
   box-shadow: 0 0 4px rgba(245, 158, 11, 0.4) !important;
   border-radius: 4px !important;
 }
 
-.message-ai.message-warning .scrollable-content::-webkit-scrollbar-thumb:hover {
+.message-warning .scrollable-content::-webkit-scrollbar-thumb:hover {
   background: rgba(245, 158, 11, 1.0) !important;
   box-shadow: 0 0 8px rgba(245, 158, 11, 0.6) !important;
   transform: scale(1.05) !important;
 }
 
 /* Error messages - red scrollable content */
-.message-ai.message-error .scrollable-content::-webkit-scrollbar-thumb {
+.message-error .scrollable-content::-webkit-scrollbar-thumb {
   background: rgba(239, 68, 68, 0.8) !important;
   border: 1px solid rgba(239, 68, 68, 0.5) !important;
   box-shadow: 0 0 4px rgba(239, 68, 68, 0.4) !important;
   border-radius: 4px !important;
 }
 
-.message-ai.message-error .scrollable-content::-webkit-scrollbar-thumb:hover {
+.message-error .scrollable-content::-webkit-scrollbar-thumb:hover {
   background: rgba(239, 68, 68, 1.0) !important;
   box-shadow: 0 0 8px rgba(239, 68, 68, 0.6) !important;
   transform: scale(1.05) !important;
@@ -3946,14 +4006,14 @@ nav ul li a img {
 }
 
 /* Default messages - subtle gray scrollable content */
-.message-ai.message-default .scrollable-content::-webkit-scrollbar-thumb {
+.message-default .scrollable-content::-webkit-scrollbar-thumb {
   background: rgba(107, 114, 128, 0.8) !important;
   border: 1px solid rgba(107, 114, 128, 0.5) !important;
   box-shadow: 0 0 4px rgba(107, 114, 128, 0.4) !important;
   border-radius: 4px !important;
 }
 
-.message-ai.message-default .scrollable-content::-webkit-scrollbar-thumb:hover {
+.message-default .scrollable-content::-webkit-scrollbar-thumb:hover {
   background: rgba(107, 114, 128, 1.0) !important;
   box-shadow: 0 0 8px rgba(107, 114, 128, 0.6) !important;
   transform: scale(1.05) !important;
