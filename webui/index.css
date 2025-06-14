@@ -584,7 +584,7 @@ pre {
   right: 0.25rem;
   display: flex;
   gap: 0.25rem;
-  z-index: 2;
+  z-index: 3;
 }
 
 .message-button {
@@ -711,13 +711,13 @@ pre {
 
 .message-code-exe {
   background-color: #1e1e1e;
-  color: #00ff00;
+  color: #22c55e;
   font-family: 'Roboto Mono', monospace;
 }
 
 .light-mode .message-code-exe {
   background-color: #f8f8f8;
-  color: #008000;
+  color: #4ade80;
 }
 
 .message-code-exe .console-summary {
@@ -1613,6 +1613,15 @@ input:checked + .slider:before {
   position: relative;
 }
 
+body.long-form .scrollable-content {
+  max-height: none;
+  overflow-y: visible;
+}
+
+body.long-form .scroll-indicator {
+  display: none;
+}
+
 .scroll-indicator {
   position: absolute;
   right: 4px;
@@ -1713,7 +1722,7 @@ input:checked + .slider:before {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(0.5rem);
+    transform: translateY(var(--spacing-small));
   }
   to {
     opacity: 1;

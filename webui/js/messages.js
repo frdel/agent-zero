@@ -204,11 +204,15 @@ export function _drawMessage(
   kvps = null,
   messageClasses = [],
   contentClasses = [],
-  latex = false
+  latex = false,
+  addControls = true
 ) {
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", ...messageClasses);
-  injectMessageControls(messageDiv);
+
+  if (addControls) {
+    injectMessageControls(messageDiv);
+  }
   const skipScroll = messageClasses.includes("message-agent-response");
 
   if (heading) {
@@ -489,6 +493,7 @@ export function drawMessageCodeExe(
     null,
     ["message-ai", "message-code-exe"],
     [],
+    false,
     false
   );
   injectConsoleControls(div, content || "");

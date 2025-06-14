@@ -755,6 +755,15 @@ window.toggleSpeech = function (isOn) {
     if (!isOn) speech.stop()
 };
 
+window.toggleFixedHeight = function (isLongFormEnabled) {
+    if (isLongFormEnabled) {
+        document.body.classList.add('long-form');
+    } else {
+        document.body.classList.remove('long-form');
+    }
+    localStorage.setItem('longFormEnabled', isLongFormEnabled);
+};
+
 window.nudge = async function () {
     try {
         const resp = await sendJsonData("/nudge", { ctxid: getContext() });
@@ -805,6 +814,8 @@ window.restart = async function () {
 document.addEventListener('DOMContentLoaded', () => {
     const isDarkMode = localStorage.getItem('darkMode') !== 'false';
     toggleDarkMode(isDarkMode);
+    const isFixed = localStorage.getItem('fixedHeight') !== 'false';
+    toggleFixedHeight(isFixed);
 });
 
 
