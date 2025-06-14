@@ -92,7 +92,7 @@ function injectConsoleControls(messageDiv, command, type) {
           msg.style.overflow = 'visible';
           msg.style.overflowY = 'visible';
           
-          // Also temporarily remove any compact/expanded classes for pure measurement
+          // Also temporarily remove any state classes for pure measurement
           const wasCompact = msg.classList.contains('message-compact');
           const wasExpanded = msg.classList.contains('message-expanded');
           msg.classList.remove('message-compact', 'message-expanded');
@@ -128,12 +128,12 @@ function injectConsoleControls(messageDiv, command, type) {
           
           console.log(`📏 Message height analysis: total=${totalHeight}px, content=${contentHeight}px, final=${finalHeight}px`);
           
-          // Simple logic with buffer to prevent flashing: if total height > 300px, add scroll
-          if (finalHeight > 300) {
-            console.log('📏 Case: >300px → Compact scroll');
+          // More conservative threshold - only add scrollbars for truly tall content
+          if (finalHeight > 350) {
+            console.log('📏 Case: >350px → Compact scroll');
             resolve('compact');
           } else {
-            console.log('📏 Case: ≤300px → Natural (no scroll)');
+            console.log('📏 Case: ≤350px → Natural (no scroll)');
             resolve('natural');
           }
           
@@ -236,35 +236,111 @@ function injectConsoleControls(messageDiv, command, type) {
         removeContentPreview(msg);
         
         // Check user preferences - ALWAYS re-read from localStorage for real-time updates
-        const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+        const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
         
-        if (isFullHeight) {
-          // User explicitly wants full height
-          msg.classList.add("message-expanded");
-        } else if (isFixedHeightGlobal) {
-          // Apply intelligent height management - force re-evaluation
-          try {
-            // Force a small delay to ensure DOM is stable, then re-measure
-            await new Promise(resolve => setTimeout(resolve, 10));
-            const optimalState = await determineMessageState(msg);
-            switch (optimalState) {
-              case 'natural':
-                // No class needed - natural height
-                break;
-              case 'compact':
-                msg.classList.add("message-compact");
-                break;
-              default:
-                // Fallback to compact
-                msg.classList.add("message-compact");
+        if (isFixedHeightGlobal) {
+          // Global fixed height mode ON - messages use smart height by default
+          if (isFullHeight) {
+            // User explicitly wants full expansion - same as when fixed height is OFF
+            msg.classList.add("message-expanded");
+            // Force truly expanded state like when fixed height is off - use !important styles
+            msg.style.setProperty('max-height', 'none', 'important');
+            msg.style.setProperty('overflow-y', 'visible', 'important');
+            msg.style.setProperty('overflow-x', 'auto', 'important');
+            // Ensure no scrollbar space is reserved
+            msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
+            
+            // Also clear constraints from any nested scrollable content
+            const scrollableContent = msg.querySelector('.scrollable-content');
+            if (scrollableContent) {
+              scrollableContent.style.setProperty('max-height', 'none', 'important');
+              scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
+              scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
             }
-          } catch (error) {
-            console.warn('Error applying message state:', error);
-            msg.classList.add("message-compact");
+            
+            // Clear constraints from any nested content areas
+            const msgContent = msg.querySelector('.msg-content');
+            if (msgContent) {
+              msgContent.style.setProperty('max-height', 'none', 'important');
+              msgContent.style.setProperty('overflow-y', 'visible', 'important');
+            }
+          } else {
+            // Default behavior - apply intelligent height management
+            try {
+              // Force a small delay to ensure DOM is stable, then re-measure
+              await new Promise(resolve => setTimeout(resolve, 10));
+              const optimalState = await determineMessageState(msg);
+              switch (optimalState) {
+                case 'natural':
+                  // No class needed - natural height, but ensure clean state
+                  msg.style.maxHeight = 'none';
+                  msg.style.overflowY = 'visible';
+                  break;
+                case 'compact':
+                  msg.classList.add("message-compact");
+                  // Ensure proper compact state
+                  msg.style.maxHeight = '400px';
+                  msg.style.overflowY = 'auto';
+                  break;
+                default:
+                  // Fallback to compact
+                  msg.classList.add("message-compact");
+                  msg.style.maxHeight = '400px';
+                  msg.style.overflowY = 'auto';
+              }
+            } catch (error) {
+              console.warn('Error applying message state:', error);
+              msg.classList.add("message-compact");
+              msg.style.maxHeight = '400px';
+              msg.style.overflowY = 'auto';
+            }
           }
         } else {
-          // Global preference is off - show full height
-          msg.classList.add("message-expanded");
+          // Global fixed height mode OFF - messages are expanded by default
+          if (isFullHeight) {
+            // User override to compact mode
+            try {
+              await new Promise(resolve => setTimeout(resolve, 10));
+              const optimalState = await determineMessageState(msg);
+              if (optimalState === 'compact' || isFullHeight) {
+                msg.classList.add("message-compact");
+                msg.style.maxHeight = '400px';
+                msg.style.overflowY = 'auto';
+              } else {
+                // Natural state but user wanted compact, so force compact
+                msg.classList.add("message-compact");
+                msg.style.maxHeight = '400px';
+                msg.style.overflowY = 'auto';
+              }
+            } catch (error) {
+              console.warn('Error re-evaluating message state:', error);
+              msg.classList.add("message-compact");
+              msg.style.maxHeight = '400px';
+              msg.style.overflowY = 'auto';
+            }
+          } else {
+            // Default behavior - fully expanded like natural state
+            msg.classList.add("message-expanded");
+            msg.style.setProperty('max-height', 'none', 'important');
+            msg.style.setProperty('overflow-y', 'visible', 'important');
+            msg.style.setProperty('overflow-x', 'auto', 'important');
+            msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
+            
+            // Also clear constraints from any nested scrollable content
+            const scrollableContent = msg.querySelector('.scrollable-content');
+            if (scrollableContent) {
+              scrollableContent.style.setProperty('max-height', 'none', 'important');
+              scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
+              scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
+            }
+            
+            // Clear constraints from any nested content areas
+            const msgContent = msg.querySelector('.msg-content');
+            if (msgContent) {
+              msgContent.style.setProperty('max-height', 'none', 'important');
+              msgContent.style.setProperty('overflow-y', 'visible', 'important');
+            }
+          }
         }
       }
     }
@@ -388,7 +464,7 @@ function injectConsoleControls(messageDiv, command, type) {
 
   // Toggle height - ALWAYS read from localStorage
   const toggleHeight = () => {
-    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
     const currentState = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
     
     // Logic for toggling depends on global mode:
@@ -527,7 +603,7 @@ function updateButtonState(button, isActive, type, buttonType) {
       button.title = `Hide all ${type} messages (show preview only)`;
     }
   } else if (buttonType === 'height') {
-    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
     
     // Logic: 
     // - When global fixed height is OFF: messages are expanded by default, show compress icon
@@ -624,25 +700,51 @@ window.reevaluateMessageStates = (delay = 200) => {
       
       // Get current preferences
       const isFullHeight = localStorage.getItem(`msgFullHeight_${messageType}`) === 'true';
-      const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+      const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
       
-      // Only re-evaluate if not manually expanded and fixed height is on
-      if (!isFullHeight && isFixedHeightGlobal) {
-        // Remove current state classes
-        msg.classList.remove('message-compact', 'message-expanded');
-        
-        // Re-evaluate after a short delay to ensure content is stable
-        setTimeout(async () => {
-          try {
-            const optimalState = await determineMessageState(msg);
-            if (optimalState === 'compact') {
-              msg.classList.add('message-compact');
-              console.log(`📏 Applied compact to ${messageType} message after re-evaluation`);
+      // Clear any existing inline styles that might interfere
+      msg.style.maxHeight = '';
+      msg.style.overflowY = '';
+      msg.style.overflowX = 'auto';
+      
+      // Only re-evaluate if not manually overridden
+      if (isFixedHeightGlobal) {
+        if (!isFullHeight) {
+          // Default smart behavior - re-evaluate
+          msg.classList.remove('message-compact', 'message-expanded');
+          
+          // Re-evaluate after a short delay to ensure content is stable
+          setTimeout(async () => {
+            try {
+              const optimalState = await determineMessageState(msg);
+              if (optimalState === 'compact') {
+                msg.classList.add('message-compact');
+                msg.style.maxHeight = '400px';
+                msg.style.overflowY = 'auto';
+                console.log(`📏 Applied compact to ${messageType} message after re-evaluation`);
+              } else {
+                // Natural state
+                msg.style.maxHeight = 'none';
+                msg.style.overflowY = 'visible';
+                console.log(`📏 Applied natural to ${messageType} message after re-evaluation`);
+              }
+            } catch (error) {
+              console.warn('Error in re-evaluation:', error);
             }
-          } catch (error) {
-            console.warn('Error in re-evaluation:', error);
-          }
-        }, 50);
+          }, 50);
+        }
+        // If isFullHeight is true, keep the expanded override
+      } else {
+        // Fixed height off - only re-evaluate if user chose compact
+        if (isFullHeight) {
+          // User chose compact in expanded-by-default mode
+          msg.classList.remove('message-compact', 'message-expanded');
+          msg.classList.add('message-compact');
+          msg.style.maxHeight = '400px';
+          msg.style.overflowY = 'auto';
+          console.log(`📏 Applied forced compact to ${messageType} message after re-evaluation`);
+        }
+        // If isFullHeight is false, keep the expanded default
       }
     });
   }, delay);
@@ -652,10 +754,18 @@ window.reevaluateMessageStates = (delay = 200) => {
 window.updateAllMessageStates = () => {
   console.log('🔄 Updating all message states for fixed height toggle');
   
-  // Get all message types that have controls
+  // RESET ALL INDIVIDUAL MESSAGE TYPE PREFERENCES - global preference has authority
   const messageTypes = ['agent', 'response', 'tool', 'code_exe', 'browser', 'info', 'warning', 'error', 'user', 'default'];
   
-  // Trigger update for each message type
+  console.log('🔄 Resetting all individual message type preferences to let global preference take authority');
+  messageTypes.forEach(type => {
+    // Clear individual message type preferences
+    localStorage.removeItem(`msgFullHeight_${type}`);
+    // Keep hide preferences since those are independent
+    // localStorage.removeItem(`msgHidden_${type}`); // Don't reset hide preferences
+  });
+  
+  // Trigger update for each message type with fresh preferences
   messageTypes.forEach(async (type) => {
     const messageSelector = getMessageSelectorForType(type);
     const messagesOfType = document.querySelectorAll(messageSelector);
@@ -663,81 +773,81 @@ window.updateAllMessageStates = () => {
     console.log(`📋 Found ${messagesOfType.length} messages of type ${type}`);
     
     if (messagesOfType.length > 0) {
-      // Re-trigger the update for this message type
+      // Get fresh preferences after reset
       const { isHidden, isFullHeight } = {
         isHidden: localStorage.getItem(`msgHidden_${type}`) === 'true',
-        isFullHeight: localStorage.getItem(`msgFullHeight_${type}`) === 'true'
+        isFullHeight: localStorage.getItem(`msgFullHeight_${type}`) === 'true' // This will be false now since we cleared it
       };
       
       for (const msg of messagesOfType) {
-        // Remove all state classes
+        // Remove all state classes and reset inline styles
         msg.classList.remove(
           "message-collapsed", "message-compact", "message-expanded",
           "message-scroll", "message-smart-scroll", "message-upper-overflow", "message-auto"
         );
         
+        // Clear any inline styles that might interfere
+        msg.style.maxHeight = '';
+        msg.style.overflowY = '';
+        msg.style.overflowX = 'auto'; // Keep horizontal scroll
+        
         // Apply current state based on fresh localStorage read
         if (isHidden) {
           msg.classList.add("message-collapsed");
         } else {
-          const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
-          console.log(`🔧 Fixed height global setting: ${isFixedHeightGlobal} for ${type}`);
-          
-          // Logic depends on global fixed height mode:
-          // When global fixed height ON: isFullHeight=true means expand override
-          // When global fixed height OFF: isFullHeight=true means compact override
+          const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+          console.log(`🔧 Fixed height global setting: ${isFixedHeightGlobal} for ${type} (reset preferences)`);
           
           if (isFixedHeightGlobal) {
-            // Global fixed height mode ON - messages are compact by default
-            if (isFullHeight) {
-              // User override to expand
-              msg.classList.add("message-expanded");
-              console.log(`📏 Applied expanded override to ${type} message`);
-            } else {
-              // Default behavior - evaluate if compact needed
-              setTimeout(async () => {
-                try {
-                  // Force reflow before measuring
-                  msg.offsetHeight;
-                  const optimalState = await determineMessageState(msg);
-                  msg.classList.remove("message-compact", "message-expanded");
-                  if (optimalState === 'compact') {
-                    msg.classList.add("message-compact");
-                    console.log(`📏 Applied compact to ${type} message (${msg.scrollHeight}px)`);
-                  } else {
-                    console.log(`📏 Applied natural to ${type} message (${msg.scrollHeight}px)`);
-                  }
-                } catch (error) {
-                  console.warn('Error re-evaluating message state:', error);
+            // Global fixed height mode ON - since we reset preferences, use default smart behavior
+            setTimeout(async () => {
+              try {
+                // Force reflow before measuring
+                msg.offsetHeight;
+                const optimalState = await determineMessageState(msg);
+                msg.classList.remove("message-compact", "message-expanded");
+                if (optimalState === 'compact') {
                   msg.classList.add("message-compact");
+                  msg.style.maxHeight = '400px';
+                  msg.style.overflowY = 'auto';
+                  console.log(`📏 Applied compact to ${type} message (${msg.scrollHeight}px)`);
+                } else {
+                  // Natural state - no scrollbar needed
+                  msg.style.maxHeight = 'none';
+                  msg.style.overflowY = 'visible';
+                  console.log(`📏 Applied natural to ${type} message (${msg.scrollHeight}px)`);
                 }
-              }, 50);
-            }
+              } catch (error) {
+                console.warn('Error re-evaluating message state:', error);
+                msg.classList.add("message-compact");
+                msg.style.maxHeight = '400px';
+                msg.style.overflowY = 'auto';
+              }
+            }, 50);
           } else {
-            // Global fixed height mode OFF - messages are expanded by default  
-            if (isFullHeight) {
-              // User override to compact
-              setTimeout(async () => {
-                try {
-                  msg.offsetHeight;
-                  const optimalState = await determineMessageState(msg);
-                  msg.classList.remove("message-compact", "message-expanded");
-                  if (optimalState === 'compact') {
-                    msg.classList.add("message-compact");
-                    console.log(`📏 Applied compact override to ${type} message (${msg.scrollHeight}px)`);
-                  } else {
-                    console.log(`📏 Applied natural override to ${type} message (${msg.scrollHeight}px)`);
-                  }
-                } catch (error) {
-                  console.warn('Error re-evaluating message state:', error);
-                  msg.classList.add("message-compact");
-                }
-              }, 50);
-            } else {
-              // Default behavior - fully expanded
-              msg.classList.add("message-expanded");
-              console.log(`📏 Applied expanded (global off) to ${type} message`);
+            // Global fixed height mode OFF - since we reset preferences, use default expanded behavior
+            msg.classList.add("message-expanded");
+            msg.style.setProperty('max-height', 'none', 'important');
+            msg.style.setProperty('overflow-y', 'visible', 'important');
+            msg.style.setProperty('overflow-x', 'auto', 'important');
+            msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
+            
+            // Also clear constraints from any nested scrollable content
+            const scrollableContent = msg.querySelector('.scrollable-content');
+            if (scrollableContent) {
+              scrollableContent.style.setProperty('max-height', 'none', 'important');
+              scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
+              scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
             }
+            
+            // Clear constraints from any nested content areas
+            const msgContent = msg.querySelector('.msg-content');
+            if (msgContent) {
+              msgContent.style.setProperty('max-height', 'none', 'important');
+              msgContent.style.setProperty('overflow-y', 'visible', 'important');
+            }
+            
+            console.log(`📏 Applied expanded (global off) to ${type} message`);
           }
         }
       }
@@ -981,7 +1091,7 @@ export function drawMessageAgent(
   
   // Re-evaluate this specific message after it's fully rendered
   setTimeout(() => {
-    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
     const isFullHeight = localStorage.getItem('msgFullHeight_agent') === 'true';
     
     if (isFixedHeightGlobal && !isFullHeight && !div.classList.contains('message-collapsed')) {
@@ -1025,7 +1135,7 @@ export function drawMessageResponse(
   
   // Re-evaluate this specific message after it's fully rendered
   setTimeout(() => {
-    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
     const isFullHeight = localStorage.getItem('msgFullHeight_response') === 'true';
     
     if (isFixedHeightGlobal && !isFullHeight && !messageDiv.classList.contains('message-collapsed')) {
@@ -1189,7 +1299,7 @@ export function drawMessageTool(
   
   // Re-evaluate this specific message after it's fully rendered
   setTimeout(() => {
-    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
     const isFullHeight = localStorage.getItem('msgFullHeight_tool') === 'true';
     
     if (isFixedHeightGlobal && !isFullHeight && !div.classList.contains('message-collapsed')) {

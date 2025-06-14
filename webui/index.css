@@ -768,6 +768,11 @@ pre {
   box-sizing: border-box;
 }
 
+/* Hide the scroll indicators completely since we're using message-level scrolling */
+.scroll-indicator {
+  display: none !important;
+}
+
 /* Legacy styles - now handled by unified system above */
 
 /* Legacy scrollable-content styles - now handled by unified message-level scrolling */
@@ -1055,12 +1060,15 @@ pre {
   max-height: none;
   overflow-y: visible;
   overflow-x: auto; /* Always allow horizontal scroll when needed */
+  /* Prevent scrollbar space reservation unless actually needed */
+  scrollbar-gutter: auto;
 }
 
 /* Collapsed state: Hidden with preview */
 .message-collapsed {
   max-height: none;
   overflow: visible;
+  scrollbar-gutter: auto;
 }
 
 /* Compact state: Limited height with scrolling */
@@ -1068,13 +1076,43 @@ pre {
   max-height: 400px;
   overflow-y: auto;
   overflow-x: auto;
+  /* Only reserve scrollbar space when actively scrolling */
+  scrollbar-gutter: stable;
 }
 
 /* Expanded state: Full height, no limits */
 .message-expanded {
-  max-height: none;
-  overflow-y: visible;
-  overflow-x: auto;
+  max-height: none !important;
+  overflow-y: visible !important;
+  overflow-x: auto !important;
+  /* No scrollbar space needed */
+  scrollbar-gutter: auto !important;
+}
+
+/* Ensure all nested content in expanded messages is also freed from constraints */
+.message-expanded .scrollable-content {
+  max-height: none !important;
+  overflow-y: visible !important;
+  overflow-x: visible !important;
+}
+
+.message-expanded .msg-content {
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
+.message-expanded .msg-kvps {
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
+/* Ensure expanded messages never show vertical scrollbars */
+.message-expanded::-webkit-scrollbar-vertical {
+  display: none !important;
+}
+
+.message-expanded::-webkit-scrollbar:vertical {
+  width: 0px !important;
 }
 
 /* ========================================
@@ -1088,6 +1126,45 @@ pre {
 }
 
 .message::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+}
+
+/* Only show scrollbars when actually needed */
+.message:not(.message-compact)::-webkit-scrollbar {
+  width: 0px !important;
+  height: 0px !important;
+}
+
+.message:not(.message-compact)::-webkit-scrollbar-track {
+  display: none !important;
+}
+
+.message:not(.message-compact)::-webkit-scrollbar-thumb {
+  display: none !important;
+}
+
+/* Extra specificity for expanded messages */
+.message-expanded::-webkit-scrollbar {
+  width: 0px !important;
+  height: 0px !important;
+}
+
+.message-expanded::-webkit-scrollbar-track {
+  display: none !important;
+}
+
+.message-expanded::-webkit-scrollbar-thumb {
+  display: none !important;
+}
+
+/* Compact messages get visible scrollbars */
+.message-compact::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.message-compact::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 5px;
 }
@@ -1128,32 +1205,112 @@ pre {
    VISUAL FEEDBACK FOR MESSAGE STATES
    ======================================== */
 
-/* Subtle visual indicators for different states */
+/* Color-matched state indicators using scrollbar color scheme */
+
+/* Compact state: smaller border with muted scrollbar colors */
 .message-compact {
-  border-left: 2px solid rgba(255, 255, 255, 0.2);
+  border-left: 2px solid rgba(255, 255, 255, 0.2); /* Fallback for unmatched types */
   padding-left: calc(var(--spacing-md) + 2px);
   margin-left: -2px;
 }
 
+/* Expanded state: wider border with brighter scrollbar colors */
 .message-expanded {
-  border-left: 3px solid var(--color-primary);
-  padding-left: calc(var(--spacing-md) + 3px);
-  margin-left: -3px;
+  border-left: 4px solid var(--color-primary); /* Fallback for unmatched types */
+  padding-left: calc(var(--spacing-md) + 4px);
+  margin-left: -4px;
 }
 
 /* Natural state has no border - full content display */
 
-/* Color-matched state indicators */
+/* Agent messages - blue color scheme */
 .message-agent.message-compact {
-  border-left-color: rgba(59, 130, 246, 0.4);
+  border-left-color: rgba(59, 130, 246, 0.4); /* Muted blue */
 }
 
+.message-agent.message-expanded {
+  border-left-color: rgba(59, 130, 246, 0.6); /* Brighter blue */
+}
+
+/* Tool messages - purple color scheme */
 .message-tool.message-compact {
-  border-left-color: rgba(168, 85, 247, 0.4);
+  border-left-color: rgba(168, 85, 247, 0.4); /* Muted purple */
 }
 
+.message-tool.message-expanded {
+  border-left-color: rgba(168, 85, 247, 0.6); /* Brighter purple */
+}
+
+/* Agent response messages - green color scheme */
 .message-agent-response.message-compact {
-  border-left-color: rgba(34, 197, 94, 0.4);
+  border-left-color: rgba(34, 197, 94, 0.4); /* Muted green */
+}
+
+.message-agent-response.message-expanded {
+  border-left-color: rgba(34, 197, 94, 0.6); /* Brighter green */
+}
+
+/* Code execution messages - yellow color scheme */
+.message-code-exe.message-compact {
+  border-left-color: rgba(251, 191, 36, 0.4); /* Muted yellow */
+}
+
+.message-code-exe.message-expanded {
+  border-left-color: rgba(251, 191, 36, 0.6); /* Brighter yellow */
+}
+
+/* Browser messages - purple variant color scheme */
+.message-browser.message-compact {
+  border-left-color: rgba(147, 51, 234, 0.4); /* Muted purple variant */
+}
+
+.message-browser.message-expanded {
+  border-left-color: rgba(147, 51, 234, 0.6); /* Brighter purple variant */
+}
+
+/* Warning messages - orange color scheme */
+.message-warning.message-compact {
+  border-left-color: rgba(245, 158, 11, 0.4); /* Muted orange */
+}
+
+.message-warning.message-expanded {
+  border-left-color: rgba(245, 158, 11, 0.6); /* Brighter orange */
+}
+
+/* Error messages - red color scheme */
+.message-error.message-compact {
+  border-left-color: rgba(239, 68, 68, 0.4); /* Muted red */
+}
+
+.message-error.message-expanded {
+  border-left-color: rgba(239, 68, 68, 0.6); /* Brighter red */
+}
+
+/* Info messages - gray color scheme */
+.message-info.message-compact {
+  border-left-color: rgba(107, 114, 128, 0.4); /* Muted gray */
+}
+
+.message-info.message-expanded {
+  border-left-color: rgba(107, 114, 128, 0.6); /* Brighter gray */
+}
+
+/* User messages - gray variant color scheme */
+.message-user.message-compact {
+  border-left-color: rgba(156, 163, 175, 0.4); /* Muted gray variant */
+}
+
+.message-user.message-expanded {
+  border-left-color: rgba(156, 163, 175, 0.6); /* Brighter gray variant */
+}
+
+/* Default messages - gray color scheme */
+.message-default.message-compact {
+  border-left-color: rgba(107, 114, 128, 0.4); /* Muted gray */
+}
+
+.message-default.message-expanded {
+  border-left-color: rgba(107, 114, 128, 0.6); /* Brighter gray */
 }
 
 /* Remove old classes - unified approach */
@@ -3902,6 +4059,87 @@ nav ul li a img {
 .light-mode .message-user::-webkit-scrollbar-thumb {
   background: rgba(107, 114, 128, 0.7) !important;
   border: 1px solid rgba(107, 114, 128, 0.4) !important;
+}
+
+/* Light mode adjustments for color-matched state indicators */
+.light-mode .message-agent.message-compact {
+  border-left-color: rgba(37, 99, 235, 0.6); /* Darker blue for light mode */
+}
+
+.light-mode .message-agent.message-expanded {
+  border-left-color: rgba(37, 99, 235, 0.8); /* Even darker blue for light mode */
+}
+
+.light-mode .message-tool.message-compact {
+  border-left-color: rgba(147, 51, 234, 0.6); /* Darker purple for light mode */
+}
+
+.light-mode .message-tool.message-expanded {
+  border-left-color: rgba(147, 51, 234, 0.8); /* Even darker purple for light mode */
+}
+
+.light-mode .message-agent-response.message-compact {
+  border-left-color: rgba(22, 163, 74, 0.6); /* Darker green for light mode */
+}
+
+.light-mode .message-agent-response.message-expanded {
+  border-left-color: rgba(22, 163, 74, 0.8); /* Even darker green for light mode */
+}
+
+.light-mode .message-code-exe.message-compact {
+  border-left-color: rgba(217, 119, 6, 0.6); /* Darker yellow for light mode */
+}
+
+.light-mode .message-code-exe.message-expanded {
+  border-left-color: rgba(217, 119, 6, 0.8); /* Even darker yellow for light mode */
+}
+
+.light-mode .message-browser.message-compact {
+  border-left-color: rgba(126, 34, 206, 0.6); /* Darker purple variant for light mode */
+}
+
+.light-mode .message-browser.message-expanded {
+  border-left-color: rgba(126, 34, 206, 0.8); /* Even darker purple variant for light mode */
+}
+
+.light-mode .message-warning.message-compact {
+  border-left-color: rgba(180, 83, 9, 0.6); /* Darker orange for light mode */
+}
+
+.light-mode .message-warning.message-expanded {
+  border-left-color: rgba(180, 83, 9, 0.8); /* Even darker orange for light mode */
+}
+
+.light-mode .message-error.message-compact {
+  border-left-color: rgba(220, 38, 38, 0.6); /* Darker red for light mode */
+}
+
+.light-mode .message-error.message-expanded {
+  border-left-color: rgba(220, 38, 38, 0.8); /* Even darker red for light mode */
+}
+
+.light-mode .message-info.message-compact {
+  border-left-color: rgba(75, 85, 99, 0.6); /* Darker gray for light mode */
+}
+
+.light-mode .message-info.message-expanded {
+  border-left-color: rgba(75, 85, 99, 0.8); /* Even darker gray for light mode */
+}
+
+.light-mode .message-user.message-compact {
+  border-left-color: rgba(107, 114, 128, 0.6); /* Darker gray variant for light mode */
+}
+
+.light-mode .message-user.message-expanded {
+  border-left-color: rgba(107, 114, 128, 0.8); /* Even darker gray variant for light mode */
+}
+
+.light-mode .message-default.message-compact {
+  border-left-color: rgba(75, 85, 99, 0.6); /* Darker gray for light mode */
+}
+
+.light-mode .message-default.message-expanded {
+  border-left-color: rgba(75, 85, 99, 0.8); /* Even darker gray for light mode */
 }
 
 /* ========================================
