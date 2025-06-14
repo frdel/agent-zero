@@ -1,0 +1,584 @@
+/* webui/css/components/_messages.css */
+
+/* Message Styles (General) */
+.message-container {
+  animation: fadeIn 0.5s; /* Assuming fadeIn is defined in _animations.css */
+  -webkit-animation: fadeIn 0.5s; /* Assuming fadeIn is defined in _animations.css */
+  margin-bottom: var(--spacing-sm);
+  width: 70%;
+}
+
+.message {
+  background-color: var(--color-message-bg);
+  border-radius: var(--border-radius);
+  padding: 0.9rem var(--spacing-md) 0.7rem var(--spacing-md);
+}
+
+.user-container { /* Specific to user messages, but part of message display */
+  align-self: flex-end;
+  margin: 1.5rem 0rem;
+}
+
+.ai-container { /* Specific to AI messages */
+  align-self: flex-start;
+  margin-right: 2rem ;
+}
+
+.center-container { /* For centered messages like errors/info */
+  align-self: center;
+  max-width: 80%;
+  margin: 0;
+}
+
+.center-container .message {
+  margin-bottom: var(--spacing-sm);
+}
+
+.message-user {
+  background-color: #4a4a4a; 
+  border-bottom-right-radius: var(--spacing-xs);
+  min-width: 195px;
+  text-align: end;
+}
+
+.message-user > div { /* Content within a user message */
+  padding-top: var(--spacing-xs);
+  font-family: 'Roboto Mono', monospace;
+  font-optical-sizing: auto;
+  -webkit-font-optical-sizing: auto;
+  font-size: var(--font-size-small);
+}
+
+.message-ai { /* General AI message styling */
+  border-bottom-left-radius: var(--spacing-xs);
+}
+
+.message-center { /* For system messages, errors, etc. */
+  align-self: center;
+  border-bottom-left-radius: unset; /* Overrides .message-ai if also applied */
+}
+
+.message-followup { /* For followup messages in a sequence */
+  
+  margin-bottom: var(--spacing-lg);
+}
+
+.message-followup .message {
+  border-radius: 1.125em; 
+  border-top-left-radius: 0.3125em; 
+}
+
+.message-followup + .message-followup {
+  margin-bottom: 0;
+}
+
+/* Message Types & States (loading, error, success, info, etc.) */
+.message-default,
+.message-agent,
+.message-agent-response,
+.message-agent-delegation,
+.message-tool,
+.message-code-exe,
+.message-browser,
+.message-info,
+.message-util,
+.message-warning,
+.message-error {
+  color: #e0e0e0; 
+}
+
+.message-default {
+  background-color: #1a242f;
+}
+
+.message-agent {
+  background-color: #34506b;
+}
+
+.message-agent-response {
+  min-width: 255px;
+  background-color: #1f3c1e;
+}
+
+.message-agent-delegation {
+  background-color: #12685e;
+}
+
+.message-tool {
+  background-color: #2a4170;
+}
+
+.message-code-exe {
+  background-color: #4b3a69;
+}
+
+.message-browser {
+  background-color: #4b3a69; /* Same as code-exe, might be intentional */
+}
+
+.message-info {
+  background-color: var(--color-panel); 
+}
+
+.message-util { /* Utility messages, might be hidden by default */
+  background-color: #23211a;
+  display: none;
+}
+
+.message-warning {
+  background-color: #bc8036;
+}
+
+.message-error {
+  background-color: #af2222;
+}
+
+/* Light mode overrides for message types */
+.light-mode .message-default {
+  background-color: #f3f3f3;
+  color: #1a242f;
+}
+
+.light-mode .message-agent {
+  background-color: #f3f3f3;
+  color: #356ca3;
+}
+
+.light-mode .message-agent-response {
+  background-color: #f3f3f3;
+  color: #188216;
+}
+
+.light-mode .message-agent-delegation {
+  background-color: #f3f3f3;
+  color: #12685e;
+}
+
+.light-mode .message-tool {
+  background-color: #f3f3f3;
+  color: #1c3c88;
+}
+
+.light-mode .message-code-exe {
+  background-color: #f3f3f3;
+  color: #6c43b0;
+}
+
+.light-mode .message-browser {
+  background-color: #ffffff; /* Different from other light mode messages */
+  color: #6c43b0;
+}
+
+.light-mode .message-info {
+  background-color: #f3f3f3;
+  color: #3f3f3f;
+}
+
+.light-mode .message-util {
+  background-color: #f3f3f3;
+  color: #5b5540;
+}
+
+.light-mode .message-warning {
+  background-color: #f3f3f3;
+  color: #8f4800;
+}
+
+.light-mode .message-error {
+  background-color: #f3f3f3;
+  color: #8f1010;
+}
+
+.light-mode .message-user { /* User message in light mode */
+  background-color: #f3f3f3;
+  color: #4e4e4e;
+}
+
+
+/* Agent Info / Message Metadata */
+.agent-start { /* Indicates start of an agent's thought process or action */
+  color: var(--color-text);
+  font-size: var(--font-size-small);
+  margin-bottom: var(--spacing-xs);
+  opacity: 0.7;
+}
+
+.msg-kvps { /* Key-Value Pairs within messages */
+  font-size: 0.9em;
+  margin: 0.5rem 0 0.55rem 0;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.msg-kvps th,
+.msg-kvps td {
+  align-content: baseline;
+  padding: 0.25rem;
+  padding-left: 0;
+  text-align: left;
+}
+
+.msg-kvps th {
+  color: var(--color-primary);
+  width: 40%;
+}
+
+.msg-kvps tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.light-mode .msg-kvps tr {
+  border-bottom: 1px solid rgb(192 192 192 / 50%);
+}
+
+.kvps-key {
+  font-weight: 500;
+  font-size: var(--font-size-small);
+}
+
+.kvps-val {
+  margin: 0.65rem 0 0.65rem 0.4rem;
+  white-space: pre-wrap;
+}
+
+.kvps-img { /* For images within KVP display */
+  width: 8em;
+  height: 8em;
+  object-fit: cover;
+  object-position: top left;
+  border-radius: 10%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Message Actions & Toolbars */
+.message-actions {
+  color: var(--color-text);
+  font-size: var(--font-size-small);
+  margin-top: var(--spacing-xs);
+}
+
+.message-action {
+  cursor: pointer;
+  opacity: 0.7;
+  -webkit-transition: opacity var(--transition-speed) ease-in-out;
+  transition: opacity var(--transition-speed) ease-in-out;
+}
+
+.message-action:hover {
+  opacity: 1;
+}
+
+/* Copy button styles (part of message actions/toolbar) */
+.copy-button {
+  position: absolute;
+  right: 0;
+  top: var(--spacing-sm);
+  background: none;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  padding-right: 0;
+  cursor: pointer;
+  text-decoration: none;
+  text-wrap: nowrap;
+  opacity: 0;
+  -webkit-transition: opacity var(--transition-speed) ease-in-out;
+  transition: opacity var(--transition-speed) ease-in-out;
+  color: inherit;
+  font-size: 12px;
+  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  display: flex; 
+  align-items: center; 
+}
+
+.copy-button-icon { /* Added */
+  width: 1rem; /* Added */
+  height: 1rem; /* Added */
+  margin-right: 0.25rem; 
+  fill: currentColor; 
+  stroke: currentColor; 
+}
+
+.copy-button:hover {
+  opacity: 0.8 !important;
+}
+
+.msg-content:hover .copy-button,
+.kvps-row:hover .copy-button, /* Assuming .kvps-row exists for KVP items */
+.message-text:hover .copy-button {
+  opacity: 0.6;
+}
+
+.copy-button.copied {
+  font-family: "Rubik", Arial, Helvetica, sans-serif !important;
+  opacity: 1 !important;
+}
+
+.msg-thoughts .copy-button { /* Specific positioning for thoughts */
+  top: -12px !important;
+}
+
+.message-user .copy-button {
+  top: -15px !important;
+  left: -13px !important;
+  right: 99% !important;
+}
+
+.message-agent-response .copy-button {
+  top: -22px !important;
+  right: 0 !important;
+  padding-right: 0px !important;
+}
+
+.message-info .copy-button {
+  top: -22px !important;
+  right: 0 !important;
+  padding-right: 0px !important;
+}
+
+.message-tool .copy-button {
+  top: -12px !important;
+  right: 0 !important;
+}
+
+.msg-output .copy-button { /* For tool output or similar */
+  top: -6px !important;
+  right: 0 !important;
+}
+
+/* Make message containers relative for absolute positioning of copy buttons */
+.msg-content,
+.kvps-row, /* Assuming .kvps-row */
+.message-text {
+  position: relative;
+}
+
+/* Code Blocks & Syntax Highlighting (basic pre formatting) */
+pre { /* General pre formatting, often used for code blocks */
+  font-family: 'Roboto Mono', monospace;
+  font-optical-sizing: auto;
+  -webkit-font-optical-sizing: auto;
+  font-size: 0.75rem;
+  /* Note: Actual syntax highlighting is usually done by JS library,
+     CSS here provides the container and basic font styling. */
+}
+
+/* Attachments in messages */
+.attachments-container {
+  margin-top: 0.5em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  background: var(--color-background); 
+  padding: 0.5em;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.attachment-item:hover {
+  background: var(--color-secondary);
+}
+
+.attachment-item.file-type { /* If specific styling for file types is needed */
+  background: var(--color-background);
+}
+
+.attachment-preview { /* For image previews in messages */
+  max-width: 100px;
+  max-height: 100px;
+  border-radius: 4px;
+  object-fit: contain;
+}
+
+.attachment-image .attachment-preview {
+  margin-right: 8px;
+}
+
+.attachment-info,
+.file-info { /* General info display for attachments */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.attachment-name,
+.filename, 
+.file-name { 
+  font-size: 0.9em;
+  color: var(--color-text);
+  word-break: break-word;
+}
+
+.attachment-ext,
+.extension, 
+.file-ext { 
+  background: var(--color-primary);
+  color: var(--color-text); 
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Temporary message styling (e.g., for streaming responses) */
+.message-temp {
+  display: none;
+}
+
+.message-temp:not([style*="display: none"]):last-of-type {
+  display: block; 
+}
+
+/* Path link styling within messages */
+.path-link{
+  margin-left: 0.1em;
+  margin-right: 0.1em;
+  
+}
+
+/* Media query adjustments for message copy behavior */
+@media (max-width: 768px) {
+  .copy-button {
+    display: none !important; 
+  }
+
+  /* Styles for tap-to-copy feedback on mobile */
+  .msg-content span,
+  .kvps-val,
+  .message-text span { /* Assuming spans are used for copyable text segments */
+    cursor: pointer;
+    position: relative;
+  }
+
+  .msg-thoughts span::after,
+  .msg-content span::after,
+  .kvps-val::after,
+  .message-text::after { /* The "Copied!" feedback */
+    content: 'Copied!';
+    position: absolute;
+    opacity: 0;
+    font-family: "Rubik", Arial, Helvetica, sans-serif;
+    font-size: 0.7rem;
+    padding: 6px var(--spacing-sm);
+    -webkit-transition: opacity var(--transition-speed) ease-in-out;
+    transition: opacity var(--transition-speed) ease-in-out;
+    right: 0px;
+    top: 0px;
+    background-color: var(--color-background);
+    border: none;
+    border-radius: 5px;
+    color: inherit;
+  }
+
+  .msg-thoughts span.copied::after,
+  .msg-content span.copied::after,
+  .kvps-val.copied::after,
+  .message-text.copied::after {
+    opacity: 1;
+  }
+
+  /* Mobile KVP display */
+   .msg-kvps {
+    display: flex;
+    flex-direction: column;
+    border-collapse: separate;
+    border-spacing: 0 0.5rem;
+  }
+
+  .msg-kvps tr {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.3rem;
+    padding-bottom: 0;
+  }
+
+  .msg-kvps th,
+  .msg-kvps td {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border-bottom: none;
+    padding: 0.25rem 0;
+    padding-left: 0 !important;
+  }
+
+  .msg-kvps th {
+    color: var(--color-primary);
+    margin-bottom: 0.25rem;
+  }
+
+  .kvps-val {
+    margin: 0 0 0.4rem 0;
+  }
+}
+
+/* Message content display helpers */
+.msg-json { /* For raw JSON data, hidden by default */
+  display: none;
+}
+
+.msg-thoughts { /* For agent thoughts, shown by default */
+  /* display: block; */ /* Removed to fix table layout issue */
+}
+
+.msg-content { /* General content wrapper within a message */
+  margin-bottom: 0; 
+}
+/* Message h4 styling */
+.message h4 {
+  font-size: 0.85rem;
+}
+/* Styles for the new duplicate icon and its container */
+.action-buttons-container {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem; 
+}
+
+.duplicate-icon-button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer; 
+  display: inline-flex; 
+  align-items: center;
+  justify-content: center;
+}
+
+.duplicate-icon-button svg {
+  width: 0.5rem;
+  height: 0.5rem;
+  fill: currentColor; 
+}
+
+/* Ensure the new icon and copy button share hover visibility with parent */
+.msg-content:hover .action-buttons-container,
+.message-text:hover .action-buttons-container,
+.kvps-row:hover .action-buttons-container {
+  opacity: 1;
+  visibility: visible;
+}
+
+.msg-content .action-buttons-container,
+.message-text .action-buttons-container,
+.kvps-row .action-buttons-container {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+  position: absolute; 
+  top: 0.25rem; 
+  right: 0.25rem; 
+}
+@media (max-width: 480px) {
+  .message-container {
+  width: 90%;
+}
+}
+/* Adjustments for copy button if it's now inside action-buttons-container */

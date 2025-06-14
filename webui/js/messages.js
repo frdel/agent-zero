@@ -4,7 +4,8 @@ import { openImageModal } from "./image_modal.js";
 function createCopyButton() {
   const button = document.createElement("button");
   button.className = "copy-button";
-  button.textContent = "Copy";
+  // Add SVG icon and text
+  button.innerHTML = `<svg class="copy-button-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><polyline points="168 168 216 168 216 40 88 40 88 88" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><rect x="40" y="88" width="128" height="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg> Copy`;
 
   button.addEventListener("click", async function (e) {
     e.stopPropagation();
@@ -21,12 +22,12 @@ function createCopyButton() {
 
     try {
       await navigator.clipboard.writeText(textToCopy);
-      const originalText = button.textContent;
+      const originalHTML = button.innerHTML; // Store original HTML
       button.classList.add("copied");
-      button.textContent = "Copied!";
+      button.innerHTML = `<svg class="copy-button-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><polyline points="168 168 216 168 216 40 88 40 88 88" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><rect x="40" y="88" width="128" height="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg> Copied!`; // Update HTML
       setTimeout(() => {
         button.classList.remove("copied");
-        button.textContent = originalText;
+        button.innerHTML = originalHTML; // Restore original HTML
       }, 2000);
     } catch (err) {
       console.error("Failed to copy text:", err);
@@ -38,7 +39,8 @@ function createCopyButton() {
 
 function addCopyButtonToElement(element) {
   if (!element.querySelector(".copy-button")) {
-    element.appendChild(createCopyButton());
+    const copyButton = createCopyButton();
+    element.appendChild(copyButton);
   }
 }
 

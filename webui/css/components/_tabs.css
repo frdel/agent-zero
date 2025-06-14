@@ -1,0 +1,78 @@
+/* === Tabs === */
+
+.tabs-container {
+  width: 100%;
+  margin-bottom: 8px; /* Reduced spacing between tabs and list */
+  padding: 0;
+  margin-top: 20px; /* Increased spacing from elements above */
+}
+
+.tabs {
+  display: flex;
+  width: 100%;
+  position: relative;
+  gap: 5px;
+  border-bottom: 3px solid var(--color-border); /* Thicker bottom line */
+  justify-content: flex-start; /* Center the tabs */
+  font-size: 0.75rem;
+}
+
+.tab {
+  padding: 8px 16px;
+  cursor: pointer;
+  position: relative;
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.3s ease;
+  background-color: var(--color-panel);
+  margin-bottom: -3px; /* Match the thicker border */
+  z-index: 1;
+}
+
+.tab:not(.active) {
+  opacity: 0.8;
+  border-bottom: 3px solid var(--color-border);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.tab.active {
+  border-color: var(--color-border);
+  font-weight: bold;
+  background-color: var(--color-panel);
+}
+
+.light-mode .tab.active {
+  box-shadow:
+    0 -4px 8px -2px var(--color-border),
+    4px 0 8px -2px var(--color-border),
+    -4px 0 8px -2px var(--color-border);
+}
+
+.light-mode .tab:not(.active) {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Remove previous tab styling that conflicts */
+.tab.active::after {
+  display: none;
+}
+
+/* Tab Content Area (Placeholder - Assuming .tab-content or similar might be used in HTML) */
+
+/* Empty list message styling (often used with tabs if content is empty) */
+.empty-list-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  color: var(--color-secondary);
+  text-align: center;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.light-mode .empty-list-message {
+  color: var(--color-secondary-light);
+}

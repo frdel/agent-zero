@@ -1,0 +1,111 @@
+/* webui/css/utils/_helpers.css */
+
+/* Utility Classes */
+.kvps-key {
+  font-weight: 500;
+  font-size: var(--font-size-small);
+}
+
+.kvps-val {
+  margin: 0.65rem 0 0.65rem 0.4rem;
+  white-space: pre-wrap;
+}
+
+.kvps-img {
+  width: 8em;
+  height: 8em;
+  object-fit: cover;
+  object-position: top left;
+  border-radius: 10%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.image-viewer-img{
+  width: 100%;
+}
+
+.msg-json {
+  display: none;
+}
+
+.msg-thoughts {
+  /* display: block; */ /* Removed to fix table layout issue */
+}
+
+.msg-content {
+  margin-bottom: 0;
+}
+
+.message-temp {
+  display: none;
+}
+
+.message-temp:not([style*="display: none"]):last-of-type {
+  display: block; 
+}
+
+.status-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.status-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.connected-circle,
+.disconnected-circle {
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+}
+
+.connected-circle {
+  animation: heartbeat 1.5s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.connected {
+  color: #00c340;
+}
+
+.disconnected {
+  color: #e40138;
+}
+
+.font-bold {
+  font-weight: bold;
+}
+
+.path-link{
+  margin-left: 0.1em;
+  margin-right: 0.1em;
+}
+
+/* Alpine cloak to prevent FOUC */
+[x-cloak] {
+    display: none !important;
+}
+
+/* Alpine transition classes */
+.transition {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.duration-300 {
+    transition-duration: 300ms;
+}
+
+.opacity-0 {
+    opacity: 0;
+}
+
+.opacity-100 {
+    opacity: 1;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}

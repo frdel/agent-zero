@@ -1,0 +1,635 @@
+/* Left Panel Layout */
+#left-panel {
+  background-color: var(--color-panel);
+  border-right: 1px solid var(--color-border);
+  box-sizing: border-box;
+  display: -webkit-flex;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  -webkit-transition: all var(--transition-speed) ease-in-out;
+  transition: all var(--transition-speed) ease-in-out;
+  width: 250px;
+  min-width: 250px;
+  color: var(--color-text);
+  box-shadow: 1px 0 5px rgba(0, 0, 0, 0.3);
+  user-select: none;
+}
+
+#left-panel.hidden {
+  margin-left: -250px;
+}
+
+.left-panel-top {
+  flex: 1;
+  display: -webkit-flex;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden; /* Fallback, specific overflow-y below */
+  margin-top: 3.5rem;
+  padding: 0.5rem 0rem;
+}
+
+.left-panel-top::-webkit-scrollbar {
+  width: 0px; /* Hide scrollbar for this specific element */
+}
+
+.left-panel-top {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE 10+ */
+}
+
+#status-section,
+.config-section:not(#chats-section) { /* Assuming #chats-section is a .config-section */
+  flex-shrink: 0;
+  padding: 0.5rem;
+}
+
+.left-panel-bottom {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Sidebar Toggle Button */
+.toggle-sidebar-button {
+  height: 2.6rem;
+  width: 2.6rem;
+  background-color: var(--color-background);
+  border: 0.1rem solid var(--color-border);
+  border-radius: var(--spacing-xs);
+  color: var(--color-text);
+  opacity: 0.8;
+  cursor: pointer;
+  left: var(--spacing-md);
+  padding: 0.47rem 0.56rem;
+  position: absolute; /* Changed to fixed in media query */
+  top: var(--spacing-md);
+  z-index: 1004;
+  -webkit-transition: all var(--transition-speed) ease-in-out;
+  transition: all var(--transition-speed) ease-in-out;
+}
+
+.toggle-sidebar-button:hover {
+  background-color: var(--color-secondary);
+  opacity: 1;
+}
+
+.toggle-sidebar-button:active {
+  opacity: 0.5;
+}
+
+#sidebar-hamburger-svg {
+  -webkit-transition: all var(--transition-speed) ease;
+  transition: all var(--transition-speed) ease;
+}
+
+.toggle-sidebar-button:active #sidebar-hamburger-svg {
+  -webkit-transform: scaleY(0.8);
+  transform: scaleY(0.8);
+}
+
+/* Chat and Task List Area */
+.chat-container, .task-container { /* Combined from 211 & 2424 */
+    display: flex;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    min-height: 30px; 
+    gap: 0; 
+    justify-content: space-between; 
+}
+
+.chat-list-button {
+    display: block;
+    width: 100%;
+    padding: 8px 5px;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    border-radius: 4px;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.chat-list-button.has-task-container {
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.chat-list-button:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.chat-name {
+  display: inline-block;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  margin-right: 60px; 
+  font-size: var(--font-size-small);
+}
+
+.chat-name:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  text-decoration: none;
+}
+
+.chats-list-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  mask-image: linear-gradient(
+    to bottom,
+    black calc(100% - 20px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black calc(100% - 20px),
+    transparent 100%
+  );
+  background: linear-gradient(to bottom, calc(100% - 20px), transparent 100%); 
+  padding-bottom: 20px; 
+  /* scrollbar-width: thin; /* Handled by global _scrollbars.css */
+  /* -ms-overflow-style: auto; /* Handled by global _scrollbars.css */
+}
+
+#chats-section {
+  display: -webkit-flex;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  margin-top: 0.5rem;
+}
+
+.chat-actions { /* For edit/delete buttons on chat items */
+    display: flex;
+    gap: 5px;
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    min-width: 70px;
+    justify-content: flex-end;
+}
+
+/* Tasks List (within left panel) */
+/* Tasks list container - similar to chats list */
+.tasks-list-container {
+    max-height: fit-content;
+    overflow-y: auto;
+    margin-top: 10px;
+    padding-right: 5px;
+    border-radius: 5px;
+    position: relative;
+    scrollbar-width: thin;
+    -ms-overflow-style: auto;
+}
+
+.task-name {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 3px 0;
+    margin-left: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    font-size: var(--font-size-small);
+    margin-bottom: 2px;
+}
+
+.task-info-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 2px;
+    margin-left: 5px;
+}
+
+.task-name:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+}
+
+.task-container-vertical { /* For layout within a task item if needed */
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 6px;
+}
+
+/* Tabs for Chats/Tasks */
+.tabs-container {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 0;
+  margin-top: 20px;
+}
+
+.tabs {
+  display: flex;
+  width: 100%;
+  position: relative;
+  gap: 5px;
+  border-bottom: 3px solid var(--color-border);
+  justify-content: center;
+}
+
+.tab {
+  padding: 8px 16px;
+  cursor: pointer;
+  position: relative;
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.3s ease;
+  background-color: var(--color-panel);
+  margin-bottom: -3px;
+  z-index: 1;
+}
+
+.tab:not(.active) {
+  opacity: 0.8;
+  border-bottom: 3px solid var(--color-border);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.tab.active {
+  border-color: var(--color-border);
+  font-weight: bold;
+  background-color: var(--color-panel);
+}
+
+.tab.active::after { /* Removed conflicting style */
+  display: none;
+}
+
+.empty-list-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  color: var(--color-secondary);
+  text-align: center;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+/* Selected chat item indicator */
+.chat-list-button.font-bold {
+    position: relative;
+    background-color: var(--color-border) 0.05; /* Check this syntax, might need rgba */
+}
+
+.chat-list-button.font-bold::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background-color: var(--color-border);
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+}
+
+/* Preferences & Config Sections */
+.pref-header {
+  display: -webkit-flex;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  font-size: var(--font-size-normal);
+  margin: 0.28rem 0 0.6rem 0;
+}
+
+h3.pref-header {
+    font-size: 0.9rem;
+}
+
+.arrow-icon {
+  flex-shrink: 0;
+  -webkit-transition: transform var(--transition-speed) ease-in-out;
+  transition: transform var(--transition-speed) ease-in-out;
+  margin-left: 0.5rem;
+  width: 16px;
+  height: 16px;
+  transform: rotate(90deg);
+}
+
+.arrow-icon.rotated {
+  -webkit-transform: rotate(-90deg);
+  transform: rotate(-90deg);
+}
+
+.pref-section { /* Container for preference items */
+  font-size: var(--font-size-small);
+  
+}
+
+.pref-section [x-cloak] { /* Alpine specific */
+  display: none;
+}
+
+.config-section > h4 {
+  margin-top: 0;
+}
+
+.config-list {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.config-list li {
+  align-items: center;
+  border-top: 1px solid var(--color-border);
+  display: -webkit-flex;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+}
+
+.config-list > *:first-child {
+  border-top: 0px;
+}
+
+#pref-list li { /* Specific to preference list items */
+  opacity: 0.8;
+}
+
+.config-button {
+  background-color: var(--color-background);
+  border: 0.1rem solid var(--color-border);
+  border-radius: var(--spacing-xs);
+  cursor: pointer;
+  display: inline;
+  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  font-size: var(--font-size-small);
+  opacity: 0.8;
+  text-wrap: nowrap;
+  width: calc(50% - var(--spacing-xs));
+  float:left;
+  margin: 0 var(--spacing-xs) var(--spacing-xs) 0;
+  padding: var(--spacing-sm) 0.75rem;
+  max-height: 2.3rem;
+  -webkit-transition: all var(--transition-speed), transform 0.1s ease-in-out;
+  transition: all var(--transition-speed), transform 0.1s ease-in-out;
+}
+
+.config-button:hover {
+  background-color: var(--color-secondary);
+  opacity: 1;
+}
+
+.config-button:active {
+  opacity: 0.5;
+}
+
+#settings { /* Container for settings icon/button */
+  display: flex;
+  align-items: center;
+}
+
+.edit-button { /* Generic edit button, often in config lists */
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 0.1875rem;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 0.125rem 0.5rem;
+  -webkit-transition: all var(--transition-speed) ease-in-out;
+  transition: all var(--transition-speed) ease-in-out;
+  width: 2rem;
+  height: 2rem;
+}
+
+.edit-button:hover {
+  border-color: var(--color-primary);
+  background-color: #32455690;
+}
+
+.edit-button:active {
+  background-color: #131a2090;
+  color: rgba(253, 253, 253, 0.35);
+}
+
+.switch-label { /* Label for toggle switches */
+  margin-right: 0.5rem;
+}
+
+.switch {
+  display: inline-block;
+  height: 1.15rem;
+  position: relative;
+  width: 2.2rem;
+}
+
+.switch input {
+  float: right;
+  height: 0;
+  opacity: 0;
+  width: 0;
+}
+
+.slider {
+  background-color: #272727;
+  border: 1px solid #535353;
+  border-radius: 1.15rem;
+  bottom: 0;
+  cursor: pointer;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  -webkit-transition: 0.4s ease-in-out;
+  transition: 0.4s ease-in-out;
+}
+
+.slider:before {
+  background-color: #b6b6b6;
+  border-radius: 50%;
+  bottom: 0.134rem;
+  content: "";
+  height: 0.8rem;
+  left: 0.15rem;
+  position: absolute;
+  -webkit-transition: 0.4s ease-in-out;
+  transition: 0.4s ease-in-out;
+  width: 0.8rem;
+}
+
+input:checked + .slider {
+  background-color: #3a3a3a;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(1.0rem);
+  transform: translateX(1.0rem);
+}
+
+/* Version Info */
+.version-info {
+  line-height: 0.8rem;
+  position: relative;
+  margin: 0 var(--spacing-md) 1rem var(--spacing-md);
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+  opacity: 0.45;
+}
+
+/* Media Queries for Left Panel */
+@media (max-width: 768px) {
+  #left-panel {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 250px !important; 
+    min-width: 250px; 
+    z-index: 1003;
+  }
+
+  #left-panel.hidden {
+    margin-left: -250px; 
+  }
+
+  .toggle-sidebar-button {
+    position: fixed; 
+    left: var(--spacing-md);
+    z-index: 1004; 
+  }
+
+  .sidebar-overlay { /* Mobile only overlay for closing panel */
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0); 
+    opacity: 0;
+    z-index: 1002; 
+  }
+
+  .sidebar-overlay.visible {
+    display: block;
+    
+  }
+}
+
+@media (max-height: 600px) {
+  #chats-section { 
+    min-height: 100%; 
+  }
+
+  .left-panel-top { 
+    overflow-y: auto;
+    -webkit-scroll-behavior: smooth;
+    scroll-behavior: smooth;
+  }
+}
+
+/* Light Mode Overrides for Left Panel */
+.light-mode .chat-list-button:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.light-mode .chat-name:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.light-mode .task-name:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.light-mode .tab.active {
+    /* color: var(--highlight-pink); /* This variable is not defined in the provided root */
+    /* box-shadow: 0 0 8px var(--highlight-pink); /* This variable is not defined */
+    /* Reverting to a more generic active tab style for light mode if specific pink is not available */
+    border-color: var(--color-border-light); 
+}
+
+.light-mode .tab:not(.active) {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.light-mode .empty-list-message {
+  color: var(--color-secondary-light); /* Assuming this is defined, or use a direct color */
+}
+
+.light-mode .chat-list-button.font-bold {
+    background-color: var(--color-border) 0.05; /* Check this syntax */
+}
+
+.light-mode .chat-list-button.font-bold::before {
+    background-color: var(--color-border);
+}
+
+.light-mode #left-panel {
+  box-shadow: 1px 0 25px rgba(0, 0, 0, 0.05);
+}
+
+.light-mode .config-button {
+  background-color: var(--color-background); 
+  color: #333333;
+}
+
+.light-mode .config-button:hover {
+  background-color: #d6dae8;
+}
+
+.light-mode .config-button:active {
+  background-color: #bdc0cb;
+}
+
+.light-mode .edit-button {
+  border-color: var(--color-primary-light);
+  color: var(--color-primary-light);
+}
+
+.light-mode .edit-button:hover {
+  background-color: #e4e7f0;
+}
+
+.light-mode .edit-button:active {
+  background-color: #979fb9;
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.light-mode .slider {
+  background-color: #f1f1f1;
+  border: 1px solid #dddddd;
+}
+
+.light-mode .slider:before {
+  background-color: #838383;
+}
+
+.light-mode input:checked + .slider {
+  background-color: #e6e6e6;
+}
+/* Time Date Container Styling */
+#time-date-container {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: var(--time-date-bg);
+  border: 1px solid var(--time-date-border);
+  margin: 0.5rem; 
+}
