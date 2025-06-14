@@ -243,6 +243,11 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
         if (type === 'user') {
             return; // Skip re-rendering
         }
+        const span = messageContainer.querySelector('.msg-content span');
+        if (span) {
+            msgs.updateMessageContent(messageContainer, content);
+            return;
+        }
         // For other types, update the message
         messageContainer.innerHTML = '';
     } else {
