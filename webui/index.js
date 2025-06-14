@@ -22,9 +22,58 @@ let connectionStatus = false
 
 
 // Initialize the toggle button
-setupSidebarToggle();
+// setupSidebarToggle(); // Will be called in initializeApp
 // Initialize tabs
-setupTabs();
+// setupTabs(); // Will be called in initializeApp
+
+async function initializeApp() {
+    // Setup UI elements first
+    setupSidebarToggle();
+    setupTabs();
+    initializeActiveTab(); // This might also call translatePage if it relies on i18n
+
+    // Determine initial language
+    let preferredLanguage = localStorage.getItem('preferredLanguage');
+    if (!preferredLanguage) {
+        const browserLanguage = navigator.language || navigator.userLanguage;
+        if (browserLanguage) {
+            const baseLanguage = browserLanguage.split('-')[0];
+            if (['en', 'zh'].includes(baseLanguage)) {
+                preferredLanguage = baseLanguage;
+            }
+        }
+    }
+    // Default to 'zh' if no preference found or supported
+    const initialLang = preferredLanguage || 'zh'; // Changed 'en' to 'zh'
+
+    // Store the chosen language (or the new default)
+    localStorage.setItem('preferredLanguage', initialLang);
+
+    // Set the lang attribute on the HTML element as early as possible
+    document.documentElement.lang = initialLang;
+
+    try {
+        if (window.i18n && window.i18n.loadTranslations) {
+            await window.i18n.loadTranslations(initialLang);
+            if (window.i18n.translatePage) {
+                window.i18n.translatePage();
+            }
+            // Dispatch language changed event so other components (like switcher) can sync
+            document.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: initialLang } }));
+        } else {
+            console.error("i18n system not found. Translations will not be applied.");
+        }
+    } catch (error) {
+        console.error("Error initializing i18n:", error);
+    }
+
+    // Start polling after i18n is initialized
+    startPolling();
+
+    // Other initializations that might depend on the DOM being ready and translated
+    const isDarkMode = localStorage.getItem('darkMode') !== 'false';
+    toggleDarkMode(isDarkMode); // Assuming toggleDarkMode is defined
+}
 
 function isMobile() {
     return window.innerWidth <= 768;
@@ -788,10 +837,17 @@ window.restart = async function () {
 }
 
 // Modify this part
-document.addEventListener('DOMContentLoaded', () => {
-    const isDarkMode = localStorage.getItem('darkMode') !== 'false';
-    toggleDarkMode(isDarkMode);
-});
+// document.addEventListener('DOMContentLoaded', () => {
+//     const isDarkMode = localStorage.getItem('darkMode') !== 'false';
+//     toggleDarkMode(isDarkMode);
+// });
+
+// Combined DOMContentLoaded listener
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
+}
 
 
 function toggleCssProperty(selector, property, value) {
@@ -1077,9 +1133,9 @@ async function startPolling() {
     _doPoll();
 }
 
-document.addEventListener("DOMContentLoaded", startPolling);
+// document.addEventListener("DOMContentLoaded", startPolling); // Now called from initializeApp
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => { // This can remain for drag/drop separate from initializeApp if preferred, or merged.
     const dragDropOverlay = document.getElementById('dragdrop-overlay');
     const inputSection = document.getElementById('input-section');
     let dragCounter = 0;
@@ -1160,11 +1216,11 @@ window.handleFileUpload = function(event) {
 }
 
 // Setup event handlers once the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', function() {
-    setupSidebarToggle();
-    setupTabs();
-    initializeActiveTab();
-});
+// document.addEventListener('DOMContentLoaded', function() { // These are now called within initializeApp
+//     setupSidebarToggle();
+//     setupTabs();
+//     initializeActiveTab();
+// });
 
 // Setup tabs functionality
 function setupTabs() {

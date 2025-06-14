@@ -1,10 +1,12 @@
 // copy button
 import { openImageModal } from "./image_modal.js";
 
+const __ = window.i18n.translate; // Helper for cleaner calls
+
 function createCopyButton() {
   const button = document.createElement("button");
   button.className = "copy-button";
-  button.textContent = "Copy";
+  button.textContent = __("copy");
 
   button.addEventListener("click", async function (e) {
     e.stopPropagation();
@@ -21,15 +23,15 @@ function createCopyButton() {
 
     try {
       await navigator.clipboard.writeText(textToCopy);
-      const originalText = button.textContent;
+      const originalText = button.textContent; // This will be "Copy" in the current language
       button.classList.add("copied");
-      button.textContent = "Copied!";
+      button.textContent = __("copied");
       setTimeout(() => {
         button.classList.remove("copied");
-        button.textContent = originalText;
+        button.textContent = originalText; // Restore original translated "Copy"
       }, 2000);
     } catch (err) {
-      console.error("Failed to copy text:", err);
+      console.error(__("failedToCopyText"), err);
     }
   });
 
@@ -240,7 +242,7 @@ export function drawMessageUser(
   messageDiv.classList.add("message", "message-user");
 
   const headingElement = document.createElement("h4");
-  headingElement.textContent = "User message";
+  headingElement.textContent = __("userMessage");
   messageDiv.appendChild(headingElement);
 
   if (content && content.trim().length > 0) {
@@ -509,7 +511,20 @@ function drawKvps(container, kvps, latex) {
         row.classList.add("msg-thoughts");
 
       const th = row.insertCell();
-      th.textContent = convertToTitleCase(key);
+      let titleKey = `messageKVP${convertToTitleCase(key).replace(/\s/g, '')}`;
+      // Use specific keys for known items, fallback for others
+      if (key === "thoughts") {
+        th.textContent = __("messageKVPThoughts");
+      } else if (key === "reflection") {
+        th.textContent = __("messageKVPReflection");
+      } else if (key === "tool_args" || key === "tool_arguments") { // Checking common variations
+        th.textContent = __("messageKVPToolArgs");
+      } else if (typeof __(titleKey) === 'string' && __(titleKey) !== titleKey) { // Check if a specific key exists
+        th.textContent = __(titleKey);
+      }
+      else {
+        th.textContent = convertToTitleCase(key); // Fallback for unknown keys
+      }
       th.classList.add("kvps-key");
 
       const td = row.insertCell();
@@ -529,7 +544,7 @@ function drawKvps(container, kvps, latex) {
           const imgElement = document.createElement("img");
           imgElement.classList.add("kvps-img");
           imgElement.src = value.replace("img://", "/image_get?path=");
-          imgElement.alt = "Image Attachment";
+          imgElement.alt = __("imageAttachment");
           td.appendChild(imgElement);
 
           // Add click handler and cursor change
@@ -595,7 +610,7 @@ function convertImageTags(content) {
   const updatedContent = content.replace(
     imageTagRegex,
     (match, base64Content) => {
-      return `<img src="data:image/jpeg;base64,${base64Content}" alt="Image Attachment" style="max-width: 250px !important;"/>`;
+      return `<img src="data:image/jpeg;base64,${base64Content}" alt="${__("imageAttachment")}" style="max-width: 250px !important;"/>`;
     }
   );
 
@@ -610,7 +625,7 @@ async function copyText(text, element) {
       element.classList.remove("copied");
     }, 2000);
   } catch (err) {
-    console.error("Failed to copy text:", err);
+    console.error(__("failedToCopyText"), err);
   }
 }
 
