@@ -6,9 +6,11 @@ export async function openHistoryModal() {
         // const data = JSON.stringify(hist.history, null, 4);
         const data = hist.history
         const size = hist.tokens
-        await showEditorModal(data, "markdown", `History ~${size} tokens`, "Conversation history visible to the LLM. History is compressed to fit into the context window over time.");
+        const title = window.i18n.t('history.title', "History ~{size} tokens", { size: size });
+        const description = window.i18n.t('history.description', "Conversation history visible to the LLM. History is compressed to fit into the context window over time.");
+        await showEditorModal(data, "markdown", title, description);
     } catch (e) {
-        window.toastFetchError("Error fetching history", e)
+        window.toastFetchError(window.i18n.t('history.fetchError', "Error fetching history"), e);
         return
     }
 }
@@ -18,9 +20,11 @@ export async function openCtxWindowModal() {
         const win = await window.sendJsonData("/ctx_window_get", { context: getContext() });
         const data = win.content
         const size = win.tokens
-        await showEditorModal(data, "markdown", `Context window ~${size} tokens`, "Data passed to the LLM during last interaction. Contains system message, conversation history and RAG.");
+        const title = window.i18n.t('contextWindow.title', "Context window ~{size} tokens", { size: size });
+        const description = window.i18n.t('contextWindow.description', "Data passed to the LLM during last interaction. Contains system message, conversation history and RAG.");
+        await showEditorModal(data, "markdown", title, description);
     } catch (e) {
-        window.toastFetchError("Error fetching context", e)
+        window.toastFetchError(window.i18n.t('contextWindow.fetchError', "Error fetching context"), e);
         return
     }
 }

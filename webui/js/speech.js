@@ -42,7 +42,7 @@ async function loadMicSettings() {
             });
         }
     } catch (error) {
-        window.toastFetchError("Failed to load speech settings", error)
+        window.toastFetchError(window.i18n.t('speech.loadSettingsFailed', "Failed to load speech settings"), error);
         console.error('Failed to load speech settings:', error);
     }
 }
@@ -196,7 +196,7 @@ class MicrophoneInput {
         } catch (error) {
 
             console.error('Microphone initialization error:', error);
-            toast('Failed to access microphone. Please check permissions.', 'error');
+            toast(window.i18n.t('speech.micAccessFailed', 'Failed to access microphone. Please check permissions.'), 'error');
             return false;
         }
     }
@@ -283,7 +283,7 @@ class MicrophoneInput {
                 await this.updateCallback(result.text, true);
             }
         } catch (error) {
-            window.toastFetchError("Transcription error", error)
+            window.toastFetchError(window.i18n.t('speech.transcriptionError', "Transcription error"), error);
             console.error('Transcription error:', error);
         } finally {
             this.audioChunks = [];
@@ -373,7 +373,7 @@ async function requestMicrophonePermission() {
         return true;
     } catch (err) {
         console.error('Error accessing microphone:', err);
-        toast('Microphone access denied. Please enable microphone access in your browser settings.', 'error');
+        toast(window.i18n.t('speech.micAccessDenied', 'Microphone access denied. Please enable microphone access in your browser settings.'), 'error');
         return false;
     }
 }
