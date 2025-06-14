@@ -1595,7 +1595,7 @@ async function copyText(text, element) {
   }
 }
 
-function convertHTML(str) {
+export function convertHTML(str) {
   if (typeof str !== "string") str = JSON.stringify(str, null, 2);
 
   let result = escapeHTML(str);
@@ -1637,6 +1637,17 @@ function convertPathsToLinks(str) {
   const regex = new RegExp(`(?<=${prefix})\\/${folder}*${file}${suffix}`, "g");
 
   return str.replace(regex, generateLinks);
+}
+
+export function updateMessageContent(container, content) {
+  const span = container.querySelector('.msg-content span');
+  const msg = container.querySelector('.message');
+  if (!span || !msg) return;
+  const atBottom = msg.scrollTop + msg.clientHeight >= msg.scrollHeight - 1;
+  span.innerHTML = convertHTML(content);
+  if (atBottom) {
+    msg.scrollTop = msg.scrollHeight;
+  }
 }
 
 // Removed broken inline copy system - using original copy buttons instead
