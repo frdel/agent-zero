@@ -755,13 +755,13 @@ window.toggleSpeech = function (isOn) {
     if (!isOn) speech.stop()
 };
 
-window.toggleFixedHeight = function (isFixed) {
-    if (isFixed) {
-        document.body.classList.remove('long-form');
-    } else {
+window.toggleFixedHeight = function (isLongFormEnabled) {
+    if (isLongFormEnabled) {
         document.body.classList.add('long-form');
+    } else {
+        document.body.classList.remove('long-form');
     }
-    localStorage.setItem('fixedHeight', isFixed);
+    localStorage.setItem('longFormEnabled', isLongFormEnabled);
 };
 
 window.nudge = async function () {
