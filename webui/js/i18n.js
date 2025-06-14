@@ -1,7 +1,7 @@
 // webui/js/i18n.js
 i18next
   .use(i18nextHttpBackend)
-  .use(i18nextBrowserLanguageDetector)
+  // .use(i18nextBrowserLanguageDetector) // Removed
   .init({
     lng: 'zh', // Set default language to Chinese
     fallbackLng: 'en', // Fallback language
@@ -11,17 +11,7 @@ i18next
     backend: {
       loadPath: 'locales/{{lng}}.json', // Path to translation files
     },
-    detection: {
-      // Order and from where user language should be detected
-      order: ['querystring', 'cookie', 'localStorage', 'sessionStorage', 'navigator', 'htmlTag'],
-      // Keys or params to lookup language from
-      lookupQuerystring: 'lng',
-      lookupCookie: 'i18next',
-      lookupLocalStorage: 'i18nextLng',
-      lookupSessionStorage: 'i18nextLng',
-      caches: ['localStorage', 'cookie'], // Where to cache the detected language
-      excludeCacheFor: ['cimode'], // Languages to not persist (e.g., 'cimode' for development)
-    }
+    // detection: { ... } // Removed
   }, (err, t) => {
     if (err) return console.error('Error initializing i18next:', err);
     console.log('i18next initialized.');
