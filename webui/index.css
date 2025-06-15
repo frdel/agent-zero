@@ -965,8 +965,14 @@ pre {
 }
 
 .message-collapsed::after {
-  content: "";
-  display: none;
+  content: "📄 Content hidden - click + to show";
+  display: block;
+  font-size: 0.8em;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  padding: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 0.5rem;
 }
 
 .message-button svg {
@@ -1157,7 +1163,7 @@ pre {
 
 /* Visual indicator when content is hidden */
 .message-collapsed::after {
-  content: "📄 Content hidden - click to show";
+  content: "📄 Content hidden - click + to show";
   display: block;
   font-size: 0.8em;
   color: rgba(255, 255, 255, 0.6);
@@ -1190,7 +1196,6 @@ pre {
 
 /* Compact state: Limited height with scrolling */
 .message-compact {
-  height: 400px;
   max-height: 400px;
   overflow-y: auto;
   overflow-x: auto;

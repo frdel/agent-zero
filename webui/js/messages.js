@@ -62,9 +62,16 @@ function createControlButton(label, title, handler) {
 }
 
 // Function to determine optimal message height state - simplified with smooth transitions
-function determineMessageState(msg) {
+function determineMessageState(msg, retryCount = 0) {
+  // Avoid infinite retry loops
+  const MAX_RETRIES = 10;
   if (msg.classList.contains('message-temp') || msg.classList.contains('state-lock')) {
     console.log(`[BORDER-DEBUG] determineMessageState: message-temp or state-lock, forcing expanded | borderLeft=${msg.style.borderLeft} | classList=${msg.className}`);
+    return Promise.resolve('expanded');
+  }
+  // Only proceed if the element is attached and visible
+  if (!msg.isConnected || msg.offsetParent === null) {
+    console.log(`[DEBUG] determineMessageState: element not in DOM or not visible, skipping | classList=${msg.className}`);
     return Promise.resolve('expanded');
   }
   return new Promise((resolve) => {
@@ -107,10 +114,15 @@ function determineMessageState(msg) {
         const afterOverflowY = msg.style.overflowY;
         const afterBorderLeft = msg.style.borderLeft;
         if (finalHeight === 0) {
-          console.log(`[DEBUG] determineMessageState: height=0, retrying next frame | classList=${afterClassList}`);
-          requestAnimationFrame(() => {
-            determineMessageState(msg).then(resolve);
-          });
+          if (retryCount < MAX_RETRIES) {
+            console.log(`[DEBUG] determineMessageState: height=0, retrying next frame (${retryCount + 1}) | classList=${afterClassList}`);
+            requestAnimationFrame(() => {
+              determineMessageState(msg, retryCount + 1).then(resolve);
+            });
+          } else {
+            console.warn(`[WARN] determineMessageState: height=0 after ${MAX_RETRIES} retries, defaulting to expanded | classList=${afterClassList}`);
+            resolve('expanded');
+          }
           return;
         }
         const threshold = 400;
@@ -138,6 +150,11 @@ function ensureScrollTracking(messageElement) {
     return; // Already initialized
   }
 
+  // Do not set up scroll tracking for streaming messages
+  if (messageElement.classList.contains('message-temp')) {
+    return;
+  }
+
   // Initialize user scroll tracking
   messageElement.dataset.userScrolled = "false";
   messageElement.dataset.scrollTrackingInitialized = "true";
@@ -163,8 +180,8 @@ function ensureScrollTracking(messageElement) {
   const classList = Array.from(messageElement.classList).join(' ');
   console.log(`[SCROLL] ensureScrollTracking: initialized for ${messageElement.id || messageElement.className} | scrollTop=${messageElement.scrollTop} | height=${messageElement.scrollHeight} | overflowY=${overflowY} | borderLeft=${borderLeft} | classList=${classList}`);
 
-  // Only auto-scroll to bottom if compact and not user scrolled
-  if (messageElement.classList.contains('message-compact')) {
+  // Only auto-scroll to bottom if compact and not user scrolled, and not streaming
+  if (messageElement.classList.contains('message-compact') && !messageElement.classList.contains('message-temp')) {
     if (pendingScrollAnimationFrame.has(messageElement)) {
       cancelAnimationFrame(pendingScrollAnimationFrame.get(messageElement));
     }
@@ -330,6 +347,8 @@ function injectConsoleControls(messageDiv, command, type) {
     const allMessagesOfType = document.querySelectorAll(messageSelector);
     const isStreaming = document.querySelector('.message-temp');
     for (const msg of allMessagesOfType) {
+      // --- Fix: Always allow hide/unhide to override streaming guard ---
+      // Only skip if locked/streaming AND not a hide/unhide action
       if (!force && isStreaming && !msg.classList.contains('message-temp')) {
         console.log(`[GUARD] updateAllMessagesOfType: Skipping ${msg.id || msg.className} because another message is streaming.`);
         continue;
@@ -343,6 +362,9 @@ function injectConsoleControls(messageDiv, command, type) {
         msg.classList.add('message-collapsed');
         addContentPreview(msg, type);
         console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to collapsed | prevState=${prevState}`);
+      } else {
+        // --- Fix: Always remove collapsed class when unhidden ---
+        msg.classList.remove('message-collapsed');
       }
       removeContentPreview(msg);
       const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
@@ -410,6 +432,15 @@ function injectConsoleControls(messageDiv, command, type) {
       }
     }
     updateAllButtonStatesForType(type);
+    // After streaming ends, unlock all and reevaluate
+    if (!isStreaming) {
+      unlockAllMessageStates();
+      allMessagesOfType.forEach(msg => {
+        if (!msg.classList.contains('message-temp')) {
+          reevaluateMessageStateAfterStreaming(msg);
+        }
+      });
+    }
   };
 
   // Add content preview functionality
@@ -651,23 +682,15 @@ function updateButtonState(button, isActive, type, buttonType) {
   
   if (buttonType === 'hide') {
     if (isActive) {
-      // Hidden state - show eye icon to indicate "click to show"
-      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-        <circle cx="12" cy="12" r="3"/>
-      </svg>`;
+      // Collapsed/hidden state - show plus icon (maximize/expand)
+      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
       button.style.color = '#10b981'; // Green - click to show
-      button.title = `Show all ${type} messages`;
+      button.title = `Show all ${type} messages (expand)`;
     } else {
-      // Visible state - show eye-off icon to indicate "click to hide"  
-      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 8 11 8a13.16 13.16 0 0 1-1.67 2.68"/>
-        <path d="M6.61 6.61A13.526 13.526 0 0 0 1 12s4 8 11 8a9.74 9.74 0 0 0 5.39-1.61"/>
-        <line x1="2" y1="2" x2="22" y2="22"/>
-      </svg>`;
+      // Visible state - show minus icon (minimize/collapse)
+      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
       button.style.color = '#6b7280'; // Gray - click to hide
-      button.title = `Hide all ${type} messages (show preview only)`;
+      button.title = `Hide all ${type} messages (collapse)`;
     }
   } else if (buttonType === 'height') {
     const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
@@ -1989,4 +2012,10 @@ export function enforceLastAgentResponseExpanded() {
       });
     }
   }
+}
+
+// Helper to unlock all messages after streaming ends
+function unlockAllMessageStates() {
+  const lockedMessages = document.querySelectorAll('.state-lock');
+  lockedMessages.forEach(msg => msg.classList.remove('state-lock'));
 }
