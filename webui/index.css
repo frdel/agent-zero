@@ -593,6 +593,8 @@ pre {
   /* Removed transitions to prevent flashing during content updates */
   /* Prevent layout shifts during streaming */
   contain: layout style;
+  border-left: 2px solid var(--color-border);
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), height 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s, color 0.3s;
 }
 
 /* Sticky message header so controls remain visible */
@@ -1195,9 +1197,9 @@ pre {
   scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
-  border-left: 2px solid rgba(255, 255, 255, 0.2);
-  padding-left: calc(var(--spacing-md) + 2px);
-  margin-left: -2px;
+  border-left: 1px solid var(--color-border); /* subtle, not colored */
+  padding-left: var(--spacing-md);
+  margin-left: 0;
 }
 
 .message-compact .scrollable-content {
@@ -1336,16 +1338,16 @@ pre {
 
 /* Compact state: smaller border with muted colors */
 .message-compact {
-  border-left: 2px solid rgba(255, 255, 255, 0.2);
-  padding-left: calc(var(--spacing-md) + 2px);
-  margin-left: -2px;
+  border-left: 1px solid var(--color-border); /* subtle, not colored */
+  padding-left: var(--spacing-md);
+  margin-left: 0;
 }
 
 /* Expanded state: wider border with brighter colors */
 .message-expanded {
-  border-left: 4px solid var(--color-primary);
-  padding-left: calc(var(--spacing-md) + 4px);
-  margin-left: -4px;
+  border-left: 1px solid var(--color-border); /* subtle, not colored */
+  padding-left: var(--spacing-md);
+  margin-left: 0;
 }
 
 /* Natural state has no border - full content display */
@@ -1463,9 +1465,9 @@ pre {
 
 /* Visual feedback for different states */
 .message-expanded {
-  border-left: 3px solid var(--color-primary);
-  padding-left: calc(var(--spacing-md) + 3px);
-  margin-left: -3px;
+  border-left: 1px solid var(--color-border);
+  padding-left: var(--spacing-md);
+  margin-left: 0;
 }
 
 .message-browser {
@@ -4419,3 +4421,91 @@ nav ul li a img {
   overflow: visible;
   flex: 1 1 auto;
 }
+
+.measuring-message {
+  border-left: 1px solid var(--color-border) !important;
+  padding-left: var(--spacing-md) !important;
+  margin-left: 0 !important;
+}
+
+/* Prevent border flicker during measurement */
+.measuring-message {
+  border-left: 1px solid var(--color-border) !important;
+}
+.message-agent.measuring-message {
+  border-left-color: rgba(59, 130, 246, 0.6) !important;
+}
+.message-tool.measuring-message {
+  border-left-color: rgba(168, 85, 247, 0.6) !important;
+}
+.message-agent-response.measuring-message {
+  border-left-color: rgba(34, 197, 94, 0.6) !important;
+}
+.message-code-exe.measuring-message {
+  border-left-color: rgba(251, 191, 36, 0.6) !important;
+}
+.message-browser.measuring-message {
+  border-left-color: rgba(147, 51, 234, 0.6) !important;
+}
+.message-warning.measuring-message {
+  border-left-color: rgba(245, 158, 11, 0.6) !important;
+}
+.message-error.measuring-message {
+  border-left-color: rgba(239, 68, 68, 0.6) !important;
+}
+.message-info.measuring-message {
+  border-left-color: rgba(107, 114, 128, 0.6) !important;
+}
+.message-default.measuring-message {
+  border-left-color: rgba(107, 114, 128, 0.6) !important;
+}
+.message-user.measuring-message {
+  border-left-color: rgba(156, 163, 175, 0.6) !important;
+}
+
+/* Always set a default border for .message */
+.message {
+  border-left: 1px solid var(--color-border);
+}
+/* Expanded state: wider border */
+.message-expanded {
+  border-left-width: 1px;
+  border-left-style: solid;
+}
+/* Compact state: thinner border */
+.message-compact {
+  border-left-width: 1px;
+  border-left-style: solid;
+}
+/* Set color for each type, only once */
+.message-agent {
+  border-left-color: rgba(59, 130, 246, 0.6);
+}
+.message-tool {
+  border-left-color: rgba(168, 85, 247, 0.6);
+}
+.message-agent-response {
+  border-left-color: rgba(34, 197, 94, 0.6);
+}
+.message-code-exe {
+  border-left-color: rgba(251, 191, 36, 0.6);
+}
+.message-browser {
+  border-left-color: rgba(147, 51, 234, 0.6);
+}
+.message-warning {
+  border-left-color: rgba(245, 158, 11, 0.6);
+}
+.message-error {
+  border-left-color: rgba(239, 68, 68, 0.6);
+}
+.message-info {
+  border-left-color: rgba(59, 130, 246, 0.4);
+}
+.message-default {
+  border-left-color: #e0e0e0;
+}
+.message-user {
+  border-left-color: #a3a3a3;
+}
+/* Remove all other border-left-width/color overrides for .message, .message-expanded, .message-compact, and type-specific states below this point. */

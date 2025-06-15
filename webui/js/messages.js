@@ -63,111 +63,128 @@ function createControlButton(label, title, handler) {
 
 // Function to determine optimal message height state - simplified with smooth transitions
 function determineMessageState(msg) {
+  if (msg.classList.contains('message-temp') || msg.classList.contains('state-lock')) {
+    console.log(`[BORDER-DEBUG] determineMessageState: message-temp or state-lock, forcing expanded | borderLeft=${msg.style.borderLeft} | classList=${msg.className}`);
+    return Promise.resolve('expanded');
+  }
   return new Promise((resolve) => {
     requestAnimationFrame(() => {
       try {
-        // Ensure message is in natural state for accurate measurement
-        const originalMaxHeight = msg.style.maxHeight;
-        const originalOverflow = msg.style.overflow;
-        const originalOverflowY = msg.style.overflowY;
-        
-        // Temporarily remove height constraints for accurate measurement
+        // Patch: Add a temporary class that mimics expanded state border/padding for measurement
+        const beforeClassList = Array.from(msg.classList).join(' ');
+        const beforeMaxHeight = msg.style.maxHeight;
+        const beforeOverflow = msg.style.overflow;
+        const beforeOverflowY = msg.style.overflowY;
+        const beforeBorderLeft = msg.style.borderLeft;
+        // Save current state
+        const wasCompact = msg.classList.contains('message-compact');
+        const wasExpanded = msg.classList.contains('message-expanded');
+        // DO NOT remove compact/expanded, just add measuring-message
+        msg.classList.add('measuring-message');
         msg.style.maxHeight = 'none';
         msg.style.overflow = 'visible';
         msg.style.overflowY = 'visible';
-        
-        // Also temporarily remove any state classes for pure measurement
-        const wasCompact = msg.classList.contains('message-compact');
-        const wasExpanded = msg.classList.contains('message-expanded');
-        msg.classList.remove('message-compact', 'message-expanded');
-        
-        // Force reflow to get accurate height
         msg.offsetHeight;
-        
-        // Get total message height including all content
         const totalHeight = msg.scrollHeight || 0;
-        
-        // Also check the content specifically for tool messages
         let contentHeight = 0;
         const scrollableContent = msg.querySelector('.scrollable-content');
         const kvpsTable = msg.querySelector('.msg-kvps');
-        
         if (scrollableContent) {
           contentHeight = Math.max(contentHeight, scrollableContent.scrollHeight || 0);
         }
         if (kvpsTable) {
           contentHeight = Math.max(contentHeight, kvpsTable.scrollHeight || 0);
         }
-        
         const finalHeight = Math.max(totalHeight, contentHeight);
-        
-        // Restore original state
-        msg.style.maxHeight = originalMaxHeight;
-        msg.style.overflow = originalOverflow;
-        msg.style.overflowY = originalOverflowY;
-        
-        // Restore classes if they were there
-        if (wasCompact) msg.classList.add('message-compact');
-        if (wasExpanded) msg.classList.add('message-expanded');
-        
-        console.log(`📏 Message height analysis: total=${totalHeight}px, content=${contentHeight}px, final=${finalHeight}px`);
-        
-        // More conservative threshold - only add scrollbars for truly tall content
+        // Restore previous state
+        msg.classList.remove('measuring-message');
+        msg.style.maxHeight = beforeMaxHeight;
+        msg.style.overflow = beforeOverflow;
+        msg.style.overflowY = beforeOverflowY;
+        const afterClassList = Array.from(msg.classList).join(' ');
+        const afterMaxHeight = msg.style.maxHeight;
+        const afterOverflow = msg.style.overflow;
+        const afterOverflowY = msg.style.overflowY;
+        const afterBorderLeft = msg.style.borderLeft;
+        if (finalHeight === 0) {
+          console.log(`[DEBUG] determineMessageState: height=0, retrying next frame | classList=${afterClassList}`);
+          requestAnimationFrame(() => {
+            determineMessageState(msg).then(resolve);
+          });
+          return;
+        }
         const threshold = 400;
-        if (finalHeight > threshold) {
-          console.log('📏 Case: >400px → Compact scroll');
+        const willBeCompact = finalHeight > threshold;
+        console.log(`[DEBUG] determineMessageState: before classList=${beforeClassList}, after classList=${afterClassList}, before maxHeight=${beforeMaxHeight}, after maxHeight=${afterMaxHeight}, before overflow=${beforeOverflow}, after overflow=${afterOverflow}, before overflowY=${beforeOverflowY}, after overflowY=${afterOverflowY}, before borderLeft=${beforeBorderLeft}, after borderLeft=${afterBorderLeft}, finalHeight=${finalHeight}, willBeCompact=${willBeCompact}`);
+        console.log(`[BORDER-DEBUG] determineMessageState: borderLeft=${msg.style.borderLeft} | classList=${msg.className}`);
+        if (willBeCompact) {
           resolve('compact');
         } else {
-          console.log('📏 Case: ≤400px → Natural (no scroll)');
-          resolve('natural');
+          resolve('expanded');
         }
-        
       } catch (error) {
         console.warn('Error determining message state:', error);
-        resolve('natural');
+        resolve('expanded');
       }
     });
   });
 }
 
-// Legacy function - replaced by injectConsoleControls for all message types
-// Function to ensure scroll tracking is properly set up for a message element
+// Global map to debounce scroll-to-bottom per message
+const pendingScrollAnimationFrame = new Map();
+
 function ensureScrollTracking(messageElement) {
   if (!messageElement || messageElement.dataset.scrollTrackingInitialized === "true") {
     return; // Already initialized
   }
-  
+
   // Initialize user scroll tracking
   messageElement.dataset.userScrolled = "false";
   messageElement.dataset.scrollTrackingInitialized = "true";
-  
+
   // Add scroll listener for unified scrolling
   const scrollHandler = () => {
-    // Check if message has scrolling capability (compact mode or tall content)
     const hasScrolling = messageElement.classList.contains('message-compact') || 
                         messageElement.scrollHeight > messageElement.clientHeight;
-    
     if (hasScrolling) {
       const nearBottom = messageElement.scrollTop + messageElement.clientHeight >= messageElement.scrollHeight - 10;
       messageElement.dataset.userScrolled = nearBottom ? "false" : "true";
-      console.log(`📊 Scroll tracking: nearBottom=${nearBottom}, userScrolled=${messageElement.dataset.userScrolled}`);
+      const borderLeft = messageElement.style.borderLeft;
+      const overflowY = messageElement.style.overflowY;
+      const classList = Array.from(messageElement.classList).join(' ');
+      console.log(`[SCROLL] ensureScrollTracking: ${messageElement.id || messageElement.className} scroll event | nearBottom=${nearBottom} | userScrolled=${messageElement.dataset.userScrolled} | scrollTop=${messageElement.scrollTop} | height=${messageElement.scrollHeight} | overflowY=${overflowY} | borderLeft=${borderLeft} | classList=${classList}`);
     }
   };
-  
-  // Remove any existing scroll listener to avoid duplicates
   messageElement.removeEventListener("scroll", scrollHandler);
   messageElement.addEventListener("scroll", scrollHandler);
-  
-  console.log('🎯 Scroll tracking initialized for message element');
-  
-  // If this is a compact message, auto-scroll to bottom initially
+
+  const borderLeft = messageElement.style.borderLeft;
+  const overflowY = messageElement.style.overflowY;
+  const classList = Array.from(messageElement.classList).join(' ');
+  console.log(`[SCROLL] ensureScrollTracking: initialized for ${messageElement.id || messageElement.className} | scrollTop=${messageElement.scrollTop} | height=${messageElement.scrollHeight} | overflowY=${overflowY} | borderLeft=${borderLeft} | classList=${classList}`);
+
+  // Only auto-scroll to bottom if compact and not user scrolled
   if (messageElement.classList.contains('message-compact')) {
-    requestAnimationFrame(() => {
-      const oldScrollTop = messageElement.scrollTop;
-      messageElement.scrollTop = messageElement.scrollHeight;
-      messageElement.dataset.userScrolled = "false";
-      console.log(`🔽 Initial auto-scroll for compact message: ${oldScrollTop} → ${messageElement.scrollTop}`);
+    if (pendingScrollAnimationFrame.has(messageElement)) {
+      cancelAnimationFrame(pendingScrollAnimationFrame.get(messageElement));
+    }
+    const rafId = requestAnimationFrame(() => {
+      if (messageElement.scrollHeight === 0) {
+        // Try again next frame if not rendered yet
+        ensureScrollTracking(messageElement);
+        return;
+      }
+      if (messageElement.dataset.userScrolled !== 'true') {
+        messageElement.scrollTop = messageElement.scrollHeight;
+        messageElement.dataset.userScrolled = "false";
+      }
+      const borderLeft2 = messageElement.style.borderLeft;
+      const overflowY2 = messageElement.style.overflowY;
+      const classList2 = Array.from(messageElement.classList).join(' ');
+      pendingScrollAnimationFrame.delete(messageElement);
+      console.log(`[SCROLL] ensureScrollTracking: auto-scroll to bottom for ${messageElement.id || messageElement.className} | scrollTop=${messageElement.scrollTop} | height=${messageElement.scrollHeight} | overflowY=${overflowY2} | borderLeft=${borderLeft2} | classList=${classList2}`);
     });
+    pendingScrollAnimationFrame.set(messageElement, rafId);
   }
 }
 
@@ -189,19 +206,27 @@ function injectConsoleControls(messageDiv, command, type) {
   // Debounced state update to prevent flashing during streaming
   const stateUpdateTimeouts = new Map();
   
-  const debouncedStateUpdate = (messageElement, delay = 100) => {
+  // Patch: Only allow state/scroll updates for streaming message during streaming
+  // Accept a force parameter to override the guard for user actions
+  function debouncedStateUpdate(messageElement, delay = 100, force = false) {
+    // If not the streaming message, skip during streaming (unless forced by user action)
+    const isStreaming = document.querySelector('.message-temp');
+    if (!force && isStreaming && !messageElement.classList.contains('message-temp')) {
+      console.log(`[GUARD] debouncedStateUpdate: Skipping ${messageElement.id || messageElement.className} because another message is streaming.`);
+      return;
+    }
+    if (!force && (messageElement.classList.contains('message-temp') || messageElement.classList.contains('state-lock'))) {
+      console.log(`[GUARD] debouncedStateUpdate: Skipping ${messageElement.id || messageElement.className} because it is streaming or locked.`);
+      return;
+    }
     const messageId = messageElement.id || messageElement.className || Math.random().toString();
-    
-    // Clear existing timeout for this message
     if (stateUpdateTimeouts.has(messageId)) {
       clearTimeout(stateUpdateTimeouts.get(messageId));
     }
-    
-    // Set new timeout
+    lockMessageState(messageElement);
+    const prevUserScrolled = messageElement.dataset.userScrolled;
     const timeoutId = setTimeout(async () => {
       try {
-        // --- FIX: Always check expanded state first ---
-        // Determine message type from classes
         let messageType = 'default';
         if (messageElement.classList.contains('message-code-exe')) messageType = 'code_exe';
         else if (messageElement.classList.contains('message-tool')) messageType = 'tool';
@@ -211,12 +236,10 @@ function injectConsoleControls(messageDiv, command, type) {
         else if (messageElement.classList.contains('message-error')) messageType = 'error';
         else if (messageElement.classList.contains('message-warning')) messageType = 'warning';
         else if (messageElement.classList.contains('message-info')) messageType = 'info';
-        // Always re-read settings from localStorage
         const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
         const isFullHeight = localStorage.getItem(`msgFullHeight_${messageType}`) === 'true';
         if (!isFixedHeightGlobal || isFullHeight) {
-          messageElement.classList.remove('message-compact');
-          messageElement.classList.add('message-expanded');
+          setMessageState(messageElement, 'expanded');
           messageElement.style.setProperty('height', 'auto', 'important');
           messageElement.style.setProperty('max-height', 'none', 'important');
           messageElement.style.setProperty('overflow-y', 'visible', 'important');
@@ -233,30 +256,27 @@ function injectConsoleControls(messageDiv, command, type) {
             msgContent.style.setProperty('max-height', 'none', 'important');
             msgContent.style.setProperty('overflow-y', 'visible', 'important');
           }
+          console.log(`[STATE] debouncedStateUpdate: ${messageId} set to expanded | scrollTop=${messageElement.scrollTop} | height=${messageElement.scrollHeight}`);
+          unlockMessageState(messageElement);
           stateUpdateTimeouts.delete(messageId);
           return;
         }
-        // --- END FIX ---
         const newState = await determineMessageState(messageElement);
-        // Apply state smoothly
-        messageElement.style.transition = 'max-height 0.2s ease-out, opacity 0.15s ease-in-out';
-        // Remove existing state classes
-        messageElement.classList.remove("message-compact", "message-expanded");
-        // Apply new state
-        if (newState === 'compact') {
-          messageElement.classList.add("message-compact");
-          // Ensure scroll tracking is set up for compact messages
-          ensureScrollTracking(messageElement);
+        setMessageState(messageElement, newState === 'compact' ? 'compact' : 'expanded');
+        ensureScrollTracking(messageElement);
+        if (prevUserScrolled !== undefined) {
+          messageElement.dataset.userScrolled = prevUserScrolled;
         }
+        console.log(`[STATE] debouncedStateUpdate: ${messageId} set to ${newState} | scrollTop=${messageElement.scrollTop} | height=${messageElement.scrollHeight}`);
+        unlockMessageState(messageElement);
         stateUpdateTimeouts.delete(messageId);
       } catch (error) {
-        console.warn('Error in debounced state update:', error);
+        unlockMessageState(messageElement);
         stateUpdateTimeouts.delete(messageId);
       }
     }, delay);
-    
     stateUpdateTimeouts.set(messageId, timeoutId);
-  };
+  }
 
   // Global observer for streaming message updates
   if (!window.streamingObserver) {
@@ -272,13 +292,19 @@ function injectConsoleControls(messageDiv, command, type) {
           }
           
           // If this is a streaming message (has message-temp class), debounce the update
+          // But skip state changes for streaming messages
           if (messageElement && messageElement.classList.contains('message-temp')) {
             console.log('🔄 Streaming mutation detected for message');
             
             // Ensure scroll tracking is set up for streaming messages
             ensureScrollTracking(messageElement);
             
-            // Debounce the state update
+            // Do NOT call debouncedStateUpdate for streaming messages
+            return;
+          }
+          
+          // For non-streaming messages, allow debounced state update
+          if (messageElement) {
             debouncedStateUpdate(messageElement, 150); // Longer delay for streaming
           }
         }
@@ -297,138 +323,92 @@ function injectConsoleControls(messageDiv, command, type) {
   }
 
   // Function to apply state to ALL messages of this type
-  const updateAllMessagesOfType = async () => {
+  // Accept a force parameter to override the guard for user actions
+  const updateAllMessagesOfType = async (force = false) => {
     const { isHidden, isFullHeight } = getCurrentStates();
     const messageSelector = getMessageSelectorForType(type);
     const allMessagesOfType = document.querySelectorAll(messageSelector);
-    
+    const isStreaming = document.querySelector('.message-temp');
     for (const msg of allMessagesOfType) {
-      // Remove all state classes (including legacy ones)
-      msg.classList.remove(
-        "message-collapsed", "message-compact", "message-expanded",
-        "message-scroll", "message-smart-scroll", "message-upper-overflow", "message-auto" // Legacy classes
-      );
-      
-      // Apply current state
+      if (!force && isStreaming && !msg.classList.contains('message-temp')) {
+        console.log(`[GUARD] updateAllMessagesOfType: Skipping ${msg.id || msg.className} because another message is streaming.`);
+        continue;
+      }
+      if (!force && (msg.classList.contains('message-temp') || msg.classList.contains('state-lock'))) {
+        console.log(`[GUARD] updateAllMessagesOfType: Skipping ${msg.id || msg.className} because it is streaming or locked.`);
+        continue;
+      }
+      const prevState = msg.classList.contains('message-compact') ? 'compact' : (msg.classList.contains('message-expanded') ? 'expanded' : 'none');
       if (isHidden) {
-        msg.classList.add("message-collapsed");
-        // Add preview for hidden content
+        msg.classList.add('message-collapsed');
         addContentPreview(msg, type);
-      } else {
-        // Remove preview when showing content
-        removeContentPreview(msg);
-        
-        // Check user preferences - ALWAYS re-read from localStorage for real-time updates
-        const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-        
-        if (isFixedHeightGlobal) {
-          // Global fixed height mode ON - messages use smart height by default
-          if (isFullHeight) {
-            // User explicitly wants full expansion - same as when fixed height is OFF
-            msg.classList.add("message-expanded");
-            // Force truly expanded state like when fixed height is off - use !important styles
-            msg.style.setProperty('max-height', 'none', 'important');
-            msg.style.setProperty('overflow-y', 'visible', 'important');
-            msg.style.setProperty('overflow-x', 'auto', 'important');
-            // Ensure no scrollbar space is reserved
-            msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
-            
-            // Also clear constraints from any nested scrollable content
-            const scrollableContent = msg.querySelector('.scrollable-content');
-            if (scrollableContent) {
-              scrollableContent.style.setProperty('max-height', 'none', 'important');
-              scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
-              scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
-            }
-            
-            // Clear constraints from any nested content areas
-            const msgContent = msg.querySelector('.msg-content');
-            if (msgContent) {
-              msgContent.style.setProperty('max-height', 'none', 'important');
-              msgContent.style.setProperty('overflow-y', 'visible', 'important');
-            }
-          } else {
-            // Default behavior - apply intelligent height management
-            try {
-              // Force a small delay to ensure DOM is stable, then re-measure
-              await new Promise(resolve => setTimeout(resolve, 10));
-              const optimalState = await determineMessageState(msg);
-              switch (optimalState) {
-                case 'natural':
-                  // No class needed - natural height, but ensure clean state
-                  msg.style.maxHeight = 'none';
-                  msg.style.overflowY = 'visible';
-                  break;
-                case 'compact':
-                  msg.classList.add("message-compact");
-                  // Ensure scroll tracking is set up for compact messages
-                  ensureScrollTracking(msg);
-                  break;
-                default:
-                  console.warn('Unknown message state:', optimalState);
-              }
-            } catch (error) {
-              console.warn('Error determining optimal state:', error);
-              // Fallback to compact with scrolling
-              msg.classList.add("message-compact");
-              ensureScrollTracking(msg);
-            }
+        console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to collapsed | prevState=${prevState}`);
+      }
+      removeContentPreview(msg);
+      const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+      if (isFixedHeightGlobal) {
+        if (isFullHeight) {
+          setMessageState(msg, 'expanded');
+          msg.style.setProperty('height', 'auto', 'important');
+          msg.style.setProperty('max-height', 'none', 'important');
+          msg.style.setProperty('overflow-y', 'visible', 'important');
+          msg.style.setProperty('overflow-x', 'auto', 'important');
+          msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
+          const scrollableContent = msg.querySelector('.scrollable-content');
+          if (scrollableContent) {
+            scrollableContent.style.setProperty('max-height', 'none', 'important');
+            scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
+            scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
+          }
+          const msgContent = msg.querySelector('.msg-content');
+          if (msgContent) {
+            msgContent.style.setProperty('max-height', 'none', 'important');
+            msgContent.style.setProperty('overflow-y', 'visible', 'important');
+          }
+          console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to expanded | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
+          // Only call determineMessageState when expanding, to allow auto-compact if needed
+          try {
+            await new Promise(resolve => setTimeout(resolve, 10));
+            const optimalState = await determineMessageState(msg);
+            setMessageState(msg, optimalState === 'compact' ? 'compact' : 'expanded');
+            ensureScrollTracking(msg);
+            console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to ${optimalState} | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
+          } catch (error) {
+            setMessageState(msg, 'compact');
+            ensureScrollTracking(msg);
+            console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} fallback to compact | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
           }
         } else {
-          // Global fixed height mode OFF - messages are fully expanded by default
-          if (isFullHeight || !isFixedHeightGlobal) {
-            // Expanded mode: remove compact, add expanded, clear height/overflow
-            msg.classList.remove("message-compact");
-            msg.classList.add("message-expanded");
-            msg.style.setProperty('height', 'auto', 'important');
-            msg.style.setProperty('max-height', 'none', 'important');
-            msg.style.setProperty('overflow-y', 'visible', 'important');
-            msg.style.setProperty('overflow-x', 'auto', 'important');
-            msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
-            // Also clear constraints from any nested scrollable content
-            const scrollableContent = msg.querySelector('.scrollable-content');
-            if (scrollableContent) {
-              scrollableContent.style.setProperty('max-height', 'none', 'important');
-              scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
-              scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
-            }
-            // Clear constraints from any nested content areas
-            const msgContent = msg.querySelector('.msg-content');
-            if (msgContent) {
-              msgContent.style.setProperty('max-height', 'none', 'important');
-              msgContent.style.setProperty('overflow-y', 'visible', 'important');
-            }
-            console.log(`📏 Applied expanded (global off or expanded) to ${type} message`);
-          } else {
-            // Default behavior - fully expanded like natural state
-            msg.classList.add("message-expanded");
-            msg.style.setProperty('max-height', 'none', 'important');
-            msg.style.setProperty('overflow-y', 'visible', 'important');
-            msg.style.setProperty('overflow-x', 'auto', 'important');
-            msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
-            
-            // Also clear constraints from any nested scrollable content
-            const scrollableContent = msg.querySelector('.scrollable-content');
-            if (scrollableContent) {
-              scrollableContent.style.setProperty('max-height', 'none', 'important');
-              scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
-              scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
-            }
-            
-            // Clear constraints from any nested content areas
-            const msgContent = msg.querySelector('.msg-content');
-            if (msgContent) {
-              msgContent.style.setProperty('max-height', 'none', 'important');
-              msgContent.style.setProperty('overflow-y', 'visible', 'important');
-            }
-            
-            console.log(`📏 Applied expanded (global off) to ${type} message`);
-          }
+          // User wants compact: force compact, do not call determineMessageState
+          setMessageState(msg, 'compact');
+          msg.style.setProperty('max-height', '400px', 'important');
+          msg.style.setProperty('overflow-y', 'auto', 'important');
+          msg.style.setProperty('overflow-x', 'auto', 'important');
+          msg.style.setProperty('scrollbar-gutter', 'stable', 'important');
+          ensureScrollTracking(msg);
+          console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to compact (user-forced) | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
         }
+      } else {
+        setMessageState(msg, 'expanded');
+        msg.style.setProperty('height', 'auto', 'important');
+        msg.style.setProperty('max-height', 'none', 'important');
+        msg.style.setProperty('overflow-y', 'visible', 'important');
+        msg.style.setProperty('overflow-x', 'auto', 'important');
+        msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
+        const scrollableContent = msg.querySelector('.scrollable-content');
+        if (scrollableContent) {
+          scrollableContent.style.setProperty('max-height', 'none', 'important');
+          scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
+          scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
+        }
+        const msgContent = msg.querySelector('.msg-content');
+        if (msgContent) {
+          msgContent.style.setProperty('max-height', 'none', 'important');
+          msgContent.style.setProperty('overflow-y', 'visible', 'important');
+        }
+        console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to expanded | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
       }
     }
-
-    // Update ALL button visual states for this type
     updateAllButtonStatesForType(type);
   };
 
@@ -542,22 +522,17 @@ function injectConsoleControls(messageDiv, command, type) {
     const currentState = localStorage.getItem(`msgHidden_${type}`) === 'true';
     const newState = !currentState;
     localStorage.setItem(`msgHidden_${type}`, newState);
-    updateAllMessagesOfType();
+    updateAllMessagesOfType(true); // force update
   };
 
   // Toggle height - ALWAYS read from localStorage
   const toggleHeight = () => {
     const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
     const currentState = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
-    
-    // Logic for toggling depends on global mode:
-    // - When global fixed height is ON: toggle between compact (false) and expanded (true)  
-    // - When global fixed height is OFF: toggle between expanded (false) and compact (true)
     const newState = !currentState;
     localStorage.setItem(`msgFullHeight_${type}`, newState);
-    
     console.log(`🔧 Toggle height for ${type}: ${currentState} -> ${newState} (global fixed: ${isFixedHeightGlobal})`);
-    updateAllMessagesOfType();
+    updateAllMessagesOfType(true); // force update
   };
 
   // Copy message content
@@ -765,20 +740,12 @@ window.updateButtonState = updateButtonState;
 
 // Function to re-evaluate message states after new messages are added
 window.reevaluateMessageStates = (delay = 200) => {
-  console.log('🔄 Re-evaluating message states after new content');
   setTimeout(() => {
-    // Get all messages that might need state updates
     const allMessages = document.querySelectorAll('.message');
-    
     allMessages.forEach(async (msg) => {
-      // Skip if message is already collapsed (hidden)
-      if (msg.classList.contains('message-collapsed')) return;
-      
-      // Check if this message has controls (meaning it participates in our system)
+      if (msg.classList.contains('message-collapsed') || msg.classList.contains('message-temp') || msg.classList.contains('state-lock')) return;
       const controls = msg.querySelector('.message-controls');
       if (!controls) return;
-      
-      // Determine message type from classes
       let messageType = 'default';
       if (msg.classList.contains('message-agent')) messageType = 'agent';
       else if (msg.classList.contains('message-tool')) messageType = 'tool';
@@ -789,54 +756,27 @@ window.reevaluateMessageStates = (delay = 200) => {
       else if (msg.classList.contains('message-error')) messageType = 'error';
       else if (msg.classList.contains('message-user')) messageType = 'user';
       else if (msg.classList.contains('message-agent-response')) messageType = 'response';
-      
-      // Get current preferences
       const isFullHeight = localStorage.getItem(`msgFullHeight_${messageType}`) === 'true';
       const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-      
-      // Clear any existing inline styles that might interfere
       msg.style.maxHeight = '';
       msg.style.overflowY = '';
       msg.style.overflowX = 'auto';
-      
-      // Only re-evaluate if not manually overridden
       if (isFixedHeightGlobal) {
         if (!isFullHeight) {
-          // Default smart behavior - re-evaluate
-          msg.classList.remove('message-compact', 'message-expanded');
-          
-          // Re-evaluate after a short delay to ensure content is stable
           setTimeout(async () => {
             try {
               const optimalState = await determineMessageState(msg);
-              if (optimalState === 'compact') {
-                msg.classList.add('message-compact');
-                msg.style.maxHeight = '400px';
-                msg.style.overflowY = 'auto';
-                console.log(`📏 Applied compact to ${messageType} message after re-evaluation`);
-              } else {
-                // Natural state
-                msg.style.maxHeight = 'none';
-                msg.style.overflowY = 'visible';
-                console.log(`📏 Applied natural to ${messageType} message after re-evaluation`);
-              }
-            } catch (error) {
-              console.warn('Error in re-evaluation:', error);
-            }
+              setMessageState(msg, optimalState === 'compact' ? 'compact' : 'expanded');
+              ensureScrollTracking(msg);
+            } catch (error) {}
           }, 50);
         }
-        // If isFullHeight is true, keep the expanded override
       } else {
-        // Fixed height off - only re-evaluate if user chose compact
         if (isFullHeight) {
-          // User chose compact in expanded-by-default mode
-          msg.classList.remove('message-compact', 'message-expanded');
-          msg.classList.add('message-compact');
+          setMessageState(msg, 'compact');
           msg.style.maxHeight = '400px';
           msg.style.overflowY = 'auto';
-          console.log(`📏 Applied forced compact to ${messageType} message after re-evaluation`);
         }
-        // If isFullHeight is false, keep the expanded default
       }
     });
   }, delay);
@@ -872,6 +812,8 @@ window.updateAllMessageStates = () => {
       };
       
       for (const msg of messagesOfType) {
+        // Skip streaming or locked messages
+        if (msg.classList.contains('message-temp') || msg.classList.contains('state-lock')) continue;
         // Remove all state classes and reset inline styles
         msg.classList.remove(
           "message-collapsed", "message-compact", "message-expanded",
@@ -1029,26 +971,42 @@ function wrapInScrollable(element, disableWrapping = false) {
 
 function scrollToEndIfNeeded(wrapper) {
   if (!wrapper) return;
-  
-  // Check if this is a legacy scrollable-content wrapper that still has scrolling
   const computedStyle = window.getComputedStyle(wrapper);
   if (computedStyle.overflowY === 'visible') {
-    // This wrapper doesn't scroll, check if we should scroll the parent message instead
     const messageElement = wrapper.closest('.message');
     if (messageElement && messageElement.classList.contains('message-compact')) {
-      // Only auto-scroll if user hasn't manually scrolled away
-      if (messageElement.dataset.userScrolled !== "true") {
-        messageElement.scrollTop = messageElement.scrollHeight;
-        messageElement.dataset.userScrolled = "false";
+      if (pendingScrollAnimationFrame.has(messageElement)) {
+        cancelAnimationFrame(pendingScrollAnimationFrame.get(messageElement));
       }
+      const rafId = requestAnimationFrame(() => {
+        if (messageElement.scrollHeight === 0) {
+          ensureScrollTracking(messageElement);
+          return;
+        }
+        if (messageElement.dataset.userScrolled !== 'true') {
+          messageElement.scrollTop = messageElement.scrollHeight;
+          messageElement.dataset.userScrolled = "false";
+        }
+        pendingScrollAnimationFrame.delete(messageElement);
+      });
+      pendingScrollAnimationFrame.set(messageElement, rafId);
     }
     return;
   }
-  
-  // Legacy scrollable-content wrapper with actual scrolling
   if (wrapper.dataset.userScrolled === "true") return;
-  wrapper.scrollTop = wrapper.scrollHeight;
-  wrapper.dispatchEvent(new Event("scroll"));
+  if (pendingScrollAnimationFrame.has(wrapper)) {
+    cancelAnimationFrame(pendingScrollAnimationFrame.get(wrapper));
+  }
+  const rafId = requestAnimationFrame(() => {
+    if (wrapper.scrollHeight === 0) {
+      scrollToEndIfNeeded(wrapper);
+      return;
+    }
+    wrapper.scrollTop = wrapper.scrollHeight;
+    wrapper.dispatchEvent(new Event("scroll"));
+    pendingScrollAnimationFrame.delete(wrapper);
+  });
+  pendingScrollAnimationFrame.set(wrapper, rafId);
 }
 
 export function getHandler(type) {
@@ -1216,32 +1174,34 @@ export function drawMessageAgent(
   );
   injectConsoleControls(div, content || "", 'agent');
   
-  // Re-evaluate this specific message after it's fully rendered
-  setTimeout(() => {
-    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-    const isFullHeight = localStorage.getItem('msgFullHeight_agent') === 'true';
-    
-    if (isFixedHeightGlobal && !isFullHeight && !div.classList.contains('message-collapsed')) {
-      determineMessageState(div).then(optimalState => {
-        if (optimalState === 'compact') {
-          div.classList.remove('message-expanded');
-          div.classList.add('message-compact');
-          ensureScrollTracking(div);
-          
-          // Ensure the message scrolls to bottom after becoming compact
-          requestAnimationFrame(() => {
-            div.scrollTop = div.scrollHeight;
-            div.dataset.userScrolled = "false";
-            console.log('🔽 Auto-scrolled agent message after compact transition');
-          });
-          
-          console.log('📏 Applied compact to agent message after creation');
-        }
-      }).catch(error => {
-        console.warn('Error evaluating agent message state:', error);
-      });
-    }
-  }, 150);
+  if (!div.classList.contains('message-temp')) {
+    const timeoutId = setTimeout(() => {
+      if (div.classList.contains('message-temp') || div.classList.contains('state-lock')) return;
+      const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+      const isFullHeight = localStorage.getItem('msgFullHeight_agent') === 'true';
+      if (isFixedHeightGlobal && !isFullHeight && !div.classList.contains('message-collapsed')) {
+        determineMessageState(div).then(optimalState => {
+          if (optimalState === 'compact') {
+            div.classList.remove('message-expanded');
+            div.classList.add('message-compact');
+            ensureScrollTracking(div);
+            if (div.dataset.userScrolled !== 'true') {
+              div.scrollTop = div.scrollHeight;
+              div.dataset.userScrolled = 'false';
+            }
+          } else {
+            div.classList.remove('message-compact');
+            div.classList.add('message-expanded');
+            ensureScrollTracking(div);
+          }
+        }).catch(error => {
+          console.warn('Error evaluating agent message state:', error);
+        });
+      }
+      pendingStateTimeouts.delete(div);
+    }, 150);
+    pendingStateTimeouts.set(div, timeoutId);
+  }
 }
 
 export function drawMessageResponse(
@@ -1269,24 +1229,32 @@ export function drawMessageResponse(
   // Add proper controls for agent response messages
   injectConsoleControls(messageDiv, content || "", 'response');
   
-  // Re-evaluate this specific message after it's fully rendered
-  setTimeout(() => {
-    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-    const isFullHeight = localStorage.getItem('msgFullHeight_response') === 'true';
-    
-    if (isFixedHeightGlobal && !isFullHeight && !messageDiv.classList.contains('message-collapsed')) {
-      determineMessageState(messageDiv).then(optimalState => {
-        if (optimalState === 'compact') {
-          messageDiv.classList.remove('message-expanded');
-          messageDiv.classList.add('message-compact');
-          ensureScrollTracking(messageDiv);
-          console.log('📏 Applied compact to response message after creation');
-        }
-      }).catch(error => {
-        console.warn('Error evaluating response message state:', error);
-      });
-    }
-  }, 150);
+  if (!messageDiv.classList.contains('message-temp')) {
+    const timeoutId = setTimeout(() => {
+      if (messageDiv.classList.contains('message-temp') || messageDiv.classList.contains('state-lock')) return;
+      const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+      const isFullHeight = localStorage.getItem('msgFullHeight_response') === 'true';
+      if (isFixedHeightGlobal && !isFullHeight && !messageDiv.classList.contains('message-collapsed')) {
+        determineMessageState(messageDiv).then(optimalState => {
+          if (optimalState === 'compact') {
+            messageDiv.classList.remove('message-expanded');
+            messageDiv.classList.add('message-compact');
+            ensureScrollTracking(messageDiv);
+            console.log('📏 Applied compact to response message after creation');
+          } else {
+            messageDiv.classList.remove('message-compact');
+            messageDiv.classList.add('message-expanded');
+            ensureScrollTracking(messageDiv);
+            console.log('📏 Applied expanded to response message after creation');
+          }
+        }).catch(error => {
+          console.warn('Error evaluating response message state:', error);
+        });
+      }
+      pendingStateTimeouts.delete(messageDiv);
+    }, 150);
+    pendingStateTimeouts.set(messageDiv, timeoutId);
+  }
   
   return messageDiv;
 }
@@ -1435,23 +1403,30 @@ export function drawMessageTool(
   );
   injectConsoleControls(div, content || "", 'tool');
   
-  // Re-evaluate this specific message after it's fully rendered
-  setTimeout(() => {
-    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-    const isFullHeight = localStorage.getItem('msgFullHeight_tool') === 'true';
-    
-    if (isFixedHeightGlobal && !isFullHeight && !div.classList.contains('message-collapsed')) {
-      determineMessageState(div).then(optimalState => {
-        if (optimalState === 'compact') {
-          div.classList.remove('message-expanded');
-          div.classList.add('message-compact');
-          console.log('📏 Applied compact to tool message after creation');
-        }
-      }).catch(error => {
-        console.warn('Error evaluating tool message state:', error);
-      });
-    }
-  }, 150);
+  if (!div.classList.contains('message-temp')) {
+    const timeoutId = setTimeout(() => {
+      if (div.classList.contains('message-temp') || div.classList.contains('state-lock')) return;
+      const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+      const isFullHeight = localStorage.getItem('msgFullHeight_tool') === 'true';
+      if (isFixedHeightGlobal && !isFullHeight && !div.classList.contains('message-collapsed')) {
+        determineMessageState(div).then(optimalState => {
+          if (optimalState === 'compact') {
+            div.classList.remove('message-expanded');
+            div.classList.add('message-compact');
+            console.log('📏 Applied compact to tool message after creation');
+          } else {
+            div.classList.remove('message-compact');
+            div.classList.add('message-expanded');
+            console.log('📏 Applied expanded to tool message after creation');
+          }
+        }).catch(error => {
+          console.warn('Error evaluating tool message state:', error);
+        });
+      }
+      pendingStateTimeouts.delete(div);
+    }, 150);
+    pendingStateTimeouts.set(div, timeoutId);
+  }
 }
 
 export function drawMessageCodeExe(
@@ -1477,32 +1452,32 @@ export function drawMessageCodeExe(
   );
   injectConsoleControls(div, content || "", 'code_exe');
   
-  // Re-evaluate this specific message after it's fully rendered
-  setTimeout(() => {
-    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-    const isFullHeight = localStorage.getItem('msgFullHeight_code_exe') === 'true';
-    
-    if (isFixedHeightGlobal && !isFullHeight && !div.classList.contains('message-collapsed')) {
-      determineMessageState(div).then(optimalState => {
-        if (optimalState === 'compact') {
-          div.classList.remove('message-expanded');
-          div.classList.add('message-compact');
-          ensureScrollTracking(div);
-          
-          // Ensure the message scrolls to bottom after becoming compact
-          requestAnimationFrame(() => {
-            div.scrollTop = div.scrollHeight;
-            div.dataset.userScrolled = "false";
-            console.log('🔽 Auto-scrolled code_exe message after compact transition');
-          });
-          
-          console.log('📏 Applied compact to code_exe message after creation');
-        }
-      }).catch(error => {
-        console.warn('Error evaluating code_exe message state:', error);
-      });
-    }
-  }, 150);
+  if (!div.classList.contains('message-temp')) {
+    const timeoutId = setTimeout(() => {
+      if (div.classList.contains('message-temp') || div.classList.contains('state-lock')) return;
+      const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+      const isFullHeight = localStorage.getItem('msgFullHeight_code_exe') === 'true';
+      if (isFixedHeightGlobal && !isFullHeight && !div.classList.contains('message-collapsed')) {
+        determineMessageState(div).then(optimalState => {
+          if (optimalState === 'compact') {
+            div.classList.remove('message-expanded');
+            div.classList.add('message-compact');
+            ensureScrollTracking(div);
+            console.log('📏 Applied compact to code_exe message after creation');
+          } else {
+            div.classList.remove('message-compact');
+            div.classList.add('message-expanded');
+            ensureScrollTracking(div);
+            console.log('📏 Applied expanded to code_exe message after creation');
+          }
+        }).catch(error => {
+          console.warn('Error evaluating code_exe message state:', error);
+        });
+      }
+      pendingStateTimeouts.delete(div);
+    }, 150);
+    pendingStateTimeouts.set(div, timeoutId);
+  }
   
   return div;
 }
@@ -1809,161 +1784,41 @@ function convertPathsToLinks(str) {
 // Removed broken inline copy system - using original copy buttons instead
 
 export function updateMessageContent(container, content) {
-  const span = container.querySelector('.msg-content span');
-  if (!span) {
-    console.warn('⚠️ updateMessageContent: No .msg-content span found in container');
-    return;
+  const span = container.querySelector('.msg-content span') || container.querySelector('.scrollable-content span') || container.querySelector('.message span');
+  if (span) {
+    span.textContent = content;
+    // Log border after content update
+    const msg = container.querySelector('.message');
+    if (msg) {
+      console.log(`[BORDER-DEBUG] updateMessageContent: after content update | borderLeft=${msg.style.borderLeft} | classList=${msg.className}`);
+    }
   }
+}
 
-  // Mark this message as streaming so MutationObserver triggers scroll updates
-  container.classList.add('message-temp');
-  const streamingDiv = container.querySelector('.message');
-  if (streamingDiv) {
-    streamingDiv.classList.add('message-temp');
+// Helper to re-evaluate state after streaming ends
+export async function reevaluateMessageStateAfterStreaming(messageDiv) {
+  if (messageDiv.classList.contains('message-temp')) return;
+  lockMessageState(messageDiv);
+  if (pendingStateTimeouts.has(messageDiv)) {
+    clearTimeout(pendingStateTimeouts.get(messageDiv));
+    pendingStateTimeouts.delete(messageDiv);
   }
-  
-  const oldLength = span.innerHTML.length;
-  const newLength = convertHTML(content).length;
-  console.log(`📝 Updating message content: ${oldLength} → ${newLength} chars`);
-  
-  // Update content first
-  span.innerHTML = convertHTML(content);
-  
-  // Force auto-scroll for the message element in the unified scrolling system
-  requestAnimationFrame(() => {
-    // Find the actual message div that handles scrolling in the unified system
-    const messageDiv = container.querySelector('.message');
-    if (messageDiv) {
-      console.log('🎯 Found message div for scrolling, checking state...');
-      console.log(`🔍 Message classes: ${Array.from(messageDiv.classList).join(' ')}`);
-      
-      // Check if this message is in compact mode (has scrolling enabled)
-      if (messageDiv.classList.contains('message-compact')) {
-        console.log('📦 Message is in compact mode, checking scroll state...');
-        
-        // For messages with scrollable-content wrapper, scroll the wrapper instead
-        const scrollableContent = messageDiv.querySelector('.scrollable-content');
-        const scrollElement = scrollableContent || messageDiv;
-        
-        // Only auto-scroll if user hasn't manually scrolled away from bottom
-        const userScrolled = messageDiv.dataset.userScrolled;
-        console.log(`👤 User scrolled state: ${userScrolled}`);
-        console.log(`🎯 Scroll element: ${scrollableContent ? '.scrollable-content' : '.message'}`);
-        
-        if (userScrolled !== "true") {
-          const oldScrollTop = scrollElement.scrollTop;
-          scrollElement.scrollTop = scrollElement.scrollHeight;
-          console.log(`🔽 Auto-scrolled ${scrollableContent ? 'scrollable-content' : 'message'}: ${oldScrollTop} → ${scrollElement.scrollTop}`);
-          
-          // Update the user scrolled state to false since we just auto-scrolled
-          messageDiv.dataset.userScrolled = "false";
-        } else {
-          console.log('🚫 Skipping auto-scroll - user has manually scrolled');
-        }
-      } else {
-        console.log('📄 Message not in compact mode, checking if it should be...');
-        
-        // Check if message should transition to compact mode due to growing content
-        const messageHeight = messageDiv.scrollHeight;
-        console.log(`📏 Current message height: ${messageHeight}px`);
-        
-        const threshold = 400;
-        // Always re-read settings from localStorage on every update
-        const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-        let messageType = 'unknown';
-        if (messageDiv.classList.contains('message-code-exe')) {
-          messageType = 'code_exe';
-        } else if (messageDiv.classList.contains('message-tool')) {
-          messageType = 'tool';
-        } else if (messageDiv.classList.contains('message-agent-response')) {
-          messageType = 'response';
-        } else if (messageDiv.classList.contains('message-agent')) {
-          messageType = 'agent';
-        } else if (messageDiv.classList.contains('message-browser')) {
-          messageType = 'browser';
-        } else if (messageDiv.classList.contains('message-error')) {
-          messageType = 'error';
-        } else if (messageDiv.classList.contains('message-warning')) {
-          messageType = 'warning';
-        } else if (messageDiv.classList.contains('message-info')) {
-          messageType = 'info';
-        }
-        // RE-READ isFullHeight from localStorage every time
-        const isFullHeight = localStorage.getItem(`msgFullHeight_${messageType}`) === 'true';
-        // --- NEW: Always prioritize expanded mode ---
-        if (!isFixedHeightGlobal || isFullHeight) {
-          messageDiv.classList.remove('message-compact');
-          messageDiv.classList.add('message-expanded');
-          messageDiv.style.setProperty('height', 'auto', 'important');
-          messageDiv.style.setProperty('max-height', 'none', 'important');
-          messageDiv.style.setProperty('overflow-y', 'visible', 'important');
-          messageDiv.style.setProperty('overflow-x', 'auto', 'important');
-          messageDiv.style.setProperty('scrollbar-gutter', 'auto', 'important');
-          const scrollableContent = messageDiv.querySelector('.scrollable-content');
-          if (scrollableContent) {
-            scrollableContent.style.setProperty('max-height', 'none', 'important');
-            scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
-            scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
-          }
-          const msgContent = messageDiv.querySelector('.msg-content');
-          if (msgContent) {
-            msgContent.style.setProperty('max-height', 'none', 'important');
-            msgContent.style.setProperty('overflow-y', 'visible', 'important');
-          }
-          console.log(`📏 Forced expanded for ${messageType} message during streaming update`);
-          return;
-        }
-        // --- END NEW ---
-        // Only apply compact mode if we're in fixed height mode and not force-expanded
-        if (messageHeight > threshold) {
-          console.log(`🔍 Detected message type: ${messageType}`);
-          console.log(`🔍 Settings check: fixedHeight=${isFixedHeightGlobal}, fullHeight=${isFullHeight}, collapsed=${messageDiv.classList.contains('message-collapsed')}`);
-          if (isFixedHeightGlobal && !isFullHeight && !messageDiv.classList.contains('message-collapsed')) {
-            console.log(`📦 Applying compact mode to ${messageType} message (streaming transition)`);
-            messageDiv.classList.remove('message-expanded');
-            messageDiv.classList.add('message-compact');
-            ensureScrollTracking(messageDiv);
-            requestAnimationFrame(() => {
-              const scrollableContent = messageDiv.querySelector('.scrollable-content');
-              const scrollElement = scrollableContent || messageDiv;
-              scrollElement.scrollTop = scrollElement.scrollHeight;
-              messageDiv.dataset.userScrolled = "false";
-              console.log(`🔽 Auto-scrolled ${scrollableContent ? 'scrollable-content' : 'message'} after transitioning to compact mode during streaming`);
-            });
-          } else {
-            // If expanded, ensure compact is not applied
-            messageDiv.classList.remove('message-compact');
-            messageDiv.classList.add('message-expanded');
-            messageDiv.style.setProperty('height', 'auto', 'important');
-            messageDiv.style.setProperty('max-height', 'none', 'important');
-            messageDiv.style.setProperty('overflow-y', 'visible', 'important');
-            messageDiv.style.setProperty('overflow-x', 'auto', 'important');
-            messageDiv.style.setProperty('scrollbar-gutter', 'auto', 'important');
-            const scrollableContent = messageDiv.querySelector('.scrollable-content');
-            if (scrollableContent) {
-              scrollableContent.style.setProperty('max-height', 'none', 'important');
-              scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
-              scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
-            }
-            const msgContent = messageDiv.querySelector('.msg-content');
-            if (msgContent) {
-              msgContent.style.setProperty('max-height', 'none', 'important');
-              msgContent.style.setProperty('overflow-y', 'visible', 'important');
-            }
-            console.log(`📏 Kept expanded for ${messageType} message during streaming update`);
-          }
-        }
-      }
-    } else {
-      console.warn('⚠️ No message div found for auto-scrolling');
+  // Only reevaluate this message, not others
+  console.log(`[GUARD] reevaluateMessageStateAfterStreaming: Only reevaluating ${messageDiv.id || messageDiv.className} after streaming.`);
+  const prevState = messageDiv.classList.contains('message-compact') ? 'compact' : (messageDiv.classList.contains('message-expanded') ? 'expanded' : 'none');
+  try {
+    const optimalState = await determineMessageState(messageDiv);
+    setMessageState(messageDiv, optimalState === 'compact' ? 'compact' : 'expanded');
+    ensureScrollTracking(messageDiv);
+    if (messageDiv.dataset.userScrolled !== 'true') {
+      messageDiv.scrollTop = messageDiv.scrollHeight;
+      messageDiv.dataset.userScrolled = 'false';
     }
-    
-    // Also handle legacy scrollable-content wrappers for backward compatibility
-    const scrollableWrapper = container.querySelector('.scrollable-content');
-    if (scrollableWrapper) {
-      scrollToEndIfNeeded(scrollableWrapper);
-    }
-  });
+    console.log(`[STATE] reevaluateMessageStateAfterStreaming: ${messageDiv.id || messageDiv.className} set to ${optimalState} | prevState=${prevState} | scrollTop=${messageDiv.scrollTop} | height=${messageDiv.scrollHeight}`);
+  } catch (error) {
+    console.warn('Error re-evaluating message state after streaming:', error);
+  }
+  unlockMessageState(messageDiv);
 }
 
 // Debugging function for console testing
@@ -2087,3 +1942,51 @@ window.msgs = {
   convertHTML,
   getHandler
 };
+
+// Add a global map to track pending state evaluators
+const pendingStateTimeouts = new Map();
+
+// Helper to lock state on a message
+function lockMessageState(msg) {
+  msg.classList.add('state-lock');
+}
+// Helper to unlock state on a message
+function unlockMessageState(msg) {
+  msg.classList.remove('state-lock');
+}
+
+// Helper to set message state safely
+function setMessageState(msg, newState) {
+  // Only update if the state is actually changing
+  if (!msg.classList.contains(`message-${newState}`)) {
+    msg.classList.remove('message-expanded', 'message-compact');
+    msg.classList.add(`message-${newState}`);
+  }
+}
+
+// Helper: Force a message to expanded state (removes compact, adds expanded)
+function forceExpanded(msg) {
+  msg.classList.remove('message-compact');
+  msg.classList.add('message-expanded');
+  msg.style.maxHeight = 'none';
+  msg.style.overflowY = 'visible';
+}
+
+// Helper: Re-evaluate all agent-response messages except the last one
+export function enforceLastAgentResponseExpanded() {
+  const responses = Array.from(document.querySelectorAll('.message-agent-response'));
+  if (responses.length === 0) return;
+  // Last one stays expanded
+  const last = responses[responses.length - 1];
+  forceExpanded(last);
+  // All previous can compact if needed
+  for (let i = 0; i < responses.length - 1; i++) {
+    const msg = responses[i];
+    // Only re-evaluate if not collapsed or streaming
+    if (!msg.classList.contains('message-collapsed') && !msg.classList.contains('message-temp')) {
+      determineMessageState(msg).then(optimalState => {
+        setMessageState(msg, optimalState === 'compact' ? 'compact' : 'expanded');
+      });
+    }
+  }
+}

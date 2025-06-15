@@ -244,11 +244,20 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
             return; // Skip re-rendering
         }
 
-        // Update streaming state class on the container
+        // Track if the message was streaming and is now finished
+        const wasStreaming = messageContainer.classList.contains('message-temp');
         if (temp) {
             messageContainer.classList.add("message-temp");
         } else {
             messageContainer.classList.remove("message-temp");
+            // If it was streaming and now isn't, just update state, don't re-render
+            if (wasStreaming) {
+                const messageDiv = messageContainer.querySelector('.message');
+                if (messageDiv) {
+                    msgs.reevaluateMessageStateAfterStreaming(messageDiv);
+                }
+                return; // Prevents re-render!
+            }
         }
         
         // For streaming messages, update inline and avoid a full re-render
@@ -301,7 +310,6 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
             console.log(`⚠️ Not streaming: temp=${temp}, content=${!!content}, length=${content?.length}, type=${type}`);
         }
         // For non-streaming updates, clear the container before redrawing
-        console.log(`🔄 Full re-render for ${type} message ${id} (streaming=${isStreaming})`);
         messageContainer.innerHTML = '';
     } else {
         // Create a new container if not found
@@ -611,6 +619,12 @@ function afterMessagesUpdate(logs) {
     }
     if (localStorage.getItem('speech') == 'true') {
         speakMessages(logs)
+    }
+    // Enforce last agent response stays expanded
+    if (window.msgs && typeof window.msgs.enforceLastAgentResponseExpanded === 'function') {
+        window.msgs.enforceLastAgentResponseExpanded();
+    } else if (msgs && typeof msgs.enforceLastAgentResponseExpanded === 'function') {
+        msgs.enforceLastAgentResponseExpanded();
     }
 }
 
