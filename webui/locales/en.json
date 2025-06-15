@@ -294,5 +294,8 @@
   "tunnel.errorStoppingCatch": "Error stopping tunnel",
   "tunnel.urlCopied": "Tunnel URL copied to clipboard!",
   "tunnel.copyUrlFailed": "Failed to copy tunnel URL",
-  "tunnel.copyFailedState": "Failed"
+  "tunnel.copyFailedState": "Failed",
+  "languageLabel": "Language",
+  "languageEnglish": "English",
+  "languageChinese": "Chinese"
 }

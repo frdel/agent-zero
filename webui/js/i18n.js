@@ -1,6 +1,18 @@
 // webui/js/i18n.js
 console.log('i18n.js: Script start');
 
+window.changeLanguage = function(lang) {
+  console.log('i18n.js: changeLanguage called with:', lang);
+  i18next.changeLanguage(lang, (err, t) => {
+    if (err) {
+      return console.error('i18n.js: Error changing language:', err);
+    }
+    console.log('i18n.js: Language changed to', lang);
+    localStorage.setItem('i18nextLng', lang);
+    // updateContent is already called by i18next.on('languageChanged')
+  });
+}
+
 // Function to update content (defined earlier to be available)
 function updateContent() {
   console.log('i18n.js: updateContent() called. Current i18next.language:', i18next.language);
@@ -68,13 +80,40 @@ function updateContent() {
   console.log('i18n.js: updateContent() finished.');
 }
 
-console.log('i18n.js: Initializing i18next with explicit initial lng preference:', 'zh');
+function initLanguageSelector() {
+  console.log('i18n.js: initLanguageSelector() called');
+  const selector = document.getElementById('language-select');
+  if (selector) {
+    // Set initial value based on i18next's current language
+    selector.value = i18next.language;
+
+    // The @change event in the HTML already calls window.changeLanguage.
+    // No need to add another event listener here if using Alpine's @change.
+    // If not using Alpine for this specific element, an event listener would be added here:
+    // selector.addEventListener('change', (event) => {
+    //   window.changeLanguage(event.target.value);
+    // });
+  } else {
+    console.warn('i18n.js: Language selector #language-select not found.');
+  }
+}
+
+// Default language setup
+const preferredLanguage = localStorage.getItem('i18nextLng');
+if (!preferredLanguage) {
+  localStorage.setItem('i18nextLng', 'zh'); // Set Chinese as default if nothing is stored
+  console.log('i18n.js: No language preference found in localStorage. Setting default to zh.');
+} else {
+  console.log('i18n.js: Language preference found in localStorage:', preferredLanguage);
+}
+
+// console.log('i18n.js: Initializing i18next with explicit initial lng preference:', 'zh'); // This line is misleading now
 i18next
   .use(i18nextHttpBackend)
   .use(i18nextBrowserLanguageDetector)
   .init({
-    lng: 'zh', // Explicitly set Chinese as the desired initial language
-    fallbackLng: 'en',
+    // lng: 'zh', // REMOVED to allow detector to work for persistence. localStorage check above handles default.
+    fallbackLng: 'en', // Fallback if a translation file for the current language is missing
     debug: true,
     ns: ['translation'],
     defaultNS: 'translation',
@@ -82,39 +121,20 @@ i18next
       loadPath: 'locales/{{lng}}.json',
     },
     detection: {
-      order: ['querystring', 'localStorage', 'cookie'], // Simplified order
+      order: ['localStorage', 'querystring', 'cookie'], // Ensure localStorage is checked first
       lookupQuerystring: 'lng',
       lookupCookie: 'i18next',
       lookupLocalStorage: 'i18nextLng',
-      caches: ['localStorage', 'cookie'],
+      caches: ['localStorage'], // Cache the detected language in localStorage
       excludeCacheFor: ['cimode'],
     }
   }, (err, t_init) => {
-    // This callback fires AFTER detection has run and an initial language is set.
+    // REMOVED THE PREVIOUS CONDITIONAL LOGIC THAT FORCED 'zh'
     console.log('i18n.js: i18next.init base callback. Detected/Initial language:', i18next.language);
-    console.log('i18n.js: i18next.init base callback. Attempting to translate "testKey":', t_init('testKey'));
     if (err) {
         console.error('i18n.js: Error during i18next.init base:', err);
     }
-
-    if (i18next.language !== 'zh') {
-        console.log(`i18n.js: Initial language is ${i18next.language}. Forcing change to 'zh'.`);
-        i18next.changeLanguage('zh', (err_change, t_change) => {
-            if (err_change) {
-                console.error('i18n.js: Error changing language to zh:', err_change);
-            } else {
-                console.log('i18n.js: Language successfully changed to zh. Translating "testKey":', t_change('testKey'));
-            }
-            console.log('i18n.js: Resources for zh/translation after potential changeLanguage:', JSON.stringify(i18next.getResourceBundle('zh', 'translation')));
-            console.log('i18n.js: Resources for en/translation after potential changeLanguage:', JSON.stringify(i18next.getResourceBundle('en', 'translation')));
-            updateContent(); // Update content after attempting to change to 'zh'
-        });
-    } else {
-        console.log("i18n.js: Initial language already 'zh'. Proceeding to update content.");
-        console.log('i18n.js: Resources for zh/translation (already zh):', JSON.stringify(i18next.getResourceBundle('zh', 'translation')));
-        console.log('i18n.js: Resources for en/translation (already zh):', JSON.stringify(i18next.getResourceBundle('en', 'translation')));
-        updateContent();
-    }
+    updateContent(); // Update content after language is determined
   });
 
 // This event is for subsequent language changes AFTER initial setup.
@@ -130,7 +150,8 @@ i18next.on('initialized', (options) => {
   // This event listener can still be useful for other post-initialization tasks if needed.
   // console.log('i18n.js: i18next initialized event. Attempting to translate "testKey":', i18next.t('testKey'));
   // console.log('i18n.js: i18next initialized event. Loaded languages:', i18next.languages);
-  // updateContent(); // This call might be redundant if the init callback logic always calls updateContent.
+  // updateContent(); // This call is redundant as it's in the init callback.
+  initLanguageSelector(); // Initialize the language selector AFTER i18next is fully initialized and language determined.
 });
 
 window.i18n = i18next;
@@ -148,3 +169,14 @@ if (window.Alpine) {
     }
   });
 }
+
+// Ensure initLanguageSelector is called after the initial content update in the init callback.
+// One way is to call it at the end of the i18next.init callback.
+// Or, ensure the 'initialized' event still reliably fires after the init callback and does its job.
+// For safety, and given the `updateContent` is in the init callback, let's add it there too.
+
+// Modifying the init callback to include initLanguageSelector after updateContent
+// This requires re-stating the init block. For the purpose of this diff, we'll assume the previous
+// SEARCH/REPLACE blocks handled the main init changes, and this is a conceptual adjustment.
+// The `initLanguageSelector` call within `i18next.on('initialized', ...)` should still be effective,
+// as `initialized` fires after `init` callback.

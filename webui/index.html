@@ -327,6 +327,13 @@
                                     <span class="slider"></span>
                                 </label>
                             </li>
+                            <li x-data="{ language: localStorage.getItem('i18nextLng') || 'en' }">
+                                <span data-i18n="languageLabel">Language</span>
+                                <select id="language-select" x-model="language" @change="changeLanguage($event.target.value)">
+                                    <option value="en" data-i18n="languageEnglish">English</option>
+                                    <option value="zh" data-i18n="languageChinese">中文</option>
+                                </select>
+                            </li>
                         </ul>
                     </span>
                 </div>
