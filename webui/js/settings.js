@@ -85,7 +85,7 @@ const settingsModalProxy = {
     },
 
     async openModal() {
-        console.log('Settings modal opening');
+        console.log(i18next.t('settingsModalOpening'));
         const modalEl = document.getElementById('settingsModal');
         const modalAD = Alpine.$data(modalEl);
 
@@ -102,16 +102,16 @@ const settingsModalProxy = {
 
             // First load the settings data without setting the active tab
             const settings = {
-                "title": "Settings",
+                "title": i18next.t("settings"),
                 "buttons": [
                     {
                         "id": "save",
-                        "title": "Save",
+                        "title": i18next.t("save"),
                         "classes": "btn btn-ok"
                     },
                     {
                         "id": "cancel",
-                        "title": "Cancel",
+                        "title": i18next.t("cancel"),
                         "type": "secondary",
                         "classes": "btn btn-cancel"
                     }
@@ -128,7 +128,7 @@ const settingsModalProxy = {
             setTimeout(() => {
                 // Get stored tab or default to 'agent'
                 const savedTab = localStorage.getItem('settingsActiveTab') || 'agent';
-                console.log(`Setting initial tab to: ${savedTab}`);
+                console.log(i18next.t('settingInitialTabTo', { tab: savedTab }));
 
                 // Directly set the active tab
                 modalAD.activeTab = savedTab;
@@ -148,13 +148,12 @@ const settingsModalProxy = {
                     }
                     // Debug log
                     const schedulerTab = document.querySelector('.settings-tab[title="Task Scheduler"]');
-                    console.log(`Current active tab after direct set: ${modalAD.activeTab}`);
-                    console.log('Scheduler tab active after direct initialization?',
-                        schedulerTab && schedulerTab.classList.contains('active'));
+                    console.log(i18next.t('currentActiveTabAfterSet', { tab: modalAD.activeTab }));
+                    console.log(i18next.t('schedulerTabActiveAfterInit', { active: schedulerTab && schedulerTab.classList.contains('active') }));
 
                     // Explicitly start polling if we're on the scheduler tab
                     if (modalAD.activeTab === 'scheduler') {
-                        console.log('Settings opened directly to scheduler tab, initializing polling');
+                        console.log(i18next.t('settingsOpenedToSchedulerTab'));
                         const schedulerElement = document.querySelector('[x-data="schedulerSettings"]');
                         if (schedulerElement) {
                             const schedulerData = Alpine.$data(schedulerElement);
@@ -207,7 +206,7 @@ const settingsModalProxy = {
             });
 
         } catch (e) {
-            window.toastFetchError("Error getting settings", e)
+            window.toastFetchError(i18next.t('errorGettingSettings'), e)
         }
     },
 
@@ -219,7 +218,7 @@ const settingsModalProxy = {
             try {
                 resp = await window.sendJsonData("/settings_set", modalAD.settings);
             } catch (e) {
-                window.toastFetchError("Error saving settings", e)
+                window.toastFetchError(i18next.t('errorSavingSettings'), e)
                 return
             }
             document.dispatchEvent(new CustomEvent('settings-updated', { detail: resp.settings }));
@@ -276,14 +275,14 @@ const settingsModalProxy = {
         if (schedulerElement) {
             const schedulerData = Alpine.$data(schedulerElement);
             if (schedulerData && typeof schedulerData.stopPolling === 'function') {
-                console.log('Stopping scheduler polling on modal close');
+                    console.log(i18next.t('stoppingSchedulerPollingOnModalClose'));
                 schedulerData.stopPolling();
             }
         }
     },
 
     async handleFieldButton(field) {
-        console.log(`Button clicked: ${field.id}`);
+            console.log(i18next.t('buttonClicked', { id: field.id }));
 
         if (field.id === "mcp_servers_config") {
             openModal("settings/mcp/client/mcp-servers.html");
@@ -371,13 +370,13 @@ document.addEventListener('alpine:init', function () {
                         if (data && data.settings) {
                             this.settingsData = data.settings;
                         } else {
-                            console.error('Invalid settings data format');
+                            console.error(i18next.t('invalidSettingsDataFormat'));
                         }
                     } else {
-                        console.error('Failed to fetch settings:', response.statusText);
+                        console.error(i18next.t('failedToFetchSettings', { statusText: response.statusText }));
                     }
                 } catch (error) {
-                    console.error('Error fetching settings:', error);
+                    console.error(i18next.t('errorFetchingSettings'), error);
                 } finally {
                     this.isLoading = false;
                 }
@@ -409,7 +408,7 @@ document.addEventListener('alpine:init', function () {
                     for (const section of this.settingsData.sections) {
                         for (const field of section.fields) {
                             if (field.required && (!field.value || field.value.trim() === '')) {
-                                showToast(`${field.title} in ${section.title} is required`, 'error');
+                                showToast(i18next.t('fieldIsRequired', { fieldTitle: field.title, sectionTitle: section.title }), 'error');
                                 return;
                             }
                         }
@@ -433,16 +432,16 @@ document.addEventListener('alpine:init', function () {
                     });
 
                     if (response.ok) {
-                        showToast('Settings saved successfully', 'success');
+                        showToast(i18next.t('settingsSavedSuccessfully'), 'success');
                         // Refresh settings
                         await this.fetchSettings();
                     } else {
                         const errorData = await response.json();
-                        throw new Error(errorData.error || 'Failed to save settings');
+                        throw new Error(errorData.error || i18next.t('failedToSaveSettings'));
                     }
                 } catch (error) {
-                    console.error('Error saving settings:', error);
-                    showToast('Failed to save settings: ' + error.message, 'error');
+                    console.error(i18next.t('errorSavingSettings'), error);
+                    showToast(i18next.t('failedToSaveSettings') + ': ' + error.message, 'error');
                 }
             },
 
@@ -455,14 +454,14 @@ document.addEventListener('alpine:init', function () {
                 } else if (field.action === 'generate_token') {
                     this.generateToken(field);
                 } else {
-                    console.warn('Unknown button action:', field.action);
+                    console.warn(i18next.t('unknownButtonAction', { action: field.action }));
                 }
             },
 
             // Test API connection
             async testConnection(field) {
                 try {
-                    field.testResult = 'Testing...';
+                    field.testResult = i18next.t('testing');
                     field.testStatus = 'loading';
 
                     // Find the API key field
@@ -477,7 +476,7 @@ document.addEventListener('alpine:init', function () {
                     }
 
                     if (!apiKey) {
-                        throw new Error('API key is required');
+                        throw new Error(i18next.t('apiKeyIsRequired'));
                     }
 
                     // Send test request
@@ -495,14 +494,14 @@ document.addEventListener('alpine:init', function () {
                     const data = await response.json();
 
                     if (response.ok && data.success) {
-                        field.testResult = 'Connection successful!';
+                        field.testResult = i18next.t('connectionSuccessful');
                         field.testStatus = 'success';
                     } else {
-                        throw new Error(data.error || 'Connection failed');
+                        throw new Error(data.error || i18next.t('connectionFailed'));
                     }
                 } catch (error) {
-                    console.error('Connection test failed:', error);
-                    field.testResult = `Failed: ${error.message}`;
+                    console.error(i18next.t('connectionTestFailed'), error);
+                    field.testResult = i18next.t('failed') + `: ${error.message}`;
                     field.testStatus = 'error';
                 }
             },
@@ -517,7 +516,7 @@ document.addEventListener('alpine:init', function () {
                             f.type = f.type === 'password' ? 'text' : 'password';
 
                             // Update button text
-                            field.value = f.type === 'password' ? 'Show' : 'Hide';
+                            field.value = f.type === 'password' ? i18next.t('show') : i18next.t('hide');
 
                             break;
                         }
@@ -552,7 +551,7 @@ document.addEventListener('alpine:init', function () {
                 if (schedulerElement) {
                     const schedulerData = Alpine.$data(schedulerElement);
                     if (schedulerData && typeof schedulerData.stopPolling === 'function') {
-                        console.log('Stopping scheduler polling on modal close');
+                    console.log(i18next.t('stoppingSchedulerPollingOnModalClose'));
                         schedulerData.stopPolling();
                     }
                 }

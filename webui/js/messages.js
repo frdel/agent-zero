@@ -4,7 +4,7 @@ import { openImageModal } from "./image_modal.js";
 function createCopyButton() {
   const button = document.createElement("button");
   button.className = "copy-button";
-  button.textContent = "Copy";
+  button.textContent = i18next.t("copy");
 
   button.addEventListener("click", async function (e) {
     e.stopPropagation();
@@ -23,13 +23,13 @@ function createCopyButton() {
       await navigator.clipboard.writeText(textToCopy);
       const originalText = button.textContent;
       button.classList.add("copied");
-      button.textContent = "Copied!";
+      button.textContent = i18next.t("copied");
       setTimeout(() => {
         button.classList.remove("copied");
         button.textContent = originalText;
       }, 2000);
     } catch (err) {
-      console.error("Failed to copy text:", err);
+      console.error(i18next.t("failedToCopyText"), err);
     }
   });
 
@@ -240,7 +240,7 @@ export function drawMessageUser(
   messageDiv.classList.add("message", "message-user");
 
   const headingElement = document.createElement("h4");
-  headingElement.textContent = "User message";
+  headingElement.textContent = i18next.t("userMessage");
   messageDiv.appendChild(headingElement);
 
   if (content && content.trim().length > 0) {
@@ -509,7 +509,7 @@ function drawKvps(container, kvps, latex) {
         row.classList.add("msg-thoughts");
 
       const th = row.insertCell();
-      th.textContent = convertToTitleCase(key);
+      th.textContent = convertToTitleCase(i18next.t(key, { defaultValue: key }));
       th.classList.add("kvps-key");
 
       const td = row.insertCell();
@@ -579,7 +579,11 @@ function drawKvps(container, kvps, latex) {
 }
 
 function convertToTitleCase(str) {
-  return str
+  // First, translate the string if a translation exists for it.
+  // If not, use the original string.
+  const translatedStr = i18next.t(str, { defaultValue: str });
+
+  return translatedStr
     .replace(/_/g, " ") // Replace underscores with spaces
     .toLowerCase() // Convert the entire string to lowercase
     .replace(/\b\w/g, function (match) {

@@ -61,7 +61,7 @@ document.addEventListener('alpine:init', () => {
                     }
                 }
             } catch (error) {
-                console.error('Error checking tunnel status:', error);
+                console.error(i18next.t('errorCheckingTunnelStatus'), error);
                 this.tunnelLink = '';
                 this.linkGenerated = false;
             }
@@ -69,14 +69,14 @@ document.addEventListener('alpine:init', () => {
 
         async refreshLink() {
             // Call generate but with a confirmation first
-            if (confirm("Are you sure you want to generate a new tunnel URL? The old URL will no longer work.")) {
+            if (confirm(i18next.t('confirmRefreshTunnel'))) {
                 this.isLoading = true;
-                this.loadingText = 'Refreshing tunnel...';
+                this.loadingText = i18next.t('refreshingTunnel');
                 
                 // Change refresh button appearance
                 const refreshButton = document.querySelector('.refresh-link-button');
                 const originalContent = refreshButton.innerHTML;
-                refreshButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+                refreshButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${i18next.t('refreshing')}`;
                 refreshButton.disabled = true;
                 refreshButton.classList.add('refreshing');
                 
@@ -93,15 +93,15 @@ document.addEventListener('alpine:init', () => {
                     // Check if stopping was successful
                     const stopData = await stopResponse.json();
                     if (!stopData.success) {
-                        console.warn("Warning: Couldn't stop existing tunnel cleanly");
+                        console.warn(i18next.t('warningCouldNotStopTunnel'));
                         // Continue anyway since we want to create a new one
                     }
                     
                     // Then generate a new one
                     await this.generateLink();
                 } catch (error) {
-                    console.error("Error refreshing tunnel:", error);
-                    window.toast("Error refreshing tunnel", "error", 3000);
+                    console.error(i18next.t('errorRefreshingTunnel'), error);
+                    window.toast(i18next.t('errorRefreshingTunnel'), "error", 3000);
                     this.isLoading = false;
                     this.loadingText = '';
                 } finally {
@@ -140,12 +140,7 @@ document.addEventListener('alpine:init', () => {
                 // If no authentication is set, warn the user
                 if (!hasAuth) {
                     const proceed = confirm(
-                        "WARNING: No authentication is configured for your Agent Zero instance.\n\n" +
-                        "Creating a public tunnel without authentication means anyone with the URL " +
-                        "can access your Agent Zero instance.\n\n" +
-                        "It is recommended to set up authentication in the Settings > Authentication section " +
-                        "before creating a public tunnel.\n\n" +
-                        "Do you want to proceed anyway?"
+                        i18next.t('warningNoAuthForTunnel')
                     );
                     
                     if (!proceed) {
@@ -153,12 +148,12 @@ document.addEventListener('alpine:init', () => {
                     }
                 }
             } catch (error) {
-                console.error("Error checking authentication status:", error);
+                console.error(i18next.t('errorCheckingAuthStatus'), error);
                 // Continue anyway if we can't check auth status
             }
             
             this.isLoading = true;
-            this.loadingText = 'Creating tunnel...';
+            this.loadingText = i18next.t('creatingTunnel');
 
             // Get provider from the parent settings modal scope
             const modalEl = document.getElementById('settingsModal');
@@ -168,7 +163,7 @@ document.addEventListener('alpine:init', () => {
             // Change create button appearance
             const createButton = document.querySelector('.tunnel-actions .btn-ok');
             if (createButton) {
-                createButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+                createButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${i18next.t('creating')}`;
                 createButton.disabled = true;
                 createButton.classList.add('creating');
             }
@@ -197,10 +192,10 @@ document.addEventListener('alpine:init', () => {
                     this.linkGenerated = true;
                     
                     // Show success message to confirm creation
-                    window.toast("Tunnel created successfully", "success", 3000);
+                    window.toast(i18next.t('tunnelCreatedSuccessfully'), "success", 3000);
                 } else {
                     // The tunnel might still be starting up, check again after a delay
-                    this.loadingText = 'Tunnel creation taking longer than expected...';
+                    this.loadingText = i18next.t('tunnelCreationTakingLonger');
                     
                     // Wait for 5 seconds and check if the tunnel is running
                     await new Promise(resolve => setTimeout(resolve, 5000));
@@ -222,21 +217,21 @@ document.addEventListener('alpine:init', () => {
                             localStorage.setItem('agent_zero_tunnel_url', statusData.tunnel_url);
                             this.tunnelLink = statusData.tunnel_url;
                             this.linkGenerated = true;
-                            window.toast("Tunnel created successfully", "success", 3000);
+                            window.toast(i18next.t('tunnelCreatedSuccessfully'), "success", 3000);
                             return;
                         }
                     } catch (statusError) {
-                        console.error("Error checking tunnel status:", statusError);
+                        console.error(i18next.t('errorCheckingTunnelStatus'), statusError);
                     }
                     
                     // If we get here, the tunnel really failed to start
-                    const errorMessage = data.message || "Failed to create tunnel. Please try again.";
+                    const errorMessage = data.message || i18next.t('failedToCreateTunnelPleaseTryAgain');
                     window.toast(errorMessage, "error", 5000);
-                    console.error("Tunnel creation failed:", data);
+                    console.error(i18next.t('tunnelCreationFailed'), data);
                 }
             } catch (error) {
-                window.toast("Error creating tunnel", "error", 5000);
-                console.error("Error creating tunnel:", error);
+                window.toast(i18next.t('errorCreatingTunnel'), "error", 5000);
+                console.error(i18next.t('errorCreatingTunnel'), error);
             } finally {
                 this.isLoading = false;
                 this.loadingText = '';
@@ -244,7 +239,7 @@ document.addEventListener('alpine:init', () => {
                 // Reset create button if it's still in the DOM
                 const createButton = document.querySelector('.tunnel-actions .btn-ok');
                 if (createButton) {
-                    createButton.innerHTML = '<i class="fas fa-play-circle"></i> Create Tunnel';
+                    createButton.innerHTML = `<i class="fas fa-play-circle"></i> ${i18next.t('createTunnel')}`;
                     createButton.disabled = false;
                     createButton.classList.remove('creating');
                 }
@@ -252,9 +247,9 @@ document.addEventListener('alpine:init', () => {
         },
 
         async stopTunnel() {
-            if (confirm("Are you sure you want to stop the tunnel? The URL will no longer be accessible.")) {
+            if (confirm(i18next.t('confirmStopTunnel'))) {
                 this.isLoading = true;
-                this.loadingText = 'Stopping tunnel...';
+                this.loadingText = i18next.t('stoppingTunnel');
                 
                 
                 try {
@@ -277,9 +272,9 @@ document.addEventListener('alpine:init', () => {
                         this.tunnelLink = '';
                         this.linkGenerated = false;
                         
-                        window.toast("Tunnel stopped successfully", "success", 3000);
+                        window.toast(i18next.t('tunnelStoppedSuccessfully'), "success", 3000);
                     } else {
-                        window.toast("Failed to stop tunnel", "error", 3000);
+                        window.toast(i18next.t('failedToStopTunnel'), "error", 3000);
                         
                         // Reset stop button
                         stopButton.innerHTML = originalStopContent;
@@ -287,8 +282,8 @@ document.addEventListener('alpine:init', () => {
                         stopButton.classList.remove('stopping');
                     }
                 } catch (error) {
-                    window.toast("Error stopping tunnel", "error", 3000);
-                    console.error("Error stopping tunnel:", error);
+                    window.toast(i18next.t('errorStoppingTunnel'), "error", 3000);
+                    console.error(i18next.t('errorStoppingTunnel'), error);
                     
                     // Reset stop button
                     stopButton.innerHTML = originalStopContent;
@@ -310,11 +305,11 @@ document.addEventListener('alpine:init', () => {
             navigator.clipboard.writeText(this.tunnelLink)
                 .then(() => {
                     // Update button to show success state
-                    copyButton.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    copyButton.innerHTML = `<i class="fas fa-check"></i> ${i18next.t('copied')}`;
                     copyButton.classList.add('copy-success');
                     
                     // Show toast notification
-                    window.toast("Tunnel URL copied to clipboard!", "success", 3000);
+                    window.toast(i18next.t('tunnelUrlCopied'), "success", 3000);
                     
                     // Reset button after 2 seconds
                     setTimeout(() => {
@@ -323,11 +318,11 @@ document.addEventListener('alpine:init', () => {
                     }, 2000);
                 })
                 .catch(err => {
-                    console.error('Failed to copy URL: ', err);
-                    window.toast("Failed to copy tunnel URL", "error", 3000);
+                    console.error(i18next.t('failedToCopyUrl'), err);
+                    window.toast(i18next.t('failedToCopyTunnelUrl'), "error", 3000);
                     
                     // Show error state
-                    copyButton.innerHTML = '<i class="fas fa-times"></i> Failed';
+                    copyButton.innerHTML = `<i class="fas fa-times"></i> ${i18next.t('failed')}`;
                     copyButton.classList.add('copy-error');
                     
                     // Reset button after 2 seconds
