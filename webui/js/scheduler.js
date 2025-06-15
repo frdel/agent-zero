@@ -267,7 +267,7 @@ const fullComponentImplementation = function() {
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch tasks');
+                    throw new Error(window.i18n.t('scheduler.fetchTasksError', 'Failed to fetch tasks'));
                 }
 
                 const data = await response.json();
@@ -314,7 +314,7 @@ const fullComponentImplementation = function() {
                 console.error('Error fetching tasks:', error);
                 // Only show toast for errors on manual refresh, not during polling
                 if (!this.pollingInterval) {
-                    showToast('Failed to fetch tasks: ' + error.message, 'error');
+                    showToast(window.i18n.t('scheduler.fetchTasksFailed', 'Failed to fetch tasks: {error}', { error: error.message }), 'error');
                 }
                 // Reset tasks to empty array on error
                 this.tasks = [];
@@ -348,7 +348,7 @@ const fullComponentImplementation = function() {
         showTaskDetail(taskId) {
             const task = this.tasks.find(t => t.uuid === taskId);
             if (!task) {
-                showToast('Task not found', 'error');
+                showToast(window.i18n.t('scheduler.taskNotFound', 'Task not found'), 'error');
                 return;
             }
 
@@ -371,16 +371,16 @@ const fullComponentImplementation = function() {
 
         // Format date for display
         formatDate(dateString) {
-            if (!dateString) return 'Never';
+            if (!dateString) return window.i18n.t('scheduler.dateNever', 'Never');
             return formatDateTime(dateString, 'full');
         },
 
         // Format plan for display
         formatPlan(task) {
-            if (!task || !task.plan) return 'No plan';
+            if (!task || !task.plan) return window.i18n.t('scheduler.planNoPlan', 'No plan');
 
             const todoCount = Array.isArray(task.plan.todo) ? task.plan.todo.length : 0;
-            const inProgress = task.plan.in_progress ? 'Yes' : 'No';
+            const inProgressStatus = task.plan.in_progress ? window.i18n.t('yes', 'Yes') : window.i18n.t('no', 'No');
             const doneCount = Array.isArray(task.plan.done) ? task.plan.done.length : 0;
 
             let nextRun = '';
@@ -392,23 +392,28 @@ const fullComponentImplementation = function() {
                     if (!isNaN(nextTime.getTime())) {
                         nextRun = formatDateTime(nextTime, 'short');
                     } else {
-                        nextRun = 'Invalid date';
+                        nextRun = window.i18n.t('scheduler.planInvalidDate', 'Invalid date');
                         console.warn(`Invalid date format in plan.todo[0]: ${task.plan.todo[0]}`);
                     }
                 } catch (error) {
                     console.error(`Error formatting next run time: ${error.message}`);
-                    nextRun = 'Error';
+                    nextRun = window.i18n.t('scheduler.planError', 'Error');
                 }
             } else {
-                nextRun = 'None';
+                nextRun = window.i18n.t('scheduler.planNextRunNone', 'None');
             }
 
-            return `Next: ${nextRun}\nTodo: ${todoCount}\nIn Progress: ${inProgress}\nDone: ${doneCount}`;
+            const nextRunStr = window.i18n.t('scheduler.planNext', 'Next: {value}', { value: nextRun });
+            const todoStr = window.i18n.t('scheduler.planTodo', 'Todo: {count}', { count: todoCount });
+            const inProgressStr = window.i18n.t('scheduler.planInProgress', 'In Progress: {value}', { value: inProgressStatus });
+            const doneStr = window.i18n.t('scheduler.planDone', 'Done: {count}', { count: doneCount });
+
+            return `${nextRunStr}\n${todoStr}\n${inProgressStr}\n${doneStr}`;
         },
 
         // Format schedule for display
         formatSchedule(task) {
-            if (!task.schedule) return 'None';
+            if (!task.schedule) return window.i18n.t('scheduler.scheduleNone', 'None');
 
             let schedule = '';
             if (typeof task.schedule === 'string') {
@@ -470,7 +475,7 @@ const fullComponentImplementation = function() {
         async startEditTask(taskId) {
             const task = this.tasks.find(t => t.uuid === taskId);
             if (!task) {
-                showToast('Task not found', 'error');
+                showToast(window.i18n.t('scheduler.taskNotFound', 'Task not found'), 'error');
                 return;
             }
 
@@ -654,8 +659,7 @@ const fullComponentImplementation = function() {
         async saveTask() {
             // Validate task data
             if (!this.editingTask.name.trim() || !this.editingTask.prompt.trim()) {
-                // showToast('Task name and prompt are required', 'error');
-                alert('Task name and prompt are required');
+                alert(window.i18n.t('scheduler.taskNamePromptRequired', 'Task name and prompt are required'));
                 return;
             }
 
@@ -794,14 +798,17 @@ const fullComponentImplementation = function() {
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to save task');
+                    throw new Error(errorData.error || window.i18n.t('scheduler.saveTaskErrorFallback', 'Failed to save task'));
                 }
 
                 // Parse response data to get the created/updated task
                 const responseData = await response.json();
 
                 // Show success message
-                showToast(this.isCreating ? 'Task created successfully' : 'Task updated successfully', 'success');
+                const successMessage = this.isCreating ?
+                    window.i18n.t('scheduler.taskCreatedSuccess', 'Task created successfully') :
+                    window.i18n.t('scheduler.taskUpdatedSuccess', 'Task updated successfully');
+                showToast(successMessage, 'success');
 
                 // Immediately update the UI if the response includes the task
                 if (responseData && responseData.task) {
@@ -867,7 +874,7 @@ const fullComponentImplementation = function() {
                 document.querySelector('[x-data="schedulerSettings"]')?.removeAttribute('data-editing-state');
             } catch (error) {
                 console.error('Error saving task:', error);
-                showToast('Failed to save task: ' + error.message, 'error');
+                showToast(window.i18n.t('scheduler.saveTaskFailed', 'Failed to save task: {error}', { error: error.message }), 'error');
             }
         },
 
@@ -887,16 +894,16 @@ const fullComponentImplementation = function() {
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to run task');
+                    throw new Error(errorData.error || window.i18n.t('scheduler.runTaskErrorFallback', 'Failed to run task'));
                 }
 
-                showToast('Task started successfully', 'success');
+                showToast(window.i18n.t('scheduler.taskStartedSuccess', 'Task started successfully'), 'success');
 
                 // Refresh task list
                 this.fetchTasks();
             } catch (error) {
                 console.error('Error running task:', error);
-                showToast('Failed to run task: ' + error.message, 'error');
+                showToast(window.i18n.t('scheduler.runTaskFailed', 'Failed to run task: {error}', { error: error.message }), 'error');
             }
         },
 
@@ -905,13 +912,13 @@ const fullComponentImplementation = function() {
             try {
                 const task = this.tasks.find(t => t.uuid === taskId);
                 if (!task) {
-                    showToast('Task not found', 'error');
+                    showToast(window.i18n.t('scheduler.taskNotFound', 'Task not found'), 'error');
                     return;
                 }
 
                 // Check if task is already in idle state
                 if (task.state === 'idle') {
-                    showToast('Task is already in idle state', 'info');
+                    showToast(window.i18n.t('scheduler.taskAlreadyIdle', 'Task is already in idle state'), 'info');
                     return;
                 }
 
@@ -932,17 +939,17 @@ const fullComponentImplementation = function() {
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to reset task state');
+                    throw new Error(errorData.error || window.i18n.t('scheduler.resetTaskStateErrorFallback', 'Failed to reset task state'));
                 }
 
-                showToast('Task state reset to idle', 'success');
+                showToast(window.i18n.t('scheduler.taskStateResetToIdle', 'Task state reset to idle'), 'success');
 
                 // Refresh task list
                 await this.fetchTasks();
                 this.showLoadingState = false;
             } catch (error) {
                 console.error('Error resetting task state:', error);
-                showToast('Failed to reset task state: ' + error.message, 'error');
+                showToast(window.i18n.t('scheduler.resetTaskStateFailed', 'Failed to reset task state: {error}', { error: error.message }), 'error');
                 this.showLoadingState = false;
             }
         },
@@ -950,7 +957,7 @@ const fullComponentImplementation = function() {
         // Delete a task
         async deleteTask(taskId) {
             // Confirm deletion
-            if (!confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
+            if (!confirm(window.i18n.t('scheduler.confirmDeleteTask', 'Are you sure you want to delete this task? This action cannot be undone.'))) {
                 return;
             }
 
@@ -972,10 +979,10 @@ const fullComponentImplementation = function() {
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to delete task');
+                    throw new Error(errorData.error || window.i18n.t('scheduler.deleteTaskErrorFallback', 'Failed to delete task'));
                 }
 
-                showToast('Task deleted successfully', 'success');
+                showToast(window.i18n.t('scheduler.taskDeletedSuccess', 'Task deleted successfully'), 'success');
                 
                 // If we were viewing the detail of the deleted task, close the detail view
                 if (this.selectedTaskForDetail && this.selectedTaskForDetail.uuid === taskId) {
@@ -989,7 +996,7 @@ const fullComponentImplementation = function() {
                 this.updateTasksUI();
             } catch (error) {
                 console.error('Error deleting task:', error);
-                showToast('Failed to delete task: ' + error.message, 'error');
+                showToast(window.i18n.t('scheduler.deleteTaskFailed', 'Failed to delete task: {error}', { error: error.message }), 'error');
             }
         },
 

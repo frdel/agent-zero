@@ -4,7 +4,7 @@ import { openImageModal } from "./image_modal.js";
 function createCopyButton() {
   const button = document.createElement("button");
   button.className = "copy-button";
-  button.textContent = "Copy";
+  button.textContent = window.i18n.t('copy', "Copy");
 
   button.addEventListener("click", async function (e) {
     e.stopPropagation();
@@ -21,12 +21,12 @@ function createCopyButton() {
 
     try {
       await navigator.clipboard.writeText(textToCopy);
-      const originalText = button.textContent;
+      const originalText = window.i18n.t('copy', "Copy"); // Ensure original text is also translated if needed or keep static
       button.classList.add("copied");
-      button.textContent = "Copied!";
+      button.textContent = window.i18n.t('copied', "Copied!");
       setTimeout(() => {
         button.classList.remove("copied");
-        button.textContent = originalText;
+        button.textContent = originalText; // Reset to "Copy"
       }, 2000);
     } catch (err) {
       console.error("Failed to copy text:", err);
@@ -240,7 +240,7 @@ export function drawMessageUser(
   messageDiv.classList.add("message", "message-user");
 
   const headingElement = document.createElement("h4");
-  headingElement.textContent = "User message";
+  headingElement.textContent = window.i18n.t('userMessage', "User message");
   messageDiv.appendChild(headingElement);
 
   if (content && content.trim().length > 0) {
@@ -509,7 +509,7 @@ function drawKvps(container, kvps, latex) {
         row.classList.add("msg-thoughts");
 
       const th = row.insertCell();
-      th.textContent = convertToTitleCase(key);
+      th.textContent = window.i18n.t('kvps.' + key, convertToTitleCase(key));
       th.classList.add("kvps-key");
 
       const td = row.insertCell();
