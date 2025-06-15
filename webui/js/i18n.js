@@ -1,120 +1,138 @@
 // webui/js/i18n.js
-i18next
-  .use(i18nextHttpBackend)
-  .use(i18nextBrowserLanguageDetector)
-  .init({
-    lng: 'zh', // Set default language to Chinese
-    fallbackLng: 'en', // Fallback language
-    debug: true, // Set to false in production
-    ns: ['translation'], // Default namespace
-    defaultNS: 'translation',
-    backend: {
-      loadPath: 'locales/{{lng}}.json', // Path to translation files
-    },
-    detection: {
-      // Order and from where user language should be detected
-      order: ['querystring', 'cookie', 'localStorage', 'sessionStorage', 'navigator', 'htmlTag'],
-      // Keys or params to lookup language from
-      lookupQuerystring: 'lng',
-      lookupCookie: 'i18next',
-      lookupLocalStorage: 'i18nextLng',
-      lookupSessionStorage: 'i18nextLng',
-      caches: ['localStorage', 'cookie'], // Where to cache the detected language
-      excludeCacheFor: ['cimode'], // Languages to not persist (e.g., 'cimode' for development)
-    }
-  }, (err, t) => {
-    if (err) return console.error('Error initializing i18next:', err);
-    console.log('i18next initialized.');
-    // Initial translation of static elements after i18next is ready
-    // updateContent is called by the 'initialized' event instead.
-  });
+console.log('i18n.js: Script start');
 
-// Function to update content
+// Function to update content (defined earlier to be available)
 function updateContent() {
-  console.log('Updating content based on selected language:', i18next.language);
+  console.log('i18n.js: updateContent() called. Current i18next.language:', i18next.language);
+  console.log('i18n.js: updateContent() - Translating "testKey":', i18next.t('testKey'));
+  // Attempt to log i18next.options; fallback if stringify fails
+  try {
+    console.log('i18n.js: updateContent() - i18next.options:', JSON.stringify(i18next.options));
+  } catch (e) {
+    console.log('i18n.js: updateContent() - i18next.options (raw):', i18next.options);
+  }
 
-  // Update textContent for elements with data-i18n
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.dataset.i18n;
     const translation = i18next.t(key);
-    // Only update if translation exists and is different, to avoid unnecessary changes
+    // console.log('i18n.js: updateContent() - Element [data-i18n]:', el, 'Key:', key, 'Translation:', translation); // Verbose, remove if too noisy
     if (translation !== key && el.textContent !== translation) {
       el.textContent = translation;
-    } else if (translation === key) {
-      // console.warn(`Translation not found for key: ${key}`);
+    } else if (translation === key && el.textContent !== key && !(el.textContent.startsWith('[zh]') && el.textContent.substring(5) === key)) {
+      // console.warn('i18n.js: updateContent() - TextContent translation not found (or key is value) for key:', key, 'Current text:', el.textContent);
     }
   });
 
-  // Update placeholder for elements with data-i18n-placeholder
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     const key = el.dataset.i18nPlaceholder;
     const translation = i18next.t(key);
+    // console.log('i18n.js: updateContent() - Element [data-i18n-placeholder]:', el, 'Key:', key, 'Translation:', translation); // Verbose
     if (translation !== key && el.placeholder !== translation) {
       el.placeholder = translation;
-    } else if (translation === key) {
-      // console.warn(`Placeholder translation not found for key: ${key}`);
+    } else if (translation === key && el.placeholder !== key && !(el.placeholder.startsWith('[zh]') && el.placeholder.substring(5) === key)) {
+      // console.warn('i18n.js: updateContent() - Placeholder translation not found (or key is value) for key:', key, 'Current placeholder:', el.placeholder);
     }
   });
 
-  // Update title for elements with data-i18n-title
   document.querySelectorAll('[data-i18n-title]').forEach(el => {
     const key = el.dataset.i18nTitle;
     const translation = i18next.t(key);
+    // console.log('i18n.js: updateContent() - Element [data-i18n-title]:', el, 'Key:', key, 'Translation:', translation); // Verbose
     if (translation !== key && el.title !== translation) {
       el.title = translation;
-    } else if (translation === key) {
-      // console.warn(`Title translation not found for key: ${key}`);
+    } else if (translation === key && el.title !== key && !(el.title.startsWith('[zh]') && el.title.substring(5) === key)) {
+      // console.warn('i18n.js: updateContent() - Title translation not found (or key is value) for key:', key, 'Current title:', el.title);
     }
   });
 
-  // Update aria-label for elements with data-i18n-aria-label (optional, if you decide to use this pattern)
   document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
-    const key = el.dataset.i18nArialabel; // Note: dataset property names are camelCased
+    const key = el.dataset.i18nArialabel;
     const translation = i18next.t(key);
-    if (translation !== key && el.getAttribute('aria-label') !== translation) {
+    // console.log('i18n.js: updateContent() - Element [data-i18n-aria-label]:', el, 'Key:', key, 'Translation:', translation); // Verbose
+    const currentAriaLabel = el.getAttribute('aria-label');
+    if (translation !== key && currentAriaLabel !== translation) {
       el.setAttribute('aria-label', translation);
-    } else if (translation === key) {
-      // console.warn(`Aria-label translation not found for key: ${key}`);
+    } else if (translation === key && currentAriaLabel !== key && !(currentAriaLabel && currentAriaLabel.startsWith('[zh]') && currentAriaLabel.substring(5) === key)) {
+      // console.warn('i18n.js: updateContent() - Aria-label translation not found (or key is value) for key:', key, 'Current aria-label:', currentAriaLabel);
     }
   });
 
-  // Update html lang attribute
   const currentLang = i18next.language;
   if (document.documentElement.lang !== currentLang) {
     document.documentElement.lang = currentLang;
   }
 
-  // Update Alpine.js components that rely on translated text, if necessary
-  // This might involve dispatching a custom event that Alpine components can listen to,
-  // or directly calling methods on components if they are accessible.
-  // For example, if an Alpine component needs to re-initialize its text:
-  // window.dispatchEvent(new CustomEvent('language-changed-event'));
-  // Then in your Alpine component: window.addEventListener('language-changed-event', () => { this.text = i18next.t('myKey'); });
-
-  // For x-text attributes that use dynamic keys like the pause/resume button:
-  // We need to ensure Alpine reacts to language changes.
-  // A simple way is to make i18next reactive within Alpine's context or trigger updates.
-  // If $store.i18n.t() is used in x-text, and $store.i18n is an Alpine store
-  // wrapping i18next, changes to language should ideally trigger reactivity.
-  // If not, a manual re-evaluation might be needed, or ensure `i18next.language` is part of reactive state.
   if (window.Alpine && window.Alpine.store && window.Alpine.store('i18n')) {
-    window.Alpine.store('i18n').language = currentLang; // Force Alpine to acknowledge the change
+    window.Alpine.store('i18n').language = currentLang;
   }
-
+  console.log('i18n.js: updateContent() finished.');
 }
 
-// Call this function when i18next is ready and when language changes
-i18next.on('initialized', (options) => {
-  console.log('i18next initialized event triggered.');
-  updateContent();
-});
+console.log('i18n.js: Initializing i18next with explicit initial lng preference:', 'zh');
+i18next
+  .use(i18nextHttpBackend)
+  .use(i18nextBrowserLanguageDetector)
+  .init({
+    lng: 'zh', // Explicitly set Chinese as the desired initial language
+    fallbackLng: 'en',
+    debug: true,
+    ns: ['translation'],
+    defaultNS: 'translation',
+    backend: {
+      loadPath: 'locales/{{lng}}.json',
+    },
+    detection: {
+      order: ['querystring', 'localStorage', 'cookie'], // Simplified order
+      lookupQuerystring: 'lng',
+      lookupCookie: 'i18next',
+      lookupLocalStorage: 'i18nextLng',
+      caches: ['localStorage', 'cookie'],
+      excludeCacheFor: ['cimode'],
+    }
+  }, (err, t_init) => {
+    // This callback fires AFTER detection has run and an initial language is set.
+    console.log('i18n.js: i18next.init base callback. Detected/Initial language:', i18next.language);
+    console.log('i18n.js: i18next.init base callback. Attempting to translate "testKey":', t_init('testKey'));
+    if (err) {
+        console.error('i18n.js: Error during i18next.init base:', err);
+    }
+
+    if (i18next.language !== 'zh') {
+        console.log(`i18n.js: Initial language is ${i18next.language}. Forcing change to 'zh'.`);
+        i18next.changeLanguage('zh', (err_change, t_change) => {
+            if (err_change) {
+                console.error('i18n.js: Error changing language to zh:', err_change);
+            } else {
+                console.log('i18n.js: Language successfully changed to zh. Translating "testKey":', t_change('testKey'));
+            }
+            console.log('i18n.js: Resources for zh/translation after potential changeLanguage:', JSON.stringify(i18next.getResourceBundle('zh', 'translation')));
+            console.log('i18n.js: Resources for en/translation after potential changeLanguage:', JSON.stringify(i18next.getResourceBundle('en', 'translation')));
+            updateContent(); // Update content after attempting to change to 'zh'
+        });
+    } else {
+        console.log("i18n.js: Initial language already 'zh'. Proceeding to update content.");
+        console.log('i18n.js: Resources for zh/translation (already zh):', JSON.stringify(i18next.getResourceBundle('zh', 'translation')));
+        console.log('i18n.js: Resources for en/translation (already zh):', JSON.stringify(i18next.getResourceBundle('en', 'translation')));
+        updateContent();
+    }
+  });
+
+// This event is for subsequent language changes AFTER initial setup.
 i18next.on('languageChanged', (lng) => {
-  console.log('i18next languageChanged event triggered to:', lng);
+  console.log('i18n.js: i18next languageChanged event. New language:', lng);
+  console.log('i18n.js: i18next languageChanged event. Attempting to translate "testKey":', i18next.t('testKey'));
   updateContent();
 });
 
-// Make i18next instance available globally for other scripts if needed (optional)
-// and as an Alpine.js store for reactivity in x-text attributes
+i18next.on('initialized', (options) => {
+  console.log('i18n.js: i18next initialized event. Current language:', i18next.language);
+  // The main content update is now handled more directly in the init callback to ensure 'zh' priority.
+  // This event listener can still be useful for other post-initialization tasks if needed.
+  // console.log('i18n.js: i18next initialized event. Attempting to translate "testKey":', i18next.t('testKey'));
+  // console.log('i18n.js: i18next initialized event. Loaded languages:', i18next.languages);
+  // updateContent(); // This call might be redundant if the init callback logic always calls updateContent.
+});
+
 window.i18n = i18next;
 
 if (window.Alpine) {
@@ -125,10 +143,8 @@ if (window.Alpine) {
     get language() {
       return i18next.language;
     },
-    // Dummy setter to make language reactive, updateContent will actually refresh.
     set language(lng) {
-        // This is mainly to make Alpine reactive.
-        // The actual language change is handled by i18next.on('languageChanged', updateContent);
+      // Reactive dummy setter
     }
   });
 }
