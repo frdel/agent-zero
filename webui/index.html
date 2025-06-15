@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="css/settings.css">
     <link rel="stylesheet" href="css/file_browser.css">
     <link rel="stylesheet" href="css/modals.css">
-    <link rel="stylesheet" href="css/modals2.css">
     <link rel="stylesheet" href="css/speech.css">
     <link rel="stylesheet" href="css/history.css">
     <link rel="stylesheet" href="css/scheduler-datepicker.css">
@@ -105,8 +104,7 @@
 
     <!-- Then load Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.3/dist/cdn.min.js"></script>
-    <!-- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script> -->
-    <script type="module" src="js/initFw.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.36.5/src-noconflict/ace.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/ace-builds@1.36.5/css/ace.min.css" rel="stylesheet">
@@ -125,7 +123,7 @@
     <script type="text/javascript" src="js/tunnel.js"></script>
 </head>
 
-<body class="dark-mode">
+<body>
     <div class="container">
         <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
         <div class="icons-section" id="hide-button" x-data="{ connected: true }">
@@ -586,10 +584,6 @@
                                      @click="switchTab('external')"
                                      title="External Services">External Services</div>
                                 <div class="settings-tab"
-                                     :class="{'active': activeTab === 'mcp'}"
-                                     @click="switchTab('mcp')"
-                                     title="MCP">MCP</div>
-                                <div class="settings-tab"
                                      :class="{'active': activeTab === 'developer'}"
                                      @click="switchTab('developer')"
                                      title="Developer">Developer</div>
@@ -628,7 +622,7 @@
                                     <div class="section-title" x-text="section.title"></div>
                                     <div class="section-description" x-html="section.description"></div>
 
-                                    <template x-for="(field, fieldIndex) in section.fields.filter(f => !f.hidden)" :key="fieldIndex">
+                                    <template x-for="(field, fieldIndex) in section.fields" :key="fieldIndex">
                                         <div :class="{'field': true, 'field-full': field.type === 'textarea'}">
                                             <div class="field-label">
                                                 <div class="field-title" x-text="field.title"></div>
@@ -698,7 +692,8 @@
                                                 <!-- Select field -->
                                                 <template x-if="field.type === 'select'">
                                                     <select :class="field.classes" x-model="field.value"
-                                                        :disabled="field.readonly === true">
+                                                        :disabled="field.readonly === true"
+                                                        @change="field.id.endsWith('_model_provider') ? handleProviderChange(field.id, field.value) : null">
                                                         <template x-for="option in field.options" :key="option.value">
                                                             <option :value="option.value" x-text="option.label"
                                                                 :selected="option.value === field.value"></option>
@@ -715,19 +710,6 @@
                             <div id="section-tunnel" class="section" x-show="activeTab === 'external'">
                                 <div class="section-title">Flare Tunnel</div>
                                 <div class="section-description">Create a secure public URL to access your Agent Zero instance anytime, anywhere.</div>
-                                <div class="field">
-                                    <div class="field-label">
-                                        <div class="field-title">Tunnel provider</div>
-                                        <div class="field-description">Select provider for public tunnel</div>
-                                    </div>
-                                    <div class="field-control">
-                                        <select id="tunnel-provider" x-model="provider" :disabled="isLoading">
-                                            <option value="serveo">Serveo</option>
-                                            <option value="cloudflared">Cloudflare</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <!-- Tunnel content UI -->
                                 <div class="tunnel-container" x-data="tunnelSettings">
                                     <!-- Loading spinner for tunnel operations -->
                                     <div class="loading-spinner" x-show="isLoading">
@@ -762,6 +744,7 @@
                                                 </button>
                                             </div>
                                         </div>
+
                                         <!-- Generate tunnel button when no link exists -->
                                         <div class="tunnel-actions" x-show="!linkGenerated">
                                             <button class="btn btn-ok" @click="generateLink()">

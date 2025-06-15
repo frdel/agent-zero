@@ -1,4 +1,4 @@
-from flaredantic import FlareTunnel, FlareConfig, ServeoConfig, ServeoTunnel
+from flaredantic import FlareTunnel, FlareConfig
 import threading
 
 
@@ -18,26 +18,24 @@ class TunnelManager:
         self.tunnel = None
         self.tunnel_url = None
         self.is_running = False
-        self.provider = None
 
-    def start_tunnel(self, port=80, provider="serveo"):
+    def start_tunnel(self, port=80):
         """Start a new tunnel or return the existing one's URL"""
         if self.is_running and self.tunnel_url:
             return self.tunnel_url
 
-        self.provider = provider
+        # Create and start a new tunnel
+        config = FlareConfig(
+            port=port,
+            verbose=True,
+            timeout=60,  # Increase timeout from default 30 to 60 seconds
+        )
 
         try:
             # Start tunnel in a separate thread to avoid blocking
             def run_tunnel():
                 try:
-                    if self.provider == "cloudflared":
-                        config = FlareConfig(port=port, verbose=True)
-                        self.tunnel = FlareTunnel(config)
-                    else:  # Default to serveo
-                        config = ServeoConfig(port=port) # type: ignore
-                        self.tunnel = ServeoTunnel(config)
-
+                    self.tunnel = FlareTunnel(config)
                     self.tunnel.start()
                     self.tunnel_url = self.tunnel.tunnel_url
                     self.is_running = True
@@ -68,7 +66,6 @@ class TunnelManager:
                 self.tunnel.stop()
                 self.is_running = False
                 self.tunnel_url = None
-                self.provider = None
                 return True
             except Exception:
                 return False

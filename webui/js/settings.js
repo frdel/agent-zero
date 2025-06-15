@@ -1,10 +1,31 @@
-
 const settingsModalProxy = {
     isOpen: false,
     settings: {},
     resolvePromise: null,
     activeTab: 'agent', // Default tab
-    provider: 'serveo',
+
+    providerToModelFieldMap: {
+        'chat_model_provider': 'chat_model_name',
+        'util_model_provider': 'util_model_name',
+        'embed_model_provider': 'embed_model_name',
+        'browser_model_provider': 'browser_model_name'
+    },
+
+    findField(fieldId) {
+        if (!this.settings || !this.settings.sections) {
+            console.warn('Settings data or sections not available for findField in settingsModalProxy:', fieldId);
+            return null;
+        }
+        for (const section of this.settings.sections) { // Operates on this.settings
+            for (const field of section.fields) {
+                if (field.id === fieldId) {
+                    return field;
+                }
+            }
+        }
+        console.warn('Field not found by findField in settingsModalProxy:', fieldId);
+        return null;
+    },
 
     // Computed property for filtered sections
     get filteredSections() {
@@ -202,12 +223,33 @@ const settingsModalProxy = {
                 setTimeout(checkSchedulerEditingState, 100);
             }
 
+            // Initialize model dropdowns for existing provider selections
+            // This needs to be awaited if openModal itself is not awaited by caller,
+            // but given the promise structure, it's better to make openModal fully async.
+            // The 'this' context here refers to settingsModalProxy.
+            for (const providerFieldId of Object.keys(this.providerToModelFieldMap)) {
+                const providerField = this.findField(providerFieldId); // 'this' correctly refers to settingsModalProxy
+                if (providerField && providerField.value) {
+                    if (providerField.value === "OLLAMA" || providerField.value === "GPT4ALL" || providerField.value === "LMSTUDIO") {
+                        console.log(`Settings modal opened: Initializing model field for ${providerFieldId} with provider ${providerField.value}`);
+                        // No 'await' here if openModal is not meant to block on this,
+                        // but for correctness and to ensure UI updates before user interaction, await is better.
+                        // This implies openModal should be consistently treated as async by its callers if they depend on this completion.
+                        await this.handleProviderChange(providerFieldId, providerField.value);
+                    }
+                }
+            }
+
             return new Promise(resolve => {
                 this.resolvePromise = resolve;
             });
 
         } catch (e) {
             window.toastFetchError("Error getting settings", e)
+            // If settings fail to load, we might not have this.settings populated,
+            // so the above loop might not run or findField might fail.
+            // Ensure this is handled or that findField can deal with this.settings being undefined.
+            // (findField already checks for this.settings)
         }
     },
 
@@ -282,11 +324,81 @@ const settingsModalProxy = {
         }
     },
 
-    async handleFieldButton(field) {
-        console.log(`Button clicked: ${field.id}`);
+    handleFieldButton(field) {
+        console.log(`Button clicked: ${field.action}`);
+    },
 
-        if (field.id === "mcp_servers_config") {
-            openModal("settings/mcp/client/mcp-servers.html");
+    async updateModelNameField(providerValue, modelNameFieldId) {
+        const modelField = this.findField(modelNameFieldId); // Uses this.findField
+        if (!modelField) {
+            console.error(`Model name field '${modelNameFieldId}' not found within settingsModalProxy.`);
+            return;
+        }
+
+        const oldValue = modelField.value;
+        modelField.options = []; // Clear previous options if any
+
+        if (providerValue === "OLLAMA" || providerValue === "GPT4ALL" || providerValue === "LMSTUDIO") {
+            let endpoint = "";
+            if (providerValue === "OLLAMA") {
+                endpoint = "/api/ollama/models";
+            } else if (providerValue === "GPT4ALL") {
+                endpoint = "/api/gpt4all/models";
+            } else if (providerValue === "LMSTUDIO") {
+                endpoint = "/api/lmstudio/models";
+            }
+
+            try {
+                const response = await fetch(endpoint); // Assuming fetch is available globally
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch models from ${endpoint}: ${response.status} ${response.statusText}`);
+                }
+                const models = await response.json();
+
+                if (models && models.length > 0) {
+                    modelField.type = "select";
+                    modelField.options = models.map(m => ({ value: m.value, label: m.label }));
+
+                    const M_OPTION_EXISTS = models.some(opt => opt.value === oldValue);
+                    if (M_OPTION_EXISTS) {
+                        modelField.value = oldValue;
+                    } else if (modelField.options.length > 0) {
+                        modelField.value = modelField.options[0].value;
+                    } else {
+                        modelField.value = "";
+                    }
+                } else {
+                    console.warn(`No models returned from ${endpoint}. Reverting to text input for ${modelNameFieldId}.`);
+                    modelField.type = "text";
+                    modelField.value = oldValue;
+                }
+            } catch (error) {
+                console.error(`Error fetching models for ${providerValue} for field ${modelNameFieldId}:`, error);
+                modelField.type = "text";
+                modelField.options = [];
+                modelField.value = oldValue;
+                showToast(`Could not load models for ${providerValue}. Ensure server is running and accessible.`, 'error');
+            }
+        } else {
+            modelField.type = "text";
+            modelField.options = [];
+            modelField.value = oldValue; // Keep old value if it's now a text field
+        }
+        // Force Alpine to re-render if necessary, though direct property assignment should be reactive.
+        // If issues, might need this.settings = {...this.settings}; or similar, but try without first.
+    },
+
+    async handleProviderChange(providerFieldId, newProviderValue) {
+        const modelNameFieldId = this.providerToModelFieldMap[providerFieldId];
+        if (modelNameFieldId) {
+            // Optional: Clear the model name field value when provider changes to avoid carrying over incompatible model names.
+            // const modelField = this.findField(modelNameFieldId);
+            // if (modelField) {
+            //    modelField.value = "";
+            // }
+            await this.updateModelNameField(newProviderValue, modelNameFieldId);
+        } else {
+            console.warn(`No model name field mapping for provider: ${providerFieldId}`);
         }
     }
 };
@@ -327,6 +439,109 @@ document.addEventListener('alpine:init', function () {
             activeTab: 'agent',
             isLoading: true,
 
+            providerToModelFieldMap: {
+                'chat_model_provider': 'chat_model_name',
+                'util_model_provider': 'util_model_name',
+                'embed_model_provider': 'embed_model_name',
+                'browser_model_provider': 'browser_model_name'
+            },
+
+            findField(fieldId) {
+                if (!this.settingsData || !this.settingsData.sections) {
+                    console.warn('Settings data or sections not available for findField:', fieldId);
+                    return null;
+                }
+                for (const section of this.settingsData.sections) {
+                    for (const field of section.fields) {
+                        if (field.id === fieldId) {
+                            return field;
+                        }
+                    }
+                }
+                console.warn('Field not found by findField:', fieldId);
+                return null;
+            },
+
+            async updateModelNameField(providerValue, modelNameFieldId) {
+                const modelField = this.findField(modelNameFieldId);
+                if (!modelField) {
+                    console.error(`Model name field '${modelNameFieldId}' not found.`);
+                    return;
+                }
+
+                const oldValue = modelField.value;
+                // Always reset options when provider changes, before potentially fetching new ones
+                modelField.options = [];
+
+                if (providerValue === "OLLAMA" || providerValue === "GPT4ALL") {
+                    const endpoint = providerValue === "OLLAMA" ? "/api/ollama/models" : "/api/gpt4all/models";
+                    try {
+                        const response = await fetch(endpoint);
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch models from ${endpoint}: ${response.statusText}`);
+                        }
+                        const models = await response.json();
+
+                        if (models && models.length > 0) {
+                            modelField.type = "select";
+                            modelField.options = models.map(m => ({ value: m.value, label: m.label }));
+
+                            const M_OPTION_EXISTS = models.some(opt => opt.value === oldValue);
+                            if (M_OPTION_EXISTS) {
+                                modelField.value = oldValue;
+                            } else if (modelField.options.length > 0) {
+                                modelField.value = modelField.options[0].value; // Default to first option
+                            } else {
+                                modelField.value = ""; // No options, clear value
+                            }
+                        } else {
+                            // No models returned or empty list
+                            console.warn(`No models returned from ${endpoint}. Reverting to text input for ${modelNameFieldId}.`);
+                            modelField.type = "text";
+                            modelField.value = oldValue; // Restore old value if it was a text input or if selection is now invalid
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching models for ${providerValue} from ${modelNameFieldId}:`, error);
+                        modelField.type = "text";
+                        modelField.options = [];
+                        modelField.value = oldValue; // Restore old value on error
+                        // Optionally, show a toast error to the user
+                        showToast(`Could not load models for ${providerValue}. Check server connection.`, 'error');
+                    }
+                } else {
+                    // Provider is not OLLAMA or GPT4ALL, ensure it's a text input
+                    modelField.type = "text";
+                    modelField.options = [];
+                    // Value should ideally be preserved if it was already a text input.
+                    // If it was a select, this implies the user changed provider,
+                    // oldValue here might be a value from a previous select.
+                    // For simplicity, we can keep oldValue, or clear it if that's preferred.
+                    // Keeping oldValue might be useful if user temporarily switches away and back.
+                    // However, if the model name is not compatible with the new provider, this might be confusing.
+                    // For now, let's keep it simple: if it's not a special provider, it's text, value remains.
+                    // If the field *was* a select and now becomes text, its previous value might be one of the option values.
+                    // If the old value is not sensible for a text input, it might need clearing or specific handling.
+                    // Let's assume for now that if it becomes text, the current value (oldValue) is acceptable or will be changed by user.
+                     modelField.value = oldValue;
+                }
+            },
+
+            async handleProviderChange(providerFieldId, newProviderValue) {
+                const modelNameFieldId = this.providerToModelFieldMap[providerFieldId];
+                if (modelNameFieldId) {
+                    // When provider changes, we clear the model name field's value
+                    // before updating it to be a dropdown or text input.
+                    // This prevents carrying over an incompatible model name.
+                    const modelField = this.findField(modelNameFieldId);
+                    if (modelField) {
+                         // modelField.value = ""; // Clear previous model selection/text
+                    }
+                    await this.updateModelNameField(newProviderValue, modelNameFieldId);
+                } else {
+                    console.warn(`No model name field mapping for provider: ${providerFieldId}`);
+                }
+            },
+
             async init() {
                 // Initialize with the store value
                 this.activeTab = Alpine.store('root').activeTab || 'agent';
@@ -342,7 +557,20 @@ document.addEventListener('alpine:init', function () {
 
                 // Load settings
                 await this.fetchSettings();
-                this.updateFilteredSections();
+                this.updateFilteredSections(); // Initial filter based on loaded settings and activeTab
+
+                // Initialize model dropdowns for existing provider selections
+                for (const providerFieldId of Object.keys(this.providerToModelFieldMap)) {
+                    const providerField = this.findField(providerFieldId);
+                    if (providerField && providerField.value) {
+                        // Check if the provider is one that needs dynamic loading
+                        if (providerField.value === "OLLAMA" || providerField.value === "GPT4ALL") {
+                            console.log(`Initializing model field for ${providerFieldId} with provider ${providerField.value}`);
+                            await this.handleProviderChange(providerFieldId, providerField.value);
+                        }
+                    }
+                }
+
             },
 
             switchTab(tab) {

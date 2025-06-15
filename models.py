@@ -25,7 +25,9 @@ from langchain_google_genai import (
     HarmCategory,
     embeddings as google_embeddings,
 )
-from langchain_mistralai import ChatMistralAI
+from langchain_mistralai import ChatMistralAI, MistralAIEmbeddings
+from langchain_community.llms.gpt4all import GPT4All
+from langchain_community.embeddings.gpt4all import GPT4AllEmbeddings
 
 # from pydantic.v1.types import SecretStr
 from python.helpers import dotenv, runtime
@@ -46,16 +48,18 @@ class ModelProvider(Enum):
     CHUTES = "Chutes"
     DEEPSEEK = "DeepSeek"
     GOOGLE = "Google"
+    GPT4ALL = "GPT4All" # Moved
     GROQ = "Groq"
     HUGGINGFACE = "HuggingFace"
+    JAN = "Jan"
     LMSTUDIO = "LM Studio"
     MISTRALAI = "Mistral AI"
     OLLAMA = "Ollama"
     OPENAI = "OpenAI"
     OPENAI_AZURE = "OpenAI Azure"
     OPENROUTER = "OpenRouter"
+    OTHER = "Other" # Moved
     SAMBANOVA = "Sambanova"
-    OTHER = "Other"
 
 
 rate_limiters: dict[str, RateLimiter] = {}
@@ -139,6 +143,58 @@ def get_ollama_embedding(
     )
 
 
+# GPT4All models
+def _get_gpt4all_model_path(model_name: str) -> str:
+    """
+    Determines the full path to the GPT4All model file.
+    Priority:
+    1. If GPT4ALL_MODEL_PATH env var is a valid file, use it (model_name is ignored in this case).
+    2. If GPT4ALL_MODEL_PATH env var is a valid dir, use os.path.join(GPT4ALL_MODEL_PATH, model_name).
+    3. Else, assume model_name is the full path to the model.
+    """
+    env_model_path = dotenv.get_dotenv_value("GPT4ALL_MODEL_PATH")
+
+    resolved_path = model_name # Default if env_model_path is not helpful
+    if env_model_path:
+        if os.path.isfile(env_model_path):
+            resolved_path = env_model_path
+        elif os.path.isdir(env_model_path):
+            resolved_path = os.path.join(env_model_path, model_name)
+        # If env_model_path is set but isn't a file or dir, resolved_path remains model_name
+
+    if not os.path.isfile(resolved_path):
+        raise FileNotFoundError(
+            f"GPT4All model file not found. Initial model_name: '{model_name}', "
+            f"GPT4ALL_MODEL_PATH (env var): '{env_model_path}'. Resolved to: '{resolved_path}' which is not a valid file."
+        )
+    return resolved_path
+
+
+def get_gpt4all_chat(
+    model_name: str,  # Filename of the model (e.g., "ggml-gpt4all-j-v1.3-groovy.bin") or full path
+    **kwargs,
+):
+    """
+    Initializes a GPT4All language model.
+    Note: GPT4All from langchain is an LLM, not a specific ChatModel.
+    """
+    model_to_load = _get_gpt4all_model_path(model_name)
+    return GPT4All(model=model_to_load, **kwargs)
+
+
+def get_gpt4all_embedding(
+    model_name: str, # Filename of the model (e.g., "ggml-gpt4all-j-v1.3-groovy.bin") or full path
+    **kwargs,
+):
+    """
+    Initializes GPT4All embeddings.
+    The `model_name` for embeddings should be the same model file used for chat,
+    or a specific embeddings-focused model if available.
+    """
+    model_file_to_load_for_embedding = _get_gpt4all_model_path(model_name)
+    return GPT4AllEmbeddings(model_path=model_file_to_load_for_embedding, **kwargs)
+
+
 # HuggingFace models
 def get_huggingface_chat(
     model_name: str,
@@ -163,6 +219,34 @@ def get_huggingface_chat(
 
 def get_huggingface_embedding(model_name: str, **kwargs):
     return HuggingFaceEmbeddings(model_name=model_name, **kwargs)
+
+
+# Jan models (OpenAI compatible)
+def get_jan_base_url():
+    return (
+        dotenv.get_dotenv_value("JAN_BASE_URL")
+        or f"http://{runtime.get_local_url()}:1337/v1" # Default Jan endpoint
+    )
+
+def get_jan_chat(
+    model_name: str,
+    base_url=None,
+    **kwargs,
+):
+    if not base_url:
+        base_url = get_jan_base_url()
+    return ChatOpenAI(model_name=model_name, base_url=base_url, api_key="none", **kwargs) # type: ignore
+
+def get_jan_embedding(
+    model_name: str,
+    base_url=None,
+    **kwargs,
+):
+    if not base_url:
+        base_url = get_jan_base_url()
+    # Ensure check_embedding_ctx_length is False if not otherwise specified, similar to LMStudio
+    kwargs.setdefault("check_embedding_ctx_length", False)
+    return OpenAIEmbeddings(model=model_name, api_key="none", base_url=base_url, **kwargs) # type: ignore
 
 
 # LM Studio and other OpenAI compatible interfaces
@@ -295,6 +379,16 @@ def get_mistralai_chat(
     return ChatMistralAI(model=model_name, api_key=api_key, **kwargs)  # type: ignore
 
 
+def get_mistralai_embedding(
+    model_name: str,
+    api_key=None,
+    **kwargs,
+):
+    if not api_key:
+        api_key = get_api_key("mistral")
+    return MistralAIEmbeddings(model=model_name, api_key=api_key, **kwargs) # type: ignore
+
+
 # Groq models
 def get_groq_chat(
     model_name: str,
@@ -304,6 +398,25 @@ def get_groq_chat(
     if not api_key:
         api_key = get_api_key("groq")
     return ChatGroq(model_name=model_name, api_key=api_key, **kwargs)  # type: ignore
+
+
+def get_groq_embedding(
+    model_name: str,
+    api_key=None, # This would ideally be an OpenAI key for the fallback
+    **kwargs,
+):
+    # Groq does not offer native embedding models as of now.
+    # This function falls back to OpenAIEmbeddings.
+    # Users should ensure they have an OpenAI API key configured if using this,
+    # or provide a different embedding model via other means if desired.
+    if not api_key:
+        api_key = get_api_key("openai") # Attempt to get OpenAI key for fallback
+
+    # If a specific model_name is provided that's not an OpenAI model,
+    # it might cause issues. Defaulting to a common OpenAI embedding model might be safer,
+    # but for now, we pass model_name through.
+    print(f"Warning: Groq does not provide native embeddings. Falling back to OpenAIEmbeddings with model '{model_name}'. Ensure an OpenAI API key is available.")
+    return OpenAIEmbeddings(model=model_name, api_key=api_key, **kwargs) # type: ignore
 
 
 # DeepSeek models
@@ -321,6 +434,21 @@ def get_deepseek_chat(
         )
 
     return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
+
+
+def get_deepseek_embedding(
+    model_name: str,
+    api_key=None,
+    base_url=None,
+    **kwargs,
+):
+    if not api_key:
+        api_key = get_api_key("deepseek")
+    if not base_url:
+        base_url = (
+            dotenv.get_dotenv_value("DEEPSEEK_BASE_URL") or "https://api.deepseek.com"
+        )
+    return OpenAIEmbeddings(model=model_name, api_key=api_key, openai_api_base=base_url, **kwargs) # type: ignore
 
 
 # OpenRouter models
@@ -411,6 +539,21 @@ def get_other_chat(
     **kwargs,
 ):
     return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
+
+
+def get_chutes_embedding(
+    model_name: str,
+    api_key=None,
+    base_url=None,
+    **kwargs,
+):
+    if not api_key:
+        api_key = get_api_key("chutes")
+    if not base_url:
+        base_url = (
+            dotenv.get_dotenv_value("CHUTES_BASE_URL") or "https://llm.chutes.ai/v1"
+        )
+    return OpenAIEmbeddings(model=model_name, api_key=api_key, openai_api_base=base_url, **kwargs) # type: ignore
 
 
 def get_other_embedding(model_name: str, api_key=None, base_url=None, **kwargs):

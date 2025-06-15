@@ -5,7 +5,7 @@ from typing import Union, TypedDict, Dict, Any
 from attr import dataclass
 from flask import Request, Response, jsonify, Flask
 from agent import AgentContext
-from initialize import initialize_agent
+from initialize import initialize
 from python.helpers.print_style import PrintStyle
 from python.helpers.errors import format_error
 from werkzeug.serving import make_server
@@ -31,6 +31,14 @@ class ApiHandler:
     @classmethod
     def requires_auth(cls) -> bool:
         return True
+
+    @classmethod
+    def get_route(cls) -> Union[str, None]:
+        """
+        Override this method in subclasses to specify a custom route.
+        If None or not overridden, the route will be derived from the module name.
+        """
+        return None
 
     @abstractmethod
     async def process(self, input: Input, request: Request) -> Output:
@@ -77,8 +85,8 @@ class ApiHandler:
                 first = AgentContext.first()
                 if first:
                     return first
-                return AgentContext(config=initialize_agent())
+                return AgentContext(config=initialize())
             got = AgentContext.get(ctxid)
             if got:
                 return got
-            return AgentContext(config=initialize_agent(), id=ctxid)
+            return AgentContext(config=initialize(), id=ctxid)
