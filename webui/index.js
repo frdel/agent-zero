@@ -243,6 +243,13 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
         if (type === 'user') {
             return; // Skip re-rendering
         }
+
+        // Update streaming state class on the container
+        if (temp) {
+            messageContainer.classList.add("message-temp");
+        } else {
+            messageContainer.classList.remove("message-temp");
+        }
         
         // For streaming messages, update inline and avoid a full re-render
         // Enhanced streaming detection: check for content growth patterns

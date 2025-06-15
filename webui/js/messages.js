@@ -1063,6 +1063,9 @@ export function _drawMessage(
 ) {
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", ...messageClasses);
+  if (temp) {
+    messageDiv.classList.add("message-temp");
+  }
 
   if (addControls) {
     // Determine message type from classes
@@ -1776,6 +1779,13 @@ export function updateMessageContent(container, content) {
   if (!span) {
     console.warn('⚠️ updateMessageContent: No .msg-content span found in container');
     return;
+  }
+
+  // Mark this message as streaming so MutationObserver triggers scroll updates
+  container.classList.add('message-temp');
+  const streamingDiv = container.querySelector('.message');
+  if (streamingDiv) {
+    streamingDiv.classList.add('message-temp');
   }
   
   const oldLength = span.innerHTML.length;
