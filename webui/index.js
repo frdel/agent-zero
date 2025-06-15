@@ -243,18 +243,62 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
         if (type === 'user') {
             return; // Skip re-rendering
         }
-        // For streaming messages, try to update content without full re-render to reduce flashing
-        if ((type === 'response' || type === 'code_exe') && temp && content && content.trim().length > 0) {
-            const span = messageContainer.querySelector('.msg-content span');
-            if (span && span.parentElement && span.parentElement.classList.contains('msg-content')) {
-                msgs.updateMessageContent(messageContainer, content);
-                // Don't return early - let the normal flow handle scrolling
+        
+        // For streaming messages, update inline and avoid a full re-render
+        // Enhanced streaming detection: check for content growth patterns
+        const isStreamingType = (type === 'response' || type === 'code_exe' || type === 'agent');
+        const hasContent = content && content.trim().length > 0;
+        
+        // For code_exe messages, we detect streaming by content growth rather than temp flag
+        // since console output may not use temp=true consistently
+        let isStreaming = false;
+        if (isStreamingType && hasContent) {
+            if (type === 'code_exe') {
+                // Code execution streaming: detect by content growth
+                isStreaming = true; // Always try streaming for code_exe first
+            } else {
+                // Other message types: require temp=true for streaming
+                isStreaming = temp;
             }
         }
-        // For other types, update the message
+        
+        if (isStreaming) {
+            // Try multiple selectors to find the content span
+            let span = messageContainer.querySelector('.msg-content span');
+            if (!span) {
+                // Fallback: look for any span in scrollable content
+                span = messageContainer.querySelector('.scrollable-content span');
+            }
+            if (!span) {
+                // Fallback: look for any span in the message
+                span = messageContainer.querySelector('.message span');
+            }
+            
+            if (span) {
+                // Check if content is actually growing (not just the same content)
+                const currentContent = span.textContent || span.innerText || '';
+                const newContent = content;
+                
+                // More lenient growth detection - if new content is longer OR different
+                if (newContent.length > currentContent.length || newContent !== currentContent) {
+                    console.log(`🔄 Streaming update for ${type} message ${id} (${currentContent.length} → ${newContent.length} chars)`);
+                    msgs.updateMessageContent(messageContainer, content);
+                    return; // Skip re-rendering to prevent flashing
+                } else {
+                    console.log(`⚠️ Content not growing for ${type} message ${id} (${currentContent.length} = ${newContent.length}), will re-render`);
+                }
+            } else {
+                console.log(`⚠️ No span found for streaming ${type} message ${id}, will re-render`);
+            }
+        } else {
+            console.log(`⚠️ Not streaming: temp=${temp}, content=${!!content}, length=${content?.length}, type=${type}`);
+        }
+        // For non-streaming updates, clear the container before redrawing
+        console.log(`🔄 Full re-render for ${type} message ${id} (streaming=${isStreaming})`);
         messageContainer.innerHTML = '';
     } else {
         // Create a new container if not found
+        console.log(`✨ Creating new ${type} message ${id}`);
         const sender = type === 'user' ? 'user' : 'ai';
         messageContainer = document.createElement('div');
         messageContainer.id = `message-${id}`;

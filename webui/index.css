@@ -1192,6 +1192,14 @@ pre {
   scrollbar-gutter: stable;
 }
 
+/* Ensure scrollable-content within compact messages also has proper height limits */
+.message-compact .scrollable-content {
+  max-height: 350px;
+  overflow-y: auto;
+  overflow-x: auto;
+  scrollbar-gutter: stable;
+}
+
 /* Expanded state: Full height, no limits */
 .message-expanded {
   max-height: none !important;
