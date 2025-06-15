@@ -113,11 +113,12 @@ function determineMessageState(msg) {
         console.log(`📏 Message height analysis: total=${totalHeight}px, content=${contentHeight}px, final=${finalHeight}px`);
         
         // More conservative threshold - only add scrollbars for truly tall content
-        if (finalHeight > 350) {
-          console.log('📏 Case: >350px → Compact scroll');
+        const threshold = 400;
+        if (finalHeight > threshold) {
+          console.log('📏 Case: >400px → Compact scroll');
           resolve('compact');
         } else {
-          console.log('📏 Case: ≤350px → Natural (no scroll)');
+          console.log('📏 Case: ≤400px → Natural (no scroll)');
           resolve('natural');
         }
         
@@ -199,20 +200,54 @@ function injectConsoleControls(messageDiv, command, type) {
     // Set new timeout
     const timeoutId = setTimeout(async () => {
       try {
+        // --- FIX: Always check expanded state first ---
+        // Determine message type from classes
+        let messageType = 'default';
+        if (messageElement.classList.contains('message-code-exe')) messageType = 'code_exe';
+        else if (messageElement.classList.contains('message-tool')) messageType = 'tool';
+        else if (messageElement.classList.contains('message-agent-response')) messageType = 'response';
+        else if (messageElement.classList.contains('message-agent')) messageType = 'agent';
+        else if (messageElement.classList.contains('message-browser')) messageType = 'browser';
+        else if (messageElement.classList.contains('message-error')) messageType = 'error';
+        else if (messageElement.classList.contains('message-warning')) messageType = 'warning';
+        else if (messageElement.classList.contains('message-info')) messageType = 'info';
+        // Always re-read settings from localStorage
+        const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+        const isFullHeight = localStorage.getItem(`msgFullHeight_${messageType}`) === 'true';
+        if (!isFixedHeightGlobal || isFullHeight) {
+          messageElement.classList.remove('message-compact');
+          messageElement.classList.add('message-expanded');
+          messageElement.style.setProperty('height', 'auto', 'important');
+          messageElement.style.setProperty('max-height', 'none', 'important');
+          messageElement.style.setProperty('overflow-y', 'visible', 'important');
+          messageElement.style.setProperty('overflow-x', 'auto', 'important');
+          messageElement.style.setProperty('scrollbar-gutter', 'auto', 'important');
+          const scrollableContent = messageElement.querySelector('.scrollable-content');
+          if (scrollableContent) {
+            scrollableContent.style.setProperty('max-height', 'none', 'important');
+            scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
+            scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
+          }
+          const msgContent = messageElement.querySelector('.msg-content');
+          if (msgContent) {
+            msgContent.style.setProperty('max-height', 'none', 'important');
+            msgContent.style.setProperty('overflow-y', 'visible', 'important');
+          }
+          stateUpdateTimeouts.delete(messageId);
+          return;
+        }
+        // --- END FIX ---
         const newState = await determineMessageState(messageElement);
         // Apply state smoothly
         messageElement.style.transition = 'max-height 0.2s ease-out, opacity 0.15s ease-in-out';
-        
         // Remove existing state classes
         messageElement.classList.remove("message-compact", "message-expanded");
-        
         // Apply new state
         if (newState === 'compact') {
           messageElement.classList.add("message-compact");
           // Ensure scroll tracking is set up for compact messages
           ensureScrollTracking(messageElement);
         }
-        
         stateUpdateTimeouts.delete(messageId);
       } catch (error) {
         console.warn('Error in debounced state update:', error);
@@ -341,14 +376,15 @@ function injectConsoleControls(messageDiv, command, type) {
           }
         } else {
           // Global fixed height mode OFF - messages are fully expanded by default
-          if (isFullHeight) {
-            // Default behavior - fully expanded like natural state
+          if (isFullHeight || !isFixedHeightGlobal) {
+            // Expanded mode: remove compact, add expanded, clear height/overflow
+            msg.classList.remove("message-compact");
             msg.classList.add("message-expanded");
+            msg.style.setProperty('height', 'auto', 'important');
             msg.style.setProperty('max-height', 'none', 'important');
             msg.style.setProperty('overflow-y', 'visible', 'important');
             msg.style.setProperty('overflow-x', 'auto', 'important');
             msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
-            
             // Also clear constraints from any nested scrollable content
             const scrollableContent = msg.querySelector('.scrollable-content');
             if (scrollableContent) {
@@ -356,15 +392,13 @@ function injectConsoleControls(messageDiv, command, type) {
               scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
               scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
             }
-            
             // Clear constraints from any nested content areas
             const msgContent = msg.querySelector('.msg-content');
             if (msgContent) {
               msgContent.style.setProperty('max-height', 'none', 'important');
               msgContent.style.setProperty('overflow-y', 'visible', 'important');
             }
-            
-            console.log(`📏 Applied expanded (global off) to ${type} message`);
+            console.log(`📏 Applied expanded (global off or expanded) to ${type} message`);
           } else {
             // Default behavior - fully expanded like natural state
             msg.classList.add("message-expanded");
@@ -1833,59 +1867,90 @@ export function updateMessageContent(container, content) {
         const messageHeight = messageDiv.scrollHeight;
         console.log(`📏 Current message height: ${messageHeight}px`);
         
-        if (messageHeight > 350) {
-          console.log('📦 Message should be compact, applying transition directly...');
-          
-          // Get current settings to determine if we should apply compact mode
-          const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-          
-          // Detect message type more accurately
-          let messageType = 'unknown';
-          if (messageDiv.classList.contains('message-code-exe')) {
-            messageType = 'code_exe';
-          } else if (messageDiv.classList.contains('message-tool')) {
-            messageType = 'tool';
-          } else if (messageDiv.classList.contains('message-agent-response')) {
-            messageType = 'response';
-          } else if (messageDiv.classList.contains('message-agent')) {
-            messageType = 'agent';
-          } else if (messageDiv.classList.contains('message-browser')) {
-            messageType = 'browser';
-          } else if (messageDiv.classList.contains('message-error')) {
-            messageType = 'error';
-          } else if (messageDiv.classList.contains('message-warning')) {
-            messageType = 'warning';
-          } else if (messageDiv.classList.contains('message-info')) {
-            messageType = 'info';
+        const threshold = 400;
+        // Always re-read settings from localStorage on every update
+        const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+        let messageType = 'unknown';
+        if (messageDiv.classList.contains('message-code-exe')) {
+          messageType = 'code_exe';
+        } else if (messageDiv.classList.contains('message-tool')) {
+          messageType = 'tool';
+        } else if (messageDiv.classList.contains('message-agent-response')) {
+          messageType = 'response';
+        } else if (messageDiv.classList.contains('message-agent')) {
+          messageType = 'agent';
+        } else if (messageDiv.classList.contains('message-browser')) {
+          messageType = 'browser';
+        } else if (messageDiv.classList.contains('message-error')) {
+          messageType = 'error';
+        } else if (messageDiv.classList.contains('message-warning')) {
+          messageType = 'warning';
+        } else if (messageDiv.classList.contains('message-info')) {
+          messageType = 'info';
+        }
+        // RE-READ isFullHeight from localStorage every time
+        const isFullHeight = localStorage.getItem(`msgFullHeight_${messageType}`) === 'true';
+        // --- NEW: Always prioritize expanded mode ---
+        if (!isFixedHeightGlobal || isFullHeight) {
+          messageDiv.classList.remove('message-compact');
+          messageDiv.classList.add('message-expanded');
+          messageDiv.style.setProperty('height', 'auto', 'important');
+          messageDiv.style.setProperty('max-height', 'none', 'important');
+          messageDiv.style.setProperty('overflow-y', 'visible', 'important');
+          messageDiv.style.setProperty('overflow-x', 'auto', 'important');
+          messageDiv.style.setProperty('scrollbar-gutter', 'auto', 'important');
+          const scrollableContent = messageDiv.querySelector('.scrollable-content');
+          if (scrollableContent) {
+            scrollableContent.style.setProperty('max-height', 'none', 'important');
+            scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
+            scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
           }
-          
+          const msgContent = messageDiv.querySelector('.msg-content');
+          if (msgContent) {
+            msgContent.style.setProperty('max-height', 'none', 'important');
+            msgContent.style.setProperty('overflow-y', 'visible', 'important');
+          }
+          console.log(`📏 Forced expanded for ${messageType} message during streaming update`);
+          return;
+        }
+        // --- END NEW ---
+        // Only apply compact mode if we're in fixed height mode and not force-expanded
+        if (messageHeight > threshold) {
           console.log(`🔍 Detected message type: ${messageType}`);
-          
-          const isFullHeight = localStorage.getItem(`msgFullHeight_${messageType}`) === 'true';
-          
           console.log(`🔍 Settings check: fixedHeight=${isFixedHeightGlobal}, fullHeight=${isFullHeight}, collapsed=${messageDiv.classList.contains('message-collapsed')}`);
-          
-          // Only apply compact mode if we're in fixed height mode and not force-expanded
           if (isFixedHeightGlobal && !isFullHeight && !messageDiv.classList.contains('message-collapsed')) {
             console.log(`📦 Applying compact mode to ${messageType} message (streaming transition)`);
-            
-            // Apply compact mode directly
             messageDiv.classList.remove('message-expanded');
             messageDiv.classList.add('message-compact');
             ensureScrollTracking(messageDiv);
-            
-            // Auto-scroll to bottom after transitioning to compact
             requestAnimationFrame(() => {
-              // For messages with scrollable-content wrapper, scroll the wrapper instead
               const scrollableContent = messageDiv.querySelector('.scrollable-content');
               const scrollElement = scrollableContent || messageDiv;
-              
               scrollElement.scrollTop = scrollElement.scrollHeight;
               messageDiv.dataset.userScrolled = "false";
               console.log(`🔽 Auto-scrolled ${scrollableContent ? 'scrollable-content' : 'message'} after transitioning to compact mode during streaming`);
             });
           } else {
-            console.log(`📄 Skipping compact transition: fixedHeight=${isFixedHeightGlobal}, fullHeight=${isFullHeight}, collapsed=${messageDiv.classList.contains('message-collapsed')}`);
+            // If expanded, ensure compact is not applied
+            messageDiv.classList.remove('message-compact');
+            messageDiv.classList.add('message-expanded');
+            messageDiv.style.setProperty('height', 'auto', 'important');
+            messageDiv.style.setProperty('max-height', 'none', 'important');
+            messageDiv.style.setProperty('overflow-y', 'visible', 'important');
+            messageDiv.style.setProperty('overflow-x', 'auto', 'important');
+            messageDiv.style.setProperty('scrollbar-gutter', 'auto', 'important');
+            const scrollableContent = messageDiv.querySelector('.scrollable-content');
+            if (scrollableContent) {
+              scrollableContent.style.setProperty('max-height', 'none', 'important');
+              scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
+              scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
+            }
+            const msgContent = messageDiv.querySelector('.msg-content');
+            if (msgContent) {
+              msgContent.style.setProperty('max-height', 'none', 'important');
+              msgContent.style.setProperty('overflow-y', 'visible', 'important');
+            }
+            console.log(`📏 Kept expanded for ${messageType} message during streaming update`);
           }
         }
       }

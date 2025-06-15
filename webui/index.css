@@ -1000,7 +1000,10 @@ pre {
 }
 
 .message-expanded .scrollable-content {
-  max-height: 30rem;
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+  overflow-x: auto !important;
 }
 
 .user-container {
@@ -1205,6 +1208,7 @@ pre {
 
 /* Expanded state: Full height, no limits */
 .message-expanded {
+  height: auto !important;
   max-height: none !important;
   overflow-y: visible !important;
   overflow-x: auto !important;
