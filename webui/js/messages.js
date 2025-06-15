@@ -1837,7 +1837,7 @@ export function updateMessageContent(container, content) {
           console.log('📦 Message should be compact, applying transition directly...');
           
           // Get current settings to determine if we should apply compact mode
-          const isFixedHeightGlobal = localStorage.getItem('fixedHeight') !== 'false';
+          const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
           
           // Detect message type more accurately
           let messageType = 'unknown';

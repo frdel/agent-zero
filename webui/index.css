@@ -1185,11 +1185,22 @@ pre {
 
 /* Compact state: Limited height with scrolling */
 .message-compact {
+  height: 400px;
   max-height: 400px;
   overflow-y: auto;
   overflow-x: auto;
-  /* Only reserve scrollbar space when actively scrolling */
   scrollbar-gutter: stable;
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
+  padding-left: calc(var(--spacing-md) + 2px);
+  margin-left: -2px;
+}
+
+.message-compact .scrollable-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  /* overflow: visible; */
 }
 
 /* Expanded state: Full height, no limits */
@@ -4396,4 +4407,11 @@ nav ul li a img {
   background: rgba(156, 163, 175, 0.6) !important;
   box-shadow: 0 0 5px rgba(156, 163, 175, 0.3) !important;
   transform: scale(1.03) !important;
+}
+
+.message-compact .scrollable-content {
+  max-height: 100%;
+  min-height: 0;
+  overflow: visible;
+  flex: 1 1 auto;
 }
