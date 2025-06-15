@@ -1605,7 +1605,7 @@ async function copyText(text, element) {
   }
 }
 
-function convertHTML(str) {
+export function convertHTML(str) {
   if (typeof str !== "string") str = JSON.stringify(str, null, 2);
 
   let result = escapeHTML(str);
@@ -1650,3 +1650,36 @@ function convertPathsToLinks(str) {
 }
 
 // Removed broken inline copy system - using original copy buttons instead
+
+export function updateMessageContent(container, content) {
+  const span = container.querySelector('.msg-content span');
+  if (!span) return;
+  
+  // Update content first
+  span.innerHTML = convertHTML(content);
+  
+  // Force auto-scroll for ALL scrollable elements in the message
+  requestAnimationFrame(() => {
+    // Try to find scrollable content wrapper first
+    const scrollableContent = container.querySelector('.scrollable-content');
+    if (scrollableContent) {
+      // For messages with scrollable wrapper, use the existing function
+      scrollToEndIfNeeded(scrollableContent);
+    }
+    
+    // Also check the message itself for scrolling
+    const messageDiv = container.querySelector('.message');
+    if (messageDiv) {
+      // Always scroll to bottom for streaming content
+      messageDiv.scrollTop = messageDiv.scrollHeight;
+    }
+    
+    // Also check any other scrollable elements
+    const allScrollable = container.querySelectorAll('[class*="scrollable"], .message-compact, .message-expanded');
+    allScrollable.forEach(element => {
+      if (element.scrollHeight > element.clientHeight) {
+        element.scrollTop = element.scrollHeight;
+      }
+    });
+  });
+}

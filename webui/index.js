@@ -243,6 +243,14 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
         if (type === 'user') {
             return; // Skip re-rendering
         }
+        // For streaming messages, try to update content without full re-render to reduce flashing
+        if ((type === 'response' || type === 'code_exe') && temp && content && content.trim().length > 0) {
+            const span = messageContainer.querySelector('.msg-content span');
+            if (span && span.parentElement && span.parentElement.classList.contains('msg-content')) {
+                msgs.updateMessageContent(messageContainer, content);
+                // Don't return early - let the normal flow handle scrolling
+            }
+        }
         // For other types, update the message
         messageContainer.innerHTML = '';
     } else {

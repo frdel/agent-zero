@@ -92,8 +92,8 @@ body,
 .message,
 .config-button,
 .switch-label {
-  -webkit-transition: background-color 0.3s, color 0.3s, border-color 0.3s;
-  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+  -webkit-transition: background-color 0.3s, color 0.3s;
+  transition: background-color 0.3s, color 0.3s;
   color: var(--color-text);
 }
 
@@ -590,8 +590,7 @@ pre {
   overflow-x: auto;
   overflow-y: visible;
   max-height: none;
-  /* Smooth transitions to prevent flashing */
-  transition: max-height 0.2s ease-out, border-left-color 0.2s ease, opacity 0.15s ease-in-out;
+  /* Removed transitions to prevent flashing during content updates */
   /* Prevent layout shifts during streaming */
   contain: layout style;
 }
@@ -1320,16 +1319,16 @@ pre {
 
 /* Color-matched state indicators using scrollbar color scheme */
 
-/* Compact state: smaller border with muted scrollbar colors */
+/* Compact state: smaller border with muted colors */
 .message-compact {
-  border-left: 2px solid rgba(255, 255, 255, 0.2); /* Fallback for unmatched types */
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
   padding-left: calc(var(--spacing-md) + 2px);
   margin-left: -2px;
 }
 
-/* Expanded state: wider border with brighter scrollbar colors */
+/* Expanded state: wider border with brighter colors */
 .message-expanded {
-  border-left: 4px solid var(--color-primary); /* Fallback for unmatched types */
+  border-left: 4px solid var(--color-primary);
   padding-left: calc(var(--spacing-md) + 4px);
   margin-left: -4px;
 }
@@ -1338,92 +1337,92 @@ pre {
 
 /* Agent messages - blue color scheme */
 .message-agent.message-compact {
-  border-left-color: rgba(59, 130, 246, 0.4); /* Muted blue */
+  border-left-color: rgba(59, 130, 246, 0.4);
 }
 
 .message-agent.message-expanded {
-  border-left-color: rgba(59, 130, 246, 0.6); /* Brighter blue */
+  border-left-color: rgba(59, 130, 246, 0.6);
 }
 
 /* Tool messages - purple color scheme */
 .message-tool.message-compact {
-  border-left-color: rgba(168, 85, 247, 0.4); /* Muted purple */
+  border-left-color: rgba(168, 85, 247, 0.4);
 }
 
 .message-tool.message-expanded {
-  border-left-color: rgba(168, 85, 247, 0.6); /* Brighter purple */
+  border-left-color: rgba(168, 85, 247, 0.6);
 }
 
 /* Agent response messages - green color scheme */
 .message-agent-response.message-compact {
-  border-left-color: rgba(34, 197, 94, 0.4); /* Muted green */
+  border-left-color: rgba(34, 197, 94, 0.4);
 }
 
 .message-agent-response.message-expanded {
-  border-left-color: rgba(34, 197, 94, 0.6); /* Brighter green */
+  border-left-color: rgba(34, 197, 94, 0.6);
 }
 
 /* Code execution messages - yellow color scheme */
 .message-code-exe.message-compact {
-  border-left-color: rgba(251, 191, 36, 0.4); /* Muted yellow */
+  border-left-color: rgba(251, 191, 36, 0.4);
 }
 
 .message-code-exe.message-expanded {
-  border-left-color: rgba(251, 191, 36, 0.6); /* Brighter yellow */
+  border-left-color: rgba(251, 191, 36, 0.6);
 }
 
 /* Browser messages - purple variant color scheme */
 .message-browser.message-compact {
-  border-left-color: rgba(147, 51, 234, 0.4); /* Muted purple variant */
+  border-left-color: rgba(147, 51, 234, 0.4);
 }
 
 .message-browser.message-expanded {
-  border-left-color: rgba(147, 51, 234, 0.6); /* Brighter purple variant */
+  border-left-color: rgba(147, 51, 234, 0.6);
 }
 
 /* Warning messages - orange color scheme */
 .message-warning.message-compact {
-  border-left-color: rgba(245, 158, 11, 0.4); /* Muted orange */
+  border-left-color: rgba(245, 158, 11, 0.4);
 }
 
 .message-warning.message-expanded {
-  border-left-color: rgba(245, 158, 11, 0.6); /* Brighter orange */
+  border-left-color: rgba(245, 158, 11, 0.6);
 }
 
 /* Error messages - red color scheme */
 .message-error.message-compact {
-  border-left-color: rgba(239, 68, 68, 0.4); /* Muted red */
+  border-left-color: rgba(239, 68, 68, 0.4);
 }
 
 .message-error.message-expanded {
-  border-left-color: rgba(239, 68, 68, 0.6); /* Brighter red */
+  border-left-color: rgba(239, 68, 68, 0.6);
 }
 
 /* Info messages - gray color scheme */
 .message-info.message-compact {
-  border-left-color: rgba(107, 114, 128, 0.4); /* Muted gray */
+  border-left-color: rgba(107, 114, 128, 0.4);
 }
 
 .message-info.message-expanded {
-  border-left-color: rgba(107, 114, 128, 0.6); /* Brighter gray */
+  border-left-color: rgba(107, 114, 128, 0.6);
 }
 
 /* User messages - gray variant color scheme */
 .message-user.message-compact {
-  border-left-color: rgba(156, 163, 175, 0.4); /* Muted gray variant */
+  border-left-color: rgba(156, 163, 175, 0.4);
 }
 
 .message-user.message-expanded {
-  border-left-color: rgba(156, 163, 175, 0.6); /* Brighter gray variant */
+  border-left-color: rgba(156, 163, 175, 0.6);
 }
 
 /* Default messages - gray color scheme */
 .message-default.message-compact {
-  border-left-color: rgba(107, 114, 128, 0.4); /* Muted gray */
+  border-left-color: rgba(107, 114, 128, 0.4);
 }
 
 .message-default.message-expanded {
-  border-left-color: rgba(107, 114, 128, 0.6); /* Brighter gray */
+  border-left-color: rgba(107, 114, 128, 0.6);
 }
 
 /* Remove old classes - unified approach */
@@ -1434,9 +1433,8 @@ pre {
   max-height: none;
 }
 
-/* Smooth transitions between states - prevent flashing */
+/* Removed transitions to prevent flashing during content updates */
 .message {
-  transition: max-height 0.2s ease-out, border-left-color 0.2s ease, opacity 0.15s ease-in-out;
   /* Prevent scrollbar flashing during streaming */
   scrollbar-gutter: stable;
 }
