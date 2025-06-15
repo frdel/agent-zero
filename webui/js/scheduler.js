@@ -63,7 +63,7 @@ const showToast = function(message, type = 'info') {
     if (typeof window.toast === 'function') {
         window.toast(message, type);
     } else {
-        console.log(`Toast (${type}): ${message}`);
+        console.log(i18next.t('toastMessage', { type, message }));
     }
 };
 
@@ -195,7 +195,7 @@ const fullComponentImplementation = function() {
 
             // Cleanup on component destruction
             this.$cleanup = () => {
-                console.log('Cleaning up schedulerSettings component');
+                console.log(i18next.t('cleaningUpSchedulerSettings'));
                 this.stopPolling();
 
                 // Clean up any Flatpickr instances
@@ -215,11 +215,11 @@ const fullComponentImplementation = function() {
         startPolling() {
             // Don't start if already polling
             if (this.pollingInterval) {
-                console.log('Polling already active, not starting again');
+                console.log(i18next.t('pollingAlreadyActive'));
                 return;
             }
 
-            console.log('Starting task polling');
+            console.log(i18next.t('startingTaskPolling'));
             this.pollingActive = true;
 
             // Fetch immediately, then set up interval for every 2 seconds
@@ -233,7 +233,7 @@ const fullComponentImplementation = function() {
 
         // Stop polling when tab is inactive
         stopPolling() {
-            console.log('Stopping task polling');
+            console.log(i18next.t('stoppingTaskPolling'));
             this.pollingActive = false;
 
             if (this.pollingInterval) {
@@ -267,42 +267,42 @@ const fullComponentImplementation = function() {
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch tasks');
+                    throw new Error(i18next.t('failedToFetchTasks'));
                 }
 
                 const data = await response.json();
 
                 // Check if data.tasks exists and is an array
                 if (!data || !data.tasks) {
-                    console.error('Invalid response: data.tasks is missing', data);
+                    console.error(i18next.t('invalidResponseTasksMissing'), data);
                     this.tasks = [];
                 } else if (!Array.isArray(data.tasks)) {
-                    console.error('Invalid response: data.tasks is not an array', data.tasks);
+                    console.error(i18next.t('invalidResponseTasksNotArray'), data.tasks);
                     this.tasks = [];
                 } else {
                     // Verify each task has necessary properties
                     const validTasks = data.tasks.filter(task => {
                         if (!task || typeof task !== 'object') {
-                            console.error('Invalid task (not an object):', task);
+                            console.error(i18next.t('invalidTaskNotObject'), task);
                             return false;
                         }
                         if (!task.uuid) {
-                            console.error('Task missing uuid:', task);
+                            console.error(i18next.t('taskMissingUuid'), task);
                             return false;
                         }
                         if (!task.name) {
-                            console.error('Task missing name:', task);
+                            console.error(i18next.t('taskMissingName'), task);
                             return false;
                         }
                         if (!task.type) {
-                            console.error('Task missing type:', task);
+                            console.error(i18next.t('taskMissingType'), task);
                             return false;
                         }
                         return true;
                     });
 
                     if (validTasks.length !== data.tasks.length) {
-                        console.warn(`Filtered out ${data.tasks.length - validTasks.length} invalid tasks`);
+                        console.warn(i18next.t('filteredInvalidTasks', { count: data.tasks.length - validTasks.length }));
                     }
 
                     this.tasks = validTasks;
@@ -311,10 +311,10 @@ const fullComponentImplementation = function() {
                     this.updateTasksUI();
                 }
             } catch (error) {
-                console.error('Error fetching tasks:', error);
+                console.error(i18next.t('errorFetchingTasks'), error);
                 // Only show toast for errors on manual refresh, not during polling
                 if (!this.pollingInterval) {
-                    showToast('Failed to fetch tasks: ' + error.message, 'error');
+                    showToast(i18next.t('failedToFetchTasks') + ': ' + error.message, 'error');
                 }
                 // Reset tasks to empty array on error
                 this.tasks = [];
@@ -348,7 +348,7 @@ const fullComponentImplementation = function() {
         showTaskDetail(taskId) {
             const task = this.tasks.find(t => t.uuid === taskId);
             if (!task) {
-                showToast('Task not found', 'error');
+                showToast(i18next.t('taskNotFound'), 'error');
                 return;
             }
 
@@ -371,16 +371,16 @@ const fullComponentImplementation = function() {
 
         // Format date for display
         formatDate(dateString) {
-            if (!dateString) return 'Never';
+            if (!dateString) return i18next.t('never');
             return formatDateTime(dateString, 'full');
         },
 
         // Format plan for display
         formatPlan(task) {
-            if (!task || !task.plan) return 'No plan';
+            if (!task || !task.plan) return i18next.t('noPlan');
 
             const todoCount = Array.isArray(task.plan.todo) ? task.plan.todo.length : 0;
-            const inProgress = task.plan.in_progress ? 'Yes' : 'No';
+            const inProgress = task.plan.in_progress ? i18next.t('yes') : i18next.t('no');
             const doneCount = Array.isArray(task.plan.done) ? task.plan.done.length : 0;
 
             let nextRun = '';
@@ -392,23 +392,23 @@ const fullComponentImplementation = function() {
                     if (!isNaN(nextTime.getTime())) {
                         nextRun = formatDateTime(nextTime, 'short');
                     } else {
-                        nextRun = 'Invalid date';
-                        console.warn(`Invalid date format in plan.todo[0]: ${task.plan.todo[0]}`);
+                        nextRun = i18next.t('invalidDate');
+                        console.warn(i18next.t('invalidDateFormatInPlan', { date: task.plan.todo[0] }));
                     }
                 } catch (error) {
-                    console.error(`Error formatting next run time: ${error.message}`);
-                    nextRun = 'Error';
+                    console.error(i18next.t('errorFormattingNextRunTime', { message: error.message }));
+                    nextRun = i18next.t('error');
                 }
             } else {
-                nextRun = 'None';
+                nextRun = i18next.t('none');
             }
 
-            return `Next: ${nextRun}\nTodo: ${todoCount}\nIn Progress: ${inProgress}\nDone: ${doneCount}`;
+            return `${i18next.t('next')}: ${nextRun}\n${i18next.t('todo')}: ${todoCount}\n${i18next.t('inProgress')}: ${inProgress}\n${i18next.t('done')}: ${doneCount}`;
         },
 
         // Format schedule for display
         formatSchedule(task) {
-            if (!task.schedule) return 'None';
+            if (!task.schedule) return i18next.t('none');
 
             let schedule = '';
             if (typeof task.schedule === 'string') {
@@ -470,7 +470,7 @@ const fullComponentImplementation = function() {
         async startEditTask(taskId) {
             const task = this.tasks.find(t => t.uuid === taskId);
             if (!task) {
-                showToast('Task not found', 'error');
+                showToast(i18next.t('taskNotFound'), 'error');
                 return;
             }
 
@@ -707,10 +707,10 @@ const fullComponentImplementation = function() {
                     // Ensure token is a non-empty string, generate a new one if needed
                     if (!this.editingTask.token) {
                         this.editingTask.token = this.generateRandomToken();
-                        console.log('Generated new token for adhoc task:', this.editingTask.token);
+                        console.log(i18next.t('generatedNewTokenForAdhoc', { token: this.editingTask.token }));
                     }
 
-                    console.log('Setting token in taskData:', this.editingTask.token);
+                    console.log(i18next.t('settingTokenInTaskData', { token: this.editingTask.token }));
                     taskData.token = this.editingTask.token;
 
                     // Don't send schedule or plan for adhoc tasks
@@ -744,10 +744,10 @@ const fullComponentImplementation = function() {
                             if (!isNaN(date.getTime())) {
                                 validatedTodo.push(date.toISOString());
                             } else {
-                                console.warn(`Skipping invalid date in todo list: ${dateStr}`);
+                                console.warn(i18next.t('skippingInvalidDateInTodo', { dateStr }));
                             }
                         } catch (error) {
-                            console.warn(`Error processing date: ${error.message}`);
+                            console.warn(i18next.t('errorProcessingDate', { message: error.message }));
                         }
                     }
 
@@ -765,7 +765,7 @@ const fullComponentImplementation = function() {
                     };
 
                     // Log the plan data for debugging
-                    console.log('Planned task plan data:', JSON.stringify(taskData.plan, null, 2));
+                    console.log(i18next.t('plannedTaskPlanData'), JSON.stringify(taskData.plan, null, 2));
 
                     // Don't send schedule or token for planned tasks
                     delete taskData.schedule;
@@ -781,7 +781,7 @@ const fullComponentImplementation = function() {
                 }
 
                 // Debug: Log the final task data being sent
-                console.log('Final task data being sent to API:', JSON.stringify(taskData, null, 2));
+                console.log(i18next.t('finalTaskDataToApi'), JSON.stringify(taskData, null, 2));
 
                 // Make API request
                 const response = await fetch(apiEndpoint, {
@@ -794,18 +794,18 @@ const fullComponentImplementation = function() {
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to save task');
+                    throw new Error(errorData.error || i18next.t('failedToSaveTask'));
                 }
 
                 // Parse response data to get the created/updated task
                 const responseData = await response.json();
 
                 // Show success message
-                showToast(this.isCreating ? 'Task created successfully' : 'Task updated successfully', 'success');
+                showToast(this.isCreating ? i18next.t('taskCreatedSuccessfully') : i18next.t('taskUpdatedSuccessfully'), 'success');
 
                 // Immediately update the UI if the response includes the task
                 if (responseData && responseData.task) {
-                    console.log('Task received in response:', responseData.task);
+                    console.log(i18next.t('taskReceivedInResponse'), responseData.task);
 
                     // Update the tasks array
                     if (this.isCreating) {
@@ -866,8 +866,8 @@ const fullComponentImplementation = function() {
                 this.isEditing = false;
                 document.querySelector('[x-data="schedulerSettings"]')?.removeAttribute('data-editing-state');
             } catch (error) {
-                console.error('Error saving task:', error);
-                showToast('Failed to save task: ' + error.message, 'error');
+                console.error(i18next.t('errorSavingTask'), error);
+                showToast(i18next.t('failedToSaveTask') + ': ' + error.message, 'error');
             }
         },
 
@@ -887,16 +887,16 @@ const fullComponentImplementation = function() {
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to run task');
+                    throw new Error(errorData.error || i18next.t('failedToRunTask'));
                 }
 
-                showToast('Task started successfully', 'success');
+                showToast(i18next.t('taskStartedSuccessfully'), 'success');
 
                 // Refresh task list
                 this.fetchTasks();
             } catch (error) {
-                console.error('Error running task:', error);
-                showToast('Failed to run task: ' + error.message, 'error');
+                console.error(i18next.t('errorRunningTask'), error);
+                showToast(i18next.t('failedToRunTask') + ': ' + error.message, 'error');
             }
         },
 
@@ -905,13 +905,13 @@ const fullComponentImplementation = function() {
             try {
                 const task = this.tasks.find(t => t.uuid === taskId);
                 if (!task) {
-                    showToast('Task not found', 'error');
+                    showToast(i18next.t('taskNotFound'), 'error');
                     return;
                 }
 
                 // Check if task is already in idle state
                 if (task.state === 'idle') {
-                    showToast('Task is already in idle state', 'info');
+                    showToast(i18next.t('taskAlreadyIdle'), 'info');
                     return;
                 }
 
@@ -932,17 +932,17 @@ const fullComponentImplementation = function() {
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to reset task state');
+                    throw new Error(errorData.error || i18next.t('failedToResetTaskState'));
                 }
 
-                showToast('Task state reset to idle', 'success');
+                showToast(i18next.t('taskStateResetToIdle'), 'success');
 
                 // Refresh task list
                 await this.fetchTasks();
                 this.showLoadingState = false;
             } catch (error) {
-                console.error('Error resetting task state:', error);
-                showToast('Failed to reset task state: ' + error.message, 'error');
+                console.error(i18next.t('errorResettingTaskState'), error);
+                showToast(i18next.t('failedToResetTaskState') + ': ' + error.message, 'error');
                 this.showLoadingState = false;
             }
         },
@@ -950,7 +950,7 @@ const fullComponentImplementation = function() {
         // Delete a task
         async deleteTask(taskId) {
             // Confirm deletion
-            if (!confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
+            if (!confirm(i18next.t('confirmDeleteTask'))) {
                 return;
             }
 
@@ -972,10 +972,10 @@ const fullComponentImplementation = function() {
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to delete task');
+                    throw new Error(errorData.error || i18next.t('failedToDeleteTask'));
                 }
 
-                showToast('Task deleted successfully', 'success');
+                showToast(i18next.t('taskDeletedSuccessfully'), 'success');
                 
                 // If we were viewing the detail of the deleted task, close the detail view
                 if (this.selectedTaskForDetail && this.selectedTaskForDetail.uuid === taskId) {
@@ -988,8 +988,8 @@ const fullComponentImplementation = function() {
                 // Update UI using the shared function
                 this.updateTasksUI();
             } catch (error) {
-                console.error('Error deleting task:', error);
-                showToast('Failed to delete task: ' + error.message, 'error');
+                console.error(i18next.t('errorDeletingTask'), error);
+                showToast(i18next.t('failedToDeleteTask') + ': ' + error.message, 'error');
             }
         },
 

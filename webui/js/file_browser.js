@@ -3,7 +3,7 @@ const fileBrowserModalProxy = {
   isLoading: false,
 
   browser: {
-    title: "File Browser",
+    title: i18next.t("fileBrowser"),
     currentPath: "",
     entries: [],
     parentPath: "",
@@ -49,11 +49,11 @@ const fileBrowserModalProxy = {
         this.browser.currentPath = data.data.current_path;
         this.browser.parentPath = data.data.parent_path;
       } else {
-        console.error("Error fetching files:", await response.text());
+        console.error(i18next.t("errorFetchingFiles"), await response.text());
         this.browser.entries = [];
       }
     } catch (error) {
-      window.toastFetchError("Error fetching files", error);
+      window.toastFetchError(i18next.t('errorFetchingFiles'), error);
       this.browser.entries = [];
     } finally {
       this.isLoading = false;
@@ -108,7 +108,7 @@ const fileBrowserModalProxy = {
   },
 
   async deleteFile(file) {
-    if (!confirm(`Are you sure you want to delete ${file.name}?`)) {
+    if (!confirm(i18next.t('confirmDeleteFile', { fileName: file.name }))) {
       return;
     }
 
@@ -129,13 +129,13 @@ const fileBrowserModalProxy = {
         this.browser.entries = this.browser.entries.filter(
           (entry) => entry.path !== file.path
         );
-        alert("File deleted successfully.");
+        alert(i18next.t('fileDeletedSuccessfully'));
       } else {
-        alert(`Error deleting file: ${await response.text()}`);
+        alert(i18next.t('errorDeletingFile', { errorText: await response.text() }));
       }
     } catch (error) {
-      window.toastFetchError("Error deleting file", error);
-      alert("Error deleting file");
+      window.toastFetchError(i18next.t('errorDeletingFileGeneral'), error);
+      alert(i18next.t('errorDeletingFileGeneral'));
     }
   },
 
@@ -152,9 +152,7 @@ const fileBrowserModalProxy = {
         if (!["zip", "tar", "gz", "rar", "7z"].includes(ext)) {
           if (files[i].size > 100 * 1024 * 1024) {
             // 100MB
-            alert(
-              `File ${files[i].name} exceeds the maximum allowed size of 100MB.`
-            );
+            alert(i18next.t('fileExceedsSizeLimit', { fileName: files[i].name, maxSize: "100MB" }));
             continue;
           }
         }
@@ -182,14 +180,14 @@ const fileBrowserModalProxy = {
           const failedFiles = data.failed
             .map((file) => `${file.name}: ${file.error}`)
             .join("\n");
-          alert(`Some files failed to upload:\n${failedFiles}`);
+          alert(i18next.t('someFilesFailedToUpload', { failedFiles }));
         }
       } else {
         alert(data.message);
       }
     } catch (error) {
-      window.toastFetchError("Error uploading files", error);
-      alert("Error uploading files");
+      window.toastFetchError(i18next.t('errorUploadingFilesGeneral'), error);
+      alert(i18next.t('errorUploadingFilesGeneral'));
     }
   },
 
@@ -202,7 +200,7 @@ const fileBrowserModalProxy = {
       const response = await fetch(downloadUrl);
 
       if (!response.ok) {
-        throw new Error("Network response was not ok");
+        throw new Error(i18next.t("networkResponseNotOk"));
       }
 
       const blob = await response.blob();
@@ -215,16 +213,16 @@ const fileBrowserModalProxy = {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(link.href);
     } catch (error) {
-      window.toastFetchError("Error downloading file", error);
-      alert("Error downloading file");
+      window.toastFetchError(i18next.t('errorDownloadingFileGeneral'), error);
+      alert(i18next.t('errorDownloadingFileGeneral'));
     }
   },
 
   // Helper Functions
   formatFileSize(size) {
-    if (size === 0) return "0 Bytes";
+    if (size === 0) return i18next.t("0Bytes");
     const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+    const sizes = [i18next.t("bytes"), "KB", "MB", "GB", "TB"]; // Assuming KB, MB, etc. don't need translation or are handled by i18next if keys exist
     const i = Math.floor(Math.log(size) / Math.log(k));
     return parseFloat((size / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   },
@@ -267,7 +265,7 @@ openFileLink = async function (path) {
   try {
     const resp = await window.sendJsonData("/file_info", { path });
     if (!resp.exists) {
-      window.toast("File does not exist.", "error");
+      window.toast(i18next.t("fileDoesNotExist"), "error");
       return;
     }
 
@@ -280,7 +278,7 @@ openFileLink = async function (path) {
       });
     }
   } catch (e) {
-    window.toastFetchError("Error opening file", e);
+    window.toastFetchError(i18next.t('errorOpeningFile'), e);
   }
 };
 window.openFileLink = openFileLink;

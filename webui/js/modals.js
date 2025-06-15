@@ -114,7 +114,7 @@ export function openModal(modalPath) {
       ).observe(document.body, { childList: true, subtree: true });
 
       // Set a loading state
-      modal.body.innerHTML = '<div class="loading">Loading...</div>';
+      modal.body.innerHTML = `<div class="loading">${i18next.t('loading')}</div>`;
 
       // Already added to stack above
 
@@ -130,8 +130,8 @@ export function openModal(modalPath) {
           modal.title.innerHTML = doc.title || modalPath;
         })
         .catch((error) => {
-          console.error("Error loading modal content:", error);
-          modal.body.innerHTML = `<div class="error">Failed to load modal content: ${error.message}</div>`;
+          console.error(i18next.t('errorLoadingModalContent'), error);
+          modal.body.innerHTML = `<div class="error">${i18next.t('failedToLoadModalContent', { message: error.message })}</div>`;
         });
 
       // Add modal to stack and show it

@@ -75,7 +75,7 @@ function setupSidebarToggle() {
     if (toggleSidebarButton) {
         toggleSidebarButton.addEventListener('click', toggleSidebar);
     } else {
-        console.error('Toggle sidebar button not found');
+        console.error(i18next.t('toggleSidebarButtonNotFound'));
         setTimeout(setupSidebarToggle, 100);
     }
 }
@@ -144,13 +144,13 @@ export async function sendMessage() {
             // Handle response
             const jsonResponse = await response.json();
             if (!jsonResponse) {
-                toast("No response returned.", "error");
+                toast(i18next.t("noResponseReturned"), "error");
             }
             // else if (!jsonResponse.ok) {
             //     if (jsonResponse.message) {
             //         toast(jsonResponse.message, "error");
             //     } else {
-            //         toast("Undefined error.", "error");
+            //         toast(i18next.t("undefinedError"), "error");
             //     }
             // }
             else {
@@ -164,15 +164,15 @@ export async function sendMessage() {
             adjustTextareaHeight();
         }
     } catch (e) {
-        toastFetchError("Error sending message", e)
+        toastFetchError(i18next.t("errorSendingMessage"), e)
     }
 }
 
 function toastFetchError(text, error) {
     if (getConnectionStatus()) {
-        toast(`${text}: ${error.message}`, "error");
+        toast(i18next.t("fetchError", { text, errorMessage: error.message }), "error");
     } else {
-        toast(`${text} (it seems the backend is not running): ${error.message}`, "error");
+        toast(i18next.t("fetchErrorBackendDown", { text, errorMessage: error.message }), "error");
     }
     console.error(text, error);
 }
@@ -189,7 +189,7 @@ sendButton.addEventListener('click', sendMessage);
 
 
 export function updateChatInput(text) {
-    console.log('updateChatInput called with:', text);
+    console.log(i18next.t('updateChatInputCalledWith', { text }));
 
     // Append text with proper spacing
     const currentValue = chatInput.value;
@@ -200,7 +200,7 @@ export function updateChatInput(text) {
     adjustTextareaHeight();
     chatInput.dispatchEvent(new Event('input'));
 
-    console.log('Updated chat input value:', chatInput.value);
+    console.log(i18next.t('updatedChatInputValue', { value: chatInput.value }));
 }
 
 function updateUserTime() {
@@ -283,10 +283,10 @@ window.loadKnowledge = async function () {
             toast(await response.text(), "error");
         } else {
             const data = await response.json();
-            toast("Knowledge files imported: " + data.filenames.join(", "), "success");
+            toast(i18next.t("knowledgeFilesImported", { filenames: data.filenames.join(", ") }), "success");
         }
         } catch (e) {
-            toastFetchError("Error loading knowledge", e)
+            toastFetchError(i18next.t("errorLoadingKnowledge"), e)
         }
     };
 
@@ -356,7 +356,7 @@ async function poll() {
 
         // Check if the response is valid
         if (!response) {
-            console.error("Invalid response from poll endpoint");
+            console.error(i18next.t("invalidResponseFromPoll"));
             return false;
         }
 
@@ -483,7 +483,7 @@ async function poll() {
         lastLogGuid = response.log_guid;
 
     } catch (error) {
-        console.error('Error:', error);
+        console.error(i18next.t('errorPolling'), error);
         setConnectionStatus(false)
     }
 
@@ -528,7 +528,7 @@ window.pauseAgent = async function (paused) {
     try {
         const resp = await sendJsonData("/pause", { paused: paused, context });
     } catch (e) {
-        window.toastFetchError("Error pausing agent", e)
+        window.toastFetchError(i18next.t("errorPausingAgent"), e)
     }
 }
 
@@ -537,7 +537,7 @@ window.resetChat = async function (ctxid=null) {
         const resp = await sendJsonData("/chat_reset", { "context": ctxid === null ? context : ctxid });
         if (ctxid === null) updateAfterScroll();
     } catch (e) {
-        window.toastFetchError("Error resetting chat", e);
+        window.toastFetchError(i18next.t("errorResettingChat"), e);
     }
 }
 
@@ -546,21 +546,21 @@ window.newChat = async function () {
         setContext(generateGUID());
         updateAfterScroll()
     } catch (e) {
-        window.toastFetchError("Error creating new chat", e)
+        window.toastFetchError(i18next.t("errorCreatingNewChat"), e)
     }
 }
 
 window.killChat = async function (id) {
     if (!id) {
-        console.error("No chat ID provided for deletion");
+        console.error(i18next.t("noChatIdForDeletion"));
         return;
     }
 
-    console.log("Deleting chat with ID:", id);
+    console.log(i18next.t("deletingChatWithId", { id }));
 
     try {
         const chatsAD = Alpine.$data(chatsSection);
-        console.log("Current contexts before deletion:", JSON.stringify(chatsAD.contexts.map(c => ({ id: c.id, name: c.name }))));
+        console.log(i18next.t("contextsBeforeDeletion", { contexts: JSON.stringify(chatsAD.contexts.map(c => ({ id: c.id, name: c.name }))) }));
 
         // switch to another context if deleting current
         switchFromContext(id);
@@ -571,17 +571,17 @@ window.killChat = async function (id) {
         // Update the UI manually to ensure the correct chat is removed
         // Deep clone the contexts array to prevent reference issues
         const updatedContexts = chatsAD.contexts.filter(ctx => ctx.id !== id);
-        console.log("Updated contexts after deletion:", JSON.stringify(updatedContexts.map(c => ({ id: c.id, name: c.name }))));
+        console.log(i18next.t("contextsAfterDeletion", { contexts: JSON.stringify(updatedContexts.map(c => ({ id: c.id, name: c.name }))) }));
 
         // Force UI update by creating a new array
         chatsAD.contexts = [...updatedContexts];
 
         updateAfterScroll();
 
-        toast("Chat deleted successfully", "success");
+        toast(i18next.t("chatDeletedSuccessfully"), "success");
     } catch (e) {
-        console.error("Error deleting chat:", e);
-        window.toastFetchError("Error deleting chat", e);
+        console.error(i18next.t("errorDeletingChat"), e);
+        window.toastFetchError(i18next.t("errorDeletingChat"), e);
     }
 }
 
@@ -731,12 +731,12 @@ window.toggleDarkMode = function (isDark) {
         document.body.classList.remove('dark-mode');
         document.body.classList.add('light-mode');
     }
-    console.log("Dark mode:", isDark);
+    console.log(i18next.t('darkMode'), isDark);
     localStorage.setItem('darkMode', isDark);
 };
 
 window.toggleSpeech = function (isOn) {
-    console.log("Speech:", isOn);
+    console.log(i18next.t('speech'), isOn);
     localStorage.setItem('speech', isOn);
     if (!isOn) speech.stop()
 };
@@ -745,21 +745,21 @@ window.nudge = async function () {
     try {
         const resp = await sendJsonData("/nudge", { ctxid: getContext() });
     } catch (e) {
-        toastFetchError("Error nudging agent", e)
+        toastFetchError(i18next.t("errorNudgingAgent"), e)
     }
 }
 
 window.restart = async function () {
     try {
         if (!getConnectionStatus()) {
-            toast("Backend disconnected, cannot restart.", "error");
+            toast(i18next.t("backendDisconnectedCannotRestart"), "error");
             return
         }
         // First try to initiate restart
         const resp = await sendJsonData("/restart", {});
     } catch (e) {
         // Show restarting message
-        toast("Restarting...", "info", 0);
+        toast(i18next.t("restarting"), "info", 0);
 
         let retries = 0;
         const maxRetries = 240; // Maximum number of retries (60 seconds with 250ms interval)
@@ -771,7 +771,7 @@ window.restart = async function () {
                 await new Promise(resolve => setTimeout(resolve, 250));
                 hideToast();
                 await new Promise(resolve => setTimeout(resolve, 400));
-                toast("Restarted", "success", 5000);
+                toast(i18next.t("restarted"), "success", 5000);
                 return;
             } catch (e) {
                 // Server still down, keep waiting
@@ -783,7 +783,7 @@ window.restart = async function () {
         // If we get here, restart failed or took too long
         hideToast();
         await new Promise(resolve => setTimeout(resolve, 400));
-        toast("Restart timed out or failed", "error", 5000);
+        toast(i18next.t("restartTimeoutOrFailed"), "error", 5000);
     }
 }
 
@@ -824,22 +824,22 @@ window.loadChats = async function () {
         const response = await sendJsonData("/chat_load", { chats: fileContents });
 
         if (!response) {
-            toast("No response returned.", "error")
+        toast(i18next.t("noResponseReturned"), "error")
         }
         // else if (!response.ok) {
         //     if (response.message) {
         //         toast(response.message, "error")
         //     } else {
-        //         toast("Undefined error.", "error")
+    //         toast(i18next.t("undefinedError"), "error")
         //     }
         // }
         else {
             setContext(response.ctxids[0])
-            toast("Chats loaded.", "success")
+        toast(i18next.t("chatsLoaded"), "success")
         }
 
     } catch (e) {
-        toastFetchError("Error loading chats", e)
+        toastFetchError(i18next.t("errorLoadingChats"), e)
     }
 }
 
@@ -848,22 +848,22 @@ window.saveChat = async function () {
         const response = await sendJsonData("/chat_export", { ctxid: context });
 
         if (!response) {
-            toast("No response returned.", "error")
+            toast(i18next.t("noResponseReturned"), "error")
         }
         //  else if (!response.ok) {
         //     if (response.message) {
         //         toast(response.message, "error")
         //     } else {
-        //         toast("Undefined error.", "error")
+        //         toast(i18next.t("undefinedError"), "error")
         //     }
         // }
         else {
             downloadFile(response.ctxid + ".json", response.content)
-            toast("Chat file downloaded.", "success")
+            toast(i18next.t("chatFileDownloaded"), "success")
         }
 
     } catch (e) {
-        toastFetchError("Error saving chat", e)
+        toastFetchError(i18next.t("errorSavingChat"), e)
     }
 }
 
@@ -973,9 +973,9 @@ function toast(text, type = 'info', timeout = 5000) {
         // Add the copy button event listener
         copyButton.onclick = () => {
             navigator.clipboard.writeText(text);
-            copyButton.textContent = 'Copied!';
+            copyButton.textContent = i18next.t('copied');
             setTimeout(() => {
-                copyButton.textContent = 'Copy';
+                copyButton.textContent = i18next.t('copy');
             }, 2000);
         };
 
@@ -1067,7 +1067,7 @@ async function startPolling() {
             if (shortIntervalCount > 0) shortIntervalCount--; // Decrease the counter on each call
             nextInterval = shortIntervalCount > 0 ? shortInterval : longInterval;
         } catch (error) {
-            console.error('Error:', error);
+            console.error(i18next.t('errorPolling'), error);
         }
 
         // Call the function again after the selected interval
@@ -1164,7 +1164,34 @@ document.addEventListener('DOMContentLoaded', function() {
     setupSidebarToggle();
     setupTabs();
     initializeActiveTab();
+    setupLanguageSwitcher(); // Added language switcher setup
 });
+
+// Setup language switcher logic
+function setupLanguageSwitcher() {
+    const langSwitcher = document.getElementById('language-switcher');
+    if (langSwitcher) {
+        // Set initial value based on current i18next language
+        if (i18next.language) {
+             // Use base language (e.g., 'en' from 'en-US' or 'zh' from 'zh-CN')
+            langSwitcher.value = i18next.language.split('-')[0];
+        }
+
+        langSwitcher.addEventListener('change', (event) => {
+            const selectedLangCode = event.target.value;
+            i18next.changeLanguage(selectedLangCode, (err, t) => {
+                if (err) return console.error(i18next.t('errorChangingLanguage'), err);
+                // i18nextify.forceRender(); // i18nextify should pick up changes automatically with new i18next version
+                                        // but if not, this line can be uncommented.
+                                        // Alternatively, ensure data-i18n attributes are re-evaluated.
+                                        // Forcing a page reload is a simpler way if subtle issues occur:
+                location.reload();
+            });
+        });
+    } else {
+        console.warn(i18next.t('languageSwitcherNotFound')); // Changed to warn as it might not be an error if HTML isn't there
+    }
+}
 
 // Setup tabs functionality
 function setupTabs() {
@@ -1180,7 +1207,7 @@ function setupTabs() {
             activateTab('tasks');
         });
     } else {
-        console.error('Tab elements not found');
+        console.error(i18next.t('tabElementsNotFound'));
         setTimeout(setupTabs, 100); // Retry setup
     }
 }
@@ -1298,7 +1325,7 @@ function openTaskDetail(taskId) {
             // Now get a reference to the modal element
             const modalEl = document.getElementById('settingsModal');
             if (!modalEl) {
-                console.error('Settings modal element not found after clicking button');
+                console.error(i18next.t('settingsModalElementNotFound'));
                 return;
             }
 
@@ -1315,7 +1342,7 @@ function openTaskDetail(taskId) {
                     // Get the scheduler component
                     const schedulerComponent = document.querySelector('[x-data="schedulerSettings"]');
                     if (!schedulerComponent) {
-                        console.error('Scheduler component not found');
+                        console.error(i18next.t('schedulerComponentNotFound'));
                         return;
                     }
 
@@ -1325,14 +1352,14 @@ function openTaskDetail(taskId) {
                     // Show the task detail view for the specific task
                     schedulerData.showTaskDetail(taskId);
 
-                    console.log('Task detail view opened for task:', taskId);
+                    console.log(i18next.t('taskDetailViewOpenedForTask', { taskId }));
                 }, 50); // Give time for the scheduler tab to initialize
             }, 25); // Give time for the modal to render
         } else {
-            console.error('Settings button not found');
+            console.error(i18next.t('settingsButtonNotFound'));
         }
     } else {
-        console.error('Alpine.js not loaded');
+        console.error(i18next.t('alpineNotLoaded'));
     }
 }
 
