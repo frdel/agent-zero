@@ -7,7 +7,6 @@ do not reset if iterating
 be precise descriptive like: open google login and end task, log in using ... and end task
 when following up start: considering open pages
 dont use phrase wait for instructions use end task
-downloads default in /a0/tmp/downloads
 
 usage:
 ```json

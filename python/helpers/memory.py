@@ -5,12 +5,7 @@ from langchain.embeddings import CacheBackedEmbeddings
 
 # from langchain_chroma import Chroma
 from langchain_community.vectorstores import FAISS
-
-# faiss needs to be patched for python 3.12 on arm #TODO remove once not needed
-from python.helpers import faiss_monkey_patch
 import faiss
-
-
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
@@ -331,7 +326,7 @@ class Memory:
                 # fnd = self.db.get(where={"id": {"$in": document_ids}})
                 # if fnd["ids"]: self.db.delete(ids=fnd["ids"])
                 # tot += len(fnd["ids"])
-                await self.db.adelete(ids=document_ids)
+                self.db.delete(ids=document_ids)
                 tot += len(document_ids)
 
             # If fewer than K document IDs, break the loop
@@ -344,7 +339,7 @@ class Memory:
 
     async def delete_documents_by_ids(self, ids: list[str]):
         # aget_by_ids is not yet implemented in faiss, need to do a workaround
-        rem_docs = await self.db.aget_by_ids(ids)  # existing docs to remove (prevents error)
+        rem_docs = self.db.get_by_ids(ids)  # existing docs to remove (prevents error)
         if rem_docs:
             rem_ids = [doc.metadata["id"] for doc in rem_docs]  # ids to remove
             await self.db.adelete(ids=rem_ids)
@@ -375,7 +370,7 @@ class Memory:
                 model_config=self.agent.config.embeddings_model, input=docs_txt
             )
 
-            await self.db.aadd_documents(documents=docs, ids=ids)
+            self.db.add_documents(documents=docs, ids=ids)
             self._save_db()  # persist
         return ids
 

@@ -1,10 +1,11 @@
+import asyncio
 import models
 from agent import AgentConfig, ModelConfig
-from python.helpers import runtime, settings, defer
-from python.helpers.print_style import PrintStyle
+from python.helpers import dotenv, files, rfc_exchange, runtime, settings, docker, log
 
 
-def initialize_agent():
+def initialize():
+
     current_settings = settings.get_settings()
 
     # chat model from user settings
@@ -52,7 +53,6 @@ def initialize_agent():
         prompts_subdir=current_settings["agent_prompts_subdir"],
         memory_subdir=current_settings["agent_memory_subdir"],
         knowledge_subdirs=["default", current_settings["agent_knowledge_subdir"]],
-        mcp_servers=current_settings["mcp_servers"],
         code_exec_docker_enabled=False,
         # code_exec_docker_name = "A0-dev",
         # code_exec_docker_image = "frdel/agent-zero-run:development",
@@ -70,57 +70,16 @@ def initialize_agent():
     )
 
     # update SSH and docker settings
-    _set_runtime_config(config, current_settings)
+    set_runtime_config(config, current_settings)
 
     # update config with runtime args
-    _args_override(config)
-
-    # initialize MCP in deferred task to prevent blocking the main thread
-    # async def initialize_mcp_async(mcp_servers_config: str):
-    #     return initialize_mcp(mcp_servers_config)
-    # defer.DeferredTask(thread_name="mcp-initializer").start_task(initialize_mcp_async, config.mcp_servers)
-    # initialize_mcp(config.mcp_servers)
-
-    # import python.helpers.mcp_handler as mcp_helper
-    # import agent as agent_helper
-    # import python.helpers.print_style as print_style_helper
-    # if not mcp_helper.MCPConfig.get_instance().is_initialized():
-    #     try:
-    #         mcp_helper.MCPConfig.update(config.mcp_servers)
-    #     except Exception as e:
-    #         first_context = agent_helper.AgentContext.first()
-    #         if first_context:
-    #             (
-    #                 first_context.log
-    #                 .log(type="warning", content=f"Failed to update MCP settings: {e}", temp=False)
-    #             )
-    #         (
-    #             print_style_helper.PrintStyle(background_color="black", font_color="red", padding=True)
-    #             .print(f"Failed to update MCP settings: {e}")
-    #         )
+    args_override(config)
 
     # return config object
     return config
 
-def initialize_chats():
-    from python.helpers import persist_chat
-    async def initialize_chats_async():
-        persist_chat.load_tmp_chats()
-    return defer.DeferredTask().start_task(initialize_chats_async)
 
-def initialize_mcp():
-    set = settings.get_settings()
-    async def initialize_mcp_async():
-        from python.helpers.mcp_handler import initialize_mcp as _initialize_mcp
-        return _initialize_mcp(set["mcp_servers"])
-    return defer.DeferredTask().start_task(initialize_mcp_async)
-
-def initialize_job_loop():
-    from python.helpers.job_loop import run_loop
-    return defer.DeferredTask("JobLoop").start_task(run_loop)
-
-
-def _args_override(config):
+def args_override(config):
     # update config with runtime args
     for key, value in runtime.args.items():
         if hasattr(config, key):
@@ -141,7 +100,7 @@ def _args_override(config):
             setattr(config, key, value)
 
 
-def _set_runtime_config(config: AgentConfig, set: settings.Settings):
+def set_runtime_config(config: AgentConfig, set: settings.Settings):
     ssh_conf = settings.get_runtime_config(set)
     for key, value in ssh_conf.items():
         if hasattr(config, key):

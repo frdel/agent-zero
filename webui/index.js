@@ -726,9 +726,7 @@ window.toggleUtils = async function (showUtils) {
 window.toggleDarkMode = function (isDark) {
     if (isDark) {
         document.body.classList.remove('light-mode');
-        document.body.classList.add('dark-mode');
-       } else {
-        document.body.classList.remove('dark-mode');
+    } else {
         document.body.classList.add('light-mode');
     }
     console.log("Dark mode:", isDark);
@@ -762,7 +760,7 @@ window.restart = async function () {
         toast("Restarting...", "info", 0);
 
         let retries = 0;
-        const maxRetries = 240; // Maximum number of retries (60 seconds with 250ms interval)
+        const maxRetries = 60; // Maximum number of retries (15 seconds with 250ms interval)
 
         while (retries < maxRetries) {
             try {
@@ -793,6 +791,15 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleDarkMode(isDarkMode);
 });
 
+window.toggleDarkMode = function (isDark) {
+    if (isDark) {
+        document.body.classList.remove('light-mode');
+    } else {
+        document.body.classList.add('light-mode');
+    }
+    console.log("Dark mode:", isDark);
+    localStorage.setItem('darkMode', isDark);
+};
 
 function toggleCssProperty(selector, property, value) {
     // Get the stylesheet that contains the class

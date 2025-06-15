@@ -200,8 +200,11 @@ The Settings page is the control center for selecting the Large Language Models 
 
 **How to Change:**
 1. Open Settings page in the Web UI.
-2. Choose the provider for the LLM for each role (Chat model, Utility model, Embedding model) and write the model name.
-3. Click "Save" to apply the changes.
+2. Choose the provider for the LLM for each role (Chat model, Utility model, Embedding model). Common providers include OpenAI, Anthropic, Ollama, GPT4All, LM Studio, and Jan.
+3. Write the model name (e.g., `gpt-4o`, `claude-3-opus-20240229`, `llama3.2`, `ggml-gpt4all-j-v1.3-groovy.bin`, a model ID from LM Studio, or a model ID served by Jan).
+   > **Note:** For local providers like Ollama, GPT4All, and LM Studio, after selecting the provider, the "Model Name" field will attempt to dynamically load and display a dropdown list of your available local models. If models cannot be fetched (e.g., the local server is not running, or a required path like `GPT4ALL_MODEL_PATH` is not set correctly), the field will remain a text input, allowing you to manually enter the model name.
+4. Ensure any necessary environment variables are set (e.g., `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GPT4ALL_MODEL_PATH`, `LM_STUDIO_BASE_URL`, `JAN_BASE_URL`). Refer to the sections below for provider-specific setup.
+5. Click "Save" to apply the changes.
 
 ## Important Considerations
 
@@ -249,7 +252,8 @@ ollama pull <model-name>
 
 2. Within the Chat model, Utility model, or Embedding model section, choose Ollama as provider.
 
-3. Write your model code as expected by Ollama, in the format `llama3.2` or `qwen2.5:7b`
+3. Write your model code as expected by Ollama, in the format `llama3.2` or `qwen2.5:7b`.
+   > When Ollama is selected as the provider, this field will attempt to show a dropdown of models currently available from your Ollama server. If it cannot connect or no models are found, it will behave as a regular text input.
 
 4. Click `Save` to confirm your settings.
 
@@ -271,6 +275,82 @@ Once you've downloaded some models, you might want to check which ones you have 
 
 
 - Experiment with different model combinations to find the balance of performance and cost that best suits your needs. E.g., faster and lower latency LLMs will help, and you can also use `faiss_gpu` instead of `faiss_cpu` for the memory.
+
+## Other Local Model Providers
+
+### GPT4All
+
+Agent Zero now includes support for GPT4All models, allowing you to run compatible LLMs locally. The `gpt4all` Python package is included in the `requirements.txt`.
+
+**1. Download GPT4All Models:**
+   - Visit the official [GPT4All website](https://gpt4all.io/index.html) to browse and download available models. Models are typically in a `.gguf` format (previously `.bin`).
+   - Download the model file(s) you wish to use and place them in a directory on your system (e.g., `/path/to/your/gpt4all_models/`).
+
+**2. Configure Environment Variable:**
+   - Agent Zero needs to know where your GPT4All models are located. Set the `GPT4ALL_MODEL_PATH` environment variable.
+     - You can add this to your `.env` file in the Agent Zero data directory (e.g., `GPT4ALL_MODEL_PATH="/path/to/your/gpt4all_models/"`).
+     - Alternatively, set it as a system-wide environment variable.
+   - The `GPT4ALL_MODEL_PATH` can be:
+     - A **directory path**: If it's a directory, Agent Zero will look for the model filename (specified in the settings) within this directory.
+     - A **full file path**: If it points directly to a specific model file, that model will be used, and the "Model Name" in settings might be ignored or should match the filename. For consistency, it's recommended to set it as a directory.
+
+**3. Select GPT4All in Agent Zero Settings:**
+   - In the Agent Zero Web UI, go to "Settings".
+   - For the desired LLM role (Chat, Utility, or Embedding):
+     - Choose "GPT4All" as the **Provider**.
+     - Enter the **filename** of your downloaded model (e.g., `ggml-gpt4all-j-v1.3-groovy.bin` or `gpt4all-falcon-q4_0.gguf`) as the **Model Name**.
+       > After selecting "GPT4All" as the provider, this field will attempt to list model files found in your `GPT4ALL_MODEL_PATH`. If the path is not set, invalid, or no models are found, it will remain a text input for manual entry.
+   - Click "Save".
+
+   Agent Zero will then load the specified GPT4All model from the path you configured. Note that GPT4All models are loaded as general LLMs, not specific "Chat" type models in LangChain.
+
+### Jan
+
+Jan provides an OpenAI-compatible API for running local models, often through their desktop application which manages and serves the models.
+
+**1. Ensure Jan Server is Running:**
+   - You must have the Jan application installed and running on your system.
+   - Ensure that Jan's local server is active and serving models via its OpenAI-compatible API endpoint.
+
+**2. Configure Base URL (Optional):**
+   - Agent Zero will default to `http://localhost:1337/v1` (or the equivalent local IP) to connect to Jan's API.
+   - If your Jan server is running on a different URL or port, set the `JAN_BASE_URL` environment variable (e.g., in your `.env` file: `JAN_BASE_URL="http://192.168.1.100:1337/v1"`).
+
+**3. Select Jan in Agent Zero Settings:**
+   - In the Agent Zero Web UI, go to "Settings".
+   - For the desired LLM role (Chat, Utility, or Embedding):
+     - Choose "Jan" as the **Provider**.
+     - For **Model Name**:
+       - This often corresponds to a model ID or name that Jan uses to serve a specific model (e.g., `mistral-7b-instruct-v0.2`, `jan-custom-model`).
+       - If Jan is configured to serve a default model when no specific model is requested, you might be able to leave this blank or use a placeholder like "default". Check Jan's documentation for how it handles model selection via API.
+       - No API key is typically required for Jan as it runs locally.
+   - Click "Save".
+
+Agent Zero will then attempt to connect to your Jan server using the specified (or default) base URL and model name.
+
+### LM Studio
+
+LM Studio also provides an OpenAI-compatible API, typically available at `http://localhost:1234/v1`. This allows Agent Zero to use models loaded in LM Studio.
+
+**1. Ensure LM Studio Server is Running:**
+   - You must have the LM Studio application installed, with a model loaded and the AI server started.
+
+**2. Configure Base URL (Optional):**
+   - Agent Zero defaults to `http://localhost:1234/v1` (or the equivalent local IP) for LM Studio.
+   - If your LM Studio server is on a different URL or port, set the `LM_STUDIO_BASE_URL` environment variable (e.g., in your `.env` file: `LM_STUDIO_BASE_URL="http://my-lmstudio-host:1234/v1"`).
+
+**3. Select LM Studio in Agent Zero Settings:**
+   - In the Agent Zero Web UI, go to "Settings".
+   - For the desired LLM role (Chat, Utility, or Embedding):
+     - Choose "LM Studio" as the **Provider**.
+     - For **Model Name**:
+       - After selecting "LM Studio" as the provider, this field will attempt to dynamically list models available from your LM Studio server.
+       - If successful, you can select a model from the dropdown. The model names are usually listed by their file path or an ID assigned by LM Studio (e.g., `local-model/ggml-Llama-2-7B-chat-gguf`).
+       - If the models cannot be fetched (e.g., LM Studio server not running), the field will remain a text input. You can then manually enter the model identifier as recognized by LM Studio's API.
+       - No API key is required by default.
+   - Click "Save".
+
+Agent Zero will then connect to your LM Studio server.
 
 ## Using Agent Zero on your mobile device
 Agent Zero's Web UI is accessible from any device on your network through the Docker container:

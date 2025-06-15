@@ -8,8 +8,6 @@ import shutil
 import tempfile
 import zipfile
 
-from python.helpers.strings import sanitize_string
-
 
 def parse_file(_relative_path, _backup_dirs=None, _encoding="utf-8", **kwargs):
     content = read_file(_relative_path, _backup_dirs, _encoding)
@@ -71,7 +69,7 @@ def read_file_base64(_relative_path, _backup_dirs=None):
 
     # read binary content and encode to base64
     with open(absolute_path, "rb") as f:
-        return base64.b64encode(f.read()).decode("utf-8")
+        return base64.b64encode(f.read()).decode('utf-8')
 
 
 def replace_placeholders_text(_content: str, **kwargs):
@@ -193,7 +191,6 @@ def is_full_json_template(text):
 def write_file(relative_path: str, content: str, encoding: str = "utf-8"):
     abs_path = get_abs_path(relative_path)
     os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-    content = sanitize_string(content, encoding)
     with open(abs_path, "w", encoding=encoding) as f:
         f.write(content)
 
@@ -214,30 +211,16 @@ def write_file_base64(relative_path: str, content: str):
         f.write(data)
 
 
-def delete_dir(relative_path: str):
-    # ensure deletion of directory without propagating errors
+def delete_file(relative_path: str):
     abs_path = get_abs_path(relative_path)
     if os.path.exists(abs_path):
-        # first try with ignore_errors=True which is the safest option
-        shutil.rmtree(abs_path, ignore_errors=True)
+        os.remove(abs_path)
 
-        # if directory still exists, try more aggressive methods
-        if os.path.exists(abs_path):
-            try:
-                # try to change permissions and delete again
-                for root, dirs, files in os.walk(abs_path, topdown=False):
-                    for name in files:
-                        file_path = os.path.join(root, name)
-                        os.chmod(file_path, 0o777)
-                    for name in dirs:
-                        dir_path = os.path.join(root, name)
-                        os.chmod(dir_path, 0o777)
 
-                # try again after changing permissions
-                shutil.rmtree(abs_path, ignore_errors=True)
-            except:
-                # suppress all errors - we're ensuring no errors propagate
-                pass
+def delete_dir(relative_path: str):
+    abs_path = get_abs_path(relative_path)
+    if os.path.exists(abs_path):
+        shutil.rmtree(abs_path)
 
 
 def list_files(relative_path: str, filter: str = "*"):
@@ -266,7 +249,6 @@ def get_base_dir():
     base_dir = os.path.dirname(os.path.abspath(os.path.join(__file__, "../../")))
     return base_dir
 
-
 def is_in_base_dir(path: str):
     # check if the given path is within the base directory
     base_dir = get_base_dir()
@@ -276,11 +258,7 @@ def is_in_base_dir(path: str):
     return os.path.commonpath([abs_path, base_dir]) == base_dir
 
 
-def get_subdirectories(
-    relative_path: str,
-    include: str | list[str] = "*",
-    exclude: str | list[str] | None = None,
-):
+def get_subdirectories(relative_path: str, include: str | list[str] = "*", exclude: str | list[str] | None = None):
     abs_path = get_abs_path(relative_path)
     if not os.path.exists(abs_path):
         return []
@@ -316,9 +294,7 @@ def move_file(relative_path: str, new_path: str):
     os.makedirs(os.path.dirname(new_abs_path), exist_ok=True)
     os.rename(abs_path, new_abs_path)
 
-
-def safe_file_name(filename: str) -> str:
+def safe_file_name(filename:str)-> str:
     # Replace any character that's not alphanumeric, dash, underscore, or dot with underscore
     import re
-
-    return re.sub(r"[^a-zA-Z0-9-._]", "_", filename)
+    return re.sub(r'[^a-zA-Z0-9-._]', '_', filename)

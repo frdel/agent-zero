@@ -1,13 +1,10 @@
 #!/bin/bash
 
-echo "====================SEARXNG1 START===================="
-
 # Install necessary packages
 apt-get install -y \
-    python3.12-dev python3.12-venv \
+    python3-dev python3-babel python3-venv \
+    uwsgi uwsgi-plugin-python3 \
     git build-essential libxslt-dev zlib1g-dev libffi-dev libssl-dev
-#    python3.12-babel uwsgi uwsgi-plugin-python3
-
 
 # Add the searxng system user
 useradd --shell /bin/bash --system \
@@ -22,8 +19,5 @@ usermod -aG sudo searxng
 mkdir "/usr/local/searxng"
 chown -R "searxng:searxng" "/usr/local/searxng"
 
-echo "====================SEARXNG1 END===================="
-
 # Start a new shell as the searxng user and run the installation script
 su - searxng -c "bash /ins/install_searxng2.sh"
-

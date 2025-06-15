@@ -5,7 +5,7 @@ thoughts: array thoughts before execution in natural language
 tool_name: use tool name
 tool_args: key value pairs tool arguments
 
-no text before after json
+no other text
 
 ### Response example
 ~~~json
