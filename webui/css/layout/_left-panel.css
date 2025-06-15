@@ -184,14 +184,15 @@
 /* Tasks List (within left panel) */
 /* Tasks list container - similar to chats list */
 .tasks-list-container {
-    max-height: fit-content;
-    overflow-y: auto;
+    height: fit-content;
+    overflow-y: scroll;
     margin-top: 10px;
     padding-right: 5px;
     border-radius: 5px;
     position: relative;
     scrollbar-width: thin;
     -ms-overflow-style: auto;
+   
 }
 
 .task-name {

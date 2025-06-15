@@ -82,6 +82,7 @@ body {
   white-space: nowrap;       
   overflow: hidden;
   font-weight: normal;
+  font-size: 0.75rem;
 }
 
 #progress-bar-i {
@@ -157,7 +158,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  padding: 0.8rem var(--spacing-md) var(--spacing-sm) 0.8rem; 
+  padding: 1rem; 
   align-items: start;
   flex-shrink: 0;
   z-index: 1001;
@@ -818,16 +819,6 @@ nav ul li a img {
   #chat-input {
     min-height: 5.3rem;
     align-content: start;
-  }
-
-  #chat-buttons-wrapper {
-    display: flex;
-    gap: var(--spacing-xs);
-    padding: 0;
-    width: 3.5rem;
-    flex-wrap: wrap;
-    -webkit-transition: all 0.3s ease;
-    transition: all 0.3s ease;
   }
 }
 

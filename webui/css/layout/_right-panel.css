@@ -31,11 +31,13 @@
   font-size: var(--font-size-normal);
   text-align: right;
   line-height: 1.1;
+  font-size: 0.7rem;
 }
 
 #user-date {
   font-size: var(--font-size-small);
   opacity: 0.6;
+  font-size: 0.6rem;
 }
 
 /* Chat History Area */

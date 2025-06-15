@@ -13,6 +13,11 @@
   list-style-type: none;
   margin: 0;
   padding: 0;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  overflow-y: scroll;
+  /* max-height: 300px; */
+
 }
 
 .config-list li {

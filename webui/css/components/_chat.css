@@ -423,7 +423,7 @@
     display: flex;
     gap: var(--spacing-xs);
     padding: 0;
-    width: 3.5rem;
+    width: 3rem;
     flex-wrap: wrap;
     -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;

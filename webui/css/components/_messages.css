@@ -34,11 +34,16 @@
   margin-bottom: var(--spacing-sm);
 }
 
+a.path-link {
+    color: inherit;
+}
+
+
 .message-user {
   background-color: #4a4a4a; 
   border-bottom-right-radius: var(--spacing-xs);
   min-width: 195px;
-  text-align: end;
+  text-align: left;
 }
 
 .message-user > div { /* Content within a user message */
