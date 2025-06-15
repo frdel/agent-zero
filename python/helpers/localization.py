@@ -35,7 +35,7 @@ class Localization:
         try:
             pytz.timezone(timezone)
             if timezone != getattr(self, 'timezone', None):
-                PrintStyle.debug(f"Changing timezone from {getattr(self, 'timezone', 'None')} to {timezone}")
+                # Remove debug message that shows timezone changes
                 self.timezone = timezone
                 save_dotenv_value("DEFAULT_USER_TIMEZONE", timezone)
         except pytz.exceptions.UnknownTimeZoneError:

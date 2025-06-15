@@ -948,4 +948,126 @@ nav ul li a img {
     }
 }
 
-/* Token field (for ad-hoc tasks) */
+/* Model Picker Dropdown */
+#model-picker-dropdown,
+.model-picker-dropdown {
+  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  max-height: 300px;
+  overflow-y: auto;
+  transition: opacity 0.2s, transform 0.2s;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 250px;
+  max-width: 400px;
+}
+
+/* Model Picker Header */
+.model-picker-header {
+  background-color: var(--color-accent);
+  color: white;
+  padding: 8px 12px;
+  font-weight: bold;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 7px 7px 0 0;
+  cursor: default;
+}
+
+/* Model Picker Items */
+.model-picker-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  background-color: var(--color-background);
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.model-picker-item:last-child {
+  border-bottom: none;
+}
+
+.model-picker-item:hover {
+  background-color: var(--color-secondary) !important;
+  color: var(--color-text);
+}
+
+
+/* Model name input hover effect */
+input[data-provider]:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.light-mode input[data-provider]:hover {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+/* Model search input in dropdown */
+.model-picker-search {
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-secondary);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  outline: none;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.model-picker-search:focus {
+  border-bottom-color: var(--color-accent);
+  background-color: var(--color-input-focus);
+}
+
+/* Highlight matching text in model names */
+.model-picker-item .highlight {
+  background-color: var(--color-accent);
+  color: white;
+  font-weight: bold;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* Light mode adjustments for model picker */
+.light-mode .model-picker-dropdown,
+.light-mode #model-picker-dropdown {
+  background-color: var(--color-background-light);
+  border-color: var(--color-border-light);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.light-mode .model-picker-item {
+  color: var(--color-text-light);
+  border-bottom-color: var(--color-border-light);
+  background-color: var(--color-background-light);
+}
+
+.light-mode .model-picker-item:hover {
+  background-color: var(--color-secondary-light) !important;
+  color: var(--color-text-light);
+}
+
+.light-mode .model-picker-header {
+  background-color: var(--color-accent-light);
+}
+
+.light-mode .model-picker-search {
+  background-color: var(--color-secondary-light);
+  color: var(--color-text-light);
+  border-bottom-color: var(--color-border-light);
+}
+
+.light-mode .model-picker-search:focus {
+  background-color: var(--color-input-focus-light);
+  border-bottom-color: var(--color-accent-light);
+}

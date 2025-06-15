@@ -640,7 +640,8 @@
                                                 <template x-if="field.type === 'text'">
                                                     <input type="text" :class="field.classes" :value="field.value"
                                                         :readonly="field.readonly === true"
-                                                        @input="field.value = $event.target.value">
+                                                        @input="field.value = $event.target.value"
+                                                        x-init="if(field.attributes) { Object.keys(field.attributes).forEach(key => $el.setAttribute(key, field.attributes[key])); }">
                                                 </template>
 
                                                 <!-- Number field -->

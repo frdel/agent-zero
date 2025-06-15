@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import time
 from typing import Optional
 from agent import Agent, InterventionException
@@ -57,6 +58,8 @@ class State:
                 screen={"width": 1024, "height": 2048},
                 viewport={"width": 1024, "height": 2048},
                 args=["--headless=new"],
+                # Use a unique user data directory to avoid conflicts
+                user_data_dir=str(Path.home() / ".config" / "browseruse" / "profiles" / f"agent_{self.agent.context.id}"),
             )
         )
 
@@ -118,25 +121,55 @@ class State:
             )
             return result
 
-        model = models.get_model(
-            type=models.ModelType.CHAT,
-            provider=self.agent.config.browser_model.provider,
-            name=self.agent.config.browser_model.name,
-            **self.agent.config.browser_model.kwargs,
+        # Obtain the provider name using the map defined in the models module
+        provider_name = models.LITELLM_PROVIDER_MAP.get(
+            self.agent.config.browser_model.provider.name,
+            self.agent.config.browser_model.provider.name.lower(),
         )
 
-        self.use_agent = browser_use.Agent(
-            task=task,
-            browser_session=self.browser_session,
-            llm=model,
-            use_vision=self.agent.config.browser_model.vision,
-            extend_system_message=self.agent.read_prompt(
-                "prompts/browser_agent.system.md"
-            ),
-            controller=controller,
-            enable_memory=False,  # Disable memory to avoid state conflicts
-            # available_file_paths=[],
-        )
+        # Prefer the dedicated browser-safe factory when present (Agent-Zero >= 0.5)
+        browser_factory = getattr(models, "get_browser_compatible_chat", None)
+
+        if callable(browser_factory):
+            model = browser_factory(
+                model_name=self.agent.config.browser_model.name,
+                provider=provider_name,
+                **self.agent.config.browser_model.kwargs,
+            )
+        else:
+            # Fallback for older Model helpers – will still work, but without
+            # the extra message-filtering wrapper.
+            import warnings
+
+            warnings.warn(
+                "models.get_browser_compatible_chat() not found – falling back to"
+                " models.get_litellm_chat. Browser agent may be less robust to"
+                " malformed tool messages.",
+                RuntimeWarning,
+            )
+
+            model = models.get_litellm_chat(
+                self.agent.config.browser_model.name,
+                provider_name,
+                **self.agent.config.browser_model.kwargs,
+            )
+
+        try:
+            self.use_agent = browser_use.Agent(
+                task=task,
+                browser_session=self.browser_session,
+                llm=model,
+                use_vision=self.agent.config.browser_model.vision,
+                extend_system_message=self.agent.read_prompt(
+                    "prompts/browser_agent.system.md"
+                ),
+                controller=controller,
+                enable_memory=False,  # Disable memory to avoid state conflicts
+                # available_file_paths=[],
+            )
+        except Exception as e:
+            logging.error(f"Failed to create browser_use.Agent: {e}")
+            raise Exception(f"Browser agent initialization failed. This might be due to model compatibility issues. Error: {e}") from e
 
         self.iter_no = get_iter_no(self.agent)
 
