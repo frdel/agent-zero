@@ -1184,8 +1184,20 @@ function setupLanguageSwitcher() {
                 // i18nextify.forceRender(); // i18nextify should pick up changes automatically with new i18next version
                                         // but if not, this line can be uncommented.
                                         // Alternatively, ensure data-i18n attributes are re-evaluated.
-                                        // Forcing a page reload is a simpler way if subtle issues occur:
-                location.reload();
+                // location.reload(); // Avoid full page reload
+                i18nextify.forceRender(); // Re-render i18n elements
+
+                // Update Alpine.js component's currentLang to trigger reactivity if needed
+                const langSwitcherElement = document.getElementById('language-switcher');
+                if (langSwitcherElement) {
+                    const alpineComponentElement = langSwitcherElement.closest('[x-data]');
+                    if (alpineComponentElement) {
+                        const alpineData = Alpine.$data(alpineComponentElement);
+                        if (alpineData && typeof alpineData.currentLang !== 'undefined') {
+                            alpineData.currentLang = selectedLangCode;
+                        }
+                    }
+                }
             });
         });
     } else {

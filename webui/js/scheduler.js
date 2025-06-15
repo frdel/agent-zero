@@ -655,7 +655,7 @@ const fullComponentImplementation = function() {
             // Validate task data
             if (!this.editingTask.name.trim() || !this.editingTask.prompt.trim()) {
                 // showToast('Task name and prompt are required', 'error');
-                alert('Task name and prompt are required');
+                alert(i18next.t('fieldIsRequired', { fieldTitle: 'Task Name and Prompt', sectionTitle: 'Task Editor' }));
                 return;
             }
 
@@ -1684,3 +1684,5 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize the tab handling
     setupSchedulerTab();
 });
+
+[end of webui/js/scheduler.js]

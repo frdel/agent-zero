@@ -163,7 +163,7 @@
         <div class="icons-section" id="hide-button" x-data="{ connected: true }">
             <!--Sidebar-->
             <!-- Sidebar Toggle Button -->
-            <button id="toggle-sidebar" class="toggle-sidebar-button" aria-label="Toggle Sidebar" aria-expanded="false" data-i18n="toggleSidebar">
+            <button id="toggle-sidebar" class="toggle-sidebar-button" aria-label="Toggle Sidebar" aria-expanded="false" data-i18n="toggleSidebar" data-i18n-aria-label="toggleSidebarAriaLabel">
                 <span aria-hidden="true">
                     <!-- Hamburger Icon -->
                     <svg id="sidebar-hamburger-svg" xmlns="http://www.w3.org/2000/svg" width="22" height="22"
@@ -189,7 +189,7 @@
                     <button class="config-button" id="loadChats" @click="loadChats()" data-i18n="loadChat">Load Chat</button>
                     <button class="config-button" id="loadChat" @click="saveChat()" data-i18n="saveChat">Save Chat</button>
                     <button class="config-button" id="restart" @click="restart()" data-i18n="restart">Restart</button>
-                    <button class="config-button" id="settings" @click="settingsModalProxy.openModal()" data-i18n="settings"><svg
+                    <button class="config-button" id="settings" @click="settingsModalProxy.openModal()" data-i18n="settings" data-i18n-title="settingsTitle"><svg
                             xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-5.0 -17.0 110.0 135.0"
                             fill="currentColor" width="24" height="24">
                             <path
@@ -294,7 +294,7 @@
                 <!-- Preferences -->
                 <div class="pref-section" x-data="{ prefOpen: true }">
                     <span>
-                        <h3 class="pref-header" @click="prefOpen = !prefOpen" data-i18n="preferences">
+                        <h3 class="pref-header" @click="prefOpen = !prefOpen" data-i18n="preferencesHeader">
                             Preferences
                             <svg class="arrow-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2" width="16" height="16"
@@ -352,7 +352,7 @@
                                     <span class="slider"></span>
                                 </label>
                             </li>
-                            <li x-data="{ currentLang: i18next.language.split('-')[0] }" x-init="$watch('currentLang', val => { if (val !== i18next.language.split('-')[0]) { i18next.changeLanguage(val, (err) => { if (err) { console.error('Error changing language:', err); displayToast(i18next.t('errorChangingLanguage', 'Error changing language'), 'error'); return; } /* i18nextify.forceRender(); */ location.reload(); }); } })">
+                            <li x-data="{ currentLang: i18next.language.split('-')[0] }" x-init="$watch('currentLang', val => { if (val !== i18next.language.split('-')[0]) { i18next.changeLanguage(val, (err) => { if (err) { console.error('Error changing language:', err); displayToast(i18next.t('errorChangingLanguage', 'Error changing language'), 'error'); return; } i18nextify.forceRender(); const langSwitcherElement = document.getElementById('language-switcher'); if (langSwitcherElement) { const alpineComponentElement = langSwitcherElement.closest('[x-data]'); if (alpineComponentElement) { const alpineData = Alpine.$data(alpineComponentElement); if (alpineData && typeof alpineData.currentLang !== 'undefined') { alpineData.currentLang = val; } } } }); } })">
                                 <span data-i18n="languageLabel">Language</span>
                                 <select id="language-switcher" x-model="currentLang" class="language-switcher-select">
                                     <option value="zh">中文</option>
@@ -367,7 +367,7 @@
                 </div>
                 <!-- Version Info -->
                 <div class="version-info">
-                    <span id="a0version">Version {{version_no}} {{version_time}}</span>
+                    <span id="a0version" data-i18n="versionLabel">Version {{version_no}} {{version_time}}</span>
                 </div>
             </div>
         </div>
@@ -395,8 +395,8 @@
                     <div class="toast__separator"></div>
                     <div class="toast__message"></div>
                 </div>
-                <button class="toast__copy" style="display: none;">Copy</button>
-                <button class="toast__close">Close</button>
+                <button class="toast__copy" style="display: none;" data-i18n="copyButton">Copy</button>
+                <button class="toast__close" data-i18n="closeButton">Close</button>
             </div>
             <div id="progress-bar-box" x-data="{ isSpeaking: false }" x-init="
             // Watch the speech synthesis status to update isSpeaking
@@ -541,7 +541,7 @@
                             </svg>
                         </template>
                         </svg>
-                            <span x-text="paused ? 'Resume Agent' : 'Pause Agent'" data-i18n="pauseAgent" data-i18n-options='{ "context": "pause" }'>Pause Agent</span>
+                            <span x-text="paused ? i18next.t('resumeAgentButtonText', 'Resume Agent') : i18next.t('pauseAgentButtonText', 'Pause Agent')"></span>
                     </button>
 
                     <button class="text-button" @click="loadKnowledge()"><svg xmlns="http://www.w3.org/2000/svg"
@@ -622,7 +622,7 @@
                                 <div class="settings-tab"
                                      :class="{'active': activeTab === 'agent'}"
                                      @click="switchTab('agent')"
-                                     title="Agent Settings" data-i18n="agentSettings">Agent Settings</div>
+                                 title="Agent Settings" data-i18n="agentSettings" data-i18n-title="agentSettingsTooltip">Agent Settings</div>
                                 <div class="settings-tab"
                                      :class="{'active': activeTab === 'external'}"
                                      @click="switchTab('external')"
@@ -990,7 +990,7 @@
                                                                 }
 
                                                                 if (!selectedDate || isNaN(selectedDate.getTime())) {
-                                                                    alert('Please select a valid date and time');
+                                                                    alert(i18next.t('alertInvalidDateTime', 'Please select a valid date and time'));
                                                                     return;
                                                                 }
 
@@ -1218,7 +1218,7 @@
                                                                 }
 
                                                                 if (!selectedDate || isNaN(selectedDate.getTime())) {
-                                                                    alert('Please select a valid date and time');
+                                                                    alert(i18next.t('alertInvalidDateTime', 'Please select a valid date and time'));
                                                                     return;
                                                                 }
 
@@ -1294,9 +1294,9 @@
                                 <div class="scheduler-container" x-show="!isCreating && !isEditing && viewMode === 'list'">
                                     <!-- Header with Actions -->
                                     <div class="scheduler-header">
-                                        <h2>Task Management</h2>
+                                        <h2 data-i18n="taskManagementTitle">Task Management</h2>
                                         <div class="scheduler-actions">
-                                            <button class="btn btn-ok" @click="startCreateTask()">
+                                            <button class="btn btn-ok" @click="startCreateTask()" data-i18n="newTaskButton">
                                                 New Task
                                             </button>
                                         </div>
@@ -1305,23 +1305,23 @@
                                     <!-- Filters -->
                                     <div class="scheduler-filters">
                                         <div class="scheduler-filter-group">
-                                            <span class="scheduler-filter-label">Type:</span>
+                                            <span class="scheduler-filter-label" data-i18n="typeFilterLabel">Type:</span>
                                             <select class="scheduler-filter-select" x-model="filterType">
-                                                <option value="all">All Types</option>
-                                                <option value="scheduled">Scheduled</option>
-                                                <option value="adhoc">Ad-hoc</option>
-                                                <option value="planned">Planned</option>
+                                                <option value="all" data-i18n="allTypesOption">All Types</option>
+                                                <option value="scheduled" data-i18n="scheduledOption">Scheduled</option>
+                                                <option value="adhoc" data-i18n="adhocOption">Ad-hoc</option>
+                                                <option value="planned" data-i18n="plannedOption">Planned</option>
                                             </select>
                                         </div>
 
                                         <div class="scheduler-filter-group">
-                                            <span class="scheduler-filter-label">State:</span>
+                                            <span class="scheduler-filter-label" data-i18n="stateFilterLabel">State:</span>
                                             <select class="scheduler-filter-select" x-model="filterState">
-                                                <option value="all">All States</option>
-                                                <option value="idle">Idle</option>
-                                                <option value="running">Running</option>
-                                                <option value="disabled">Disabled</option>
-                                                <option value="error">Error</option>
+                                                <option value="all" data-i18n="allStatesOption">All States</option>
+                                                <option value="idle" data-i18n="idleOption">Idle</option>
+                                                <option value="running" data-i18n="runningOption">Running</option>
+                                                <option value="disabled" data-i18n="disabledOption">Disabled</option>
+                                                <option value="error" data-i18n="errorOption">Error</option>
                                             </select>
                                         </div>
                                     </div>
@@ -1336,8 +1336,8 @@
                                          x-show="!isLoading && filteredTasks.length === 0"
                                          x-effect="$el.style.display = (!isLoading && filteredTasks.length === 0) ? '' : 'none'">
                                         <!-- <div class="scheduler-empty-icon">📋</div> -->
-                                        <div class="scheduler-empty-text">No tasks found</div>
-                                        <button class="btn btn-ok" @click="startCreateTask()">Create your first task</button>
+                                        <div class="scheduler-empty-text" data-i18n="noTasksFound">No tasks found</div>
+                                        <button class="btn btn-ok" @click="startCreateTask()" data-i18n="createFirstTaskButton">Create your first task</button>
                                     </div>
 
                                     <!-- Task List Table -->
@@ -1346,24 +1346,24 @@
                                            x-effect="$el.style.display = (!isLoading && filteredTasks.length > 0) ? '' : 'none'">
                                         <thead>
                                             <tr>
-                                                <th @click="changeSort('name')">
+                                                <th @click="changeSort('name')" data-i18n="nameColumn">
                                                     Name
                                                     <span class="scheduler-sort-indicator" x-show="sortField === 'name'"
                                                           :class="{'scheduler-sort-desc': sortDirection === 'desc'}">↑</span>
                                                 </th>
-                                                <th @click="changeSort('state')">
+                                                <th @click="changeSort('state')" data-i18n="stateColumn">
                                                     State
                                                     <span class="scheduler-sort-indicator" x-show="sortField === 'state'"
                                                           :class="{'scheduler-sort-desc': sortDirection === 'desc'}">↑</span>
                                                 </th>
-                                                <th>Type</th>
-                                                <th>Schedule</th>
-                                                <th @click="changeSort('last_run')">
+                                                <th data-i18n="typeColumn">Type</th>
+                                                <th data-i18n="scheduleColumn">Schedule</th>
+                                                <th @click="changeSort('last_run')" data-i18n="lastRunColumn">
                                                     Last Run
                                                     <span class="scheduler-sort-indicator" x-show="sortField === 'last_run'"
                                                           :class="{'scheduler-sort-desc': sortDirection === 'desc'}">↑</span>
                                                 </th>
-                                                <th>Actions</th>
+                                                <th data-i18n="actionsColumn">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -1384,22 +1384,22 @@
                                                     <td x-text="formatDate(task.last_run)"></td>
                                                     <td @click.stop>
                                                         <div class="scheduler-task-actions">
-                                                            <button class="scheduler-task-action" @click="runTask(task.uuid)" title="Run Task">
+                                                            <button class="scheduler-task-action" @click="runTask(task.uuid)" title="Run Task" data-i18n-title="runTaskTooltip">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                                                                     <path d="M8 5v14l11-7z"/>
                                                                 </svg>
                                                             </button>
-                                                            <button class="scheduler-task-action" @click="resetTaskState(task.uuid)" title="Reset State">
+                                                            <button class="scheduler-task-action" @click="resetTaskState(task.uuid)" title="Reset State" data-i18n-title="resetStateTooltip">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                                                                     <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
                                                                 </svg>
                                                             </button>
-                                                            <button class="scheduler-task-action" @click="startEditTask(task.uuid)" title="Edit Task">
+                                                            <button class="scheduler-task-action" @click="startEditTask(task.uuid)" title="Edit Task" data-i18n-title="editTaskTooltip">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                                                                     <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                                                                 </svg>
                                                             </button>
-                                                            <button class="scheduler-task-action" @click="deleteTask(task.uuid)" title="Delete Task">
+                                                            <button class="scheduler-task-action" @click="deleteTask(task.uuid)" title="Delete Task" data-i18n-title="deleteTaskIconTooltip">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                                                                     <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                                                                 </svg>
@@ -1420,33 +1420,33 @@
                                             :class="selectedTaskForDetail ? getStateBadgeClass(selectedTaskForDetail.state) : ''"
                                             x-text="selectedTaskForDetail ? selectedTaskForDetail.state : ''">
                                         </div>
-                                        <button class="btn btn-cancel" @click="closeTaskDetail()">Close</button>
+                                        <button class="btn btn-cancel" @click="closeTaskDetail()" data-i18n="closeButtonLabel">Close</button>
                                     </div>
 
                                     <div class="scheduler-detail-content">
                                         <div class="scheduler-details-grid">
-                                            <div class="scheduler-details-label">Type:</div>
+                                            <div class="scheduler-details-label" data-i18n="detailTypeLabel">Type:</div>
                                             <div class="scheduler-details-value" x-text="selectedTaskForDetail ? selectedTaskForDetail.type : ''"></div>
 
-                                            <div class="scheduler-details-label">Created:</div>
+                                            <div class="scheduler-details-label" data-i18n="detailCreatedLabel">Created:</div>
                                             <div class="scheduler-details-value" x-text="selectedTaskForDetail ? formatDate(selectedTaskForDetail.created_at) : ''"></div>
 
-                                            <div class="scheduler-details-label">Last Updated:</div>
+                                            <div class="scheduler-details-label" data-i18n="detailLastUpdatedLabel">Last Updated:</div>
                                             <div class="scheduler-details-value" x-text="selectedTaskForDetail ? formatDate(selectedTaskForDetail.updated_at) : ''"></div>
 
-                                            <div class="scheduler-details-label">Last Run:</div>
+                                            <div class="scheduler-details-label" data-i18n="detailLastRunLabel">Last Run:</div>
                                             <div class="scheduler-details-value" x-text="selectedTaskForDetail ? formatDate(selectedTaskForDetail.last_run) : ''"></div>
 
-                                            <div class="scheduler-details-label" x-show="selectedTaskForDetail && selectedTaskForDetail.type === 'scheduled'">Schedule:</div>
+                                            <div class="scheduler-details-label" x-show="selectedTaskForDetail && selectedTaskForDetail.type === 'scheduled'" data-i18n="detailScheduleLabel">Schedule:</div>
                                             <div class="scheduler-details-value" x-show="selectedTaskForDetail && selectedTaskForDetail.type === 'scheduled'" x-text="selectedTaskForDetail ? formatSchedule(selectedTaskForDetail) : ''"></div>
 
-                                            <div class="scheduler-details-label" x-show="selectedTaskForDetail && selectedTaskForDetail.type === 'adhoc'">Token:</div>
+                                            <div class="scheduler-details-label" x-show="selectedTaskForDetail && selectedTaskForDetail.type === 'adhoc'" data-i18n="detailTokenLabel">Token:</div>
                                             <div class="scheduler-details-value" x-show="selectedTaskForDetail && selectedTaskForDetail.type === 'adhoc'" x-text="selectedTaskForDetail ? selectedTaskForDetail.token : ''"></div>
 
-                                            <div class="scheduler-details-label" x-show="selectedTaskForDetail && selectedTaskForDetail.type === 'planned'">Plan:</div>
+                                            <div class="scheduler-details-label" x-show="selectedTaskForDetail && selectedTaskForDetail.type === 'planned'" data-i18n="detailPlanLabel">Plan:</div>
                                             <div class="scheduler-details-value" x-show="selectedTaskForDetail && selectedTaskForDetail.type === 'planned'">
                                                 <div x-show="selectedTaskForDetail && selectedTaskForDetail.plan">
-                                                    <div><strong>Upcoming:</strong></div>
+                                                    <div data-i18n="detailPlanUpcomingLabel"><strong>Upcoming:</strong></div>
                                                     <template x-if="selectedTaskForDetail && selectedTaskForDetail.plan && selectedTaskForDetail.plan.todo && selectedTaskForDetail.plan.todo.length > 0">
                                                         <div>
                                                             <template x-for="(time, index) in selectedTaskForDetail.plan.todo" :key="index">
@@ -1455,13 +1455,13 @@
                                                         </div>
                                                     </template>
                                                     <template x-if="!selectedTaskForDetail || !selectedTaskForDetail.plan || !selectedTaskForDetail.plan.todo || selectedTaskForDetail.plan.todo.length === 0">
-                                                        <div>No upcoming executions</div>
+                                                        <div data-i18n="detailPlanNoUpcoming">No upcoming executions</div>
                                                     </template>
 
-                                                    <div><strong>In Progress:</strong></div>
-                                                    <div x-text="selectedTaskForDetail && selectedTaskForDetail.plan && selectedTaskForDetail.plan.in_progress ? formatDate(selectedTaskForDetail.plan.in_progress) : 'None'"></div>
+                                                    <div data-i18n="detailPlanInProgressLabel"><strong>In Progress:</strong></div>
+                                                    <div x-text="selectedTaskForDetail && selectedTaskForDetail.plan && selectedTaskForDetail.plan.in_progress ? formatDate(selectedTaskForDetail.plan.in_progress) : $el.dataset.i18nDefault" data-i18n="noneStatus" data-i18n-default="None">None</div>
 
-                                                    <div><strong>Completed:</strong></div>
+                                                    <div data-i18n="detailPlanCompletedLabel"><strong>Completed:</strong></div>
                                                     <template x-if="selectedTaskForDetail && selectedTaskForDetail.plan && selectedTaskForDetail.plan.done && selectedTaskForDetail.plan.done.length > 0">
                                                         <div>
                                                             <template x-for="(time, index) in selectedTaskForDetail.plan.done" :key="index">
@@ -1470,21 +1470,21 @@
                                                         </div>
                                                     </template>
                                                     <template x-if="!selectedTaskForDetail || !selectedTaskForDetail.plan || !selectedTaskForDetail.plan.done || selectedTaskForDetail.plan.done.length === 0">
-                                                        <div>No completed executions</div>
+                                                        <div data-i18n="detailPlanNoCompleted">No completed executions</div>
                                                     </template>
                                                 </div>
                                             </div>
 
-                                            <div class="scheduler-details-label">Last Result:</div>
-                                            <div class="scheduler-details-value" x-text="selectedTaskForDetail && selectedTaskForDetail.last_result ? selectedTaskForDetail.last_result : 'No results yet'"></div>
+                                            <div class="scheduler-details-label" data-i18n="detailLastResultLabel">Last Result:</div>
+                                            <div class="scheduler-details-value" x-text="selectedTaskForDetail && selectedTaskForDetail.last_result ? selectedTaskForDetail.last_result : $el.dataset.i18nDefault" data-i18n="noResultsYet" data-i18n-default="No results yet">No results yet</div>
 
-                                            <div class="scheduler-details-label">System Prompt:</div>
+                                            <div class="scheduler-details-label" data-i18n="detailSystemPromptLabel">System Prompt:</div>
                                             <div class="scheduler-details-value" x-text="selectedTaskForDetail ? selectedTaskForDetail.system_prompt : ''"></div>
 
-                                            <div class="scheduler-details-label">User Prompt:</div>
+                                            <div class="scheduler-details-label" data-i18n="detailUserPromptLabel">User Prompt:</div>
                                             <div class="scheduler-details-value" x-text="selectedTaskForDetail ? selectedTaskForDetail.prompt : ''"></div>
 
-                                            <div class="scheduler-details-label">Attachments:</div>
+                                            <div class="scheduler-details-label" data-i18n="detailAttachmentsLabel">Attachments:</div>
                                             <div class="scheduler-details-value">
                                                 <template x-if="selectedTaskForDetail && selectedTaskForDetail.attachments && selectedTaskForDetail.attachments.length > 0">
                                                     <div>
@@ -1494,7 +1494,7 @@
                                                     </div>
                                                 </template>
                                                 <template x-if="!selectedTaskForDetail || !selectedTaskForDetail.attachments || selectedTaskForDetail.attachments.length === 0">
-                                                    <div>No attachments</div>
+                                                    <div data-i18n="noAttachments">No attachments</div>
                                                 </template>
                                             </div>
                                         </div>
@@ -1529,13 +1529,13 @@
                         <button class="modal-close" @click="handleClose()">&times;</button>
                     </div>
                     <div class="modal-content">
-                        <div x-show="isLoading" class="loading-spinner">
+                        <div x-show="isLoading" class="loading-spinner" data-i18n="loadingFileBrowser">
                             Loading...
                         </div>
                         <div x-show="!isLoading">
                             <div class="path-navigator">
                                 <!-- Up Button -->
-                                <button class="text-button back-button" @click="navigateUp()" aria-label="Navigate Up">
+                                <button class="text-button back-button" @click="navigateUp()" aria-label="Navigate Up" data-i18n="navigateUpButton" data-i18n-aria-label="navigateUpAriaLabel">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10.5 15">
                                         <path d="m.75,5.25L5.25.75m0,0l4.5,4.5M5.25.75v13.5" fill="none"
                                             stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
@@ -1552,19 +1552,19 @@
                             <div class="files-list">
                                 <!-- Header -->
                                 <div class="file-header">
-                                    <div class="file-cell" @click="toggleSort('name')">
+                                    <div class="file-cell" @click="toggleSort('name')" data-i18n="fileNameColumn">
                                         Name
                                         <span x-show="browser.sortBy === 'name'"
                                             x-text="browser.sortDirection === 'asc' ? '↑' : '↓'">
                                         </span>
                                     </div>
-                                    <div class="file-cell-size" @click="toggleSort('size')">
+                                    <div class="file-cell-size" @click="toggleSort('size')" data-i18n="fileSizeColumn">
                                         Size
                                         <span x-show="browser.sortBy === 'size'"
                                             x-text="browser.sortDirection === 'asc' ? '↑' : '↓'">
                                         </span>
                                     </div>
-                                    <div class="file-cell-date" @click="toggleSort('date')">
+                                    <div class="file-cell-date" @click="toggleSort('date')" data-i18n="fileModifiedColumn">
                                         Modified
                                         <span x-show="browser.sortBy === 'date'"
                                             x-text="browser.sortDirection === 'asc' ? '↑' : '↓'">
@@ -1610,7 +1610,7 @@
 
                                 <!-- Empty State -->
                                 <template x-if="!browser.entries.length">
-                                    <div class="no-files">
+                                    <div class="no-files" data-i18n="noFilesFound">
                                         No files found
                                     </div>
                                 </template>
@@ -1619,7 +1619,7 @@
                     </div>
                     <div class="modal-footer">
                         <div id="buttons-container">
-                            <label class="btn btn-upload"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                            <label class="btn btn-upload" data-i18n="uploadFilesButton"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
                                     viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5">
@@ -1629,7 +1629,7 @@
                                 <input type="file" multiple="" accept="all" @change="handleFileUpload"
                                     style="display: none;">
                             </label>
-                            <button class="btn btn-cancel" @click="handleClose()">Close Browser</button>
+                            <button class="btn btn-cancel" @click="handleClose()" data-i18n="closeBrowserButton">Close Browser</button>
                         </div>
                     </div>
                 </div>
@@ -1673,13 +1673,13 @@
                         <!-- Add toolbar -->
                         <div class="editor-toolbar">
                             <div class="toolbar-group">
-                                <button class="toolbar-button" @click="undo()" :disabled="!canUndo" title="Undo (Ctrl+Z)">
+                                <button class="toolbar-button" @click="undo()" :disabled="!canUndo" title="Undo (Ctrl+Z)" data-i18n-title="undoButtonTitle">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M3 7v6h6"></path>
                                         <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path>
                                     </svg>
                                 </button>
-                                <button class="toolbar-button" @click="redo()" :disabled="!canRedo" title="Redo (Ctrl+Shift+Z)">
+                                <button class="toolbar-button" @click="redo()" :disabled="!canRedo" title="Redo (Ctrl+Shift+Z)" data-i18n-title="redoButtonTitle">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M21 7v6h-6"></path>
                                         <path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7"></path>
@@ -1687,14 +1687,14 @@
                                 </button>
                             </div>
                             <div class="toolbar-group">
-                                <button class="toolbar-button" @click="clearText()" title="Clear Text">
+                                <button class="toolbar-button" @click="clearText()" title="Clear Text" data-i18n-title="clearTextButtonTitle">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
                                         <line x1="10" y1="11" x2="10" y2="17"></line>
                                         <line x1="14" y1="11" x2="14" y2="17"></line>
                                     </svg>
                                 </button>
-                                <button class="toolbar-button" @click="toggleWrap()" :class="{ active: wordWrap }" title="Toggle Word Wrap">
+                                <button class="toolbar-button" @click="toggleWrap()" :class="{ active: wordWrap }" title="Toggle Word Wrap" data-i18n-title="toggleWordWrapButtonTitle">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M3 6h18M3 12h15l3 3-3 3M3 18h18"></path>
                                     </svg>
@@ -1712,7 +1712,7 @@
                     </div>
                     <div class="modal-footer">
                         <div id="buttons-container">
-                            <button class="btn btn-ok" @click="handleClose()">Done (Ctrl+Enter)</button>
+                            <button class="btn btn-ok" @click="handleClose()" data-i18n="doneButtonLabel">Done (Ctrl+Enter)</button>
                         </div>
                     </div>
                 </div>
@@ -1732,8 +1732,8 @@
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
          class="dragdrop-overlay">
-        <img src="public/dragndrop.svg" alt="Drop files" class="dragdrop-icon">
-        <div class="dragdrop-text">Drop files to attach them to your message</div>
+        <img src="public/dragndrop.svg" alt="Drop files" class="dragdrop-icon" data-i18n-alt="dropFilesAlt">
+        <div class="dragdrop-text" data-i18n="dropFilesMessage">Drop files to attach them to your message</div>
         <div class="dragdrop-subtext"></div>
     </div>
 
