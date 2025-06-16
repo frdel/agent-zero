@@ -1,10 +1,11 @@
+import asyncio
 import models
 from agent import AgentConfig, ModelConfig
-from python.helpers import runtime, settings, defer
-from python.helpers.print_style import PrintStyle
+from python.helpers import dotenv, files, rfc_exchange, runtime, settings, docker, log
 
 
 def initialize_agent():
+
     current_settings = settings.get_settings()
 
     # chat model from user settings
@@ -52,21 +53,13 @@ def initialize_agent():
         prompts_subdir=current_settings["agent_prompts_subdir"],
         memory_subdir=current_settings["agent_memory_subdir"],
         knowledge_subdirs=["default", current_settings["agent_knowledge_subdir"]],
-        mcp_servers=current_settings["mcp_servers"],
+
+        # --- MERGED CHANGES ---
+        # Kept this new setting from the updated main branch
+        mcp_servers=current_settings["mcp_servers"], 
+        # Kept our custom modification to force local execution
+        code_exec_ssh_enabled=False,
         code_exec_docker_enabled=False,
-        # code_exec_docker_name = "A0-dev",
-        # code_exec_docker_image = "frdel/agent-zero-run:development",
-        # code_exec_docker_ports = { "22/tcp": 55022, "80/tcp": 55080 }
-        # code_exec_docker_volumes = {
-        # files.get_base_dir(): {"bind": "/a0", "mode": "rw"},
-        # files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"},
-        # },
-        # code_exec_ssh_enabled = True,
-        # code_exec_ssh_addr = "localhost",
-        # code_exec_ssh_port = 55022,
-        # code_exec_ssh_user = "root",
-        # code_exec_ssh_pass = "",
-        # additional = {},
     )
 
     # update SSH and docker settings
@@ -74,30 +67,6 @@ def initialize_agent():
 
     # update config with runtime args
     _args_override(config)
-
-    # initialize MCP in deferred task to prevent blocking the main thread
-    # async def initialize_mcp_async(mcp_servers_config: str):
-    #     return initialize_mcp(mcp_servers_config)
-    # defer.DeferredTask(thread_name="mcp-initializer").start_task(initialize_mcp_async, config.mcp_servers)
-    # initialize_mcp(config.mcp_servers)
-
-    # import python.helpers.mcp_handler as mcp_helper
-    # import agent as agent_helper
-    # import python.helpers.print_style as print_style_helper
-    # if not mcp_helper.MCPConfig.get_instance().is_initialized():
-    #     try:
-    #         mcp_helper.MCPConfig.update(config.mcp_servers)
-    #     except Exception as e:
-    #         first_context = agent_helper.AgentContext.first()
-    #         if first_context:
-    #             (
-    #                 first_context.log
-    #                 .log(type="warning", content=f"Failed to update MCP settings: {e}", temp=False)
-    #             )
-    #         (
-    #             print_style_helper.PrintStyle(background_color="black", font_color="red", padding=True)
-    #             .print(f"Failed to update MCP settings: {e}")
-    #         )
 
     # return config object
     return config
@@ -130,35 +99,3 @@ def _args_override(config):
             elif isinstance(getattr(config, key), int):
                 value = int(value)
             elif isinstance(getattr(config, key), float):
-                value = float(value)
-            elif isinstance(getattr(config, key), str):
-                value = str(value)
-            else:
-                raise Exception(
-                    f"Unsupported argument type of '{key}': {type(getattr(config, key))}"
-                )
-
-            setattr(config, key, value)
-
-
-def _set_runtime_config(config: AgentConfig, set: settings.Settings):
-    ssh_conf = settings.get_runtime_config(set)
-    for key, value in ssh_conf.items():
-        if hasattr(config, key):
-            setattr(config, key, value)
-
-    # if config.code_exec_docker_enabled:
-    #     config.code_exec_docker_ports["22/tcp"] = ssh_conf["code_exec_ssh_port"]
-    #     config.code_exec_docker_ports["80/tcp"] = ssh_conf["code_exec_http_port"]
-    #     config.code_exec_docker_name = f"{config.code_exec_docker_name}-{ssh_conf['code_exec_ssh_port']}-{ssh_conf['code_exec_http_port']}"
-
-    #     dman = docker.DockerContainerManager(
-    #         logger=log.Log(),
-    #         name=config.code_exec_docker_name,
-    #         image=config.code_exec_docker_image,
-    #         ports=config.code_exec_docker_ports,
-    #         volumes=config.code_exec_docker_volumes,
-    #     )
-    #     dman.start_container()
-
-    # config.code_exec_ssh_pass = asyncio.run(rfc_exchange.get_root_password())
