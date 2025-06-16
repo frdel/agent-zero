@@ -370,7 +370,30 @@ function injectConsoleControls(messageDiv, command, type, heading) {
     const messageSelector = getMessageSelectorForType(type);
     const allMessagesOfType = document.querySelectorAll(messageSelector);
     const isStreaming = document.querySelector('.message-temp');
+    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+
+    // Only reset preferences if global fixed height actually changed, and only once per toggle
+    if (lastFixedHeightGlobal !== null && lastFixedHeightGlobal !== isFixedHeightGlobal && !hasResetForThisToggle) {
+      console.log('🔄 Resetting all individual message type preferences to let global preference take authority');
+      const types = ['agent','response','tool','code_exe','browser','info','warning','error','user','default'];
+      types.forEach(t => localStorage.removeItem(`msgFullHeight_${t}`));
+      hasResetForThisToggle = true;
+    }
+    if (lastFixedHeightGlobal !== isFixedHeightGlobal) {
+      lastFixedHeightGlobal = isFixedHeightGlobal;
+      hasResetForThisToggle = false;
+    }
+
+    // Preserve scroll position
+    const chatHistory = document.getElementById('chat-history');
+    const prevScrollTop = chatHistory ? chatHistory.scrollTop : null;
+    const prevScrollHeight = chatHistory ? chatHistory.scrollHeight : null;
+
     for (const msg of allMessagesOfType) {
+      // Always skip streaming or locked messages
+      if (msg.classList.contains('message-temp') || msg.classList.contains('state-lock')) {
+        continue;
+      }
       // --- Fix: Always allow hide/unhide to override streaming guard ---
       // Only skip if locked/streaming AND not a hide/unhide action
       if (!force && isStreaming && !msg.classList.contains('message-temp')) {
@@ -477,6 +500,13 @@ function injectConsoleControls(messageDiv, command, type, heading) {
           reevaluateMessageStateAfterStreaming(msg);
         }
       });
+    }
+
+    // Restore scroll position if it changed
+    if (chatHistory && prevScrollTop !== null && prevScrollHeight !== null) {
+      // Try to keep the same scroll offset from the bottom
+      const newScrollHeight = chatHistory.scrollHeight;
+      chatHistory.scrollTop = newScrollHeight - prevScrollHeight + prevScrollTop;
     }
   };
 
@@ -914,112 +944,86 @@ window.reevaluateMessageStates = (delay = 200) => {
 
 // Global function to trigger re-evaluation of all messages when fixed height setting changes
 window.updateAllMessageStates = () => {
+  const isFixedHeight = localStorage.getItem('fixedHeight') === 'true';
+  if (lastGlobalFixedHeight === isFixedHeight) {
+    // No change, skip all resets
+    return;
+  }
+  lastGlobalFixedHeight = isFixedHeight;
   console.log('🔄 Updating all message states for fixed height toggle');
   // Remove state-lock from all messages so global toggle always applies
   document.querySelectorAll('.message.state-lock').forEach(msg => msg.classList.remove('state-lock'));
   // RESET ALL INDIVIDUAL MESSAGE TYPE PREFERENCES - global preference has authority
   const messageTypes = ['agent', 'response', 'tool', 'code_exe', 'browser', 'info', 'warning', 'error', 'user', 'default'];
-  
-  console.log('🔄 Resetting all individual message type preferences to let global preference take authority');
   messageTypes.forEach(type => {
-    // Clear individual message type preferences
     localStorage.removeItem(`msgFullHeight_${type}`);
-    // Keep hide preferences since those are independent
-    // localStorage.removeItem(`msgHidden_${type}`); // Don't reset hide preferences
   });
-  
-  // Trigger update for each message type with fresh preferences
   messageTypes.forEach(async (type) => {
     const messageSelector = getMessageSelectorForType(type);
     const messagesOfType = document.querySelectorAll(messageSelector);
-    
-    console.log(`📋 Found ${messagesOfType.length} messages of type ${type}`);
-    
     if (messagesOfType.length > 0) {
-      // Get fresh preferences after reset
       const { isHidden, isFullHeight } = {
         isHidden: localStorage.getItem(`msgHidden_${type}`) === 'true',
-        isFullHeight: localStorage.getItem(`msgFullHeight_${type}`) === 'true' // This will be false now since we cleared it
+        isFullHeight: localStorage.getItem(`msgFullHeight_${type}`) === 'true'
       };
-      
       for (const msg of messagesOfType) {
-        // Skip streaming or locked messages
         if (msg.classList.contains('message-temp') || msg.classList.contains('state-lock')) continue;
-        // Remove all state classes and reset inline styles
         msg.classList.remove(
           "message-collapsed", "message-compact", "message-expanded",
           "message-scroll", "message-smart-scroll", "message-upper-overflow", "message-auto"
         );
-        
-        // Clear any inline styles that might interfere
         msg.style.maxHeight = '';
         msg.style.overflowY = '';
-        msg.style.overflowX = 'auto'; // Keep horizontal scroll
-        
-        // Apply current state based on fresh localStorage read
+        msg.style.overflowX = 'auto';
         if (isHidden) {
           msg.classList.add("message-collapsed");
         } else {
           const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-          console.log(`🔧 Fixed height global setting: ${isFixedHeightGlobal} for ${type} (reset preferences)`);
-          
           if (isFixedHeightGlobal) {
-            // Global fixed height mode ON - since we reset preferences, use default smart behavior
             setTimeout(async () => {
               try {
-                // Force reflow before measuring
                 msg.offsetHeight;
-                const optimalState = await determineMessageState(msg);
-                msg.classList.remove("message-compact", "message-expanded");
-                if (optimalState === 'compact') {
-                  msg.classList.add("message-compact");
-                  msg.style.maxHeight = '400px';
-                  msg.style.overflowY = 'auto';
-                  console.log(`📏 Applied compact to ${type} message (${msg.scrollHeight}px)`);
-                } else {
-                  // Natural state - no scrollbar needed
-                  msg.style.maxHeight = 'none';
-                  msg.style.overflowY = 'visible';
-                  console.log(`📏 Applied natural to ${type} message (${msg.scrollHeight}px)`);
+                // Only call determineMessageState if not locked/streaming
+                if (!msg.classList.contains('message-temp') && !msg.classList.contains('state-lock')) {
+                  const optimalState = await determineMessageState(msg);
+                  msg.classList.remove("message-compact", "message-expanded");
+                  if (optimalState === 'compact') {
+                    msg.classList.add("message-compact");
+                    msg.style.maxHeight = '400px';
+                    msg.style.overflowY = 'auto';
+                  } else {
+                    msg.style.maxHeight = 'none';
+                    msg.style.overflowY = 'visible';
+                  }
                 }
               } catch (error) {
-                console.warn('Error re-evaluating message state:', error);
                 msg.classList.add("message-compact");
                 msg.style.maxHeight = '400px';
                 msg.style.overflowY = 'auto';
               }
             }, 50);
           } else {
-            // Global fixed height mode OFF - since we reset preferences, use default expanded behavior
             msg.classList.add("message-expanded");
             msg.style.setProperty('max-height', 'none', 'important');
             msg.style.setProperty('overflow-y', 'visible', 'important');
             msg.style.setProperty('overflow-x', 'auto', 'important');
             msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
-            
-            // Also clear constraints from any nested scrollable content
             const scrollableContent = msg.querySelector('.scrollable-content');
             if (scrollableContent) {
               scrollableContent.style.setProperty('max-height', 'none', 'important');
               scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
               scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
             }
-            
-            // Clear constraints from any nested content areas
             const msgContent = msg.querySelector('.msg-content');
             if (msgContent) {
               msgContent.style.setProperty('max-height', 'none', 'important');
               msgContent.style.setProperty('overflow-y', 'visible', 'important');
             }
-            
-            console.log(`📏 Applied expanded (global off) to ${type} message`);
           }
         }
       }
     }
   });
-
-  // --- ADDED: Ensure all expand/collapse buttons are updated after global preference change ---
   if (window.updateAllButtonStates) {
     window.updateAllButtonStates();
   }
@@ -2227,3 +2231,7 @@ function finalizeMessageState(messageDiv, type) {
 //   walk(wrapper);
 //   return wrapper.innerHTML;
 // }
+
+let lastFixedHeightGlobal = null; // Track last global fixed height state
+let hasResetForThisToggle = false; // Ensure reset only happens once per toggle
+let lastGlobalFixedHeight = null; // Track last global fixed height state
