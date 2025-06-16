@@ -227,7 +227,7 @@ function injectMessageControls(messageDiv) {
   console.warn("injectMessageControls is deprecated, use injectConsoleControls instead");
 }
 
-function injectConsoleControls(messageDiv, command, type) {
+function injectConsoleControls(messageDiv, command, type, heading) {
   const controls = document.createElement("div");
   controls.className = "message-controls console-controls";
 
@@ -661,8 +661,16 @@ function injectConsoleControls(messageDiv, command, type) {
   if (!headerDiv) {
     headerDiv = document.createElement('div');
     headerDiv.classList.add('message-header');
-    const existingHeading = messageDiv.querySelector('h4');
-    if (existingHeading) headerDiv.appendChild(existingHeading);
+    // For error type, insert heading in header
+    if (type === 'error' && heading) {
+      const headingElement = document.createElement('h4');
+      headingElement.textContent = heading;
+      headingElement.classList.add('error-header-title'); // for extra styling if needed
+      headerDiv.appendChild(headingElement);
+    } else {
+      const existingHeading = messageDiv.querySelector('h4');
+      if (existingHeading) headerDiv.appendChild(existingHeading);
+    }
     messageDiv.prepend(headerDiv);
   }
   headerDiv.appendChild(controls);
@@ -1101,7 +1109,8 @@ export function _drawMessage(
   messageClasses = [],
   contentClasses = [],
   latex = false,
-  addControls = true
+  addControls = true,
+  skipBodyHeading = false // NEW: allow skipping <h4> in body
 ) {
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", ...messageClasses);
@@ -1120,12 +1129,12 @@ export function _drawMessage(
     else if (messageClasses.includes('message-warning')) messageType = 'warning';
     else if (messageClasses.includes('message-error')) messageType = 'error';
     else if (messageClasses.includes('message-user')) messageType = 'user';
-    
-    injectConsoleControls(messageDiv, '', messageType);
+    injectConsoleControls(messageDiv, '', messageType, heading); // pass heading for error
   }
   const skipScroll = messageClasses.includes("message-agent-response");
 
-  if (heading) {
+  // Only add heading in body if not skipping (e.g. not error)
+  if (heading && !skipBodyHeading) {
     const headingElement = document.createElement("h4");
     headingElement.textContent = heading;
     messageDiv.appendChild(headingElement);
@@ -1190,9 +1199,10 @@ export function drawMessageDefault(
     ["message-ai", "message-default"],
     ["msg-json"],
     false,
-    false  // addControls = false to prevent basic buttons
+    false,  // addControls = false to prevent basic buttons
+    false  // skipBodyHeading = false
   );
-  injectConsoleControls(div, content || "", 'default');
+  injectConsoleControls(div, content || "", 'default', heading);
   finalizeMessageState(div, 'default');
 }
 
@@ -1221,9 +1231,10 @@ export function drawMessageAgent(
     ["message-ai", "message-agent"],
     ["msg-json"],
     false,
-    false  // addControls = false to prevent basic buttons
+    false,  // addControls = false to prevent basic buttons
+    false  // skipBodyHeading = false
   );
-  injectConsoleControls(div, content || "", 'agent');
+  injectConsoleControls(div, content || "", 'agent', heading);
   // Immediately set state after render (no scroll changes)
   finalizeMessageState(div, 'agent');
 }
@@ -1247,11 +1258,12 @@ export function drawMessageResponse(
     ["message-ai", "message-agent-response"],
     [],
     true,
-    false  // addControls = false to prevent basic buttons
+    false,  // addControls = false to prevent basic buttons
+    false  // skipBodyHeading = false
   );
   
   // Add proper controls for agent response messages
-  injectConsoleControls(messageDiv, content || "", 'response');
+  injectConsoleControls(messageDiv, content || "", 'response', heading);
   
   // PATCH: If state-lock is present, do not schedule delayed state update
   if (!messageDiv.classList.contains('message-temp') && !messageDiv.classList.contains('state-lock')) {
@@ -1309,7 +1321,9 @@ export function drawMessageDelegation(
     kvps,
     ["message-ai", "message-agent", "message-agent-delegation"],
     [],
-    true
+    true,
+    false,  // addControls = false to prevent basic buttons
+    false  // skipBodyHeading = false
   );
 }
 
@@ -1330,7 +1344,7 @@ export function drawMessageUser(
   headingElement.textContent = "User message";
   messageDiv.appendChild(headingElement);
   
-  injectConsoleControls(messageDiv, content || "", 'user');
+  injectConsoleControls(messageDiv, content || "", 'user', heading);
 
   if (content && content.trim().length > 0) {
     const textDiv = document.createElement("div");
@@ -1432,9 +1446,10 @@ export function drawMessageTool(
     ["message-ai", "message-tool"],
     ["msg-output"],
     false,
-    false  // addControls = false to prevent basic buttons
+    false,  // addControls = false to prevent basic buttons
+    false  // skipBodyHeading = false
   );
-  injectConsoleControls(div, content || "", 'tool');
+  injectConsoleControls(div, content || "", 'tool', heading);
   finalizeMessageState(div, 'tool');
 }
 
@@ -1457,9 +1472,10 @@ export function drawMessageCodeExe(
     ["message-ai", "message-code-exe"],
     [],
     false,
-    false
+    false,
+    false  // skipBodyHeading = false
   );
-  injectConsoleControls(div, content || "", 'code_exe');
+  injectConsoleControls(div, content || "", 'code_exe', heading);
   finalizeMessageState(div, 'code_exe');
   return div;
 }
@@ -1483,9 +1499,10 @@ export function drawMessageBrowser(
     ["message-ai", "message-browser"],
     ["msg-json"],
     false,
-    false  // addControls = false to prevent basic buttons
+    false,  // addControls = false to prevent basic buttons
+    false  // skipBodyHeading = false
   );
-  injectConsoleControls(div, content || "", 'browser');
+  injectConsoleControls(div, content || "", 'browser', heading);
   finalizeMessageState(div, 'browser');
 }
 
@@ -1508,7 +1525,9 @@ export function drawMessageAgentPlain(
     kvps,
     [...classes],
     [],
-    false
+    false,
+    false,
+    false  // skipBodyHeading = false
   );
   messageContainer.classList.add("center-container");
   return div;
@@ -1533,7 +1552,7 @@ export function drawMessageInfo(
     temp,
     kvps
   );
-  injectConsoleControls(div, content || "", 'info');
+  injectConsoleControls(div, content || "", 'info', heading);
   return div;
 }
 
@@ -1555,7 +1574,9 @@ export function drawMessageUtil(
     kvps,
     ["message-util"],
     ["msg-json"],
-    false
+    false,
+    false,
+    false  // skipBodyHeading = false
   );
   messageContainer.classList.add("center-container");
 }
@@ -1579,7 +1600,7 @@ export function drawMessageWarning(
     temp,
     kvps
   );
-  injectConsoleControls(div, content || "", 'warning');
+  injectConsoleControls(div, content || "", 'warning', heading);
   return div;
 }
 
@@ -1592,17 +1613,21 @@ export function drawMessageError(
   temp,
   kvps = null
 ) {
-  const div = drawMessageAgentPlain(
-    ["message-error"],
+  const div = _drawMessage(
     messageContainer,
-    id,
-    type,
     heading,
     content,
     temp,
-    kvps
+    false,
+    kvps,
+    ["message-error"],
+    [],
+    false,
+    true, // addControls
+    true  // skipBodyHeading
   );
-  injectConsoleControls(div, content || "", 'error');
+  // Restore original centering: apply to messageContainer
+  messageContainer.classList.add("center-container");
   return div;
 }
 

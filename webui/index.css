@@ -683,12 +683,18 @@ pre {
 }
 
 .message-error .message-header {
-  background: linear-gradient(
-    to bottom,
-    var(--color-message-bg) 0%,
-    var(--color-message-bg) 70%,
-    transparent 100%
-  );
+  background: #af2222; /* match .message-error background */
+  color: #fff;
+  border-top-left-radius: var(--border-radius);
+  border-top-right-radius: var(--border-radius);
+  padding: 0.5em 1em;
+}
+
+.message-error .message-header h4,
+.message-error .error-header-title {
+  color: #fff;
+  margin: 0;
+  font-weight: bold;
 }
 
 .message-info .message-header {
