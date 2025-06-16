@@ -104,7 +104,9 @@ export function _drawMessage(
       contentDiv.classList.add("msg-content", ...contentClasses);
       
       const spanElement = document.createElement("span"); // Wrapper span
-      spanElement.innerHTML = marked.parse(content, { breaks: true });
+      let processedContent = convertPathsToLinks(content);
+      processedContent = convertImageTags(processedContent);
+      spanElement.innerHTML = marked.parse(processedContent, { breaks: true });
       contentDiv.appendChild(spanElement);
       
       addCopyButtonToElement(contentDiv);
