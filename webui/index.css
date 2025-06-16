@@ -611,7 +611,7 @@ pre {
 /* Sticky message header so controls remain visible */
 .message-header {
   position: sticky;
-  top: -10px;
+  top: -15px;
   z-index: 10;
   display: flex;
   align-items: center;
@@ -1129,13 +1129,13 @@ pre {
 
 .message-code-exe {
   background-color: #1e1e1e;
-  color: #22c55e;
+  color: #fff;
   font-family: 'Roboto Mono', monospace;
 }
 
 .light-mode .message-code-exe {
   background-color: #f8f8f8;
-  color: #4ade80;
+  color: #fff;
 }
 
 .message-code-exe .console-summary {
