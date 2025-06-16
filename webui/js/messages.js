@@ -245,9 +245,12 @@ function injectConsoleControls(messageDiv, command, type) {
   function debouncedStateUpdate(messageElement, delay = 100, force = false) {
     // If not the streaming message, skip during streaming (unless forced by user action)
     const isStreaming = document.querySelector('.message-temp');
+    // Allow code_exe messages to update state even if streaming
     if (!force && isStreaming && !messageElement.classList.contains('message-temp')) {
-      console.log(`[GUARD] debouncedStateUpdate: Skipping ${messageElement.id || messageElement.className} because another message is streaming.`);
-      return;
+      if (!messageElement.classList.contains('message-code-exe')) {
+        console.log(`[GUARD] debouncedStateUpdate: Skipping ${messageElement.id || messageElement.className} because another message is streaming.`);
+        return;
+      }
     }
     if (!force && (messageElement.classList.contains('message-temp') || messageElement.classList.contains('state-lock'))) {
       console.log(`[GUARD] debouncedStateUpdate: Skipping ${messageElement.id || messageElement.className} because it is streaming or locked.`);
@@ -367,8 +370,10 @@ function injectConsoleControls(messageDiv, command, type) {
       // --- Fix: Always allow hide/unhide to override streaming guard ---
       // Only skip if locked/streaming AND not a hide/unhide action
       if (!force && isStreaming && !msg.classList.contains('message-temp')) {
-        console.log(`[GUARD] updateAllMessagesOfType: Skipping ${msg.id || msg.className} because another message is streaming.`);
-        continue;
+        if (!msg.classList.contains('message-code-exe')) {
+          console.log(`[GUARD] updateAllMessagesOfType: Skipping ${msg.id || msg.className} because another message is streaming.`);
+          continue;
+        }
       }
       if (!force && (msg.classList.contains('message-temp') || msg.classList.contains('state-lock'))) {
         console.log(`[GUARD] updateAllMessagesOfType: Skipping ${msg.id || msg.className} because it is streaming or locked.`);
@@ -1764,6 +1769,26 @@ export function updateMessageContent(container, content) {
     const msg = container.querySelector('.message');
     if (msg) {
       console.log(`[BORDER-DEBUG] updateMessageContent: after content update | borderLeft=${msg.style.borderLeft} | classList=${msg.className}`);
+      // If this is a code_exe message, re-run finalizeMessageState to allow compacting while streaming
+      if (msg.classList.contains('message-code-exe')) {
+        if (window.finalizeMessageState) {
+          window.finalizeMessageState(msg, 'code_exe');
+        }
+        // --- Ensure scrollable-content always auto-scrolls to bottom in compact mode ---
+        if (msg.classList.contains('message-compact')) {
+          const scrollableContent = msg.querySelector('.scrollable-content');
+          requestAnimationFrame(() => {
+            if (scrollableContent) {
+              scrollableContent.scrollTop = scrollableContent.scrollHeight;
+              scrollableContent.dataset.userScrolled = "false";
+            }
+            // Also set on the message div itself as a fallback
+            msg.scrollTop = msg.scrollHeight;
+            msg.dataset.userScrolled = "false";
+            console.log('🔽 (Forced) Auto-scrolled code_exe scrollable-content and message div to bottom after content update');
+          });
+        }
+      }
     }
   }
 }
@@ -1972,7 +1997,24 @@ function unlockAllMessageStates() {
 
 // New helper: finalize message state after render (no scroll changes)
 function finalizeMessageState(messageDiv, type) {
-  // If streaming, always expanded
+  // Special handling for code_exe messages: compact while streaming if >400px
+  if (type === 'code_exe' && messageDiv.classList.contains('message-temp')) {
+    // If empty, skip
+    if (!messageDiv || messageDiv.scrollHeight === 0) return;
+    if (messageDiv.scrollHeight > 400) {
+      setMessageState(messageDiv, 'compact');
+      // Always scroll to bottom unless user has scrolled up
+      if (messageDiv.dataset.userScrolled !== 'true') {
+        messageDiv.scrollTop = messageDiv.scrollHeight;
+        messageDiv.dataset.userScrolled = "false";
+      }
+      return;
+    } else {
+      setMessageState(messageDiv, 'expanded');
+      return;
+    }
+  }
+  // If streaming (other types), always expanded
   if (messageDiv.classList.contains('message-temp')) {
     setMessageState(messageDiv, 'expanded');
     return;
