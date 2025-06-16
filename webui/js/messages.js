@@ -932,6 +932,11 @@ window.updateAllMessageStates = () => {
       }
     }
   });
+
+  // --- ADDED: Ensure all expand/collapse buttons are updated after global preference change ---
+  if (window.updateAllButtonStates) {
+    window.updateAllButtonStates();
+  }
 };
 
 // Helper function to get CSS selector for message type
