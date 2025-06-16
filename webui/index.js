@@ -1,5 +1,6 @@
 import * as msgs from "./js/messages.js";
 import { speech } from "./js/speech.js";
+import { ArtifactCanvas } from "./js/artifact_canvas.js";
 
 const leftPanel = document.getElementById('left-panel');
 const rightPanel = document.getElementById('right-panel');
@@ -66,6 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleSidebar(false);
         }
     });
+
+    // Initialize artifact canvas
+    window.artifactCanvas = new ArtifactCanvas();
 });
 
 function setupSidebarToggle() {

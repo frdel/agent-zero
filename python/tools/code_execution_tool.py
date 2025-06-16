@@ -10,6 +10,8 @@ from python.helpers.shell_ssh import SSHInteractiveSession
 from python.helpers.docker import DockerContainerManager
 from python.helpers.messages import truncate_text
 import re
+import sys
+from run_ui import socketio
 
 
 @dataclass
@@ -206,6 +208,10 @@ class CodeExecution(Tool):
         full_output = ""
         truncated_output = ""
         got_output = False
+        artifact_streaming = False
+        artifact_id = None
+        artifact_type = None
+        artifact_metadata = None
 
         while True:
             await asyncio.sleep(sleep_time)
@@ -226,6 +232,37 @@ class CodeExecution(Tool):
                 self.log.update(content=truncated_output)
                 last_output_time = now
                 got_output = True
+
+                # --- Live artifact streaming logic ---
+                if self.is_artifact_content(partial_output):
+                    artifact_streaming = True
+                    artifact_id = f"live_{session}_{int(time.time())}"
+                    artifact_type = self.detect_artifact_type(partial_output)
+                    artifact_metadata = {
+                        "source": "code_execution_stream",
+                        "session": session,
+                        "agent": self.agent.agent_name,
+                        "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                    # Emit chunk to frontend
+                    try:
+                        socketio.emit(
+                            'artifact_stream',
+                            {
+                                "type": "artifact_stream",
+                                "payload": {
+                                    "artifactId": artifact_id,
+                                    "chunk": partial_output,
+                                    "isComplete": False,
+                                    "metadata": artifact_metadata,
+                                    "type": artifact_type,
+                                    "chat_id": getattr(self.agent.context, 'id', 'default')
+                                }
+                            },
+                            namespace='/artifacts'
+                        )
+                    except Exception as e:
+                        PrintStyle(font_color="red").print(f"Failed to emit artifact stream: {e}")
 
                 # Check for shell prompt at the end of output
                 last_lines = truncated_output.splitlines()[-3:] if truncated_output else []
@@ -290,3 +327,58 @@ class CodeExecution(Tool):
         )
         self.log.update(content=response)
         return response
+
+    def is_artifact_content(self, content: str) -> bool:
+        """Detect if content contains artifact patterns"""
+        # Detect HTML, SVG, images in agent output
+        html_pattern = r'<html|<!DOCTYPE html|<svg|<canvas'
+        image_pattern = r'data:image/[^;]+;base64,'
+        file_pattern = r'\.(html|svg|png|jpg|jpeg|gif|webp)$'
+        
+        return (re.search(html_pattern, content, re.IGNORECASE) is not None or
+                re.search(image_pattern, content, re.IGNORECASE) is not None or
+                re.search(file_pattern, content, re.IGNORECASE) is not None)
+
+    def detect_artifact_type(self, content: str) -> str:
+        """Detect the type of artifact from content"""
+        if re.search(r'<html|<!DOCTYPE html', content, re.IGNORECASE):
+            return 'html'
+        elif re.search(r'<svg', content, re.IGNORECASE):
+            return 'svg'
+        elif re.search(r'<canvas', content, re.IGNORECASE):
+            return 'canvas'
+        elif re.search(r'data:image/', content, re.IGNORECASE):
+            return 'image'
+        elif re.search(r'\.(png|jpg|jpeg|gif|webp)$', content, re.IGNORECASE):
+            return 'image'
+        else:
+            return 'text'
+
+    async def check_and_create_artifact(self, output: str, session: int):
+        """Check output for artifacts and create them via API"""
+        if self.is_artifact_content(output):
+            artifact_type = self.detect_artifact_type(output)
+            artifact_id = f"code_{session}_{int(time.time())}"
+            
+            # Create artifact via API
+            try:
+                from python.api.artifacts import artifact_handler
+                artifact_data = {
+                    "chat_id": getattr(self.agent.context, 'id', 'default'),
+                    "artifact_id": artifact_id,
+                    "type": artifact_type,
+                    "content": output,
+                    "metadata": {
+                        "source": "code_execution",
+                        "session": session,
+                        "agent": self.agent.agent_name,
+                        "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                }
+                result = artifact_handler.create_artifact(artifact_data)
+                if result.get("success"):
+                    PrintStyle(font_color="green").print(f"Artifact created: {artifact_id}")
+                else:
+                    PrintStyle(font_color="red").print(f"Failed to create artifact: {result.get('error', 'Unknown error')}")
+            except Exception as e:
+                PrintStyle(font_color="red").print(f"Error creating artifact: {str(e)}")

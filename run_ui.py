@@ -8,6 +8,7 @@ import threading
 import signal
 from flask import Flask, request, Response
 from flask_basicauth import BasicAuth
+from flask_socketio import SocketIO, emit, disconnect
 import initialize
 from python.helpers import errors, files, git, mcp_server
 from python.helpers.files import get_abs_path
@@ -26,7 +27,14 @@ time.tzset()
 webapp = Flask("app", static_folder=get_abs_path("./webui"), static_url_path="/")
 webapp.config["JSON_SORT_KEYS"] = False  # Disable key sorting in jsonify
 
+# Initialize SocketIO
+socketio = SocketIO(webapp, cors_allowed_origins="*", async_mode='threading')
+
 lock = threading.Lock()
+
+# Initialize artifact handler
+from python.api.artifacts import ArtifactHandler
+artifact_handler = ArtifactHandler(webapp, lock)
 
 # Set up basic authentication for UI and API but not MCP
 basic_auth = BasicAuth(webapp)
@@ -117,6 +125,63 @@ def requires_auth(f):
         return await f(*args, **kwargs)
 
     return decorated
+
+
+# WebSocket event handlers for artifacts
+@socketio.on('connect', namespace='/artifacts')
+def handle_artifact_connect():
+    """Handle client connection to artifact namespace"""
+    from flask import request as flask_request
+    print(f"Client connected to artifacts")
+    emit('connected', {'status': 'Connected to artifact stream'})
+
+
+@socketio.on('disconnect', namespace='/artifacts')
+def handle_artifact_disconnect():
+    """Handle client disconnection from artifact namespace"""
+    print(f"Client disconnected from artifacts")
+    # Stop watching for this client's chat if needed
+    # Clean up any watchers for this session
+
+
+@socketio.on('subscribe', namespace='/artifacts')
+def handle_artifact_subscribe(data):
+    """Handle subscription to a specific chat's artifacts"""
+    chat_id = data.get('chat_id', 'default')
+    print(f"Client subscribed to artifacts for chat: {chat_id}")
+    
+    # Start watching artifacts for this chat
+    artifact_handler.start_watching(chat_id, socketio)
+    
+    # Send current artifacts list
+    artifacts = artifact_handler.list_artifacts(chat_id)
+    emit('artifacts_list', artifacts)
+
+
+@socketio.on('unsubscribe', namespace='/artifacts')
+def handle_artifact_unsubscribe(data):
+    """Handle unsubscription from a specific chat's artifacts"""
+    chat_id = data.get('chat_id', 'default')
+    print(f"Client unsubscribed from artifacts for chat: {chat_id}")
+    
+    # Stop watching artifacts for this chat
+    artifact_handler.stop_watching(chat_id)
+
+
+@socketio.on('create_artifact', namespace='/artifacts')
+def handle_create_artifact(data):
+    """Handle artifact creation from client"""
+    print(f"Creating artifact: {data.get('id', 'unknown')}")
+    
+    result = artifact_handler.create_artifact(data)
+    socketio.emit('artifact_created', result, namespace='/artifacts')
+
+
+@socketio.on('artifact_stream', namespace='/artifacts')
+def handle_artifact_stream(data):
+    # This handler is not expected to be called by the client, but we keep it for completeness
+    # The backend emits 'artifact_stream' events directly to the namespace
+    pass
 
 
 # handle default address, load index
@@ -211,22 +276,19 @@ def run():
 
     PrintStyle().debug(f"Starting server at {host}:{port}...")
 
-    server = make_server(
-        host=host,
-        port=port,
-        app=app,
-        request_handler=NoRequestLoggingWSGIRequestHandler,
-        threaded=True,
-    )
-    process.set_server(server)
-    server.log_startup()
-
+    # Use SocketIO's run method instead of Flask's
+    def signal_handler(signum, frame):
+        PrintStyle().print("Received signal to terminate server...")
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
     # Start init_a0 in a background thread when server starts
-    # threading.Thread(target=init_a0, daemon=True).start()
-    init_a0()
+    threading.Thread(target=init_a0, daemon=True).start()
 
-    # run the server
-    server.serve_forever()
+    # Run the server with SocketIO
+    socketio.run(webapp, host=host, port=port, debug=False, allow_unsafe_werkzeug=True)
 
 
 def init_a0():
