@@ -499,6 +499,9 @@ async function poll() {
                 setMessage(messageId, log.type, log.heading, log.content, log.temp, log.kvps);
             }
             afterMessagesUpdate(response.logs)
+            if (window.updateAllMessageStates) {
+                window.updateAllMessageStates();
+            }
         }
 
         lastLogVersion = response.log_version;

@@ -394,7 +394,37 @@ function injectConsoleControls(messageDiv, command, type, heading) {
       }
       removeContentPreview(msg);
       const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-      if (isFixedHeightGlobal) {
+      if (!isFixedHeightGlobal) {
+        // When fixed height is OFF, respect the isFullHeight setting
+        if (!isFullHeight) {
+          setMessageState(msg, 'compact');
+          msg.style.setProperty('max-height', '400px', 'important');
+          msg.style.setProperty('overflow-y', 'auto', 'important');
+          msg.style.setProperty('overflow-x', 'auto', 'important');
+          msg.style.setProperty('scrollbar-gutter', 'stable', 'important');
+          ensureScrollTracking(msg);
+          console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to compact (user-forced) | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
+        } else {
+          setMessageState(msg, 'expanded');
+          msg.style.setProperty('height', 'auto', 'important');
+          msg.style.setProperty('max-height', 'none', 'important');
+          msg.style.setProperty('overflow-y', 'visible', 'important');
+          msg.style.setProperty('overflow-x', 'auto', 'important');
+          msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
+          const scrollableContent = msg.querySelector('.scrollable-content');
+          if (scrollableContent) {
+            scrollableContent.style.setProperty('max-height', 'none', 'important');
+            scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
+            scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
+          }
+          const msgContent = msg.querySelector('.msg-content');
+          if (msgContent) {
+            msgContent.style.setProperty('max-height', 'none', 'important');
+            msgContent.style.setProperty('overflow-y', 'visible', 'important');
+          }
+          console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to expanded | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
+        }
+      } else {
         if (isFullHeight) {
           setMessageState(msg, 'expanded');
           msg.style.setProperty('height', 'auto', 'important');
@@ -436,25 +466,6 @@ function injectConsoleControls(messageDiv, command, type, heading) {
           ensureScrollTracking(msg);
           console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to compact (user-forced) | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
         }
-      } else {
-        setMessageState(msg, 'expanded');
-        msg.style.setProperty('height', 'auto', 'important');
-        msg.style.setProperty('max-height', 'none', 'important');
-        msg.style.setProperty('overflow-y', 'visible', 'important');
-        msg.style.setProperty('overflow-x', 'auto', 'important');
-        msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
-        const scrollableContent = msg.querySelector('.scrollable-content');
-        if (scrollableContent) {
-          scrollableContent.style.setProperty('max-height', 'none', 'important');
-          scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
-          scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
-        }
-        const msgContent = msg.querySelector('.msg-content');
-        if (msgContent) {
-          msgContent.style.setProperty('max-height', 'none', 'important');
-          msgContent.style.setProperty('overflow-y', 'visible', 'important');
-        }
-        console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to expanded | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
       }
     }
     updateAllButtonStatesForType(type);
@@ -585,11 +596,66 @@ function injectConsoleControls(messageDiv, command, type, heading) {
   // Toggle height - ALWAYS read from localStorage
   const toggleHeight = () => {
     const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-    const currentState = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
-    const newState = !currentState;
-    localStorage.setItem(`msgFullHeight_${type}`, newState);
-    console.log(`🔧 Toggle height for ${type}: ${currentState} -> ${newState} (global fixed: ${isFixedHeightGlobal})`);
-    updateAllMessagesOfType(true); // force update
+    const messageSelector = getMessageSelectorForType(type);
+    const allMessagesOfType = document.querySelectorAll(messageSelector);
+
+    let shouldExpand;
+    if (!isFixedHeightGlobal) {
+      // When fixed height is OFF, toggle based on DOM state
+      shouldExpand = true; // default
+      if (allMessagesOfType.length > 0) {
+        const firstMsg = allMessagesOfType[0];
+        shouldExpand = !firstMsg.classList.contains('message-expanded');
+      }
+    } else {
+      // When fixed height is ON, toggle based on stored state
+      const currentState = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
+      shouldExpand = !currentState;
+    }
+
+    // Set the new state in storage to match what we're about to do
+    localStorage.setItem(`msgFullHeight_${type}`, shouldExpand);
+    console.log(`🔧 Toggle height for ${type}: (mode-aware) will set to ${shouldExpand} (global fixed: ${isFixedHeightGlobal})`);
+
+    // Immediately apply visual state before calling updateAllMessagesOfType
+    allMessagesOfType.forEach(msg => {
+      if (!msg.classList.contains('message-temp') && !msg.classList.contains('state-lock')) {
+        if (!isFixedHeightGlobal) {
+          if (shouldExpand) {
+            // Expand
+            setMessageState(msg, 'expanded');
+            msg.style.setProperty('height', 'auto', 'important');
+            msg.style.setProperty('max-height', 'none', 'important');
+            msg.style.setProperty('overflow-y', 'visible', 'important');
+            msg.style.setProperty('overflow-x', 'auto', 'important');
+            msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
+            const scrollableContent = msg.querySelector('.scrollable-content');
+            if (scrollableContent) {
+              scrollableContent.style.setProperty('max-height', 'none', 'important');
+              scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
+              scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
+            }
+            const msgContent = msg.querySelector('.msg-content');
+            if (msgContent) {
+              msgContent.style.setProperty('max-height', 'none', 'important');
+              msgContent.style.setProperty('overflow-y', 'visible', 'important');
+            }
+          } else {
+            // Compact
+            setMessageState(msg, 'compact');
+            msg.style.setProperty('max-height', '400px', 'important');
+            msg.style.setProperty('overflow-y', 'auto', 'important');
+            msg.style.setProperty('overflow-x', 'auto', 'important');
+            msg.style.setProperty('scrollbar-gutter', 'stable', 'important');
+            ensureScrollTracking(msg);
+          }
+        }
+      }
+    });
+
+    // Update button states and trigger full update
+    updateAllButtonStatesForType(type);
+    updateAllMessagesOfType(true);
   };
 
   // Copy message content
@@ -712,42 +778,42 @@ function createModernButton(buttonType, handler) {
 
 // Update individual button state with proper icons and colors
 function updateButtonState(button, isActive, type, buttonType) {
+  const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+  if (buttonType === 'height') {
+    // Minimal fix: when fixed height is OFF, use DOM state for active effect
+    if (!isFixedHeightGlobal) {
+      const messageSelector = getMessageSelectorForType(type);
+      const firstMsg = document.querySelector(messageSelector);
+      if (firstMsg) {
+        isActive = firstMsg.classList.contains('message-compact');
+      }
+    }
+  }
   button.classList.toggle('active', isActive);
   
   if (buttonType === 'hide') {
     if (isActive) {
-      // Collapsed/hidden state - show plus icon (maximize/expand)
       button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
-      button.style.color = '#10b981'; // Green - click to show
+      button.style.color = '#10b981';
       button.title = `Show all ${type} messages (expand)`;
     } else {
-      // Visible state - show minus icon (minimize/collapse)
       button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
-      button.style.color = '#6b7280'; // Gray - click to hide
+      button.style.color = '#6b7280';
       button.title = `Hide all ${type} messages (collapse)`;
     }
   } else if (buttonType === 'height') {
     const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+    const messageElement = button.closest('.message');
+    const isCurrentlyExpanded = messageElement && messageElement.classList.contains('message-expanded');
     
-    // Logic: 
-    // - When global fixed height is OFF: messages are expanded by default, show compress icon
-    // - When global fixed height is ON and message type is not expanded: show expand icon  
-    // - When message type is explicitly expanded (isActive=true): show compress icon
+    // Logic for button state:
+    // - When fixed height is OFF: show compress icon when expanded, expand icon when compact
+    // - When fixed height is ON: show expand icon when compact, compress icon when expanded
     
     if (!isFixedHeightGlobal) {
-      // Global fixed height mode is OFF - messages are expanded by default
-      if (isActive) {
-        // User has set this type to compact mode - show expand icon
-        button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="15,3 21,3 21,9"/>
-          <polyline points="9,21 3,21 3,15"/>
-          <line x1="21" y1="3" x2="14" y2="10"/>
-          <line x1="3" y1="21" x2="10" y2="14"/>
-        </svg>`;
-        button.style.color = '#f59e0b'; // Amber - expand available
-        button.title = `Expand all ${type} messages (unlimited height)`;
-      } else {
-        // Default state - show compress icon (currently expanded)
+      // Global fixed height mode is OFF
+      if (isActive || isCurrentlyExpanded) {
+        // Show compress icon - message is expanded
         button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="4,14 10,14 10,20"/>
           <polyline points="20,10 14,10 14,4"/>
@@ -756,21 +822,8 @@ function updateButtonState(button, isActive, type, buttonType) {
         </svg>`;
         button.style.color = '#10b981'; // Green - expanded, can compress
         button.title = `Set all ${type} messages to scroll height`;
-      }
-    } else {
-      // Global fixed height mode is ON - messages are compact by default
-      if (isActive) {
-        // User has set this type to expanded mode - show compress icon
-        button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="4,14 10,14 10,20"/>
-          <polyline points="20,10 14,10 14,4"/>
-          <line x1="14" y1="10" x2="21" y2="3"/>
-          <line x1="3" y1="21" x2="10" y2="14"/>
-        </svg>`;
-        button.style.color = '#10b981'; // Green - expanded
-        button.title = `Set all ${type} messages to scroll height`;
       } else {
-        // Default state - show expand icon (currently compact)
+        // Show expand icon - message is compact
         button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="15,3 21,3 21,9"/>
           <polyline points="9,21 3,21 3,15"/>
@@ -780,14 +833,34 @@ function updateButtonState(button, isActive, type, buttonType) {
         button.style.color = '#f59e0b'; // Amber - expand available
         button.title = `Expand all ${type} messages (unlimited height)`;
       }
+    } else {
+      // Global fixed height mode is ON - keep existing logic
+      if (isActive) {
+        button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="4,14 10,14 10,20"/>
+          <polyline points="20,10 14,10 14,4"/>
+          <line x1="14" y1="10" x2="21" y2="3"/>
+          <line x1="3" y1="21" x2="10" y2="14"/>
+        </svg>`;
+        button.style.color = '#10b981';
+        button.title = `Set all ${type} messages to scroll height`;
+      } else {
+        button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15,3 21,3 21,9"/>
+          <polyline points="9,21 3,21 3,15"/>
+          <line x1="21" y1="3" x2="14" y2="10"/>
+          <line x1="3" y1="21" x2="10" y2="14"/>
+        </svg>`;
+        button.style.color = '#f59e0b';
+        button.title = `Expand all ${type} messages (unlimited height)`;
+      }
     }
   } else if (buttonType === 'copy') {
-    // Copy button - always same icon, no active state needed
     button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
       <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
     </svg>`;
-    button.style.color = '#6b7280'; // Gray - default
+    button.style.color = '#6b7280';
     button.title = `Copy ${type} message content`;
   }
 }
@@ -842,7 +915,8 @@ window.reevaluateMessageStates = (delay = 200) => {
 // Global function to trigger re-evaluation of all messages when fixed height setting changes
 window.updateAllMessageStates = () => {
   console.log('🔄 Updating all message states for fixed height toggle');
-  
+  // Remove state-lock from all messages so global toggle always applies
+  document.querySelectorAll('.message.state-lock').forEach(msg => msg.classList.remove('state-lock'));
   // RESET ALL INDIVIDUAL MESSAGE TYPE PREFERENCES - global preference has authority
   const messageTypes = ['agent', 'response', 'tool', 'code_exe', 'browser', 'info', 'warning', 'error', 'user', 'default'];
   
