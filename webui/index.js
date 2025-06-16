@@ -230,6 +230,34 @@ setInterval(updateUserTime, 1000);
 
 
 function setMessage(id, type, heading, content, temp, kvps = null) {
+    // Before rendering a new agent or response, compact the previous one if needed
+    if (type === 'response' || type === 'agent') {
+        // Find all agent/response messages, except the one we're about to render
+        const selector = type === 'response' ? '.message-agent-response' : '.message-agent';
+        const messages = Array.from(document.querySelectorAll(selector));
+        if (messages.length > 0) {
+            const prev = messages[messages.length - 1];
+            // Only compact if fixed height is enabled and not collapsed
+            const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+            const isFullHeight = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
+            if (
+                isFixedHeightGlobal &&
+                !isFullHeight &&
+                prev &&
+                !prev.classList.contains('message-collapsed')
+            ) {
+                // Compact immediately, regardless of streaming state
+                prev.classList.remove('message-expanded');
+                prev.classList.add('message-compact');
+                prev.classList.add('state-lock'); // Prevent later re-expansion
+                // Force a reflow to ensure the style is applied before DOM changes
+                void prev.offsetHeight;
+                if (window.msgs && typeof window.msgs.ensureScrollTracking === 'function') {
+                    window.msgs.ensureScrollTracking(prev);
+                }
+            }
+        }
+    }
     // Search for the existing message container by id
     let messageContainer = document.getElementById(`message-${id}`);
 
@@ -327,6 +355,21 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
     // If the container was found, it was already in the DOM, no need to append again
     if (!document.getElementById(`message-${id}`)) {
         chatHistory.appendChild(messageContainer);
+    }
+
+    // After handler: re-apply state-lock to previous message if lost (diagnostic patch)
+    if (type === 'response' || type === 'agent') {
+        const selector = type === 'response' ? '.message-agent-response' : '.message-agent';
+        const messages = Array.from(document.querySelectorAll(selector));
+        if (messages.length > 1) {
+            const prev = messages[messages.length - 2];
+            if (prev && !prev.classList.contains('state-lock')) {
+                console.warn('[LOCK-DEBUG] Re-applying state-lock to previous message after re-render:', prev);
+                prev.classList.remove('message-expanded');
+                prev.classList.add('message-compact');
+                prev.classList.add('state-lock');
+            }
+        }
     }
 }
 

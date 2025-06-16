@@ -65,9 +65,26 @@ function createControlButton(label, title, handler) {
 function determineMessageState(msg, retryCount = 0) {
   // Avoid infinite retry loops
   const MAX_RETRIES = 10;
-  if (msg.classList.contains('message-temp') || msg.classList.contains('state-lock')) {
-    console.log(`[BORDER-DEBUG] determineMessageState: message-temp or state-lock, forcing expanded | borderLeft=${msg.style.borderLeft} | classList=${msg.className}`);
+  // If this is the last agent/response message and streaming, always expanded
+  const isAgentOrResponse = msg.classList.contains('message-agent') || msg.classList.contains('message-agent-response');
+  const allAgentMsgs = Array.from(document.querySelectorAll('.message-agent, .message-agent-response'));
+  const isLastAgentMsg = isAgentOrResponse && allAgentMsgs.length > 0 && allAgentMsgs[allAgentMsgs.length - 1] === msg;
+  if (msg.classList.contains('message-temp') && isLastAgentMsg) {
+    const stack = new Error().stack.split('\n').slice(1, 4).join(' | ');
+    console.log(`[BORDER-DEBUG] determineMessageState: last streaming agent/response, forcing expanded | classList=${msg.className} | stack=${stack}`);
     return Promise.resolve('expanded');
+  }
+  if (msg.classList.contains('message-temp')) {
+    // Streaming messages are always expanded
+    const stack = new Error().stack.split('\n').slice(1, 4).join(' | ');
+    console.log(`[BORDER-DEBUG] determineMessageState: message-temp, forcing expanded | classList=${msg.className} | stack=${stack}`);
+    return Promise.resolve('expanded');
+  }
+  if (msg.classList.contains('state-lock')) {
+    // Locked messages are always compact
+    const stack = new Error().stack.split('\n').slice(1, 4).join(' | ');
+    console.log(`[BORDER-DEBUG] determineMessageState: state-lock, forcing compact | classList=${msg.className} | stack=${stack}`);
+    return Promise.resolve('compact');
   }
   // Only proceed if the element is attached and visible
   if (!msg.isConnected || msg.offsetParent === null) {
@@ -1166,6 +1183,7 @@ export function drawMessageDefault(
     false  // addControls = false to prevent basic buttons
   );
   injectConsoleControls(div, content || "", 'default');
+  finalizeMessageState(div, 'default');
 }
 
 export function drawMessageAgent(
@@ -1196,35 +1214,8 @@ export function drawMessageAgent(
     false  // addControls = false to prevent basic buttons
   );
   injectConsoleControls(div, content || "", 'agent');
-  
-  if (!div.classList.contains('message-temp')) {
-    const timeoutId = setTimeout(() => {
-      if (div.classList.contains('message-temp') || div.classList.contains('state-lock')) return;
-      const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-      const isFullHeight = localStorage.getItem('msgFullHeight_agent') === 'true';
-      if (isFixedHeightGlobal && !isFullHeight && !div.classList.contains('message-collapsed')) {
-        determineMessageState(div).then(optimalState => {
-          if (optimalState === 'compact') {
-            div.classList.remove('message-expanded');
-            div.classList.add('message-compact');
-            ensureScrollTracking(div);
-            if (div.dataset.userScrolled !== 'true') {
-              div.scrollTop = div.scrollHeight;
-              div.dataset.userScrolled = 'false';
-            }
-          } else {
-            div.classList.remove('message-compact');
-            div.classList.add('message-expanded');
-            ensureScrollTracking(div);
-          }
-        }).catch(error => {
-          console.warn('Error evaluating agent message state:', error);
-        });
-      }
-      pendingStateTimeouts.delete(div);
-    }, 150);
-    pendingStateTimeouts.set(div, timeoutId);
-  }
+  // Immediately set state after render (no scroll changes)
+  finalizeMessageState(div, 'agent');
 }
 
 export function drawMessageResponse(
@@ -1252,9 +1243,15 @@ export function drawMessageResponse(
   // Add proper controls for agent response messages
   injectConsoleControls(messageDiv, content || "", 'response');
   
-  if (!messageDiv.classList.contains('message-temp')) {
+  // PATCH: If state-lock is present, do not schedule delayed state update
+  if (!messageDiv.classList.contains('message-temp') && !messageDiv.classList.contains('state-lock')) {
     const timeoutId = setTimeout(() => {
-      if (messageDiv.classList.contains('message-temp') || messageDiv.classList.contains('state-lock')) return;
+      if (messageDiv.classList.contains('message-temp') || messageDiv.classList.contains('state-lock')) {
+        if (messageDiv.classList.contains('state-lock')) {
+          console.log('[LOCK-DEBUG] drawMessageResponse: skipping delayed state update due to state-lock', messageDiv);
+        }
+        return;
+      }
       const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
       const isFullHeight = localStorage.getItem('msgFullHeight_response') === 'true';
       if (isFixedHeightGlobal && !isFullHeight && !messageDiv.classList.contains('message-collapsed')) {
@@ -1277,8 +1274,10 @@ export function drawMessageResponse(
       pendingStateTimeouts.delete(messageDiv);
     }, 150);
     pendingStateTimeouts.set(messageDiv, timeoutId);
+  } else if (messageDiv.classList.contains('state-lock')) {
+    console.log('[LOCK-DEBUG] drawMessageResponse: skipping initial delayed state update due to state-lock', messageDiv);
   }
-  
+  finalizeMessageState(messageDiv, 'response');
   return messageDiv;
 }
 
@@ -1401,6 +1400,7 @@ export function drawMessageUser(
   }
 
   messageContainer.appendChild(messageDiv);
+  finalizeMessageState(messageDiv, 'user');
 }
 
 export function drawMessageTool(
@@ -1425,31 +1425,7 @@ export function drawMessageTool(
     false  // addControls = false to prevent basic buttons
   );
   injectConsoleControls(div, content || "", 'tool');
-  
-  if (!div.classList.contains('message-temp')) {
-    const timeoutId = setTimeout(() => {
-      if (div.classList.contains('message-temp') || div.classList.contains('state-lock')) return;
-      const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-      const isFullHeight = localStorage.getItem('msgFullHeight_tool') === 'true';
-      if (isFixedHeightGlobal && !isFullHeight && !div.classList.contains('message-collapsed')) {
-        determineMessageState(div).then(optimalState => {
-          if (optimalState === 'compact') {
-            div.classList.remove('message-expanded');
-            div.classList.add('message-compact');
-            console.log('📏 Applied compact to tool message after creation');
-          } else {
-            div.classList.remove('message-compact');
-            div.classList.add('message-expanded');
-            console.log('📏 Applied expanded to tool message after creation');
-          }
-        }).catch(error => {
-          console.warn('Error evaluating tool message state:', error);
-        });
-      }
-      pendingStateTimeouts.delete(div);
-    }, 150);
-    pendingStateTimeouts.set(div, timeoutId);
-  }
+  finalizeMessageState(div, 'tool');
 }
 
 export function drawMessageCodeExe(
@@ -1474,34 +1450,7 @@ export function drawMessageCodeExe(
     false
   );
   injectConsoleControls(div, content || "", 'code_exe');
-  
-  if (!div.classList.contains('message-temp')) {
-    const timeoutId = setTimeout(() => {
-      if (div.classList.contains('message-temp') || div.classList.contains('state-lock')) return;
-      const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-      const isFullHeight = localStorage.getItem('msgFullHeight_code_exe') === 'true';
-      if (isFixedHeightGlobal && !isFullHeight && !div.classList.contains('message-collapsed')) {
-        determineMessageState(div).then(optimalState => {
-          if (optimalState === 'compact') {
-            div.classList.remove('message-expanded');
-            div.classList.add('message-compact');
-            ensureScrollTracking(div);
-            console.log('📏 Applied compact to code_exe message after creation');
-          } else {
-            div.classList.remove('message-compact');
-            div.classList.add('message-expanded');
-            ensureScrollTracking(div);
-            console.log('📏 Applied expanded to code_exe message after creation');
-          }
-        }).catch(error => {
-          console.warn('Error evaluating code_exe message state:', error);
-        });
-      }
-      pendingStateTimeouts.delete(div);
-    }, 150);
-    pendingStateTimeouts.set(div, timeoutId);
-  }
-  
+  finalizeMessageState(div, 'code_exe');
   return div;
 }
 
@@ -1527,6 +1476,7 @@ export function drawMessageBrowser(
     false  // addControls = false to prevent basic buttons
   );
   injectConsoleControls(div, content || "", 'browser');
+  finalizeMessageState(div, 'browser');
 }
 
 export function drawMessageAgentPlain(
@@ -1841,7 +1791,7 @@ export async function reevaluateMessageStateAfterStreaming(messageDiv) {
   } catch (error) {
     console.warn('Error re-evaluating message state after streaming:', error);
   }
-  unlockMessageState(messageDiv);
+  // unlockMessageState(messageDiv); // Do not unlock automatically
 }
 
 // Debugging function for console testing
@@ -2018,4 +1968,24 @@ export function enforceLastAgentResponseExpanded() {
 function unlockAllMessageStates() {
   const lockedMessages = document.querySelectorAll('.state-lock');
   lockedMessages.forEach(msg => msg.classList.remove('state-lock'));
+}
+
+// New helper: finalize message state after render (no scroll changes)
+function finalizeMessageState(messageDiv, type) {
+  // If streaming, always expanded
+  if (messageDiv.classList.contains('message-temp')) {
+    setMessageState(messageDiv, 'expanded');
+    return;
+  }
+  // If empty, skip
+  if (!messageDiv || messageDiv.scrollHeight === 0) return;
+  // Otherwise, determine optimal state
+  determineMessageState(messageDiv).then(optimalState => {
+    setMessageState(messageDiv, optimalState === 'compact' ? 'compact' : 'expanded');
+    // Restore auto-scroll-to-bottom within message when compacted, unless user has scrolled up
+    if (optimalState === 'compact' && messageDiv.dataset.userScrolled !== 'true') {
+      messageDiv.scrollTop = messageDiv.scrollHeight;
+      messageDiv.dataset.userScrolled = "false";
+    }
+  });
 }
