@@ -1,9 +1,10 @@
 import base64
 from python.helpers.print_style import PrintStyle
 from python.helpers.tool import Tool, Response
-from python.helpers import runtime, files, images
+from python.helpers import files, images
 from mimetypes import guess_type
 from python.helpers import history
+import os # <<< ADDED for os.path.exists
 
 # image optimization and token estimation for context window
 MAX_PIXELS = 768_000
@@ -18,29 +19,29 @@ class VisionLoad(Tool):
         template: list[dict[str, str]] = []  # type: ignore
 
         for path in paths:
-            if not await runtime.call_development_function(files.exists, str(path)):
+            # --- MODIFICATION: Replace RFC call with direct local file check ---
+            # The 'files.get_abs_path' ensures it resolves paths correctly within the project.
+            absolute_path = files.get_abs_path(path)
+            if not os.path.exists(absolute_path):
+                PrintStyle().error(f"File not found locally: {absolute_path}")
                 continue
+            # --- END MODIFICATION ---
 
             if path not in self.images_dict:
-                mime_type, _ = guess_type(str(path))
+                mime_type, _ = guess_type(str(absolute_path))
                 if mime_type and mime_type.startswith("image/"):
                     try:
-                        # Read binary file
-                        file_content = await runtime.call_development_function(
-                            files.read_file_base64, str(path)
-                        )
-                        file_content = base64.b64decode(file_content)
+                        # --- MODIFICATION: Replace RFC call with direct local file read ---
+                        with open(absolute_path, "rb") as f:
+                            file_content = f.read()
+                        # --- END MODIFICATION ---
+
                         # Compress and convert to JPEG
                         compressed = images.compress_image(
                             file_content, max_pixels=MAX_PIXELS, quality=QUALITY
                         )
                         # Encode as base64
                         file_content_b64 = base64.b64encode(compressed).decode("utf-8")
-
-                        # DEBUG: Save compressed image
-                        # await runtime.call_development_function(
-                        #     files.write_file_base64, str(path), file_content_b64
-                        # )
 
                         # Construct the data URL (always JPEG after compression)
                         self.images_dict[path] = file_content_b64
@@ -49,6 +50,7 @@ class VisionLoad(Tool):
                         PrintStyle().error(f"Error processing image {path}: {e}")
                         self.agent.context.log.log("warning", f"Error processing image {path}: {e}")
 
+        # The 'dummy' message is not shown; after_execution handles the real output.
         return Response(message="dummy", break_loop=False)
 
     async def after_execution(self, response: Response, **kwargs):
@@ -72,7 +74,7 @@ class VisionLoad(Tool):
                         }
                     )
             # append as raw message content for LLMs with vision tokens estimate
-            msg = history.RawMessage(raw_content=content, preview="<Base64 encoded image data>")
+            msg = history.RawMessage(raw_content=content, preview="<Image data loaded>")
             self.agent.hist_add_message(
                 False, content=msg, tokens=TOKENS_ESTIMATE * len(content)
             )

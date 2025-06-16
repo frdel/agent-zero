@@ -1,0 +1,67 @@
+# ================================================================================
+# Custom sudoers rules for User natefoxtrot, generated on Sun Jun  8 10:26:19 PM CDT 2025
+# Allows Agent-Zero to run common pentesting tools without a password.
+# ================================================================================
+
+natefoxtrot ALL=(ALL) NOPASSWD: /home/natefoxtrot/miniconda3/envs/a0_hacking/bin/python
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/msfconsole
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/msfvenom
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/msfdb
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/beef-xss
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/local/sbin/fatrat
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/veil
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/ghidra
+# WARNING: Tool not found in PATH: ghidraRun
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/backdoor-factory
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/shellter
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/sbin/airmon-ng
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/sbin/aireplay-ng
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/sbin/airodump-ng
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/local/bin/wifite
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/bettercap
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/macchanger
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/sparrow-wifi
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/hcxdumptool
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/hcxpcapngtool
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/hcxhashtool
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/hcxpsktool
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/hcxpmktool
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/hcxeiutool
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/nmap
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/sbin/netdiscover
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/sbin/netsniff-ng
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/fragrouter
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/wireshark
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/tshark
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/tcpdump
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/dnsrecon
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/dnsenum
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/dnschef
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/dnswalk
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/sqlmap
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/sqlninja
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/sbin/john
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/local/bin/hashcat
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/hydra
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/crunch
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/cewl
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/recon-ng
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/theharvester
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/metagoofil
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/sublist3r
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/sherlock
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/netexec
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/evil-winrm
+# WARNING: Tool not found in PATH: psexec.py
+# WARNING: Tool not found in PATH: smbclient.py
+# WARNING: Tool not found in PATH: secretsdump.py
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/weevely
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/sbin/scrounge-ntfs
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/unix-privesc-check
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/autopsy
+# WARNING: Tool not found in PATH: volatility
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/fls
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/icat
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/stegosuite
+natefoxtrot ALL=(ALL) NOPASSWD: /usr/bin/steghide
+# ================================================================================
