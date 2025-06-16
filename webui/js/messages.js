@@ -1,5 +1,9 @@
 // copy button
 import { openImageModal } from "./image_modal.js";
+import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
+
+const katexDelimiterLeft = "<$LATEX>";
+const katexDelimiterRight = "</$LATEX>";
 
 function createCopyButton() {
   const button = document.createElement("button");
@@ -15,11 +19,11 @@ function createCopyButton() {
     let textToCopy;
 
     if (container.classList.contains("kvps-row")) {
-      textToCopy = container.querySelector(".kvps-val").textContent;
+      textToCopy = container.querySelector(".kvps-val").innerText;
     } else if (container.classList.contains("message-text")) {
-      textToCopy = container.querySelector("span").textContent;
+      textToCopy = container.querySelector("span").innerText;
     } else {
-      textToCopy = container.querySelector("span").textContent;
+      textToCopy = container.querySelector("span").innerText;
     }
 
     try {
@@ -1110,7 +1114,8 @@ export function _drawMessage(
   contentClasses = [],
   latex = false,
   addControls = true,
-  skipBodyHeading = false // NEW: allow skipping <h4> in body
+  skipBodyHeading = false, // NEW: allow skipping <h4> in body
+  markdown = false
 ) {
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", ...messageClasses);
@@ -1136,6 +1141,7 @@ export function _drawMessage(
   // Only add heading in body if not skipping (e.g. not error)
   if (heading && !skipBodyHeading) {
     const headingElement = document.createElement("h4");
+    headingElement.classList.add("msg-heading");
     headingElement.textContent = heading;
     messageDiv.appendChild(headingElement);
   }
@@ -1143,31 +1149,71 @@ export function _drawMessage(
   drawKvps(messageDiv, kvps, latex);
 
   if (content && content.trim().length > 0) {
-    const preElement = document.createElement("pre");
-    preElement.classList.add("msg-content", ...contentClasses);
-    preElement.style.whiteSpace = "pre-wrap";
-    preElement.style.wordBreak = "break-word";
+    if (markdown) {
+      const contentDiv = document.createElement("div");
+      contentDiv.classList.add("msg-content", ...contentClasses);
 
-    const spanElement = document.createElement("span");
-    spanElement.innerHTML = convertHTML(content);
+      const spanElement = document.createElement("span"); // Wrapper span
+      let processedContent = content;
+      processedContent = convertImageTags(processedContent);
+      processedContent = convertImgFilePaths(processedContent);
+      processedContent = marked.parse(processedContent, { breaks: true });
+      processedContent = convertPathsToLinks(processedContent);
+      spanElement.innerHTML = processedContent;
+      contentDiv.appendChild(spanElement);
 
-    // Add click handler for small screens
-    spanElement.addEventListener("click", () => {
-      copyText(spanElement.textContent, spanElement);
-    });
+      addCopyButtonToElement(contentDiv);
+      messageDiv.appendChild(contentDiv);
 
     preElement.appendChild(spanElement);
     addCopyButtonToElement(preElement);
 
     const wrapper = wrapInScrollable(preElement, skipScroll);
     messageDiv.appendChild(wrapper);
+      // KaTeX rendering for markdown
+      if (window.renderMathInElement && latex) {
+        renderMathInElement(contentDiv, {
+          delimiters: [
+            {
+              left: katexDelimiterLeft,
+              right: katexDelimiterRight,
+              display: true,
+            },
+          ],
+          throwOnError: false,
+        });
+      }
+    } else {
+      const preElement = document.createElement("pre");
+      preElement.classList.add("msg-content", ...contentClasses);
+      preElement.style.whiteSpace = "pre-wrap";
+      preElement.style.wordBreak = "break-word";
 
-    // Render LaTeX math within the span
-    if (window.renderMathInElement && latex) {
-      renderMathInElement(spanElement, {
-        delimiters: [{ left: "$", right: "$", display: true }],
-        throwOnError: false,
+      const spanElement = document.createElement("span");
+      spanElement.innerHTML = convertHTML(content);
+
+      // Add click handler for small screens
+      spanElement.addEventListener("click", () => {
+        copyText(spanElement.textContent, spanElement);
       });
+
+      preElement.appendChild(spanElement);
+      addCopyButtonToElement(preElement);
+      messageDiv.appendChild(preElement);
+
+      // Render LaTeX math within the span
+      if (window.renderMathInElement && latex) {
+        renderMathInElement(spanElement, {
+          delimiters: [
+            {
+              left: katexDelimiterLeft,
+              right: katexDelimiterRight,
+              display: true,
+            },
+          ],
+          throwOnError: false,
+        });
+      }
     }
   }
 
@@ -1200,7 +1246,8 @@ export function drawMessageDefault(
     ["msg-json"],
     false,
     false,  // addControls = false to prevent basic buttons
-    false  // skipBodyHeading = false
+    false,  // skipBodyHeading = false
+    false
   );
   injectConsoleControls(div, content || "", 'default', heading);
   finalizeMessageState(div, 'default');
@@ -1232,7 +1279,8 @@ export function drawMessageAgent(
     ["msg-json"],
     false,
     false,  // addControls = false to prevent basic buttons
-    false  // skipBodyHeading = false
+    false,  // skipBodyHeading = false
+    false
   );
   injectConsoleControls(div, content || "", 'agent', heading);
   // Immediately set state after render (no scroll changes)
@@ -1259,7 +1307,8 @@ export function drawMessageResponse(
     [],
     true,
     false,  // addControls = false to prevent basic buttons
-    false  // skipBodyHeading = false
+    false,  // skipBodyHeading = false
+    true
   );
   
   // Add proper controls for agent response messages
@@ -1315,7 +1364,7 @@ export function drawMessageDelegation(
   _drawMessage(
     messageContainer,
     heading,
-    messageContent,
+    content,
     temp,
     true,
     kvps,
@@ -1323,7 +1372,8 @@ export function drawMessageDelegation(
     [],
     true,
     false,  // addControls = false to prevent basic buttons
-    false  // skipBodyHeading = false
+    false,  // skipBodyHeading = false
+    false
   );
 }
 
@@ -1341,6 +1391,7 @@ export function drawMessageUser(
   messageDiv.classList.add("message", "message-user");
   
   const headingElement = document.createElement("h4");
+  headingElement.classList.add("msg-heading");
   headingElement.textContent = "User message";
   messageDiv.appendChild(headingElement);
   
@@ -1447,7 +1498,8 @@ export function drawMessageTool(
     ["msg-output"],
     false,
     false,  // addControls = false to prevent basic buttons
-    false  // skipBodyHeading = false
+    false,  // skipBodyHeading = false
+    false
   );
   injectConsoleControls(div, content || "", 'tool', heading);
   finalizeMessageState(div, 'tool');
@@ -1473,7 +1525,8 @@ export function drawMessageCodeExe(
     [],
     false,
     false,
-    false  // skipBodyHeading = false
+    false,  // skipBodyHeading = false
+    false
   );
   injectConsoleControls(div, content || "", 'code_exe', heading);
   finalizeMessageState(div, 'code_exe');
@@ -1500,7 +1553,8 @@ export function drawMessageBrowser(
     ["msg-json"],
     false,
     false,  // addControls = false to prevent basic buttons
-    false  // skipBodyHeading = false
+    false,  // skipBodyHeading = false
+    false
   );
   injectConsoleControls(div, content || "", 'browser', heading);
   finalizeMessageState(div, 'browser');
@@ -1527,7 +1581,8 @@ export function drawMessageAgentPlain(
     [],
     false,
     false,
-    false  // skipBodyHeading = false
+    false,  // skipBodyHeading = false
+    false
   );
   messageContainer.classList.add("center-container");
   return div;
@@ -1576,7 +1631,8 @@ export function drawMessageUtil(
     ["msg-json"],
     false,
     false,
-    false  // skipBodyHeading = false
+    false,  // skipBodyHeading = false
+    false
   );
   messageContainer.classList.add("center-container");
 }
@@ -1698,7 +1754,7 @@ function drawKvps(container, kvps, latex) {
 
           if (window.renderMathInElement && latex) {
             renderMathInElement(span, {
-              delimiters: [{ left: "$", right: "$", display: true }],
+              delimiters: [{ left: katexDelimiterLeft, right: katexDelimiterRight, display: true }],
               throwOnError: false,
             });
           }
@@ -1749,9 +1805,13 @@ export function convertHTML(str) {
   if (typeof str !== "string") str = JSON.stringify(str, null, 2);
 
   let result = escapeHTML(str);
-  result = convertPathsToLinks(result);
   result = convertImageTags(result);
+  result = convertPathsToLinks(result);
   return result;
+}
+
+function convertImgFilePaths(str) {
+  return str.replace("img://", "/image_get?path=");   
 }
 
 function escapeHTML(str) {
@@ -1766,27 +1826,36 @@ function escapeHTML(str) {
 }
 
 function convertPathsToLinks(str) {
-  function generateLinks(match, ...args) {
-    const parts = match.split("/");
-
-    if (!parts[0]) parts.shift();
-    let conc = "";
-    let html = "";
-    for (let part of parts) {
-      conc += "/" + part;
-      html += `/<a href="#" class="path-link" onclick="openFileLink('${conc}');">${part}</a>`;
-    }
-    return html;
+  function generateLinks(match) {
+      const parts = match.split("/");
+      if (!parts[0]) parts.shift();             // drop empty element left of first “/”
+      let conc = "";
+      let html = "";
+      for (const part of parts) {
+          conc += "/" + part;
+          html += `/<a href="#" class="path-link" onclick="openFileLink('${conc}');">${part}</a>`;
+      }
+      return html;
   }
 
-  const prefix = `(?:^|[ \`'"\\n]|&#39;|&quot;)`; // Use a non-capturing group for OR logic
-  const folder = `[a-zA-Z0-9_\\/.\\-]`; // Characters allowed in folder chain
-  const file = `[a-zA-Z0-9_\\-\\/]`; // Characters allowed in file names
+  const prefix = `(?:^|[> \`'"\\n]|&#39;|&quot;)`;
+  const folder = `[a-zA-Z0-9_\\/.\\-]`;
+  const file = `[a-zA-Z0-9_\\-\\/]`;
   const suffix = `(?<!\\.)`;
+  const pathRegex = new RegExp(`(?<=${prefix})\\/${folder}*${file}${suffix}`, "g");
 
-  const regex = new RegExp(`(?<=${prefix})\\/${folder}*${file}${suffix}`, "g");
+  // skip paths inside html tags, like <img src="/path/to/image">
+  const tagRegex = /(<(?:[^<>"']+|"[^"]*"|'[^']*')*>)/g;
 
-  return str.replace(regex, generateLinks);
+  return str
+      .split(tagRegex)              // keep tags & text separate
+      .map(chunk => {
+          // if it *starts* with '<', it’s a tag -> leave untouched
+          if (chunk.startsWith("<")) return chunk;
+          // otherwise run your link-generation
+          return chunk.replace(pathRegex, generateLinks);
+      })
+      .join("");
 }
 
 // Removed broken inline copy system - using original copy buttons instead
@@ -2061,3 +2130,30 @@ function finalizeMessageState(messageDiv, type) {
     }
   });
 }
+// function convertPathsToLinksInHtml(htmlString) {
+//   // 1. Parse the input safely
+//   const wrapper = document.createElement("div");
+//   wrapper.innerHTML = htmlString;
+
+//   // 2. Depth-first walk
+//   function walk(node) {
+//     // Skip <script> and <style> blocks entirely
+//     if (node.nodeName === "SCRIPT" || node.nodeName === "STYLE") return;
+
+//     if (node.nodeType === Node.TEXT_NODE) {
+//       const original = node.nodeValue;
+//       const replaced = convertPathsToLinks(original);
+//       if (replaced !== original) {
+//         // Turn the replacement HTML string into real nodes
+//         const frag = document.createRange().createContextualFragment(replaced);
+//         node.replaceWith(frag);
+//       }
+//     } else {
+//       // Recurse into children
+//       for (const child of Array.from(node.childNodes)) walk(child);
+//     }
+//   }
+
+//   walk(wrapper);
+//   return wrapper.innerHTML;
+// }
