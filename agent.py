@@ -1,5 +1,6 @@
 import asyncio
 import nest_asyncio
+
 nest_asyncio.apply()
 
 from collections import OrderedDict
@@ -79,7 +80,7 @@ class AgentContext:
         if not AgentContext._contexts:
             return None
         return list(AgentContext._contexts.values())[0]
-    
+
     @staticmethod
     def all():
         return list(AgentContext._contexts.values())
@@ -97,7 +98,8 @@ class AgentContext:
             "name": self.name,
             "created_at": (
                 Localization.get().serialize_datetime(self.created_at)
-                if self.created_at else Localization.get().serialize_datetime(datetime.fromtimestamp(0))
+                if self.created_at
+                else Localization.get().serialize_datetime(datetime.fromtimestamp(0))
             ),
             "no": self.no,
             "log_guid": self.log.guid,
@@ -106,7 +108,8 @@ class AgentContext:
             "paused": self.paused,
             "last_message": (
                 Localization.get().serialize_datetime(self.last_message)
-                if self.last_message else Localization.get().serialize_datetime(datetime.fromtimestamp(0))
+                if self.last_message
+                else Localization.get().serialize_datetime(datetime.fromtimestamp(0))
             ),
             "type": self.type.value,
         }
@@ -124,7 +127,11 @@ class AgentContext:
     ) -> list[Log.LogItem]:
         items: list[Log.LogItem] = []
         for context in AgentContext.all():
-            items.append(context.log.log(type, heading, content, kvps, temp, update_progress, id, **kwargs))
+            items.append(
+                context.log.log(
+                    type, heading, content, kvps, temp, update_progress, id, **kwargs
+                )
+            )
         return items
 
     def kill_process(self):
@@ -253,6 +260,8 @@ class LoopData:
         self.extras_temporary: OrderedDict[str, history.MessageContent] = OrderedDict()
         self.extras_persistent: OrderedDict[str, history.MessageContent] = OrderedDict()
         self.last_response = ""
+        self.params_temporary: dict = {}
+        self.params_persistent: dict = {}
 
         # override values with kwargs
         for key, value in kwargs.items():
@@ -313,9 +322,12 @@ class Agent:
 
                     self.context.streaming_agent = self  # mark self as current streamer
                     self.loop_data.iteration += 1
+                    self.loop_data.params_temporary = {}  # clear temporary params
 
                     # call message_loop_start extensions
-                    await self.call_extensions("message_loop_start", loop_data=self.loop_data)
+                    await self.call_extensions(
+                        "message_loop_start", loop_data=self.loop_data
+                    )
 
                     try:
                         # prepare LLM chain (model, system, history)
@@ -328,15 +340,18 @@ class Agent:
                             padding=True,
                             background_color="white",
                         ).print(f"{self.agent_name}: Generating")
-                        log = self.context.log.log(
-                            type="agent", heading=f"{self.agent_name}: Generating"
+                        # create log message right away, more responsive
+                        self.loop_data.params_temporary["log_item_generating"] = (
+                            self.context.log.log(
+                                type="agent", heading=f"{self.agent_name}: Generating"
+                            )
                         )
 
                         async def stream_callback(chunk: str, full: str):
                             # output the agent response stream
                             if chunk:
                                 printer.stream(chunk)
-                                self.log_from_stream(full, log)
+                                await self.handle_response_stream(full)
 
                         agent_response = await self.call_chat_model(
                             prompt, callback=stream_callback
@@ -414,10 +429,14 @@ class Agent:
         # for extra in loop_data.extras_temporary.values():
         #     extras += history.Message(False, content=extra).output()
         extras = history.Message(
-            False, 
-            content=self.read_prompt("agent.context.extras.md", extras=dirty_json.stringify(
-                {**loop_data.extras_persistent, **loop_data.extras_temporary}
-                ))).output()
+            False,
+            content=self.read_prompt(
+                "agent.context.extras.md",
+                extras=dirty_json.stringify(
+                    {**loop_data.extras_persistent, **loop_data.extras_temporary}
+                ),
+            ),
+        ).output()
         loop_data.extras_temporary.clear()
 
         # convert history + extras to LLM format
@@ -527,14 +546,14 @@ class Agent:
                 "fw.intervention.md",
                 message=message.message,
                 attachments=message.attachments,
-                system_message=message.system_message
+                system_message=message.system_message,
             )
         else:
             content = self.parse_prompt(
                 "fw.user_message.md",
                 message=message.message,
                 attachments=message.attachments,
-                system_message=message.system_message
+                system_message=message.system_message,
             )
 
         # remove empty parts from template
@@ -705,34 +724,39 @@ class Agent:
         if tool_request is not None:
             raw_tool_name = tool_request.get("tool_name", "")  # Get the raw tool name
             tool_args = tool_request.get("tool_args", {})
-            
+
             tool_name = raw_tool_name  # Initialize tool_name with raw_tool_name
             tool_method = None  # Initialize tool_method
 
             # Split raw_tool_name into tool_name and tool_method if applicable
             if ":" in raw_tool_name:
                 tool_name, tool_method = raw_tool_name.split(":", 1)
-            
+
             tool = None  # Initialize tool to None
 
             # Try getting tool from MCP first
             try:
-                import python.helpers.mcp_handler as mcp_helper 
-                mcp_tool_candidate = mcp_helper.MCPConfig.get_instance().get_tool(self, tool_name)
+                import python.helpers.mcp_handler as mcp_helper
+
+                mcp_tool_candidate = mcp_helper.MCPConfig.get_instance().get_tool(
+                    self, tool_name
+                )
                 if mcp_tool_candidate:
                     tool = mcp_tool_candidate
             except ImportError:
-                PrintStyle(background_color="black", font_color="yellow", padding=True).print(
-                    "MCP helper module not found. Skipping MCP tool lookup."
-                 )
+                PrintStyle(
+                    background_color="black", font_color="yellow", padding=True
+                ).print("MCP helper module not found. Skipping MCP tool lookup.")
             except Exception as e:
-                PrintStyle(background_color="black", font_color="red", padding=True).print(
-                    f"Failed to get MCP tool '{tool_name}': {e}"
-                )
+                PrintStyle(
+                    background_color="black", font_color="red", padding=True
+                ).print(f"Failed to get MCP tool '{tool_name}': {e}")
 
             # Fallback to local get_tool if MCP tool was not found or MCP lookup failed
             if not tool:
-                tool = self.get_tool(name=tool_name, method=tool_method, args=tool_args, message=msg)
+                tool = self.get_tool(
+                    name=tool_name, method=tool_method, args=tool_args, message=msg
+                )
 
             if tool:
                 await self.handle_intervention()
@@ -745,7 +769,9 @@ class Agent:
                 if response.break_loop:
                     return response.message
             else:
-                error_detail = f"Tool '{raw_tool_name}' not found or could not be initialized."
+                error_detail = (
+                    f"Tool '{raw_tool_name}' not found or could not be initialized."
+                )
                 self.hist_add_warning(error_detail)
                 PrintStyle(font_color="red", padding=True).print(error_detail)
                 self.context.log.log(
@@ -756,21 +782,29 @@ class Agent:
             self.hist_add_warning(warning_msg_misformat)
             PrintStyle(font_color="red", padding=True).print(warning_msg_misformat)
             self.context.log.log(
-                type="error", content=f"{self.agent_name}: Message misformat, no valid tool request found."
+                type="error",
+                content=f"{self.agent_name}: Message misformat, no valid tool request found.",
             )
 
-    def log_from_stream(self, stream: str, logItem: Log.LogItem):
+    async def handle_response_stream(self, stream: str):
         try:
             if len(stream) < 25:
                 return  # no reason to try
             response = DirtyJson.parse_string(stream)
             if isinstance(response, dict):
-                # log if result is a dictionary already
-                logItem.update(content=stream, kvps=response)
+                await self.call_extensions(
+                    "response_stream",
+                    loop_data=self.loop_data,
+                    text=stream,
+                    parsed=response,
+                )
+
         except Exception as e:
             pass
 
-    def get_tool(self, name: str, method: str | None, args: dict, message: str, **kwargs):
+    def get_tool(
+        self, name: str, method: str | None, args: dict, message: str, **kwargs
+    ):
         from python.tools.unknown import Unknown
         from python.helpers.tool import Tool
 
@@ -778,13 +812,22 @@ class Agent:
             "python/tools", name + ".py", Tool
         )
         tool_class = classes[0] if classes else Unknown
-        return tool_class(agent=self, name=name, method=method, args=args, message=message, **kwargs)
+        return tool_class(
+            agent=self, name=name, method=method, args=args, message=message, **kwargs
+        )
 
     async def call_extensions(self, folder: str, **kwargs) -> Any:
         from python.helpers.extension import Extension
 
-        classes = extract_tools.load_classes_from_folder(
-            "python/extensions/" + folder, "*", Extension
-        )
+        cache = {}  # some extensions can be called very often, like response_stream
+
+        if folder in cache:
+            classes = cache[folder]
+        else:
+            classes = extract_tools.load_classes_from_folder(
+                "python/extensions/" + folder, "*", Extension
+            )
+            cache[folder] = classes
+
         for cls in classes:
             await cls(agent=self).execute(**kwargs)

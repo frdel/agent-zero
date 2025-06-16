@@ -42,7 +42,7 @@ No other text is allowed!
 Only one JSON object allowed per reply
 
 ### rules
-Math requires latex notation $...$ delimiters
+Math requires latex notation <$LATEX>...<$LATEX> delimiters
 Code inside markdown must be enclosed in "~~~" and not "```"
 dont use **
 
