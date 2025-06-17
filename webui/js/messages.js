@@ -247,22 +247,75 @@ function injectConsoleControls(messageDiv, command, type, heading) {
   // Patch: Only allow state/scroll updates for streaming message during streaming
   // Accept a force parameter to override the guard for user actions
   function debouncedStateUpdate(messageElement, delay = 100, force = false) {
-    // If not the streaming message, skip during streaming (unless forced by user action)
     const isStreaming = document.querySelector('.message-temp');
-    // Allow code_exe messages to update state even if streaming
-    if (!force && isStreaming && !messageElement.classList.contains('message-temp')) {
-      if (!messageElement.classList.contains('message-code-exe')) {
-        console.log(`[GUARD] debouncedStateUpdate: Skipping ${messageElement.id || messageElement.className} because another message is streaming.`);
+    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+    console.log(`[DEBUG][debouncedStateUpdate] called for message id/class=${messageElement.id || messageElement.className} force=${force} isStreaming=${!!isStreaming} isFixedHeightGlobal=${isFixedHeightGlobal} classList=${messageElement.className}`);
+    // --- PATCH: If force is true, ALWAYS apply the state, even if streaming or locked ---
+    if (force) {
+      // Remove state-lock if present
+      if (messageElement.classList.contains('state-lock')) {
+        messageElement.classList.remove('state-lock');
+        console.log(`[DEBUG][debouncedStateUpdate] force=true, removed state-lock from ${messageElement.id || messageElement.className}`);
+      }
+      // Proceed to state update below, regardless of streaming
+    } else {
+      if (isStreaming && !messageElement.classList.contains('message-temp')) {
+        if (!messageElement.classList.contains('message-code-exe')) {
+          console.log(`[GUARD][debouncedStateUpdate] Skipping ${messageElement.id || messageElement.className} because another message is streaming.`);
+          return;
+        }
+      }
+      if (messageElement.classList.contains('message-temp') || messageElement.classList.contains('state-lock')){
+        console.log(`[GUARD][debouncedStateUpdate] Skipping ${messageElement.id || messageElement.className} because it is streaming or locked.`);
         return;
       }
     }
-    if (!force && (messageElement.classList.contains('message-temp') || messageElement.classList.contains('state-lock'))) {
-      console.log(`[GUARD] debouncedStateUpdate: Skipping ${messageElement.id || messageElement.className} because it is streaming or locked.`);
+    // --- PATCH: When fixed height is OFF and force=true, set state directly from localStorage and do not call determineMessageState ---
+    if (!isFixedHeightGlobal && force) {
+      let messageType = 'default';
+      if (messageElement.classList.contains('message-code-exe')) messageType = 'code_exe';
+      else if (messageElement.classList.contains('message-tool')) messageType = 'tool';
+      else if (messageElement.classList.contains('message-agent-response')) messageType = 'response';
+      else if (messageElement.classList.contains('message-agent')) messageType = 'agent';
+      else if (messageElement.classList.contains('message-browser')) messageType = 'browser';
+      else if (messageElement.classList.contains('message-error')) messageType = 'error';
+      else if (messageElement.classList.contains('message-warning')) messageType = 'warning';
+      else if (messageElement.classList.contains('message-info')) messageType = 'info';
+      const isFullHeight = localStorage.getItem(`msgFullHeight_${messageType}`) === 'true';
+      console.log(`[DEBUG][debouncedStateUpdate] (fixedHeight=OFF, force) messageType=${messageType} isFullHeight=${isFullHeight}`);
+      if (isFullHeight) {
+        setMessageState(messageElement, 'expanded');
+        messageElement.style.setProperty('height', 'auto', 'important');
+        messageElement.style.setProperty('max-height', 'none', 'important');
+        messageElement.style.setProperty('overflow-y', 'visible', 'important');
+        messageElement.style.setProperty('overflow-x', 'auto', 'important');
+        messageElement.style.setProperty('scrollbar-gutter', 'auto', 'important');
+      } else {
+        setMessageState(messageElement, 'compact');
+        messageElement.style.setProperty('max-height', '400px', 'important');
+        messageElement.style.setProperty('overflow-y', 'auto', 'important');
+        messageElement.style.setProperty('overflow-x', 'auto', 'important');
+        messageElement.style.setProperty('scrollbar-gutter', 'stable', 'important');
+      }
+      ensureScrollTracking(messageElement);
+      return;
+    }
+    // --- END PATCH ---
+    // --- PATCH: Always allow user-initiated actions (force=true) even during streaming ---
+    if (!force && isStreaming && !messageElement.classList.contains('message-temp')) {
+      if (!messageElement.classList.contains('message-code-exe')) {
+        console.log(`[GUARD][debouncedStateUpdate] Skipping ${messageElement.id || messageElement.className} because another message is streaming.`);
+        return;
+      }
+    }
+    if (!force && (messageElement.classList.contains('message-temp') || messageElement.classList.contains('state-lock'))){
+      console.log(`[GUARD][debouncedStateUpdate] Skipping ${messageElement.id || messageElement.className} because it is streaming or locked.`);
       return;
     }
     const messageId = messageElement.id || messageElement.className || Math.random().toString();
     if (stateUpdateTimeouts.has(messageId)) {
       clearTimeout(stateUpdateTimeouts.get(messageId));
+      console.log(`[DEBUG][debouncedStateUpdate] Cleared previous timeout for messageId=${messageId}`);
     }
     lockMessageState(messageElement);
     const prevUserScrolled = messageElement.dataset.userScrolled;
@@ -279,6 +332,7 @@ function injectConsoleControls(messageDiv, command, type, heading) {
         else if (messageElement.classList.contains('message-info')) messageType = 'info';
         const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
         const isFullHeight = localStorage.getItem(`msgFullHeight_${messageType}`) === 'true';
+        console.log(`[DEBUG][debouncedStateUpdate][timeout] messageType=${messageType} isFixedHeightGlobal=${isFixedHeightGlobal} isFullHeight=${isFullHeight}`);
         if (!isFixedHeightGlobal || isFullHeight) {
           setMessageState(messageElement, 'expanded');
           messageElement.style.setProperty('height', 'auto', 'important');
@@ -297,9 +351,11 @@ function injectConsoleControls(messageDiv, command, type, heading) {
             msgContent.style.setProperty('max-height', 'none', 'important');
             msgContent.style.setProperty('overflow-y', 'visible', 'important');
           }
-          console.log(`[STATE] debouncedStateUpdate: ${messageId} set to expanded | scrollTop=${messageElement.scrollTop} | height=${messageElement.scrollHeight}`);
+          console.log(`[STATE] debouncedStateUpdate: ${messageId} set to expanded | scrollTop=${messageElement.scrollTop} | height=${messageElement.scrollHeight} | classList=${messageElement.className}`);
           unlockMessageState(messageElement);
           stateUpdateTimeouts.delete(messageId);
+          // Sync button state after state change
+          syncButtonStateToDOM(messageElement, messageType);
           return;
         }
         const newState = await determineMessageState(messageElement);
@@ -308,15 +364,19 @@ function injectConsoleControls(messageDiv, command, type, heading) {
         if (prevUserScrolled !== undefined) {
           messageElement.dataset.userScrolled = prevUserScrolled;
         }
-        console.log(`[STATE] debouncedStateUpdate: ${messageId} set to ${newState} | scrollTop=${messageElement.scrollTop} | height=${messageElement.scrollHeight}`);
+        console.log(`[STATE] debouncedStateUpdate: ${messageId} set to ${newState} | scrollTop=${messageElement.scrollTop} | height=${messageElement.scrollHeight} | classList=${messageElement.className}`);
         unlockMessageState(messageElement);
         stateUpdateTimeouts.delete(messageId);
+        // Sync button state after state change
+        syncButtonStateToDOM(messageElement, messageType);
       } catch (error) {
         unlockMessageState(messageElement);
         stateUpdateTimeouts.delete(messageId);
+        console.error(`[ERROR][debouncedStateUpdate][timeout] messageId=${messageId} error=`, error);
       }
     }, delay);
     stateUpdateTimeouts.set(messageId, timeoutId);
+    console.log(`[DEBUG][debouncedStateUpdate] Set timeout for messageId=${messageId} delay=${delay}`);
   }
 
   // Global observer for streaming message updates
@@ -370,111 +430,60 @@ function injectConsoleControls(messageDiv, command, type, heading) {
     const messageSelector = getMessageSelectorForType(type);
     const allMessagesOfType = document.querySelectorAll(messageSelector);
     const isStreaming = document.querySelector('.message-temp');
-    // --- Removed global reset logic from here ---
-
-    // Preserve scroll position
-    const chatHistory = document.getElementById('chat-history');
-    const prevScrollTop = chatHistory ? chatHistory.scrollTop : null;
-    const prevScrollHeight = chatHistory ? chatHistory.scrollHeight : null;
-
-    for (const msg of allMessagesOfType) {
-      // Always skip streaming or locked messages
-      if (msg.classList.contains('message-temp') || msg.classList.contains('state-lock')) {
-        continue;
-      }
-      // --- Fix: Always allow hide/unhide to override streaming guard ---
-      // Only skip if locked/streaming AND not a hide/unhide action
-      if (!force && isStreaming && !msg.classList.contains('message-temp')) {
-        if (!msg.classList.contains('message-code-exe')) {
-          console.log(`[GUARD] updateAllMessagesOfType: Skipping ${msg.id || msg.className} because another message is streaming.`);
+    console.log(`[DEBUG][updateAllMessagesOfType] type=${type} force=${force} isHidden=${isHidden} isFullHeight=${isFullHeight} isStreaming=${!!isStreaming} numMessages=${allMessagesOfType.length}`);
+    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+    if (!isFixedHeightGlobal && force) {
+      for (const msg of allMessagesOfType) {
+        if (!force && (msg.classList.contains('message-temp') || msg.classList.contains('state-lock'))) {
+          console.log(`[GUARD][updateAllMessagesOfType] Skipping message ${msg.id || msg.className} because it is streaming or locked.`);
           continue;
         }
-      }
-      if (!force && (msg.classList.contains('message-temp') || msg.classList.contains('state-lock'))){
-        console.log(`[GUARD] updateAllMessagesOfType: Skipping ${msg.id || msg.className} because it is streaming or locked.`);
-        continue;
-      }
-      const prevState = msg.classList.contains('message-compact') ? 'compact' : (msg.classList.contains('message-expanded') ? 'expanded' : 'none');
-      if (isHidden) {
-        msg.classList.add('message-collapsed');
-        addContentPreview(msg, type);
-        console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to collapsed | prevState=${prevState}`);
-      } else {
-        msg.classList.remove('message-collapsed');
-      }
-      removeContentPreview(msg);
-      const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-      // --- Use only localStorage for isFullHeight, do not infer from DOM ---
-      if (!isFixedHeightGlobal) {
-        if (!isFullHeight) {
-          setMessageState(msg, 'compact');
-          msg.style.setProperty('max-height', '400px', 'important');
-          msg.style.setProperty('overflow-y', 'auto', 'important');
-          msg.style.setProperty('overflow-x', 'auto', 'important');
-          msg.style.setProperty('scrollbar-gutter', 'stable', 'important');
-          ensureScrollTracking(msg);
-          console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to compact (user-forced) | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
+        if (msg.classList.contains('message-temp') && !force) continue;
+        if (isHidden) {
+          msg.classList.add('message-collapsed');
+          addContentPreview(msg, type);
         } else {
-          setMessageState(msg, 'expanded');
-          msg.style.setProperty('height', 'auto', 'important');
-          msg.style.setProperty('max-height', 'none', 'important');
-          msg.style.setProperty('overflow-y', 'visible', 'important');
-          msg.style.setProperty('overflow-x', 'auto', 'important');
-          msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
-          const scrollableContent = msg.querySelector('.scrollable-content');
-          if (scrollableContent) {
-            scrollableContent.style.setProperty('max-height', 'none', 'important');
-            scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
-            scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
-          }
-          const msgContent = msg.querySelector('.msg-content');
-          if (msgContent) {
-            msgContent.style.setProperty('max-height', 'none', 'important');
-            msgContent.style.setProperty('overflow-y', 'visible', 'important');
-          }
-          console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to expanded | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
-        }
-      } else {
-        if (isFullHeight) {
-          setMessageState(msg, 'expanded');
-          msg.style.setProperty('height', 'auto', 'important');
-          msg.style.setProperty('max-height', 'none', 'important');
-          msg.style.setProperty('overflow-y', 'visible', 'important');
-          msg.style.setProperty('overflow-x', 'auto', 'important');
-          msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
-          const scrollableContent = msg.querySelector('.scrollable-content');
-          if (scrollableContent) {
-            scrollableContent.style.setProperty('max-height', 'none', 'important');
-            scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
-            scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
-          }
-          const msgContent = msg.querySelector('.msg-content');
-          if (msgContent) {
-            msgContent.style.setProperty('max-height', 'none', 'important');
-            msgContent.style.setProperty('overflow-y', 'visible', 'important');
-          }
-          console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to expanded | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
-          try {
-            await new Promise(resolve => setTimeout(resolve, 10));
-            const optimalState = await determineMessageState(msg);
-            setMessageState(msg, optimalState === 'compact' ? 'compact' : 'expanded');
-            ensureScrollTracking(msg);
-            console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to ${optimalState} | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
-          } catch (error) {
+          msg.classList.remove('message-collapsed');
+          removeContentPreview(msg);
+          if (isFullHeight) {
+            setMessageState(msg, 'expanded');
+            msg.style.setProperty('height', 'auto', 'important');
+            msg.style.setProperty('max-height', 'none', 'important');
+            msg.style.setProperty('overflow-y', 'visible', 'important');
+            msg.style.setProperty('overflow-x', 'auto', 'important');
+            msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
+          } else {
             setMessageState(msg, 'compact');
-            ensureScrollTracking(msg);
-            console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} fallback to compact | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
+            msg.style.setProperty('max-height', '400px', 'important');
+            msg.style.setProperty('overflow-y', 'auto', 'important');
+            msg.style.setProperty('overflow-x', 'auto', 'important');
+            msg.style.setProperty('scrollbar-gutter', 'stable', 'important');
           }
-        } else {
-          setMessageState(msg, 'compact');
-          msg.style.setProperty('max-height', '400px', 'important');
-          msg.style.setProperty('overflow-y', 'auto', 'important');
-          msg.style.setProperty('overflow-x', 'auto', 'important');
-          msg.style.setProperty('scrollbar-gutter', 'stable', 'important');
           ensureScrollTracking(msg);
-          console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to compact (user-forced) | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
+          // Sync button state after state change
+          syncButtonStateToDOM(msg, type);
         }
       }
+      updateAllButtonStatesForType(type);
+      if (!isStreaming) {
+        unlockAllMessageStates();
+        allMessagesOfType.forEach(msg => {
+          if (!msg.classList.contains('message-temp')) {
+            reevaluateMessageStateAfterStreaming(msg);
+          }
+        });
+      }
+      // Restore scroll position if it changed
+      const chatHistory = document.getElementById('chat-history');
+      if (chatHistory && chatHistory.scrollTop !== null && chatHistory.scrollHeight !== null) {
+        const newScrollHeight = chatHistory.scrollHeight;
+        chatHistory.scrollTop = newScrollHeight - chatHistory.scrollHeight + chatHistory.scrollTop;
+      }
+      return;
+    }
+    for (const msg of allMessagesOfType) {
+      // Always pass force=true for user-initiated actions (from toggleHeight)
+      debouncedStateUpdate(msg, 0, force);
     }
     updateAllButtonStatesForType(type);
     if (!isStreaming) {
@@ -486,9 +495,10 @@ function injectConsoleControls(messageDiv, command, type, heading) {
       });
     }
     // Restore scroll position if it changed
-    if (chatHistory && prevScrollTop !== null && prevScrollHeight !== null) {
+    const chatHistory = document.getElementById('chat-history');
+    if (chatHistory && chatHistory.scrollTop !== null && chatHistory.scrollHeight !== null) {
       const newScrollHeight = chatHistory.scrollHeight;
-      chatHistory.scrollTop = newScrollHeight - prevScrollHeight + prevScrollTop;
+      chatHistory.scrollTop = newScrollHeight - chatHistory.scrollHeight + chatHistory.scrollTop;
     }
   };
 
@@ -601,8 +611,9 @@ function injectConsoleControls(messageDiv, command, type, heading) {
   const toggleVisibility = () => {
     const currentState = localStorage.getItem(`msgHidden_${type}`) === 'true';
     const newState = !currentState;
+    console.log(`[DEBUG][toggleVisibility] type=${type} currentState=${currentState} -> newState=${newState}`);
     localStorage.setItem(`msgHidden_${type}`, newState);
-    updateAllMessagesOfType(true); // force update
+    updateAllMessagesOfType(true); // force update, always allow user action
   };
 
   // Toggle height - ALWAYS read from localStorage
@@ -611,22 +622,49 @@ function injectConsoleControls(messageDiv, command, type, heading) {
     const messageSelector = getMessageSelectorForType(type);
     const allMessagesOfType = document.querySelectorAll(messageSelector);
 
-    let shouldExpand;
-    if (!isFixedHeightGlobal) {
-      // When fixed height is OFF, toggle based on localStorage only
-      const currentState = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
-      shouldExpand = !currentState;
-    } else {
-      // When fixed height is ON, toggle based on stored state
-      const currentState = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
-      shouldExpand = !currentState;
+    // --- NEW LOGIC: Always toggle DOM state, then set preference to match ---
+    let willExpand = true;
+    if (allMessagesOfType.length > 0) {
+      // If the first message is expanded, we want to compact; if compact, expand
+      willExpand = !allMessagesOfType[0].classList.contains('message-expanded');
     }
-    // Set the new state in storage to match what we're about to do
-    localStorage.setItem(`msgFullHeight_${type}`, shouldExpand);
-    console.log(`🔧 Toggle height for ${type}: will set to ${shouldExpand} (global fixed: ${isFixedHeightGlobal})`);
-    // Only call updateAllMessagesOfType, do not apply visual state directly
+    // Set the new preference to match the new state
+    localStorage.setItem(`msgFullHeight_${type}`, willExpand);
+    console.log(`[DEBUG][toggleHeight] (fixedHeight=${isFixedHeightGlobal ? 'ON' : 'OFF'}) type=${type} willExpand=${willExpand}`);
+
+    // Update button state immediately after user action
     updateAllButtonStatesForType(type);
-    updateAllMessagesOfType(true);
+    console.log(`[DEBUG][toggleHeight] Directly setting state for all messages of type=${type}`);
+
+    allMessagesOfType.forEach(msg => {
+      if (msg.classList.contains('state-lock')) {
+        msg.classList.remove('state-lock');
+        console.log(`[DEBUG][toggleHeight] Removed state-lock from message id/class=${msg.id || msg.className}`);
+      }
+      if (willExpand) {
+        msg.classList.remove('message-compact');
+        msg.classList.add('message-expanded');
+        msg.style.setProperty('height', 'auto', 'important');
+        msg.style.setProperty('max-height', 'none', 'important');
+        msg.style.setProperty('overflow-y', 'visible', 'important');
+        msg.style.setProperty('overflow-x', 'auto', 'important');
+        msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
+        console.log(`[DEBUG][toggleHeight] Set message to expanded for id/class=${msg.id || msg.className}`);
+      } else {
+        msg.classList.remove('message-expanded');
+        msg.classList.add('message-compact');
+        msg.style.setProperty('max-height', '400px', 'important');
+        msg.style.setProperty('overflow-y', 'auto', 'important');
+        msg.style.setProperty('overflow-x', 'auto', 'important');
+        msg.style.setProperty('scrollbar-gutter', 'stable', 'important');
+        console.log(`[DEBUG][toggleHeight] Set message to compact for id/class=${msg.id || msg.className}`);
+      }
+      // Sync button state
+      syncButtonStateToDOM(msg, type);
+    });
+
+    // --- PATCH: Update button state again after messages update to ensure sync ---
+    setTimeout(() => updateAllButtonStatesForType(type), 50);
   };
 
   // Copy message content
@@ -753,6 +791,7 @@ function updateButtonState(button, isActive, type, buttonType) {
   if (buttonType === 'height') {
     // Always use localStorage for isActive
     isActive = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
+    console.log(`[DEBUG][updateButtonState] height button for type=${type} isActive=${isActive} fixedHeightGlobal=${isFixedHeightGlobal}`);
   }
   button.classList.toggle('active', isActive);
   
@@ -2067,6 +2106,19 @@ function setMessageState(msg, newState) {
   if (!msg.classList.contains(`message-${newState}`)) {
     msg.classList.remove('message-expanded', 'message-compact');
     msg.classList.add(`message-${newState}`);
+    // Sync button state after state change
+    let messageType = 'default';
+    if (msg.classList.contains('message-agent')) messageType = 'agent';
+    else if (msg.classList.contains('message-tool')) messageType = 'tool';
+    else if (msg.classList.contains('message-code-exe')) messageType = 'code_exe';
+    else if (msg.classList.contains('message-browser')) messageType = 'browser';
+    else if (msg.classList.contains('message-info')) messageType = 'info';
+    else if (msg.classList.contains('message-warning')) messageType = 'warning';
+    else if (msg.classList.contains('message-error')) messageType = 'error';
+    else if (msg.classList.contains('message-user')) messageType = 'user';
+    else if (msg.classList.contains('message-agent-response')) messageType = 'response';
+    syncButtonStateToDOM(msg, messageType);
+    console.log(`[DEBUG][setMessageState] Set message to ${newState} for type=${messageType} classList=${msg.className}`);
   }
 }
 
@@ -2105,6 +2157,7 @@ function unlockAllMessageStates() {
 
 // New helper: finalize message state after render (no scroll changes)
 function finalizeMessageState(messageDiv, type) {
+  console.log(`[DEBUG][finalizeMessageState] type=${type} classList=${messageDiv.className}`);
   // Special handling for code_exe messages: compact while streaming if >400px
   if (type === 'code_exe' && messageDiv.classList.contains('message-temp')) {
     // If empty, skip
@@ -2170,3 +2223,93 @@ function finalizeMessageState(messageDiv, type) {
 let lastFixedHeightGlobal = null; // Track last global fixed height state
 let hasResetForThisToggle = false; // Ensure reset only happens once per toggle
 let lastGlobalFixedHeight = null; // Track last global fixed height state
+
+// After all messages are loaded, sync all button states for all types
+if (typeof window !== 'undefined') {
+  window.syncAllButtonStates = function() {
+    const messageTypes = ['agent', 'response', 'tool', 'code_exe', 'browser', 'info', 'warning', 'error', 'user', 'default'];
+    messageTypes.forEach(type => {
+      if (typeof updateAllButtonStatesForType === 'function') {
+        updateAllButtonStatesForType(type);
+      }
+    });
+  };
+}
+
+// Helper: Sync button state to DOM state
+function syncButtonStateToDOM(messageElement, messageType) {
+  // Find the height button for this message
+  const heightBtn = messageElement.querySelector('.message-height-btn');
+  if (!heightBtn) return;
+  // Determine if the message is currently expanded or compact
+  const isExpanded = messageElement.classList.contains('message-expanded');
+  const isCompact = messageElement.classList.contains('message-compact');
+  // Set the button state to match the DOM
+  // If expanded, set isActive=true for expand button; if compact, set isActive=false
+  // (This logic may be inverted depending on icon logic)
+  // For clarity, log the sync
+  console.log(`[DEBUG][syncButtonStateToDOM] messageType=${messageType} isExpanded=${isExpanded} isCompact=${isCompact} classList=${messageElement.className}`);
+  // Use updateButtonState to update the button
+  updateButtonState(heightBtn, isExpanded, messageType, 'height');
+}
+
+// Patch: On page load, after all messages are finalized, sync all button states to DOM state
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const allMessages = document.querySelectorAll('.message');
+    allMessages.forEach(msg => {
+      let messageType = 'default';
+      if (msg.classList.contains('message-agent')) messageType = 'agent';
+      else if (msg.classList.contains('message-tool')) messageType = 'tool';
+      else if (msg.classList.contains('message-code-exe')) messageType = 'code_exe';
+      else if (msg.classList.contains('message-browser')) messageType = 'browser';
+      else if (msg.classList.contains('message-info')) messageType = 'info';
+      else if (msg.classList.contains('message-warning')) messageType = 'warning';
+      else if (msg.classList.contains('message-error')) messageType = 'error';
+      else if (msg.classList.contains('message-user')) messageType = 'user';
+      else if (msg.classList.contains('message-agent-response')) messageType = 'response';
+      syncButtonStateToDOM(msg, messageType);
+    });
+    console.log('[DEBUG][DOMContentLoaded] Synced all button states to DOM state after page load.');
+  }, 500); // Delay to ensure all messages are rendered
+});
+
+// On page load, after all messages are rendered, for each message type, set the DOM state to match the localStorage preference
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const messageTypes = ['agent', 'response', 'tool', 'code_exe', 'browser', 'info', 'warning', 'error', 'user', 'default'];
+    messageTypes.forEach(type => {
+      const messageSelector = getMessageSelectorForType(type);
+      const allMessagesOfType = document.querySelectorAll(messageSelector);
+      const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+      const pref = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
+      allMessagesOfType.forEach(msg => {
+        if (msg.classList.contains('state-lock')) msg.classList.remove('state-lock');
+        if (isFixedHeightGlobal) {
+          // Let the normal logic handle this
+          return;
+        }
+        if (pref) {
+          msg.classList.remove('message-compact');
+          msg.classList.add('message-expanded');
+          msg.style.setProperty('height', 'auto', 'important');
+          msg.style.setProperty('max-height', 'none', 'important');
+          msg.style.setProperty('overflow-y', 'visible', 'important');
+          msg.style.setProperty('overflow-x', 'auto', 'important');
+          msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
+          console.log(`[DEBUG][DOMContentLoaded] Set message to expanded for id/class=${msg.id || msg.className} type=${type}`);
+        } else {
+          msg.classList.remove('message-expanded');
+          msg.classList.add('message-compact');
+          msg.style.setProperty('max-height', '400px', 'important');
+          msg.style.setProperty('overflow-y', 'auto', 'important');
+          msg.style.setProperty('overflow-x', 'auto', 'important');
+          msg.style.setProperty('scrollbar-gutter', 'stable', 'important');
+          console.log(`[DEBUG][DOMContentLoaded] Set message to compact for id/class=${msg.id || msg.className} type=${type}`);
+        }
+        syncButtonStateToDOM(msg, type);
+      });
+    });
+    console.log('[DEBUG][DOMContentLoaded] Synced all button and DOM states to localStorage preferences after page load.');
+  }, 500); // Delay to ensure all messages are rendered
+});

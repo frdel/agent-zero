@@ -502,6 +502,13 @@ async function poll() {
             if (window.updateAllMessageStates) {
                 window.updateAllMessageStates();
             }
+            if (window.reevaluateMessageStates) {
+                setTimeout(() => window.reevaluateMessageStates(0), 100);
+            }
+            // --- PATCH: Sync all button states after messages are loaded ---
+            if (window.syncAllButtonStates) {
+                setTimeout(() => window.syncAllButtonStates(), 120);
+            }
         }
 
         lastLogVersion = response.log_version;
@@ -671,6 +678,13 @@ function afterMessagesUpdate(logs) {
         window.msgs.enforceLastAgentResponseExpanded();
     } else if (msgs && typeof msgs.enforceLastAgentResponseExpanded === 'function') {
         msgs.enforceLastAgentResponseExpanded();
+    }
+    if (window.reevaluateMessageStates) {
+        setTimeout(() => window.reevaluateMessageStates(0), 100);
+    }
+    // --- PATCH: Sync all button states after messages update ---
+    if (window.syncAllButtonStates) {
+        setTimeout(() => window.syncAllButtonStates(), 120);
     }
 }
 
