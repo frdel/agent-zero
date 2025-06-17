@@ -100,7 +100,7 @@ class DocumentQueryStore:
 
         elif scheme in ["http", "https"]:
             # Always use https for web URLs
-            normalized = normalized.replace("http://", "https://")  # TODO why?
+            normalized = normalized.replace("http://", "https://")
 
         return normalized
 
