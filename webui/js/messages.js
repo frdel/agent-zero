@@ -90,6 +90,30 @@ function determineMessageState(msg, retryCount = 0) {
     console.log(`[BORDER-DEBUG] determineMessageState: state-lock, forcing compact | classList=${msg.className} | stack=${stack}`);
     return Promise.resolve('compact');
   }
+  // --- PATCH: Always expand streaming agent response messages in fixed height mode (top-level guard) ---
+  const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+  if (
+    isFixedHeightGlobal &&
+    msg.classList.contains('message-agent-response') &&
+    msg.classList.contains('message-temp')
+  ) {
+    console.log('[PATCH] determineMessageState: Forcing expanded for streaming agent-response in fixed height mode (top-level)');
+    return Promise.resolve('expanded');
+  }
+  // --- PATCH: Always expand the last agent response message in fixed height mode ---
+  if (
+    isFixedHeightGlobal &&
+    msg.classList.contains('message-agent-response')
+  ) {
+    const allAgentResponses = Array.from(document.querySelectorAll('.message-agent-response'));
+    const isLastAgentResponse = allAgentResponses.length > 0 && allAgentResponses[allAgentResponses.length - 1] === msg;
+    if (isLastAgentResponse && !msg.classList.contains('message-collapsed')) {
+      console.log('[PATCH] determineMessageState: Forcing expanded for last agent-response in fixed height mode');
+      // --- PATCH: Sync button state after forcing expanded ---
+      syncButtonStateToDOM(msg, 'response');
+      return Promise.resolve('expanded');
+    }
+  }
   // Only proceed if the element is attached and visible
   if (!msg.isConnected || msg.offsetParent === null) {
     console.log(`[DEBUG] determineMessageState: element not in DOM or not visible, skipping | classList=${msg.className}`);
@@ -802,9 +826,21 @@ function createModernButton(buttonType, handler) {
 function updateButtonState(button, isActive, type, buttonType) {
   const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
   if (buttonType === 'height') {
-    // Always use localStorage for isActive
-    isActive = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
-    console.log(`[DEBUG][updateButtonState] height button for type=${type} isActive=${isActive} fixedHeightGlobal=${isFixedHeightGlobal}`);
+    const messageElement = button.closest('.message');
+    const isCurrentlyExpanded = messageElement && messageElement.classList.contains('message-expanded');
+    // PATCH: For last agent-response, use DOM state for button
+    let isLastAgentResponse = false;
+    if (type === 'response' && messageElement && messageElement.classList.contains('message-agent-response')) {
+      const allAgentResponses = Array.from(document.querySelectorAll('.message-agent-response'));
+      isLastAgentResponse = allAgentResponses.length > 0 && allAgentResponses[allAgentResponses.length - 1] === messageElement;
+    }
+    if (isLastAgentResponse) {
+      isActive = isCurrentlyExpanded;
+    } else {
+      // Always use localStorage for isActive for other messages
+      isActive = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
+    }
+    console.log(`[DEBUG][updateButtonState] height button for type=${type} isActive=${isActive} fixedHeightGlobal=${isFixedHeightGlobal} (lastAgentResponse=${isLastAgentResponse})`);
   }
   button.classList.toggle('active', isActive);
   
@@ -2115,10 +2151,36 @@ function unlockMessageState(msg) {
 
 // Helper to set message state safely
 function setMessageState(msg, newState) {
+  // --- PATCH: Never compact streaming agent response messages in fixed height mode ---
+  const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+  if (
+    isFixedHeightGlobal &&
+    msg.classList.contains('message-agent-response') &&
+    msg.classList.contains('message-temp')
+  ) {
+    newState = 'expanded';
+    console.log('[PATCH] setMessageState: Forcing expanded for streaming agent-response in fixed height mode');
+  }
+  // --- PATCH: Never compact the last agent response message in fixed height mode ---
+  if (
+    isFixedHeightGlobal &&
+    msg.classList.contains('message-agent-response')
+  ) {
+    const allAgentResponses = Array.from(document.querySelectorAll('.message-agent-response'));
+    const isLastAgentResponse = allAgentResponses.length > 0 && allAgentResponses[allAgentResponses.length - 1] === msg;
+    if (isLastAgentResponse && !msg.classList.contains('message-collapsed')) {
+      newState = 'expanded';
+      console.log('[PATCH] setMessageState: Forcing expanded for last agent-response in fixed height mode');
+    }
+  }
   // Only update if the state is actually changing
   if (!msg.classList.contains(`message-${newState}`)) {
     msg.classList.remove('message-expanded', 'message-compact');
     msg.classList.add(`message-${newState}`);
+    // --- PATCH: Sync button state after forcing expanded ---
+    if (msg.classList.contains('message-agent-response')) {
+      syncButtonStateToDOM(msg, 'response');
+    }
     // Sync button state after state change
     let messageType = 'default';
     if (msg.classList.contains('message-agent')) messageType = 'agent';
@@ -2170,6 +2232,32 @@ function unlockAllMessageStates() {
 
 // New helper: finalize message state after render (no scroll changes)
 function finalizeMessageState(messageDiv, type) {
+  // --- PATCH: Always expand streaming agent response messages in fixed height mode ---
+  const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+  if (
+    isFixedHeightGlobal &&
+    messageDiv.classList.contains('message-agent-response') &&
+    messageDiv.classList.contains('message-temp')
+  ) {
+    setMessageState(messageDiv, 'expanded');
+    console.log('[PATCH] finalizeMessageState: Forcing expanded for streaming agent-response in fixed height mode');
+    return;
+  }
+  // --- PATCH: Always expand the last agent response message in fixed height mode ---
+  if (
+    isFixedHeightGlobal &&
+    messageDiv.classList.contains('message-agent-response')
+  ) {
+    const allAgentResponses = Array.from(document.querySelectorAll('.message-agent-response'));
+    const isLastAgentResponse = allAgentResponses.length > 0 && allAgentResponses[allAgentResponses.length - 1] === messageDiv;
+    if (isLastAgentResponse && !messageDiv.classList.contains('message-collapsed')) {
+      setMessageState(messageDiv, 'expanded');
+      // --- PATCH: Sync button state after forcing expanded ---
+      syncButtonStateToDOM(messageDiv, 'response');
+      console.log('[PATCH] finalizeMessageState: Forcing expanded for last agent-response in fixed height mode');
+      return;
+    }
+  }
   console.log(`[DEBUG][finalizeMessageState] type=${type} classList=${messageDiv.className}`);
   // Special handling for code_exe messages: compact while streaming if >400px
   if (type === 'code_exe' && messageDiv.classList.contains('message-temp')) {
