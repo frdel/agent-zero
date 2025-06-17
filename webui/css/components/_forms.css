@@ -16,7 +16,7 @@ textarea {
   font-family: 'Roboto Mono', monospace; /* Consistent with #chat-input */
   font-optical-sizing: auto;
   -webkit-font-optical-sizing: auto;
-  font-size: 0.90rem; /* Consistent with #chat-input */
+  font-size: 0.7rem; /* Consistent with #chat-input */
   padding: var(--spacing-sm); /* General padding */
   width: 100%; /* Default to full width */
   box-sizing: border-box; /* Ensure padding and border are inside the element's width/height */
@@ -70,7 +70,7 @@ select {
   width: 100%; /* Default to full width */
   box-sizing: border-box;
   font-family: "Rubik", Arial, Helvetica, sans-serif; /* Match other UI elements */
-  font-size: 0.9rem; /* Match other UI elements */
+  font-size: 0.7rem; /* Match other UI elements */
 }
 
 select:focus {
@@ -131,3 +131,10 @@ label, .form-label { /* Added .form-label as common alternative */
 /* Form Validation States (Placeholder - to be implemented based on JS logic) */
 
 /* Form Helpers (Placeholder - for text like "Optional" or hints) */
+.form-help-text {
+  font-size: 12px; /* Consistent with scheduler's help text */
+  color: var(--color-text-secondary);
+  opacity: 0.8; /* For a slightly subdued appearance */
+  margin-top: 4px; /* Space from the related form element */
+  line-height: 1.4; /* Improved readability */
+}

@@ -2,12 +2,13 @@
 #right-panel {
   display: -webkit-flex;
   display: flex;
-  width: 100%; 
+  width: 100%;
   flex-direction: column;
   flex-grow: 1;
   -webkit-transition: margin-left var(--transition-speed) ease-in-out;
   transition: margin-left var(--transition-speed) ease-in-out;
-  
+  box-sizing: border-box; /* Added */
+  overflow-x: hidden; /* Added to prevent horizontal scroll */
 }
 
 #right-panel.expanded { 

@@ -90,6 +90,47 @@ export function _drawMessage(
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", ...messageClasses);
 
+  // Add collapse arrow for specific AI messages
+  if (messageClasses.includes("message-ai") && (messageClasses.includes("message-tool") || messageClasses.includes("message-agent-response") || messageClasses.includes("message-agent"))) {
+    const collapseButton = document.createElement("button");
+    collapseButton.classList.add("collapse-arrow");
+    const arrowSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    arrowSvg.setAttribute("viewBox", "0 0 256 256");
+    arrowSvg.innerHTML = '<rect width="256" height="256" fill="none"/><polyline points="208 96 128 176 48 96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>';
+    collapseButton.appendChild(arrowSvg);
+    collapseButton.setAttribute("aria-label", "Collapse message");
+    collapseButton.setAttribute("title", "Collapse message");
+
+    collapseButton.addEventListener("click", function(e) {
+        e.stopPropagation(); // Prevent other click listeners on the message
+        const messageContentContainer = this.parentElement; // This is messageDiv
+        const svgElement = this.querySelector("svg");
+
+        // Toggle 'collapsed' class on the messageDiv itself
+        const isCollapsed = messageContentContainer.classList.toggle("collapsed");
+        
+        svgElement.classList.toggle("collapsed-icon", isCollapsed); // Toggle rotation class on SVG
+        this.setAttribute("aria-label", isCollapsed ? "Expand message" : "Collapse message");
+        this.setAttribute("title", isCollapsed ? "Expand message" : "Collapse message");
+        
+        // CSS will handle hiding/showing elements based on .collapsed class and rotating the icon
+    });
+
+    // Default collapsed state logic
+    if (messageClasses.includes("message-tool") || messageClasses.includes("message-agent")) {
+      messageDiv.classList.add("collapsed");
+      const svgElement = collapseButton.querySelector("svg");
+      if (svgElement) {
+        svgElement.classList.add("collapsed-icon");
+      }
+      collapseButton.setAttribute("aria-label", "Expand message");
+      collapseButton.setAttribute("title", "Expand message");
+    }
+
+    // Prepend to messageDiv so it's at the top, CSS will handle top-right positioning
+    messageDiv.insertBefore(collapseButton, messageDiv.firstChild);
+  }
+
   if (heading) {
     const headingElement = document.createElement("h4");
     headingElement.textContent = heading;
@@ -126,6 +167,16 @@ export function _drawMessage(
   }
 
   messageContainer.appendChild(messageDiv);
+
+  // Add timestamp if available
+  // console.log("kvps:", kvps); // DEBUG: Check kvps content
+  // if (kvps && kvps.timestamp) {
+  //   const timestampElement = document.createElement("div");
+  //   timestampElement.classList.add("message-timestamp");
+  //   timestampElement.textContent = formatTimestamp(kvps.timestamp);
+  //   messageDiv.appendChild(timestampElement); // Append to the specific message's div
+  // }
+  console.log("DEBUG: Timestamp display DISABLED in _drawMessage");
 
   if (followUp) {
     messageContainer.classList.add("message-followup");
@@ -613,6 +664,64 @@ async function copyText(text, element) {
     }, 2000);
   } catch (err) {
     console.error("Failed to copy text:", err);
+  }
+}
+
+// Helper function to format time in HH:MM AM/PM
+function formatTime(date) {
+  let hours = date.getHours();
+  let minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  minutes = minutes < 10 ? '0' + minutes : minutes;
+  return `${hours}:${minutes} ${ampm}`;
+}
+
+// Helper function to format timestamp for display
+function formatTimestamp(isoString) {
+  console.log(`DEBUG: formatTimestamp called with isoString: ${isoString}`);
+  if (!isoString) return '';
+
+  const date = new Date(isoString);
+  const now = new Date();
+  console.log(`DEBUG: formatTimestamp - date: ${date.toISOString()}, now: ${now.toISOString()}`);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  yesterday.setDate(today.getDate() - 1);
+
+  const diffSeconds = Math.round((now - date) / 1000);
+  const diffMinutes = Math.round(diffSeconds / 60);
+  const diffHours = Math.round(diffMinutes / 60);
+  console.log(`DEBUG: formatTimestamp - diffSeconds: ${diffSeconds}, diffMinutes: ${diffMinutes}, diffHours: ${diffHours}`);
+
+  if (diffSeconds < 60) {
+    return "just now";
+  } else if (diffMinutes < 60) {
+    return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+  } else if (date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate()) {
+    // Today
+    // Check if it's less than hours since midnight of 'today'
+    const midnightToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const hoursSinceMidnight = (date.getTime() - midnightToday) / (1000 * 60 * 60);
+
+    // Compare diffHours with actual hours passed since midnight on the day the message was sent
+    // This ensures "X hours ago" is only shown if it's truly within that many hours from *now* AND on the same day.
+    if (diffHours < 24 && diffHours <= (now.getHours() + now.getMinutes()/60) ) {
+         return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    }
+    return `Today ${formatTime(date)}`;
+  } else if (date.getFullYear() === yesterday.getFullYear() && date.getMonth() === yesterday.getMonth() && date.getDate() === yesterday.getDate()) {
+    // Yesterday
+    return `Yesterday ${formatTime(date)}`;
+  } else {
+    // Format as MM/DD/YYYY HH:MM AM/PM for older dates
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${month}/${day}/${year} ${formatTime(date)}`;
   }
 }
 

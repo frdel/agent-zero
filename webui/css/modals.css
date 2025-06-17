@@ -233,27 +233,6 @@
   gap: 1rem;
 }
 
-/* Section Styles */
-.section {
-  margin-bottom: 2rem;
-  padding: 1rem;
-  padding-bottom: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
-}
-
-.section-title {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: var(--color-primary);
-  margin-bottom: 0.5rem;
-}
-
-.section-description {
-  color: var(--color-text);
-  margin-bottom: 1rem;
-}
-
 /* Button Styles */
 .btn {
   font-weight: 500;
@@ -261,7 +240,7 @@
   border-radius: 0.25rem;
   cursor: pointer;
   border: none;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-family: "Rubik", Arial, Helvetica, sans-serif;
 }
 
@@ -380,8 +359,9 @@ h2 {
 
 @media (max-width: 540px) {
   .modal-header h2 {
-    font-size: var(--font-size-normal);
+    font-size: 1rem;
     margin: 0;
+    font-weight: 400;
   }
 
   #buttons-container {

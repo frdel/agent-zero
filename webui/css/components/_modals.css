@@ -76,6 +76,8 @@
 .modal-description {
   padding: 0.8rem 1rem 0 1rem;
   flex-grow: 1;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
 }
 
 /* Modal Content */
@@ -157,7 +159,9 @@
 
 #full-screen-input {
   width: 100%;
-  height: calc(100% - 50px); 
+  min-height: 120px; /* Accommodates a few lines before growing */
+  max-height: calc(100% - 50px); /* Uses the original calculation as the limit */
+  overflow-y: auto; /* Enables scrollbar only when needed */
   border: none;
   background-color: transparent;
   color: var(--color-text);
@@ -214,6 +218,7 @@
   padding-bottom: 0;
   border: 1px solid var(--color-border);
   border-radius: 0.5rem;
+  overflow-x: auto; /* Ensure sections in modals can scroll horizontally if content overflows */
 }
 
 .section-title {
@@ -267,6 +272,24 @@
   .section { 
     overflow-x: auto;
   }
+}
+
+@media (max-width: 640px) {
+  .modal-container {
+    width: 100%;
+    max-width: calc(100vw - 2rem); /* Ensures some padding from viewport edges */
+    min-width: 0; /* Override any problematic min-width */
+    /* Adjust padding if necessary for very small screens, e.g., */
+    /* padding-left: 1rem; */
+    /* padding-right: 1rem; */
+  }
+
+  /* If .settings-modal-content is a specific class needing adjustment: */
+  /* .settings-modal-content { */
+  /*   width: 100%; */
+  /*   max-width: calc(100vw - 2rem); */
+  /*   min-width: 0; */
+  /* } */
 }
 
 @media (max-width: 768px) {

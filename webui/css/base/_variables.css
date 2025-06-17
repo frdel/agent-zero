@@ -43,6 +43,7 @@
   --time-date-border: var(--time-date-border-dark);
 
 /* Spacing variables */
+  --spacing-xxs: 0.125rem;
   --spacing-xs: 0.3125rem;
   --spacing-sm: 0.625rem;
   --spacing-md: 1.25rem;

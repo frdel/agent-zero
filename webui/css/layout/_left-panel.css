@@ -41,9 +41,18 @@
 }
 
 #status-section,
+#tasks-section, /* Added #tasks-section here */
 .config-section:not(#chats-section) { /* Assuming #chats-section is a .config-section */
   flex-shrink: 0;
   padding: 0.5rem;
+}
+
+/* Added styles for #tasks-section to match #chats-section */
+#tasks-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
 }
 
 .left-panel-bottom {
@@ -184,13 +193,14 @@
 /* Tasks List (within left panel) */
 /* Tasks list container - similar to chats list */
 .tasks-list-container {
-    height: fit-content;
-    overflow-y: scroll;
-    margin-top: 10px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto; /* Changed from scroll to auto */
+    margin-top: 0px;
     padding-right: 5px;
     border-radius: 5px;
     position: relative;
-    scrollbar-width: thin;
+    scrollbar-width: none;
     -ms-overflow-style: auto;
    
 }

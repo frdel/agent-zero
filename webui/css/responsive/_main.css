@@ -250,21 +250,4 @@
 }
 
 /* Responsive adjustments for scheduler */
-@media (max-width: 768px) {
-    .scheduler-form-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .scheduler-schedule-builder {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .scheduler-filters {
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .scheduler-task-actions {
-        flex-wrap: wrap;
-    }
-}
+/* Rules moved to webui/css/components/_scheduler.css */

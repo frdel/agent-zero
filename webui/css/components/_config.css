@@ -14,7 +14,7 @@
   margin: 0;
   padding: 0;
   scroll-behavior: smooth;
-  scrollbar-width: thin;
+  scrollbar-width: none;
   overflow-y: scroll;
   /* max-height: 300px; */
 

@@ -61,7 +61,7 @@
 
 .tunnel-link-info {
     margin-top: 1rem;
-    font-size: 1rem;
+    font-size: 0.75rem;
     color: var(--text-color);
     text-align: center;
     line-height: 1.5;
@@ -101,7 +101,7 @@
 
 .tunnel-link-persistence {
     margin-top: 0.75rem;
-    font-size: 0.95rem;
+    font-size: 0.65rem;
     color: rgba(255, 255, 255, 0.7);
     text-align: center;
     font-style: italic;

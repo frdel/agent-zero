@@ -69,6 +69,47 @@ const showToast = function(message, type = 'info') {
 
 // Define the full component implementation
 const fullComponentImplementation = function() {
+
+    // Helper function for deep comparison of two arrays of task objects
+    function deepCompareTasks(arr1, arr2) {
+        if (!arr1 && !arr2) return true; // Both null/undefined
+        if (!arr1 || !arr2) return false; // One is null/undefined, the other isn't
+        if (arr1.length !== arr2.length) {
+            return false;
+        }
+
+        // Create a copy of arr2 to find matches and remove them, ensuring all items in arr1 exist in arr2
+        // and that there are no extra items in arr2.
+        // This handles order differences and ensures all properties are checked.
+        const arr2Copy = JSON.parse(JSON.stringify(arr2)); // Deep copy for manipulation
+
+        for (let i = 0; i < arr1.length; i++) {
+            const task1 = arr1[i];
+            let foundMatch = false;
+            let matchIndex = -1;
+
+            for (let j = 0; j < arr2Copy.length; j++) {
+                const task2 = arr2Copy[j];
+                if (task1.uuid === task2.uuid) { // Assuming uuid is the unique identifier
+                    // Perform a deep comparison of the task objects
+                    if (JSON.stringify(task1) === JSON.stringify(task2)) {
+                        foundMatch = true;
+                        matchIndex = j;
+                        break;
+                    }
+                }
+            }
+
+            if (foundMatch) {
+                arr2Copy.splice(matchIndex, 1); // Remove matched task from copy
+            } else {
+                return false; // Task in arr1 not found in arr2 or properties differ
+            }
+        }
+
+        return arr2Copy.length === 0; // If arr2Copy is empty, all tasks matched
+    }
+
     return {
         tasks: [],
         isLoading: true,
@@ -305,10 +346,22 @@ const fullComponentImplementation = function() {
                         console.warn(`Filtered out ${data.tasks.length - validTasks.length} invalid tasks`);
                     }
 
-                    this.tasks = validTasks;
+                    // Optimization: Only update this.tasks if validTasks is actually different
+                    if (!deepCompareTasks(this.tasks, validTasks)) {
+                        console.log('Scheduler tasks changed, updating UI.');
+                        this.tasks = validTasks;
+                        // The $watch on 'tasks' will call updateTasksUI()
+                    } else {
+                        // console.log('Scheduler tasks unchanged, skipping UI update.');
+                    }
 
-                    // Update UI using the shared function
-                    this.updateTasksUI();
+                    // Ensure UI consistency even if tasks haven't changed but filters might need re-application
+                    // or if it's the initial load.
+                    // However, the primary goal is to avoid re-assigning `this.tasks` if data is identical.
+                    // If `this.tasks` is not reassigned, the watcher won't fire.
+                    // If `updateTasksUI` needs to run for other reasons (e.g. filter changes),
+                    // those are handled by their respective watchers.
+                    // For initial load, `updateTasksUI` is called by the watcher after `this.tasks` is first set.
                 }
             } catch (error) {
                 console.error('Error fetching tasks:', error);

@@ -3,6 +3,7 @@ import json
 from typing import Any, Literal, Optional, Dict
 import uuid
 from collections import OrderedDict  # Import OrderedDict
+from datetime import datetime, timezone
 
 Type = Literal[
     "agent",
@@ -37,7 +38,19 @@ class LogItem:
     guid: str = ""
 
     def __post_init__(self):
+        print(f"DEBUG: LogItem __post_init__ CALLED for item.no: {self.no}. Initial self.kvps: {self.kvps}")
         self.guid = self.log.guid
+        if self.kvps is None: # Should be initialized by Log.log before __post_init__
+            self.kvps = OrderedDict()
+            print(f"DEBUG: LogItem __post_init__ self.kvps was None, initialized for item.no: {self.no}")
+
+        if 'timestamp' not in self.kvps:
+            # new_timestamp = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z') # Disabled timestamp generation
+            # self.kvps['timestamp'] = new_timestamp # Disabled timestamp generation
+            # print(f"DEBUG: LogItem __post_init__ 'timestamp' key NOT FOUND. ADDED timestamp for item.no: {self.no} with {new_timestamp}. self.kvps is now: {self.kvps}") # Disabled
+            print(f"DEBUG: LogItem __post_init__ 'timestamp' key NOT FOUND. Timestamp generation DISABLED. item.no: {self.no}")
+        else:
+            print(f"DEBUG: LogItem __post_init__ 'timestamp' key FOUND for item.no: {self.no}. Value: {self.kvps.get('timestamp')}. self.kvps: {self.kvps}")
 
     def update(
         self,
@@ -140,6 +153,9 @@ class Log:
         **kwargs,
     ):
         item = self.logs[no]
+        print(f"DEBUG: _update_item START for no: {no}. Original item.kvps: {item.kvps}")
+        print(f"DEBUG: _update_item incoming args - type: {type}, heading: {heading}, content: {content}, kvps: {kvps}, temp: {temp}, update_progress: {update_progress}, kwargs: {kwargs}")
+
         if type is not None:
             item.type = type
         if update_progress is not None:
@@ -148,18 +164,31 @@ class Log:
             item.heading = heading
         if content is not None:
             item.content = content
+
+        # Check if incoming kvps will overwrite an existing timestamp
         if kvps is not None:
+            print(f"DEBUG: _update_item item.no {no}: item.kvps BEFORE OrderedDict(kvps) update: {item.kvps.get('timestamp') if item.kvps else 'N/A'}")
             item.kvps = OrderedDict(kvps)  # Use OrderedDict to keep the order
+            print(f"DEBUG: _update_item item.no {no}: item.kvps AFTER OrderedDict(kvps) update: {item.kvps.get('timestamp')}. Incoming kvps was: {kvps}")
+        else:
+            print(f"DEBUG: _update_item item.no {no}: incoming kvps is None. item.kvps.timestamp remains: {item.kvps.get('timestamp') if item.kvps else 'N/A'}")
 
         if temp is not None:
             item.temp = temp
 
         if kwargs:
-            if item.kvps is None:
-                item.kvps = OrderedDict()  # Ensure kvps is an OrderedDict
+            if item.kvps is None: # Should be initialized by __post_init__ if Log.log passes None
+                item.kvps = OrderedDict()
+                print(f"DEBUG: _update_item item.no {no}: item.kvps was None, initialized before adding kwargs.")
+            
+            if 'timestamp' in kwargs:
+                print(f"DEBUG: _update_item item.no {no}: 'timestamp' found in kwargs: {kwargs['timestamp']}. Current item.kvps.timestamp: {item.kvps.get('timestamp') if item.kvps else 'N/A'}")
+            
             for k, v in kwargs.items():
                 item.kvps[k] = v
-
+            print(f"DEBUG: _update_item item.no {no}: item.kvps AFTER kwargs update: {item.kvps.get('timestamp') if item.kvps else 'N/A'}. kwargs were: {kwargs}")
+        
+        print(f"DEBUG: _update_item END for item.no: {no}. Final item.kvps.timestamp: {item.kvps.get('timestamp') if item.kvps else 'N/A'}")
         self.updates += [item.no]
         self._update_progress_from_item(item)
 

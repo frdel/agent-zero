@@ -32,10 +32,6 @@
   /* display: block; */ /* Removed to fix table layout issue */
 }
 
-.msg-content {
-  margin-bottom: 0;
-}
-
 .message-temp {
   display: none;
 }

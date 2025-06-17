@@ -61,30 +61,6 @@
   background-color: rgba(0, 0, 0, 0.05);
 }
 
-.chats-list-container {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  scroll-behavior: smooth;
-  
-  mask-image: linear-gradient(
-    to bottom,
-    black calc(100% - 20px),
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    black calc(100% - 20px),
-    transparent 100%
-  );
-  
-  background: linear-gradient(to bottom, calc(100% - 20px), transparent 100%);
-  
-  padding-bottom: 20px;
-  scrollbar-width: thin;
-  -ms-overflow-style: auto;
-}
-
 .chats-list-container::-webkit-scrollbar {
   width: 5px;
 }
@@ -427,6 +403,7 @@
     flex-wrap: wrap;
     -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
+    justify-content: center;
   }
 }
 

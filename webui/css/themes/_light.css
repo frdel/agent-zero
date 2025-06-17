@@ -236,25 +236,37 @@
 
 
 .light-mode .scheduler-status-idle {
-    background-color: rgba(42, 157, 143, 0.1);
-    color: #1a6f65;
+    background-color: rgba(42, 157, 143, 0.1); /* Light green background */
+    color: #1a6f65; /* Darker green text */
 }
 
 .light-mode .scheduler-status-running {
-    background-color: rgba(67, 97, 238, 0.1);
-    color: #2540b3;
+    background-color: rgba(67, 97, 238, 0.1); /* Light blue background */
+    color: #2540b3; /* Darker blue text */
 }
 
 .light-mode .scheduler-status-disabled {
-    background-color: rgba(108, 117, 125, 0.1);
-    color: #495057;
+    background-color: rgba(108, 117, 125, 0.1); /* Light gray background */
+    color: #495057; /* Darker gray text */
 }
 
 .light-mode .scheduler-status-error {
-    background-color: rgba(230, 57, 70, 0.1);
-    color: #c5283d;
+    background-color: rgba(230, 57, 70, 0.1); /* Light red background */
+    color: #c5283d; /* Darker red text */
 }
 
 .light-mode .scheduler-task-list tbody tr:hover {
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: rgba(0, 0, 0, 0.02); /* Very light gray for row hover */
+}
+
+.light-mode .task-name:hover {
+    background-color: rgba(0, 0, 0, 0.05); /* Slightly darker gray for task name hover */
+}
+
+.light-mode .scheduler-task-list th {
+    background-color: var(--color-bg-secondary-light, #e9ecef); /* Light theme table header */
+}
+
+.light-mode .scheduler-task-list th:hover {
+    background-color: var(--color-bg-tertiary-light, #dee2e6); /* Lighter hover for table header */
 }

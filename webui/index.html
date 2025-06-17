@@ -260,7 +260,7 @@
             <!--Sidebar lower elements-->
             <div class="left-panel-bottom">
                 <!-- Preferences -->
-                <div class="pref-section" x-data="{ prefOpen: true }">
+                <div class="pref-section" x-data="{ prefOpen: false }">
                     <span>
                         <h3 class="pref-header" @click="prefOpen = !prefOpen">
                             Preferences
@@ -1327,20 +1327,20 @@
                                         <tbody>
                                             <template x-for="task in filteredTasks" x-bind:key="task.uuid">
                                                 <tr @click="showTaskDetail(task.uuid)">
-                                                    <td>
+                                                    <td data-label="Name">
                                                         <span x-text="task.name"></span>
                                                     </td>
-                                                    <td>
+                                                    <td data-label="State">
                                                         <span class="scheduler-status-badge" :class="getStateBadgeClass(task.state)" x-text="task.state"></span>
                                                     </td>
-                                                    <td x-text="task.type"></td>
-                                                    <td>
+                                                    <td data-label="Type" x-text="task.type"></td>
+                                                    <td data-label="Schedule">
                                                         <span x-show="task.type === 'scheduled'" x-text="formatSchedule(task)"></span>
                                                         <span x-show="task.type === 'adhoc'" class="scheduler-no-schedule">—</span>
                                                         <span x-show="task.type === 'planned'" x-html="formatPlan(task).replace(/\n/g, '<br>')"></span>
                                                     </td>
-                                                    <td x-text="formatDate(task.last_run)"></td>
-                                                    <td @click.stop>
+                                                    <td data-label="Last Run" x-text="formatDate(task.last_run)"></td>
+                                                    <td data-label="Actions" @click.stop>
                                                         <div class="scheduler-task-actions">
                                                             <button class="scheduler-task-action" @click="runTask(task.uuid)" title="Run Task">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">

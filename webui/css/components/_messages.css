@@ -4,7 +4,7 @@
 .message-container {
   animation: fadeIn 0.5s; /* Assuming fadeIn is defined in _animations.css */
   -webkit-animation: fadeIn 0.5s; /* Assuming fadeIn is defined in _animations.css */
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: 6px; /* Adjusted for timestamp. Original: var(--spacing-sm) */
   width: 70%;
 }
 
@@ -12,11 +12,56 @@
   background-color: var(--color-message-bg);
   border-radius: var(--border-radius);
   padding: 0.9rem var(--spacing-md) 0.7rem var(--spacing-md);
+  position: relative; /* For positioning the collapse arrow */
 }
+
+/* Collapse Arrow Styles */
+.collapse-arrow {
+  position: absolute;
+  top: 0.5rem; /* Adjust as needed */
+  right: 0.75rem; /* Adjust as needed */
+  background: none;
+  border: none;
+  color: var(--color-text-secondary); /* Or your preferred color */
+  cursor: pointer;
+  font-size: 1rem; /* Adjust size as needed */
+  padding: 0.25rem;
+  line-height: 1;
+  z-index: 10; /* Ensure it's above other content */
+  width: 24px; /* SVG size */
+  height: 24px; /* SVG size */
+}
+
+.collapse-arrow svg {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.collapse-arrow svg.collapsed-icon {
+  transform: rotate(-180deg);
+}
+
+.collapse-arrow:hover {
+  color: var(--color-primary); /* Highlight on hover */
+}
+
+/* Styles for collapsed messages */
+.message.collapsed .msg-content,
+.message.collapsed .msg-kvps,
+.message.collapsed .attachments-container,
+.message.collapsed .message-text { /* Ensure message-text is also targeted */
+  max-height: 150px;
+  overflow: hidden;
+  /* display: none; */ /* Removed */
+}
+
+/* Removed .message.collapsed::after rule */
 
 .user-container { /* Specific to user messages, but part of message display */
   align-self: flex-end;
-  margin: 1.5rem 0rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.25rem; /* Adjusted for timestamp. Original: 1.5rem */
 }
 
 .ai-container { /* Specific to AI messages */
@@ -41,7 +86,7 @@ a.path-link {
 
 .message-user {
   background-color: #4a4a4a; 
-  border-bottom-right-radius: var(--spacing-xs);
+  border-bottom-right-radius: var(--spacing-xxs);
   min-width: 195px;
   text-align: left;
 }
@@ -52,10 +97,11 @@ a.path-link {
   font-optical-sizing: auto;
   -webkit-font-optical-sizing: auto;
   font-size: var(--font-size-small);
+  margin-bottom: 1rem;
 }
 
 .message-ai { /* General AI message styling */
-  border-bottom-left-radius: var(--spacing-xs);
+  border-bottom-left-radius: var(--spacing-xxs);
 }
 
 .message-center { /* For system messages, errors, etc. */
@@ -70,7 +116,7 @@ a.path-link {
 
 .message-followup .message {
   border-radius: 1.125em; 
-  border-top-left-radius: 0.3125em; 
+  border-top-left-radius: var(--spacing-xxs); 
 }
 
 .message-followup + .message-followup {
@@ -123,6 +169,7 @@ a.path-link {
 
 .message-info {
   background-color: var(--color-panel); 
+  text-align: center;
 }
 
 .message-util { /* Utility messages, might be hidden by default */
@@ -533,7 +580,7 @@ pre { /* General pre formatting, often used for code blocks */
 }
 
 .msg-content { /* General content wrapper within a message */
-  margin-bottom: 0; 
+  margin-bottom: 1rem; 
 }
 /* Message h4 styling */
 .message h4 {
@@ -587,3 +634,22 @@ pre { /* General pre formatting, often used for code blocks */
 }
 }
 /* Adjustments for copy button if it's now inside action-buttons-container */
+/* Message Timestamp Styles */
+.message-timestamp {
+  font-size: var(--font-size-small);
+  color: var(--color-secondary-dark); /* Default to dark mode muted color */
+  margin-top: 4px; /* Small gap below the message bubble */
+  line-height: 1.2;
+}
+
+.light-mode .message-timestamp {
+  color: #777777; /* Muted color for light mode - specific grey */
+}
+
+.user-container .message-timestamp {
+  text-align: right;
+}
+
+.ai-container .message-timestamp {
+  text-align: left;
+}
