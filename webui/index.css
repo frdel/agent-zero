@@ -675,13 +675,14 @@ pre {
   );
 }
 
+/* --- Ensure browser message header is always purple --- */
 .message-browser .message-header {
   background: linear-gradient(
     to bottom,
-    var(--color-message-bg) 0%,
-    var(--color-message-bg) 70%,
+    #4b3a69 0%,
+    #4b3a69 70%,
     transparent 100%
-  );
+  ) !important;
 }
 
 .message-warning .message-header {
