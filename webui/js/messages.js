@@ -370,19 +370,7 @@ function injectConsoleControls(messageDiv, command, type, heading) {
     const messageSelector = getMessageSelectorForType(type);
     const allMessagesOfType = document.querySelectorAll(messageSelector);
     const isStreaming = document.querySelector('.message-temp');
-    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-
-    // Only reset preferences if global fixed height actually changed, and only once per toggle
-    if (lastFixedHeightGlobal !== null && lastFixedHeightGlobal !== isFixedHeightGlobal && !hasResetForThisToggle) {
-      console.log('🔄 Resetting all individual message type preferences to let global preference take authority');
-      const types = ['agent','response','tool','code_exe','browser','info','warning','error','user','default'];
-      types.forEach(t => localStorage.removeItem(`msgFullHeight_${t}`));
-      hasResetForThisToggle = true;
-    }
-    if (lastFixedHeightGlobal !== isFixedHeightGlobal) {
-      lastFixedHeightGlobal = isFixedHeightGlobal;
-      hasResetForThisToggle = false;
-    }
+    // --- Removed global reset logic from here ---
 
     // Preserve scroll position
     const chatHistory = document.getElementById('chat-history');
@@ -402,7 +390,7 @@ function injectConsoleControls(messageDiv, command, type, heading) {
           continue;
         }
       }
-      if (!force && (msg.classList.contains('message-temp') || msg.classList.contains('state-lock'))) {
+      if (!force && (msg.classList.contains('message-temp') || msg.classList.contains('state-lock'))){
         console.log(`[GUARD] updateAllMessagesOfType: Skipping ${msg.id || msg.className} because it is streaming or locked.`);
         continue;
       }
@@ -412,13 +400,12 @@ function injectConsoleControls(messageDiv, command, type, heading) {
         addContentPreview(msg, type);
         console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to collapsed | prevState=${prevState}`);
       } else {
-        // --- Fix: Always remove collapsed class when unhidden ---
         msg.classList.remove('message-collapsed');
       }
       removeContentPreview(msg);
       const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+      // --- Use only localStorage for isFullHeight, do not infer from DOM ---
       if (!isFixedHeightGlobal) {
-        // When fixed height is OFF, respect the isFullHeight setting
         if (!isFullHeight) {
           setMessageState(msg, 'compact');
           msg.style.setProperty('max-height', '400px', 'important');
@@ -467,7 +454,6 @@ function injectConsoleControls(messageDiv, command, type, heading) {
             msgContent.style.setProperty('overflow-y', 'visible', 'important');
           }
           console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} set to expanded | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
-          // Only call determineMessageState when expanding, to allow auto-compact if needed
           try {
             await new Promise(resolve => setTimeout(resolve, 10));
             const optimalState = await determineMessageState(msg);
@@ -480,7 +466,6 @@ function injectConsoleControls(messageDiv, command, type, heading) {
             console.log(`[STATE] updateAllMessagesOfType: ${msg.id || msg.className} fallback to compact | prevState=${prevState} | scrollTop=${msg.scrollTop} | height=${msg.scrollHeight}`);
           }
         } else {
-          // User wants compact: force compact, do not call determineMessageState
           setMessageState(msg, 'compact');
           msg.style.setProperty('max-height', '400px', 'important');
           msg.style.setProperty('overflow-y', 'auto', 'important');
@@ -492,7 +477,6 @@ function injectConsoleControls(messageDiv, command, type, heading) {
       }
     }
     updateAllButtonStatesForType(type);
-    // After streaming ends, unlock all and reevaluate
     if (!isStreaming) {
       unlockAllMessageStates();
       allMessagesOfType.forEach(msg => {
@@ -501,10 +485,8 @@ function injectConsoleControls(messageDiv, command, type, heading) {
         }
       });
     }
-
     // Restore scroll position if it changed
     if (chatHistory && prevScrollTop !== null && prevScrollHeight !== null) {
-      // Try to keep the same scroll offset from the bottom
       const newScrollHeight = chatHistory.scrollHeight;
       chatHistory.scrollTop = newScrollHeight - prevScrollHeight + prevScrollTop;
     }
@@ -631,59 +613,18 @@ function injectConsoleControls(messageDiv, command, type, heading) {
 
     let shouldExpand;
     if (!isFixedHeightGlobal) {
-      // When fixed height is OFF, toggle based on DOM state
-      shouldExpand = true; // default
-      if (allMessagesOfType.length > 0) {
-        const firstMsg = allMessagesOfType[0];
-        shouldExpand = !firstMsg.classList.contains('message-expanded');
-      }
+      // When fixed height is OFF, toggle based on localStorage only
+      const currentState = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
+      shouldExpand = !currentState;
     } else {
       // When fixed height is ON, toggle based on stored state
       const currentState = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
       shouldExpand = !currentState;
     }
-
     // Set the new state in storage to match what we're about to do
     localStorage.setItem(`msgFullHeight_${type}`, shouldExpand);
-    console.log(`🔧 Toggle height for ${type}: (mode-aware) will set to ${shouldExpand} (global fixed: ${isFixedHeightGlobal})`);
-
-    // Immediately apply visual state before calling updateAllMessagesOfType
-    allMessagesOfType.forEach(msg => {
-      if (!msg.classList.contains('message-temp') && !msg.classList.contains('state-lock')) {
-        if (!isFixedHeightGlobal) {
-          if (shouldExpand) {
-            // Expand
-            setMessageState(msg, 'expanded');
-            msg.style.setProperty('height', 'auto', 'important');
-            msg.style.setProperty('max-height', 'none', 'important');
-            msg.style.setProperty('overflow-y', 'visible', 'important');
-            msg.style.setProperty('overflow-x', 'auto', 'important');
-            msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
-            const scrollableContent = msg.querySelector('.scrollable-content');
-            if (scrollableContent) {
-              scrollableContent.style.setProperty('max-height', 'none', 'important');
-              scrollableContent.style.setProperty('overflow-y', 'visible', 'important');
-              scrollableContent.style.setProperty('overflow-x', 'visible', 'important');
-            }
-            const msgContent = msg.querySelector('.msg-content');
-            if (msgContent) {
-              msgContent.style.setProperty('max-height', 'none', 'important');
-              msgContent.style.setProperty('overflow-y', 'visible', 'important');
-            }
-          } else {
-            // Compact
-            setMessageState(msg, 'compact');
-            msg.style.setProperty('max-height', '400px', 'important');
-            msg.style.setProperty('overflow-y', 'auto', 'important');
-            msg.style.setProperty('overflow-x', 'auto', 'important');
-            msg.style.setProperty('scrollbar-gutter', 'stable', 'important');
-            ensureScrollTracking(msg);
-          }
-        }
-      }
-    });
-
-    // Update button states and trigger full update
+    console.log(`🔧 Toggle height for ${type}: will set to ${shouldExpand} (global fixed: ${isFixedHeightGlobal})`);
+    // Only call updateAllMessagesOfType, do not apply visual state directly
     updateAllButtonStatesForType(type);
     updateAllMessagesOfType(true);
   };
@@ -810,14 +751,8 @@ function createModernButton(buttonType, handler) {
 function updateButtonState(button, isActive, type, buttonType) {
   const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
   if (buttonType === 'height') {
-    // Minimal fix: when fixed height is OFF, use DOM state for active effect
-    if (!isFixedHeightGlobal) {
-      const messageSelector = getMessageSelectorForType(type);
-      const firstMsg = document.querySelector(messageSelector);
-      if (firstMsg) {
-        isActive = firstMsg.classList.contains('message-compact');
-      }
-    }
+    // Always use localStorage for isActive
+    isActive = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
   }
   button.classList.toggle('active', isActive);
   
