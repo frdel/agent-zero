@@ -191,7 +191,8 @@ class CodeExecution(Tool):
         reset_full_output=True,
         first_output_timeout=30,  # Wait up to x seconds for first output
         between_output_timeout=15,  # Wait up to x seconds between outputs
-        max_exec_timeout=180,  #hard cap on total runtime
+        dialog_timeout=5,  # potential dialog detection timeout
+        max_exec_timeout=180,  # hard cap on total runtime
         sleep_time=0.1,
     ):
         # Common shell prompt regex patterns (add more as needed)
@@ -199,6 +200,14 @@ class CodeExecution(Tool):
             re.compile(r"\\(venv\\).+[$#] ?$"),  # (venv) ...$ or (venv) ...#
             re.compile(r"root@[^:]+:[^#]+# ?$"),  # root@container:~#
             re.compile(r"[a-zA-Z0-9_.-]+@[^:]+:[^$#]+[$#] ?$"),  # user@host:~$
+        ]
+
+        # potential dialog detection
+        dialog_patterns = [
+            re.compile(r"Y/N", re.IGNORECASE),  # Y/N anywhere in line
+            re.compile(r"yes/no", re.IGNORECASE),  # yes/no anywhere in line
+            re.compile(r":\s*$"),  # line ending with colon
+            re.compile(r"\?\s*$"),  # line ending with question mark
         ]
 
         start_time = time.time()
@@ -228,7 +237,9 @@ class CodeExecution(Tool):
                 got_output = True
 
                 # Check for shell prompt at the end of output
-                last_lines = truncated_output.splitlines()[-3:] if truncated_output else []
+                last_lines = (
+                    truncated_output.splitlines()[-3:] if truncated_output else []
+                )
                 for line in last_lines:
                     for pat in prompt_patterns:
                         if pat.search(line.strip()):
@@ -271,6 +282,31 @@ class CodeExecution(Tool):
                     PrintStyle.warning(sysinfo)
                     self.log.update(content=response)
                     return response
+
+                # potential dialog detection
+                if now - last_output_time > dialog_timeout:
+                    # Check for dialog prompt at the end of output
+                    last_lines = (
+                        truncated_output.splitlines()[-2:] if truncated_output else []
+                    )
+                    for line in last_lines:
+                        for pat in dialog_patterns:
+                            if pat.search(line.strip()):
+                                PrintStyle.info(
+                                    "Detected dialog prompt, returning output early."
+                                )
+
+                                sysinfo = self.agent.read_prompt(
+                                    "fw.code.pause_dialog.md", timeout=dialog_timeout
+                                )
+                                response = self.agent.read_prompt(
+                                    "fw.code.info.md", info=sysinfo
+                                )
+                                if truncated_output:
+                                    response = truncated_output + "\n\n" + response
+                                PrintStyle.warning(sysinfo)
+                                self.log.update(content=response)
+                                return response
 
     async def reset_terminal(self, session=0, reason: str | None = None):
         # Print the reason for the reset to the console if provided
