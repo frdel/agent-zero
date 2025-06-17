@@ -33,4 +33,9 @@ RUN bash /ins/install_searxng.sh
 RUN bash /ins/configure_ssh.sh
 
 # Keep container running infinitely
+# Create non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser -u 1001 appuser
+
+# Switch to non-root user
+USER appuser
 CMD ["tail", "-f", "/dev/null"]
