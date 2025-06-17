@@ -247,8 +247,13 @@ function injectConsoleControls(messageDiv, command, type, heading) {
   // Patch: Only allow state/scroll updates for streaming message during streaming
   // Accept a force parameter to override the guard for user actions
   function debouncedStateUpdate(messageElement, delay = 100, force = false) {
-    const isStreaming = document.querySelector('.message-temp');
+    // --- PATCH: Skip if data-initialized and not streaming ---
     const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+    if (messageElement.getAttribute('data-initialized') === 'true' && !messageElement.classList.contains('message-temp')) {
+      console.log(`[DEBUG][debouncedStateUpdate] Skipping initialized message id/class=${messageElement.id || messageElement.className}`);
+      return;
+    }
+    const isStreaming = document.querySelector('.message-temp');
     console.log(`[DEBUG][debouncedStateUpdate] called for message id/class=${messageElement.id || messageElement.className} force=${force} isStreaming=${!!isStreaming} isFixedHeightGlobal=${isFixedHeightGlobal} classList=${messageElement.className}`);
     // --- PATCH: If force is true, ALWAYS apply the state, even if streaming or locked ---
     if (force) {
@@ -377,6 +382,14 @@ function injectConsoleControls(messageDiv, command, type, heading) {
     }, delay);
     stateUpdateTimeouts.set(messageId, timeoutId);
     console.log(`[DEBUG][debouncedStateUpdate] Set timeout for messageId=${messageId} delay=${delay}`);
+    // --- PATCH: If fixed height is ON and not streaming, always clear state-lock after setting state ---
+    if (isFixedHeightGlobal && !messageElement.classList.contains('message-temp')) {
+      if (messageElement.classList.contains('state-lock')) {
+        messageElement.classList.remove('state-lock');
+        console.log(`[DEBUG][debouncedStateUpdate] Cleared state-lock after state set for id/class=${messageElement.id || messageElement.className}`);
+      }
+      messageElement.setAttribute('data-initialized', 'true');
+    }
   }
 
   // Global observer for streaming message updates
@@ -2286,6 +2299,16 @@ window.addEventListener('DOMContentLoaded', () => {
       allMessagesOfType.forEach(msg => {
         if (msg.classList.contains('state-lock')) msg.classList.remove('state-lock');
         if (isFixedHeightGlobal) {
+          // --- PATCH: Forcibly clear state-lock and message-temp, mark as initialized ---
+          if (msg.classList.contains('state-lock')) {
+            msg.classList.remove('state-lock');
+            console.log(`[DEBUG][DOMContentLoaded] Forcibly removed state-lock from id/class=${msg.id || msg.className}`);
+          }
+          if (msg.classList.contains('message-temp')) {
+            msg.classList.remove('message-temp');
+            console.log(`[DEBUG][DOMContentLoaded] Forcibly removed message-temp from id/class=${msg.id || msg.className}`);
+          }
+          msg.setAttribute('data-initialized', 'true');
           // Let the normal logic handle this
           return;
         }
@@ -2308,7 +2331,23 @@ window.addEventListener('DOMContentLoaded', () => {
           console.log(`[DEBUG][DOMContentLoaded] Set message to compact for id/class=${msg.id || msg.className} type=${type}`);
         }
         syncButtonStateToDOM(msg, type);
+        // --- PATCH: Mark as initialized and clear state-lock ---
+        msg.removeAttribute('state-lock');
+        msg.removeAttribute('data-state-lock');
+        msg.classList.remove('state-lock');
+        msg.setAttribute('data-initialized', 'true');
+        console.log(`[DEBUG][DOMContentLoaded] Cleared state-lock and set data-initialized for id/class=${msg.id || msg.className}`);
       });
+    });
+    // After all, remove state-lock from any message not streaming
+    document.querySelectorAll('.message').forEach(msg => {
+      if (!msg.classList.contains('message-temp')) {
+        msg.classList.remove('state-lock');
+        msg.removeAttribute('state-lock');
+        msg.removeAttribute('data-state-lock');
+        msg.setAttribute('data-initialized', 'true');
+        console.log(`[DEBUG][DOMContentLoaded] Final state-lock clear for id/class=${msg.id || msg.className}`);
+      }
     });
     console.log('[DEBUG][DOMContentLoaded] Synced all button and DOM states to localStorage preferences after page load.');
   }, 500); // Delay to ensure all messages are rendered
