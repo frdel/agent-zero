@@ -54,7 +54,7 @@ Located beneath the chat input box, Agent Zero provides a set of action buttons 
 
 ![Context](res/ui-context.png)
 
-### History: 
+### History:
 Access the chat history in JSON format
   - View the conversation as processed by the LLM
   - Useful for debugging and understanding agent behavior
@@ -184,8 +184,8 @@ Configure STT settings in the Settings page:
 ![Speech to Text Settings](res/ui-settings-5-speech-to-text.png)
 
 > [!IMPORTANT]
-> All STT and TTS functionalities operate locally within the Docker container, 
-> ensuring that no data is transmitted to external servers or OpenAI APIs. This 
+> All STT and TTS functionalities operate locally within the Docker container,
+> ensuring that no data is transmitted to external servers or OpenAI APIs. This
 > enhances user privacy while maintaining functionality.
 
 ### Mathematical Expressions
@@ -229,14 +229,14 @@ Agent Zero provides a powerful file browser interface for managing your workspac
 ![File Browser](res/ui-file-browser.png)
 
 #### Features
-- **Directory Navigation**: 
+- **Directory Navigation**:
   - Click directories to enter them
   - Use "Up" button to move to parent directory
   - Current path always visible for context
 
 > [!NOTE]
 > The files browser allows the user to go in the Agent Zero root folder if you click the `Up` button, but the working directory of Agents will always be `/work_dir`
-> 
+>
 - **File Operations**:
   - Create new files and directories
   - Delete existing files and directories
@@ -252,3 +252,124 @@ Agent Zero provides a powerful file browser interface for managing your workspac
 
 > [!TIP]
 > The File Browser integrates seamlessly with Agent Zero's capabilities. You can reference files directly in your conversations, and the agent can help you manage, modify, and organize your files.
+
+## Backup & Restore
+Agent Zero provides a comprehensive backup and restore system to protect your data and configurations. This feature helps you safeguard your work and migrate Agent Zero setups between different systems.
+
+### Creating Backups
+Access the backup functionality through the Settings interface:
+
+1. Click the **Settings** button in the sidebar
+2. Navigate to the **Backup** tab
+3. Click **Create Backup** to start the backup process
+
+#### What Gets Backed Up
+By default, Agent Zero backs up your most important data:
+
+* **Knowledge Base**: Your custom knowledge files and documents
+* **Memory System**: Agent memories and learned information
+* **Chat History**: All your conversations and interactions
+* **Configuration Files**: Settings, API keys, and system preferences
+* **Custom Instruments**: Any tools you've added or modified
+* **Uploaded Files**: Documents and files you've worked with
+
+#### Customizing Backup Content
+Before creating a backup, you can customize what to include:
+
+* **Edit Patterns**: Use the built-in editor to specify exactly which files and folders to backup
+* **Include Hidden Files**: Choose whether to include system and configuration files
+* **Preview Files**: See exactly what will be included before creating the backup
+* **Organized View**: Files are grouped by directory for easy review
+
+> [!TIP]
+> The backup system uses pattern matching, so you can include or exclude specific file types. For example, you can backup all `.py` files but exclude temporary `.tmp` files.
+
+#### Creating Your Backup
+1. Review the file preview to ensure you're backing up what you need
+2. Give your backup a descriptive name
+3. Click **Create Backup** to generate the archive
+4. The backup file will download automatically as a ZIP archive
+
+> [!NOTE]
+> Backup creation may take a few minutes depending on the amount of data. You'll see progress updates during the process.
+
+### Restoring from Backup
+The restore process allows you to recover your Agent Zero setup from a previous backup:
+
+#### Starting a Restore
+1. Navigate to **Settings** → **Backup** tab
+2. Click **Restore from Backup**
+3. Upload your backup ZIP file
+
+#### Reviewing Before Restore
+After uploading, you can review and customize the restore:
+
+* **Inspect Metadata**: View information about when and where the backup was created
+* **Edit Restore Patterns**: Choose exactly which files to restore
+* **Preview Changes**: See which files will be restored, overwritten, or skipped
+* **Cross-System Compatibility**: Paths are automatically adjusted when restoring on different systems
+
+#### Restore Options
+Configure how the restore should handle existing files:
+
+* **Overwrite**: Replace existing files with backup versions
+* **Skip**: Keep existing files, only restore missing ones
+* **Backup Existing**: Create backup copies of existing files before overwriting
+
+#### Clean Before Restore
+Optionally clean up existing files before restoring:
+
+* **Smart Cleanup**: Remove files that match backup patterns before restoring
+* **Preview Cleanup**: See which files would be deleted before confirming
+* **Safe Operation**: Only affects files that match your specified patterns
+
+### Best Practices
+
+#### When to Create Backups
+* **Before Major Changes**: Always backup before significant modifications
+* **Regular Schedule**: Create weekly or monthly backups of your work
+* **Before System Updates**: Backup before updating Agent Zero or system components
+* **Project Milestones**: Save backups when completing important work
+
+#### Backup Management
+* **Descriptive Names**: Use clear names like "project-completion-2024-01"
+* **External Storage**: Keep backup files in a safe location outside Agent Zero
+* **Multiple Versions**: Maintain several backup versions for different time periods
+* **Test Restores**: Occasionally test restoring backups to ensure they work
+
+#### Security Considerations
+* **API Keys**: Backups include your API keys and sensitive configuration
+* **Secure Storage**: Store backup files securely and don't share them
+* **Clean Systems**: When restoring on new systems, verify all configurations
+
+### Common Use Cases
+
+#### System Migration
+Moving Agent Zero to a new server or computer:
+1. Create a complete backup on the original system
+2. Install Agent Zero on the new system
+3. Restore the backup to migrate all your data and settings
+
+#### Project Archival
+Preserving completed projects:
+1. Create project-specific backup patterns
+2. Include only relevant files and conversations
+3. Store the backup as a project archive
+
+#### Development Snapshots
+Saving work-in-progress states:
+1. Create frequent backups during development
+2. Use descriptive names to track progress
+3. Restore previous versions if something goes wrong
+
+#### Team Collaboration
+Sharing Agent Zero configurations:
+1. Create backups with shared configurations and tools
+2. Team members can restore to get consistent setups
+3. Include documentation and project files
+
+> [!IMPORTANT]
+> Always test your backup and restore process in a safe environment before relying on it for critical data. Keep multiple backup versions and store them in secure, accessible locations.
+
+> [!TIP]
+> The backup system is designed to work across different operating systems and Agent Zero installations. Your backups from a Windows system will work on Linux, and vice versa.
