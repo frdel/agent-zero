@@ -18,10 +18,11 @@ ENV TZ=UTC
 # Copy contents of the project to /
 COPY ./fs/ /
 
-# install packages software
+# install packages software (split for better cache management)
 RUN bash /ins/install_base_packages1.sh
 RUN bash /ins/install_base_packages2.sh
 RUN bash /ins/install_base_packages3.sh
+RUN bash /ins/install_base_packages4.sh
 
 # install python after packages to ensure version overriding
 RUN bash /ins/install_python.sh

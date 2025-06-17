@@ -10,6 +10,4 @@ echo "====================BASE PACKAGES3 NPM===================="
 
 # we shall not install npx separately, it's discontinued and some versions are broken
 # npm i -g npx
-npm i -g shx
-
 echo "====================BASE PACKAGES3 END===================="

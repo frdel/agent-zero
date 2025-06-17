@@ -1,0 +1,1 @@
+Potential dialog detected in output. Returning control to agent after {{timeout}} seconds since last output update. Decide whether dialog actually occurred and needs to be addressed, or if it was just a false positive and wait for more output.

@@ -40,7 +40,7 @@ from agent import Agent
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
-DEFAULT_SEARCH_THRESHOLD = 0.6
+DEFAULT_SEARCH_THRESHOLD = 0.5
 
 class DocumentQueryStore:
     """
