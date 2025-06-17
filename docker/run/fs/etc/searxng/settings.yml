@@ -58,6 +58,10 @@ enabled_plugins:
 #     - '(.*\.)?wikipedia.org$'
 
 engines:
+  - name: radio_browser
+    disabled: true
+# TODO enable radio_browser when it works again
+# currently it crashes on x86 on gethostbyaddr
 
 #   - name: fdroid
 #     disabled: false

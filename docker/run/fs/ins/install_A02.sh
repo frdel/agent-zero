@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # cachebuster script, this helps speed up docker builds
 

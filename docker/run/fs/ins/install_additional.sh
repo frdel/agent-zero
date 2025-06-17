@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # install playwright - moved to install A0
 # bash /ins/install_playwright.sh "$@"

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # fix permissions for cron files
 chmod 0644 /etc/cron.d/*
