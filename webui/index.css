@@ -3002,26 +3002,38 @@ nav ul li a img {
 
 .msg-content h1 {
   font-size: 1.25em;
+  font-weight: 800;
+  margin-bottom: 0.2em;
 }
 
 .msg-content h2 {
   font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 0.2em;
 }
 
 .msg-content h3 {
   font-size: 1.15em;
+  font-weight: 600;
+  margin-bottom: 0.2em;
 }
 
 .msg-content h4 {
   font-size: 1.1em;
+  font-weight: 500;
+  margin-bottom: 0.2em;
 }
 
 .msg-content h5 {
   font-size: 1.05em;
+  font-weight: 500;
+  margin-bottom: 0.2em;
 }
 
 .msg-content h6 {
   font-size: 1em;
+  font-weight: 500;
+  margin-bottom: 0.2em;
 }
 
 .msg-content table {
