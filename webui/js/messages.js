@@ -2,8 +2,8 @@
 import { openImageModal } from "./image_modal.js";
 import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
 
-const katexDelimiterLeft = "<$LATEX>";
-const katexDelimiterRight = "</$LATEX>";
+const katexDelimiterLeft = "<latex>";
+const katexDelimiterRight = "</latex>";
 
 function createCopyButton() {
   const button = document.createElement("button");
@@ -100,7 +100,7 @@ export function _drawMessage(
     messageDiv.appendChild(headingElement);
   }
 
-  drawKvps(messageDiv, kvps, latex);
+  drawKvps(messageDiv, kvps, false);
 
   if (content && content.trim().length > 0) {
     if (markdown) {
@@ -109,29 +109,41 @@ export function _drawMessage(
 
       const spanElement = document.createElement("span"); // Wrapper span
       let processedContent = content;
+
       processedContent = convertImageTags(processedContent);
       processedContent = convertImgFilePaths(processedContent);
       processedContent = marked.parse(processedContent, { breaks: true });
       processedContent = convertPathsToLinks(processedContent);
       spanElement.innerHTML = processedContent;
-      contentDiv.appendChild(spanElement);
-
-      addCopyButtonToElement(contentDiv);
-      messageDiv.appendChild(contentDiv);
 
       // KaTeX rendering for markdown
       if (window.renderMathInElement && latex) {
-        renderMathInElement(contentDiv, {
-          delimiters: [
-            {
-              left: katexDelimiterLeft,
-              right: katexDelimiterRight,
-              display: true,
-            },
-          ],
-          throwOnError: false,
+        spanElement.querySelectorAll("latex").forEach((element) => {
+          katex.render(element.innerHTML, element, {
+            throwOnError: false,
+          });
         });
+
+        // renderMathInElement(spanElement, {
+        //   delimiters: [
+        //     {
+        //       left: katexDelimiterLeft,
+        //       right: katexDelimiterRight,
+        //       display: true,
+        //     },
+        //     {
+        //       left: escapeHTML(katexDelimiterLeft),
+        //       right: escapeHTML(katexDelimiterRight),
+        //       display: true,
+        //     },
+        //   ],
+        //   throwOnError: true,
+        // });
       }
+
+      contentDiv.appendChild(spanElement);
+      addCopyButtonToElement(contentDiv);
+      messageDiv.appendChild(contentDiv);
     } else {
       const preElement = document.createElement("pre");
       preElement.classList.add("msg-content", ...contentClasses);
@@ -149,20 +161,6 @@ export function _drawMessage(
       preElement.appendChild(spanElement);
       addCopyButtonToElement(preElement);
       messageDiv.appendChild(preElement);
-
-      // Render LaTeX math within the span
-      if (window.renderMathInElement && latex) {
-        renderMathInElement(spanElement, {
-          delimiters: [
-            {
-              left: katexDelimiterLeft,
-              right: katexDelimiterRight,
-              display: true,
-            },
-          ],
-          throwOnError: false,
-        });
-      }
     }
   }
 
@@ -609,7 +607,13 @@ function drawKvps(container, kvps, latex) {
 
           if (window.renderMathInElement && latex) {
             renderMathInElement(span, {
-              delimiters: [{ left: katexDelimiterLeft, right: katexDelimiterRight, display: true }],
+              delimiters: [
+                {
+                  left: katexDelimiterLeft,
+                  right: katexDelimiterRight,
+                  display: true,
+                },
+              ],
               throwOnError: false,
             });
           }
@@ -677,7 +681,7 @@ function convertHTML(str) {
 }
 
 function convertImgFilePaths(str) {
-  return str.replace("img://", "/image_get?path=");   
+  return str.replace("img://", "/image_get?path=");
 }
 
 function escapeHTML(str) {
@@ -693,35 +697,38 @@ function escapeHTML(str) {
 
 function convertPathsToLinks(str) {
   function generateLinks(match) {
-      const parts = match.split("/");
-      if (!parts[0]) parts.shift();             // drop empty element left of first “/”
-      let conc = "";
-      let html = "";
-      for (const part of parts) {
-          conc += "/" + part;
-          html += `/<a href="#" class="path-link" onclick="openFileLink('${conc}');">${part}</a>`;
-      }
-      return html;
+    const parts = match.split("/");
+    if (!parts[0]) parts.shift(); // drop empty element left of first “/”
+    let conc = "";
+    let html = "";
+    for (const part of parts) {
+      conc += "/" + part;
+      html += `/<a href="#" class="path-link" onclick="openFileLink('${conc}');">${part}</a>`;
+    }
+    return html;
   }
 
   const prefix = `(?:^|[> \`'"\\n]|&#39;|&quot;)`;
   const folder = `[a-zA-Z0-9_\\/.\\-]`;
   const file = `[a-zA-Z0-9_\\-\\/]`;
   const suffix = `(?<!\\.)`;
-  const pathRegex = new RegExp(`(?<=${prefix})\\/${folder}*${file}${suffix}`, "g");
+  const pathRegex = new RegExp(
+    `(?<=${prefix})\\/${folder}*${file}${suffix}`,
+    "g"
+  );
 
   // skip paths inside html tags, like <img src="/path/to/image">
   const tagRegex = /(<(?:[^<>"']+|"[^"]*"|'[^']*')*>)/g;
 
   return str
-      .split(tagRegex)              // keep tags & text separate
-      .map(chunk => {
-          // if it *starts* with '<', it’s a tag -> leave untouched
-          if (chunk.startsWith("<")) return chunk;
-          // otherwise run your link-generation
-          return chunk.replace(pathRegex, generateLinks);
-      })
-      .join("");
+    .split(tagRegex) // keep tags & text separate
+    .map((chunk) => {
+      // if it *starts* with '<', it’s a tag -> leave untouched
+      if (chunk.startsWith("<")) return chunk;
+      // otherwise run your link-generation
+      return chunk.replace(pathRegex, generateLinks);
+    })
+    .join("");
 }
 
 // function convertPathsToLinksInHtml(htmlString) {
