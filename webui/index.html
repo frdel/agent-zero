@@ -190,7 +190,7 @@
                                         <span class="chat-name" :title="context.name ? context.name : 'Chat #' + context.no"
                                             x-text="context.name ? context.name : 'Chat #' + context.no"></span>
                                     </div>
-                                    <button class="edit-button" @click="killChat(context.id)">X</button>
+                                    <button class="edit-button" @click="killChat(context.id)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><line x1="216" y1="56" x2="40" y2="56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="104" y1="104" x2="104" y2="168" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="152" y1="104" x2="152" y2="168" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M200,56V208a8,8,0,0,1-8,8H64a8,8,0,0,1-8-8V56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M168,56V40a16,16,0,0,0-16-16H104A16,16,0,0,0,88,40V56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg></button>
                                 </li>
                             </template>
                         </ul>
@@ -211,7 +211,7 @@
                     style="display: none;">
                     <div class="tasks-list-container">
                         <ul class="config-list" x-show="tasks.length > 0">
-                            <template x-for="task in tasks">
+                            <template x-for="task in tasks" x-bind:key="task.uuid">
                                 <li>
                                     <div :class="{'chat-list-button': true, 'font-bold': task.id === selected, 'has-task-container': true}"
                                         @click="selected = task.id; selectChat(task.id)">
@@ -260,7 +260,7 @@
             <!--Sidebar lower elements-->
             <div class="left-panel-bottom">
                 <!-- Preferences -->
-                <div class="pref-section" x-data="{ prefOpen: true }">
+                <div class="pref-section" x-data="{ prefOpen: false }">
                     <span>
                         <h3 class="pref-header" @click="prefOpen = !prefOpen">
                             Preferences
@@ -1325,22 +1325,22 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <template x-for="task in filteredTasks" :key="task.uuid">
+                                            <template x-for="task in filteredTasks" x-bind:key="task.uuid">
                                                 <tr @click="showTaskDetail(task.uuid)">
-                                                    <td>
+                                                    <td data-label="Name">
                                                         <span x-text="task.name"></span>
                                                     </td>
-                                                    <td>
+                                                    <td data-label="State">
                                                         <span class="scheduler-status-badge" :class="getStateBadgeClass(task.state)" x-text="task.state"></span>
                                                     </td>
-                                                    <td x-text="task.type"></td>
-                                                    <td>
+                                                    <td data-label="Type" x-text="task.type"></td>
+                                                    <td data-label="Schedule">
                                                         <span x-show="task.type === 'scheduled'" x-text="formatSchedule(task)"></span>
                                                         <span x-show="task.type === 'adhoc'" class="scheduler-no-schedule">—</span>
                                                         <span x-show="task.type === 'planned'" x-html="formatPlan(task).replace(/\n/g, '<br>')"></span>
                                                     </td>
-                                                    <td x-text="formatDate(task.last_run)"></td>
-                                                    <td @click.stop>
+                                                    <td data-label="Last Run" x-text="formatDate(task.last_run)"></td>
+                                                    <td data-label="Actions" @click.stop>
                                                         <div class="scheduler-task-actions">
                                                             <button class="scheduler-task-action" @click="runTask(task.uuid)" title="Run Task">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">

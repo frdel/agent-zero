@@ -1,0 +1,365 @@
+/* webui/css/components/_config.css */
+
+/* Config Section (general) */
+.config-section {
+  flex-shrink: 0; 
+}
+
+.config-section > h4 {
+  margin-top: 0;
+}
+
+.config-list {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  overflow-y: scroll;
+  /* max-height: 300px; */
+
+}
+
+.config-list li {
+  align-items: center;
+  border-top: 1px solid var(--color-border);
+  display: -webkit-flex;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+  margin: 0 0.5rem;
+}
+
+.config-list > *:first-child {
+  border-top: 0px;
+}
+
+/* Preferences / Collapsible sections */
+.pref-header {
+  display: -webkit-flex;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  font-size: var(--font-size-normal);
+  margin: 0.28rem 0 0.6rem 0;
+}
+
+/* Arrow icon for collapsible sections */
+.arrow-icon {
+  flex-shrink: 0;
+  -webkit-transition: transform var(--transition-speed) ease-in-out;
+  transition: transform var(--transition-speed) ease-in-out;
+  margin-left: 0.5rem;
+  width: 16px;
+  height: 16px;
+  transform: rotate(90deg);
+}
+
+.arrow-icon.rotated {
+  -webkit-transform: rotate(-90deg);
+  transform: rotate(-90deg);
+}
+
+.pref-section {
+  font-size: var(--font-size-small);
+  padding: 0.6rem;
+}
+
+/* Collapse transition for preferences */
+.pref-section [x-cloak] {
+  display: none;
+}
+
+#pref-list li { 
+  opacity: 0.8;
+  margin: 0;
+}
+
+/* Config Buttons (general styling, might be used in various config panels) */
+.config-button {
+  background-color: var(--color-background);
+  border: 0.1rem solid var(--color-border);
+  border-radius: var(--spacing-xs);
+  cursor: pointer;
+  display: inline;
+  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  font-size: var(--font-size-small);
+  opacity: 0.8;
+  text-wrap: nowrap;
+  width: calc(50% - var(--spacing-xs));
+  float:left;
+  margin: 0 var(--spacing-xs) var(--spacing-xs) 0;
+  padding: var(--spacing-sm) 0.75rem;
+  max-height: 2.3rem;
+  -webkit-transition: all var(--transition-speed), transform 0.1s ease-in-out;
+  transition: all var(--transition-speed), transform 0.1s ease-in-out;
+}
+
+.config-button:hover {
+  background-color: var(--color-secondary);
+  opacity: 1;
+}
+
+.config-button:active {
+  opacity: 0.5;
+}
+
+/* Settings specific container (if #settings is a primary config panel) */
+#settings { 
+  display: flex;
+  align-items: center;
+}
+
+/* Edit button (often used in config panels) */
+.edit-button {
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 0.1875rem;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 0.125rem 0.5rem;
+  -webkit-transition: all var(--transition-speed) ease-in-out;
+  transition: all var(--transition-speed) ease-in-out;
+  width: 2rem;
+  height: 2rem;
+}
+
+.edit-button:hover {
+  border-color: var(--color-primary);
+  background-color: #32455690;
+}
+
+.edit-button:active {
+  background-color: #131a2090;
+  color: rgba(253, 253, 253, 0.35);
+}
+
+/* Toggle Switch (common in config panels) */
+.switch-label { 
+  margin-right: 0.5rem;
+}
+
+.switch {
+  display: inline-block;
+  height: 1.15rem;
+  position: relative;
+  width: 2.2rem;
+}
+
+.switch input {
+  float: right;
+  height: 0;
+  opacity: 0;
+  width: 0;
+}
+
+.slider {
+  background-color: #272727;
+  border: 1px solid #535353;
+  border-radius: 1.15rem;
+  bottom: 0;
+  cursor: pointer;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  -webkit-transition: 0.4s ease-in-out;
+  transition: 0.4s ease-in-out;
+}
+
+.slider:before {
+  background-color: #b6b6b6;
+  border-radius: 50%;
+  bottom: 0.134rem;
+  content: "";
+  height: 0.8rem;
+  left: 0.15rem;
+  position: absolute;
+  -webkit-transition: 0.4s ease-in-out;
+  transition: 0.4s ease-in-out;
+  width: 0.8rem;
+}
+
+input:checked + .slider {
+  background-color: #3a3a3a;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(1.0rem);
+          transform: translateX(1.0rem);
+}
+
+/* Light mode specific overrides for config elements */
+.light-mode .config-button {
+  background-color: var(--color-background);
+  color: #333333;
+}
+
+.light-mode .config-button:hover {
+  background-color: #d6dae8;
+}
+
+.light-mode .config-button:active {
+  background-color: #bdc0cb;
+}
+
+.light-mode .edit-button {
+  border-color: var(--color-primary-light);
+  color: var(--color-primary-light);
+}
+
+.light-mode .edit-button:hover {
+  background-color: #e4e7f0;
+}
+
+.light-mode .edit-button:active {
+  background-color: #979fb9;
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.light-mode .slider {
+  background-color: #f1f1f1;
+  border: 1px solid #dddddd;
+}
+
+.light-mode .slider:before {
+  background-color: #838383;
+}
+
+.light-mode input:checked + .slider {
+  background-color: #e6e6e6;
+}
+
+/* Settings Modal Styles (if configuration is within a modal) */
+
+.settings-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+    padding: 24px;
+}
+
+.settings-modal-close {
+    position: absolute;
+    top: 8px;
+    right: 16px;
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--color-text-secondary); 
+}
+
+.settings-modal-title {
+    margin-top: 0;
+    margin-bottom: 24px;
+    font-size: 1.8rem;
+    text-align: center;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 12px;
+}
+
+.settings-modal-content {
+    background-color: var(--color-panel);
+    color: var(--color-text);
+    width: 100%;
+    max-width: 800px;
+    height: auto;
+    max-height: 90vh;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    padding: 24px;
+    position: relative;
+    overflow: auto;
+}
+
+/* Settings Sections within modal */
+
+.settings-modal-content nav ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    padding: 0;
+    margin: 0 0 1rem 0;
+    list-style: none;
+}
+
+.settings-modal-content nav {
+    margin-bottom: 1rem;
+}
+
+.settings-modal-content nav ul li a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: var(--color-bg-secondary); 
+    text-decoration: none;
+    color: var(--color-text);
+    transition: background-color 0.2s ease;
+}
+
+.settings-modal-content nav ul li a:hover {
+    background-color: var(--color-bg-tertiary); 
+}
+
+.settings-modal-content nav ul li a img {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 0.5rem;
+    filter: var(--svg-filter);
+}
+
+.settings-modal-content .section { 
+    margin-bottom: 3rem;
+    animation: fadeIn 0.3s ease; 
+    width: 100%;
+}
+
+.settings-modal-content .section-title {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--color-primary);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0.5rem;
+}
+
+.settings-modal-content .section-description {
+    margin-bottom: 1.5rem;
+    color: var(--color-text-secondary); 
+}
+
+/* Input group, potentially for API keys or other settings */
+.input-group {
+    display: flex;
+    gap: 8px;
+}
+
+/* Responsive adjustments for settings modal sections */
+@media (max-width: 480px) {
+    .settings-modal-content nav ul li a {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+    }
+
+    .settings-modal-content nav ul li a img {
+        margin-bottom: 0;
+        width: 30px;
+        height: 30px;
+    }
+}

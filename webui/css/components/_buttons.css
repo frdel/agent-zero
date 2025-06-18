@@ -1,0 +1,270 @@
+/* === Buttons === */
+
+/* Sidebar Toggle Button */
+.toggle-sidebar-button {
+  height: 2.6rem;
+  width: 2.6rem;
+  background-color: var(--color-background);
+  border: 0.1rem solid var(--color-border);
+  border-radius: var(--spacing-xs);
+  color: var(--color-text);
+  opacity: 0.8;
+  cursor: pointer;
+  left: var(--spacing-md);
+  padding: 0.47rem 0.56rem;
+  position: absolute;
+  top: var(--spacing-md);
+  z-index: 1004;
+  -webkit-transition: all var(--transition-speed) ease-in-out;
+  transition: all var(--transition-speed) ease-in-out;
+}
+
+.toggle-sidebar-button:hover {
+  background-color: var(--color-secondary);
+  opacity: 1;
+}
+
+.toggle-sidebar-button:active {
+  opacity: 0.5;
+}
+
+/* Specific to toggle-sidebar-button's icon */
+.toggle-sidebar-button:active #sidebar-hamburger-svg {
+  -webkit-transform: scaleY(0.8);
+  transform: scaleY(0.8);
+}
+
+/* Chat List Button (acts as a button) */
+.chat-list-button {
+    display: block;
+    width: 100%;
+    padding: 8px 5px;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    border-radius: 4px;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.chat-list-button.has-task-container {
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.chat-list-button:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.light-mode .chat-list-button:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Expand Button */
+#expand-button {
+  position: absolute;
+  top: 12px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+/* Config Button */
+.config-button {
+  background-color: var(--color-background);
+  border: 0.1rem solid var(--color-border);
+  border-radius: var(--spacing-xs);
+  cursor: pointer;
+  display: inline;
+  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  font-size: var(--font-size-small);
+  opacity: 0.8;
+  text-wrap: nowrap;
+  width: calc(50% - var(--spacing-xs));
+  float:left;
+  margin: 0 var(--spacing-xs) var(--spacing-xs) 0;
+  padding: var(--spacing-sm) 0.75rem;
+  max-height: 2.3rem;
+  -webkit-transition: all var(--transition-speed), transform 0.1s ease-in-out;
+  transition: all var(--transition-speed), transform 0.1s ease-in-out;
+}
+
+.config-button:hover {
+  background-color: var(--color-secondary);
+  opacity: 1;
+}
+
+.config-button:active {
+  opacity: 0.5;
+}
+
+.light-mode .config-button {
+  background-color: var(--color-background);
+  color: #333333;
+}
+
+.light-mode .config-button:hover {
+  background-color: #d6dae8;
+}
+
+.light-mode .config-button:active {
+  background-color: #bdc0cb;
+}
+
+/* Edit Button */
+.edit-button {
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  
+}
+
+.light-mode .edit-button {
+  border-color: var(--color-primary-light);
+  color: var(--color-primary-light);
+}
+
+/* Text Button (often used with icons) */
+.text-button {
+  background-color: transparent;
+  border: none;
+  border-radius: 5px;
+  color: var(--color-text);
+  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  font-size: 0.6rem;
+  padding: 6px var(--spacing-sm);
+  cursor: pointer;
+  opacity: 0.8;
+  -webkit-transition: all 0.3s;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs); 
+  max-height: 25px; 
+}
+
+.text-button:hover {
+  opacity: 1;
+  background-color: var(--color-secondary);
+  border-radius: 4px;
+}
+
+.text-button:active {
+ opacity: 0.5;
+}
+
+.text-button svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0; 
+}
+
+.text-button p {
+  margin-block: 0;
+}
+
+/* Chat Buttons (Send and Mic) */
+.chat-button {
+  border: none;
+  border-radius: 50%;
+  color: var(--color-background);
+  cursor: pointer;
+  font-size: var(--font-size-normal);
+  height: 2.525rem;
+  width: 2.525rem;
+  margin: 0 0.18rem 0 var(--spacing-xs); 
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  flex-grow: 0;
+  min-width: 2.525rem;
+  -webkit-transition: all var(--transition-speed), transform 0.1s ease-in-out;
+  transition: all var(--transition-speed), transform 0.1s ease-in-out;
+}
+
+#send-button {
+  background-color: #4248f1;
+}
+
+/* Copy Button */
+.copy-button {
+  position: absolute;
+  right: 0;
+  top: var(--spacing-sm);
+  background: none;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  padding-right: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-wrap: nowrap;
+  opacity: 0;
+  -webkit-transition: opacity var(--transition-speed) ease-in-out;
+  transition: opacity var(--transition-speed) ease-in-out;
+  color: inherit;
+  font-size: 12px;
+  font-family: "Rubik", Arial, Helvetica, sans-serif;
+}
+
+.copy-button:hover {
+  opacity: 0.8 !important;
+}
+
+.msg-content:hover .copy-button,
+.kvps-row:hover .copy-button,
+.message-text:hover .copy-button {
+  opacity: 0.6;
+}
+
+.copy-button.copied {
+  font-family: "Rubik", Arial, Helvetica, sans-serif !important;
+  opacity: 1 !important;
+}
+
+.msg-thoughts .copy-button {
+  top: -12px !important;
+}
+
+.message-user .copy-button {
+  top: -15px !important;
+  left: -13px !important;
+  right: 99% !important;
+}
+
+.message-agent-response .copy-button {
+  top: -22px !important;
+  right: 0 !important;
+  padding-right: 0px !important;
+}
+
+.message-info .copy-button {
+  top: -22px !important;
+  right: 0 !important;
+  padding-right: 0px !important;
+}
+
+.message-tool .copy-button {
+  top: -12px !important;
+  right: 0 !important;
+}
+
+.msg-output .copy-button {
+  top: -6px !important;
+  right: 0 !important;
+}
+
+/* Styles from media queries */
+@media (max-width: 768px) {
+  .toggle-sidebar-button {
+    position: fixed; 
+  }
+
+  .text-button {
+    font-size: 0.6rem; 
+  }
+
+  .copy-button {
+    display: none !important; 
+  }
+}

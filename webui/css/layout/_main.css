@@ -1,0 +1,807 @@
+/* Core Layout Styles */
+body,
+html {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  width: 100%;
+  height: 100%;
+  min-width: 320px !important;
+  min-height: 370px !important;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Changed from overflow: hidden to overflow-x: hidden to allow vertical scroll if needed by content */
+  position: fixed;
+  -webkit-font-smoothing: antialiased; /* Improve font rendering */
+  -moz-osx-font-smoothing: grayscale;    /* Improve font rendering */
+  box-sizing: border-box; /* Added */
+}
+
+body {
+  overscroll-behavior: none;
+  -webkit-overscroll-behavior: none;
+  overflow-x: hidden; /* Ensure body itself doesn't scroll horizontally */
+}
+
+.container {
+  display: -webkit-flex;
+  display: flex;
+  height: 100%;
+  width: 100%; /* Added */
+  box-sizing: border-box; /* Added */
+  overflow-x: hidden; /* Prevent container from being pushed wider by content */
+}
+
+.panel {
+  display: -webkit-flex;
+  display: flex;
+  height: 100%;
+  overflow: auto; /* Allows vertical scroll within panels */
+  -webkit-scroll-behavior: smooth;
+  scroll-behavior: smooth;
+  box-sizing: border-box; /* Added */
+  /* width: 100%; */ /* This might be too general for .panel, specific panels like #right-panel should handle their width */
+  overflow-x: hidden; /* Prevent horizontal scroll at the panel level by default */
+}
+
+/* Global Elements */
+#logo-container {
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: fixed;
+  margin-left: 4.6rem;
+  margin-top: var(--spacing-md);
+  z-index: 1004;
+  -webkit-transition: margin-left var(--transition-speed) ease-in-out;
+  transition: margin-left var(--transition-speed) ease-in-out;
+}
+
+#logo-container a {
+  color: inherit;
+  text-decoration: none;
+}
+
+#logo-container img {
+  border-radius: var(--spacing-xs);
+  width: auto;
+  height: 2.6rem;
+  -webkit-transition: filter 0.3s ease;
+  transition: filter 0.3s ease;
+}
+
+#progress-bar-box {
+  background-color: var(--color-panel);
+  padding: var(--spacing-sm) var(--spacing-md);
+  padding-bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  z-index: 1001;
+}
+
+#progress-bar-h {
+  color: var(--color-primary);
+  display: flex;
+  align-items: left;
+  justify-content: flex-start;
+  height: 1.2em;
+  text-overflow: ellipsis;
+  white-space: nowrap;       
+  overflow: hidden;
+  font-weight: normal;
+  font-size: 0.75rem;
+}
+
+#progress-bar-i {
+  font-weight: bold;
+  padding-right: 0.5em;
+  color: var(--color-secondary);
+}
+
+.progress-bar h4 {
+  margin-left: 1em;
+  margin-right: 1.2em;
+}
+
+.center-container {
+  align-self: center;
+  max-width: 80%;
+  margin: 0;
+}
+
+.center-container .message {
+  margin-bottom: var(--spacing-sm);
+}
+
+.message-user > div {
+  padding-top: var(--spacing-xs);
+  font-family: 'Roboto Mono', monospace;
+  font-optical-sizing: auto;
+  -webkit-font-optical-sizing: auto;
+  font-size: var(--font-size-small);
+}
+
+.message-ai {
+  border-bottom-left-radius: var(--spacing-xs);
+}
+
+.message-center {
+  align-self: center;
+  border-bottom-left-radius: unset;
+}
+
+.message-followup + .message-followup {
+  margin-bottom: 0;
+}
+
+/* Input Section Layout */
+#input-section {
+  position: relative;
+  background-color: var(--color-panel);
+  display: -webkit-flex;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: 1rem 0.5rem; 
+  align-items: start;
+  flex-shrink: 0;
+  z-index: 1001;
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  width: 100%;
+  white-space: nowrap;
+}
+
+/* Attachment icon & Preview section */
+.attachment-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.attachment-icon {
+  cursor: pointer;
+  color: var(--color-text);
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.attachment-icon:hover {
+  opacity: 1;
+}
+
+.attachment-icon:active {
+  opacity: 0.5;
+}
+
+.preview-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: var(--spacing-xs);
+  transition: all 0.3s ease;
+  background-color: var(--color-input); 
+  border-radius: 8px;
+  
+}
+
+.preview-item {
+  position: relative;
+  flex-shrink: 0;
+  animation: fadeIn 0.3s ease;
+  
+  background: var(--color-secondary);
+  border-radius: 8px;
+  padding: 8px; 
+  max-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+  min-width: min-content; 
+}
+
+
+.preview-item.image-preview img {
+  max-height: 100px;
+  object-fit: cover;
+  border-radius: 8px; 
+  border: 1px solid var(--color-border-light); 
+}
+
+.preview-item img { 
+  max-height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--color-border-light);
+}
+
+
+.image-wrapper { 
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-preview { 
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.remove-attachment,
+.remove-image {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: var(--color-accent); 
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, transform 0.1s ease-in-out; 
+  z-index: 1;
+}
+
+.remove-attachment:hover,
+.remove-image:hover {
+  background-color: var(--color-accent-dark); 
+  transform: scale(1.1);
+}
+
+.remove-attachment:active,
+.remove-image:active {
+  transform: scale(0.9);
+}
+
+.image-error {
+  border: 1px solid var(--color-error);
+  padding: 10px;
+  color: var(--color-error);
+  border-radius: 4px;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.image-error::before {
+  content: "⚠️";
+}
+
+/* Text input */
+#chat-input-container {
+  position: relative;
+  width: 100%;
+}
+
+#chat-input {
+  background-color: var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  flex-grow: 1;
+  font-family: 'Roboto Mono', monospace;
+  font-optical-sizing: auto;
+  -webkit-font-optical-sizing: auto;
+  font-size: 0.90rem;
+  max-height: 7rem;
+  min-height: 3.05rem;
+  width: 100%;
+  padding: 0.48rem 40px var(--spacing-sm) var(--spacing-sm);
+  margin-right: var(--spacing-xs);
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  resize: none;
+  align-content: start;
+  background-clip: border-box;
+  
+  transition: all 0.3s ease;
+  -webkit-transition: all 0.3s ease;
+  outline: 1px solid var(--color-border); 
+}
+
+#chat-input:focus {
+  outline: 0.05rem solid rgba(155, 155, 155, 0.5);
+  font-size: 0.955rem;
+  padding-top: 0.45rem;
+  background-color: var(--color-input-focus);
+}
+
+#chat-input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+#expand-button {
+  position: absolute;
+  top: 12px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: var(--color-text);
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+#expand-button:hover {
+  opacity: 0.7;
+}
+
+#expand-button:active {
+  opacity: 1;
+}
+
+#expand-button svg {
+    width: 1.3rem;
+    height: 1.3rem;
+}
+
+/* Text buttons (e.g., Stop, Regenerate) */
+.text-buttons-row {
+  width: 100%; 
+  display: flex;
+  padding-top: var(--spacing-xs);
+  margin-left: var(--spacing-xs); 
+  gap: var(--spacing-xs); 
+  white-space: pre-wrap; 
+}
+
+.text-button {
+  background-color: transparent;
+  border: none;
+  border-radius: 5px;
+  color: var(--color-text);
+  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  font-size: 0.6rem;
+  padding: 6px var(--spacing-sm);
+  cursor: pointer;
+  opacity: 0.8;
+  -webkit-transition: all 0.3s;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs); 
+}
+
+.text-button:hover {
+  opacity: 1;
+  background-color: var(--color-secondary);
+  border-radius: 4px;
+}
+
+.text-button:active {
+ opacity: 0.5;
+}
+
+.text-button svg {
+  width: 14px; 
+  height: 14px; 
+  flex-shrink: 0; 
+}
+
+.text-button p {
+  margin-block: 0;
+}
+
+/* Chat buttons (Send and Mic) */
+#chat-buttons-wrapper {
+  gap: var(--spacing-xs);
+  padding-left: var(--spacing-xs);
+  line-height: 0.5rem;
+  display: -webkit-flex;
+  display: flex;
+  flex-wrap: nowrap; 
+}
+
+.chat-button {
+  border: none;
+  border-radius: 50%;
+  color: var(--color-background);
+  cursor: pointer;
+  font-size: var(--font-size-normal);
+  height: 2.525rem;
+  width: 2.525rem;
+  margin: 0 0.18rem 0 0 var(--spacing-xs); 
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  flex-grow: 0;
+  min-width: 2.525rem;
+  -webkit-transition: all var(--transition-speed), transform 0.1s ease-in-out;
+  transition: all var(--transition-speed), transform 0.1s ease-in-out;
+}
+
+#send-button {
+  background-color: #4248f1;
+}
+
+#send-button:hover {
+  -webkit-transform: scale(1.05);
+  transform: scale(1.05);
+  transform-origin: center;
+  background-color: #353bc5;
+}
+
+#send-button:active {
+  -webkit-transform: scale(1);
+  transform: scale(1);
+  transform-origin: center;
+  background-color: #2b309c;
+}
+
+.chat-button svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.chat-button.mic-inactive svg {
+  
+}
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(0%);
+  padding: 8px;
+  background-color: var(--color-secondary);
+  color: var(--color-text);
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1002;
+}
+
+/* Image preview section (within input area) */
+.image-preview-section {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-sm) 0.37rem var(--spacing-sm);
+  overflow-x: auto;
+  background-color: var(--color-input);
+  border-radius: 8px;
+  margin-bottom: var(--spacing-xs);
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+}
+
+/* Copy button general positioning */
+.msg-content,
+.kvps-row,
+.message-text {
+  position: relative;
+}
+
+.copy-button {
+  position: absolute;
+  right: 0;
+  top: var(--spacing-sm);
+  background: none;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  padding-right: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-wrap: nowrap;
+  opacity: 0;
+  -webkit-transition: opacity var(--transition-speed) ease-in-out;
+  transition: opacity var(--transition-speed) ease-in-out;
+  color: inherit;
+  font-size: 12px;
+  font-family: "Rubik", Arial, Helvetica, sans-serif;
+}
+
+.copy-button:hover {
+  opacity: 0.8 !important;
+}
+
+.msg-content:hover .copy-button,
+.kvps-row:hover .copy-button,
+.message-text:hover .copy-button {
+  opacity: 0.6;
+}
+
+.copy-button.copied {
+  font-family: "Rubik", Arial, Helvetica, sans-serif !important;
+  opacity: 1 !important;
+}
+
+/* Drag and Drop Overlay */
+.dragdrop-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.dragdrop-icon {
+    width: 128px;
+    height: 128px;
+    opacity: 0.85;
+    filter: invert(1);
+}
+
+.dragdrop-text {
+    color: var(--color-text);
+    font-size: 1.2rem;
+    opacity: 0.85;
+    text-align: center;
+    max-width: 80%;
+    line-height: 1.5;
+}
+
+.dragdrop-subtext {
+    color: var(--color-text);
+    font-size: 0.9rem;
+    opacity: 0.6;
+}
+
+/* Settings Modal Layout */
+.settings-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+    padding: 24px;
+}
+
+.settings-modal-close {
+    position: absolute;
+    top: 8px;
+    right: 16px;
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+}
+
+.settings-modal-title {
+    margin-top: 0;
+    margin-bottom: 24px;
+    font-size: 1.8rem;
+    text-align: center;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 12px;
+}
+
+.settings-modal-content {
+    background-color: var(--color-panel);
+    color: var(--color-text);
+    width: 100%;
+    max-width: 800px;
+    height: auto;
+    max-height: 90vh;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    padding: 24px;
+    position: relative;
+    overflow: auto;
+}
+
+nav {
+  margin-bottom: 1rem;
+}
+
+nav ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    padding: 0;
+    margin: 0 0 1rem 0;
+    list-style: none;
+}
+
+nav ul li a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: var(--color-bg-secondary); /* Assuming var(--color-bg-secondary) is defined elsewhere or should be var(--color-secondary) */
+    text-decoration: none;
+    color: var(--color-text);
+    transition: background-color 0.2s ease;
+}
+
+nav ul li a:hover {
+    background-color: var(--color-bg-tertiary); /* Assuming var(--color-bg-tertiary) is defined */
+}
+
+nav ul li a img {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 0.5rem;
+    filter: var(--svg-filter);
+}
+
+.section { /* General section styling for modals/settings */
+    margin-bottom: 3rem;
+    animation: fadeIn 0.3s ease;
+    width: 100%;
+}
+
+.section-title {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--color-primary);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0.5rem;
+}
+
+.section-description {
+    margin-bottom: 1.5rem;
+    color: var(--color-text-secondary);
+}
+
+/* Scheduler Layout Blocks removed, consolidated into _scheduler.css */
+
+
+/* Media Queries for Main Layout */
+@media (max-width: 640px) {
+  .text-buttons-row {
+    display: table;
+    gap: 0.1rem !important;
+  }
+
+  .text-button {
+    max-height: 25px;
+  }
+
+  .text-button p {
+    display: none;
+  }
+
+  .message-followup {
+    margin-bottom: var(--spacing-md);
+  }
+
+  #chat-input {
+    min-height: 5.3rem;
+    align-content: start;
+  }
+}
+
+@media (max-width: 768px) {
+  #logo-container {
+    margin-left: 4.6rem;
+    -webkit-transition: all 0.3s ease;
+    transition: all 0.3s ease;
+  }
+
+  #right-panel.expanded #logo-container { /* This implies #right-panel is part of main or influences it */
+    margin-left: 4.6rem;
+  }
+
+  #input-section {
+    align-items: start;
+  }
+
+  .text-buttons-row {
+    width: 90%; 
+    
+    
+    
+    
+  }
+
+  .text-button {
+    font-size: 0.6rem;
+  }
+
+   .text-button svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  .copy-button {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) {
+  #chat-buttons-wrapper {
+    flex-wrap: nowrap;
+    -webkit-flex-wrap: nowrap;
+    
+  }
+}
+
+@media (max-height: 600px) {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@media screen and (orientation: landscape) {
+  html {
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .text-button svg {
+    width: 16px;
+    height: 16px;
+  }
+  nav ul li a {
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: 1rem;
+      padding: 0.75rem 1rem;
+  }
+
+  nav ul li a img {
+      margin-bottom: 0;
+      width: 30px;
+      height: 30px;
+  }
+}
+
+/* Light Mode Overrides for Main Layout */
+.light-mode #progress-bar-i {
+  color: var(--color-border-dark); /* This seems like an oversight, should be light mode variable */
+  opacity: 0.5;
+}
+
+.light-mode #logo-container img {
+  -webkit-filter: invert(100%) grayscale(100%);
+  filter: invert(100%) grayscale(100%);
+}
+
+.light-mode .dragdrop-overlay {
+    background: rgba(255, 255, 255, 0.92);
+}
+
+.light-mode .dragdrop-icon {
+    filter: none;
+}
+
+/* Light mode scheduler styles removed, consolidated into _light.css */

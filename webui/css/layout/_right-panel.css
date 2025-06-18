@@ -1,0 +1,71 @@
+/* Right Panel Layout */
+#right-panel {
+  display: -webkit-flex;
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  flex-grow: 1;
+  -webkit-transition: margin-left var(--transition-speed) ease-in-out;
+  transition: margin-left var(--transition-speed) ease-in-out;
+  box-sizing: border-box; /* Added */
+  overflow-x: hidden; /* Added to prevent horizontal scroll */
+}
+
+#right-panel.expanded { 
+  margin-left: 0; 
+}
+
+/* Time and Date display, typically in the right panel's top area */
+#time-date-container {
+  position: fixed; 
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-right: var(--spacing-md);
+  margin-top: var(--spacing-md);
+  z-index: 1000; 
+}
+
+#time-date {
+  color: var(--color-text);
+  font-size: var(--font-size-normal);
+  text-align: right;
+  line-height: 1.1;
+  font-size: 0.7rem;
+}
+
+#user-date {
+  font-size: var(--font-size-small);
+  opacity: 0.6;
+  font-size: 0.6rem;
+}
+
+/* Chat History Area */
+#chat-history {
+  display: -webkit-flex;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; 
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scroll-behavior: auto !important; 
+  padding: var(--spacing-md) var(--spacing-md) 0; 
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+  
+  
+}
+
+#chat-history > *:first-child { 
+  margin-top: 4.4em;
+}
+
+/* Media Queries for Right Panel (if any specific ones are needed beyond main) */
+@media (max-width: 768px) {
+  #right-panel.expanded #logo-container {
+    margin-left: 4.6rem; 
+  }
+}
+
+/* Light Mode Overrides for Right Panel (if any specific) */

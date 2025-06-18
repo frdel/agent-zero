@@ -21,13 +21,14 @@
 }
 
 .field-title {
-  font-weight: bold;
+  font-weight: 500;
   color: var(--color-primary);
+  font-size: 0.75rem;
 }
 
 .field-description {
   color: var(--color-text);
-  font-size: 0.875rem;
+  font-size: 0.7rem;
   opacity: 0.8;
   margin: 0.25rem 0 0.5rem 0;
 }
@@ -88,6 +89,7 @@ textarea:focus {
   display: inline-block;
   width: 60px;
   height: 34px;
+  scale: 0.75;
 }
 
 .toggle input {
@@ -245,6 +247,9 @@ nav ul li a img {
     width: 30px;
     height: 30px;
   }
+  nav ul li a {
+  font-size: 0.85rem;
+}
 }
 
 /* Settings Tab Styles */
@@ -384,128 +389,9 @@ nav ul li a img {
   }
 }
 
-/* Scheduler Task List - updated with guaranteed width handling */
-.scheduler-task-list {
-  width: 100%;
-  min-width: 100%;
-  margin: 0;
-  border-collapse: separate;
-  border-spacing: 0;
-  white-space: nowrap;
-  padding-bottom: 8px;
-  table-layout: auto;
-}
+/* Scheduler Task List styles removed, consolidated into _scheduler.css */
 
-.scheduler-task-list th,
-.scheduler-task-list td {
-  padding: 8px 12px;
-  text-align: left;
-  vertical-align: middle;
-  border-bottom: 1px solid var(--color-border);
-}
-
-/* Ensure columns have proper min-width */
-.scheduler-task-list th:nth-child(1),
-.scheduler-task-list td:nth-child(1) {
-  min-width: 150px;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.scheduler-task-list th:nth-child(2),
-.scheduler-task-list td:nth-child(2) {
-  min-width: 100px;
-}
-
-.scheduler-task-list th:nth-child(3),
-.scheduler-task-list td:nth-child(3) {
-  min-width: 100px;
-}
-
-.scheduler-task-list th:nth-child(4),
-.scheduler-task-list td:nth-child(4) {
-  min-width: 150px;
-}
-
-.scheduler-task-list th:nth-child(5),
-.scheduler-task-list td:nth-child(5) {
-  min-width: 180px;
-}
-
-.scheduler-task-list th:nth-child(6),
-.scheduler-task-list td:nth-child(6) {
-  min-width: 160px;
-  white-space: nowrap;
-}
-
-/* Task actions container */
-.scheduler-task-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  flex-wrap: nowrap;
-}
-
-/* Scheduler form styles */
-.scheduler-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding: 1rem 0;
-}
-
-.scheduler-form-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.scheduler-form-title {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: var(--color-primary);
-  margin: 0;
-}
-
-.scheduler-form-actions {
-  display: flex;
-  gap: 0.8rem;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-.scheduler-form-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-  overflow-x: auto;
-}
-
-.scheduler-form-field {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-@media (max-width: 768px) {
-  .scheduler-form-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .scheduler-form-actions {
-    align-self: flex-end;
-  }
-
-  .scheduler-form-field {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
-}
+/* Scheduler form styles removed, consolidated into _scheduler.css and _forms.css */
 
 /* Section Styles */
 .section {
@@ -522,14 +408,15 @@ nav ul li a img {
 }
 
 .section-title {
-  font-size: 1.25rem;
-  font-weight: bold;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--color-primary);
   margin-bottom: 0.5rem;
 }
 
 .section-description {
   color: var(--color-text);
+  font-size: 0.75rem;
   margin-bottom: 1rem;
 }
 
@@ -564,13 +451,8 @@ nav ul li a img {
 
 /* Adjust media queries to handle small screens */
 @media (max-width: 768px) {
-  .scheduler-task-list {
-    min-width: 700px;
-  }
-
-  .scheduler-detail-view {
-    min-width: 650px;
-  }
+  /* Conflicting/Redundant responsive rules for scheduler-task-list and scheduler-detail-view removed. */
+  /* Base responsive rules are in _scheduler.css */
 }
 
 /* Scrollbar styling for better visibility */
@@ -590,12 +472,15 @@ nav ul li a img {
 
 /* Mobile styles for scheduler sections */
 @media (max-width: 1280px) {
-  .scheduler-container {
-    min-width: max-content; /* Allow expansion based on content */
-  }
+  /* .scheduler-container { */
+    /* min-width: max-content; /* Allow expansion based on content */
+  /* } */
+  /* This rule was causing issues on smaller screens,
+     it's better to control this at smaller breakpoints or remove if not strictly needed at 1280px */
 
   .scheduler-task-list {
-    min-width: max-content; /* Expand to fit content if needed */
+    /* Conflicting min-width: max-content for scheduler-task-list removed. */
+    /* Base responsive rules are in _scheduler.css */
   }
 
   /* Scrollbar styling for mobile view */
@@ -611,6 +496,27 @@ nav ul li a img {
 
   .section::-webkit-scrollbar-thumb:hover {
     background-color: rgba(155, 155, 155, 0.9);
+  }
+}
+
+@media (max-width: 768px) {
+  .section {
+    overflow-x: auto; /* Allow horizontal scrolling within sections if content overflows */
+    min-width: 0; /* Prevent section from forcing parent wider */
+  }
+  .scheduler-container {
+     min-width: 0; /* Override max-content from larger screens */
+  }
+}
+
+@media (max-width: 640px) {
+  .scheduler-container {
+    min-width: 0; /* Ensure it does not force width */
+    padding: 0.5rem 0.25rem; /* Reduce horizontal padding slightly */
+  }
+  .section {
+    padding: 0.75rem; /* Adjust padding for sections */
+    min-width: auto; /* More flexible min-width */
   }
 }
 
@@ -642,47 +548,12 @@ nav ul li a img {
   margin-bottom: 0;
 }
 
-/* Scheduler detail header styling */
-.scheduler-detail-header {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  width: 100%;
-}
-
-.scheduler-detail-header .scheduler-detail-title {
-  margin-right: auto;
-}
+/* Scheduler detail header styling removed, consolidated into _scheduler.css */
 
 /* Responsive adjustments for headers */
 @media (max-width: 768px) {
-  .scheduler-form-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .scheduler-form-actions {
-    align-self: flex-end;
-  }
-
-  .scheduler-detail-header {
-    flex-direction: row; /* Keep in row even on mobile */
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .scheduler-detail-header .btn {
-    margin-left: auto; /* Push to right edge */
-  }
-
-  .scheduler-form-field {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
+  /* Redundant responsive rules for scheduler form and detail header removed. */
+  /* Base responsive rules are in _scheduler.css */
 }
 
 /* Input group for token field with generate button */
@@ -802,7 +673,7 @@ nav ul li a img {
 .scheduler-schedule-builder {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
+    /* gap is defined in _scheduler.css (12px) */
     width: 100%;
     margin-bottom: 10px;
 }
