@@ -33,5 +33,8 @@ RUN bash /ins/install_searxng.sh
 # configure ssh
 RUN bash /ins/configure_ssh.sh
 
+# after install
+RUN bash /ins/after_install.sh
+
 # Keep container running infinitely
 CMD ["tail", "-f", "/dev/null"]

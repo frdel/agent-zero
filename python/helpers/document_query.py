@@ -10,7 +10,7 @@ os.environ["USER_AGENT"] = "@mixedbread-ai/unstructured"  # noqa E402
 from langchain_unstructured import UnstructuredLoader  # noqa E402
 
 from urllib.parse import urlparse
-from typing import Sequence, List, Optional, Tuple
+from typing import Callable, Sequence, List, Optional, Tuple
 from datetime import datetime
 
 from langchain_community.document_loaders import AsyncHtmlLoader
@@ -100,7 +100,7 @@ class DocumentQueryStore:
 
         elif scheme in ["http", "https"]:
             # Always use https for web URLs
-            normalized = normalized.replace("http://", "https://")  # TODO why?
+            normalized = normalized.replace("http://", "https://")
 
         return normalized
 
@@ -109,7 +109,7 @@ class DocumentQueryStore:
 
     async def add_document(
         self, text: str, document_uri: str, metadata: dict | None = None
-    ) -> bool:
+    ) -> tuple[bool, list[str]]:
         """
         Add a document to the store with the given URI.
 
@@ -148,7 +148,7 @@ class DocumentQueryStore:
 
         if not docs:
             PrintStyle.error(f"No chunks created for document: {document_uri}")
-            return False
+            return False, []
 
         # Apply rate limiter
         try:
@@ -165,10 +165,10 @@ class DocumentQueryStore:
             PrintStyle.standard(
                 f"Added document '{document_uri}' with {len(docs)} chunks"
             )
-            return True
+            return True, ids
         except Exception as e:
             PrintStyle.error(f"Error adding document '{document_uri}': {str(e)}")
-            return False
+            return False, []
 
     async def get_document(self, document_uri: str) -> Optional[Document]:
         """
@@ -368,17 +368,21 @@ class DocumentQueryStore:
 
 class DocumentQueryHelper:
 
-    def __init__(self, agent: Agent):
+    def __init__(self, agent: Agent, progress_callback: Callable[[str], None] | None = None):
         self.agent = agent
         self.store = DocumentQueryStore.get(agent)
+        self.progress_callback = progress_callback or (lambda x: None)
 
     async def document_qa(
         self, document_uri: str, questions: Sequence[str]
     ) -> Tuple[bool, str]:
+        self.progress_callback(f"Starting Q&A process")
+
         # index document
         _ = await self.document_get_content(document_uri, True)
-        content = ""
+        selected_chunks = {}
         for question in questions:
+            self.progress_callback(f"Optimizing query: {question}")
             human_content = f'Search Query: "{question}"'
             system_content = self.agent.parse_prompt(
                 "fw.document_query.optmimize_query.md"
@@ -390,6 +394,8 @@ class DocumentQueryHelper:
                 )
             ).strip()
 
+            self.progress_callback(f"Searching document with query: {optimized_query}")
+
             normalized_uri = self.store.normalize_uri(document_uri)
             chunks = await self.store.search_document(
                 document_uri=normalized_uri,
@@ -397,16 +403,21 @@ class DocumentQueryHelper:
                 limit=100,
                 threshold=DEFAULT_SEARCH_THRESHOLD,
             )
-            content += (
-                "\n\n----\n\n".join([chunk.page_content for chunk in chunks])
-                + "\n\n----\n\n"
-            )
 
-        if not content:
+            self.progress_callback(f"Found {len(chunks)} chunks")
+
+            for chunk in chunks:
+                selected_chunks[chunk.metadata["id"]] = chunk
+
+        if not selected_chunks:
+            self.progress_callback(f"No relevant content found in the document")
             content = f"!!! No content found for document: {document_uri} matching queries: {json.dumps(questions)}"
             return False, content
 
+        self.progress_callback(f"Processing {len(questions)} questions in context of {len(selected_chunks)} chunks")
+
         questions_str = "\n".join([f" *  {question}" for question in questions])
+        content = "\n\n----\n\n".join([chunk.page_content for chunk in selected_chunks.values()])
 
         qa_system_message = self.agent.parse_prompt(
             "fw.document_query.system_prompt.md"
@@ -422,9 +433,12 @@ class DocumentQueryHelper:
             )
         )
 
+        self.progress_callback(f"Q&A process completed")
+
         return True, str(ai_response)
 
     async def document_get_content(self, document_uri: str, add_to_db: bool = False) -> str:
+        self.progress_callback(f"Fetching document content")
         url = urlparse(document_uri)
         scheme = url.scheme or "file"
         mimetype, encoding = mimetypes.guess_type(document_uri)
@@ -503,7 +517,14 @@ class DocumentQueryHelper:
                     document_uri, scheme
                 )
             if add_to_db:
-                await self.store.add_document(document_content, document_uri_norm)
+                self.progress_callback(f"Indexing document")
+                success, ids = await self.store.add_document(document_content, document_uri_norm)
+                if not success:
+                    self.progress_callback(f"Failed to index document")
+                    raise ValueError(
+                        f"DocumentQueryHelper::document_get_content: Failed to index document: {document_uri_norm}"
+                    )
+                self.progress_callback(f"Indexed {len(ids)} chunks")
         else:
             doc = await self.store.get_document(document_uri_norm)
             if doc:

@@ -44,13 +44,18 @@ python3.12 -m venv /opt/venv
 source /opt/venv/bin/activate
 
 # upgrade pip and install static packages
-pip install --upgrade pip ipython requests
+pip install --no-cache-dir --upgrade pip ipython requests
 # Install some packages in specific variants
-pip install torch --index-url https://download.pytorch.org/whl/cpu
-
+pip install --no-cache-dir \
+    torch==2.4.0 \
+    torchvision==0.19.0 \
+    --index-url https://download.pytorch.org/whl/cpu
 
 echo "====================PYTHON UV ===================="
 
 curl -Ls https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
+
+# clean up pip cache
+pip cache purge
 
 echo "====================PYTHON END===================="

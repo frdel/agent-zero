@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # this has to be ready from base image
 # if [ ! -d /opt/venv ]; then

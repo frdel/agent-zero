@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Paths
 SOURCE_DIR="/git/agent-zero"

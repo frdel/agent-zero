@@ -8,7 +8,7 @@ use emojis as icons improve readability
 prefer using tables
 output full file paths not only names they are clickable
 images shown with ![alt](img:///path/to/image.png)
-math with latex notation delimiters <$LATEX>...</$LATEX>
+all math with latex notation delimiters <latex>x = ...</latex>
 usage:
 ~~~json
 {
