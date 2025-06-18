@@ -2,9 +2,6 @@
 import { openImageModal } from "./image_modal.js";
 import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
 
-const katexDelimiterLeft = "<latex>";
-const katexDelimiterRight = "</latex>";
-
 function createCopyButton() {
   const button = document.createElement("button");
   button.className = "copy-button";
@@ -117,28 +114,12 @@ export function _drawMessage(
       spanElement.innerHTML = processedContent;
 
       // KaTeX rendering for markdown
-      if (window.renderMathInElement && latex) {
+      if (latex) {
         spanElement.querySelectorAll("latex").forEach((element) => {
           katex.render(element.innerHTML, element, {
             throwOnError: false,
           });
         });
-
-        // renderMathInElement(spanElement, {
-        //   delimiters: [
-        //     {
-        //       left: katexDelimiterLeft,
-        //       right: katexDelimiterRight,
-        //       display: true,
-        //     },
-        //     {
-        //       left: escapeHTML(katexDelimiterLeft),
-        //       right: escapeHTML(katexDelimiterRight),
-        //       display: true,
-        //     },
-        //   ],
-        //   throwOnError: true,
-        // });
       }
 
       contentDiv.appendChild(spanElement);
@@ -605,18 +586,14 @@ function drawKvps(container, kvps, latex) {
             copyText(span.textContent, span);
           });
 
-          if (window.renderMathInElement && latex) {
-            renderMathInElement(span, {
-              delimiters: [
-                {
-                  left: katexDelimiterLeft,
-                  right: katexDelimiterRight,
-                  display: true,
-                },
-              ],
-              throwOnError: false,
-            });
-          }
+      // KaTeX rendering for markdown
+      if (latex) {
+        span.querySelectorAll("latex").forEach((element) => {
+          katex.render(element.innerHTML, element, {
+            throwOnError: false,
+          });
+        });
+      }
         }
       }
       //   } else {
