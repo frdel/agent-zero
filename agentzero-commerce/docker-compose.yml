@@ -1,0 +1,23 @@
+version: "3.9"
+services:
+  agentzero-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: agentzero
+      POSTGRES_PASSWORD: agentzero
+      POSTGRES_DB: agentzero
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

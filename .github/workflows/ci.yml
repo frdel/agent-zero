@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build and start services
+        run: docker compose -f agentzero-commerce/docker-compose.yml up -d --build
+      - name: Wait for services
+        run: sleep 10
+      - name: Healthcheck
+        run: curl --fail http://localhost:8080/ga/healthcheck
+      - name: Shutdown
+        if: always()
+        run: docker compose -f agentzero-commerce/docker-compose.yml down
