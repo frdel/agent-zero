@@ -5,3 +5,4 @@ python-dotenv
 sqlmodel
 asyncpg
 fastapi-utils
+alembic
