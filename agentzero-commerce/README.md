@@ -10,3 +10,9 @@ This folder contains a minimal FastAPI service exposing a single test endpoint f
 5. In Open WebUI go to *Settings → OpenAPI Tool Servers → +* and enter `http://<host>:8080/openapi.json` to add the service.
 
 Prerequisites: Docker Desktop and `git`.
+
+### Cómo probar GA
+docker compose exec agentzero-api python -m scripts.mock_ga_run
+
+### Cómo inicializar BD
+alembic upgrade head
