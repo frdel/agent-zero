@@ -6,5 +6,5 @@ sqlmodel
 asyncpg
 fastapi-utils
 alembic
-astapi-utils    # repeat_every
+fastapi-utils    # repeat_every
 typing-inspect   # dependencia requerida por fastapi-utils
