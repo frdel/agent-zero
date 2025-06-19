@@ -9,8 +9,8 @@ import httpx
 from asgi_lifespan import LifespanManager
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./test.db"
 
-from src.main import app
-from src.models import init_db
+from src.app.main import app
+from src.app.models import init_db
 
 
 @pytest.fixture(scope="session", autouse=True)
