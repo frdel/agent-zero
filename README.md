@@ -161,6 +161,18 @@ docker run -p 50001:80 frdel/agent-zero-run
 
 ## 🎯 Changelog
 
+### v0.8.7 - Formatting, Document RAG Latest
+[Release video](https://youtu.be/OQJkfofYbus)
+- markdown rendering in responses
+- live response rendering
+- document Q&A tool
+
+### v0.8.6 - Merge and update
+[Release video](https://youtu.be/l0qpK3Wt65A)
+- Merge with Hacking Edition
+- browser-use upgrade and integration re-work
+- tunnel provider switch
+
 ### v0.8.5 - **MCP Server + Client**
 [Release video](https://youtu.be/pM5f4Vz3_IQ)
 
