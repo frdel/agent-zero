@@ -1,2 +1,7 @@
 fastapi
 uvicorn[standard]
+google-analytics-data
+python-dotenv
+sqlmodel
+asyncpg
+fastapi-utils

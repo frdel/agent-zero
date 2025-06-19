@@ -8,14 +8,16 @@ services:
       - "8080:8080"
     environment:
       - PYTHONUNBUFFERED=1
+      - GA_KEY_JSON=${GA_KEY_JSON}
+      - DATABASE_URL=postgresql+asyncpg://agent:pass@postgres:5432/agent
 
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: agentzero
-      POSTGRES_PASSWORD: agentzero
-      POSTGRES_DB: agentzero
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: agent
     volumes:
       - pgdata:/var/lib/postgresql/data
 
