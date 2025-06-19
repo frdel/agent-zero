@@ -256,7 +256,7 @@ export function drawMessageUser(
   messageDiv.classList.add("message", "message-user");
 
   const headingElement = document.createElement("h4");
-  headingElement.textContent = "User message";
+  headingElement.textContent = "Sua mensagem";
   messageDiv.appendChild(headingElement);
 
   if (content && content.trim().length > 0) {

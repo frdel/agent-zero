@@ -1,5 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap');
 
+/* Utility classes */
+.hidden {
+  display: none !important;
+}
+
 /* Add box-sizing globally for better cross-browser consistency */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -434,7 +439,7 @@ pre {
   font-family: 'Roboto Mono', monospace;
   font-optical-sizing: auto;
   -webkit-font-optical-sizing: auto;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
 }
 
 /* Chat History */
@@ -594,7 +599,7 @@ pre {
 }
 
 .message-user {
-  background-color: #4a4a4a;
+  background-color: #097432;
   border-bottom-right-radius: var(--spacing-xs);
   min-width: 195px;
   text-align: end;
@@ -656,7 +661,7 @@ pre {
 
 .message-agent-response {
   min-width: 255px;
-  background-color: #1f3c1e;
+  background-color: #4e534e;
 }
 
 .message-agent-delegation {

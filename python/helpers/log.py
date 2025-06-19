@@ -171,7 +171,7 @@ class Log:
         self.progress_active = active
 
     def set_initial_progress(self):
-        self.set_progress("Waiting for input", 0, False)
+        self.set_progress("Aguardando input", 0, False)
 
     def output(self, start=None, end=None):
         if start is None:

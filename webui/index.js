@@ -228,29 +228,31 @@ setInterval(updateUserTime, 1000);
 
 
 function setMessage(id, type, heading, content, temp, kvps = null) {
-    // Search for the existing message container by id
+    // Exibir apenas mensagens do usuário e respostas do agente
+    if (type !== 'response' && type !== 'user') {
+        return;
+    }
+
     let messageContainer = document.getElementById(`message-${id}`);
+    const isUserMessage = type === 'user';
 
     if (messageContainer) {
-        // Don't re-render user messages
-        if (type === 'user') {
-            return; // Skip re-rendering
+        // Não re-renderizar mensagens do usuário
+        if (isUserMessage) {
+            return;
         }
-        // For other types, update the message
         messageContainer.innerHTML = '';
     } else {
-        // Create a new container if not found
-        const sender = type === 'user' ? 'user' : 'ai';
         messageContainer = document.createElement('div');
         messageContainer.id = `message-${id}`;
-        messageContainer.classList.add('message-container', `${sender}-container`);
+        const senderClass = isUserMessage ? 'user-container' : 'ai-container';
+        messageContainer.classList.add('message-container', senderClass);
         if (temp) messageContainer.classList.add("message-temp");
     }
 
     const handler = msgs.getHandler(type);
     handler(messageContainer, id, type, heading, content, temp, kvps);
 
-    // If the container was found, it was already in the DOM, no need to append again
     if (!document.getElementById(`message-${id}`)) {
         chatHistory.appendChild(messageContainer);
     }
