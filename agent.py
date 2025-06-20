@@ -11,9 +11,11 @@ from enum import Enum
 import uuid
 import models
 
+import inspect # Added for inspecting module members
 from python.helpers import extract_tools, files, errors, history, tokens
 from python.helpers import dirty_json
 from python.helpers.print_style import PrintStyle
+from python.helpers.tool import TOOL_MODULES # Added for dynamic tool loading
 from langchain_core.prompts import (
     ChatPromptTemplate,
 )
@@ -808,10 +810,38 @@ class Agent:
         from python.tools.unknown import Unknown
         from python.helpers.tool import Tool
 
-        classes = extract_tools.load_classes_from_folder(
-            "python/tools", name + ".py", Tool
-        )
-        tool_class = classes[0] if classes else Unknown
+        tool_class = None
+
+        # 1. Try the original method: loading from python/tools/{name}.py
+        try:
+            loaded_classes = extract_tools.load_classes_from_folder(
+                "python/tools", name + ".py", Tool
+            )
+            if loaded_classes:
+                tool_class = loaded_classes[0]
+        except Exception as e:
+            # Log this error if needed, but don't let it stop the process
+            PrintStyle(font_color="yellow", padding=True).print(f"Note: Could not load tool '{name}' using file-based method: {e}")
+
+        # 2. If not found, iterate through TOOL_MODULES
+        if not tool_class:
+            for module in TOOL_MODULES:
+                for member_name, member_obj in inspect.getmembers(module):
+                    if inspect.isclass(member_obj) and issubclass(member_obj, Tool) and member_obj is not Tool:
+                        # Check if the class name matches the requested tool name
+                        # This assumes the tool name passed to get_tool matches the class name
+                        if member_name == name:
+                            tool_class = member_obj
+                            break
+                if tool_class:
+                    break
+
+        # 3. If still not found, use Unknown tool
+        if not tool_class:
+            tool_class = Unknown
+            PrintStyle(font_color="yellow", padding=True).print(f"Warning: Tool '{name}' not found by any method. Using Unknown tool.")
+
+
         return tool_class(
             agent=self, name=name, method=method, args=args, message=message, **kwargs
         )

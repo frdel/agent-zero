@@ -2,6 +2,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 
 from agent import Agent
+from python.tools import ecommerce_tools
 from python.helpers.print_style import PrintStyle
 from python.helpers.strings import sanitize_string
 
@@ -10,6 +11,11 @@ from python.helpers.strings import sanitize_string
 class Response:
     message:str
     break_loop: bool
+
+# List of modules containing tools
+TOOL_MODULES = [
+    ecommerce_tools,
+]
 
 class Tool:
 

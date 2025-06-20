@@ -6,7 +6,7 @@ import struct
 from functools import wraps
 import threading
 import signal
-from flask import Flask, request, Response
+from flask import Flask, request, Response, send_from_directory
 from flask_basicauth import BasicAuth
 import initialize
 from python.helpers import errors, files, git, mcp_server
@@ -137,6 +137,31 @@ async def serve_index():
         version_time=gitinfo["commit_time"],
     )
 
+# --- Routes for audit-ai-ecommerce UI ---
+# It's assumed that audit-ai-ecommerce is at the root of the project, alongside 'webui', 'python', etc.
+# And that the build output is in 'audit-ai-ecommerce/build'
+AUDIT_UI_BUILD_DIR = get_abs_path("audit-ai-ecommerce/build")
+
+@webapp.route('/audit/')
+@requires_auth
+async def serve_audit_index():
+    # Check if AUDIT_UI_BUILD_DIR exists and is a directory
+    if not os.path.isdir(AUDIT_UI_BUILD_DIR):
+        PrintStyle(font_color="red").print(f"Error: Audit UI build directory not found at {AUDIT_UI_BUILD_DIR}")
+        return "Audit UI not available (build directory missing).", 404
+    if not os.path.isfile(os.path.join(AUDIT_UI_BUILD_DIR, 'index.html')):
+        PrintStyle(font_color="red").print(f"Error: Audit UI index.html not found in {AUDIT_UI_BUILD_DIR}")
+        return "Audit UI not available (index.html missing).", 404
+    return await webapp.ensure_sync(send_from_directory)(AUDIT_UI_BUILD_DIR, 'index.html')
+
+@webapp.route('/audit/<path:filename>')
+@requires_auth
+async def serve_audit_static_files(filename):
+    if not os.path.isdir(AUDIT_UI_BUILD_DIR):
+        PrintStyle(font_color="red").print(f"Error: Audit UI build directory not found at {AUDIT_UI_BUILD_DIR}")
+        return "Audit UI not available (build directory missing).", 404
+    return await webapp.ensure_sync(send_from_directory)(AUDIT_UI_BUILD_DIR, filename)
+# --- End of routes for audit-ai-ecommerce UI ---
 
 def run():
     PrintStyle().print("Initializing framework...")

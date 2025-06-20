@@ -252,3 +252,11 @@ Agent Zero provides a powerful file browser interface for managing your workspac
 
 > [!TIP]
 > The File Browser integrates seamlessly with Agent Zero's capabilities. You can reference files directly in your conversations, and the agent can help you manage, modify, and organize your files.
+
+## E-commerce Audit Interface
+Agent Zero provides a dedicated interface for e-commerce auditing tasks. This interface is served directly by the Agent Zero backend and leverages the `audit-ai-ecommerce` submodule for its functionality.
+
+You can access this specialized interface by navigating to the `/audit/` path on your Agent Zero instance's URL. For example, if Agent Zero is running locally on port 8000, the E-commerce Audit Interface would be available at:
+`http://localhost:8000/audit/`
+
+This interface is designed to streamline e-commerce related auditing workflows, providing specific tools and views tailored for this purpose.
