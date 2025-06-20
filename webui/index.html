@@ -282,6 +282,14 @@
                                     <span class="slider"></span>
                                 </label>
                             </li>
+                            <li x-data="{ fixedHeight: localStorage.getItem('fixedHeight') !== 'false' }"
+                                x-init="$watch('fixedHeight', val => toggleFixedHeight(val))">
+                                <span>Fixed-height responses</span>
+                                <label class="switch">
+                                    <input type="checkbox" x-model="fixedHeight">
+                                    <span class="slider"></span>
+                                </label>
+                            </li>
                             <li x-data="{ darkMode: localStorage.getItem('darkMode') != 'false' }"
                                 x-init="$watch('darkMode', val => toggleDarkMode(val))">
                                 <span class="switch-label">Dark mode</span>
@@ -723,7 +731,7 @@
                                         <div class="field-description">Select provider for public tunnel</div>
                                     </div>
                                     <div class="field-control">
-                                        <select id="tunnel-provider" x-model="provider" :disabled="isLoading">
+                                        <select id="tunnel-provider" x-model="provider">
                                             <option value="serveo">Serveo</option>
                                             <option value="cloudflared">Cloudflare</option>
                                         </select>

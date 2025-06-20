@@ -60,7 +60,7 @@
   --font-size-large: 1.2rem;
 
   /* Other variables */
-  --border-radius: 1.125rem;
+  --border-radius: 0.75rem;
   --transition-speed: 0.3s;
   --svg-filter: brightness(0) saturate(100%) var(--color-primary-filter);
   --color-primary-filter: invert(73%) sepia(17%) saturate(360%)
@@ -96,8 +96,8 @@ body,
 .message,
 .config-button,
 .switch-label {
-  -webkit-transition: background-color 0.3s, color 0.3s, border-color 0.3s;
-  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+  -webkit-transition: background-color 0.3s, color 0.3s;
+  transition: background-color 0.3s, color 0.3s;
   color: var(--color-text);
 }
 
@@ -487,6 +487,12 @@ pre {
   background-color: #888;
 }
 
+#chat-history::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 /* Logo Container */
 #logo-container {
   display: -webkit-flex;
@@ -571,22 +577,459 @@ pre {
 
 /* Message Styles */
 .message-container {
-  animation: fadeIn 0.5s;
-  -webkit-animation: fadeIn 0.5s;
+  animation: fadeIn 0.4s ease-out;
+  -webkit-animation: fadeIn 0.4s ease-out;
   margin-bottom: var(--spacing-sm);
-  width: 100%;
-  max-width: 100%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: calc(100vw - 320px); /* Account for sidebar width */
+  width: fit-content; /* Only as wide as needed */
+  min-width: 300px; /* Minimum readable width */
 }
 
 .message {
   background-color: var(--color-message-bg);
   border-radius: var(--border-radius);
   padding: 0.9rem var(--spacing-md) 0.7rem var(--spacing-md);
-  overflow-x: auto;
+  position: relative;
+  font-size: var(--font-size-normal);
+  line-height: 1.4;
+  box-sizing: border-box;
   width: fit-content;
   max-width: 100%;
-  box-sizing: border-box;
   display: block;
+  /* Unified scrolling - overridden by state classes */
+  overflow-x: auto;
+  overflow-y: visible;
+  max-height: none;
+  /* Removed transitions to prevent flashing during content updates */
+  /* Prevent layout shifts during streaming */
+  contain: layout style;
+  border-left: 2px solid var(--color-border);
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), height 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s, color 0.3s;
+}
+
+/* Sticky message header so controls remain visible */
+.message-header {
+  position: sticky;
+  top: -15px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  margin: 0 calc(-1 * var(--spacing-md)); /* Expand to full width of chat bubble */
+  padding: 0 var(--spacing-md); /* Restore internal padding */
+  margin-top: calc(-0.6rem - 12px); /* Reach to very top of message, no gap */
+  padding-top: calc(0.6rem + 12px); /* Restore top padding for content */
+  padding-bottom: 8px; /* Extra padding for fade effect */
+  /* Default background with fade effect */
+  background: linear-gradient(
+    to bottom,
+    var(--color-message-bg) 0%,
+    var(--color-message-bg) 70%,
+    transparent 100%
+  );
+}
+
+/* Message type specific header backgrounds with fade effects */
+.message-user .message-header {
+  background: linear-gradient(
+    to bottom,
+    #4a4a4a 0%,
+    #4a4a4a 70%,
+    transparent 100%
+  );
+}
+
+.message-agent .message-header {
+  background: linear-gradient(
+    to bottom,
+    #34506b 0%,
+    #34506b 70%,
+    transparent 100%
+  );
+}
+
+.message-agent-response .message-header {
+  background: linear-gradient(
+    to bottom,
+    #1f3c1e 0%,
+    #1f3c1e 70%,
+    transparent 100%
+  );
+}
+
+.message-tool .message-header {
+  background: linear-gradient(
+    to bottom,
+    #2a4170 0%,
+    #2a4170 70%,
+    transparent 100%
+  );
+}
+
+.message-code-exe .message-header {
+  background: linear-gradient(
+    to bottom,
+    #1e1e1e 0%,
+    #1e1e1e 70%,
+    transparent 100%
+  );
+}
+
+/* --- Ensure browser message header is always purple --- */
+.message-browser .message-header {
+  background: linear-gradient(
+    to bottom,
+    #4b3a69 0%,
+    #4b3a69 70%,
+    transparent 100%
+  ) !important;
+}
+
+.message-warning .message-header {
+  background: linear-gradient(
+    to bottom,
+    var(--color-message-bg) 0%,
+    var(--color-message-bg) 70%,
+    transparent 100%
+  );
+}
+
+.message-error .message-header {
+  background: #af2222; /* match .message-error background */
+  color: #fff;
+  border-top-left-radius: var(--border-radius);
+  border-top-right-radius: var(--border-radius);
+  padding: 0.5em 1em;
+}
+
+.message-error .message-header h4,
+.message-error .error-header-title {
+  color: #fff;
+  margin: 0;
+  font-weight: bold;
+}
+
+.message-info .message-header {
+  background: linear-gradient(
+    to bottom,
+    var(--color-message-bg) 0%,
+    var(--color-message-bg) 70%,
+    transparent 100%
+  );
+}
+
+.message-default .message-header {
+  background: linear-gradient(
+    to bottom,
+    #1a242f 0%,
+    #1a242f 70%,
+    transparent 100%
+  );
+}
+
+/* Message Controls Positioning */
+.message-controls {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: auto;
+  transform: translateY(-8px); /* Move buttons up 5px in header */
+}
+
+/* Add extra padding to message headers when controls are present */
+.message h4 {
+  margin: auto 0;
+  padding-right: 110px; /* Make room for three buttons */
+  padding-bottom: 0.5rem; /* Extra bottom padding to avoid copy button overlap */
+}
+
+/* User message specific adjustments */
+.message-user {
+  padding-top: 1.25rem; /* Extra padding for user messages and copy button space */
+}
+
+.message-user h4 {
+  padding-right: 110px; /* Ensure user message headers have button space for three buttons */
+  text-align: left; /* Left align user message headers */
+  padding-bottom: 0.75rem; /* Extra bottom padding for user messages */
+  padding-top: 0.2rem; /* Extra top padding to give copy button space */
+  min-width: 0; /* Allow header text to use available width */
+  flex: 1; /* Take up available space not used by controls */
+  font-size: 1rem; /* Match standard header font size */
+  font-weight: bold; /* Make user message headers bold like other headers */
+}
+
+/* Hide all old copy buttons - we now use the unified copy button */
+.copy-button {
+  display: none !important;
+}
+
+/* Small inline copy icons for agent response sections */
+.inline-copy-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  opacity: 0.5;
+  margin-left: 0.5rem;
+  transition: opacity 0.2s ease;
+  vertical-align: middle;
+}
+
+.inline-copy-icon:hover {
+  opacity: 0.8;
+}
+
+.inline-copy-icon svg {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2;
+}
+
+/* Show inline copy icons on hover for relevant content areas */
+.msg-content:hover .inline-copy-icon,
+.kvps-row:hover .inline-copy-icon,
+.message-text:hover .inline-copy-icon {
+  opacity: 0.6;
+}
+
+.inline-copy-icon.copied {
+  opacity: 1;
+  color: #10b981;
+}
+
+/* Collapsed message adjustments */
+.message-collapsed {
+  opacity: 0.8;
+  border-left: 3px solid var(--color-accent);
+  padding-left: calc(var(--spacing-md) + 3px);
+  margin-left: -3px;
+  padding-top: 1rem; /* Extra padding when collapsed */
+  padding-bottom: 1rem; /* Extra bottom padding when collapsed */
+}
+
+/* Modern button styling - clean, no rectangles */
+.message-button {
+  font-size: 0.75rem;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.6;
+  padding: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.modern-button {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  width: 32px;
+  height: 32px;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+}
+
+.modern-button:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.modern-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.modern-button.active {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.modern-button svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+.console-controls .message-button {
+  font-size: 0.7rem;
+}
+
+.message-button:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Light mode button adjustments */
+.light-mode .modern-button:hover {
+  background: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.light-mode .modern-button:active {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.light-mode .modern-button.active {
+  background: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.light-mode .message-button:hover {
+  background: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Simplified scrollable content - unified with message-level scrolling */
+.scrollable-content {
+  width: 100%;
+  min-width: 0;
+  overflow: visible; /* Let parent message handle all scrolling */
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Hide the scroll indicators completely since we're using message-level scrolling */
+.scroll-indicator {
+  display: none !important;
+}
+
+/* Legacy styles - now handled by unified system above */
+
+/* Legacy scrollable-content styles - now handled by unified message-level scrolling */
+
+.scrollable-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1) !important;
+  border-radius: 4px !important;
+}
+
+/* Removed generic scrollable-content scrollbar rules - using color-matched ones at end of file */
+
+.scrollable-content::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Fallback generic thumb rule for scrollable-content that doesn't match color-matched selectors */
+.scrollable-content::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border);
+  opacity: 0.8;
+}
+
+/* Hide scrollbar arrows/buttons for content areas too */
+.scrollable-content::-webkit-scrollbar-button {
+  display: none !important;
+}
+
+/* Legacy scrollbar rules removed - now handled by unified system below */
+
+/* Content Preview Styling */
+.content-preview {
+  font-size: 0.85em;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0 1rem 0;
+  font-family: 'Roboto Mono', monospace;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  position: relative;
+}
+
+.content-preview::before {
+  content: "Preview:";
+  position: absolute;
+  top: -8px;
+  left: 12px;
+  background: var(--color-message-bg);
+  padding: 0 6px;
+  font-size: 0.7em;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.light-mode .content-preview {
+  color: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.light-mode .content-preview::before {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+/* Enhanced message states */
+.message-collapsed .content-preview {
+  display: block;
+}
+
+.message-collapsed::after {
+  content: "📄 Content hidden - click + to show";
+  display: block;
+  font-size: 0.8em;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  padding: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 0.5rem;
+}
+
+.message-button svg {
+  transition: all 0.2s ease;
+}
+
+/* Button styling is now handled inline via JavaScript for better control */
+
+/* Legacy button state support */
+.message-button.active {
+  opacity: 1;
+  font-weight: bold;
+}
+
+.message-collapse-btn.active {
+  background-color: #ff6b6b;
+}
+
+.message-expand-btn.active {
+  background-color: #4ecdc4;
+}
+
+.message-collapsed .scrollable-content,
+.message-collapsed .msg-kvps,
+.message-collapsed .attachments-container {
+  display: none;
+}
+
+/* Collapsed messages should not have scrollbars */
+.message-collapsed {
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+.message-expanded .scrollable-content {
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+  overflow-x: auto !important;
 }
 
 .user-container {
@@ -686,7 +1129,371 @@ pre {
 }
 
 .message-code-exe {
-  background-color: #4b3a69;
+  background-color: #1e1e1e;
+  color: #fff;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.light-mode .message-code-exe {
+  background-color: #f8f8f8;
+  color: #fff;
+}
+
+.message-code-exe .console-summary {
+  display: none;
+  white-space: pre;
+  overflow-x: auto;
+  margin-top: 0.3rem;
+}
+
+.message-code-exe.console-collapsed .console-summary {
+  display: block;
+}
+
+.message-code-exe.console-collapsed .scrollable-content,
+.message-code-exe.console-collapsed .msg-kvps,
+.message-code-exe.console-collapsed .attachments-container {
+  display: none;
+}
+
+.message-code-exe.console-scroll .scrollable-content {
+  max-height: 20rem;
+}
+
+.message-code-exe.console-expanded .scrollable-content {
+  max-height: none;
+}
+
+/* Unified Message States - All message types */
+/* Collapsed state: Show only heading and controls */
+.message-collapsed .scrollable-content,
+.message-collapsed .msg-kvps,
+.message-collapsed .attachments-container,
+.message-collapsed .msg-content,
+.message-collapsed .message-text {
+  display: none !important;
+}
+
+/* Show console summary for code execution messages when collapsed */
+.message-collapsed .console-summary {
+  display: block;
+  font-size: 0.85em;
+  opacity: 0.7;
+  margin: 0.5rem 0;
+}
+
+/* Visual indicator when content is hidden */
+.message-collapsed::after {
+  content: "📄 Content hidden - click + to show";
+  display: block;
+  font-size: 0.8em;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  padding: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 0.5rem;
+}
+
+/* ========================================
+   UNIFIED MESSAGE SCROLLING SYSTEM
+   ======================================== */
+
+/* Base message scrolling behavior */
+.message {
+  /* Default: No scrolling, natural height */
+  max-height: none;
+  overflow-y: visible;
+  overflow-x: auto; /* Always allow horizontal scroll when needed */
+  /* Prevent scrollbar space reservation unless actually needed */
+  scrollbar-gutter: auto;
+}
+
+/* Collapsed state: Hidden with preview */
+.message-collapsed {
+  max-height: none;
+  overflow: visible;
+  scrollbar-gutter: auto;
+}
+
+/* Compact state: Limited height with scrolling */
+.message-compact {
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: auto;
+  scrollbar-gutter: stable;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--color-border); /* subtle, not colored */
+  padding-left: var(--spacing-md);
+  margin-left: 0;
+}
+
+.message-compact .scrollable-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  /* overflow: visible; */
+}
+
+/* Expanded state: Full height, no limits */
+.message-expanded {
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+  overflow-x: auto !important;
+  /* No scrollbar space needed */
+  scrollbar-gutter: auto !important;
+}
+
+/* Ensure all nested content in expanded messages is also freed from constraints */
+.message-expanded .scrollable-content {
+  max-height: none !important;
+  overflow-y: visible !important;
+  overflow-x: visible !important;
+}
+
+.message-expanded .msg-content {
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
+.message-expanded .msg-kvps {
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
+/* Ensure expanded messages never show vertical scrollbars */
+.message-expanded::-webkit-scrollbar-vertical {
+  display: none !important;
+}
+
+.message-expanded::-webkit-scrollbar:vertical {
+  width: 0px !important;
+}
+
+/* ========================================
+   UNIFIED SCROLLBAR STYLING
+   ======================================== */
+
+/* Base scrollbar styling for all messages */
+.message::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.message::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+}
+
+/* Only show scrollbars when actually needed */
+.message:not(.message-compact)::-webkit-scrollbar {
+  width: 0px !important;
+  height: 0px !important;
+}
+
+.message:not(.message-compact)::-webkit-scrollbar-track {
+  display: none !important;
+}
+
+.message:not(.message-compact)::-webkit-scrollbar-thumb {
+  display: none !important;
+}
+
+/* Extra specificity for expanded messages */
+.message-expanded::-webkit-scrollbar {
+  width: 0px !important;
+  height: 0px !important;
+}
+
+.message-expanded::-webkit-scrollbar-track {
+  display: none !important;
+}
+
+.message-expanded::-webkit-scrollbar-thumb {
+  display: none !important;
+}
+
+/* Compact messages get visible scrollbars */
+.message-compact::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.message-compact::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+}
+
+/* Fallback generic thumb rule for any messages that don't match color-matched selectors */
+.message::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.message::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border);
+  opacity: 0.8;
+}
+
+/* Light mode fallback for message scrollbars */
+.light-mode .message::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.light-mode .message::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border);
+  opacity: 0.8;
+}
+
+.message::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Removed - moved to end of file for proper precedence */
+
+/* Removed generic light mode .message scrollbar rules - using color-matched ones at end of file */
+
+/* ========================================
+   VISUAL FEEDBACK FOR MESSAGE STATES
+   ======================================== */
+
+/* Color-matched state indicators using scrollbar color scheme */
+
+/* Compact state: smaller border with muted colors */
+.message-compact {
+  border-left: 1px solid var(--color-border); /* subtle, not colored */
+  padding-left: var(--spacing-md);
+  margin-left: 0;
+}
+
+/* Expanded state: wider border with brighter colors */
+.message-expanded {
+  border-left: 1px solid var(--color-border); /* subtle, not colored */
+  padding-left: var(--spacing-md);
+  margin-left: 0;
+}
+
+/* Natural state has no border - full content display */
+
+/* Agent messages - blue color scheme */
+.message-agent.message-compact {
+  border-left-color: rgba(59, 130, 246, 0.4);
+}
+
+.message-agent.message-expanded {
+  border-left-color: rgba(59, 130, 246, 0.6);
+}
+
+/* Tool messages - purple color scheme */
+.message-tool.message-compact {
+  border-left-color: rgba(168, 85, 247, 0.4);
+}
+
+.message-tool.message-expanded {
+  border-left-color: rgba(168, 85, 247, 0.6);
+}
+
+/* Agent response messages - green color scheme */
+.message-agent-response.message-compact {
+  border-left-color: rgba(34, 197, 94, 0.4);
+}
+
+.message-agent-response.message-expanded {
+  border-left-color: rgba(34, 197, 94, 0.6);
+}
+
+/* Code execution messages - yellow color scheme */
+.message-code-exe.message-compact {
+  border-left-color: rgba(251, 191, 36, 0.4);
+}
+
+.message-code-exe.message-expanded {
+  border-left-color: rgba(251, 191, 36, 0.6);
+}
+
+/* Browser messages - purple variant color scheme */
+.message-browser.message-compact {
+  border-left-color: rgba(147, 51, 234, 0.4);
+}
+
+.message-browser.message-expanded {
+  border-left-color: rgba(147, 51, 234, 0.6);
+}
+
+/* Warning messages - orange color scheme */
+.message-warning.message-compact {
+  border-left-color: rgba(245, 158, 11, 0.4);
+}
+
+.message-warning.message-expanded {
+  border-left-color: rgba(245, 158, 11, 0.6);
+}
+
+/* Error messages - red color scheme */
+.message-error.message-compact {
+  border-left-color: rgba(239, 68, 68, 0.4);
+}
+
+.message-error.message-expanded {
+  border-left-color: rgba(239, 68, 68, 0.6);
+}
+
+/* Info messages - gray color scheme */
+.message-info.message-compact {
+  border-left-color: rgba(107, 114, 128, 0.4);
+}
+
+.message-info.message-expanded {
+  border-left-color: rgba(107, 114, 128, 0.6);
+}
+
+/* User messages - gray variant color scheme */
+.message-user.message-compact {
+  border-left-color: rgba(156, 163, 175, 0.4);
+}
+
+.message-user.message-expanded {
+  border-left-color: rgba(156, 163, 175, 0.6);
+}
+
+/* Default messages - gray color scheme */
+.message-default.message-compact {
+  border-left-color: rgba(107, 114, 128, 0.4);
+}
+
+.message-default.message-expanded {
+  border-left-color: rgba(107, 114, 128, 0.6);
+}
+
+/* Remove old classes - unified approach */
+.message-scroll,
+.message-smart-scroll,
+.message-upper-overflow {
+  /* Legacy classes - now handled by unified system */
+  max-height: none;
+}
+
+/* Removed transitions to prevent flashing during content updates */
+.message {
+  /* Prevent scrollbar flashing during streaming */
+  scrollbar-gutter: stable;
+}
+
+/* Ensure scrollbars appear smoothly */
+.message-compact {
+  /* Force scrollbar space to prevent layout shifts */
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
+/* Visual feedback for different states */
+.message-expanded {
+  border-left: 1px solid var(--color-border);
+  padding-left: var(--spacing-md);
+  margin-left: 0;
 }
 
 .message-browser {
@@ -723,6 +1530,8 @@ pre {
   margin: 0.5rem 0 0.55rem 0;
   border-collapse: collapse;
   width: 100%;
+  display: block;
+  overflow-x: visible;
 }
 
 .msg-kvps th,
@@ -1338,6 +2147,7 @@ pre {
 /* Microphone button */
 .chat-button.mic-inactive svg {
   /* Add specific styles if needed */
+  opacity: 0.7;
 }
 
 /* Tooltip */
@@ -1461,53 +2271,53 @@ input:checked + .slider:before {
   display: flex;
 }
 
-/* Tooltip */
-.tooltip {
-  /* Already defined above */
+/* Tooltip - duplicate removed */
+
+/* Copy button styles - only for kvp rows */
+.kvps-row .copy-button {
+  position: absolute !important;
+  top: 4px !important;
+  right: 4px !important;
+  background: none !important;
+  border: none !important;
+  color: var(--color-text) !important;
+  padding: 2px !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+  font-size: 10px !important;
+  opacity: 0 !important;
+  display: inline-block !important;
+  width: 16px !important;
+  height: 16px !important;
+  transition: opacity 0.2s ease !important;
+  z-index: 10 !important;
 }
 
-/* Copy button styles */
-.copy-button {
-  position: absolute;
-  right: 0;
-  top: var(--spacing-sm);
-  background: none;
-  border: none;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  padding-right: 0;
-  cursor: pointer;
-  text-decoration: underline;
-  text-wrap: nowrap;
-  opacity: 0;
-  -webkit-transition: opacity var(--transition-speed) ease-in-out;
-  transition: opacity var(--transition-speed) ease-in-out;
-  color: inherit;
-  font-size: 12px;
-  font-family: "Rubik", Arial, Helvetica, sans-serif;
+/* Hide copy buttons in other contexts */
+.copy-button:not(.kvps-row .copy-button) {
+  display: none !important;
 }
 
-.copy-button:hover {
-  opacity: 0.8 !important;
+/* Show copy buttons only on row hover */
+.kvps-row:hover .copy-button {
+  opacity: 0.7 !important;
 }
 
-.msg-content:hover .copy-button,
-.kvps-row:hover .copy-button,
-.message-text:hover .copy-button {
-  opacity: 0.6;
+.kvps-row .copy-button:hover {
+  opacity: 1 !important;
 }
 
-.copy-button.copied {
-  font-family: "Rubik", Arial, Helvetica, sans-serif !important;
+.kvps-row .copy-button.copied {
   opacity: 1 !important;
 }
 
 .msg-thoughts .copy-button {
-  top: -12px !important;
+  top: -8px !important;
 }
 
 .message-user .copy-button {
-  top: -15px !important;
-  left: -13px !important;
+  top: -12px !important;
+  left: -10px !important;
   right: 99% !important;
 }
 
@@ -1540,6 +2350,17 @@ input:checked + .slider:before {
   position: relative;
 }
 
+/* Ensure kvp rows and cells have proper positioning context */
+.kvps-row,
+.kvps-row td {
+  position: relative;
+}
+
+/* Position copy button lower for the first kvp row to prevent overlap */
+.kvps-row:first-child .copy-button {
+  top: 12px !important;
+}
+
 /* Utility Classes */
 .kvps-key {
   font-weight: 500;
@@ -1548,7 +2369,81 @@ input:checked + .slider:before {
 
 .kvps-val {
   margin: 0.65rem 0 0.65rem 0.4rem;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* Ensure horizontal scrolling for long lines */
+.msg-content {
   white-space: pre-wrap;
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.msg-content span {
+  white-space: pre-wrap;
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* For very long unbreakable lines (URLs, code, etc.) */
+.msg-content .no-wrap,
+.msg-content code,
+.msg-content pre {
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+/* Force horizontal scrolling for content that truly overflows */
+.scrollable-content {
+  box-sizing: border-box;
+}
+
+/* Ensure all content sections don't create their own horizontal scrollbars */
+.msg-kvps,
+.msg-content,
+.msg-json,
+.msg-thoughts {
+  overflow-x: visible;
+  width: 100%;
+}
+
+/* Handle very long unbreakable content */
+.msg-content pre,
+.msg-content code,
+.msg-content .no-wrap {
+  white-space: nowrap;
+  display: block;
+}
+
+/* For JSON and structured data that might be very wide */
+.msg-json {
+  white-space: pre;
+}
+
+/* Ensure long URLs and paths don't break */
+.msg-content a[href*="http"],
+.msg-content .path-link {
+  word-break: keep-all;
+  white-space: nowrap;
+}
+
+
+
+body.long-form .scrollable-content {
+  max-height: none;
+  overflow-y: visible;
+}
+
+body.long-form .scroll-indicator {
+  display: none;
+}
+
+.scroll-indicator {
+  display: none !important; /* Hide all scroll indicators (white triangles) */
 }
 
 .kvps-img {
@@ -1628,7 +2523,7 @@ input:checked + .slider:before {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(var(--spacing-sm));
+    transform: translateY(var(--spacing-small));
   }
   to {
     opacity: 1;
@@ -1704,6 +2599,7 @@ input:checked + .slider:before {
     flex-direction: column;
     border-collapse: separate;
     border-spacing: 0 0.5rem;
+    overflow-x: auto;
   }
 
   .msg-kvps tr {
@@ -1729,7 +2625,9 @@ input:checked + .slider:before {
   }
 
   .kvps-val {
-    margin: 0 0 0.4rem 0;
+  margin: 0 0 0.4rem 0;
+  white-space: pre;
+  overflow-x: auto;
   }
 }
 
@@ -1823,6 +2721,12 @@ input:checked + .slider:before {
 
   .copy-button {
     display: none !important;
+  }
+
+  .message-container {
+    max-width: calc(100vw - 32px); /* Account for padding on mobile */
+    width: fit-content; /* Only as wide as needed on mobile too */
+    min-width: 280px; /* Smaller minimum on mobile */
   }
 
   .msg-content span,
@@ -1932,6 +2836,10 @@ a:active {
   --color-border: var(--color-border-light);
   --color-input: var(--color-input-light);
   --color-input-focus: var(--color-input-focus-light);
+}
+
+.light-mode .message-container {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .light-mode .msg-kvps tr {
@@ -2374,18 +3282,75 @@ a:active {
   border-radius: 6px;
 }
 
-::-webkit-scrollbar-thumb {
+/* Global scrollbar rules - exclude .message elements which have color-matched rules */
+:not(.message)::-webkit-scrollbar-thumb {
   background-color: var(--color-border);
   border-radius: 6px;
   transition: background-color 0.2s ease;
 }
 
-::-webkit-scrollbar-thumb:hover {
+:not(.message)::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-border);
 }
 
-::-webkit-scrollbar-thumb:active {
+:not(.message)::-webkit-scrollbar-thumb:active {
   background-color: var(--color-border);
+}
+
+/* Hide scrollbar arrows/buttons globally - comprehensive approach */
+::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+::-webkit-scrollbar-button:start:decrement,
+::-webkit-scrollbar-button:end:increment {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+::-webkit-scrollbar-button:horizontal:start:decrement,
+::-webkit-scrollbar-button:horizontal:end:increment,
+::-webkit-scrollbar-button:vertical:start:decrement,
+::-webkit-scrollbar-button:vertical:end:increment {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Specific scrollbar button hiding for all scrollable areas */
+.chats-list-container::-webkit-scrollbar-button,
+.tasks-list-container::-webkit-scrollbar-button,
+.left-panel-top::-webkit-scrollbar-button,
+#chat-input::-webkit-scrollbar-button,
+.message::-webkit-scrollbar-button,
+.scrollable-content::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Nuclear option - hide ALL scrollbar buttons everywhere */
+*::-webkit-scrollbar-button,
+*::-webkit-scrollbar-button:start,
+*::-webkit-scrollbar-button:end,
+*::-webkit-scrollbar-button:horizontal,
+*::-webkit-scrollbar-button:vertical,
+*::-webkit-scrollbar-button:start:decrement,
+*::-webkit-scrollbar-button:end:increment,
+*::-webkit-scrollbar-button:horizontal:start:decrement,
+*::-webkit-scrollbar-button:horizontal:end:increment,
+*::-webkit-scrollbar-button:vertical:start:decrement,
+*::-webkit-scrollbar-button:vertical:end:increment,
+*::-webkit-scrollbar-button:corner-present,
+*::-webkit-scrollbar-button:window-inactive {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: none !important;
+  border: none !important;
 }
 
 /* Firefox scrollbar */
@@ -2399,15 +3364,15 @@ a:active {
   background: rgba(200, 200, 200, 0.3);
 }
 
-.light-mode ::-webkit-scrollbar-thumb {
+.light-mode :not(.message)::-webkit-scrollbar-thumb {
   background-color: var(--color-border);
 }
 
-.light-mode ::-webkit-scrollbar-thumb:hover {
+.light-mode :not(.message)::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-border);
 }
 
-.light-mode ::-webkit-scrollbar-thumb:active {
+.light-mode :not(.message)::-webkit-scrollbar-thumb:active {
   background-color: var(--color-border);
 }
 
@@ -3076,3 +4041,587 @@ nav ul li a img {
   border: 1px solid rgba(142, 142, 142, 0.1);
   border-radius: 0.3em;
 }
+
+/* ========================================
+   COLOR-MATCHED SCROLLBARS - FINAL OVERRIDE
+   Must be at end of file to override global rules
+   ======================================== */
+
+/* Color-matched scrollbars by message type - CORRECTED SELECTORS */
+/* Agent messages - muted blue scrollbars */
+.message-agent {
+  scrollbar-color: rgba(59, 130, 246, 0.4) transparent;
+}
+
+.message-agent::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.4) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  box-shadow: 0 0 3px rgba(59, 130, 246, 0.2) !important;
+}
+
+.message-agent::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.6) !important;
+  box-shadow: 0 0 5px rgba(59, 130, 246, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Tool messages - muted purple scrollbars */
+.message-tool {
+  scrollbar-color: rgba(168, 85, 247, 0.4) transparent;
+}
+
+.message-tool::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.4) !important;
+  border: 1px solid rgba(168, 85, 247, 0.2) !important;
+  box-shadow: 0 0 3px rgba(168, 85, 247, 0.2) !important;
+}
+
+.message-tool::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.6) !important;
+  box-shadow: 0 0 5px rgba(168, 85, 247, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Agent response messages - muted green scrollbars */
+.message-agent-response {
+  scrollbar-color: rgba(34, 197, 94, 0.4) transparent;
+}
+
+.message-agent-response::-webkit-scrollbar-thumb {
+  background: rgba(34, 197, 94, 0.4) !important;
+  border: 1px solid rgba(34, 197, 94, 0.2) !important;
+  box-shadow: 0 0 3px rgba(34, 197, 94, 0.2) !important;
+}
+
+.message-agent-response::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.6) !important;
+  box-shadow: 0 0 5px rgba(34, 197, 94, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Code execution messages - muted yellow scrollbars */
+.message-code-exe {
+  scrollbar-color: rgba(251, 191, 36, 0.4) transparent;
+}
+
+.message-code-exe::-webkit-scrollbar-thumb {
+  background: rgba(251, 191, 36, 0.4) !important;
+  border: 1px solid rgba(251, 191, 36, 0.2) !important;
+  box-shadow: 0 0 3px rgba(251, 191, 36, 0.2) !important;
+}
+
+.message-code-exe::-webkit-scrollbar-thumb:hover {
+  background: rgba(251, 191, 36, 0.6) !important;
+  box-shadow: 0 0 5px rgba(251, 191, 36, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Browser messages - muted purple variant */
+.message-browser {
+  scrollbar-color: rgba(147, 51, 234, 0.4) transparent;
+}
+
+.message-browser::-webkit-scrollbar-thumb {
+  background: rgba(147, 51, 234, 0.4) !important;
+  border: 1px solid rgba(147, 51, 234, 0.2) !important;
+  box-shadow: 0 0 3px rgba(147, 51, 234, 0.2) !important;
+}
+
+.message-browser::-webkit-scrollbar-thumb:hover {
+  background: rgba(147, 51, 234, 0.6) !important;
+  box-shadow: 0 0 5px rgba(147, 51, 234, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Warning messages - muted orange scrollbars */
+.message-warning {
+  scrollbar-color: rgba(245, 158, 11, 0.4) transparent;
+}
+
+.message-warning::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.4) !important;
+  border: 1px solid rgba(245, 158, 11, 0.2) !important;
+  box-shadow: 0 0 3px rgba(245, 158, 11, 0.2) !important;
+}
+
+.message-warning::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.6) !important;
+  box-shadow: 0 0 5px rgba(245, 158, 11, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Error messages - muted red scrollbars */
+.message-error {
+  scrollbar-color: rgba(239, 68, 68, 0.4) transparent;
+}
+
+.message-error::-webkit-scrollbar-thumb {
+  background: rgba(239, 68, 68, 0.4) !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+  box-shadow: 0 0 3px rgba(239, 68, 68, 0.2) !important;
+}
+
+.message-error::-webkit-scrollbar-thumb:hover {
+  background: rgba(239, 68, 68, 0.6) !important;
+  box-shadow: 0 0 5px rgba(239, 68, 68, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Info messages - muted gray scrollbars */
+.message-info {
+  scrollbar-color: rgba(107, 114, 128, 0.4) transparent;
+}
+.message-info::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.4) !important;
+  border: 1px solid rgba(107, 114, 128, 0.2) !important;
+  box-shadow: 0 0 3px rgba(107, 114, 128, 0.2) !important;
+}
+
+.message-info::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.6) !important;
+  box-shadow: 0 0 5px rgba(107, 114, 128, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Default messages - muted gray scrollbars */
+.message-default {
+  scrollbar-color: rgba(107, 114, 128, 0.4) transparent;
+}
+
+.message-default::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.4) !important;
+  border: 1px solid rgba(107, 114, 128, 0.2) !important;
+  box-shadow: 0 0 3px rgba(107, 114, 128, 0.2) !important;
+}
+
+.message-default::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.6) !important;
+  box-shadow: 0 0 5px rgba(107, 114, 128, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* User messages - muted gray scrollbars */
+.message-user {
+  scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+}
+.message-user::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4) !important;
+  border: 1px solid rgba(156, 163, 175, 0.2) !important;
+  box-shadow: 0 0 3px rgba(156, 163, 175, 0.2) !important;
+}
+
+.message-user::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.6) !important;
+  box-shadow: 0 0 5px rgba(156, 163, 175, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Light mode adjustments for color-matched scrollbars */
+.light-mode .message-agent {
+  scrollbar-color: rgba(37, 99, 235, 0.7) transparent;
+}
+
+.light-mode .message-agent::-webkit-scrollbar-thumb {
+  background: rgba(37, 99, 235, 0.7) !important;
+  border: 1px solid rgba(37, 99, 235, 0.4) !important;
+}
+
+.light-mode .message-tool {
+  scrollbar-color: rgba(147, 51, 234, 0.7) transparent;
+}
+
+.light-mode .message-tool::-webkit-scrollbar-thumb {
+  background: rgba(147, 51, 234, 0.7) !important;
+  border: 1px solid rgba(147, 51, 234, 0.4) !important;
+}
+
+.light-mode .message-agent-response {
+  scrollbar-color: rgba(22, 163, 74, 0.7) transparent;
+}
+
+.light-mode .message-agent-response::-webkit-scrollbar-thumb {
+  background: rgba(22, 163, 74, 0.7) !important;
+  border: 1px solid rgba(22, 163, 74, 0.4) !important;
+}
+
+.light-mode .message-code-exe {
+  scrollbar-color: rgba(217, 119, 6, 0.7) transparent;
+}
+
+.light-mode .message-code-exe::-webkit-scrollbar-thumb {
+  background: rgba(217, 119, 6, 0.7) !important;
+  border: 1px solid rgba(217, 119, 6, 0.4) !important;
+}
+
+.light-mode .message-browser {
+  scrollbar-color: rgba(126, 34, 206, 0.7) transparent;
+}
+
+.light-mode .message-browser::-webkit-scrollbar-thumb {
+  background: rgba(126, 34, 206, 0.7) !important;
+  border: 1px solid rgba(126, 34, 206, 0.4) !important;
+}
+
+.light-mode .message-warning {
+  scrollbar-color: rgba(180, 83, 9, 0.7) transparent;
+}
+
+.light-mode .message-warning::-webkit-scrollbar-thumb {
+  background: rgba(180, 83, 9, 0.7) !important;
+  border: 1px solid rgba(180, 83, 9, 0.4) !important;
+}
+
+.light-mode .message-error {
+  scrollbar-color: rgba(220, 38, 38, 0.7) transparent;
+}
+
+.light-mode .message-error::-webkit-scrollbar-thumb {
+  background: rgba(220, 38, 38, 0.7) !important;
+  border: 1px solid rgba(220, 38, 38, 0.4) !important;
+}
+
+.light-mode .message-info {
+  scrollbar-color: rgba(75, 85, 99, 0.7) transparent;
+}
+.light-mode .message-info::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.7) !important;
+  border: 1px solid rgba(75, 85, 99, 0.4) !important;
+}
+
+.light-mode .message-default {
+  scrollbar-color: rgba(75, 85, 99, 0.7) transparent;
+}
+
+.light-mode .message-default::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.7) !important;
+  border: 1px solid rgba(75, 85, 99, 0.4) !important;
+}
+
+.light-mode .message-user {
+  scrollbar-color: rgba(107, 114, 128, 0.7) transparent;
+}
+.light-mode .message-user::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.7) !important;
+  border: 1px solid rgba(107, 114, 128, 0.4) !important;
+}
+
+/* Light mode adjustments for color-matched state indicators */
+.light-mode .message-agent.message-compact {
+  border-left-color: rgba(37, 99, 235, 0.6); /* Darker blue for light mode */
+}
+
+.light-mode .message-agent.message-expanded {
+  border-left-color: rgba(37, 99, 235, 0.8); /* Even darker blue for light mode */
+}
+
+.light-mode .message-tool.message-compact {
+  border-left-color: rgba(147, 51, 234, 0.6); /* Darker purple for light mode */
+}
+
+.light-mode .message-tool.message-expanded {
+  border-left-color: rgba(147, 51, 234, 0.8); /* Even darker purple for light mode */
+}
+
+.light-mode .message-agent-response.message-compact {
+  border-left-color: rgba(22, 163, 74, 0.6); /* Darker green for light mode */
+}
+
+.light-mode .message-agent-response.message-expanded {
+  border-left-color: rgba(22, 163, 74, 0.8); /* Even darker green for light mode */
+}
+
+.light-mode .message-code-exe.message-compact {
+  border-left-color: rgba(217, 119, 6, 0.6); /* Darker yellow for light mode */
+}
+
+.light-mode .message-code-exe.message-expanded {
+  border-left-color: rgba(217, 119, 6, 0.8); /* Even darker yellow for light mode */
+}
+
+.light-mode .message-browser.message-compact {
+  border-left-color: rgba(126, 34, 206, 0.6); /* Darker purple variant for light mode */
+}
+
+.light-mode .message-browser.message-expanded {
+  border-left-color: rgba(126, 34, 206, 0.8); /* Even darker purple variant for light mode */
+}
+
+.light-mode .message-warning.message-compact {
+  border-left-color: rgba(180, 83, 9, 0.6); /* Darker orange for light mode */
+}
+
+.light-mode .message-warning.message-expanded {
+  border-left-color: rgba(180, 83, 9, 0.8); /* Even darker orange for light mode */
+}
+
+.light-mode .message-error.message-compact {
+  border-left-color: rgba(220, 38, 38, 0.6); /* Darker red for light mode */
+}
+
+.light-mode .message-error.message-expanded {
+  border-left-color: rgba(220, 38, 38, 0.8); /* Even darker red for light mode */
+}
+
+.light-mode .message-info.message-compact {
+  border-left-color: rgba(75, 85, 99, 0.6); /* Darker gray for light mode */
+}
+
+.light-mode .message-info.message-expanded {
+  border-left-color: rgba(75, 85, 99, 0.8); /* Even darker gray for light mode */
+}
+
+.light-mode .message-user.message-compact {
+  border-left-color: rgba(107, 114, 128, 0.6); /* Darker gray variant for light mode */
+}
+
+.light-mode .message-user.message-expanded {
+  border-left-color: rgba(107, 114, 128, 0.8); /* Even darker gray variant for light mode */
+}
+
+.light-mode .message-default.message-compact {
+  border-left-color: rgba(75, 85, 99, 0.6); /* Darker gray for light mode */
+}
+
+.light-mode .message-default.message-expanded {
+  border-left-color: rgba(75, 85, 99, 0.8); /* Even darker gray for light mode */
+}
+
+/* ========================================
+   COLOR-MATCHED SCROLLBARS FOR SCROLLABLE CONTENT
+   These rules target .scrollable-content inside messages
+   ======================================== */
+
+/* Agent messages - muted blue scrollable content */
+.message-agent .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.4) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  box-shadow: 0 0 3px rgba(59, 130, 246, 0.2) !important;
+  border-radius: 4px !important;
+}
+
+.message-agent .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.6) !important;
+  box-shadow: 0 0 5px rgba(59, 130, 246, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Tool messages - muted purple scrollable content */
+.message-tool .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.4) !important;
+  border: 1px solid rgba(168, 85, 247, 0.2) !important;
+  box-shadow: 0 0 3px rgba(168, 85, 247, 0.2) !important;
+  border-radius: 4px !important;
+}
+
+.message-tool .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.6) !important;
+  box-shadow: 0 0 5px rgba(168, 85, 247, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Agent response messages - muted green scrollable content */
+.message-agent-response .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(34, 197, 94, 0.4) !important;
+  border: 1px solid rgba(34, 197, 94, 0.2) !important;
+  box-shadow: 0 0 3px rgba(34, 197, 94, 0.2) !important;
+  border-radius: 4px !important;
+}
+
+.message-agent-response .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.6) !important;
+  box-shadow: 0 0 5px rgba(34, 197, 94, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Code execution messages - muted yellow scrollable content */
+.message-code-exe .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(251, 191, 36, 0.4) !important;
+  border: 1px solid rgba(251, 191, 36, 0.2) !important;
+  box-shadow: 0 0 3px rgba(251, 191, 36, 0.2) !important;
+  border-radius: 4px !important;
+}
+
+.message-code-exe .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(251, 191, 36, 0.6) !important;
+  box-shadow: 0 0 5px rgba(251, 191, 36, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Browser messages - muted purple variant scrollable content */
+.message-browser .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(147, 51, 234, 0.4) !important;
+  border: 1px solid rgba(147, 51, 234, 0.2) !important;
+  box-shadow: 0 0 3px rgba(147, 51, 234, 0.2) !important;
+  border-radius: 4px !important;
+}
+
+.message-browser .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(147, 51, 234, 0.6) !important;
+  box-shadow: 0 0 5px rgba(147, 51, 234, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Warning messages - muted orange scrollable content */
+.message-warning .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.4) !important;
+  border: 1px solid rgba(245, 158, 11, 0.2) !important;
+  box-shadow: 0 0 3px rgba(245, 158, 11, 0.2) !important;
+  border-radius: 4px !important;
+}
+
+.message-warning .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.6) !important;
+  box-shadow: 0 0 5px rgba(245, 158, 11, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Error messages - muted red scrollable content */
+.message-error .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(239, 68, 68, 0.4) !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+  box-shadow: 0 0 3px rgba(239, 68, 68, 0.2) !important;
+  border-radius: 4px !important;
+}
+
+.message-error .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(239, 68, 68, 0.6) !important;
+  box-shadow: 0 0 5px rgba(239, 68, 68, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Info messages - muted gray scrollable content */
+.message-info .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.4) !important;
+  border: 1px solid rgba(107, 114, 128, 0.2) !important;
+  box-shadow: 0 0 3px rgba(107, 114, 128, 0.2) !important;
+  border-radius: 4px !important;
+}
+
+.message-info .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.6) !important;
+  box-shadow: 0 0 5px rgba(107, 114, 128, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Default messages - muted gray scrollable content */
+.message-default .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.4) !important;
+  border: 1px solid rgba(107, 114, 128, 0.2) !important;
+  box-shadow: 0 0 3px rgba(107, 114, 128, 0.2) !important;
+  border-radius: 4px !important;
+}
+
+.message-default .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.6) !important;
+  box-shadow: 0 0 5px rgba(107, 114, 128, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* User messages - muted gray scrollable content */
+.message-user .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4) !important;
+  border: 1px solid rgba(156, 163, 175, 0.2) !important;
+  box-shadow: 0 0 3px rgba(156, 163, 175, 0.2) !important;
+  border-radius: 4px !important;
+}
+
+.message-user .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.6) !important;
+  box-shadow: 0 0 5px rgba(156, 163, 175, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+.message-compact .scrollable-content {
+  max-height: 100%;
+  min-height: 0;
+  overflow: visible;
+  flex: 1 1 auto;
+}
+
+.measuring-message {
+  border-left: 1px solid var(--color-border) !important;
+  padding-left: var(--spacing-md) !important;
+  margin-left: 0 !important;
+}
+
+/* Prevent border flicker during measurement */
+.measuring-message {
+  border-left: 1px solid var(--color-border) !important;
+}
+.message-agent.measuring-message {
+  border-left-color: rgba(59, 130, 246, 0.6) !important;
+}
+.message-tool.measuring-message {
+  border-left-color: rgba(168, 85, 247, 0.6) !important;
+}
+.message-agent-response.measuring-message {
+  border-left-color: rgba(34, 197, 94, 0.6) !important;
+}
+.message-code-exe.measuring-message {
+  border-left-color: rgba(251, 191, 36, 0.6) !important;
+}
+.message-browser.measuring-message {
+  border-left-color: rgba(147, 51, 234, 0.6) !important;
+}
+.message-warning.measuring-message {
+  border-left-color: rgba(245, 158, 11, 0.6) !important;
+}
+.message-error.measuring-message {
+  border-left-color: rgba(239, 68, 68, 0.6) !important;
+}
+.message-info.measuring-message {
+  border-left-color: rgba(107, 114, 128, 0.6) !important;
+}
+.message-default.measuring-message {
+  border-left-color: rgba(107, 114, 128, 0.6) !important;
+}
+.message-user.measuring-message {
+  border-left-color: rgba(156, 163, 175, 0.6) !important;
+}
+
+/* Always set a default border for .message */
+.message {
+  border-left: 1px solid var(--color-border);
+}
+/* Expanded state: wider border */
+.message-expanded {
+  border-left-width: 1px;
+  border-left-style: solid;
+}
+/* Compact state: thinner border */
+.message-compact {
+  border-left-width: 1px;
+  border-left-style: solid;
+}
+/* Set color for each type, only once */
+.message-agent {
+  border-left-color: rgba(59, 130, 246, 0.6);
+}
+.message-tool {
+  border-left-color: rgba(168, 85, 247, 0.6);
+}
+.message-agent-response {
+  border-left-color: rgba(34, 197, 94, 0.6);
+}
+.message-code-exe {
+  border-left-color: rgba(251, 191, 36, 0.6);
+}
+.message-browser {
+  border-left-color: rgba(147, 51, 234, 0.6);
+}
+.message-warning {
+  border-left-color: rgba(245, 158, 11, 0.6);
+}
+.message-error {
+  border-left-color: rgba(239, 68, 68, 0.6);
+}
+.message-info {
+  border-left-color: rgba(59, 130, 246, 0.4);
+}
+.message-default {
+  border-left-color: #e0e0e0;
+}
+.message-user {
+  border-left-color: #a3a3a3;
+}
+/* Remove all other border-left-width/color overrides for .message, .message-expanded, .message-compact, and type-specific states below this point. */
