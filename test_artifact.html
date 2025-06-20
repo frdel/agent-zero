@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Zero Canvas Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            text-align: center;
+            max-width: 600px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .feature {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid #00ff88;
+        }
+        .demo-button {
+            background: #00ff88;
+            color: #333;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        .demo-button:hover {
+            background: #00cc6a;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 255, 136, 0.3);
+        }
+        #clock {
+            font-size: 2em;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Agent Zero Canvas</h1>
+        <p>Live artifact streaming in action!</p>
+        
+        <div class="feature">
+            <h3>✨ Real-time Updates</h3>
+            <p>Watch as Agent Zero creates and updates artifacts live</p>
+        </div>
+        
+        <div class="feature">
+            <h3>🖼️ Multiple Formats</h3>
+            <p>HTML, SVG, Images, and more supported</p>
+        </div>
+        
+        <div class="feature">
+            <h3>🎯 Syntax Highlighting</h3>
+            <p>Beautiful code display with Prism.js</p>
+        </div>
+        
+        <div id="clock"></div>
+        
+        <button class="demo-button" onclick="changeColor()">Change Colors</button>
+        <button class="demo-button" onclick="addElement()">Add Element</button>
+    </div>
+
+    <script>
+        // Live clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toLocaleTimeString();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Interactive demo functions
+        function changeColor() {
+            const colors = [
+                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+            ];
+            document.body.style.background = colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function addElement() {
+            const container = document.querySelector('.container');
+            const newElement = document.createElement('div');
+            newElement.className = 'feature';
+            newElement.innerHTML = `
+                <h3>🚀 Dynamic Element</h3>
+                <p>Added at ${new Date().toLocaleTimeString()}</p>
+            `;
+            container.appendChild(newElement);
+        }
+    </script>
+</body>
+</html>
