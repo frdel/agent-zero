@@ -50,7 +50,7 @@ const model = {
       this.editor.navigateFileStart();
     } catch (error) {
       console.error("Failed to format JSON:", error);
-      alert("Invalid JSON: " + error.message);
+      showToast(i18next.t('mcp.alert.invalidJson', { message: error.message }), 'error');
     }
   },
 
@@ -113,7 +113,7 @@ const model = {
       scrollModal("mcp-servers-status");
     } catch (error) {
       console.error("Failed to apply MCP servers:", error);
-      alert("Failed to apply MCP servers: " + error.message);
+      showToast(i18next.t('mcp.alert.failedToApplyMcp', { message: error.message }), 'error');
     }
     this.loading = false;
   },

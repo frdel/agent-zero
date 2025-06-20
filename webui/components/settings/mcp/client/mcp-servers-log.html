@@ -1,7 +1,7 @@
 <html>
 
 <head>
-    <title>MCP Server Log</title>
+    <title data-i18n="mcp.serverLog.title">MCP Server Log</title>
 
     <script type="module">
         import { store } from "/components/settings/mcp/client/mcp-servers-store.js";
@@ -12,7 +12,7 @@
     <div x-data>
         <template x-if="$store.mcpServersStore">
             <div id="mcp-servers-log">
-                <p x-text="$store.mcpServersStore.serverLog && $store.mcpServersStore.serverLog.trim() ? $store.mcpServersStore.serverLog : 'Log empty'"></p>
+                <p x-text="$store.mcpServersStore.serverLog && $store.mcpServersStore.serverLog.trim() ? $store.mcpServersStore.serverLog : i18next.t('mcp.serverLog.empty')"></p>
             </div>
         </template>
     </div>

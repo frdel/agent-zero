@@ -1,13 +1,13 @@
 <html>
 
 <head>
-    <title>Configuring MCP Servers</title>
+    <title data-i18n="mcp.example.title">Configuring MCP Servers</title>
 
 </head>
 
 <body>
     <div x-data>
-        <p>Agent Zero uses standard JSON configuration known from other AI applications.<br>
+        <p data-i18n="mcp.example.mainText">Agent Zero uses standard JSON configuration known from other AI applications.<br>
             The configuration is a JSON object containing "mcpServers" object where each key is an individual MCP
             server.<br>
             Local servers are defined by a "command", "args", "env" variables.<br>
@@ -17,7 +17,7 @@
             All servers can also define "init_timeout" and "tool_timeout" which override global settings.</p>
 
 
-        <h3>Example MCP Servers Configuration JSON</h3>
+        <h3 data-i18n="mcp.example.jsonConfigTitle">Example MCP Servers Configuration JSON</h3>
         <div id="mcp-servers-example"></div>
 
         <script>

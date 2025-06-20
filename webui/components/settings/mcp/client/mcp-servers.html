@@ -13,17 +13,17 @@
         <template x-if="$store.mcpServersStore">
             <div x-init="$store.mcpServersStore.initialize()" x-destroy="$store.mcpServersStore.onClose()">
 
-                <h3>MCP Servers Configuration JSON
+                <h3 data-i18n="mcp.servers.configJsonTitle">MCP Servers Configuration JSON
                     <button class="btn slim" style="margin-left: 0.5em;"
-                        onclick="openModal('settings/mcp/client/example.html')">Examples</button>
+                        onclick="openModal('settings/mcp/client/example.html')" data-i18n="mcp.servers.examplesButton">Examples</button>
                     <button class="btn slim" style="margin-left: 0.5em;"
-                        @click="$store.mcpServersStore.formatJson()">Reformat</button>
+                        @click="$store.mcpServersStore.formatJson()" data-i18n="mcp.servers.reformatButton">Reformat</button>
                     <button class="btn slim primary" :disabled="$store.mcpServersStore.loading"
-                        style="margin-left: 0.5em;" @click="$store.mcpServersStore.applyNow()">Apply now</button>
+                        style="margin-left: 0.5em;" @click="$store.mcpServersStore.applyNow()" data-i18n="mcp.servers.applyButton">Apply now</button>
                 </h3>
                 <div id="mcp-servers-config-json"></div>
 
-                <h3 id="mcp-servers-status">Servers status (refreshing automatically)</h3>
+                <h3 id="mcp-servers-status" data-i18n="mcp.servers.statusTitle">Servers status (refreshing automatically)</h3>
 
 
                 <div class="server-list" x-show="!$store.mcpServersStore.loading">
@@ -46,12 +46,13 @@
 
                                 <!-- Tool count (clickable if > 0, only for connected servers without errors) -->
                                 <span class="tool-count" x-show="server.tool_count > 0"
-                                    @click="$store.mcpServersStore.onToolCountClick && $store.mcpServersStore.onToolCountClick(server.name)"
-                                    x-text="server.tool_count + ' tools'"></span>
+                                    @click="$store.mcpServersStore.onToolCountClick && $store.mcpServersStore.onToolCountClick(server.name)">
+                                    <span x-text="server.tool_count"></span> <span data-i18n="mcp.servers.toolsLabel">tools</span>
+                                </span>
 
                                 <!-- Log button (only shown if has_log is true) -->
                                 <span class="log-btn" x-show="server.has_log"
-                                    @click="$store.mcpServersStore.getServerLog(server.name)">Log</span>
+                                    @click="$store.mcpServersStore.getServerLog(server.name)" data-i18n="mcp.servers.logButton">Log</span>
                             </div>
 
                             <!-- Error message (if any) -->
@@ -60,12 +61,12 @@
                             </div>
                         </div>
                     </template>
-                    <div x-show="$store.mcpServersStore.servers.length === 0" class="mcp-servers-loading">
+                    <div x-show="$store.mcpServersStore.servers.length === 0" class="mcp-servers-loading" data-i18n="mcp.servers.noServers">
                         No servers
                     </div>
                 </div>
 
-                <div x-show="$store.mcpServersStore.loading" class="mcp-servers-loading">
+                <div x-show="$store.mcpServersStore.loading" class="mcp-servers-loading" data-i18n="mcp.servers.loadingStatus">
                     Loading servers status...
                 </div>
             </div>

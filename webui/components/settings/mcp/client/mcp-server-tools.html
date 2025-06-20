@@ -23,7 +23,7 @@
 
                             <template x-if="tool.input_schema?.properties">
                                 <div class="tool-properties">
-                                    <p class="properties-title">Properties:</p>
+                                    <p class="properties-title" data-i18n="mcp.serverTools.properties">Properties:</p>
                                     <ul>
                                         <template x-for="(prop, propName) in tool.input_schema.properties"
                                             :key="propName">
