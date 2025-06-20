@@ -1,3 +1,4 @@
+# This file defines the AgentContext class, which manages the context for agents.
 import asyncio
 import nest_asyncio
 
