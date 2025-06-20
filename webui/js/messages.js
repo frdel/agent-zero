@@ -665,9 +665,17 @@ function injectConsoleControls(messageDiv, command, type, heading) {
       // If the first message is expanded, we want to compact; if compact, expand
       willExpand = !allMessagesOfType[0].classList.contains('message-expanded');
     }
-    // Set the new preference to match the new state
-    localStorage.setItem(`msgFullHeight_${type}`, willExpand);
-    console.log(`[DEBUG][toggleHeight] (fixedHeight=${isFixedHeightGlobal ? 'ON' : 'OFF'}) type=${type} willExpand=${willExpand}`);
+    
+    // For agent responses in fixed height mode, allow toggling but don't persist the preference
+    // This allows user override within the chat session but resets on reload
+    if (type === 'response' && isFixedHeightGlobal) {
+      console.log(`[DEBUG][toggleHeight] Agent response toggle (session-only): willExpand=${willExpand}`);
+      // Don't save to localStorage for agent responses in fixed height mode
+    } else {
+      // Set the new preference to match the new state for other message types
+      localStorage.setItem(`msgFullHeight_${type}`, willExpand);
+      console.log(`[DEBUG][toggleHeight] (fixedHeight=${isFixedHeightGlobal ? 'ON' : 'OFF'}) type=${type} willExpand=${willExpand} (saved)`);
+    }
 
     // Update button state immediately after user action
     updateAllButtonStatesForType(type);
@@ -828,19 +836,17 @@ function updateButtonState(button, isActive, type, buttonType) {
   if (buttonType === 'height') {
     const messageElement = button.closest('.message');
     const isCurrentlyExpanded = messageElement && messageElement.classList.contains('message-expanded');
-    // PATCH: For last agent-response, use DOM state for button
-    let isLastAgentResponse = false;
-    if (type === 'response' && messageElement && messageElement.classList.contains('message-agent-response')) {
-      const allAgentResponses = Array.from(document.querySelectorAll('.message-agent-response'));
-      isLastAgentResponse = allAgentResponses.length > 0 && allAgentResponses[allAgentResponses.length - 1] === messageElement;
-    }
-    if (isLastAgentResponse) {
+    
+    // For agent-response messages in fixed height mode, always check DOM state
+    // because they auto-expand on load and user toggles are session-only (not persisted)
+    if (type === 'response' && isFixedHeightGlobal && messageElement && messageElement.classList.contains('message-agent-response')) {
+      // Use actual DOM state for agent response buttons in fixed height mode
       isActive = isCurrentlyExpanded;
     } else {
-      // Always use localStorage for isActive for other messages
+      // For all other cases, use localStorage preference
       isActive = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
     }
-    console.log(`[DEBUG][updateButtonState] height button for type=${type} isActive=${isActive} fixedHeightGlobal=${isFixedHeightGlobal} (lastAgentResponse=${isLastAgentResponse})`);
+    console.log(`[DEBUG][updateButtonState] height button for type=${type} isActive=${isActive} fixedHeightGlobal=${isFixedHeightGlobal} isCurrentlyExpanded=${isCurrentlyExpanded}`);
   }
   button.classList.toggle('active', isActive);
   
@@ -1003,28 +1009,42 @@ window.updateAllMessageStates = () => {
         } else {
           const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
           if (isFixedHeightGlobal) {
-            setTimeout(async () => {
-              try {
-                msg.offsetHeight;
-                // Only call determineMessageState if not locked/streaming
-                if (!msg.classList.contains('message-temp') && !msg.classList.contains('state-lock')) {
-                  const optimalState = await determineMessageState(msg);
-                  msg.classList.remove("message-compact", "message-expanded");
-                  if (optimalState === 'compact') {
-                    msg.classList.add("message-compact");
-                    msg.style.maxHeight = '400px';
-                    msg.style.overflowY = 'auto';
-                  } else {
-                    msg.style.maxHeight = 'none';
-                    msg.style.overflowY = 'visible';
+            // Special handling for agent responses - they always auto-expand in fixed height mode
+            if (type === 'response' && msg.classList.contains('message-agent-response')) {
+              msg.classList.remove("message-compact");
+              msg.classList.add("message-expanded");
+              msg.style.setProperty('height', 'auto', 'important');
+              msg.style.setProperty('max-height', 'none', 'important');
+              msg.style.setProperty('overflow-y', 'visible', 'important');
+              msg.style.setProperty('overflow-x', 'auto', 'important');
+              msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
+              console.log(`[DEBUG][updateAllMessageStates] Auto-expanded agent response: ${msg.id || msg.className}`);
+            } else {
+              // For other message types, use determineMessageState
+              setTimeout(async () => {
+                try {
+                  msg.offsetHeight;
+                  // Only call determineMessageState if not locked/streaming
+                  if (!msg.classList.contains('message-temp') && !msg.classList.contains('state-lock')) {
+                    const optimalState = await determineMessageState(msg);
+                    msg.classList.remove("message-compact", "message-expanded");
+                    if (optimalState === 'compact') {
+                      msg.classList.add("message-compact");
+                      msg.style.maxHeight = '400px';
+                      msg.style.overflowY = 'auto';
+                    } else {
+                      msg.classList.add("message-expanded");
+                      msg.style.maxHeight = 'none';
+                      msg.style.overflowY = 'visible';
+                    }
                   }
+                } catch (error) {
+                  msg.classList.add("message-compact");
+                  msg.style.maxHeight = '400px';
+                  msg.style.overflowY = 'auto';
                 }
-              } catch (error) {
-                msg.classList.add("message-compact");
-                msg.style.maxHeight = '400px';
-                msg.style.overflowY = 'auto';
-              }
-            }, 50);
+              }, 50);
+            }
           } else {
             msg.classList.add("message-expanded");
             msg.style.setProperty('max-height', 'none', 'important');
@@ -1047,6 +1067,28 @@ window.updateAllMessageStates = () => {
       }
     }
   });
+  
+  // After updating all message states, ensure button states are synced to DOM
+  setTimeout(() => {
+    const allMessages = document.querySelectorAll('.message');
+    allMessages.forEach(msg => {
+      let messageType = 'default';
+      if (msg.classList.contains('message-agent')) messageType = 'agent';
+      else if (msg.classList.contains('message-tool')) messageType = 'tool';
+      else if (msg.classList.contains('message-code-exe')) messageType = 'code_exe';
+      else if (msg.classList.contains('message-browser')) messageType = 'browser';
+      else if (msg.classList.contains('message-info')) messageType = 'info';
+      else if (msg.classList.contains('message-warning')) messageType = 'warning';
+      else if (msg.classList.contains('message-error')) messageType = 'error';
+      else if (msg.classList.contains('message-user')) messageType = 'user';
+      else if (msg.classList.contains('message-agent-response')) messageType = 'response';
+      
+      // Sync button state to actual DOM state
+      syncButtonStateToDOM(msg, messageType);
+    });
+    console.log('[DEBUG][updateAllMessageStates] Synced all button states to DOM after global toggle');
+  }, 200); // Longer delay to ensure all state changes are complete
+  
   if (window.updateAllButtonStates) {
     window.updateAllButtonStates();
   }
@@ -1932,7 +1974,7 @@ function escapeHTML(str) {
 function convertPathsToLinks(str) {
   function generateLinks(match) {
     const parts = match.split("/");
-    if (!parts[0]) parts.shift(); // drop empty element left of first “/”
+    if (!parts[0]) parts.shift(); // drop empty element left of first "
     let conc = "";
     let html = "";
     for (const part of parts) {
@@ -1957,7 +1999,7 @@ function convertPathsToLinks(str) {
   return str
     .split(tagRegex) // keep tags & text separate
     .map((chunk) => {
-      // if it *starts* with '<', it’s a tag -> leave untouched
+      // if it *starts* with '<', it's a tag -> leave untouched
       if (chunk.startsWith("<")) return chunk;
       // otherwise run your link-generation
       return chunk.replace(pathRegex, generateLinks);
@@ -2171,16 +2213,14 @@ function setMessageState(msg, newState) {
     newState = 'expanded';
     console.log('[PATCH] setMessageState: Forcing expanded for streaming agent-response in fixed height mode');
   }
-  // --- PATCH: Never compact the last agent response message in fixed height mode ---
+  // --- PATCH: Never compact agent response messages in fixed height mode ---
   if (
     isFixedHeightGlobal &&
     msg.classList.contains('message-agent-response')
   ) {
-    const allAgentResponses = Array.from(document.querySelectorAll('.message-agent-response'));
-    const isLastAgentResponse = allAgentResponses.length > 0 && allAgentResponses[allAgentResponses.length - 1] === msg;
-    if (isLastAgentResponse && !msg.classList.contains('message-collapsed')) {
+    if (!msg.classList.contains('message-collapsed')) {
       newState = 'expanded';
-      console.log('[PATCH] setMessageState: Forcing expanded for last agent-response in fixed height mode');
+      console.log('[PATCH] setMessageState: Forcing expanded for agent-response in fixed height mode');
     }
   }
   // Only update if the state is actually changing
@@ -2253,18 +2293,16 @@ function finalizeMessageState(messageDiv, type) {
     console.log('[PATCH] finalizeMessageState: Forcing expanded for streaming agent-response in fixed height mode');
     return;
   }
-  // --- PATCH: Always expand the last agent response message in fixed height mode ---
+  // --- PATCH: Always expand agent response messages in fixed height mode ---
   if (
     isFixedHeightGlobal &&
     messageDiv.classList.contains('message-agent-response')
   ) {
-    const allAgentResponses = Array.from(document.querySelectorAll('.message-agent-response'));
-    const isLastAgentResponse = allAgentResponses.length > 0 && allAgentResponses[allAgentResponses.length - 1] === messageDiv;
-    if (isLastAgentResponse && !messageDiv.classList.contains('message-collapsed')) {
+    if (!messageDiv.classList.contains('message-collapsed')) {
       setMessageState(messageDiv, 'expanded');
-      // --- PATCH: Sync button state after forcing expanded ---
+      // Sync button state after forcing expanded
       syncButtonStateToDOM(messageDiv, 'response');
-      console.log('[PATCH] finalizeMessageState: Forcing expanded for last agent-response in fixed height mode');
+      console.log('[PATCH] finalizeMessageState: Forcing expanded for agent-response in fixed height mode');
       return;
     }
   }
@@ -2352,16 +2390,27 @@ function syncButtonStateToDOM(messageElement, messageType) {
   // Find the height button for this message
   const heightBtn = messageElement.querySelector('.message-height-btn');
   if (!heightBtn) return;
+  
   // Determine if the message is currently expanded or compact
   const isExpanded = messageElement.classList.contains('message-expanded');
   const isCompact = messageElement.classList.contains('message-compact');
-  // Set the button state to match the DOM
-  // If expanded, set isActive=true for expand button; if compact, set isActive=false
-  // (This logic may be inverted depending on icon logic)
-  // For clarity, log the sync
-  console.log(`[DEBUG][syncButtonStateToDOM] messageType=${messageType} isExpanded=${isExpanded} isCompact=${isCompact} classList=${messageElement.className}`);
+  const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+  
+  // For agent response messages in fixed height mode, the button state should reflect
+  // the actual DOM state (which is always expanded) rather than localStorage
+  let buttonShouldBeActive = isExpanded;
+  
+  // For other message types, use localStorage preference unless we're syncing to DOM
+  if (messageType !== 'response' || !isFixedHeightGlobal || !messageElement.classList.contains('message-agent-response')) {
+    // For non-agent-response messages, we still want to sync to actual DOM state
+    // This ensures buttons reflect reality after page load
+    buttonShouldBeActive = isExpanded;
+  }
+  
+  console.log(`[DEBUG][syncButtonStateToDOM] messageType=${messageType} isExpanded=${isExpanded} buttonActive=${buttonShouldBeActive} fixedHeight=${isFixedHeightGlobal}`);
+  
   // Use updateButtonState to update the button
-  updateButtonState(heightBtn, isExpanded, messageType, 'height');
+  updateButtonState(heightBtn, buttonShouldBeActive, messageType, 'height');
 }
 
 // Patch: On page load, after all messages are finalized, sync all button states to DOM state
@@ -2385,68 +2434,115 @@ window.addEventListener('DOMContentLoaded', () => {
   }, 500); // Delay to ensure all messages are rendered
 });
 
-// On page load, after all messages are rendered, for each message type, set the DOM state to match the localStorage preference
+// On page load, after all messages are rendered, set DOM state and sync button states
 window.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     const messageTypes = ['agent', 'response', 'tool', 'code_exe', 'browser', 'info', 'warning', 'error', 'user', 'default'];
+    const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
+    
     messageTypes.forEach(type => {
       const messageSelector = getMessageSelectorForType(type);
       const allMessagesOfType = document.querySelectorAll(messageSelector);
-      const isFixedHeightGlobal = localStorage.getItem('fixedHeight') === 'true';
-      const pref = localStorage.getItem(`msgFullHeight_${type}`) === 'true';
+      const prefValue = localStorage.getItem(`msgFullHeight_${type}`);
+      const pref = prefValue === 'true';
+      const hasPreference = prefValue !== null;
+      
       allMessagesOfType.forEach(msg => {
+        // Clear any state locks from page load
         if (msg.classList.contains('state-lock')) msg.classList.remove('state-lock');
+        if (msg.classList.contains('message-temp')) msg.classList.remove('message-temp');
+        
         if (isFixedHeightGlobal) {
-          // --- PATCH: Forcibly clear state-lock and message-temp, mark as initialized ---
-          if (msg.classList.contains('state-lock')) {
-            msg.classList.remove('state-lock');
-            console.log(`[DEBUG][DOMContentLoaded] Forcibly removed state-lock from id/class=${msg.id || msg.className}`);
+          // In fixed height mode, agent responses auto-expand regardless of preference
+          if (type === 'response' && msg.classList.contains('message-agent-response')) {
+            msg.classList.remove('message-compact');
+            msg.classList.add('message-expanded');
+            msg.style.setProperty('height', 'auto', 'important');
+            msg.style.setProperty('max-height', 'none', 'important');
+            msg.style.setProperty('overflow-y', 'visible', 'important');
+            msg.style.setProperty('overflow-x', 'auto', 'important');
+            msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
+            console.log(`[DEBUG][DOMContentLoaded] Auto-expanded agent response: ${msg.id || msg.className}`);
+          } else {
+            // For other message types in fixed height mode, use localStorage preference if available
+            // Otherwise let determineMessageState decide based on content size
+            if (hasPreference && pref) {
+              msg.classList.remove('message-compact');
+              msg.classList.add('message-expanded');
+              msg.style.setProperty('height', 'auto', 'important');
+              msg.style.setProperty('max-height', 'none', 'important');
+              msg.style.setProperty('overflow-y', 'visible', 'important');
+              msg.style.setProperty('overflow-x', 'auto', 'important');
+              msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
+            } else if (hasPreference && !pref) {
+              msg.classList.remove('message-expanded');
+              msg.classList.add('message-compact');
+              msg.style.setProperty('max-height', '400px', 'important');
+              msg.style.setProperty('overflow-y', 'auto', 'important');
+              msg.style.setProperty('overflow-x', 'auto', 'important');
+              msg.style.setProperty('scrollbar-gutter', 'stable', 'important');
+            } else {
+              // No preference set, let determineMessageState decide later
+              // For now, default to expanded and let the system optimize
+              msg.classList.remove('message-compact');
+              msg.classList.add('message-expanded');
+              msg.style.setProperty('height', 'auto', 'important');
+              msg.style.setProperty('max-height', 'none', 'important');
+              msg.style.setProperty('overflow-y', 'visible', 'important');
+              msg.style.setProperty('overflow-x', 'auto', 'important');
+              msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
+            }
           }
-          if (msg.classList.contains('message-temp')) {
-            msg.classList.remove('message-temp');
-            console.log(`[DEBUG][DOMContentLoaded] Forcibly removed message-temp from id/class=${msg.id || msg.className}`);
-          }
-          msg.setAttribute('data-initialized', 'true');
-          // Let the normal logic handle this
-          return;
-        }
-        if (pref) {
-          msg.classList.remove('message-compact');
-          msg.classList.add('message-expanded');
-          msg.style.setProperty('height', 'auto', 'important');
-          msg.style.setProperty('max-height', 'none', 'important');
-          msg.style.setProperty('overflow-y', 'visible', 'important');
-          msg.style.setProperty('overflow-x', 'auto', 'important');
-          msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
-          console.log(`[DEBUG][DOMContentLoaded] Set message to expanded for id/class=${msg.id || msg.className} type=${type}`);
         } else {
-          msg.classList.remove('message-expanded');
-          msg.classList.add('message-compact');
-          msg.style.setProperty('max-height', '400px', 'important');
-          msg.style.setProperty('overflow-y', 'auto', 'important');
-          msg.style.setProperty('overflow-x', 'auto', 'important');
-          msg.style.setProperty('scrollbar-gutter', 'stable', 'important');
-          console.log(`[DEBUG][DOMContentLoaded] Set message to compact for id/class=${msg.id || msg.className} type=${type}`);
+          // In long-form mode (fixed height OFF), all messages should be expanded by default
+          // unless user has specifically set a preference to compact them
+          if (hasPreference && !pref) {
+            // User has explicitly set this message type to compact in long-form mode
+            msg.classList.remove('message-expanded');
+            msg.classList.add('message-compact');
+            msg.style.setProperty('max-height', '400px', 'important');
+            msg.style.setProperty('overflow-y', 'auto', 'important');
+            msg.style.setProperty('overflow-x', 'auto', 'important');
+            msg.style.setProperty('scrollbar-gutter', 'stable', 'important');
+          } else {
+            // Default to expanded in long-form mode (fixed height OFF)
+            // This includes both: no preference set, or preference set to expanded
+            msg.classList.remove('message-compact');
+            msg.classList.add('message-expanded');
+            msg.style.setProperty('height', 'auto', 'important');
+            msg.style.setProperty('max-height', 'none', 'important');
+            msg.style.setProperty('overflow-y', 'visible', 'important');
+            msg.style.setProperty('overflow-x', 'auto', 'important');
+            msg.style.setProperty('scrollbar-gutter', 'auto', 'important');
+          }
         }
-        syncButtonStateToDOM(msg, type);
-        // --- PATCH: Mark as initialized and clear state-lock ---
-        msg.removeAttribute('state-lock');
-        msg.removeAttribute('data-state-lock');
-        msg.classList.remove('state-lock');
+        
+        // Mark as initialized
         msg.setAttribute('data-initialized', 'true');
-        console.log(`[DEBUG][DOMContentLoaded] Cleared state-lock and set data-initialized for id/class=${msg.id || msg.className}`);
+        const finalState = msg.classList.contains('message-expanded') ? 'expanded' : 'compact';
+        console.log(`[DEBUG][DOMContentLoaded] Initialized ${type} message: ${msg.id || msg.className} state=${finalState} fixedHeight=${isFixedHeightGlobal} hasPreference=${hasPreference} pref=${pref}`);
       });
     });
-    // After all, remove state-lock from any message not streaming
-    document.querySelectorAll('.message').forEach(msg => {
-      if (!msg.classList.contains('message-temp')) {
-        msg.classList.remove('state-lock');
-        msg.removeAttribute('state-lock');
-        msg.removeAttribute('data-state-lock');
-        msg.setAttribute('data-initialized', 'true');
-        console.log(`[DEBUG][DOMContentLoaded] Final state-lock clear for id/class=${msg.id || msg.className}`);
-      }
-    });
-    console.log('[DEBUG][DOMContentLoaded] Synced all button and DOM states to localStorage preferences after page load.');
+    
+    // Now sync all button states to match the actual DOM state
+    setTimeout(() => {
+      const allMessages = document.querySelectorAll('.message');
+      allMessages.forEach(msg => {
+        let messageType = 'default';
+        if (msg.classList.contains('message-agent')) messageType = 'agent';
+        else if (msg.classList.contains('message-tool')) messageType = 'tool';
+        else if (msg.classList.contains('message-code-exe')) messageType = 'code_exe';
+        else if (msg.classList.contains('message-browser')) messageType = 'browser';
+        else if (msg.classList.contains('message-info')) messageType = 'info';
+        else if (msg.classList.contains('message-warning')) messageType = 'warning';
+        else if (msg.classList.contains('message-error')) messageType = 'error';
+        else if (msg.classList.contains('message-user')) messageType = 'user';
+        else if (msg.classList.contains('message-agent-response')) messageType = 'response';
+        syncButtonStateToDOM(msg, messageType);
+      });
+      console.log('[DEBUG][DOMContentLoaded] Final button state sync completed.');
+    }, 100);
+    
+    console.log('[DEBUG][DOMContentLoaded] Message initialization completed.');
   }, 500); // Delay to ensure all messages are rendered
 });
