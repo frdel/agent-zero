@@ -734,29 +734,8 @@ class Agent:
 
             tool = None  # Initialize tool to None
 
-            # Try getting tool from MCP first
-            try:
-                import python.helpers.mcp_handler as mcp_helper
-
-                mcp_tool_candidate = mcp_helper.MCPConfig.get_instance().get_tool(
-                    self, tool_name
-                )
-                if mcp_tool_candidate:
-                    tool = mcp_tool_candidate
-            except ImportError:
-                PrintStyle(
-                    background_color="black", font_color="yellow", padding=True
-                ).print("MCP helper module not found. Skipping MCP tool lookup.")
-            except Exception as e:
-                PrintStyle(
-                    background_color="black", font_color="red", padding=True
-                ).print(f"Failed to get MCP tool '{tool_name}': {e}")
-
-            # Fallback to local get_tool if MCP tool was not found or MCP lookup failed
-            if not tool:
-                tool = self.get_tool(
-                    name=tool_name, method=tool_method, args=tool_args, message=msg
-                )
+            # 优化：改进工具查找逻辑，优先考虑MCP工具
+            tool = self._find_best_tool(tool_name, tool_method, tool_args, msg)
 
             if tool:
                 await self.handle_intervention()
@@ -801,6 +780,120 @@ class Agent:
 
         except Exception as e:
             pass
+
+    def _find_best_tool(self, tool_name: str, tool_method: str | None, tool_args: dict, message: str):
+        """优化的工具查找方法，优先考虑MCP工具"""
+
+        # 1. 首先尝试MCP工具（包括模糊匹配）
+        mcp_tool = self._try_mcp_tool(tool_name, tool_method)
+        if mcp_tool:
+            return mcp_tool
+
+        # 2. 尝试本地工具
+        local_tool = self.get_tool(
+            name=tool_name, method=tool_method, args=tool_args, message=message
+        )
+
+        # 3. 如果本地工具是Unknown，尝试MCP工具的模糊匹配
+        if local_tool.__class__.__name__ == 'Unknown':
+            fuzzy_mcp_tool = self._try_fuzzy_mcp_match(tool_name)
+            if fuzzy_mcp_tool:
+                return fuzzy_mcp_tool
+
+        return local_tool
+
+    def _try_mcp_tool(self, tool_name: str, tool_method: str | None):
+        """尝试获取MCP工具"""
+        try:
+            import python.helpers.mcp_handler as mcp_helper
+
+            # 直接匹配
+            mcp_tool = mcp_helper.MCPConfig.get_instance().get_tool(self, tool_name)
+            if mcp_tool:
+                return mcp_tool
+
+            # 如果有方法名，尝试组合匹配
+            if tool_method:
+                combined_name = f"{tool_name}_{tool_method}"
+                mcp_tool = mcp_helper.MCPConfig.get_instance().get_tool(self, combined_name)
+                if mcp_tool:
+                    return mcp_tool
+
+        except ImportError:
+            PrintStyle(
+                background_color="black", font_color="yellow", padding=True
+            ).print("MCP helper module not found. Skipping MCP tool lookup.")
+        except Exception as e:
+            PrintStyle(
+                background_color="black", font_color="red", padding=True
+            ).print(f"Failed to get MCP tool '{tool_name}': {e}")
+
+        return None
+
+    def _try_fuzzy_mcp_match(self, tool_name: str):
+        """尝试MCP工具的模糊匹配"""
+        try:
+            import python.helpers.mcp_handler as mcp_helper
+
+            mcp_config = mcp_helper.MCPConfig.get_instance()
+
+            # 获取所有可用的MCP工具
+            all_tools = []
+            for server in mcp_config.servers:
+                if not server.disabled:
+                    server_tools = server.get_tools()
+                    for tool in server_tools:
+                        all_tools.append(f"{server.name}.{tool.get('name', '')}")
+
+            # 模糊匹配
+            best_match = self._find_best_fuzzy_match(tool_name, all_tools)
+            if best_match:
+                PrintStyle(
+                    background_color="blue", font_color="white", padding=True
+                ).print(f"Using fuzzy matched MCP tool: {best_match} for requested: {tool_name}")
+
+                return mcp_helper.MCPConfig.get_instance().get_tool(self, best_match)
+
+        except Exception as e:
+            print(f"Error in fuzzy MCP matching: {e}")
+
+        return None
+
+    def _find_best_fuzzy_match(self, target: str, candidates: list) -> str | None:
+        """找到最佳的模糊匹配"""
+        target_lower = target.lower()
+        best_match = None
+        best_score = 0
+
+        for candidate in candidates:
+            candidate_lower = candidate.lower()
+
+            # 计算相似度分数
+            score = 0
+
+            # 完全匹配
+            if target_lower == candidate_lower:
+                return candidate
+
+            # 包含匹配
+            if target_lower in candidate_lower:
+                score += 0.8
+            elif candidate_lower in target_lower:
+                score += 0.6
+
+            # 单词匹配
+            target_words = target_lower.split('_')
+            candidate_words = candidate_lower.split('.')[-1].split('_')  # 只考虑工具名部分
+
+            common_words = set(target_words) & set(candidate_words)
+            if common_words:
+                score += len(common_words) / max(len(target_words), len(candidate_words)) * 0.5
+
+            if score > best_score and score > 0.5:  # 最低相似度阈值
+                best_score = score
+                best_match = candidate
+
+        return best_match
 
     def get_tool(
         self, name: str, method: str | None, args: dict, message: str, **kwargs
