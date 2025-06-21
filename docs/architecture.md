@@ -2,11 +2,79 @@
 Agent Zero is built on a flexible and modular architecture designed for extensibility and customization. This section outlines the key components and the interactions between them.
 
 ## System Architecture
-This simplified diagram illustrates the hierarchical relationship between agents and their interaction with tools, extensions, instruments, prompts, memory and knowledge base.
+This diagram provides a comprehensive overview of Agent Zero's architecture, detailing the main components, their interactions, and how the backend system operates within a Docker environment. It shows the flow from user interfaces to the backend, interactions with external services like LLMs, and the relationships between internal modules such as the Core Agent, API Layer, Tooling System, Memory & Knowledge System, and more.
 
-![Agent Zero Architecture](res/arch-01.svg)
+```mermaid
+graph TD
+    %% Level 1: Overview
+    subgraph User_Interfaces
+        WebUI["Web UI (webui/)"]
+        CLI["CLI (run_cli.py)"]
+    end
 
-The user or Agent 0 is at the top of the hierarchy, delegating tasks to subordinate agents, which can further delegate to other agents. Each agent can utilize tools and access the shared assets (prompts, memory, knowledge, extensions and instruments) to perform its tasks.
+    subgraph Backend_System_Docker ["Backend System (Runs in Docker)"]
+        direction LR
+        %% Level 2: Backend Breakdown
+        subgraph Core_Agent_Logic ["Core Agent (agent.py)"]
+            Agent["Agent"]
+        end
+        APILayer["API Layer (python/api/)"]
+        ToolingSystem["Tooling System (python/tools/, instruments/)"]
+        MemoryKnowledge["Memory & Knowledge System (memory/, knowledge/, python/helpers/memory.py, python/helpers/rag.py)"]
+        ConfigInit["Configuration & Initialization (models.py, settings.json, .env, initialize.py)"]
+        PromptMgmt["Prompt Management (prompts/)"]
+        ExtensionSystem["Extension System (python/extensions/)"]
+    end
+
+    subgraph External_Services
+        LLMs["Large Language Models (OpenAI, Ollama, etc.)"]
+        Web["Web (for knowledge_tool, SearXNG)"]
+    end
+
+    %% Level 1 Connections
+    WebUI -- "User Input/Requests" --> APILayer
+    CLI -- "User Commands" --> Backend_System_Docker %% CLI might bypass API layer for some direct calls or use a similar internal interface
+
+    %% Level 3: Key Interactions within Backend and with External Services
+
+    %% User Input Flow
+    APILayer -- "Processed Requests (e.g., /api/message)" --> Agent
+
+    %% Agent Core Operations
+    Agent -- "Uses Tools" --> ToolingSystem
+    Agent -- "Accesses/Updates" --> MemoryKnowledge
+    Agent -- "Sends Prompts & History for Completion" --> LLMs
+    Agent -- "Loads Behavior/Instructions" --> PromptMgmt
+    Agent -- "Utilizes" --> ExtensionSystem
+    Agent -- "Reads Configuration" --> ConfigInit
+
+    %% Tooling System Interactions
+    ToolingSystem -- "Executes Code/Accesses Web" --> Web %% For tools like code_execution, webpage_content, knowledge_tool
+    ToolingSystem -- "Reads/Writes" --> MemoryKnowledge %% e.g., memory_save tool
+    ToolingSystem -- "May Use" --> LLMs %% Some tools might directly call LLMs
+
+    %% Data Stores & Config
+    MemoryKnowledge -- "Stores Embeddings, Facts, History" --> Backend_System_Docker %% Represents storage within Docker volume
+    PromptMgmt -- "Provides System/Tool Prompts" --> Agent
+    ConfigInit -- "Provides Settings, Model Configs" --> Agent
+    ConfigInit -- "Provides Settings" --> APILayer %% API might need settings for auth, etc.
+    ConfigInit -- "Provides Settings" --> ToolingSystem %% Tools might need API keys from settings
+
+    %% External Service Interactions
+    Backend_System_Docker -- "API Calls" --> LLMs
+    Backend_System_Docker -- "HTTP Requests (via Tools)" --> Web
+
+    %% Styling (Optional - for clarity if needed)
+    classDef docker fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef user_interface fill:#ccf,stroke:#333,stroke-width:2px;
+    classDef external_service fill:#cfc,stroke:#333,stroke-width:2px;
+
+    class Backend_System_Docker docker;
+    class WebUI,CLI user_interface;
+    class LLMs,Web external_service;
+```
+
+The user or Agent 0 (when referring to the primary user-facing agent instance) is at the top of the interaction hierarchy, delegating tasks to subordinate agents if necessary (a capability of the Core Agent). Each agent can utilize tools and access shared assets like prompts, memory, knowledge, extensions, and instruments to perform its tasks. These relationships are further detailed within the Backend System shown in the diagram.
 
 ## Runtime Architecture
 Agent Zero's runtime architecture is built around Docker containers:
