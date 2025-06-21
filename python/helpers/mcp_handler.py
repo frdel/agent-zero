@@ -24,15 +24,12 @@ import json
 from python.helpers import errors
 from python.helpers import settings
 
-import os
-
-# print(f"DEBUG: Listing /opt/venv/lib/python3.11/site-packages/ before mcp import: {os.listdir('/opt/venv/lib/python3.11/site-packages/')}") # This line caused FileNotFoundError, **FOR CUDA CHANGE TO '3.12'**
-
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.client.sse import sse_client
+from mcp.client.streamable_http import streamablehttp_client
 from mcp.shared.message import SessionMessage
-from mcp.types import CallToolResult, ListToolsResult, JSONRPCMessage
+from mcp.types import CallToolResult, ListToolsResult
 from anyio.streams.memory import (
     MemoryObjectReceiveStream,
     MemoryObjectSendStream,
@@ -40,7 +37,6 @@ from anyio.streams.memory import (
 
 from pydantic import BaseModel, Field, Discriminator, Tag, PrivateAttr
 from python.helpers import dirty_json
-from python.helpers.dirty_json import DirtyJson
 from python.helpers.print_style import PrintStyle
 from python.helpers.tool import Tool, Response
 
@@ -55,6 +51,33 @@ def normalize_name(name: str) -> str:
     return name
 
 
+def _determine_server_type(config_dict: dict) -> str:
+    """Determine the server type based on configuration, with backward compatibility."""
+    # First check if type is explicitly specified
+    if "type" in config_dict:
+        server_type = config_dict["type"].lower()
+        if server_type in ["sse", "http-stream", "streaming-http", "streamable-http", "http-streaming"]:
+            return "MCPServerRemote"
+        elif server_type == "stdio":
+            return "MCPServerLocal"
+        # For future types, we could add more cases here
+        else:
+            # For unknown types, fall back to URL-based detection
+            # This allows for graceful handling of new types
+            pass
+
+    # Backward compatibility: if no type specified, use URL-based detection
+    if "url" in config_dict or "serverUrl" in config_dict:
+        return "MCPServerRemote"
+    else:
+        return "MCPServerLocal"
+
+
+def _is_streaming_http_type(server_type: str) -> bool:
+    """Check if the server type is a streaming HTTP variant."""
+    return server_type.lower() in ["http-stream", "streaming-http", "streamable-http", "http-streaming"]
+
+
 def initialize_mcp(mcp_servers_config: str):
     if not MCPConfig.get_instance().is_initialized():
         try:
@@ -67,11 +90,10 @@ def initialize_mcp(mcp_servers_config: str):
                 content=f"Failed to update MCP settings: {e}",
                 temp=False,
             )
-            
+
             PrintStyle(
                 background_color="black", font_color="red", padding=True
             ).print(f"Failed to update MCP settings: {e}")
-            
 
 
 class MCPTool(Tool):
@@ -145,9 +167,9 @@ class MCPTool(Tool):
             content = self.agent.last_user_message.content
             if isinstance(content, dict):
                 # Attempt to get a 'message' field, otherwise stringify the dict
-                user_message_text = content.get(
+                user_message_text = str(content.get(
                     "message", json.dumps(content, indent=2)
-                )
+                ))
             elif isinstance(content, str):
                 user_message_text = content
             else:
@@ -163,27 +185,6 @@ class MCPTool(Tool):
             user_message_text = (
                 user_message_text[:max_user_context_len] + "... (truncated)"
             )
-
-        # commented out for now, output should be unified between tools and MCPs
-
-        #         contextual_block = f"""
-        # \n--- End of Results for MCP Tool: {self.name} ---
-
-        # **Original Tool Call Details:**
-        # *   **Tool:** `{self.name}`
-        # *   **Arguments Given:**
-        #     ```json
-        # {json.dumps(self.args, indent=2)}
-        #     ```
-
-        # **Related User Request Context:**
-        # {user_message_text}
-
-        # **Next Steps Reminder for {self.name}:**
-        # If this action is part of an ongoing sequence, consider the next step with this tool or another appropriate tool. If the sequence is complete or this was a one-off action, analyze the final output and report to the user or proceed with the overall plan.
-        # """
-
-        #         final_text_for_agent = raw_tool_response + contextual_block
 
         final_text_for_agent = raw_tool_response
 
@@ -210,6 +211,7 @@ class MCPTool(Tool):
 class MCPServerRemote(BaseModel):
     name: str = Field(default_factory=str)
     description: Optional[str] = Field(default="Remote SSE Server")
+    type: str = Field(default="sse", description="Server connection type")
     url: str = Field(default_factory=str)
     headers: dict[str, Any] | None = Field(default_factory=dict[str, Any])
     init_timeout: int = Field(default=0)
@@ -256,6 +258,7 @@ class MCPServerRemote(BaseModel):
                 if key in [
                     "name",
                     "description",
+                    "type",
                     "url",
                     "serverUrl",
                     "headers",
@@ -280,6 +283,7 @@ class MCPServerRemote(BaseModel):
 class MCPServerLocal(BaseModel):
     name: str = Field(default_factory=str)
     description: Optional[str] = Field(default="Local StdIO Server")
+    type: str = Field(default="stdio", description="Server connection type")
     command: str = Field(default_factory=str)
     args: list[str] = Field(default_factory=list)
     env: dict[str, str] | None = Field(default_factory=dict[str, str])
@@ -331,6 +335,7 @@ class MCPServerLocal(BaseModel):
                 if key in [
                     "name",
                     "description",
+                    "type",
                     "command",
                     "args",
                     "env",
@@ -356,7 +361,7 @@ MCPServer = Annotated[
         Annotated[MCPServerRemote, Tag("MCPServerRemote")],
         Annotated[MCPServerLocal, Tag("MCPServerLocal")],
     ],
-    Discriminator(lambda v: "MCPServerRemote" if "url" in v else "MCPServerLocal"),
+    Discriminator(_determine_server_type),
 ]
 
 
@@ -370,9 +375,9 @@ class MCPConfig(BaseModel):
     @classmethod
     def get_instance(cls) -> "MCPConfig":
         # with cls.__lock:
-            if cls.__instance is None:
-                cls.__instance = cls(servers_list=[])
-            return cls.__instance
+        if cls.__instance is None:
+            cls.__instance = cls(servers_list=[])
+        return cls.__instance
 
     @classmethod
     def wait_for_lock(cls):
@@ -660,7 +665,7 @@ class MCPConfig(BaseModel):
                 if server.name == server_name:
                     try:
                         tools = server.get_tools()
-                    except Exception as e:
+                    except Exception:
                         tools = []
                     return {
                         "name": server.name,
@@ -718,40 +723,9 @@ class MCPConfig(BaseModel):
                         # f"#### Arguments:\n"
                     )
 
-                    tool_args = ""
                     input_schema = (
                         json.dumps(tool["input_schema"]) if tool["input_schema"] else ""
                     )
-                    # properties: dict[str, Any] = tool["input_schema"]["properties"]
-                    # for key, value in properties.items():
-                    #     optional = False
-                    #     examples = ""
-                    #     description = ""
-                    #     type = ""
-                    #     if "anyOf" in value:
-                    #         for nested_value in value["anyOf"]:
-                    #             if "type" in nested_value and nested_value["type"] != "null":
-                    #                 optional = True
-                    #                 value = nested_value
-                    #                 break
-                    #     tool_args += f"            \"{key}\": \"...\",\n"
-                    #     if "examples" in value:
-                    #         examples = f"(examples: {value['examples']})"
-                    #     if "description" in value:
-                    #         description = f": {value['description']}"
-                    #     if "type" in value:
-                    #         if optional:
-                    #             type = f"{value['type']}, optional"
-                    #         else:
-                    #             type = f"{value['type']}"
-                    #     else:
-                    #         if optional:
-                    #             type = "string, optional"
-                    #         else:
-                    #             type = "string"
-                    #     prompt += (
-                    #         f" * {key} ({type}){description} {examples}\n"
-                    #     )
 
                     prompt += f"#### Input schema for tool_args:\n{input_schema}\n"
 
@@ -1047,6 +1021,11 @@ class MCPClientLocal(MCPClientBase):
 
 class MCPClientRemote(MCPClientBase):
 
+    def __init__(self, server: Union[MCPServerLocal, MCPServerRemote]):
+        super().__init__(server)
+        self.session_id: Optional[str] = None  # Track session ID for streaming HTTP clients
+        self.session_id_callback: Optional[Callable[[], Optional[str]]] = None
+
     async def _create_stdio_transport(
         self, current_exit_stack: AsyncExitStack
     ) -> tuple[
@@ -1056,12 +1035,43 @@ class MCPClientRemote(MCPClientBase):
         """Connect to an MCP server, init client and save stdio/write streams"""
         server: MCPServerRemote = cast(MCPServerRemote, self.server)
         set = settings.get_settings()
-        stdio_transport = await current_exit_stack.enter_async_context(
-            sse_client(
-                url=server.url,
-                headers=server.headers,
-                timeout=server.init_timeout or set["mcp_client_init_timeout"],
-                sse_read_timeout=server.tool_timeout or set["mcp_client_tool_timeout"],
+
+        # Use lower timeouts for faster failure detection
+        init_timeout = min(server.init_timeout or set["mcp_client_init_timeout"], 5)
+        tool_timeout = min(server.tool_timeout or set["mcp_client_tool_timeout"], 10)
+
+        # Check if this is a streaming HTTP type
+        if _is_streaming_http_type(server.type):
+            # Use streamable HTTP client
+            transport_result = await current_exit_stack.enter_async_context(
+                streamablehttp_client(
+                    url=server.url,
+                    headers=server.headers,
+                    timeout=timedelta(seconds=init_timeout),
+                    sse_read_timeout=timedelta(seconds=tool_timeout),
+                )
             )
-        )
-        return stdio_transport
+            # streamablehttp_client returns (read_stream, write_stream, get_session_id_callback)
+            read_stream, write_stream, get_session_id_callback = transport_result
+
+            # Store session ID callback for potential future use
+            self.session_id_callback = get_session_id_callback
+
+            return read_stream, write_stream
+        else:
+            # Use traditional SSE client (default behavior)
+            stdio_transport = await current_exit_stack.enter_async_context(
+                sse_client(
+                    url=server.url,
+                    headers=server.headers,
+                    timeout=init_timeout,
+                    sse_read_timeout=tool_timeout,
+                )
+            )
+            return stdio_transport
+
+    def get_session_id(self) -> Optional[str]:
+        """Get the current session ID if available (for streaming HTTP clients)."""
+        if self.session_id_callback is not None:
+            return self.session_id_callback()
+        return None
