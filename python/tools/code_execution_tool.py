@@ -194,6 +194,8 @@ class CodeExecution(Tool):
         dialog_timeout=5,  # potential dialog detection timeout
         max_exec_timeout=180,  # hard cap on total runtime
         sleep_time=0.1,
+        chunk_size=100,  # Size of chunk to check for repeating patterns
+        repeat_threshold=10,  # Number of repetitions to trigger loop detection
     ):
         # Common shell prompt regex patterns (add more as needed)
         prompt_patterns = [
@@ -235,6 +237,34 @@ class CodeExecution(Tool):
                 self.log.update(content=truncated_output)
                 last_output_time = now
                 got_output = True
+
+                # --- Check for repeating output pattern ---
+                required_len = chunk_size * repeat_threshold
+                if len(full_output) >= required_len:
+                    check_segment = full_output[-required_len:]
+                    last_chunk = full_output[-chunk_size:]
+                    expected_segment = last_chunk * repeat_threshold
+                    if check_segment == expected_segment:
+                        loop_detected_msg = f"Detected repeating output pattern (last {chunk_size} chars repeated {repeat_threshold} times), likely an infinite loop."
+                        PrintStyle.error(f"{loop_detected_msg} Resetting session {session}.")
+
+                        # --- Truncate output for feedback ---
+                        max_output_length = 2048
+                        truncated_output = full_output[-max_output_length:]
+                        if len(full_output) > max_output_length:
+                            summary_prefix = f"[... Output truncated to last {max_output_length} characters ...]\n"
+                            truncated_output = summary_prefix + truncated_output
+                        else:
+                            summary_prefix = ""
+                        # --- End of truncation ---
+
+                        self.log.update(content=truncated_output + f"\n--- LOOP DETECTED --- Session {session} reset.")
+                        # Automatically reset the problematic session
+                        reset_reason = f"Detected repeating output pattern (last {chunk_size} chars repeated {repeat_threshold} times)"
+                        await self.reset_terminal(session=session, reason=reset_reason)
+                        # Return informative message to the agent with truncated output and pattern
+                        return f"{truncated_output}\n--- LOOP DETECTED & SESSION RESET ---\n{loop_detected_msg}\nRepeating pattern identified: '{last_chunk[:128]}{'...' if len(last_chunk)>128 else ''}'\nThe terminal session {session} was automatically reset.\nPlease review the code or command that caused the loop to prevent recurrence."
+                # --- End of repetition check ---
 
                 # Check for shell prompt at the end of output
                 last_lines = (
