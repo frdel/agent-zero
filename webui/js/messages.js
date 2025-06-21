@@ -1,5 +1,6 @@
 // copy button
 import { openImageModal } from "./image_modal.js";
+import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
 
 function createCopyButton() {
   const button = document.createElement("button");
@@ -12,11 +13,11 @@ function createCopyButton() {
     let textToCopy;
 
     if (container.classList.contains("kvps-row")) {
-      textToCopy = container.querySelector(".kvps-val").textContent;
+      textToCopy = container.querySelector(".kvps-val").innerText;
     } else if (container.classList.contains("message-text")) {
-      textToCopy = container.querySelector("span").textContent;
+      textToCopy = container.querySelector("span").innerText;
     } else {
-      textToCopy = container.querySelector("span").textContent;
+      textToCopy = container.querySelector("span").innerText;
     }
 
     try {
@@ -83,43 +84,64 @@ export function _drawMessage(
   kvps = null,
   messageClasses = [],
   contentClasses = [],
-  latex = false
+  latex = false,
+  markdown = false
 ) {
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", ...messageClasses);
 
   if (heading) {
     const headingElement = document.createElement("h4");
+    headingElement.classList.add("msg-heading");
     headingElement.textContent = heading;
     messageDiv.appendChild(headingElement);
   }
 
-  drawKvps(messageDiv, kvps, latex);
+  drawKvps(messageDiv, kvps, false);
 
   if (content && content.trim().length > 0) {
-    const preElement = document.createElement("pre");
-    preElement.classList.add("msg-content", ...contentClasses);
-    preElement.style.whiteSpace = "pre-wrap";
-    preElement.style.wordBreak = "break-word";
+    if (markdown) {
+      const contentDiv = document.createElement("div");
+      contentDiv.classList.add("msg-content", ...contentClasses);
 
-    const spanElement = document.createElement("span");
-    spanElement.innerHTML = convertHTML(content);
+      const spanElement = document.createElement("span"); // Wrapper span
+      let processedContent = content;
 
-    // Add click handler for small screens
-    spanElement.addEventListener("click", () => {
-      copyText(spanElement.textContent, spanElement);
-    });
+      processedContent = convertImageTags(processedContent);
+      processedContent = convertImgFilePaths(processedContent);
+      processedContent = marked.parse(processedContent, { breaks: true });
+      processedContent = convertPathsToLinks(processedContent);
+      spanElement.innerHTML = processedContent;
 
-    preElement.appendChild(spanElement);
-    addCopyButtonToElement(preElement);
-    messageDiv.appendChild(preElement);
+      // KaTeX rendering for markdown
+      if (latex) {
+        spanElement.querySelectorAll("latex").forEach((element) => {
+          katex.render(element.innerHTML, element, {
+            throwOnError: false,
+          });
+        });
+      }
 
-    // Render LaTeX math within the span
-    if (window.renderMathInElement && latex) {
-      renderMathInElement(spanElement, {
-        delimiters: [{ left: "$", right: "$", display: true }],
-        throwOnError: false,
+      contentDiv.appendChild(spanElement);
+      addCopyButtonToElement(contentDiv);
+      messageDiv.appendChild(contentDiv);
+    } else {
+      const preElement = document.createElement("pre");
+      preElement.classList.add("msg-content", ...contentClasses);
+      preElement.style.whiteSpace = "pre-wrap";
+      preElement.style.wordBreak = "break-word";
+
+      const spanElement = document.createElement("span");
+      spanElement.innerHTML = convertHTML(content);
+
+      // Add click handler for small screens
+      spanElement.addEventListener("click", () => {
+        copyText(spanElement.textContent, spanElement);
       });
+
+      preElement.appendChild(spanElement);
+      addCopyButtonToElement(preElement);
+      messageDiv.appendChild(preElement);
     }
   }
 
@@ -150,6 +172,7 @@ export function drawMessageDefault(
     kvps,
     ["message-ai", "message-default"],
     ["msg-json"],
+    false,
     false
   );
 }
@@ -178,6 +201,7 @@ export function drawMessageAgent(
     kvpsFlat,
     ["message-ai", "message-agent"],
     ["msg-json"],
+    false,
     false
   );
 }
@@ -200,6 +224,7 @@ export function drawMessageResponse(
     null,
     ["message-ai", "message-agent-response"],
     [],
+    true,
     true
   );
 }
@@ -216,13 +241,14 @@ export function drawMessageDelegation(
   _drawMessage(
     messageContainer,
     heading,
-    messageContent,
+    content,
     temp,
     true,
     kvps,
     ["message-ai", "message-agent", "message-agent-delegation"],
     [],
-    true
+    true,
+    false
   );
 }
 
@@ -240,6 +266,7 @@ export function drawMessageUser(
   messageDiv.classList.add("message", "message-user");
 
   const headingElement = document.createElement("h4");
+  headingElement.classList.add("msg-heading");
   headingElement.textContent = "User message";
   messageDiv.appendChild(headingElement);
 
@@ -340,6 +367,7 @@ export function drawMessageTool(
     kvps,
     ["message-ai", "message-tool"],
     ["msg-output"],
+    false,
     false
   );
 }
@@ -362,6 +390,7 @@ export function drawMessageCodeExe(
     null,
     ["message-ai", "message-code-exe"],
     [],
+    false,
     false
   );
 }
@@ -384,6 +413,7 @@ export function drawMessageBrowser(
     kvps,
     ["message-ai", "message-browser"],
     ["msg-json"],
+    false,
     false
   );
 }
@@ -407,6 +437,7 @@ export function drawMessageAgentPlain(
     kvps,
     [...classes],
     [],
+    false,
     false
   );
   messageContainer.classList.add("center-container");
@@ -451,6 +482,7 @@ export function drawMessageUtil(
     kvps,
     ["message-util"],
     ["msg-json"],
+    false,
     false
   );
   messageContainer.classList.add("center-container");
@@ -554,12 +586,14 @@ function drawKvps(container, kvps, latex) {
             copyText(span.textContent, span);
           });
 
-          if (window.renderMathInElement && latex) {
-            renderMathInElement(span, {
-              delimiters: [{ left: "$", right: "$", display: true }],
-              throwOnError: false,
-            });
-          }
+      // KaTeX rendering for markdown
+      if (latex) {
+        span.querySelectorAll("latex").forEach((element) => {
+          katex.render(element.innerHTML, element, {
+            throwOnError: false,
+          });
+        });
+      }
         }
       }
       //   } else {
@@ -618,9 +652,13 @@ function convertHTML(str) {
   if (typeof str !== "string") str = JSON.stringify(str, null, 2);
 
   let result = escapeHTML(str);
-  result = convertPathsToLinks(result);
   result = convertImageTags(result);
+  result = convertPathsToLinks(result);
   return result;
+}
+
+function convertImgFilePaths(str) {
+  return str.replace("img://", "/image_get?path=");
 }
 
 function escapeHTML(str) {
@@ -635,25 +673,65 @@ function escapeHTML(str) {
 }
 
 function convertPathsToLinks(str) {
-  function generateLinks(match, ...args) {
+  function generateLinks(match) {
     const parts = match.split("/");
-
-    if (!parts[0]) parts.shift();
+    if (!parts[0]) parts.shift(); // drop empty element left of first “/”
     let conc = "";
     let html = "";
-    for (let part of parts) {
+    for (const part of parts) {
       conc += "/" + part;
       html += `/<a href="#" class="path-link" onclick="openFileLink('${conc}');">${part}</a>`;
     }
     return html;
   }
 
-  const prefix = `(?:^|[ \`'"\\n]|&#39;|&quot;)`; // Use a non-capturing group for OR logic
-  const folder = `[a-zA-Z0-9_\\/.\\-]`; // Characters allowed in folder chain
-  const file = `[a-zA-Z0-9_\\-\\/]`; // Characters allowed in file names
+  const prefix = `(?:^|[> \`'"\\n]|&#39;|&quot;)`;
+  const folder = `[a-zA-Z0-9_\\/.\\-]`;
+  const file = `[a-zA-Z0-9_\\-\\/]`;
   const suffix = `(?<!\\.)`;
+  const pathRegex = new RegExp(
+    `(?<=${prefix})\\/${folder}*${file}${suffix}`,
+    "g"
+  );
 
-  const regex = new RegExp(`(?<=${prefix})\\/${folder}*${file}${suffix}`, "g");
+  // skip paths inside html tags, like <img src="/path/to/image">
+  const tagRegex = /(<(?:[^<>"']+|"[^"]*"|'[^']*')*>)/g;
 
-  return str.replace(regex, generateLinks);
+  return str
+    .split(tagRegex) // keep tags & text separate
+    .map((chunk) => {
+      // if it *starts* with '<', it’s a tag -> leave untouched
+      if (chunk.startsWith("<")) return chunk;
+      // otherwise run your link-generation
+      return chunk.replace(pathRegex, generateLinks);
+    })
+    .join("");
 }
+
+// function convertPathsToLinksInHtml(htmlString) {
+//   // 1. Parse the input safely
+//   const wrapper = document.createElement("div");
+//   wrapper.innerHTML = htmlString;
+
+//   // 2. Depth-first walk
+//   function walk(node) {
+//     // Skip <script> and <style> blocks entirely
+//     if (node.nodeName === "SCRIPT" || node.nodeName === "STYLE") return;
+
+//     if (node.nodeType === Node.TEXT_NODE) {
+//       const original = node.nodeValue;
+//       const replaced = convertPathsToLinks(original);
+//       if (replaced !== original) {
+//         // Turn the replacement HTML string into real nodes
+//         const frag = document.createRange().createContextualFragment(replaced);
+//         node.replaceWith(frag);
+//       }
+//     } else {
+//       // Recurse into children
+//       for (const child of Array.from(node.childNodes)) walk(child);
+//     }
+//   }
+
+//   walk(wrapper);
+//   return wrapper.innerHTML;
+// }

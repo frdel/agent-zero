@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Set up SSH
 mkdir -p /var/run/sshd && \

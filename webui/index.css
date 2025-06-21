@@ -1,7 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap");
 
 /* Add box-sizing globally for better cross-browser consistency */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -53,6 +55,7 @@
 
   /* Font sizes */
   --font-size-small: 0.8rem;
+  --font-size-smaller: 0.9rem;
   --font-size-normal: 1rem;
   --font-size-large: 1.2rem;
 
@@ -60,7 +63,8 @@
   --border-radius: 1.125rem;
   --transition-speed: 0.3s;
   --svg-filter: brightness(0) saturate(100%) var(--color-primary-filter);
-  --color-primary-filter: invert(73%) sepia(17%) saturate(360%) hue-rotate(177deg) brightness(87%) contrast(85%);
+  --color-primary-filter: invert(73%) sepia(17%) saturate(360%)
+    hue-rotate(177deg) brightness(87%) contrast(85%);
 }
 
 /* Reset and Base Styles */
@@ -78,7 +82,7 @@ html {
   overflow: hidden;
   position: fixed;
   -webkit-font-smoothing: antialiased; /* Improve font rendering */
-  -moz-osx-font-smoothing: grayscale;    /* Improve font rendering */
+  -moz-osx-font-smoothing: grayscale; /* Improve font rendering */
 }
 
 body {
@@ -209,39 +213,39 @@ body,
 
 /* Chats container */
 .chat-container {
-    display: flex;
-    align-items: center;
-    position: relative;
-    width: 100%;
-    min-height: 30px;
-    gap: 0;
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  min-height: 30px;
+  gap: 0;
 }
 
 /* Update the chat-list-button padding to accommodate the vertical layout */
 .chat-list-button {
-    display: block;
-    width: 100%;
-    padding: 8px 5px;
-    cursor: pointer;
-    overflow: hidden;
-    position: relative;
-    border-radius: 4px;
-    transition: background-color 0.2s ease-in-out;
+  display: block;
+  width: 100%;
+  padding: 8px 5px;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  border-radius: 4px;
+  transition: background-color 0.2s ease-in-out;
 }
 
 /* Add some more padding to the list items to accommodate the vertical layout */
 .chat-list-button.has-task-container {
-    padding-top: 6px;
-    padding-bottom: 6px;
+  padding-top: 6px;
+  padding-bottom: 6px;
 }
 
 /* Subtle background on hover for the entire row */
 .chat-list-button:hover {
-    background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .light-mode .chat-list-button:hover {
-    background-color: rgba(0, 0, 0, 0.02);
+  background-color: rgba(0, 0, 0, 0.02);
 }
 
 .chat-name {
@@ -405,12 +409,12 @@ body,
 }
 
 /* Typography */
-h2,
+/* h2,
 h3 {
   color: var(--color-primary);
-}
+} */
 
-h2 {
+/* h2 {
   margin-bottom: var(--spacing-sm);
   margin-top: var(--spacing-lg);
 }
@@ -421,7 +425,7 @@ h3 {
 
 h4 {
   margin: auto 0;
-}
+} */
 
 #a0version {
   color: var(--color-text);
@@ -431,7 +435,7 @@ h4 {
 }
 
 pre {
-  font-family: 'Roboto Mono', monospace;
+  font-family: "Roboto Mono", monospace;
   font-optical-sizing: auto;
   -webkit-font-optical-sizing: auto;
   font-size: 0.75rem;
@@ -519,6 +523,10 @@ pre {
   z-index: 1001;
 }
 
+#progress-bar-box h4 {
+  margin: 0;
+}
+
 #progress-bar-h {
   color: var(--color-primary);
   display: flex;
@@ -526,7 +534,7 @@ pre {
   justify-content: flex-start;
   height: 1.2em;
   text-overflow: ellipsis;
-  white-space: nowrap;       /* Added for text overflow */
+  white-space: nowrap; /* Added for text overflow */
   overflow: hidden;
   font-weight: normal;
 }
@@ -544,11 +552,11 @@ pre {
 
 .shiny-text {
   background: linear-gradient(
-      to right,
-      var(--color-primary-dark) 20%,
-      var(--color-text) 40%,
-      var(--color-text) 60%,
-      var(--color-primary-dark) 60%
+    to right,
+    var(--color-primary-dark) 20%,
+    var(--color-text) 40%,
+    var(--color-text) 60%,
+    var(--color-primary-dark) 60%
   );
   background-size: 200% auto;
   color: transparent;
@@ -566,17 +574,27 @@ pre {
   animation: fadeIn 0.5s;
   -webkit-animation: fadeIn 0.5s;
   margin-bottom: var(--spacing-sm);
+  width: 100%;
+  max-width: 100%;
 }
 
 .message {
   background-color: var(--color-message-bg);
   border-radius: var(--border-radius);
   padding: 0.9rem var(--spacing-md) 0.7rem var(--spacing-md);
+  overflow-x: auto;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: block;
 }
 
 .user-container {
   align-self: flex-end;
   margin: var(--spacing-sm) var(--spacing-md);
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
 }
 
 .ai-container {
@@ -602,7 +620,7 @@ pre {
 
 .message-user > div {
   padding-top: var(--spacing-xs);
-  font-family: 'Roboto Mono', monospace;
+  font-family: "Roboto Mono", monospace;
   font-optical-sizing: auto;
   -webkit-font-optical-sizing: auto;
   font-size: var(--font-size-small);
@@ -724,6 +742,10 @@ pre {
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+.msg-heading {
+  margin: 0;
+}
+
 /* Message Actions */
 .message-actions {
   color: var(--color-text);
@@ -838,10 +860,10 @@ pre {
   border-radius: 8px;
   color: var(--color-text);
   flex-grow: 1;
-  font-family: 'Roboto Mono', monospace;
+  font-family: "Roboto Mono", monospace;
   font-optical-sizing: auto;
   -webkit-font-optical-sizing: auto;
-  font-size: 0.90rem;
+  font-size: 0.9rem;
   max-height: 7rem;
   min-height: 3.05rem;
   width: 100%;
@@ -883,8 +905,8 @@ pre {
 }
 
 #expand-button svg {
-    width: 1.3rem;
-    height: 1.3rem;
+  width: 1.3rem;
+  height: 1.3rem;
 }
 
 #chat-input::-webkit-scrollbar {
@@ -960,7 +982,7 @@ pre {
   opacity: 0.8;
   text-wrap: nowrap;
   width: calc(50% - var(--spacing-xs));
-  float:left;
+  float: left;
   margin: 0 var(--spacing-xs) var(--spacing-xs) 0;
   padding: var(--spacing-sm) 0.75rem;
   max-height: 2.3rem;
@@ -1250,7 +1272,7 @@ pre {
 }
 
 .text-button:active {
- opacity: 0.5;
+  opacity: 0.5;
 }
 
 .text-button svg {
@@ -1266,9 +1288,9 @@ pre {
 /* Chat buttons (Send and Mic) */
 
 #chat-buttons-wrapper {
-    gap: var(--spacing-xs);
-    padding-left: var(--spacing-xs);
-  }
+  gap: var(--spacing-xs);
+  padding-left: var(--spacing-xs);
+}
 
 .chat-button {
   border: none;
@@ -1379,7 +1401,7 @@ pre {
 
 .remove-image {
   -webkit-transform: scale(1.1);
-          transform: scale(1.1);
+  transform: scale(1.1);
 }
 
 /* Toggle Switch */
@@ -1429,8 +1451,8 @@ input:checked + .slider {
 }
 
 input:checked + .slider:before {
-  -webkit-transform: translateX(1.0rem);
-          transform: translateX(1.0rem);
+  -webkit-transform: translateX(1rem);
+  transform: translateX(1rem);
 }
 
 #chat-buttons-wrapper {
@@ -1538,7 +1560,7 @@ input:checked + .slider:before {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.image-viewer-img{
+.image-viewer-img {
   width: 100%;
 }
 
@@ -1614,22 +1636,23 @@ input:checked + .slider:before {
   }
 }
 
-@-webkit-keyframes fadeIn { /* Safari and older Chrome */
+@-webkit-keyframes fadeIn {
+  /* Safari and older Chrome */
   from {
     opacity: 0;
     -webkit-transform: translateY(var(--spacing-sm));
-            transform: translateY(var(--spacing-sm));
+    transform: translateY(var(--spacing-sm));
   }
   to {
     opacity: 1;
     -webkit-transform: translateY(0);
-            transform: translateY(0);
+    transform: translateY(0);
   }
 }
 
 @keyframes shine {
   to {
-      background-position: -200% center;
+    background-position: -200% center;
   }
 }
 
@@ -1672,8 +1695,8 @@ input:checked + .slider:before {
   /* New styles for mobile messages */
 
   .message-followup {
-  margin-left: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
+    margin-left: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
   }
 
   .msg-kvps {
@@ -1706,7 +1729,7 @@ input:checked + .slider:before {
   }
 
   .kvps-val {
-  margin: 0 0 0.4rem 0;
+    margin: 0 0 0.4rem 0;
   }
 }
 
@@ -1813,7 +1836,7 @@ input:checked + .slider:before {
   .msg-content span::after,
   .kvps-val::after,
   .message-text::after {
-    content: 'Copied!';
+    content: "Copied!";
     position: absolute;
     opacity: 0;
     font-family: "Rubik", Arial, Helvetica, sans-serif;
@@ -1880,20 +1903,20 @@ input:checked + .slider:before {
 
 /* Link styling */
 a {
-    color: inherit;
-    /* text-decoration: none; */
+  color: inherit;
+  /* text-decoration: none; */
 }
 
 a:visited {
-    color: inherit;
+  color: inherit;
 }
 
 a:hover {
-    color: inherit;
+  color: inherit;
 }
 
 a:active {
-    color: inherit;
+  color: inherit;
 }
 
 /* Light mode class */
@@ -1912,7 +1935,7 @@ a:active {
 }
 
 .light-mode .msg-kvps tr {
-  border-bottom: 1px solid rgb(192 192 192 / 50%)
+  border-bottom: 1px solid rgb(192 192 192 / 50%);
 }
 
 .light-mode .message-default {
@@ -2034,7 +2057,7 @@ a:active {
 
 .light-mode #logo-container img {
   -webkit-filter: invert(100%) grayscale(100%);
-          filter: invert(100%) grayscale(100%);
+  filter: invert(100%) grayscale(100%);
 }
 
 .light-mode .extension {
@@ -2055,16 +2078,17 @@ a:active {
   }
 }
 
-@-webkit-keyframes fadeIn { /* Safari and older Chrome */
+@-webkit-keyframes fadeIn {
+  /* Safari and older Chrome */
   from {
     opacity: 0;
     -webkit-transform: translateY(var(--spacing-sm));
-            transform: translateY(var(--spacing-sm));
+    transform: translateY(var(--spacing-sm));
   }
   to {
     opacity: 1;
     -webkit-transform: translateY(0);
-            transform: translateY(0);
+    transform: translateY(0);
   }
 }
 
@@ -2096,77 +2120,77 @@ a:active {
 }
 
 .dragdrop-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.85);
-    z-index: 9999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    gap: 1rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .light-mode .dragdrop-overlay {
-    background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.92);
 }
 
 /* Alpine transition classes */
 .transition {
-    transition-property: all;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .duration-300 {
-    transition-duration: 300ms;
+  transition-duration: 300ms;
 }
 
 .opacity-0 {
-    opacity: 0;
+  opacity: 0;
 }
 
 .opacity-100 {
-    opacity: 1;
+  opacity: 1;
 }
 
 /* Rest of dragdrop styles remain the same */
 .dragdrop-icon {
-    width: 128px;
-    height: 128px;
-    opacity: 0.85;
-    filter: invert(1);
+  width: 128px;
+  height: 128px;
+  opacity: 0.85;
+  filter: invert(1);
 }
 
 .light-mode .dragdrop-icon {
-    filter: none;
+  filter: none;
 }
 
 .dragdrop-text {
-    color: var(--color-text);
-    font-size: 1.2rem;
-    opacity: 0.85;
-    text-align: center;
-    max-width: 80%;
-    line-height: 1.5;
+  color: var(--color-text);
+  font-size: 1.2rem;
+  opacity: 0.85;
+  text-align: center;
+  max-width: 80%;
+  line-height: 1.5;
 }
 
 .dragdrop-subtext {
-    color: var(--color-text);
-    font-size: 0.9rem;
-    opacity: 0.6;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  opacity: 0.6;
 }
 
-.path-link{
+.path-link {
   margin-left: 0.1em;
   margin-right: 0.1em;
 }
 
 /* Alpine cloak to prevent FOUC */
 [x-cloak] {
-    display: none !important;
+  display: none !important;
 }
 
 /* Remove unnecessary specific media query that was causing issues */
@@ -2179,89 +2203,88 @@ a:active {
 
 /* Add to the existing .chat-actions class or create it */
 .chat-actions {
-    display: flex;
-    gap: 5px;
-    position: absolute;
-    right: 5px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 2; /* Ensure buttons are above the edit field */
-    min-width: 70px; /* Ensure minimum width for the buttons */
-    justify-content: flex-end;
+  display: flex;
+  gap: 5px;
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2; /* Ensure buttons are above the edit field */
+  min-width: 70px; /* Ensure minimum width for the buttons */
+  justify-content: flex-end;
 }
-
 
 /* Tasks list container - similar to chats list */
 .tasks-list-container {
-    max-height: 300px;
-    overflow-y: auto;
-    margin-top: 10px;
-    padding-right: 5px;
-    border-radius: 5px;
-    position: relative;
-    scrollbar-width: thin;
-    -ms-overflow-style: auto;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 10px;
+  padding-right: 5px;
+  border-radius: 5px;
+  position: relative;
+  scrollbar-width: thin;
+  -ms-overflow-style: auto;
 }
 
 .tasks-list-container::-webkit-scrollbar {
-    width: 5px;
+  width: 5px;
 }
 
 .tasks-list-container::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
 }
 
 .tasks-list-container::-webkit-scrollbar-thumb {
-    background-color: var(--color-border);
-    border-radius: 6px;
+  background-color: var(--color-border);
+  border-radius: 6px;
 }
 
 .tasks-list-container::-webkit-scrollbar-thumb:hover {
-    background-color: var(--color-border);
+  background-color: var(--color-border);
 }
 
 .task-name {
-    display: block;
-    width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    padding: 3px 0;
-    margin-left: 10px;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-    font-size: var(--font-size-small);
-    margin-bottom: 2px;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 0;
+  margin-left: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  font-size: var(--font-size-small);
+  margin-bottom: 2px;
 }
 
 .task-info-line {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    margin-top: 2px;
-    margin-left: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 2px;
+  margin-left: 5px;
 }
 
 .task-name:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    text-decoration: none;
+  background-color: rgba(255, 255, 255, 0.1);
+  text-decoration: none;
 }
 
 .light-mode .task-name:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* Dark mode overrides */
 .light-mode .tab.active {
-    color: var(--highlight-pink);
+  color: var(--highlight-pink);
 }
 
 .light-mode .tab.active::after {
-    background-color: var(--highlight-pink);
-    /* box-shadow: 0 0 8px var(--highlight-pink); */
+  background-color: var(--highlight-pink);
+  /* box-shadow: 0 0 8px var(--highlight-pink); */
 }
 /* Tabs styling */
 .tabs-container {
@@ -2311,10 +2334,8 @@ a:active {
 }
 
 .light-mode .tab.active {
-  box-shadow:
-    0 -4px 8px -2px var(--color-border),
-    4px 0 8px -2px var(--color-border),
-    -4px 0 8px -2px var(--color-border);
+  box-shadow: 0 -4px 8px -2px var(--color-border),
+    4px 0 8px -2px var(--color-border), -4px 0 8px -2px var(--color-border);
 }
 
 .light-mode .tab:not(.active) {
@@ -2396,575 +2417,662 @@ a:active {
 
 /* Add specific styling for selected chat items */
 .chat-list-button.font-bold {
-    position: relative;
-    background-color: var(--color-border) 0.05;
+  position: relative;
+  background-color: var(--color-border) 0.05;
 }
 
 .chat-list-button.font-bold::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: 3px;
-    background-color: var(--color-border);
-    border-top-left-radius: 3px;
-    border-bottom-left-radius: 3px;
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 3px;
+  background-color: var(--color-border);
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
 }
 
 .light-mode .chat-list-button.font-bold {
-    background-color: var(--color-border) 0.05;
+  background-color: var(--color-border) 0.05;
 }
 
 .light-mode .chat-list-button.font-bold::before {
-    background-color: var(--color-border);
+  background-color: var(--color-border);
 }
 
 /* Make sure the chat container has proper spacing */
-.chat-container, .task-container {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    justify-content: space-between;
+.chat-container,
+.task-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: space-between;
 }
 
 /* Settings Modal Styles */
 .settings-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000;
-    background-color: rgba(0, 0, 0, 0.75);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: auto;
-    padding: 24px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: auto;
+  padding: 24px;
 }
 
 .settings-modal-close {
-    position: absolute;
-    top: 8px;
-    right: 16px;
-    border: none;
-    background: transparent;
-    font-size: 24px;
-    cursor: pointer;
-    color: var(--color-text-secondary);
+  position: absolute;
+  top: 8px;
+  right: 16px;
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
 }
 
 .settings-modal-title {
-    margin-top: 0;
-    margin-bottom: 24px;
-    font-size: 1.8rem;
-    text-align: center;
-    border-bottom: 1px solid var(--color-border);
-    padding-bottom: 12px;
+  margin-top: 0;
+  margin-bottom: 24px;
+  font-size: 1.8rem;
+  text-align: center;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 12px;
 }
 
 .settings-modal-content {
-    background-color: var(--color-panel);
-    color: var(--color-text);
-    width: 100%;
-    max-width: 800px;
-    height: auto;
-    max-height: 90vh;
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    padding: 24px;
-    position: relative;
-    overflow: auto;
+  background-color: var(--color-panel);
+  color: var(--color-text);
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  max-height: 90vh;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  padding: 24px;
+  position: relative;
+  overflow: auto;
 }
 
 /* Settings Sections */
 nav ul {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 1rem;
-    padding: 0;
-    margin: 0 0 1rem 0;
-    list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  padding: 0;
+  margin: 0 0 1rem 0;
+  list-style: none;
 }
 
 /* Add specific styling for the nav element itself to ensure spacing */
 nav {
-margin-bottom: 1rem;
+  margin-bottom: 1rem;
 }
 
 nav ul li a {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    background-color: var(--color-bg-secondary);
-    text-decoration: none;
-    color: var(--color-text);
-    transition: background-color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-bg-secondary);
+  text-decoration: none;
+  color: var(--color-text);
+  transition: background-color 0.2s ease;
 }
 
 nav ul li a:hover {
-    background-color: var(--color-bg-tertiary);
+  background-color: var(--color-bg-tertiary);
 }
 
 nav ul li a img {
-    width: 50px;
-    height: 50px;
-    margin-bottom: 0.5rem;
-    filter: var(--svg-filter);
+  width: 50px;
+  height: 50px;
+  margin-bottom: 0.5rem;
+  filter: var(--svg-filter);
 }
 
 .section {
-    margin-bottom: 3rem;
-    animation: fadeIn 0.3s ease;
-    width: 100%;
+  margin-bottom: 3rem;
+  animation: fadeIn 0.3s ease;
+  width: 100%;
 }
 
 .section-title {
-    margin-top: 0;
-    margin-bottom: 0.5rem;
-    font-size: 1.5rem;
-    font-weight: 500;
-    color: var(--color-primary);
-    border-bottom: 1px solid var(--color-border);
-    padding-bottom: 0.5rem;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--color-primary);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.5rem;
 }
 
 .section-description {
-    margin-bottom: 1.5rem;
-    color: var(--color-text-secondary);
+  margin-bottom: 1.5rem;
+  color: var(--color-text-secondary);
 }
 
 .scheduler-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
 .scheduler-header h2 {
-    margin: 0;
-    font-size: 1.2rem;
-    font-weight: 500;
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 500;
 }
 
 .scheduler-filters {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .scheduler-filter-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .scheduler-filter-label {
-    font-weight: 500;
-    color: var(--color-text-secondary);
+  font-weight: 500;
+  color: var(--color-text-secondary);
 }
 
 .scheduler-filter-select {
-    padding: 6px 8px;
-    border-radius: 4px;
-    border: 1px solid var(--color-border);
-    background-color: var(--color-bg-secondary);
-    color: var(--color-text);
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text);
 }
 
 .scheduler-task-list {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1rem 0;
-    font-size: 0.9rem;
-    overflow-x: auto;
-    table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  overflow-x: auto;
+  table-layout: fixed;
 }
 
 .scheduler-task-list th,
 .scheduler-task-list td {
-    padding: 0.75rem;
-    text-align: left;
-    border-bottom: 1px solid var(--color-border);
-    vertical-align: middle;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .scheduler-task-list th:nth-child(1), /* Name */
 .scheduler-task-list td:nth-child(1) {
-    width: 25%;
+  width: 25%;
 }
 
 .scheduler-task-list th:nth-child(2), /* State */
 .scheduler-task-list td:nth-child(2) {
-    width: 10%;
+  width: 10%;
 }
 
 .scheduler-task-list th:nth-child(3), /* Type */
 .scheduler-task-list td:nth-child(3) {
-    width: 10%;
+  width: 10%;
 }
 
 .scheduler-task-list th:nth-child(4), /* Schedule */
 .scheduler-task-list td:nth-child(4) {
-    width: 20%;
+  width: 20%;
 }
 
 .scheduler-task-list th:nth-child(5), /* Last Run */
 .scheduler-task-list td:nth-child(5) {
-    width: 20%;
+  width: 20%;
 }
 
 .scheduler-task-list th:nth-child(6), /* Actions */
 .scheduler-task-list td:nth-child(6) {
-    width: 15%;
-    text-align: right;
+  width: 15%;
+  text-align: right;
 }
 
 .scheduler-task-list th {
-    background-color: var(--color-bg-secondary);
-    font-weight: 500;
-    cursor: pointer;
-    user-select: none;
+  background-color: var(--color-bg-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
 }
 
 .scheduler-task-list th:hover {
-    background-color: var(--color-bg-tertiary);
+  background-color: var(--color-bg-tertiary);
 }
 
 .scheduler-task-actions {
-    display: flex;
-    gap: 8px;
+  display: flex;
+  gap: 8px;
 }
 
 .scheduler-task-action {
-    padding: 4px;
-    background: none;
-    border: none;
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    border-radius: 4px;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
 }
 
 .scheduler-task-action:hover {
-    background-color: var(--color-bg-tertiary);
-    color: var(--color-text);
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text);
 }
 
 .scheduler-status-badge {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-    text-transform: capitalize;
-    white-space: nowrap;
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+  white-space: nowrap;
 }
 
 .scheduler-status-idle {
-    background-color: rgba(0, 100, 0, 0.2);
-    color: #2a9d8f; /* Dark green that works with both light and dark themes */
-    border: 1px solid rgba(42, 157, 143, 0.3);
+  background-color: rgba(0, 100, 0, 0.2);
+  color: #2a9d8f; /* Dark green that works with both light and dark themes */
+  border: 1px solid rgba(42, 157, 143, 0.3);
 }
 
 .scheduler-status-running {
-    background-color: rgba(0, 60, 120, 0.2);
-    color: #4361ee; /* Dark blue that works with both light and dark themes */
-    border: 1px solid rgba(67, 97, 238, 0.3);
+  background-color: rgba(0, 60, 120, 0.2);
+  color: #4361ee; /* Dark blue that works with both light and dark themes */
+  border: 1px solid rgba(67, 97, 238, 0.3);
 }
 
 .scheduler-status-disabled {
-    background-color: rgba(70, 70, 70, 0.2);
-    color: #6c757d; /* Dark grey that works with both light and dark themes */
-    border: 1px solid rgba(108, 117, 125, 0.3);
+  background-color: rgba(70, 70, 70, 0.2);
+  color: #6c757d; /* Dark grey that works with both light and dark themes */
+  border: 1px solid rgba(108, 117, 125, 0.3);
 }
 
 .scheduler-status-error {
-    background-color: rgba(120, 0, 0, 0.2);
-    color: #e63946; /* Dark red that works with both light and dark themes */
-    border: 1px solid rgba(230, 57, 70, 0.3);
+  background-color: rgba(120, 0, 0, 0.2);
+  color: #e63946; /* Dark red that works with both light and dark themes */
+  border: 1px solid rgba(230, 57, 70, 0.3);
 }
 
 /* Light mode adjustments */
 .light-mode .scheduler-status-idle {
-    background-color: rgba(42, 157, 143, 0.1);
-    color: #1a6f65; /* Darker green for light mode */
+  background-color: rgba(42, 157, 143, 0.1);
+  color: #1a6f65; /* Darker green for light mode */
 }
 
 .light-mode .scheduler-status-running {
-    background-color: rgba(67, 97, 238, 0.1);
-    color: #2540b3; /* Darker blue for light mode */
+  background-color: rgba(67, 97, 238, 0.1);
+  color: #2540b3; /* Darker blue for light mode */
 }
 
 .light-mode .scheduler-status-disabled {
-    background-color: rgba(108, 117, 125, 0.1);
-    color: #495057; /* Darker grey for light mode */
+  background-color: rgba(108, 117, 125, 0.1);
+  color: #495057; /* Darker grey for light mode */
 }
 
 .light-mode .scheduler-status-error {
-    background-color: rgba(230, 57, 70, 0.1);
-    color: #c5283d; /* Darker red for light mode */
+  background-color: rgba(230, 57, 70, 0.1);
+  color: #c5283d; /* Darker red for light mode */
 }
 
 .scheduler-empty {
-    text-align: center;
-    padding: 40px 0;
-    color: var(--color-text-secondary);
+  text-align: center;
+  padding: 40px 0;
+  color: var(--color-text-secondary);
 }
 
 .scheduler-empty-icon {
-    font-size: 32px;
-    margin-bottom: 10px;
+  font-size: 32px;
+  margin-bottom: 10px;
 }
 
 .scheduler-empty-text {
-    margin-bottom: 20px;
+  margin-bottom: 20px;
 }
 
 .scheduler-loading {
-    text-align: center;
-    padding: 40px 0;
-    color: var(--color-text-secondary);
+  text-align: center;
+  padding: 40px 0;
+  color: var(--color-text-secondary);
 }
 
 .scheduler-task-details {
-    padding: 16px;
-    background-color: var(--color-bg-secondary);
-    border-radius: 4px;
+  padding: 16px;
+  background-color: var(--color-bg-secondary);
+  border-radius: 4px;
 }
 
 .scheduler-details-grid {
-    display: grid;
-    grid-template-columns: 120px 1fr;
-    gap: 8px 16px;
-    margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px 16px;
+  margin-bottom: 16px;
 }
 
 .scheduler-details-label {
-    font-weight: 500;
-    color: var(--color-text-secondary);
-    display: flex;
-    align-items: center;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
 }
 
 .scheduler-details-value {
-    color: var(--color-text);
-    word-break: break-word;
+  color: var(--color-text);
+  word-break: break-word;
 }
 
 .scheduler-details-actions {
-    display: flex;
-    justify-content: flex-end;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .scheduler-form {
-    background-color: var(--color-bg-secondary);
-    border-radius: 4px;
-    padding: 20px;
-    margin-bottom: 20px;
+  background-color: var(--color-bg-secondary);
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 20px;
 }
 
 .scheduler-form-title {
-    font-size: 1.2rem;
-    font-weight: 500;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--color-border);
+  font-size: 1.2rem;
+  font-weight: 500;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .scheduler-form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .scheduler-form-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .full-width {
-    grid-column: 1 / -1;
+  grid-column: 1 / -1;
 }
 
 .scheduler-form-label {
-    font-weight: 500;
+  font-weight: 500;
 }
 
 .scheduler-form-help {
-    font-size: 12px;
-    color: var(--color-text-secondary);
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }
 
 .scheduler-form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 .scheduler-schedule-builder {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
 }
 
 .scheduler-schedule-field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-width: 70px; /* Limit width of schedule fields */
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 70px; /* Limit width of schedule fields */
 }
 
 .scheduler-schedule-field input {
-    width: 100%;
-    min-width: 0; /* Allow shrinking below content size */
-    font-size: 0.9rem; /* Slightly reduce font size for better fit */
+  width: 100%;
+  min-width: 0; /* Allow shrinking below content size */
+  font-size: 0.9rem; /* Slightly reduce font size for better fit */
 }
 
 .scheduler-schedule-label {
-    font-size: 12px;
-    color: var(--color-text-secondary);
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }
 
 .input-group {
-    display: flex;
-    gap: 8px;
+  display: flex;
+  gap: 8px;
 }
 
 /* Sort indicators */
 .scheduler-sort-indicator {
-    display: inline-block;
-    margin-left: 4px;
-    transition: transform 0.2s ease;
+  display: inline-block;
+  margin-left: 4px;
+  transition: transform 0.2s ease;
 }
 
 .scheduler-sort-desc {
-    transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    .scheduler-form-grid {
-        grid-template-columns: 1fr;
-    }
+  .scheduler-form-grid {
+    grid-template-columns: 1fr;
+  }
 
-    .scheduler-schedule-builder {
-        grid-template-columns: 1fr 1fr;
-    }
+  .scheduler-schedule-builder {
+    grid-template-columns: 1fr 1fr;
+  }
 
-    .scheduler-filters {
-        flex-direction: column;
-        gap: 12px;
-    }
+  .scheduler-filters {
+    flex-direction: column;
+    gap: 12px;
+  }
 
-    .scheduler-task-actions {
-        flex-wrap: wrap;
-    }
+  .scheduler-task-actions {
+    flex-wrap: wrap;
+  }
 }
 
 @media (max-width: 480px) {
-    nav ul li a {
-        flex-direction: row;
-        justify-content: flex-start;
-        gap: 1rem;
-        padding: 0.75rem 1rem;
-    }
+  nav ul li a {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+  }
 
-    nav ul li a img {
-        margin-bottom: 0;
-        width: 30px;
-        height: 30px;
-    }
+  nav ul li a img {
+    margin-bottom: 0;
+    width: 30px;
+    height: 30px;
+  }
 }
 
 /* Add row hover effect for task list rows matching left panel hover */
 .scheduler-task-list tbody tr {
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
 .scheduler-task-list tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .light-mode .scheduler-task-list tbody tr:hover {
-    background-color: rgba(0, 0, 0, 0.02);
+  background-color: rgba(0, 0, 0, 0.02);
 }
 
 .scheduler-task-list th {
-    background-color: var(--color-bg-secondary);
-    font-weight: 500;
-    cursor: pointer;
-    user-select: none;
+  background-color: var(--color-bg-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
 }
 
 .scheduler-task-list th:hover {
-    background-color: var(--color-bg-tertiary);
+  background-color: var(--color-bg-tertiary);
 }
 
 /* Task detail view styling */
 .scheduler-detail-view {
-    background-color: var(--color-bg-secondary);
-    border-radius: 4px;
-    padding: 20px;
-    margin-bottom: 20px;
-    animation: fadeIn 0.3s ease;
+  background-color: var(--color-bg-secondary);
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.3s ease;
 }
 
 .scheduler-detail-header {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--color-border);
-    flex-wrap: wrap;
-    gap: 10px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .scheduler-detail-header .scheduler-detail-title {
-    font-size: 1.4rem;
-    font-weight: 500;
-    margin: 0;
-    margin-right: auto;
+  font-size: 1.4rem;
+  font-weight: 500;
+  margin: 0;
+  margin-right: auto;
 }
 
 .scheduler-detail-header .scheduler-status-badge {
-    margin-right: 10px;
+  margin-right: 10px;
 }
 
 .scheduler-detail-content {
-    margin-bottom: 20px;
+  margin-bottom: 20px;
 }
 
 /* Task Scheduler Styles */
 
 .scheduler-no-schedule {
-    color: var(--color-text-secondary);
-    opacity: 0.7;
-    font-style: italic;
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+  font-style: italic;
 }
 
 .task-container-vertical {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    gap: 6px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 6px;
 }
 
 /* Smaller status badge for task list */
 .scheduler-status-badge-small {
-    font-size: 10px;
-    padding: 2px 6px;
-    margin-right: 5px;
-    min-width: 40px;
-    text-align: center;
+  font-size: 10px;
+  padding: 2px 6px;
+  margin-right: 5px;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Markdown in messages */
+.msg-content {
+  font-size: var(--font-size-small);
+}
+
+.message-agent-response .msg-content {
+  font-size: var(--font-size-smaller);
+}
+
+.msg-content h1 {
+  font-size: 1.25em;
+  font-weight: 800;
+  margin-bottom: 0.2em;
+}
+
+.msg-content h2 {
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 0.2em;
+}
+
+.msg-content h3 {
+  font-size: 1.15em;
+  font-weight: 600;
+  margin-bottom: 0.2em;
+}
+
+.msg-content h4 {
+  font-size: 1.1em;
+  font-weight: 500;
+  margin-bottom: 0.2em;
+}
+
+.msg-content h5 {
+  font-size: 1.05em;
+  font-weight: 500;
+  margin-bottom: 0.2em;
+}
+
+.msg-content h6 {
+  font-size: 1em;
+  font-weight: 500;
+  margin-bottom: 0.2em;
+}
+
+.msg-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 0.98em;
+  background: transparent;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.msg-content th,
+.msg-content td {
+  padding: 0.55em 1em;
+  border: 1px solid rgba(142, 142, 142, 0.1);
+  text-align: left;
+  background: transparent;
+}
+
+.msg-content th {
+  font-weight: 600;
+  background: rgba(142, 142, 142, 0.1);
+}
+
+.msg-content tr:nth-child(even) {
+  background: rgba(142, 142, 142, 0.1);
+}
+
+.msg-content tr:nth-child(odd) {
+  background: transparent;
+}
+
+.msg-content table {
+  box-shadow: none;
+}
+
+.msg-content pre:has(code) {
+  padding: 0.5em;
+  border: 1px solid rgba(142, 142, 142, 0.1);
+  border-radius: 0.3em;
 }

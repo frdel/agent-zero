@@ -1,6 +1,11 @@
 # SearXNG settings
 
-use_default_settings: true
+use_default_settings:
+  engines:
+    remove:
+      - radio browser
+# TODO enable radio_browser when it works again
+# currently it crashes on x86 on gethostbyaddr
 
 general:
   debug: false
@@ -58,6 +63,12 @@ enabled_plugins:
 #     - '(.*\.)?wikipedia.org$'
 
 engines:
+  - name: radio browser
+    engine: radio_browser
+    disabled: true
+    inactive: true
+# TODO enable radio_browser when it works again
+# currently it crashes on x86 on gethostbyaddr
 
 #   - name: fdroid
 #     disabled: false

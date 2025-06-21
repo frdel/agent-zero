@@ -253,8 +253,16 @@ def make_dirs(relative_path: str):
 
 
 def get_abs_path(*relative_paths):
+    "Convert relative paths to absolute paths based on the base directory."
     return os.path.join(get_base_dir(), *relative_paths)
 
+def fix_dev_path(path:str):
+    "On dev environment, convert /a0/... paths to local absolute paths"
+    from python.helpers.runtime import is_development
+    if is_development():
+        if path.startswith("/a0/"):
+            path = path.replace("/a0/", "")
+    return get_abs_path(path)
 
 def exists(*relative_paths):
     path = get_abs_path(*relative_paths)

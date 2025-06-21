@@ -58,7 +58,7 @@
 }
 
 .modal-header h2 {
-  font-size: var(--font-size-large);
+  /* font-size: var(--font-size-large); */
   margin: 0;
 }
 
@@ -340,9 +340,9 @@
 }
 
 /* Typography */
-h2 {
+/* h2 {
   color: var(--color-primary);
-}
+} */
 
 /* Responsive Design */
 @media (max-width: 768px) {
