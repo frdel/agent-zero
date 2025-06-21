@@ -94,6 +94,7 @@ class SettingsField(TypedDict, total=False):
     step: float
     hidden: bool
     options: list[FieldOption]
+    attributes: dict[str, str]  # Custom HTML attributes
 
 
 class SettingsSection(TypedDict, total=False):
@@ -133,9 +134,10 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "chat_model_name",
             "title": "Chat model name",
-            "description": "Exact name of model from selected provider",
+            "description": "Exact name of model from selected provider. Hover to see available models for the selected provider.",
             "type": "text",
             "value": settings["chat_model_name"],
+            "attributes": {"data-provider": settings["chat_model_provider"]},
         }
     )
 
@@ -236,9 +238,10 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "util_model_name",
             "title": "Utility model name",
-            "description": "Exact name of model from selected provider",
+            "description": "Exact name of model from selected provider. Hover to see available models for the selected provider.",
             "type": "text",
             "value": settings["util_model_name"],
+            "attributes": {"data-provider": settings["util_model_provider"]},
         }
     )
 
@@ -306,9 +309,10 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "embed_model_name",
             "title": "Embedding model name",
-            "description": "Exact name of model from selected provider",
+            "description": "Exact name of model from selected provider. Hover to see available models for the selected provider.",
             "type": "text",
             "value": settings["embed_model_name"],
+            "attributes": {"data-provider": settings["embed_model_provider"]},
         }
     )
 
@@ -366,9 +370,10 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "browser_model_name",
             "title": "Web Browser model name",
-            "description": "Exact name of model from selected provider",
+            "description": "Exact name of model from selected provider. Hover to see available models for the selected provider.",
             "type": "text",
             "value": settings["browser_model_name"],
+            "attributes": {"data-provider": settings["browser_model_provider"]},
         }
     )
 
@@ -911,7 +916,7 @@ def get_default_settings() -> Settings:
 
     return Settings(
         chat_model_provider=ModelProvider.OPENAI.name,
-        chat_model_name="gpt-4.1",
+        chat_model_name="gpt-4o",  # Fixed: Use real OpenAI model name
         chat_model_kwargs={"temperature": "0"},
         chat_model_ctx_length=100000,
         chat_model_ctx_history=0.7,
@@ -920,7 +925,7 @@ def get_default_settings() -> Settings:
         chat_model_rl_input=0,
         chat_model_rl_output=0,
         util_model_provider=ModelProvider.OPENAI.name,
-        util_model_name="gpt-4.1-nano",
+        util_model_name="gpt-4o-mini",  # Fixed: Use real OpenAI model name
         util_model_ctx_length=100000,
         util_model_ctx_input=0.7,
         util_model_kwargs={"temperature": "0"},
@@ -933,7 +938,7 @@ def get_default_settings() -> Settings:
         embed_model_rl_requests=0,
         embed_model_rl_input=0,
         browser_model_provider=ModelProvider.OPENAI.name,
-        browser_model_name="gpt-4.1",
+        browser_model_name="gpt-4o",  # Fixed: Use real OpenAI model name
         browser_model_vision=True,
         browser_model_kwargs={"temperature": "0"},
         api_keys={},

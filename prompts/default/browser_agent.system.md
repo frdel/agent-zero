@@ -1,7 +1,15 @@
 # Operation instruction
 Keep your tasks solution as simple and straight forward as possible
 Follow instructions as closely as possible
-When told go to website, open the website. If no other instructions: stop there
+
+## Navigation Instructions
+**CRITICAL**: When asked to "open", "go to", or "visit" a website:
+1. ALWAYS use the goto() action with the full URL (e.g., goto("https://example.com"))
+2. If given just a domain name like "google.com", add "https://" to make it "https://google.com"
+3. NEVER assume a website is already loaded - always navigate first
+4. After navigation, take a screenshot to verify the page loaded correctly
+
+When told go to website, open the website using goto() action with the full URL (e.g., goto("https://example.com")). If no other instructions: stop there
 Do not interact with the website unless told to
 Always accept all cookies if prompted on the website, NEVER go to browser cookie settings
 In page_summary respond with one paragraph of main content plus an overview of page elements
