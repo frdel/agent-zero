@@ -9,9 +9,14 @@ from python.helpers.log import LogItem
 class MemorizeSolutions(Extension):
 
     REPLACE_THRESHOLD = 0.9
+    # 优化：增加解决方案记忆间隔
+    MEMORIZE_INTERVAL = 3  # 每3次对话才记忆一次解决方案
+    MIN_CONVERSATION_LENGTH = 4  # 最少4轮对话才开始记忆解决方案
 
     async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
-        # try:
+        # 优化：检查是否需要记忆解决方案
+        if not self._should_memorize_solutions(loop_data):
+            return
 
         # show temp info message
         self.agent.context.log.log(
@@ -26,6 +31,32 @@ class MemorizeSolutions(Extension):
 
         # memorize in background
         asyncio.create_task(self.memorize(loop_data, log_item))
+
+    def _should_memorize_solutions(self, loop_data: LoopData) -> bool:
+        """检查是否应该记忆解决方案"""
+        # 检查对话长度
+        if len(self.agent.history.current.messages) < self.MIN_CONVERSATION_LENGTH:
+            return False
+
+        # 检查是否包含成功的解决方案标识
+        recent_messages = self.agent.history.current.messages[-3:]  # 检查最近3条消息
+        has_solution_indicators = any(
+            any(keyword in str(msg.content).lower() for keyword in
+                ['solved', 'success', 'completed', 'fixed', 'resolved', 'done'])
+            for msg in recent_messages
+        )
+
+        if not has_solution_indicators:
+            return False
+
+        # 检查记忆间隔
+        solution_count = getattr(self.agent, '_solution_memorize_count', 0)
+        if solution_count % self.MEMORIZE_INTERVAL != 0:
+            self.agent._solution_memorize_count = solution_count + 1
+            return False
+
+        self.agent._solution_memorize_count = solution_count + 1
+        return True
 
     async def memorize(self, loop_data: LoopData, log_item: LogItem, **kwargs):
         # get system message and chat history for util llm
