@@ -32,6 +32,10 @@ def save_tmp_chat(context: AgentContext):
     path = _get_chat_file_path(context.id)
     files.make_dirs(path)
     data = _serialize_context(context)
+
+    # 优化：保存记忆状态信息
+    data['memory_state'] = _serialize_memory_state(context)
+
     js = _safe_json_serialize(data, ensure_ascii=False)
     files.write_file(path, js)
 
@@ -50,6 +54,11 @@ def load_tmp_chats():
             js = files.read_file(file)
             data = json.loads(js)
             ctx = _deserialize_context(data)
+
+            # 优化：恢复记忆状态
+            if 'memory_state' in data:
+                _restore_memory_state(ctx, data['memory_state'])
+
             ctxids.append(ctx.id)
         except Exception as e:
             print(f"Error loading chat {file}: {e}")
@@ -267,3 +276,47 @@ def _safe_json_serialize(obj, **kwargs):
             return False
 
     return json.dumps(obj, default=serializer, **kwargs)
+
+
+def _serialize_memory_state(context: AgentContext) -> dict:
+    """序列化记忆状态"""
+    try:
+        from python.helpers.memory import Memory
+
+        memory_state = {
+            'memory_subdir': context.config.memory_subdir or 'default',
+            'knowledge_subdirs': context.config.knowledge_subdirs,
+            'has_memory_data': False
+        }
+
+        # 检查是否有记忆数据
+        memory_subdir = context.config.memory_subdir or 'default'
+        if Memory.index.get(memory_subdir):
+            memory_state['has_memory_data'] = True
+
+        return memory_state
+    except Exception as e:
+        print(f"Error serializing memory state: {e}")
+        return {}
+
+
+def _restore_memory_state(context: AgentContext, memory_state: dict):
+    """恢复记忆状态"""
+    try:
+        from python.helpers.memory import Memory
+
+        # 设置记忆配置
+        if 'memory_subdir' in memory_state:
+            context.config.memory_subdir = memory_state['memory_subdir']
+
+        if 'knowledge_subdirs' in memory_state:
+            context.config.knowledge_subdirs = memory_state['knowledge_subdirs']
+
+        # 如果有记忆数据，预加载记忆系统
+        if memory_state.get('has_memory_data', False):
+            # 这里不直接加载，而是标记需要加载
+            # 实际加载会在第一次使用时进行
+            context._memory_needs_loading = True
+
+    except Exception as e:
+        print(f"Error restoring memory state: {e}")

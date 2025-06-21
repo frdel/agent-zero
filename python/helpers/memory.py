@@ -58,10 +58,14 @@ class Memory:
     @staticmethod
     async def get(agent: Agent):
         memory_subdir = agent.config.memory_subdir or "default"
-        if Memory.index.get(memory_subdir) is None:
+
+        # 优化：支持跨会话记忆持久化
+        context_memory_key = f"{agent.context.id}_{memory_subdir}"
+
+        if Memory.index.get(context_memory_key) is None:
             log_item = agent.context.log.log(
                 type="util",
-                heading=f"Initializing VectorDB in '/{memory_subdir}'",
+                heading=f"Initializing VectorDB in '/{memory_subdir}' for context {agent.context.id[:8]}",
             )
             db, created = Memory.initialize(
                 log_item,
@@ -69,8 +73,14 @@ class Memory:
                 memory_subdir,
                 False,
             )
-            Memory.index[memory_subdir] = db
+            Memory.index[context_memory_key] = db
             wrap = Memory(agent, db, memory_subdir=memory_subdir)
+
+            # 优化：检查是否需要加载之前的记忆
+            if hasattr(agent.context, '_memory_needs_loading') and agent.context._memory_needs_loading:
+                await wrap._load_persistent_memories(log_item)
+                agent.context._memory_needs_loading = False
+
             if agent.config.knowledge_subdirs:
                 await wrap.preload_knowledge(
                     log_item, agent.config.knowledge_subdirs, memory_subdir
@@ -79,7 +89,7 @@ class Memory:
         else:
             return Memory(
                 agent=agent,
-                db=Memory.index[memory_subdir],
+                db=Memory.index[context_memory_key],
                 memory_subdir=memory_subdir,
             )
 
@@ -381,6 +391,71 @@ class Memory:
 
     def _save_db(self):
         Memory._save_db_file(self.db, self.memory_subdir)
+
+    async def _load_persistent_memories(self, log_item: LogItem):
+        """加载持久化的记忆数据"""
+        try:
+            # 这里可以实现从持久化存储加载记忆的逻辑
+            # 例如从数据库、文件等加载之前保存的记忆
+            log_item.update(heading="Loading persistent memories...")
+
+            # 检查是否有持久化的记忆文件
+            persistent_memory_file = files.get_abs_path(
+                "memory", self.memory_subdir, "persistent_memories.json"
+            )
+
+            if files.exists(persistent_memory_file):
+                persistent_data = json.loads(files.read_file(persistent_memory_file))
+
+                # 恢复重要的记忆片段
+                if 'important_memories' in persistent_data:
+                    for memory_data in persistent_data['important_memories']:
+                        doc = Document(
+                            page_content=memory_data['content'],
+                            metadata=memory_data['metadata']
+                        )
+                        await self.db.aadd_documents([doc], [memory_data['id']])
+
+                log_item.update(heading=f"Loaded {len(persistent_data.get('important_memories', []))} persistent memories")
+            else:
+                log_item.update(heading="No persistent memories found")
+
+        except Exception as e:
+            log_item.update(heading=f"Error loading persistent memories: {e}")
+
+    async def save_persistent_memories(self):
+        """保存重要的记忆到持久化存储"""
+        try:
+            # 获取重要的记忆（例如用户信息、重要解决方案等）
+            important_memories = await self.search_similarity_threshold(
+                query="user information personal data important solution",
+                limit=50,
+                threshold=0.5,
+                filter=f"area=='{Memory.Area.MAIN.value}' or area=='{Memory.Area.SOLUTIONS.value}'"
+            )
+
+            # 准备持久化数据
+            persistent_data = {
+                'important_memories': [
+                    {
+                        'id': doc.metadata.get('id', str(uuid.uuid4())),
+                        'content': doc.page_content,
+                        'metadata': doc.metadata
+                    }
+                    for doc in important_memories
+                ],
+                'saved_at': self.get_timestamp()
+            }
+
+            # 保存到文件
+            persistent_memory_file = files.get_abs_path(
+                "memory", self.memory_subdir, "persistent_memories.json"
+            )
+            files.make_dirs(persistent_memory_file)
+            files.write_file(persistent_memory_file, json.dumps(persistent_data, indent=2))
+
+        except Exception as e:
+            print(f"Error saving persistent memories: {e}")
 
     @staticmethod
     def _save_db_file(db: MyFaiss, memory_subdir: str):

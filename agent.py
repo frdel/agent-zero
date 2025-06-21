@@ -25,6 +25,31 @@ from python.helpers.defer import DeferredTask
 from typing import Callable
 from python.helpers.localization import Localization
 
+# 导入新的智能模型管理系统
+try:
+    from python.helpers.intelligent_model_dispatcher import (
+        get_model_dispatcher, ModelRequest, TaskType, smart_generate, smart_chat
+    )
+    from python.helpers.model_config_initializer import initialize_models
+    ENHANCED_MODEL_SYSTEM_AVAILABLE = True
+except ImportError:
+    ENHANCED_MODEL_SYSTEM_AVAILABLE = False
+    print("⚠️ 增强模型系统未加载，使用传统模型系统")
+
+# 导入无限上下文系统
+try:
+    from python.helpers.unified_context_reasoning_module import (
+        get_unified_context_reasoning_module, unified_process,
+        ProcessingRequest, UnifiedProcessingConfig
+    )
+    from python.helpers.adaptive_context_manager import (
+        get_adaptive_context_manager, adaptive_process, AdaptiveConfig
+    )
+    INFINITE_CONTEXT_SYSTEM_AVAILABLE = True
+except ImportError:
+    INFINITE_CONTEXT_SYSTEM_AVAILABLE = False
+    print("⚠️ 无限上下文系统未加载，使用传统上下文处理")
+
 
 class AgentContextType(Enum):
     USER = "user"
@@ -647,6 +672,21 @@ class Agent:
         prompt: ChatPromptTemplate,
         callback: Callable[[str, str], Awaitable[None]] | None = None,
     ):
+        # 尝试使用无限上下文系统
+        if INFINITE_CONTEXT_SYSTEM_AVAILABLE:
+            try:
+                return await self._call_infinite_context_model(prompt, callback)
+            except Exception as e:
+                print(f"⚠️ 无限上下文调用失败，尝试智能模型系统: {e}")
+
+        # 尝试使用智能模型选择系统
+        if ENHANCED_MODEL_SYSTEM_AVAILABLE:
+            try:
+                return await self._call_smart_chat_model(prompt, callback)
+            except Exception as e:
+                print(f"⚠️ 智能模型调用失败，回退到传统模型: {e}")
+
+        # 回退到传统模型调用
         response = ""
 
         # model class
@@ -666,6 +706,163 @@ class Agent:
                 await callback(content, response)
 
         return response
+
+    async def _call_smart_chat_model(
+        self, prompt: ChatPromptTemplate, callback: Callable[[str, str], Awaitable[None]] | None = None
+    ) -> str:
+        """使用智能模型选择系统调用模型"""
+        import time
+
+        # 将提示转换为消息格式
+        formatted_prompt = prompt.format()
+
+        # 检测任务类型
+        task_type = self._detect_task_type_from_prompt(formatted_prompt)
+
+        # 构建模型请求
+        request = ModelRequest(
+            request_id=f"agent_{self.number}_{int(time.time())}",
+            task_type=task_type,
+            content=formatted_prompt,
+            request_type="generate",
+            prefer_quality=True,  # 主要对话模型优先质量
+            context_length_needed=self._estimate_context_length(formatted_prompt)
+        )
+
+        # 调用智能调度器
+        dispatcher = get_model_dispatcher()
+        response = await dispatcher.dispatch_request(request)
+
+        if response.success:
+            # 模拟流式回调
+            if callback:
+                # 分块发送以模拟流式输出
+                chunk_size = max(1, len(response.content) // 20)  # 分成20块
+                for i in range(0, len(response.content), chunk_size):
+                    chunk = response.content[i:i+chunk_size]
+                    partial_content = response.content[:i+len(chunk)]
+                    await callback(chunk, partial_content)
+                    await asyncio.sleep(0.01)  # 小延迟模拟流式
+
+            return response.content
+        else:
+            raise Exception(f"智能模型调用失败: {response.error_message}")
+
+    def _detect_task_type_from_prompt(self, prompt_text: str) -> TaskType:
+        """从提示文本检测任务类型"""
+        prompt_lower = prompt_text.lower()
+
+        # 检测关键词
+        if any(word in prompt_lower for word in ["screenshot", "browser", "webpage", "visual", "image"]):
+            return TaskType.BROWSING
+        elif any(word in prompt_lower for word in ["write", "article", "creative", "story", "content"]):
+            return TaskType.WRITING
+        elif any(word in prompt_lower for word in ["code", "program", "function", "debug", "python", "javascript"]):
+            return TaskType.CODING
+        elif any(word in prompt_lower for word in ["analyze", "data", "statistics", "report", "chart"]):
+            return TaskType.ANALYSIS
+        elif any(word in prompt_lower for word in ["solve", "logic", "reasoning", "problem", "think"]):
+            return TaskType.REASONING
+        else:
+            return TaskType.CHAT  # 默认对话任务
+
+    def _estimate_context_length(self, text: str) -> int:
+        """估算所需的上下文长度"""
+        # 简单估算：每4个字符约等于1个token
+        estimated_tokens = len(text) // 4
+
+        # 添加一些缓冲
+        return min(estimated_tokens * 2, 32000)  # 最大32K上下文
+
+    async def _call_infinite_context_model(
+        self, prompt: ChatPromptTemplate, callback: Callable[[str, str], Awaitable[None]] | None = None
+    ) -> str:
+        """使用无限上下文系统调用模型"""
+        import time
+
+        # 将提示转换为文本
+        formatted_prompt = prompt.format()
+
+        # 检测任务类型
+        task_type = self._detect_task_type_from_prompt(formatted_prompt)
+
+        # 估算上下文长度以决定是否使用无限上下文
+        context_length = self._estimate_context_length(formatted_prompt)
+        require_infinite_context = context_length > 8192  # 8K阈值
+
+        # 检查是否需要推理
+        require_reasoning = self._should_use_reasoning(formatted_prompt, task_type)
+
+        # 使用统一处理模块
+        try:
+            result = await unified_process(
+                content=formatted_prompt,
+                task_type=task_type,
+                require_reasoning=require_reasoning,
+                require_infinite_context=require_infinite_context,
+                agent_id=self.number,
+                session_id=getattr(self, 'session_id', 'default')
+            )
+
+            if result.success:
+                response_content = str(result.result)
+
+                # 模拟流式回调
+                if callback:
+                    # 分块发送以模拟流式输出
+                    chunk_size = max(1, len(response_content) // 20)
+                    for i in range(0, len(response_content), chunk_size):
+                        chunk = response_content[i:i+chunk_size]
+                        partial_content = response_content[:i+len(chunk)]
+                        await callback(chunk, partial_content)
+                        await asyncio.sleep(0.01)  # 小延迟模拟流式
+
+                return response_content
+            else:
+                raise Exception(f"无限上下文处理失败: {result.error_message}")
+
+        except Exception as e:
+            # 如果无限上下文处理失败，尝试自适应处理
+            try:
+                response_id = await adaptive_process(
+                    content=formatted_prompt,
+                    task_type=task_type,
+                    priority=7,  # 高优先级
+                    agent_id=self.number
+                )
+
+                # 简化的响应处理
+                if callback:
+                    await callback(f"自适应处理请求已提交: {response_id}", f"自适应处理请求已提交: {response_id}")
+
+                return f"请求已通过自适应系统处理: {response_id}"
+
+            except Exception as adaptive_error:
+                raise Exception(f"无限上下文和自适应处理都失败: {e}, {adaptive_error}")
+
+    def _should_use_reasoning(self, prompt_text: str, task_type: TaskType) -> bool:
+        """判断是否应该使用推理"""
+        prompt_lower = prompt_text.lower()
+
+        # 基于任务类型
+        if task_type in [TaskType.REASONING, TaskType.ANALYSIS, TaskType.CODING]:
+            return True
+
+        # 基于关键词
+        reasoning_keywords = [
+            "analyze", "explain", "why", "how", "compare", "evaluate",
+            "solve", "problem", "logic", "reason", "think", "consider",
+            "pros and cons", "advantages", "disadvantages", "strategy"
+        ]
+
+        if any(keyword in prompt_lower for keyword in reasoning_keywords):
+            return True
+
+        # 基于复杂度（长度和问号数量）
+        if len(prompt_text) > 1000 and prompt_text.count('?') > 1:
+            return True
+
+        return False
 
     async def rate_limiter(
         self, model_config: ModelConfig, input: str, background: bool = False
@@ -734,29 +931,8 @@ class Agent:
 
             tool = None  # Initialize tool to None
 
-            # Try getting tool from MCP first
-            try:
-                import python.helpers.mcp_handler as mcp_helper
-
-                mcp_tool_candidate = mcp_helper.MCPConfig.get_instance().get_tool(
-                    self, tool_name
-                )
-                if mcp_tool_candidate:
-                    tool = mcp_tool_candidate
-            except ImportError:
-                PrintStyle(
-                    background_color="black", font_color="yellow", padding=True
-                ).print("MCP helper module not found. Skipping MCP tool lookup.")
-            except Exception as e:
-                PrintStyle(
-                    background_color="black", font_color="red", padding=True
-                ).print(f"Failed to get MCP tool '{tool_name}': {e}")
-
-            # Fallback to local get_tool if MCP tool was not found or MCP lookup failed
-            if not tool:
-                tool = self.get_tool(
-                    name=tool_name, method=tool_method, args=tool_args, message=msg
-                )
+            # 优化：改进工具查找逻辑，优先考虑MCP工具
+            tool = self._find_best_tool(tool_name, tool_method, tool_args, msg)
 
             if tool:
                 await self.handle_intervention()
@@ -801,6 +977,120 @@ class Agent:
 
         except Exception as e:
             pass
+
+    def _find_best_tool(self, tool_name: str, tool_method: str | None, tool_args: dict, message: str):
+        """优化的工具查找方法，优先考虑MCP工具"""
+
+        # 1. 首先尝试MCP工具（包括模糊匹配）
+        mcp_tool = self._try_mcp_tool(tool_name, tool_method)
+        if mcp_tool:
+            return mcp_tool
+
+        # 2. 尝试本地工具
+        local_tool = self.get_tool(
+            name=tool_name, method=tool_method, args=tool_args, message=message
+        )
+
+        # 3. 如果本地工具是Unknown，尝试MCP工具的模糊匹配
+        if local_tool.__class__.__name__ == 'Unknown':
+            fuzzy_mcp_tool = self._try_fuzzy_mcp_match(tool_name)
+            if fuzzy_mcp_tool:
+                return fuzzy_mcp_tool
+
+        return local_tool
+
+    def _try_mcp_tool(self, tool_name: str, tool_method: str | None):
+        """尝试获取MCP工具"""
+        try:
+            import python.helpers.mcp_handler as mcp_helper
+
+            # 直接匹配
+            mcp_tool = mcp_helper.MCPConfig.get_instance().get_tool(self, tool_name)
+            if mcp_tool:
+                return mcp_tool
+
+            # 如果有方法名，尝试组合匹配
+            if tool_method:
+                combined_name = f"{tool_name}_{tool_method}"
+                mcp_tool = mcp_helper.MCPConfig.get_instance().get_tool(self, combined_name)
+                if mcp_tool:
+                    return mcp_tool
+
+        except ImportError:
+            PrintStyle(
+                background_color="black", font_color="yellow", padding=True
+            ).print("MCP helper module not found. Skipping MCP tool lookup.")
+        except Exception as e:
+            PrintStyle(
+                background_color="black", font_color="red", padding=True
+            ).print(f"Failed to get MCP tool '{tool_name}': {e}")
+
+        return None
+
+    def _try_fuzzy_mcp_match(self, tool_name: str):
+        """尝试MCP工具的模糊匹配"""
+        try:
+            import python.helpers.mcp_handler as mcp_helper
+
+            mcp_config = mcp_helper.MCPConfig.get_instance()
+
+            # 获取所有可用的MCP工具
+            all_tools = []
+            for server in mcp_config.servers:
+                if not server.disabled:
+                    server_tools = server.get_tools()
+                    for tool in server_tools:
+                        all_tools.append(f"{server.name}.{tool.get('name', '')}")
+
+            # 模糊匹配
+            best_match = self._find_best_fuzzy_match(tool_name, all_tools)
+            if best_match:
+                PrintStyle(
+                    background_color="blue", font_color="white", padding=True
+                ).print(f"Using fuzzy matched MCP tool: {best_match} for requested: {tool_name}")
+
+                return mcp_helper.MCPConfig.get_instance().get_tool(self, best_match)
+
+        except Exception as e:
+            print(f"Error in fuzzy MCP matching: {e}")
+
+        return None
+
+    def _find_best_fuzzy_match(self, target: str, candidates: list) -> str | None:
+        """找到最佳的模糊匹配"""
+        target_lower = target.lower()
+        best_match = None
+        best_score = 0
+
+        for candidate in candidates:
+            candidate_lower = candidate.lower()
+
+            # 计算相似度分数
+            score = 0
+
+            # 完全匹配
+            if target_lower == candidate_lower:
+                return candidate
+
+            # 包含匹配
+            if target_lower in candidate_lower:
+                score += 0.8
+            elif candidate_lower in target_lower:
+                score += 0.6
+
+            # 单词匹配
+            target_words = target_lower.split('_')
+            candidate_words = candidate_lower.split('.')[-1].split('_')  # 只考虑工具名部分
+
+            common_words = set(target_words) & set(candidate_words)
+            if common_words:
+                score += len(common_words) / max(len(target_words), len(candidate_words)) * 0.5
+
+            if score > best_score and score > 0.5:  # 最低相似度阈值
+                best_score = score
+                best_match = candidate
+
+        return best_match
 
     def get_tool(
         self, name: str, method: str | None, args: dict, message: str, **kwargs

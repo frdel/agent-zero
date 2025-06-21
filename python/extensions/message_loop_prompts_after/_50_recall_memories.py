@@ -7,21 +7,46 @@ DATA_NAME_TASK = "_recall_memories_task"
 
 class RecallMemories(Extension):
 
-    INTERVAL = 3
-    HISTORY = 10000
-    RESULTS = 3
-    THRESHOLD = 0.6
+    # 优化：减少记忆检索频率
+    INTERVAL = 5  # 从3改为5，减少检索频率
+    HISTORY = 6000  # 从10000减少到6000，减少处理的历史长度
+    RESULTS = 2  # 从3减少到2，减少检索结果数量
+    THRESHOLD = 0.7  # 从0.6提高到0.7，提高相关性阈值
 
     async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
 
-        # every 3 iterations (or the first one) recall memories
-        if loop_data.iteration % RecallMemories.INTERVAL == 0:
+        # 优化：增加额外的检查条件
+        should_recall = (
+            loop_data.iteration % RecallMemories.INTERVAL == 0 and
+            self._should_recall_memories(loop_data)
+        )
+
+        if should_recall:
             task = asyncio.create_task(self.search_memories(loop_data=loop_data, **kwargs))
         else:
             task = None
 
         # set to agent to be able to wait for it
         self.agent.set_data(DATA_NAME_TASK, task)
+
+    def _should_recall_memories(self, loop_data: LoopData) -> bool:
+        """检查是否应该检索记忆"""
+        # 如果是第一次迭代，总是检索
+        if loop_data.iteration == 0:
+            return True
+
+        # 检查最近的用户消息是否包含问题或请求
+        if loop_data.user_message:
+            content = str(loop_data.user_message.content).lower()
+            question_indicators = ['?', 'how', 'what', 'why', 'when', 'where', 'help', 'explain']
+            if any(indicator in content for indicator in question_indicators):
+                return True
+
+        # 检查对话长度，短对话不需要检索记忆
+        if len(self.agent.history.current.messages) < 3:
+            return False
+
+        return True
             
 
     async def search_memories(self, loop_data: LoopData, **kwargs):

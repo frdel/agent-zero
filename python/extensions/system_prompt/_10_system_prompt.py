@@ -38,6 +38,17 @@ def get_mcp_tools_prompt(agent: Agent):
         agent.context.log.set_progress("Collecting MCP tools") # MCP might be initializing, better inform via progress bar
         tools = MCPConfig.get_instance().get_tools_prompt()
         agent.context.log.set_progress(pre_progress) # return original progress
-        return tools
+
+        # 优化：增强工具提示，确保代理主动考虑使用插件
+        if tools:
+            enhanced_tools = f"""
+## Available MCP Tools (External Plugins):
+{tools}
+
+**IMPORTANT**: Always consider using these MCP tools when they are relevant to the user's request.
+These tools provide specialized functionality that can help solve problems more efficiently.
+Before using standard tools, check if any MCP tools are better suited for the task.
+"""
+            return enhanced_tools
     return ""
         
