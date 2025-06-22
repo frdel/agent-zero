@@ -124,6 +124,7 @@
     <script type="text/javascript" src="js/settings.js"></script>
     <script type="text/javascript" src="js/file_browser.js"></script>
     <script type="text/javascript" src="js/modal.js"></script>
+    <script type="text/javascript" src="js/secrets_modal.js"></script>
     <script type="text/javascript" src="js/tunnel.js"></script>
 </head>
 
@@ -663,9 +664,23 @@
 
                                                 <!-- Textarea field -->
                                                 <template x-if="field.type === 'textarea'">
-                                                    <textarea :class="field.classes" :value="field.value"
-                                                        :readonly="field.readonly === true"
-                                                        @input="field.value = $event.target.value"></textarea>
+                                                    <div style="position: relative;">
+                                                        <textarea :class="field.classes" :value="field.value"
+                                                            :readonly="field.readonly === true"
+                                                            @input="field.value = $event.target.value"></textarea>
+
+                                                        <!-- Expand button for fields that have expand functionality -->
+                                                        <template x-if="field.has_expand_button">
+                                                            <button class="textarea-expand-button"
+                                                                @click="openSecretsFullscreen(field)"
+                                                                aria-label="Expand to full screen"
+                                                                title="Open in full-screen editor">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                                                    <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                                                                </svg>
+                                                            </button>
+                                                        </template>
+                                                    </div>
                                                 </template>
 
                                                 <!-- Switch field -->
@@ -1673,6 +1688,62 @@
                     <div class="modal-footer">
                         <div id="buttons-container">
                             <button class="btn btn-ok" @click="handleClose()">Done (Ctrl+Enter)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Secrets Fullscreen Modal -->
+    <div id="secretsFullscreenModal" x-data="secretsFullscreenModalProxy">
+        <template x-teleport="body">
+            <div x-show="isOpen" class="modal-overlay" @click.self="handleCancel()"
+                @keydown.window="handleKeydown($event)" x-transition>
+                <div class="modal-container full-screen-input-modal">
+                    <div class="modal-content">
+                        <button class="modal-close" @click="handleCancel()">&times;</button>
+
+                        <!-- Add toolbar -->
+                        <div class="editor-toolbar">
+                            <div class="toolbar-group">
+                                <button class="toolbar-button" @click="undo()" :disabled="!canUndo" title="Undo (Ctrl+Z)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 7v6h6"></path>
+                                        <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path>
+                                    </svg>
+                                </button>
+                                <button class="toolbar-button" @click="redo()" :disabled="!canRedo" title="Redo (Ctrl+Shift+Z)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 7v6h-6"></path>
+                                        <path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="toolbar-group">
+                                <button class="toolbar-button" @click="clearText()" title="Clear Text">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="toolbar-title">
+                                <span>Secrets Store Editor</span>
+                                <small>Use format: KEY=value (one per line)</small>
+                            </div>
+                        </div>
+
+                        <textarea id="secrets-fullscreen-input" x-model="secretsText"
+                            placeholder="Enter secrets in .env format:&#10;API_KEY=your_api_key_here&#10;DATABASE_PASSWORD=your_password&#10;&#10;Use placeholders like §§API_KEY§§ in agent responses."
+                            @input="updateHistory()"
+                            style="white-space: pre; font-family: 'Roboto Mono', monospace;"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <div id="buttons-container">
+                            <button class="btn btn-ok" @click="handleSave()">Save (Ctrl+S)</button>
+                            <button class="btn btn-cancel" @click="handleCancel()">Cancel (Esc)</button>
                         </div>
                     </div>
                 </div>
