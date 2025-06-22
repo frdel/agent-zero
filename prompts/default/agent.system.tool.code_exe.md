@@ -23,6 +23,7 @@ usage:
         "I can use...",
         "Then I can...",
     ],
+    "headline": "short headline of the response",
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "python",
@@ -39,6 +40,7 @@ usage:
         "Need to do...",
         "Need to install...",
     ],
+    "headline": "short headline of the response",
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "terminal",
@@ -54,6 +56,7 @@ usage:
     "thoughts": [
         "Waiting for program to finish...",
     ],
+    "headline": "short headline of the response",
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "output",
@@ -68,6 +71,7 @@ usage:
     "thoughts": [
         "code_execution_tool not responding...",
     ],
+    "headline": "short headline of the response",
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "reset",

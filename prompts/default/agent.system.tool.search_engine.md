@@ -7,6 +7,7 @@ returns list urls titles descriptions
     "thoughts": [
         "...",
     ],
+    "headline": "short headline of the response",
     "tool_name": "search_engine",
     "tool_args": {
         "query": "Video of...",

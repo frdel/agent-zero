@@ -9,6 +9,7 @@ usage:
     "thoughts": [
         "The program asks for Y/N...",
     ],
+    "headline": "short headline of the response",
     "tool_name": "input",
     "tool_args": {
         "keyboard": "Y",

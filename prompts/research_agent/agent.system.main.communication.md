@@ -36,6 +36,7 @@ Carefully craft the tool call arguments to best serve the goal of a high quality
 ### reply format
 Respond with valid JSON containing the following fields:
   *   "thoughts": array (your thinking before execution in natural language)
+  *   "headline": string (short headline summary of the response)
   *   "tool_name": string (Name of the tool to use)
   *   "tool_args": Dict (key value pairs of tool arguments in form "argument: value")
 No other text is allowed!
@@ -55,6 +56,7 @@ dont use **
         "thought2",
         "..."
     ],
+    "headline": "short headline summary of the response",
     "tool_name": "tool_to_use",
     "tool_args": {
         "arg1": "val1",

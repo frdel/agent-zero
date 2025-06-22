@@ -10,6 +10,7 @@ provide full valid url with http:// or https://
     "thoughts": [
         "...",
     ],
+    "headline": "short headline of the response",
     "tool_name": "webpage_content_tool",
     "tool_args": {
         "url": "https://...comexample",

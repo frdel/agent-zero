@@ -7,6 +7,7 @@ usage:
     "thoughts": [
         "...",
     ],
+    "headline": "short headline of the response",
     "tool_name": "behaviour_adjustment",
     "tool_args": {
         "adjustments": "remove...",

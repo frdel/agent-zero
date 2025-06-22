@@ -10,6 +10,7 @@ verify memory with online
     "thoughts": [
         "...",
     ],
+    "headline": "short headline of the response",
     "tool_name": "knowledge_tool",
     "tool_args": {
         "question": "How to...",

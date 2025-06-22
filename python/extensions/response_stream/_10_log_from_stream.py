@@ -16,13 +16,17 @@ class LogFromStream(Extension):
         **kwargs
     ):
 
+        heading = f"{self.agent.agent_name}: Thinking..."
+        if "headline" in parsed:
+            heading = f"{self.agent.agent_name}: {parsed['headline']}"
+
         # create log message and store it in loop data temporary params
         if "log_item_generating" not in loop_data.params_temporary:
             loop_data.params_temporary["log_item_generating"] = self.agent.context.log.log(
                 type="agent",
-                heading=f"{self.agent.agent_name}: Generating",
+                heading=heading,
             )
 
         # update log message
         log_item = loop_data.params_temporary["log_item_generating"]
-        log_item.update(content=text, kvps=parsed)
+        log_item.update(heading=heading, content=text, kvps=parsed)

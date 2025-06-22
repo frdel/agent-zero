@@ -15,6 +15,7 @@ usage:
     "thoughts": [
         "...",
     ],
+    "headline": "short headline of the response",
     "tool_name": "response",
     "tool_args": {
         "text": "Answer to the user",
