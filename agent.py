@@ -14,6 +14,7 @@ import models
 from python.helpers import extract_tools, files, errors, history, tokens
 from python.helpers import dirty_json
 from python.helpers.print_style import PrintStyle
+from python.helpers.secrets import SecretsManager
 from langchain_core.prompts import (
     ChatPromptTemplate,
 )
@@ -482,12 +483,15 @@ class Agent:
             # Handling for general exceptions
             error_text = errors.error_text(exception)
             error_message = errors.format_error(exception)
-            PrintStyle(font_color="red", padding=True).print(error_message)
+            # Mask secrets in error messages
+            masked_error_message = SecretsManager.get_instance().mask_values(error_message)
+            masked_error_text = SecretsManager.get_instance().mask_values(error_text)
+            PrintStyle(font_color="red", padding=True).print(masked_error_message)
             self.context.log.log(
                 type="error",
                 heading="Error",
-                content=error_message,
-                kvps={"text": error_text},
+                content=masked_error_message,
+                kvps={"text": masked_error_text},
             )
             raise HandledException(exception)  # Re-raise the exception to kill the loop
 
@@ -575,8 +579,10 @@ class Agent:
         return self.hist_add_message(False, content=content)
 
     def hist_add_tool_result(self, tool_name: str, tool_result: str):
+        # Mask secrets in tool result before adding to history
+        masked_result = SecretsManager.get_instance().mask_values(tool_result)
         content = self.parse_prompt(
-            "fw.tool_result.md", tool_name=tool_name, tool_result=tool_result
+            "fw.tool_result.md", tool_name=tool_name, tool_result=masked_result
         )
         return self.hist_add_message(False, content=content)
 

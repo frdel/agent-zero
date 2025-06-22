@@ -207,6 +207,42 @@
   background-color: rgba(155, 155, 155, 0.7);
 }
 
+#secrets-fullscreen-input {
+  width: 100%;
+  height: calc(100% - 50px);
+  border: none;
+  background-color: transparent;
+  color: var(--color-text);
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-size: 0.955rem;
+  padding: 1.2rem 1rem;
+  resize: none;
+  outline: none;
+}
+
+#secrets-fullscreen-input::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+#secrets-fullscreen-input::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 14px;
+  border-radius: 6px;
+}
+
+#secrets-fullscreen-input::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.5);
+  border-radius: 6px;
+  -webkit-transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease;
+}
+
+#secrets-fullscreen-input::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(155, 155, 155, 0.7);
+}
+
 .light-mode .full-screen-input-modal {
   background-color: rgb(220, 220, 220, 0.86);
 }
@@ -474,4 +510,22 @@
 
 .toolbar-button:disabled:hover {
   background-color: transparent;
+}
+
+.toolbar-title {
+  flex: 1;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.toolbar-title span {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.toolbar-title small {
+  display: block;
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-top: 0.25rem;
 }

@@ -295,14 +295,18 @@ class DynamicMcpProxy:
 
         # Create a new MCP app with updated settings
         with self._lock:
+            # Get additional routes safely
+            additional_routes = getattr(mcp_server, '_additional_http_routes', [])
+            # Get auth settings safely
+            auth_settings = getattr(mcp_server.settings, 'auth', None)
+            
             self.app = create_sse_app(
                 server=mcp_server,
                 message_path=mcp_server.settings.message_path,
                 sse_path=mcp_server.settings.sse_path,
-                auth_server_provider=mcp_server._auth_server_provider,
-                auth_settings=mcp_server.settings.auth,
+                auth=auth_settings,
                 debug=mcp_server.settings.debug,
-                routes=mcp_server._additional_http_routes,
+                routes=additional_routes,
                 middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
             )
 
