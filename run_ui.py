@@ -199,6 +199,21 @@ def run():
     handlers = load_classes_from_folder("python/api", "*.py", ApiHandler)
     for handler in handlers:
         register_api_handler(webapp, handler)
+    
+    # Special handling for canvas serve routes
+    from python.api.canvas_serve import CanvasServe
+    canvas_serve_instance = CanvasServe(webapp, lock)
+    
+    @requires_auth  
+    async def serve_canvas_file(canvas_id, filename):
+        return await canvas_serve_instance._serve_file(canvas_id, filename)
+    
+    webapp.add_url_rule(
+        '/canvas_serve/<canvas_id>/<filename>',
+        'canvas_serve_file', 
+        serve_canvas_file,
+        methods=["GET"]
+    )
 
     # add the webapp and mcp to the app
     app = DispatcherMiddleware(

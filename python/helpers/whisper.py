@@ -1,10 +1,17 @@
 import base64
 import warnings
-import whisper
 import tempfile
 import asyncio
 from python.helpers import runtime, rfc, settings
 from python.helpers.print_style import PrintStyle
+
+# Conditional import for whisper
+try:
+    from whisper import load_model
+    WHISPER_AVAILABLE = True
+except ImportError:
+    WHISPER_AVAILABLE = False
+    load_model = None
 
 # Suppress FutureWarning from torch.load
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -23,6 +30,9 @@ async def preload(model_name:str):
 async def _preload(model_name:str):
     global _model, _model_name, is_updating_model
 
+    if not WHISPER_AVAILABLE:
+        raise ImportError("Whisper is not available. Please install openai-whisper.")
+
     while is_updating_model:
         await asyncio.sleep(0.1)
 
@@ -30,7 +40,7 @@ async def _preload(model_name:str):
         is_updating_model = True
         if not _model or _model_name != model_name:
                 PrintStyle.standard(f"Loading Whisper model: {model_name}")
-                _model = whisper.load_model(name=model_name) # type: ignore
+                _model = load_model(name=model_name)
                 _model_name = model_name
     finally:
         is_updating_model = False
@@ -46,6 +56,9 @@ async def transcribe(model_name:str, audio_bytes_b64: str):
 
 
 async def _transcribe(model_name:str, audio_bytes_b64: str):
+    if not WHISPER_AVAILABLE:
+        raise ImportError("Whisper is not available. Please install openai-whisper.")
+        
     await _preload(model_name)
     
     # Decode audio bytes if encoded as a base64 string
@@ -56,5 +69,7 @@ async def _transcribe(model_name:str, audio_bytes_b64: str):
         audio_file.write(audio_bytes)
 
     # Transcribe the audio file
-    result = _model.transcribe(audio_file.name, fp16=False) # type: ignore
+    if _model is None:
+        raise RuntimeError("Whisper model is not loaded. Please check if the model was loaded successfully.")
+    result = _model.transcribe(audio_file.name, fp16=False)
     return result
