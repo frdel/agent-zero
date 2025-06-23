@@ -29,83 +29,22 @@
             if (window[name]) window[name](...args)
         }
     </script>
+    <!-- Load Alpine.js data definitions first -->
+    <script type="text/javascript" src="js/settings.js"></script>
+    <script type="text/javascript" src="js/file_browser.js"></script>
+    <script type="text/javascript" src="js/modal.js"></script>
+    <script type="text/javascript" src="js/tunnel.js"></script>
 
-    <!-- Pre-initialize schedulerSettings to ensure Alpine doesn't miss it -->
-    <script>
-        // Pre-define schedulerSettings skeleton to ensure it's available to Alpine
-        window.schedulerSettings = function() {
-            return {
-                tasks: [],
-                isLoading: true,
-                selectedTask: null,
-                expandedTaskId: null,
-                sortField: 'name',
-                sortDirection: 'asc',
-                filterType: 'all',
-                filterState: 'all',
-                pollingInterval: null,
-                pollingActive: false,
-                editingTask: {
-                    name: '',
-                    type: 'scheduled',
-                    state: 'idle',
-                    schedule: {
-                        minute: '*',
-                        hour: '*',
-                        day: '*',
-                        month: '*',
-                        weekday: '*',
-                        timezone: ''
-                    },
-                    token: '',
-                    plan: {
-                        todo: [],
-                        in_progress: null,
-                        done: []
-                    },
-                    system_prompt: '',
-                    prompt: '',
-                    attachments: []
-                },
-                isCreating: false,
-                isEditing: false,
-                showLoadingState: false,
-                viewMode: 'list',
-                selectedTaskForDetail: null,
-                attachmentsText: '',
-                filteredTasks: [],
-                // Minimal init to avoid errors
-                init() {
-                    console.log('Basic schedulerSettings initialized');
-                    // Watch for task type changes
-                    this.$watch('editingTask.type', (newType) => {
-                        if (newType === 'planned') {
-                            // When switching to planned task type, initialize the datetime picker
-                            this.$nextTick(() => {
-                                if (this.initFlatpickr) {
-                                    if (this.isCreating) {
-                                        this.initFlatpickr('create');
-                                    } else if (this.isEditing) {
-                                        this.initFlatpickr('edit');
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
-            };
-        };
-    </script>
-
-    <!-- Load module scripts first -->
+    <!-- Load module scripts -->
     <script type="module" src="js/scheduler.js"></script>
     <script type="module" src="js/speech.js"></script>
     <script type="module" src="js/history.js"></script>
+    <script src="js/canvas.js"></script>
     <script type="module" src="index.js"></script>
 
     <!-- Then load Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.3/dist/cdn.min.js"></script>
-    <!-- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script> -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
     <script type="module" src="js/initFw.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.36.5/src-noconflict/ace.js"></script>
@@ -119,12 +58,6 @@
         crossorigin="anonymous"></script>
 
     <script src="https://rawgit.com/showdownjs/showdown/develop/dist/showdown.min.js"></script>
-
-    <!-- Non-module scripts after Alpine.js -->
-    <script type="text/javascript" src="js/settings.js"></script>
-    <script type="text/javascript" src="js/file_browser.js"></script>
-    <script type="text/javascript" src="js/modal.js"></script>
-    <script type="text/javascript" src="js/tunnel.js"></script>
 </head>
 
 <body class="dark-mode">
@@ -349,6 +282,54 @@
             </div>
             <div id="chat-history">
             </div>
+            
+            <!-- Welcome Message for Empty Chat -->
+            <div id="welcome-message" class="welcome-message">
+                <div class="welcome-content">
+                    <div class="welcome-logo">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <h2>Welcome to Agent Zero</h2>
+                    <p class="welcome-description">
+                        Your personal AI assistant that can help you with coding, analysis, research, and much more. 
+                        Agent Zero uses your computer as a tool to accomplish complex tasks.
+                    </p>
+                    <div class="welcome-features">
+                        <div class="feature-item">
+                            <span class="feature-icon">💻</span>
+                            <span>Code execution and development</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-icon">📊</span>
+                            <span>Data analysis and visualization</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-icon">🌐</span>
+                            <span>Web browsing and research</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-icon">🎨</span>
+                            <span>Interactive canvas and artifacts</span>
+                        </div>
+                    </div>
+                    <div class="welcome-action">
+                        <p class="welcome-prompt">Get started by typing a message below or try one of these:</p>
+                        <div class="welcome-suggestions">
+                            <button class="suggestion-btn" onclick="document.getElementById('chat-input').value='Create a simple HTML page with a calculator'; document.getElementById('chat-input').focus();">
+                                Build a calculator
+                            </button>
+                            <button class="suggestion-btn" onclick="document.getElementById('chat-input').value='Analyze this data and create a visualization'; document.getElementById('chat-input').focus();">
+                                Analyze data
+                            </button>
+                            <button class="suggestion-btn" onclick="document.getElementById('chat-input').value='Help me set up a Python development environment'; document.getElementById('chat-input').focus();">
+                                Setup dev environment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div id="toast" class="toast">
                 <div class="toast__content">
                     <div class="toast__title"></div>
@@ -561,6 +542,87 @@
                         <p>Nudge</p>
                     </button>
 
+                    <button class="text-button" id="canvas_toggle">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 3h18c1.1 0 2 .9 2 2v14c0 1.1-.9 2-2 2H3c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2zm0 2v14h18V5H3zm2 2h14v10H5V7zm2 2v6h10V9H7z"/>
+                        </svg>
+                        <p>Canvas</p>
+                    </button>
+
+                </div>
+            </div>
+        </div>
+        
+        <!-- Canvas Panel -->
+        <div id="canvas-panel" class="panel canvas-hidden">
+            <div class="canvas-header">
+                <div class="canvas-toolbar">
+                    <button id="canvas-close" class="canvas-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                    </button>
+                    <h3 class="canvas-title">Canvas</h3>
+                    <div class="canvas-controls">
+                        <button id="canvas-copy" class="canvas-button" title="Copy Code">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                            </svg>
+                        </button>
+                        <button id="canvas-export" class="canvas-button" title="Export">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
+                            </svg>
+                        </button>
+                        <button id="canvas-refresh" class="canvas-button" title="Refresh">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                            </svg>
+                        </button>
+                        <button id="canvas-fullscreen" class="canvas-button" title="Fullscreen">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="canvas-tabs">
+                    <button id="canvas-tab-preview" class="canvas-tab active" data-tab="preview">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                        </svg>
+                        Preview
+                    </button>
+                    <button id="canvas-tab-code" class="canvas-tab" data-tab="code">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
+                        </svg>
+                        Code
+                    </button>
+                </div>
+            </div>
+            <div id="canvas-content" class="canvas-content">
+                <div id="canvas-loading" class="canvas-loading">
+                    <div class="loading-spinner"></div>
+                    <p>Preparing canvas...</p>
+                </div>
+                
+                <!-- Preview Tab Content -->
+                <div id="canvas-preview-content" class="canvas-tab-content active">
+                    <iframe id="canvas-preview" class="canvas-preview" src="about:blank" sandbox="allow-scripts allow-forms allow-modals allow-popups allow-presentation" referrerpolicy="no-referrer"></iframe>
+                </div>
+                
+                <!-- Code Tab Content -->
+                <div id="canvas-code-content" class="canvas-tab-content">
+                    <div class="canvas-code-header">
+                        <span class="canvas-code-type">HTML</span>
+                        <button id="canvas-code-copy" class="canvas-code-copy-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <pre id="canvas-code-display" class="canvas-code-display"><code></code></pre>
                 </div>
             </div>
         </div>

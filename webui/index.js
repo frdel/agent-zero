@@ -31,32 +31,122 @@ function isMobile() {
 }
 
 function toggleSidebar(show) {
+    const leftPanelEl = document.getElementById('left-panel');
+    const rightPanelEl = document.getElementById('right-panel');
     const overlay = document.getElementById('sidebar-overlay');
-    if (typeof show === 'boolean') {
-        leftPanel.classList.toggle('hidden', !show);
-        rightPanel.classList.toggle('expanded', !show);
-        overlay.classList.toggle('visible', show);
-    } else {
-        leftPanel.classList.toggle('hidden');
-        rightPanel.classList.toggle('expanded');
-        overlay.classList.toggle('visible', !leftPanel.classList.contains('hidden'));
+    
+    if (!leftPanelEl || !rightPanelEl) {
+        console.error('Sidebar elements not found');
+        return;
     }
+    
+    console.log('=== TOGGLE SIDEBAR START ===');
+    console.log('toggleSidebar called with show:', show);
+    console.log('Current state - Left panel hidden:', leftPanelEl.classList.contains('hidden'));
+    console.log('Current state - Right panel expanded:', rightPanelEl.classList.contains('expanded'));
+    
+    // Store previous classes for comparison
+    const leftClassesBefore = Array.from(leftPanelEl.classList);
+    const rightClassesBefore = Array.from(rightPanelEl.classList);
+    
+    if (typeof show === 'boolean') {
+        leftPanelEl.classList.toggle('hidden', !show);
+        rightPanelEl.classList.toggle('expanded', !show);
+        if (overlay) {
+            overlay.classList.toggle('visible', show && isMobile());
+        }
+    } else {
+        leftPanelEl.classList.toggle('hidden');
+        rightPanelEl.classList.toggle('expanded');
+        if (overlay) {
+            overlay.classList.toggle('visible', !leftPanelEl.classList.contains('hidden') && isMobile());
+        }
+        // Mark as user-controlled when manually toggled
+        leftPanelEl.setAttribute('data-user-controlled', 'true');
+    }
+    
+    // Show what changed
+    const leftClassesAfter = Array.from(leftPanelEl.classList);
+    const rightClassesAfter = Array.from(rightPanelEl.classList);
+    
+    console.log('Classes changed:');
+    console.log('  Left panel before:', leftClassesBefore);
+    console.log('  Left panel after:', leftClassesAfter);
+    console.log('  Right panel before:', rightClassesBefore);
+    console.log('  Right panel after:', rightClassesAfter);
+    
+    console.log('New state - Left panel hidden:', leftPanelEl.classList.contains('hidden'));
+    console.log('New state - Right panel expanded:', rightPanelEl.classList.contains('expanded'));
+    
+    // Check computed styles after change
+    setTimeout(() => {
+        const leftStyle = window.getComputedStyle(leftPanelEl);
+        const rightStyle = window.getComputedStyle(rightPanelEl);
+        console.log('Post-toggle computed styles:');
+        console.log('  Left margin-left:', leftStyle.marginLeft);
+        console.log('  Right width:', rightStyle.width);
+    }, 100);
+    
+    console.log('=== TOGGLE SIDEBAR END ===');
 }
 
 function handleResize() {
+    const leftPanelEl = document.getElementById('left-panel');
+    const rightPanelEl = document.getElementById('right-panel');
     const overlay = document.getElementById('sidebar-overlay');
+    
+    if (!leftPanelEl || !rightPanelEl) return;
+    
+    console.log('handleResize called - width:', window.innerWidth, 'isMobile:', isMobile());
+    
     if (isMobile()) {
-        leftPanel.classList.add('hidden');
-        rightPanel.classList.add('expanded');
-        overlay.classList.remove('visible');
+        leftPanelEl.classList.add('hidden');
+        rightPanelEl.classList.add('expanded');
+        if (overlay) overlay.classList.remove('visible');
+        // Clear user-controlled state on mobile since we force hide
+        leftPanelEl.removeAttribute('data-user-controlled');
+        console.log('Mobile mode: cleared user-controlled state');
     } else {
-        leftPanel.classList.remove('hidden');
-        rightPanel.classList.remove('expanded');
-        overlay.classList.remove('visible');
+        leftPanelEl.classList.remove('hidden');
+        rightPanelEl.classList.remove('expanded');
+        if (overlay) overlay.classList.remove('visible');
+        // Clear user-controlled state when switching to desktop since we force show
+        leftPanelEl.removeAttribute('data-user-controlled');
+        console.log('Desktop mode: cleared user-controlled state');
     }
 }
 
-window.addEventListener('load', handleResize);
+// Initialize page state consistently
+function initializePageState() {
+    console.log('Initializing page state...');
+    
+    // Run initial resize handler to set proper state
+    handleResize();
+    
+    // Ensure state is properly initialized for canvas interaction
+    setTimeout(() => {
+        const leftPanel = document.getElementById('left-panel');
+        if (leftPanel && !leftPanel.hasAttribute('data-user-controlled')) {
+            console.log('Page initialization: user-controlled state not set, ensuring clean state');
+            // Reset sidebar state on page load/refresh
+            leftPanel.removeAttribute('data-user-controlled');
+            
+            // Force clean initial state - show sidebar on desktop, hide on mobile
+            if (window.innerWidth <= 768) {
+                // Mobile: hide sidebar
+                toggleSidebar(false);
+            } else {
+                // Desktop: show sidebar
+                toggleSidebar(true);
+            }
+        }
+    }, 50);
+}
+
+window.addEventListener('load', () => {
+    initializePageState();
+    handleResize();
+});
 window.addEventListener('resize', handleResize);
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -66,20 +156,387 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleSidebar(false);
         }
     });
+    
+    // Also initialize state on DOM ready
+    initializePageState();
 });
 
 function setupSidebarToggle() {
-    const leftPanel = document.getElementById('left-panel');
-    const rightPanel = document.getElementById('right-panel');
     const toggleSidebarButton = document.getElementById('toggle-sidebar');
-    if (toggleSidebarButton) {
-        toggleSidebarButton.addEventListener('click', toggleSidebar);
-    } else {
-        console.error('Toggle sidebar button not found');
-        setTimeout(setupSidebarToggle, 100);
+    if (toggleSidebarButton && !toggleSidebarButton._hasClickListener) {
+        console.log('Setting up sidebar toggle button');
+        
+        // Create the click handler
+        const clickHandler = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Sidebar toggle button clicked');
+            toggleSidebar();
+        };
+        
+        // Store reference to handler and mark as setup
+        toggleSidebarButton._clickHandler = clickHandler;
+        toggleSidebarButton._hasClickListener = true;
+        
+        // Add the event listener
+        toggleSidebarButton.addEventListener('click', clickHandler);
+        
+        console.log('Sidebar toggle button event listener attached successfully');
     }
 }
+
+// Set up on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', setupSidebarToggle);
+
+// Canvas toggle functionality
+window.toggleCanvas = function() {
+    if (window.canvasManager) {
+        window.canvasManager.toggle();
+    }
+};
+
+// Make toggleSidebar available globally for debugging
+window.toggleSidebar = toggleSidebar;
+
+// Simple test to trigger canvas manually
+window.testCanvasOpen = function() {
+    console.log('=== MANUAL CANVAS OPEN TEST ===');
+    const canvasManager = window.canvasManager;
+    
+    if (canvasManager) {
+        console.log('Opening canvas manually...');
+        canvasManager.show();
+        console.log('Canvas show() called - check if left panel auto-closed');
+    } else {
+        console.log('Canvas manager not found!');
+    }
+};
+
+// Test function for sidebar and canvas interaction
+window.testSidebarCanvas = function() {
+    console.log('=== TESTING SIDEBAR AND CANVAS INTERACTION ===');
+    
+    // Test 1: Check current state
+    const leftPanel = document.getElementById('left-panel');
+    const rightPanel = document.getElementById('right-panel');
+    const canvasManager = window.canvasManager;
+    
+    console.log('Initial state:');
+    console.log('  Left panel hidden:', leftPanel?.classList.contains('hidden'));
+    console.log('  Canvas visible:', canvasManager?.isVisible);
+    
+    // Test 2: Toggle sidebar manually
+    console.log('Testing manual sidebar toggle...');
+    toggleSidebar();
+    
+    setTimeout(() => {
+        console.log('After manual toggle:');
+        console.log('  Left panel hidden:', leftPanel?.classList.contains('hidden'));
+        
+        // Test 3: Open canvas - SHOULD auto-close sidebar
+        if (canvasManager) {
+            console.log('Testing canvas open (SHOULD auto-close sidebar)...');
+            canvasManager.show();
+            
+            setTimeout(() => {
+                console.log('After canvas open:');
+                console.log('  Left panel hidden:', leftPanel?.classList.contains('hidden'));
+                console.log('  Canvas visible:', canvasManager.isVisible);
+                
+                // Test 4: Test hamburger button works even with canvas open
+                console.log('Testing hamburger button with canvas open...');
+                toggleSidebar();
+                
+                setTimeout(() => {
+                    console.log('After hamburger toggle with canvas open:');
+                    console.log('  Left panel hidden:', leftPanel?.classList.contains('hidden'));
+                    
+                    // Test 5: Close canvas
+                    console.log('Testing canvas close...');
+                    canvasManager.hide();
+                    
+                    setTimeout(() => {
+                        console.log('After canvas close:');
+                        console.log('  Left panel hidden:', leftPanel?.classList.contains('hidden'));
+                        console.log('  Canvas visible:', canvasManager.isVisible);
+                        
+                        console.log('=== TESTS COMPLETE ===');
+                    }, 100);
+                }, 100);
+            }, 100);
+        }
+    }, 100);
+};
+
+// Utility function to reset user-controlled state
+window.resetSidebarUserControl = function() {
+    const leftPanel = document.getElementById('left-panel');
+    if (leftPanel) {
+        leftPanel.removeAttribute('data-user-controlled');
+        console.log('Sidebar user-controlled state reset');
+    }
+};
+
+// Debug function to test sidebar
+window.debugSidebar = function() {
+    const leftPanelEl = document.getElementById('left-panel');
+    const rightPanelEl = document.getElementById('right-panel');
+    const containerEl = document.querySelector('.container');
+    const toggleBtn = document.getElementById('toggle-sidebar');
+    
+    console.log('=== SIDEBAR DEBUG INFO ===');
+    console.log('Container Element:', containerEl);
+    console.log('Container Classes:', containerEl ? Array.from(containerEl.classList) : 'not found');
+    console.log('Left Panel:', leftPanelEl);
+    console.log('Left Panel Classes:', leftPanelEl ? Array.from(leftPanelEl.classList) : 'not found');
+    console.log('Right Panel:', rightPanelEl);
+    console.log('Right Panel Classes:', rightPanelEl ? Array.from(rightPanelEl.classList) : 'not found');
+    console.log('Toggle Button:', toggleBtn);
+    console.log('Button has click listener:', toggleBtn ? toggleBtn._hasClickListener : 'button not found');
+    
+    // Check computed styles
+    if (leftPanelEl) {
+        const leftStyle = window.getComputedStyle(leftPanelEl);
+        console.log('Left Panel Computed Style:');
+        console.log('  margin-left:', leftStyle.marginLeft);
+        console.log('  display:', leftStyle.display);
+        console.log('  visibility:', leftStyle.visibility);
+        console.log('  transform:', leftStyle.transform);
+    }
+    
+    if (rightPanelEl) {
+        const rightStyle = window.getComputedStyle(rightPanelEl);
+        console.log('Right Panel Computed Style:');
+        console.log('  width:', rightStyle.width);
+        console.log('  margin-left:', rightStyle.marginLeft);
+        console.log('  display:', rightStyle.display);
+    }
+    
+    // Test manual toggle
+    console.log('=== TESTING MANUAL TOGGLE ===');
+    toggleSidebar();
+};
+
+// Force toggle that bypasses any potential blocking
+window.forceToggleSidebar = function() {
+    console.log('Force toggling sidebar...');
+    const leftPanelEl = document.getElementById('left-panel');
+    const rightPanelEl = document.getElementById('right-panel');
+    
+    if (leftPanelEl && rightPanelEl) {
+        const isHidden = leftPanelEl.classList.contains('hidden');
+        console.log('Current state - hidden:', isHidden);
+        
+        if (isHidden) {
+            leftPanelEl.classList.remove('hidden');
+            rightPanelEl.classList.remove('expanded');
+            console.log('Showing sidebar');
+        } else {
+            leftPanelEl.classList.add('hidden');
+            rightPanelEl.classList.add('expanded');
+            console.log('Hiding sidebar');
+        }
+    }
+};
+
+// Simulate clicking the toggle button
+window.simulateToggleClick = function() {
+    console.log('Simulating toggle button click...');
+    const toggleBtn = document.getElementById('toggle-sidebar');
+    if (toggleBtn) {
+        console.log('Button found, dispatching click event...');
+        const clickEvent = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true
+        });
+        toggleBtn.dispatchEvent(clickEvent);
+    } else {
+        console.error('Toggle button not found!');
+    }
+};
+
+// Test if we can directly invoke the button's click handler
+window.testButtonHandler = function() {
+    console.log('Testing button handler directly...');
+    const toggleBtn = document.getElementById('toggle-sidebar');
+    if (toggleBtn && toggleBtn._clickHandler) {
+        console.log('Calling click handler directly...');
+        toggleBtn._clickHandler({
+            preventDefault: () => {},
+            stopPropagation: () => {}
+        });
+    } else {
+        console.error('Button or handler not found!', {
+            button: !!toggleBtn,
+            handler: toggleBtn ? !!toggleBtn._clickHandler : false
+        });
+    }
+};
+
+// Manual sidebar control - show sidebar
+window.showSidebar = function() {
+    console.log('Manually showing sidebar...');
+    const leftPanelEl = document.getElementById('left-panel');
+    const rightPanelEl = document.getElementById('right-panel');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    if (leftPanelEl && rightPanelEl) {
+        leftPanelEl.classList.remove('hidden');
+        rightPanelEl.classList.remove('expanded');
+        if (overlay && !isMobile()) {
+            overlay.classList.remove('visible');
+        }
+        console.log('Sidebar shown');
+    }
+};
+
+// Manual sidebar control - hide sidebar
+window.hideSidebar = function() {
+    console.log('Manually hiding sidebar...');
+    const leftPanelEl = document.getElementById('left-panel');
+    const rightPanelEl = document.getElementById('right-panel');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    if (leftPanelEl && rightPanelEl) {
+        leftPanelEl.classList.add('hidden');
+        rightPanelEl.classList.add('expanded');
+        if (overlay && isMobile()) {
+            overlay.classList.add('visible');
+        }
+        console.log('Sidebar hidden');
+    }
+};
+
+// Complete CSS validation function
+window.validateSidebarCSS = function() {
+    const leftPanelEl = document.getElementById('left-panel');
+    const rightPanelEl = document.getElementById('right-panel');
+    
+    if (leftPanelEl && rightPanelEl) {
+        console.log('=== CSS VALIDATION ===');
+        
+        // Test hidden state
+        leftPanelEl.classList.add('hidden');
+        rightPanelEl.classList.add('expanded');
+        
+        setTimeout(() => {
+            const leftHiddenStyle = window.getComputedStyle(leftPanelEl);
+            const rightExpandedStyle = window.getComputedStyle(rightPanelEl);
+            
+            console.log('HIDDEN STATE:');
+            console.log('  Left panel margin-left:', leftHiddenStyle.marginLeft);
+            console.log('  Right panel width:', rightExpandedStyle.width);
+            console.log('  Right panel margin-left:', rightExpandedStyle.marginLeft);
+            
+            // Test visible state
+            leftPanelEl.classList.remove('hidden');
+            rightPanelEl.classList.remove('expanded');
+            
+            setTimeout(() => {
+                const leftVisibleStyle = window.getComputedStyle(leftPanelEl);
+                const rightNormalStyle = window.getComputedStyle(rightPanelEl);
+                
+                console.log('VISIBLE STATE:');
+                console.log('  Left panel margin-left:', leftVisibleStyle.marginLeft);
+                console.log('  Right panel width:', rightNormalStyle.width);
+                console.log('  Right panel margin-left:', rightNormalStyle.marginLeft);
+                
+                console.log('=== VALIDATION COMPLETE ===');
+            }, 100);
+        }, 100);
+    }
+};
+
+// Welcome message management
+let welcomeMessageManager = {
+    welcomeElement: null,
+    chatHistoryElement: null,
+    leftPanelElement: null,
+    
+    init() {
+        this.welcomeElement = document.getElementById('welcome-message');
+        this.chatHistoryElement = document.getElementById('chat-history');
+        this.leftPanelElement = document.getElementById('left-panel');
+        
+        // Show welcome message initially (chat starts empty)
+        this.updateVisibility();
+        
+        // Set up observer to watch for chat changes
+        if (this.chatHistoryElement) {
+            const chatObserver = new MutationObserver(() => {
+                this.updateVisibility();
+            });
+            
+            chatObserver.observe(this.chatHistoryElement, {
+                childList: true,
+                subtree: true
+            });
+        }
+        
+        // Set up observer to watch for left panel visibility changes
+        if (this.leftPanelElement) {
+            const leftPanelObserver = new MutationObserver(() => {
+                this.updatePosition();
+            });
+            
+            leftPanelObserver.observe(this.leftPanelElement, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+        }
+        
+        // Also listen for window resize to update position
+        window.addEventListener('resize', () => {
+            this.updatePosition();
+        });
+    },
+    
+    updateVisibility() {
+        if (!this.welcomeElement || !this.chatHistoryElement) return;
+        
+        const hasMessages = this.chatHistoryElement.children.length > 0;
+        
+        if (hasMessages) {
+            this.hide();
+        } else {
+            this.show();
+        }
+        
+        // Update welcome message position based on left panel visibility
+        this.updatePosition();
+    },
+    
+    updatePosition() {
+        if (!this.welcomeElement) return;
+        
+        const leftPanel = document.getElementById('left-panel');
+        const isLeftPanelHidden = leftPanel && leftPanel.classList.contains('hidden');
+        
+        if (isLeftPanelHidden) {
+            this.welcomeElement.classList.add('left-panel-hidden');
+        } else {
+            this.welcomeElement.classList.remove('left-panel-hidden');
+        }
+    },
+    
+    show() {
+        if (this.welcomeElement) {
+            this.welcomeElement.classList.remove('hidden');
+        }
+    },
+    
+    hide() {
+        if (this.welcomeElement) {
+            this.welcomeElement.classList.add('hidden');
+        }
+    }
+};
+
+// Initialize welcome message manager when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    welcomeMessageManager.init();
+});
 
 export async function sendMessage() {
     try {
@@ -223,8 +680,8 @@ function updateUserTime() {
     userTimeElement.innerHTML = `${timeString}<br><span id="user-date">${dateString}</span>`;
 }
 
-updateUserTime();
-setInterval(updateUserTime, 1000);
+// updateUserTime();
+// setInterval(updateUserTime, 1000);
 
 
 function setMessage(id, type, heading, content, temp, kvps = null) {

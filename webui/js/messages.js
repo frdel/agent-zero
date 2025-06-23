@@ -69,6 +69,8 @@ export function getHandler(type) {
       return drawMessageUtil;
     case "hint":
       return drawMessageInfo;
+    case "canvas":
+      return drawMessageCanvas;
     default:
       return drawMessageDefault;
   }
@@ -735,3 +737,287 @@ function convertPathsToLinks(str) {
 //   walk(wrapper);
 //   return wrapper.innerHTML;
 // }
+
+export function drawMessageCanvas(
+  messageContainer,
+  id,
+  type,
+  heading,
+  content,
+  temp,
+  kvps = null
+) {
+  console.log('Canvas: drawMessageCanvas called with kvps:', kvps);
+  
+  // Handle different canvas message types
+  if (kvps && kvps.type === "canvas") {
+    
+    if (kvps.action === "start_streaming") {
+      // Start real-time streaming mode
+      const canvasId = kvps.canvas_id;
+      const canvasTitle = kvps.metadata?.title || 'Live Canvas';
+      const canvasType = kvps.metadata?.type || 'html';
+      
+      console.log('Canvas: Starting streaming mode for', canvasId);
+      
+      if (window.canvasManager) {
+        window.canvasManager.startStreaming(canvasId, canvasTitle, canvasType);
+      }
+      
+      // Create a minimal message for streaming start
+      const streamingDiv = document.createElement('div');
+      streamingDiv.classList.add('message', 'message-canvas', 'message-streaming');
+      streamingDiv.innerHTML = `
+        <div class="streaming-indicator">
+          <i class="fas fa-paint-brush"></i>
+          <span>Creating canvas artifact: ${canvasTitle}</span>
+          <div class="streaming-dots">
+            <span>.</span><span>.</span><span>.</span>
+          </div>
+        </div>
+      `;
+      messageContainer.appendChild(streamingDiv);
+      return;
+      
+    } else if (kvps.action === "update_streaming") {
+      // Update streaming content
+      const canvasId = kvps.canvas_id;
+      const contentChunk = kvps.content_chunk || '';
+      const isComplete = kvps.is_complete || false;
+      
+      console.log('Canvas: Updating streaming content for', canvasId, 'chunk length:', contentChunk.length);
+      
+      if (window.canvasManager) {
+        window.canvasManager.updateStreamingContent(canvasId, contentChunk, isComplete);
+      }
+      
+      // Don't create a message for streaming updates
+      return;
+      
+    } else if (kvps.action === "display") {
+      // Create the in-chat artifact preview card
+      createArtifactPreviewCard(messageContainer, kvps);
+      
+      // Also trigger canvas display in the UI with retry mechanism
+      const displayCanvas = () => {
+        if (window.canvasManager) {
+          try {
+            const metadata = kvps.metadata;
+            const canvasUrl = metadata.url;
+            const canvasTitle = metadata.title || 'Canvas Artifact';
+            const canvasType = metadata.type || 'html';
+            
+            console.log('Canvas: Displaying artifact', {
+              id: kvps.canvas_id,
+              title: canvasTitle,
+              type: canvasType,
+              url: canvasUrl
+            });
+            
+            // If we were streaming this canvas, finish streaming mode
+            if (window.canvasManager.isStreamingCanvas(kvps.canvas_id)) {
+              window.canvasManager.finishStreaming();
+            }
+
+            // Hide the left sidebar when canvas is shown
+            window.toggleSidebar(false);
+
+            // Show the canvas with the artifact content
+            console.log('Canvas: About to call window.canvasManager.show() - opening canvas');
+            window.canvasManager.show();
+            console.log('Canvas: window.canvasManager.show() called successfully');
+            
+            // Update canvas title
+            const titleElement = document.querySelector('.canvas-title');
+            if (titleElement) {
+              titleElement.textContent = canvasTitle;
+            }
+            
+            // Update canvas content with the served URL
+            setTimeout(() => {
+              if (canvasUrl) {
+                window.canvasManager.updateContent(canvasUrl, 'url');
+              } else {
+                console.warn('Canvas: No URL provided for canvas content');
+              }
+            }, 500); // Small delay to ensure canvas is shown
+            
+          } catch (error) {
+            console.error('Canvas: Error displaying canvas artifact:', error);
+          }
+        } else {
+          // Retry after a short delay if canvasManager isn't ready
+          console.log('Canvas: canvasManager not ready, retrying...');
+          setTimeout(displayCanvas, 100);
+        }
+      };
+      
+      displayCanvas();
+      
+      // Return early to avoid drawing the default message
+      return;
+    }
+  }
+  
+  // Draw the message normally for non-canvas messages
+  return drawMessageAgentPlain(
+    ["message-canvas"],
+    messageContainer,
+    id,
+    type,
+    heading,
+    content,
+    temp,
+    kvps
+  );
+}
+
+// Create Claude-like artifact preview cards in chat
+function createArtifactPreviewCard(messageContainer, kvps) {
+  const metadata = kvps.metadata;
+  const canvasId = kvps.canvas_id;
+  const canvasUrl = metadata.url;
+  const canvasTitle = metadata.title || 'Canvas Artifact';
+  const canvasType = metadata.type || 'html';
+  
+  // Create the artifact card container
+  const artifactCard = document.createElement('div');
+  artifactCard.classList.add('artifact-card');
+  artifactCard.setAttribute('data-canvas-id', canvasId);
+  
+  // Create the artifact header
+  const artifactHeader = document.createElement('div');
+  artifactHeader.classList.add('artifact-header');
+  
+  // Artifact icon based on type
+  const artifactIcon = document.createElement('div');
+  artifactIcon.classList.add('artifact-icon');
+  artifactIcon.innerHTML = getArtifactIcon(canvasType);
+  
+  // Artifact title and type
+  const artifactInfo = document.createElement('div');
+  artifactInfo.classList.add('artifact-info');
+  
+  const artifactTitleEl = document.createElement('h4');
+  artifactTitleEl.classList.add('artifact-title');
+  artifactTitleEl.textContent = canvasTitle;
+  
+  const artifactTypeEl = document.createElement('span');
+  artifactTypeEl.classList.add('artifact-type');
+  artifactTypeEl.textContent = canvasType.toUpperCase();
+  
+  artifactInfo.appendChild(artifactTitleEl);
+  artifactInfo.appendChild(artifactTypeEl);
+  
+  // Artifact actions
+  const artifactActions = document.createElement('div');
+  artifactActions.classList.add('artifact-actions');
+  
+  // Open in canvas button
+  const openCanvasBtn = document.createElement('button');
+  openCanvasBtn.classList.add('artifact-action-btn', 'artifact-open-btn');
+  openCanvasBtn.innerHTML = '<i class="fas fa-external-link-alt"></i> Open';
+  openCanvasBtn.title = 'Open in Canvas';
+  openCanvasBtn.onclick = () => {
+    if (window.canvasManager) {
+      console.log('Canvas: About to call window.canvasManager.show() from artifact card open button');
+      // Hide the left sidebar when canvas is shown
+      window.toggleSidebar(false);
+      window.canvasManager.show();
+      console.log('Canvas: window.canvasManager.show() called from artifact card open button');
+      if (canvasUrl) {
+        window.canvasManager.updateContent(canvasUrl, 'url');
+      }
+      // Update canvas title
+      const titleElement = document.querySelector('.canvas-title');
+      if (titleElement) {
+        titleElement.textContent = canvasTitle;
+      }
+    }
+  };
+  
+  // Copy URL button
+  const copyUrlBtn = document.createElement('button');
+  copyUrlBtn.classList.add('artifact-action-btn', 'artifact-copy-btn');
+  copyUrlBtn.innerHTML = '<i class="fas fa-copy"></i>';
+  copyUrlBtn.title = 'Copy URL';
+  copyUrlBtn.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(canvasUrl);
+      copyUrlBtn.innerHTML = '<i class="fas fa-check"></i>';
+      setTimeout(() => {
+        copyUrlBtn.innerHTML = '<i class="fas fa-copy"></i>';
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy URL:', err);
+    }
+  };
+  
+  artifactActions.appendChild(openCanvasBtn);
+  artifactActions.appendChild(copyUrlBtn);
+  
+  // Assemble header
+  artifactHeader.appendChild(artifactIcon);
+  artifactHeader.appendChild(artifactInfo);
+  artifactHeader.appendChild(artifactActions);
+  
+  // Create the artifact preview
+  const artifactPreview = document.createElement('div');
+  artifactPreview.classList.add('artifact-preview');
+  
+  // Create preview iframe
+  const previewIframe = document.createElement('iframe');
+  previewIframe.classList.add('artifact-preview-iframe');
+  previewIframe.src = canvasUrl;
+  previewIframe.style.width = '100%';
+  previewIframe.style.height = '200px';
+  previewIframe.style.border = 'none';
+  previewIframe.style.borderRadius = '8px';
+  previewIframe.sandbox = 'allow-scripts allow-same-origin';
+  
+  // Handle iframe load errors
+  previewIframe.onerror = () => {
+    artifactPreview.innerHTML = `
+      <div class="artifact-preview-error">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>Preview not available</p>
+      </div>
+    `;
+  };
+  
+  artifactPreview.appendChild(previewIframe);
+  
+  // Assemble the complete card
+  artifactCard.appendChild(artifactHeader);
+  artifactCard.appendChild(artifactPreview);
+  
+  // Add click handler to the entire card for opening in canvas
+  artifactCard.onclick = (e) => {
+    // Don't trigger if clicking on action buttons
+    if (!e.target.closest('.artifact-action-btn')) {
+      console.log('Canvas: Artifact card clicked - delegating to open button');
+      openCanvasBtn.onclick();
+    }
+  };
+  
+  // Add the artifact card to the message container
+  messageContainer.appendChild(artifactCard);
+}
+
+// Get appropriate icon for artifact type
+function getArtifactIcon(type) {
+  const icons = {
+    'html': '<i class="fab fa-html5"></i>',
+    'css': '<i class="fab fa-css3-alt"></i>',
+    'javascript': '<i class="fab fa-js-square"></i>',
+    'js': '<i class="fab fa-js-square"></i>',
+    'python': '<i class="fab fa-python"></i>',
+    'markdown': '<i class="fab fa-markdown"></i>',
+    'md': '<i class="fab fa-markdown"></i>',
+    'json': '<i class="fas fa-code"></i>',
+    'xml': '<i class="fas fa-code"></i>',
+    'svg': '<i class="fas fa-image"></i>'
+  };
+  
+  return icons[type.toLowerCase()] || '<i class="fas fa-file-code"></i>';
+}
