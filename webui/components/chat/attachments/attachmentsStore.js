@@ -116,16 +116,12 @@ const model = {
     console.log('Setting up paste handler...');
     document.addEventListener('paste', (e) => {
       console.log('Paste event detected, target:', e.target.tagName);
-      // Only handle paste when not in an input field (to avoid interfering with text pasting)
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-        console.log('Ignoring paste in input field');
-        return;
-      }
-
+      
       const items = e.clipboardData.items;
       let imageFound = false;
       console.log('Checking clipboard items:', items.length);
       
+      // First, check if there are any images in the clipboard
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
         if (item.type.indexOf('image') !== -1) {
@@ -134,12 +130,21 @@ const model = {
           if (blob) {
             e.preventDefault(); // Prevent default paste behavior for images
             this.handleClipboardImage(blob);
+            console.log('Image detected in clipboard, processing...');
           }
+          break; // Only handle the first image found
         }
       }
 
-      if (imageFound) {
-        console.log('Image detected in clipboard, processing...');
+      // If no images found and we're in an input field, let normal text paste happen
+      if (!imageFound && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+        console.log('No images in clipboard, allowing normal text paste in input field');
+        return;
+      }
+
+      // If no images found and not in input field, do nothing
+      if (!imageFound) {
+        console.log('No images in clipboard');
       }
     });
   },
