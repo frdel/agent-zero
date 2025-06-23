@@ -375,9 +375,8 @@ export function drawMessageUser(
       }
 
       if (displayInfo.isImage) {
-        // Render as image with enhanced device sync support
-        const imgWrapper = document.createElement("div");
-        imgWrapper.classList.add("image-wrapper");
+        // Render as image tile with bottom badge
+        attachmentDiv.classList.add("image-type");
 
         const img = document.createElement("img");
         img.src = displayInfo.previewUrl;
@@ -386,44 +385,38 @@ export function drawMessageUser(
         img.style.cursor = "pointer";
         img.addEventListener('click', displayInfo.clickHandler);
 
-        const fileInfo = document.createElement("div");
-        fileInfo.classList.add("file-info");
-        fileInfo.innerHTML = `
-                    <span class="filename">${displayInfo.filename}</span>
-                    <span class="extension">${displayInfo.extension}</span>
-                `;
+        const imageBadge = document.createElement("div");
+        imageBadge.classList.add("image-badge");
+        imageBadge.textContent = displayInfo.extension;
 
-        imgWrapper.appendChild(img);
-        attachmentDiv.appendChild(imgWrapper);
-        attachmentDiv.appendChild(fileInfo);
+        attachmentDiv.appendChild(img);
+        attachmentDiv.appendChild(imageBadge);
       } else {
-        // Render as file with icon support for device sync
+        // Render as file tile with title and icon
         attachmentDiv.classList.add("file-type");
         
-        // Create file preview with potential server-side icon
-        const filePreview = document.createElement("div");
-        filePreview.classList.add("file-preview");
-        
-        // If we have a preview URL (server icon), show it
+        // File icon
         if (displayInfo.previewUrl && displayInfo.previewUrl !== displayInfo.filename) {
           const iconImg = document.createElement("img");
           iconImg.src = displayInfo.previewUrl;
           iconImg.alt = `${displayInfo.extension} file`;
           iconImg.classList.add("file-icon");
-          iconImg.style.width = "24px";
-          iconImg.style.height = "24px";
-          iconImg.style.marginRight = "8px";
-          filePreview.appendChild(iconImg);
+          attachmentDiv.appendChild(iconImg);
         }
         
-        const textInfo = document.createElement("div");
-        textInfo.innerHTML = `
-          <span class="filename">${displayInfo.filename}</span>
-          <span class="extension">${displayInfo.extension}</span>
-        `;
-        filePreview.appendChild(textInfo);
+        // File title (filename without extension)
+        const fileTitle = document.createElement("div");
+        fileTitle.classList.add("file-title");
+        const nameWithoutExt = displayInfo.filename.replace(/\.[^/.]+$/, "");
+        fileTitle.textContent = nameWithoutExt;
         
-        attachmentDiv.appendChild(filePreview);
+        // File extension badge
+        const fileExtension = document.createElement("div");
+        fileExtension.classList.add("file-extension");
+        fileExtension.textContent = displayInfo.extension;
+        
+        attachmentDiv.appendChild(fileTitle);
+        attachmentDiv.appendChild(fileExtension);
       }
 
 
