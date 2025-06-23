@@ -23,7 +23,7 @@ usage:
         "I can use...",
         "Then I can...",
     ],
-    "headline": "short headline of the response",
+    "headline": "Executing Python code to check current directory",
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "python",
@@ -40,7 +40,7 @@ usage:
         "Need to do...",
         "Need to install...",
     ],
-    "headline": "short headline of the response",
+    "headline": "Installing zip package via terminal",
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "terminal",
@@ -56,7 +56,7 @@ usage:
     "thoughts": [
         "Waiting for program to finish...",
     ],
-    "headline": "short headline of the response",
+    "headline": "Waiting for long-running program to complete",
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "output",
@@ -71,7 +71,7 @@ usage:
     "thoughts": [
         "code_execution_tool not responding...",
     ],
-    "headline": "short headline of the response",
+    "headline": "Resetting unresponsive terminal session",
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "reset",

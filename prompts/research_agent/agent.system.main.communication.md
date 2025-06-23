@@ -56,7 +56,7 @@ dont use **
         "thought2",
         "..."
     ],
-    "headline": "short headline summary of the response",
+    "headline": "Conducting research analysis and planning next steps",
     "tool_name": "tool_to_use",
     "tool_args": {
         "arg1": "val1",

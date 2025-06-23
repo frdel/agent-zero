@@ -14,7 +14,7 @@ usage:
     "thoughts": [
         "Let's search my memory for...",
     ],
-    "headline": "short headline of the response",
+    "headline": "Searching memory for file compression information",
     "tool_name": "memory_load",
     "tool_args": {
         "query": "File compression library for...",
@@ -33,7 +33,7 @@ usage:
     "thoughts": [
         "I need to memorize...",
     ],
-    "headline": "short headline of the response",
+    "headline": "Saving important information to memory",
     "tool_name": "memory_save",
     "tool_args": {
         "text": "# To compress...",
@@ -50,7 +50,7 @@ usage:
     "thoughts": [
         "I need to delete...",
     ],
-    "headline": "short headline of the response",
+    "headline": "Deleting specific memories by ID",
     "tool_name": "memory_delete",
     "tool_args": {
         "ids": "32cd37ffd1-101f-4112-80e2-33b795548116, d1306e36-6a9c- ...",
@@ -68,7 +68,7 @@ usage:
     "thoughts": [
         "Let's remove all memories about cars",
     ],
-    "headline": "short headline of the response",
+    "headline": "Forgetting all memories about cars",
     "tool_name": "memory_forget",
     "tool_args": {
         "query": "cars",

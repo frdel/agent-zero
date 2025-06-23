@@ -19,7 +19,7 @@ no text allowed before or after json
         "processing?",
         "actions?"
     ],
-    "headline": "short headline summary of the response",
+    "headline": "Analyzing instructions to develop processing actions",
     "tool_name": "name_of_tool",
     "tool_args": {
         "arg1": "val1",
