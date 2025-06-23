@@ -229,6 +229,85 @@ const model = {
     });
   },
 
+  // Generate server-side API URL for file (for device sync)
+  getServerFileUrl(filename) {
+    return `/image_get?path=/a0/tmp/uploads/${encodeURIComponent(filename)}`;
+  },
+
+  // Get file metadata from server (for device sync and enhanced UI)
+  async getFileMetadata(filename) {
+    try {
+      const response = await fetch(`/image_get?path=/a0/tmp/uploads/${encodeURIComponent(filename)}&metadata=true`);
+      if (response.ok) {
+        return await response.json();
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to get file metadata:', error);
+      return null;
+    }
+  },
+
+  // Check if file is an image based on extension
+  isImageFile(filename) {
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+    const extension = filename.split('.').pop().toLowerCase();
+    return imageExtensions.includes(extension);
+  },
+
+  // Get attachment preview URL (server URL for persistence, blob URL for current session)
+  getAttachmentPreviewUrl(attachment) {
+    // If attachment has a name and we're dealing with a server-stored file
+    if (typeof attachment === 'string') {
+      // attachment is just a filename (from loaded chat)
+      return this.getServerFileUrl(attachment);
+    } else if (attachment.name && attachment.file) {
+      // attachment is an object from current session
+      if (attachment.type === 'image') {
+        // For images, use blob URL for current session preview
+        return attachment.url || URL.createObjectURL(attachment.file);
+      } else {
+        // For non-image files, use server URL to get appropriate icon
+        return this.getServerFileUrl(attachment.name);
+      }
+    }
+    return null;
+  },
+
+  // Enhanced method to get attachment display info for UI
+  getAttachmentDisplayInfo(attachment) {
+    if (typeof attachment === 'string') {
+      // attachment is filename only (from persistent storage)
+      const filename = attachment;
+      const extension = filename.split('.').pop();
+      return {
+        filename: filename,
+        extension: extension.toUpperCase(),
+        isImage: this.isImageFile(filename),
+        previewUrl: this.getServerFileUrl(filename),
+        clickHandler: () => {
+          if (this.isImageFile(filename)) {
+            this.openImageModal(this.getServerFileUrl(filename), filename);
+          }
+        }
+      };
+    } else {
+      // attachment is object (from current session)
+      return {
+        filename: attachment.name,
+        extension: attachment.extension.toUpperCase(),
+        isImage: attachment.type === 'image',
+        previewUrl: this.getAttachmentPreviewUrl(attachment),
+        clickHandler: () => {
+          if (attachment.type === 'image') {
+            const imageUrl = this.getAttachmentPreviewUrl(attachment);
+            this.openImageModal(imageUrl, attachment.name);
+          }
+        }
+      };
+    }
+  },
+
   // Generate GUID for unique filenames
   generateGUID() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {

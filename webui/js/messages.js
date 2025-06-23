@@ -318,102 +318,115 @@ export function drawMessageUser(
       const attachmentDiv = document.createElement("div");
       attachmentDiv.classList.add("attachment-item");
 
-      // Helper function to generate server-side image URL
+      // Get attachment store for enhanced device sync support
+      const attachmentStore = window.Alpine && window.Alpine.store('chatAttachments');
+
+      // Helper function to generate server-side image URL (fallback if store not available)
       const getServerImageUrl = (filename) => {
+        if (attachmentStore) {
+          return attachmentStore.getServerFileUrl(filename);
+        }
         return `/image_get?path=/a0/tmp/uploads/${encodeURIComponent(filename)}`;
       };
 
-      // Helper function to check if file is an image
+      // Helper function to check if file is an image (fallback if store not available)
       const isImageFile = (filename) => {
+        if (attachmentStore) {
+          return attachmentStore.isImageFile(filename);
+        }
         const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
         const extension = filename.split('.').pop().toLowerCase();
         return imageExtensions.includes(extension);
       };
 
-      if (typeof attachment === "string") {
-        // attachment is filename only (from persistent storage)
-        const filename = attachment;
-        const extension = filename.split(".").pop().toUpperCase();
-
-        if (isImageFile(filename)) {
-          // Render as image with server URL
-          const imgWrapper = document.createElement("div");
-          imgWrapper.classList.add("image-wrapper");
-
-          const img = document.createElement("img");
-          img.src = getServerImageUrl(filename);
-          img.alt = filename;
-          img.classList.add("attachment-preview");
-          img.style.cursor = "pointer";
-          img.addEventListener('click', () => {
-            if (window.Alpine && window.Alpine.store('chatAttachments')) {
-              window.Alpine.store('chatAttachments').openImageModal(getServerImageUrl(filename), filename);
+      // Use enhanced attachment store methods for better device sync
+      let displayInfo;
+      if (attachmentStore) {
+        displayInfo = attachmentStore.getAttachmentDisplayInfo(attachment);
+      } else {
+        // Fallback for when store is not available
+        if (typeof attachment === "string") {
+          const filename = attachment;
+          const extension = filename.split(".").pop();
+          displayInfo = {
+            filename: filename,
+            extension: extension.toUpperCase(),
+            isImage: isImageFile(filename),
+            previewUrl: getServerImageUrl(filename),
+            clickHandler: () => {
+              if (isImageFile(filename) && window.Alpine && window.Alpine.store('chatAttachments')) {
+                window.Alpine.store('chatAttachments').openImageModal(getServerImageUrl(filename), filename);
+              }
             }
-          });
-
-          const fileInfo = document.createElement("div");
-          fileInfo.classList.add("file-info");
-          fileInfo.innerHTML = `
-                        <span class="filename">${filename}</span>
-                        <span class="extension">${extension}</span>
-                    `;
-
-          imgWrapper.appendChild(img);
-          attachmentDiv.appendChild(imgWrapper);
-          attachmentDiv.appendChild(fileInfo);
+          };
         } else {
-          // Render as file icon
-          attachmentDiv.classList.add("file-type");
-          attachmentDiv.innerHTML = `
-                        <div class="file-preview">
-                            <span class="filename">${filename}</span>
-                            <span class="extension">${extension}</span>
-                        </div>
-                    `;
+          displayInfo = {
+            filename: attachment.name,
+            extension: attachment.extension.toUpperCase(),
+            isImage: attachment.type === 'image',
+            previewUrl: attachment.url,
+            clickHandler: () => {
+              if (attachment.type === 'image' && window.Alpine && window.Alpine.store('chatAttachments')) {
+                window.Alpine.store('chatAttachments').openImageModal(attachment.url, attachment.name);
+              }
+            }
+          };
         }
-      } else if (attachment.type === "image") {
-        // attachment is object (from current session)
+      }
+
+      if (displayInfo.isImage) {
+        // Render as image with enhanced device sync support
         const imgWrapper = document.createElement("div");
         imgWrapper.classList.add("image-wrapper");
 
         const img = document.createElement("img");
-        // Use server URL if we have filename, otherwise fall back to blob URL for current session
-        let imageUrl;
-        if (attachment.name && !attachment.url.startsWith('blob:')) {
-          imageUrl = getServerImageUrl(attachment.name);
-        } else {
-          imageUrl = attachment.url;
-        }
-        img.src = imageUrl;
-        img.alt = attachment.name;
+        img.src = displayInfo.previewUrl;
+        img.alt = displayInfo.filename;
         img.classList.add("attachment-preview");
         img.style.cursor = "pointer";
-        img.addEventListener('click', () => {
-          if (window.Alpine && window.Alpine.store('chatAttachments')) {
-            window.Alpine.store('chatAttachments').openImageModal(imageUrl, attachment.name);
-          }
-        });
+        img.addEventListener('click', displayInfo.clickHandler);
 
         const fileInfo = document.createElement("div");
         fileInfo.classList.add("file-info");
         fileInfo.innerHTML = `
-                    <span class="filename">${attachment.name}</span>
-                    <span class="extension">${attachment.extension.toUpperCase()}</span>
+                    <span class="filename">${displayInfo.filename}</span>
+                    <span class="extension">${displayInfo.extension}</span>
                 `;
 
         imgWrapper.appendChild(img);
         attachmentDiv.appendChild(imgWrapper);
         attachmentDiv.appendChild(fileInfo);
       } else {
-        // attachment is object but not image (from current session)
+        // Render as file with icon support for device sync
         attachmentDiv.classList.add("file-type");
-        attachmentDiv.innerHTML = `
-                    <div class="file-preview">
-                        <span class="filename">${attachment.name}</span>
-                        <span class="extension">${attachment.extension.toUpperCase()}</span>
-                    </div>
-                `;
+        
+        // Create file preview with potential server-side icon
+        const filePreview = document.createElement("div");
+        filePreview.classList.add("file-preview");
+        
+        // If we have a preview URL (server icon), show it
+        if (displayInfo.previewUrl && displayInfo.previewUrl !== displayInfo.filename) {
+          const iconImg = document.createElement("img");
+          iconImg.src = displayInfo.previewUrl;
+          iconImg.alt = `${displayInfo.extension} file`;
+          iconImg.classList.add("file-icon");
+          iconImg.style.width = "24px";
+          iconImg.style.height = "24px";
+          iconImg.style.marginRight = "8px";
+          filePreview.appendChild(iconImg);
+        }
+        
+        const textInfo = document.createElement("div");
+        textInfo.innerHTML = `
+          <span class="filename">${displayInfo.filename}</span>
+          <span class="extension">${displayInfo.extension}</span>
+        `;
+        filePreview.appendChild(textInfo);
+        
+        attachmentDiv.appendChild(filePreview);
       }
+
+
 
       attachmentsContainer.appendChild(attachmentDiv);
     });
