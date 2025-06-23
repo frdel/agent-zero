@@ -318,25 +318,65 @@ export function drawMessageUser(
       const attachmentDiv = document.createElement("div");
       attachmentDiv.classList.add("attachment-item");
 
+      // Helper function to generate server-side image URL
+      const getServerImageUrl = (filename) => {
+        return `/image_get?path=/a0/tmp/uploads/${encodeURIComponent(filename)}`;
+      };
+
+      // Helper function to check if file is an image
+      const isImageFile = (filename) => {
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+        const extension = filename.split('.').pop().toLowerCase();
+        return imageExtensions.includes(extension);
+      };
+
       if (typeof attachment === "string") {
-        // attachment is filename
+        // attachment is filename only (from persistent storage)
         const filename = attachment;
         const extension = filename.split(".").pop().toUpperCase();
 
-        attachmentDiv.classList.add("file-type");
-        attachmentDiv.innerHTML = `
-                    <div class="file-preview">
+        if (isImageFile(filename)) {
+          // Render as image with server URL
+          const imgWrapper = document.createElement("div");
+          imgWrapper.classList.add("image-wrapper");
+
+          const img = document.createElement("img");
+          img.src = getServerImageUrl(filename);
+          img.alt = filename;
+          img.classList.add("attachment-preview");
+
+          const fileInfo = document.createElement("div");
+          fileInfo.classList.add("file-info");
+          fileInfo.innerHTML = `
                         <span class="filename">${filename}</span>
                         <span class="extension">${extension}</span>
-                    </div>
-                `;
+                    `;
+
+          imgWrapper.appendChild(img);
+          attachmentDiv.appendChild(imgWrapper);
+          attachmentDiv.appendChild(fileInfo);
+        } else {
+          // Render as file icon
+          attachmentDiv.classList.add("file-type");
+          attachmentDiv.innerHTML = `
+                        <div class="file-preview">
+                            <span class="filename">${filename}</span>
+                            <span class="extension">${extension}</span>
+                        </div>
+                    `;
+        }
       } else if (attachment.type === "image") {
-        // Existing logic for images
+        // attachment is object (from current session)
         const imgWrapper = document.createElement("div");
         imgWrapper.classList.add("image-wrapper");
 
         const img = document.createElement("img");
-        img.src = attachment.url;
+        // Use server URL if we have filename, otherwise fall back to blob URL for current session
+        if (attachment.name && !attachment.url.startsWith('blob:')) {
+          img.src = getServerImageUrl(attachment.name);
+        } else {
+          img.src = attachment.url;
+        }
         img.alt = attachment.name;
         img.classList.add("attachment-preview");
 
@@ -351,7 +391,7 @@ export function drawMessageUser(
         attachmentDiv.appendChild(imgWrapper);
         attachmentDiv.appendChild(fileInfo);
       } else {
-        // Existing logic for non-image files
+        // attachment is object but not image (from current session)
         attachmentDiv.classList.add("file-type");
         attachmentDiv.innerHTML = `
                     <div class="file-preview">

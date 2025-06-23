@@ -84,9 +84,9 @@ document.addEventListener('DOMContentLoaded', setupSidebarToggle);
 export async function sendMessage() {
     try {
         const message = chatInput.value.trim();
-        const inputAD = Alpine.$data(inputSection);
-        const attachments = inputAD.attachments;
-        const hasAttachments = attachments && attachments.length > 0;
+        const attachmentsStore = Alpine.store('chatAttachments');
+        const attachments = attachmentsStore ? attachmentsStore.attachments : [];
+        const hasAttachments = attachmentsStore ? attachmentsStore.hasAttachments : false;
 
         if (message || hasAttachments) {
             let response;
@@ -94,18 +94,7 @@ export async function sendMessage() {
 
             // Include attachments in the user message
             if (hasAttachments) {
-                const attachmentsWithUrls = attachments.map(attachment => {
-                    if (attachment.type === 'image') {
-                        return {
-                            ...attachment,
-                            url: URL.createObjectURL(attachment.file)
-                        };
-                    } else {
-                        return {
-                            ...attachment
-                        };
-                    }
-                });
+                const attachmentsWithUrls = attachmentsStore.getAttachmentsForSending();
 
                 // Render user message with attachments
                 setMessage(messageId, 'user', '', message, false, {
@@ -159,8 +148,9 @@ export async function sendMessage() {
 
             // Clear input and attachments
             chatInput.value = '';
-            inputAD.attachments = [];
-            inputAD.hasAttachments = false;
+            if (attachmentsStore) {
+                attachmentsStore.clearAttachments();
+            }
             adjustTextareaHeight();
         }
     } catch (e) {
@@ -1079,84 +1069,14 @@ async function startPolling() {
 
 document.addEventListener("DOMContentLoaded", startPolling);
 
-document.addEventListener('DOMContentLoaded', () => {
-    const dragDropOverlay = document.getElementById('dragdrop-overlay');
-    const inputSection = document.getElementById('input-section');
-    let dragCounter = 0;
+// Drag and drop functionality has been moved to attachmentsStore.js
 
-    // Prevent default drag behaviors
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        document.addEventListener(eventName, (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-        }, false);
-    });
-
-    // Handle drag enter
-    document.addEventListener('dragenter', (e) => {
-        dragCounter++;
-        if (dragCounter === 1) {
-            Alpine.$data(dragDropOverlay).isVisible = true;
-        }
-    }, false);
-
-    // Handle drag leave
-    document.addEventListener('dragleave', (e) => {
-        dragCounter--;
-        if (dragCounter === 0) {
-            Alpine.$data(dragDropOverlay).isVisible = false;
-        }
-    }, false);
-
-    // Handle drop
-    dragDropOverlay.addEventListener('drop', (e) => {
-        dragCounter = 0;
-        Alpine.$data(dragDropOverlay).isVisible = false;
-
-        const inputAD = Alpine.$data(inputSection);
-        const files = e.dataTransfer.files;
-        handleFiles(files, inputAD);
-    }, false);
-});
-
-// Separate file handling logic to be used by both drag-drop and file input
-function handleFiles(files, inputAD) {
-    Array.from(files).forEach(file => {
-        const ext = file.name.split('.').pop().toLowerCase();
-
-            const isImage = ['jpg', 'jpeg', 'png', 'bmp'].includes(ext);
-
-            if (isImage) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    inputAD.attachments.push({
-                        file: file,
-                        url: e.target.result,
-                        type: 'image',
-                        name: file.name,
-                        extension: ext
-                    });
-                    inputAD.hasAttachments = true;
-                };
-                reader.readAsDataURL(file);
-            } else {
-                inputAD.attachments.push({
-                    file: file,
-                    type: 'file',
-                    name: file.name,
-                    extension: ext
-                });
-                inputAD.hasAttachments = true;
-            }
-
-    });
-}
-
-// Modify the existing handleFileUpload to use the new handleFiles function
+// Update handleFileUpload to use the attachments store
 window.handleFileUpload = function(event) {
     const files = event.target.files;
-    const inputAD = Alpine.$data(inputSection);
-    handleFiles(files, inputAD);
+    if (Alpine.store('chatAttachments')) {
+        Alpine.store('chatAttachments').handleFiles(files);
+    }
 }
 
 // Setup event handlers once the DOM is fully loaded
