@@ -344,6 +344,12 @@ export function drawMessageUser(
           img.src = getServerImageUrl(filename);
           img.alt = filename;
           img.classList.add("attachment-preview");
+          img.style.cursor = "pointer";
+          img.addEventListener('click', () => {
+            if (window.Alpine && window.Alpine.store('chatAttachments')) {
+              window.Alpine.store('chatAttachments').openImageModal(getServerImageUrl(filename), filename);
+            }
+          });
 
           const fileInfo = document.createElement("div");
           fileInfo.classList.add("file-info");
@@ -372,13 +378,21 @@ export function drawMessageUser(
 
         const img = document.createElement("img");
         // Use server URL if we have filename, otherwise fall back to blob URL for current session
+        let imageUrl;
         if (attachment.name && !attachment.url.startsWith('blob:')) {
-          img.src = getServerImageUrl(attachment.name);
+          imageUrl = getServerImageUrl(attachment.name);
         } else {
-          img.src = attachment.url;
+          imageUrl = attachment.url;
         }
+        img.src = imageUrl;
         img.alt = attachment.name;
         img.classList.add("attachment-preview");
+        img.style.cursor = "pointer";
+        img.addEventListener('click', () => {
+          if (window.Alpine && window.Alpine.store('chatAttachments')) {
+            window.Alpine.store('chatAttachments').openImageModal(imageUrl, attachment.name);
+          }
+        });
 
         const fileInfo = document.createElement("div");
         fileInfo.classList.add("file-info");

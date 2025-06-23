@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', setupSidebarToggle);
 export async function sendMessage() {
     try {
         const message = chatInput.value.trim();
-        const attachmentsStore = Alpine.store('chatAttachments');
+        const attachmentsStore = window.Alpine ? Alpine.store('chatAttachments') : null;
         const attachments = attachmentsStore ? attachmentsStore.attachments : [];
         const hasAttachments = attachmentsStore ? attachmentsStore.hasAttachments : false;
 
@@ -321,8 +321,15 @@ function getConnectionStatus() {
 
 function setConnectionStatus(connected) {
     connectionStatus = connected
-    const statusIcon = Alpine.$data(timeDate.querySelector('.status-icon'));
-    statusIcon.connected = connected
+    if (window.Alpine && timeDate) {
+        const statusIconEl = timeDate.querySelector('.status-icon');
+        if (statusIconEl) {
+            const statusIcon = Alpine.$data(statusIconEl);
+            if (statusIcon) {
+                statusIcon.connected = connected;
+            }
+        }
+    }
 }
 
 let lastLogVersion = 0;
@@ -373,37 +380,48 @@ async function poll() {
         updateProgress(response.log_progress, response.log_progress_active)
 
         //set ui model vars from backend
-        const inputAD = Alpine.$data(inputSection);
-        inputAD.paused = response.paused;
+        if (window.Alpine && inputSection) {
+            const inputAD = Alpine.$data(inputSection);
+            if (inputAD) {
+                inputAD.paused = response.paused;
+            }
+        }
 
         // Update status icon state
         setConnectionStatus(true)
 
         // Update chats list and sort by created_at time (newer first)
-        const chatsAD = Alpine.$data(chatsSection);
-        const contexts = response.contexts || [];
-        chatsAD.contexts = contexts.sort((a, b) =>
-            (b.created_at || 0) - (a.created_at || 0)
-        );
+        let chatsAD = null;
+        let contexts = response.contexts || [];
+        if (window.Alpine && chatsSection) {
+            chatsAD = Alpine.$data(chatsSection);
+            if (chatsAD) {
+                chatsAD.contexts = contexts.sort((a, b) =>
+                    (b.created_at || 0) - (a.created_at || 0)
+                );
+            }
+        }
 
         // Update tasks list and sort by creation time (newer first)
         const tasksSection = document.getElementById('tasks-section');
-        if (tasksSection) {
+        if (window.Alpine && tasksSection) {
             const tasksAD = Alpine.$data(tasksSection);
-            let tasks = response.tasks || [];
+            if (tasksAD) {
+                let tasks = response.tasks || [];
 
-            // Always update tasks to ensure state changes are reflected
-            if (tasks.length > 0) {
-                // Sort the tasks by creation time
-                const sortedTasks = [...tasks].sort((a, b) =>
-                    (b.created_at || 0) - (a.created_at || 0)
-                );
+                // Always update tasks to ensure state changes are reflected
+                if (tasks.length > 0) {
+                    // Sort the tasks by creation time
+                    const sortedTasks = [...tasks].sort((a, b) =>
+                        (b.created_at || 0) - (a.created_at || 0)
+                    );
 
-                // Assign the sorted tasks to the Alpine data
-                tasksAD.tasks = sortedTasks;
-            } else {
-                // Make sure to use a new empty array instance
-                tasksAD.tasks = [];
+                    // Assign the sorted tasks to the Alpine data
+                    tasksAD.tasks = sortedTasks;
+                } else {
+                    // Make sure to use a new empty array instance
+                    tasksAD.tasks = [];
+                }
             }
         }
 
@@ -412,7 +430,7 @@ async function poll() {
             // Update selection in the active tab
             const activeTab = localStorage.getItem('activeTab') || 'chats';
 
-            if (activeTab === 'chats') {
+            if (activeTab === 'chats' && chatsAD) {
                 chatsAD.selected = context;
                 localStorage.setItem('lastSelectedChat', context);
 
@@ -457,7 +475,7 @@ async function poll() {
                 tasksAD.selected = firstTaskId;
                 localStorage.setItem('lastSelectedTask', firstTaskId);
             }
-        } else if (contexts.length > 0 && localStorage.getItem('activeTab') === 'chats') {
+        } else if (contexts.length > 0 && localStorage.getItem('activeTab') === 'chats' && chatsAD) {
             // If we're in chats tab with no selection but have chats, select the first one
             const firstChatId = contexts[0].id;
 
@@ -681,11 +699,16 @@ export const setContext = function (id) {
     chatHistory.innerHTML = "";
 
     // Update both selected states
-    const chatsAD = Alpine.$data(chatsSection);
-    const tasksAD = Alpine.$data(tasksSection);
-
-    chatsAD.selected = id;
-    tasksAD.selected = id;
+    if (window.Alpine) {
+        if (chatsSection) {
+            const chatsAD = Alpine.$data(chatsSection);
+            if (chatsAD) chatsAD.selected = id;
+        }
+        if (tasksSection) {
+            const tasksAD = Alpine.$data(tasksSection);
+            if (tasksAD) tasksAD.selected = id;
+        }
+    }
 }
 
 export const getContext = function () {
@@ -1021,8 +1044,12 @@ function hideToast() {
 }
 
 function scrollChanged(isAtBottom) {
-    const inputAS = Alpine.$data(autoScrollSwitch);
-    inputAS.autoScroll = isAtBottom
+    if (window.Alpine && autoScrollSwitch) {
+        const inputAS = Alpine.$data(autoScrollSwitch);
+        if (inputAS) {
+            inputAS.autoScroll = isAtBottom;
+        }
+    }
     // autoScrollSwitch.checked = isAtBottom
 }
 
@@ -1073,9 +1100,13 @@ document.addEventListener("DOMContentLoaded", startPolling);
 
 // Update handleFileUpload to use the attachments store
 window.handleFileUpload = function(event) {
+    console.log('handleFileUpload called with files:', event.target.files.length);
     const files = event.target.files;
-    if (Alpine.store('chatAttachments')) {
+    if (window.Alpine && Alpine.store('chatAttachments')) {
+        console.log('Calling store handleFiles...');
         Alpine.store('chatAttachments').handleFiles(files);
+    } else {
+        console.error('Alpine or chatAttachments store not found!');
     }
 }
 
@@ -1137,8 +1168,8 @@ function activateTab(tabName) {
         chatsSection.style.display = '';
 
         // Get the available contexts from Alpine.js data
-        const chatsAD = Alpine.$data(chatsSection);
-        const availableContexts = chatsAD.contexts || [];
+        const chatsAD = window.Alpine ? Alpine.$data(chatsSection) : null;
+        const availableContexts = chatsAD?.contexts || [];
 
         // Restore previous chat selection
         const lastSelectedChat = localStorage.getItem('lastSelectedChat');
@@ -1158,8 +1189,8 @@ function activateTab(tabName) {
         tasksSection.style.flexDirection = 'column';
 
         // Get the available tasks from Alpine.js data
-        const tasksAD = Alpine.$data(tasksSection);
-        const availableTasks = tasksAD.tasks || [];
+        const tasksAD = window.Alpine ? Alpine.$data(tasksSection) : null;
+        const availableTasks = tasksAD?.tasks || [];
 
         // Restore previous task selection
         const lastSelectedTask = localStorage.getItem('lastSelectedTask');
@@ -1223,7 +1254,7 @@ function openTaskDetail(taskId) {
             }
 
             // Get the Alpine.js data for the modal
-            const modalData = Alpine.$data(modalEl);
+            const modalData = window.Alpine ? Alpine.$data(modalEl) : null;
 
             // Use a timeout to ensure the modal is fully rendered
             setTimeout(() => {
@@ -1240,7 +1271,7 @@ function openTaskDetail(taskId) {
                     }
 
                     // Get the Alpine.js data for the scheduler component
-                    const schedulerData = Alpine.$data(schedulerComponent);
+                    const schedulerData = window.Alpine ? Alpine.$data(schedulerComponent) : null;
 
                     // Show the task detail view for the specific task
                     schedulerData.showTaskDetail(taskId);

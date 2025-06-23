@@ -379,7 +379,9 @@
                     <template x-for="(attachment, index) in $store.chatAttachments.attachments" :key="index">
                         <div class="preview-item" :class="{'image-preview': attachment.type === 'image'}">
                             <template x-if="attachment.type === 'image'">
-                                <img :src="attachment.url" :alt="attachment.name">
+                                <img :src="attachment.url" :alt="attachment.name" 
+                                     style="cursor: pointer;" 
+                                     @click="$store.chatAttachments.openImageModal(attachment.url, attachment.name)">
                             </template>
                             <template x-if="attachment.type === 'file'">
                                 <div class="file-preview">
@@ -681,20 +683,20 @@
                             <div id="section-tunnel" class="section" x-show="activeTab === 'external'">
                                 <div class="section-title">Flare Tunnel</div>
                                 <div class="section-description">Create a secure public URL to access your Agent Zero instance anytime, anywhere.</div>
-                                <div class="field">
-                                    <div class="field-label">
-                                        <div class="field-title">Tunnel provider</div>
-                                        <div class="field-description">Select provider for public tunnel</div>
-                                    </div>
-                                    <div class="field-control">
-                                        <select id="tunnel-provider" x-model="provider" :disabled="isLoading">
-                                            <option value="serveo">Serveo</option>
-                                            <option value="cloudflared">Cloudflare</option>
-                                        </select>
-                                    </div>
-                                </div>
                                 <!-- Tunnel content UI -->
                                 <div class="tunnel-container" x-data="tunnelSettings">
+                                    <div class="field">
+                                        <div class="field-label">
+                                            <div class="field-title">Tunnel provider</div>
+                                            <div class="field-description">Select provider for public tunnel</div>
+                                        </div>
+                                        <div class="field-control">
+                                            <select id="tunnel-provider" x-model="provider" :disabled="isLoading">
+                                                <option value="serveo">Serveo</option>
+                                                <option value="cloudflared">Cloudflare</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                     <!-- Loading spinner for tunnel operations -->
                                     <div class="loading-spinner" x-show="isLoading">
                                         <i class="fas fa-spinner fa-spin"></i>

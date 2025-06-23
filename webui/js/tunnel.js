@@ -5,6 +5,7 @@ document.addEventListener('alpine:init', () => {
         tunnelLink: '',
         linkGenerated: false,
         loadingText: '',
+        provider: 'serveo', // Default tunnel provider
 
         init() {
             this.checkTunnelStatus();
@@ -160,10 +161,8 @@ document.addEventListener('alpine:init', () => {
             this.isLoading = true;
             this.loadingText = 'Creating tunnel...';
 
-            // Get provider from the parent settings modal scope
-            const modalEl = document.getElementById('settingsModal');
-            const modalAD = Alpine.$data(modalEl);
-            const provider = modalAD.provider || 'serveo'; // Default to serveo if not set
+            // Use the local provider setting
+            const provider = this.provider || 'serveo'; // Default to serveo if not set
             
             // Change create button appearance
             const createButton = document.querySelector('.tunnel-actions .btn-ok');
