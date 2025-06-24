@@ -770,6 +770,40 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "tab": "mcp",
     }
 
+    # Backup & Restore section
+    backup_fields: list[SettingsField] = []
+
+    backup_fields.append(
+        {
+            "id": "backup_create",
+            "title": "Create Backup",
+            "description": "Create a backup archive of selected files and configurations "
+            "using customizable patterns.",
+            "type": "button",
+            "value": "Create Backup",
+        }
+    )
+
+    backup_fields.append(
+        {
+            "id": "backup_restore",
+            "title": "Restore from Backup",
+            "description": "Restore files and configurations from a backup archive "
+            "with pattern-based selection.",
+            "type": "button",
+            "value": "Restore Backup",
+        }
+    )
+
+    backup_section: SettingsSection = {
+        "id": "backup_restore",
+        "title": "Backup & Restore",
+        "description": "Backup and restore Agent Zero data and configurations "
+        "using glob pattern-based file selection.",
+        "fields": backup_fields,
+        "tab": "backup",
+    }
+
     # Add the section to the result
     result: SettingsOutput = {
         "sections": [
@@ -784,6 +818,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             auth_section,
             mcp_client_section,
             mcp_server_section,
+            backup_section,
             dev_section,
         ]
     }

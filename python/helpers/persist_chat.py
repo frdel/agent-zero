@@ -36,6 +36,12 @@ def save_tmp_chat(context: AgentContext):
     files.write_file(path, js)
 
 
+def save_tmp_chats():
+    """Save all contexts to the chats folder"""
+    for _, context in AgentContext._contexts.items():
+        save_tmp_chat(context)
+
+
 def load_tmp_chats():
     """Load all contexts from the chats folder"""
     _convert_v080_chats()
