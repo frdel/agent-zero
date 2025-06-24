@@ -70,7 +70,7 @@ class BackupService:
 
 # Memory (excluding embeddings cache)
 {agent_root}/memory/**
-!{agent_root}/memory/embeddings/**
+!{agent_root}/memory/**/embeddings/**
 
 # Configuration and Settings (CRITICAL)
 {agent_root}/.env

@@ -397,7 +397,7 @@ const model = {
       const metadata = this.backupMetadataConfig;
 
       // Use fetch directly since backup_create returns a file download, not JSON
-      const response = await fetch('/backup_create', {
+      const response = await fetchApi('/backup_create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -442,7 +442,7 @@ const model = {
 
   async downloadBackup(backupPath, backupName) {
     try {
-      const response = await fetch('/backup_download', {
+      const response = await fetchApi('/backup_download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ backup_path: backupPath })
@@ -548,7 +548,7 @@ const model = {
       formData.append('overwrite_policy', this.overwritePolicy);
       formData.append('clean_before_restore', this.cleanBeforeRestore);
 
-      const response = await fetch('/backup_restore_preview', {
+      const response = await fetchApi('/backup_restore_preview', {
         method: 'POST',
         body: formData
       });
@@ -615,7 +615,7 @@ const model = {
       const formData = new FormData();
       formData.append('backup_file', file);
 
-      const response = await fetch('/backup_inspect', {
+      const response = await fetchApi('/backup_inspect', {
         method: 'POST',
         body: formData
       });
@@ -700,7 +700,7 @@ const model = {
       formData.append('overwrite_policy', this.overwritePolicy);
       formData.append('clean_before_restore', this.cleanBeforeRestore);
 
-      const response = await fetch('/backup_restore', {
+      const response = await fetchApi('/backup_restore', {
         method: 'POST',
         body: formData
       });
