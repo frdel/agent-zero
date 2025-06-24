@@ -39,7 +39,7 @@ const fileBrowserModalProxy = {
   async fetchFiles(path = "") {
     this.isLoading = true;
     try {
-      const response = await fetch(
+      const response = await fetchApi(
         `/get_work_dir_files?path=${encodeURIComponent(path)}`
       );
 
@@ -113,7 +113,7 @@ const fileBrowserModalProxy = {
     }
 
     try {
-      const response = await fetch("/delete_work_dir_file", {
+      const response = await fetchApi("/delete_work_dir_file", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -162,7 +162,7 @@ const fileBrowserModalProxy = {
       }
 
       // Proceed with upload after validation
-      const response = await fetch("/upload_work_dir_files", {
+      const response = await fetchApi("/upload_work_dir_files", {
         method: "POST",
         body: formData,
       });
@@ -199,7 +199,7 @@ const fileBrowserModalProxy = {
         file.path
       )}`;
 
-      const response = await fetch(downloadUrl);
+      const response = await fetchApi(downloadUrl);
 
       if (!response.ok) {
         throw new Error("Network response was not ok");

