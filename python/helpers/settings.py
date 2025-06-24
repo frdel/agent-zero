@@ -630,7 +630,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
                 {"value": "base", "label": "Base (74M, English)"},
                 {"value": "small", "label": "Small (244M, English)"},
                 {"value": "medium", "label": "Medium (769M, English)"},
-                {"value": "large", "label": "Large (1.5B, Multilingual)"},
+                {"value": "large", "label": "Large (1.5G, Multilingual)"},
                 {"value": "turbo", "label": "Turbo (Multilingual)"},
             ],
         }
