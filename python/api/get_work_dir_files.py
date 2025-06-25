@@ -6,6 +6,11 @@ from python.helpers import files, runtime
 
 
 class GetWorkDirFiles(ApiHandler):
+
+    @classmethod
+    def get_methods(cls):
+        return ["GET"]
+
     async def process(self, input: dict, request: Request) -> dict | Response:
         current_path = request.args.get("path", "")
         if current_path == "$WORK_DIR":
