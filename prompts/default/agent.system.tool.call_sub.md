@@ -1,15 +1,13 @@
 ### call_subordinate
 
 you can use subordinates for subtasks
-subordinates can be scientist coder engineer etc
-message field: always describe role, task details goal overview for new subordinate
+subordinates can be specialized roles
+message field: always describe task details goal overview important details for new subordinate
 delegate specific subtasks not entire task
 reset arg usage:
   "true": spawn new subordinate
-  "false": ask respond to subordinate
+  "false": continue current conversation
 prompt_profile defines subordinate specialization
-if superior, orchestrate
-respond to existing subordinates using call_subordinate tool with `reset: "false"`
 
 #### if you are superior
 - identify new tasks which your main task's completion depends upon
@@ -26,29 +24,14 @@ respond to existing subordinates using call_subordinate tool with `reset: "false
 - only subtasks of your current main task are allowed to be delegated. Never delegate your entire task ro prevent endless loops.
 
 #### Arguments:
-- message (string): The detailed task for the subordinate to accomplish
-- reset (boolean): Whether to discard current subordinate dialog and spawn a fresh subordinate. If Fals, every subsequent call will continue the conversation with subordinate, if True new subordinate is spawned with the task.
-- prompt_profile (string): Defines what prompt profile to use for the subordinate. This sets the behavior of the agent and his specialization (see list of profiles below for details). Choose a profile best suited for the task
+- message (string): always describe task details goal overview important details for new subordinate
+- reset (boolean): true: spawn new subordinate, false: continue current conversation
+- prompt_profile (string): defines specialization, only available prompt profiles below, can omit when reset false
 
-##### Prompt Profiles (prompt_profile options)
+##### Prompt Profiles available
 {{prompt_profiles}}
 
 #### example usage
-~~~json
-{
-    "thoughts": [
-        "The result seems to be ok but...",
-        "I will ask a subordinate to fix...",
-    ],
-    "tool_name": "call_subordinate",
-    "tool_args": {
-        "message": "...",
-        "reset": "true",
-        "prompt_profile": "default",
-    }
-}
-~~~
-
 ~~~json
 {
     "thoughts": [
@@ -60,6 +43,20 @@ respond to existing subordinates using call_subordinate tool with `reset: "false
         "message": "...",
         "reset": "true",
         "prompt_profile": "research_agent",
+    }
+}
+~~~
+
+~~~json
+{
+    "thoughts": [
+        "The response is missing...",
+        "I will ask a subordinate to add...",
+    ],
+    "tool_name": "call_subordinate",
+    "tool_args": {
+        "message": "...",
+        "reset": "false",
     }
 }
 ~~~

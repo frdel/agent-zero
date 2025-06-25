@@ -975,7 +975,7 @@ def get_default_settings() -> Settings:
         auth_login="",
         auth_password="",
         root_password="",
-        agent_prompts_subdir="default",
+        agent_prompts_subdir="agent0",
         agent_memory_subdir="default",
         agent_knowledge_subdir="custom",
         rfc_auto_docker=True,
