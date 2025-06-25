@@ -9,9 +9,8 @@ class AutoformatResponse(Extension):
         if not message:
             return None
         system = self.agent.read_prompt("fw.msg_autoformat.md", original_response=message)
-        prompt = ChatPromptTemplate.from_messages([SystemMessage(content=system)])
         try:
-            response = await self.agent.call_chat_model(prompt)
+            response = await self.agent.call_utility_model(system, message)
         except Exception:
             return None
         try:
