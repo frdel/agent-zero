@@ -7,12 +7,14 @@ import subprocess
 from typing import Any, Literal, TypedDict
 
 import models
-from python.helpers import runtime, whisper, defer
+from python.helpers import runtime, whisper, defer, git
 from . import files, dotenv
 from python.helpers.print_style import PrintStyle
 
 
 class Settings(TypedDict):
+    version: str
+
     chat_model_provider: str
     chat_model_name: str
     chat_model_kwargs: dict[str, str]
@@ -502,8 +504,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
     agent_fields.append(
         {
             "id": "agent_prompts_subdir",
-            "title": "Prompts Subdirectory",
-            "description": "Subdirectory of /prompts folder to use for agent prompts. Used to adjust agent behaviour.",
+            "title": "A0 Prompts Subdirectory",
+            "description": "Subdirectory of /prompts folder to be used by default agent no. 0. Subordinate agents can be spawned with other subdirectories, that is on their superior agent to decide. This setting affects the behaviour of the top level agent you communicate with.",
             "type": "select",
             "value": settings["agent_prompts_subdir"],
             "options": [
@@ -879,6 +881,11 @@ def normalize_settings(settings: Settings) -> Settings:
     copy = settings.copy()
     default = get_default_settings()
 
+    # adjust settings values to match current version if needed
+    if "version" not in copy or copy["version"] != default["version"]:
+        _adjust_to_version(copy, default)
+        copy["version"] = default["version"] # sync version
+
     # remove keys that are not in default
     keys_to_remove = [key for key in copy if key not in default]
     for key in keys_to_remove:
@@ -899,6 +906,13 @@ def normalize_settings(settings: Settings) -> Settings:
 
     return copy
 
+
+def _adjust_to_version(settings: Settings, default: Settings):
+    # starting with 0.9, the default prompt subfolder for agent no. 0 is agent0
+    # switch to agent0 if the old default is used from v0.8
+    if "version" not in settings or settings["version"].startswith("v0.8"):
+        if "agent_prompts_subdir" not in settings or settings["agent_prompts_subdir"] == "default":
+            settings["agent_prompts_subdir"] = "agent0"
 
 def _read_settings_file() -> Settings | None:
     if os.path.exists(SETTINGS_FILE):
@@ -945,6 +959,7 @@ def get_default_settings() -> Settings:
     from models import ModelProvider
 
     return Settings(
+        version=_get_version(),
         chat_model_provider=ModelProvider.OPENAI.name,
         chat_model_name="gpt-4.1",
         chat_model_kwargs={"temperature": "0"},
@@ -1076,14 +1091,14 @@ def _apply_settings(previous: Settings | None):
             )  # TODO overkill, replace with background task
 
         # update token in mcp server
-        current_token = create_auth_token() #TODO - ugly, token in settings is generated from dotenv and does not always correspond
-        if (
-            not previous
-            or current_token != previous["mcp_server_token"]
-        ):
+        current_token = (
+            create_auth_token()
+        )  # TODO - ugly, token in settings is generated from dotenv and does not always correspond
+        if not previous or current_token != previous["mcp_server_token"]:
 
             async def update_mcp_token(token: str):
                 from python.helpers.mcp_server import DynamicMcpProxy
+
                 DynamicMcpProxy.get_instance().reconfigure(token=token)
 
             task3 = defer.DeferredTask().start_task(
@@ -1161,3 +1176,11 @@ def create_auth_token() -> str:
     # encode as base64 and remove any non-alphanumeric chars (like +, /, =)
     b64_token = base64.urlsafe_b64encode(hash_bytes).decode().replace("=", "")
     return b64_token[:16]
+
+
+def _get_version():
+    try:
+        git_info = git.get_git_info()
+        return str(git_info.get("short_tag", "")).strip() or "unknown"
+    except Exception:
+        return "unknown"
