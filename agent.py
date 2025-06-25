@@ -720,6 +720,12 @@ class Agent:
     async def process_tools(self, msg: str):
         # search for tool usage requests in agent message
         tool_request = extract_tools.json_parse_dirty(msg)
+        if tool_request is None:
+            auto = await self.call_extensions(
+                "message_autoformat", message=msg, loop_data=self.loop_data
+            )
+            if isinstance(auto, dict):
+                tool_request = auto
 
         if tool_request is not None:
             raw_tool_name = tool_request.get("tool_name", "")  # Get the raw tool name
@@ -829,5 +835,9 @@ class Agent:
             )
             cache[folder] = classes
 
+        result = None
         for cls in classes:
-            await cls(agent=self).execute(**kwargs)
+            res = await cls(agent=self).execute(**kwargs)
+            if res is not None:
+                result = res
+        return result
