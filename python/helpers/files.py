@@ -1,12 +1,67 @@
+from abc import ABC, abstractmethod
 from fnmatch import fnmatch
 import json
-import os, re
-import base64
-
+import os
+import sys
 import re
+import base64
 import shutil
 import tempfile
+from typing import Any
 import zipfile
+import importlib
+import importlib.util
+import inspect
+from python.helpers.print_style import PrintStyle
+
+
+class VariablesPlugin(ABC):
+    @abstractmethod
+    def get_variables(self) -> dict[str, Any]:  # type: ignore
+        pass
+
+
+def load_plugin_variables(file: str, backup_dirs: list[str] | None = None) -> dict[str, Any]:
+    if not file.endswith(".md"):
+        return {}
+
+    if backup_dirs is None:
+        backup_dirs = []
+
+    try:
+        plugin_file = find_file_in_dirs(
+            get_abs_path(dirname(file), basename(file, ".md") + ".py"),
+            backup_dirs
+        )
+    except FileNotFoundError:
+        plugin_file = None
+
+    if plugin_file and exists(plugin_file):
+        # load python code and extract variables variables from it
+        module = None
+        module_name = dirname(plugin_file).replace("/", ".") + "." + basename(plugin_file, '.py')
+        try:
+            spec = importlib.util.spec_from_file_location(module_name, plugin_file)
+            if not spec:
+                return {}
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[spec.name] = module
+            spec.loader.exec_module(module)  # type: ignore
+        except ImportError:
+            return {}
+
+        if module is None:
+            return {}
+
+        # Get all classes in the module
+        class_list = inspect.getmembers(module, inspect.isclass)
+        # Filter for classes that are subclasses of VariablesPlugin
+        # iterate backwards to skip imported superclasses
+        for cls in reversed(class_list):
+            if cls[1] is not VariablesPlugin and issubclass(cls[1], VariablesPlugin):
+                PrintStyle().debug(f"Loading prompt variables from {plugin_file}")
+                return cls[1]().get_variables()  # type: ignore
+    return {}
 
 from python.helpers.strings import sanitize_string
 
@@ -15,13 +70,15 @@ def parse_file(_relative_path, _backup_dirs=None, _encoding="utf-8", **kwargs):
     content = read_file(_relative_path, _backup_dirs, _encoding)
     is_json = is_full_json_template(content)
     content = remove_code_fences(content)
+    variables = load_plugin_variables(_relative_path, _backup_dirs) or {}  # type: ignore
+    variables.update(kwargs)
     if is_json:
-        content = replace_placeholders_json(content, **kwargs)
+        content = replace_placeholders_json(content, **variables)
         obj = json.loads(content)
-        # obj = replace_placeholders_dict(obj, **kwargs)
+        # obj = replace_placeholders_dict(obj, **variables)
         return obj
     else:
-        content = replace_placeholders_text(content, **kwargs)
+        content = replace_placeholders_text(content, **variables)
         return content
 
 
@@ -37,11 +94,15 @@ def read_file(_relative_path, _backup_dirs=None, _encoding="utf-8", **kwargs):
         # content = remove_code_fences(f.read())
         content = f.read()
 
+    variables = load_plugin_variables(_relative_path, _backup_dirs) or {}  # type: ignore
+    variables.update(kwargs)
+
     # Replace placeholders with values from kwargs
-    content = replace_placeholders_text(content, **kwargs)
+    content = replace_placeholders_text(content, **variables)
 
     # Process include statements
     content = process_includes(
+        # here we use kwargs, the plugin variables are not inherited
         content, os.path.dirname(_relative_path), _backup_dirs, **kwargs
     )
 
@@ -162,9 +223,6 @@ def find_file_in_dirs(file_path, backup_dirs):
     )
 
 
-import re
-
-
 def remove_code_fences(text):
     # Pattern to match code fences with optional language specifier
     pattern = r"(```|~~~)(.*?\n)(.*?)(\1)"
@@ -177,9 +235,6 @@ def remove_code_fences(text):
     result = re.sub(pattern, replacer, text, flags=re.DOTALL)
 
     return result
-
-
-import re
 
 
 def is_full_json_template(text):
@@ -275,6 +330,16 @@ def get_base_dir():
     return base_dir
 
 
+def basename(path: str, suffix: str | None = None):
+    if suffix:
+        return os.path.basename(path).removesuffix(suffix)
+    return os.path.basename(path)
+
+
+def dirname(path: str):
+    return os.path.dirname(path)
+
+
 def is_in_base_dir(path: str):
     # check if the given path is within the base directory
     base_dir = get_base_dir()
@@ -327,6 +392,4 @@ def move_file(relative_path: str, new_path: str):
 
 def safe_file_name(filename: str) -> str:
     # Replace any character that's not alphanumeric, dash, underscore, or dot with underscore
-    import re
-
-    return re.sub(r"[^a-zA-Z0-9-._]", "_", filename)
+    return re.sub(r'[^a-zA-Z0-9-._]', '_', filename)
