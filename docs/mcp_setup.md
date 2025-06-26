@@ -4,10 +4,11 @@ This guide explains how to configure and utilize external tool providers through
 
 ## What are MCP Servers?
 
-MCP servers are external processes or services that expose a set of tools that Agent Zero can use. Agent Zero acts as an MCP *client*, consuming tools made available by these servers. The integration supports two main types of MCP servers:
+MCP servers are external processes or services that expose a set of tools that Agent Zero can use. Agent Zero acts as an MCP *client*, consuming tools made available by these servers. The integration supports three main types of MCP servers:
 
 1.  **Local Stdio Servers**: These are typically local executables that Agent Zero communicates with via standard input/output (stdio).
 2.  **Remote SSE Servers**: These are servers, often accessible over a network, that Agent Zero communicates with using Server-Sent Events (SSE), usually over HTTP/S.
+3.  **Remote Streaming HTTP Servers**: These are servers that use the streamable HTTP transport protocol for MCP communication, providing an alternative to SSE for network-based MCP servers.
 
 ## How Agent Zero Consumes MCP Tools
 
@@ -65,6 +66,7 @@ Here are templates for configuring individual servers within the `mcp_servers` J
 {
     "name": "My Local Tool Server",
     "description": "Optional: A brief description of this server.",
+    "type": "stdio", // Optional: Explicitly specify server type. Can be "stdio", "sse", or streaming HTTP variants ("http-stream", "streaming-http", "streamable-http", "http-streaming"). Auto-detected if omitted.
     "command": "python", // The executable to run (e.g., python, /path/to/my_tool_server)
     "args": ["path/to/your/mcp_stdio_script.py", "--some-arg"], // List of arguments for the command
     "env": { // Optional: Environment variables for the command's process
@@ -83,6 +85,7 @@ Here are templates for configuring individual servers within the `mcp_servers` J
 {
     "name": "My Remote API Tools",
     "description": "Optional: Description of the remote SSE server.",
+    "type": "sse", // Optional: Explicitly specify server type. Can be "stdio", "sse", or streaming HTTP variants ("http-stream", "streaming-http", "streamable-http", "http-streaming"). Auto-detected if omitted.
     "url": "https://api.example.com/mcp-sse-endpoint", // The full URL for the SSE endpoint of the MCP server.
     "headers": { // Optional: Any HTTP headers required for the connection.
         "Authorization": "Bearer YOUR_API_KEY_OR_TOKEN",
@@ -90,6 +93,24 @@ Here are templates for configuring individual servers within the `mcp_servers` J
     },
     "timeout": 5.0, // Optional: Connection timeout in seconds (default: 5.0).
     "sse_read_timeout": 300.0, // Optional: Read timeout for the SSE stream in seconds (default: 300.0, i.e., 5 minutes).
+    "disabled": false
+}
+```
+
+**3. Remote Streaming HTTP Server**
+
+```json
+{
+    "name": "My Streaming HTTP Tools",
+    "description": "Optional: Description of the remote streaming HTTP server.",
+    "type": "streaming-http", // Optional: Explicitly specify server type. Can be "stdio", "sse", or streaming HTTP variants ("http-stream", "streaming-http", "streamable-http", "http-streaming"). Auto-detected if omitted.
+    "url": "https://api.example.com/mcp-http-endpoint", // The full URL for the streaming HTTP endpoint of the MCP server.
+    "headers": { // Optional: Any HTTP headers required for the connection.
+        "Authorization": "Bearer YOUR_API_KEY_OR_TOKEN",
+        "X-Custom-Header": "some_value"
+    },
+    "timeout": 5.0, // Optional: Connection timeout in seconds (default: 5.0).
+    "sse_read_timeout": 300.0, // Optional: Read timeout for the SSE and streaming HTTP streams in seconds (default: 300.0, i.e., 5 minutes).
     "disabled": false
 }
 ```
@@ -107,8 +128,9 @@ Here are templates for configuring individual servers within the `mcp_servers` J
 **Key Configuration Fields:**
 
 *   `"name"`: A unique name for the server. This name will be used to prefix the tools provided by this server (e.g., `my_server_name.tool_name`). The name is normalized internally (converted to lowercase, spaces and hyphens replaced with underscores).
+*   `"type"`: Optional explicit server type specification. Can be `"stdio"`, `"sse"`, or streaming HTTP variants (`"http-stream"`, `"streaming-http"`, `"streamable-http"`, `"http-streaming"`). If omitted, the type is auto-detected based on the presence of `"command"` (stdio) or `"url"` (defaults to sse for backward compatibility).
 *   `"disabled"`: A boolean (`true` or `false`). If `true`, Agent Zero will ignore this server configuration.
-*   `"url"`: **Required for Remote SSE Servers.** The endpoint URL.
+*   `"url"`: **Required for Remote SSE and Streaming HTTP Servers.** The endpoint URL.
 *   `"command"`: **Required for Local Stdio Servers.** The executable command.
 *   `"args"`: Optional list of arguments for local Stdio servers.
 *   Other fields are specific to the server type and mostly optional with defaults.
@@ -121,4 +143,4 @@ Once configured, successfully installed (if applicable, e.g., for `npx` based se
 *   **Agent Interaction**: You can instruct the agent to use these tools. For example: "Agent, use the `sequential_thinking.run_chain` tool with the following input..." The agent's LLM will then formulate the appropriate JSON request.
 *   **Execution Flow**: Agent Zero's `process_tools` method (with logic in `python/helpers/mcp_handler.py`) prioritizes looking up the tool name in the `MCPConfig`. If found, the execution is delegated to the corresponding MCP server. If not found as an MCP tool, it then attempts to find a local/built-in tool with that name.
 
-This setup provides a flexible way to extend Agent Zero's capabilities by integrating with various external tool providers without modifying its core codebase. 
+This setup provides a flexible way to extend Agent Zero's capabilities by integrating with various external tool providers without modifying its core codebase.

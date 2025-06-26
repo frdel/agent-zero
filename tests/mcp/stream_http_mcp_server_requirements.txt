@@ -1,0 +1,9 @@
+# FastMCP Hello World Server Requirements
+# Install with: pip install -r stream_http_mcp_server_requirements.txt
+
+# FastMCP framework for building MCP servers
+fastmcp>=2.8.0
+
+# Optional: Additional dependencies that might be useful
+# uvicorn>=0.18.0  # ASGI server (may be included with FastMCP)
+# httpx>=0.24.0    # HTTP client (may be included with FastMCP)
