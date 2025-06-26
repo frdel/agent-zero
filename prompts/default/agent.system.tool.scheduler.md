@@ -51,6 +51,7 @@ All runnable tasks can be listed and filtered here. The arguments are filter fie
         "I must look for planned runnable tasks with name ... and state idle or error",
         "The tasks should run within next 20 minutes"
     ],
+    "headline": "Searching for planned runnable tasks to execute soon",
     "tool_name": "scheduler:list_tasks",
     "tool_args": {
         "state": ["idle", "error"],
@@ -73,6 +74,7 @@ List all tasks whose name is matching partially or fully the provided name param
     "thoughts": [
         "I must look for tasks with name XYZ"
     ],
+    "headline": "Finding tasks by name XYZ",
     "tool_name": "scheduler:find_task_by_name",
     "tool_args": {
         "name": "XYZ"
@@ -93,6 +95,7 @@ Show task details for scheduler task with the given uuid.
     "thoughts": [
         "I need details of task xxx-yyy-zzz",
     ],
+    "headline": "Retrieving task details and configuration",
     "tool_name": "scheduler:show_task",
     "tool_args": {
         "uuid": "xxx-yyy-zzz",
@@ -118,6 +121,7 @@ You can pass input data in text form as the "context" argument. The context will
     "thoughts": [
         "I must run task xyz-123",
     ],
+    "headline": "Manually executing scheduled task",
     "tool_name": "scheduler:run_task",
     "tool_args": {
         "uuid": "xyz-123",
@@ -139,6 +143,7 @@ Delete the task defined by the given uuid from the system.
     "thoughts": [
         "I must delete task xyz-123",
     ],
+    "headline": "Removing task from scheduler",
     "tool_name": "scheduler:delete_task",
     "tool_args": {
         "uuid": "xyz-123",
@@ -163,8 +168,9 @@ The scheduled type of tasks is being run by a cron schedule that you must provid
 ~~~json
 {
     "thoughts": [
-        "I must create new scheduled task with name XXX running every 20 minutes in a separate chat"
+        "I need to create a scheduled task that runs every 20 minutes in a separate chat"
     ],
+    "headline": "Creating recurring cron-scheduled email task",
     "tool_name": "scheduler:create_scheduled_task",
     "tool_args": {
         "name": "XXX",
@@ -199,8 +205,9 @@ The adhoc type of tasks is being run manually by "scheduler:run_task" tool or by
 ~~~json
 {
     "thoughts": [
-        "I must create new scheduled task with name XXX running every 20 minutes"
+        "I need to create an adhoc task that can be run manually when needed"
     ],
+    "headline": "Creating on-demand email task",
     "tool_name": "scheduler:create_adhoc_task",
     "tool_args": {
         "name": "XXX",
@@ -229,9 +236,10 @@ The planned type of tasks is being run by a fixed plan, a list of datetimes that
 ~~~json
 {
     "thoughts": [
-        "I must create new planned task to run tomorow at 6:25 PM",
+        "I need to create a planned task to run tomorrow at 6:25 PM",
         "Today is 2025-04-29 according to system prompt"
     ],
+    "headline": "Creating planned task for specific datetime",
     "tool_name": "scheduler:create_planned_task",
     "tool_args": {
         "name": "XXX",
@@ -258,6 +266,7 @@ Attention: You can only wait for tasks running in a different chat context (dedi
     "thoughts": [
         "I need the most current result of the task xyz-123",
     ],
+    "headline": "Waiting for task completion and results",
     "tool_name": "scheduler:wait_for_task",
     "tool_args": {
         "uuid": "xyz-123",

@@ -343,7 +343,7 @@ class Agent:
                         # create log message right away, more responsive
                         self.loop_data.params_temporary["log_item_generating"] = (
                             self.context.log.log(
-                                type="agent", heading=f"{self.agent_name}: Generating"
+                                type="agent", heading=f"{self.agent_name}: Thinking..."
                             )
                         )
 

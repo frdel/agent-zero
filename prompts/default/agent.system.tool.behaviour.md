@@ -7,6 +7,7 @@ usage:
     "thoughts": [
         "...",
     ],
+    "headline": "Adjusting agent behavior per user request",
     "tool_name": "behaviour_adjustment",
     "tool_args": {
         "adjustments": "remove...",

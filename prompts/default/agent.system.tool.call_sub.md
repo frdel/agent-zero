@@ -38,6 +38,7 @@ prompt_profile defines subordinate specialization
         "This task is challenging and requires a data analyst",
         "The research_agent profile supports data analysis",
     ],
+    "headline": "Delegating coding fix to subordinate agent",
     "tool_name": "call_subordinate",
     "tool_args": {
         "message": "...",

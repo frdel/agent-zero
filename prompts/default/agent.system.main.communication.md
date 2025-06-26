@@ -1,11 +1,14 @@
 
 ## Communication
 respond valid json with fields
-thoughts: array thoughts before execution in natural language
-tool_name: use tool name
-tool_args: key value pairs tool arguments
 
-no text before after json
+### Response format (json fields names)
+- thoughts: array thoughts before execution in natural language
+- headline: short headline summary of the response
+- tool_name: use tool name
+- tool_args: key value pairs tool arguments
+
+no text allowed before or after json
 
 ### Response example
 ~~~json
@@ -16,6 +19,7 @@ no text before after json
         "processing?",
         "actions?"
     ],
+    "headline": "Analyzing instructions to develop processing actions",
     "tool_name": "name_of_tool",
     "tool_args": {
         "arg1": "val1",
