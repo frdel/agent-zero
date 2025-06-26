@@ -616,56 +616,100 @@ class Agent:
         callback: Callable[[str], Awaitable[None]] | None = None,
         background: bool = False,
     ):
+        import asyncio
+        from openai import APIError
+
         prompt = ChatPromptTemplate.from_messages(
             [SystemMessage(content=system), HumanMessage(content=message)]
         )
 
         response = ""
+        max_retries = 3
+        retry_delay = 2  # seconds
 
-        # model class
-        model = self.get_utility_model()
+        for attempt in range(max_retries + 1):
+            try:
+                # model class
+                model = self.get_utility_model()
 
-        # rate limiter
-        limiter = await self.rate_limiter(
-            self.config.utility_model, prompt.format(), background
-        )
+                # rate limiter
+                limiter = await self.rate_limiter(
+                    self.config.utility_model, prompt.format(), background
+                )
 
-        async for chunk in (prompt | model).astream({}):
-            await self.handle_intervention()  # wait for intervention and handle it, if paused
+                async for chunk in (prompt | model).astream({}):
+                    await self.handle_intervention()  # wait for intervention and handle it, if paused
 
-            content = models.parse_chunk(chunk)
-            limiter.add(output=tokens.approximate_tokens(content))
-            response += content
+                    content = models.parse_chunk(chunk)
+                    limiter.add(output=tokens.approximate_tokens(content))
+                    response += content
 
-            if callback:
-                await callback(content)
+                    if callback:
+                        await callback(content)
 
-        return response
+                return response
+
+            except APIError as e:
+                if attempt < max_retries and "server had an error" in str(e).lower():
+                    PrintStyle(font_color="yellow", padding=True).print(
+                        f"OpenAI server error in utility model (attempt {attempt + 1}/{max_retries + 1}): {e}"
+                    )
+                    PrintStyle(font_color="yellow", padding=True).print(
+                        f"Retrying in {retry_delay} seconds..."
+                    )
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                    continue
+                else:
+                    # Re-raise if max retries exceeded or non-retryable error
+                    raise
 
     async def call_chat_model(
         self,
         prompt: ChatPromptTemplate,
         callback: Callable[[str, str], Awaitable[None]] | None = None,
     ):
+        import asyncio
+        from openai import APIError
+
         response = ""
+        max_retries = 3
+        retry_delay = 2  # seconds
 
-        # model class
-        model = self.get_chat_model()
+        for attempt in range(max_retries + 1):
+            try:
+                # model class
+                model = self.get_chat_model()
 
-        # rate limiter
-        limiter = await self.rate_limiter(self.config.chat_model, prompt.format())
+                # rate limiter
+                limiter = await self.rate_limiter(self.config.chat_model, prompt.format())
 
-        async for chunk in (prompt | model).astream({}):
-            await self.handle_intervention()  # wait for intervention and handle it, if paused
+                async for chunk in (prompt | model).astream({}):
+                    await self.handle_intervention()  # wait for intervention and handle it, if paused
 
-            content = models.parse_chunk(chunk)
-            limiter.add(output=tokens.approximate_tokens(content))
-            response += content
+                    content = models.parse_chunk(chunk)
+                    limiter.add(output=tokens.approximate_tokens(content))
+                    response += content
 
-            if callback:
-                await callback(content, response)
+                    if callback:
+                        await callback(content, response)
 
-        return response
+                return response
+
+            except APIError as e:
+                if attempt < max_retries and "server had an error" in str(e).lower():
+                    PrintStyle(font_color="yellow", padding=True).print(
+                        f"OpenAI server error (attempt {attempt + 1}/{max_retries + 1}): {e}"
+                    )
+                    PrintStyle(font_color="yellow", padding=True).print(
+                        f"Retrying in {retry_delay} seconds..."
+                    )
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                    continue
+                else:
+                    # Re-raise if max retries exceeded or non-retryable error
+                    raise
 
     async def rate_limiter(
         self, model_config: ModelConfig, input: str, background: bool = False

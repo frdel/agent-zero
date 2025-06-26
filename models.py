@@ -228,7 +228,15 @@ def get_openai_chat(
 ):
     if not api_key:
         api_key = get_api_key("openai")
-    return ChatOpenAI(model_name=model_name, api_key=api_key, **kwargs)  # type: ignore
+
+    # Add default retry configuration if not provided
+    default_kwargs = {
+        "max_retries": 3,
+        "timeout": 60,
+        **kwargs
+    }
+
+    return ChatOpenAI(model_name=model_name, api_key=api_key, **default_kwargs)  # type: ignore
 
 
 def get_openai_embedding(model_name: str, api_key=None, **kwargs):

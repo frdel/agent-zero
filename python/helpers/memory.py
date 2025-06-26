@@ -52,6 +52,7 @@ class Memory:
         FRAGMENTS = "fragments"
         SOLUTIONS = "solutions"
         INSTRUMENTS = "instruments"
+        RESEARCH = "research"
 
     index: dict[str, "MyFaiss"] = {}
 
@@ -429,6 +430,156 @@ class Memory:
     @staticmethod
     def get_timestamp():
         return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Research-specific methods for SakanaAI integration
+    async def insert(self, text: str, area: "Memory.Area" = None, metadata: dict = None):
+        """Enhanced insert method with area specification for research artifacts"""
+        if area is None:
+            area = Memory.Area.MAIN
+        if metadata is None:
+            metadata = {}
+        
+        metadata["area"] = area.value
+        return await self.insert_text(text, metadata)
+
+    async def search_research_artifacts(self, query: str, artifact_type: str = None, 
+                                      limit: int = 10, threshold: float = 0.7):
+        """Search for research artifacts with optional type filtering"""
+        filter_condition = f"area == '{Memory.Area.RESEARCH.value}'"
+        if artifact_type:
+            filter_condition += f" and type == '{artifact_type}'"
+        
+        return await self.search_similarity_threshold(
+            query, limit=limit, threshold=threshold, filter=filter_condition
+        )
+
+    async def get_research_papers(self, limit: int = 20, threshold: float = 0.5):
+        """Get all research papers stored in memory"""
+        return await self.search_similarity_threshold(
+            "research paper academic", 
+            limit=limit, 
+            threshold=threshold,
+            filter=f"area == '{Memory.Area.RESEARCH.value}' and type == 'academic_paper'"
+        )
+
+    async def get_experiment_designs(self, limit: int = 10, threshold: float = 0.5):
+        """Get all experiment designs stored in memory"""
+        return await self.search_similarity_threshold(
+            "experiment design methodology", 
+            limit=limit, 
+            threshold=threshold,
+            filter=f"area == '{Memory.Area.RESEARCH.value}' and type == 'experiment_design'"
+        )
+
+    async def get_peer_reviews(self, limit: int = 10, threshold: float = 0.5):
+        """Get all peer reviews stored in memory"""
+        return await self.search_similarity_threshold(
+            "peer review evaluation", 
+            limit=limit, 
+            threshold=threshold,
+            filter=f"area == '{Memory.Area.RESEARCH.value}' and type == 'peer_review'"
+        )
+
+    async def get_research_findings(self, query: str = "", limit: int = 15, threshold: float = 0.6):
+        """Get research findings with optional query filtering"""
+        search_query = f"research findings results {query}".strip()
+        return await self.search_similarity_threshold(
+            search_query, 
+            limit=limit, 
+            threshold=threshold,
+            filter=f"area == '{Memory.Area.RESEARCH.value}' and type == 'research_findings'"
+        )
+
+    async def delete_research_artifacts(self, artifact_type: str = None, threshold: float = 0.5):
+        """Delete research artifacts by type"""
+        if artifact_type:
+            filter_condition = f"area == '{Memory.Area.RESEARCH.value}' and type == '{artifact_type}'"
+            query = f"research {artifact_type}"
+        else:
+            filter_condition = f"area == '{Memory.Area.RESEARCH.value}'"
+            query = "research artifacts"
+            
+        return await self.delete_documents_by_query(query, threshold, filter_condition)
+
+    async def get_research_timeline(self, days_back: int = 30):
+        """Get research artifacts from recent timeline"""
+        from datetime import datetime, timedelta
+        cutoff_date = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
+        
+        # This would require timestamp comparison, simplified implementation
+        return await self.search_similarity_threshold(
+            "recent research", 
+            limit=50, 
+            threshold=0.3,
+            filter=f"area == '{Memory.Area.RESEARCH.value}'"
+        )
+
+    async def save_research_session(self, session_data: dict):
+        """Save complete research session with metadata"""
+        metadata = {
+            "type": "research_session",
+            "session_id": session_data.get("session_id", "unknown"),
+            "research_topic": session_data.get("topic", ""),
+            "agent": self.agent.agent_name,
+            "area": Memory.Area.RESEARCH.value
+        }
+        
+        session_summary = f"""Research Session Summary:
+Topic: {session_data.get('topic', 'Unknown')}
+Duration: {session_data.get('duration', 'Unknown')}
+Artifacts Created: {session_data.get('artifacts_count', 0)}
+Key Findings: {session_data.get('key_findings', 'None recorded')}
+Next Steps: {session_data.get('next_steps', 'None specified')}
+"""
+        
+        return await self.insert_text(session_summary, metadata)
+
+    @staticmethod
+    def format_research_docs(docs: list[Document]) -> str:
+        """Format research documents for display with enhanced metadata"""
+        if not docs:
+            return "No research documents found."
+        
+        result = []
+        for i, doc in enumerate(docs, 1):
+            text = f"\n--- Research Document {i} ---\n"
+            
+            # Extract key metadata
+            doc_type = doc.metadata.get('type', 'Unknown')
+            timestamp = doc.metadata.get('timestamp', 'Unknown')
+            agent = doc.metadata.get('agent', 'Unknown')
+            
+            text += f"Type: {doc_type}\n"
+            text += f"Timestamp: {timestamp}\n"
+            text += f"Agent: {agent}\n"
+            
+            # Add specific metadata based on type
+            if doc_type == "research_findings":
+                research_type = doc.metadata.get('research_type', 'Unknown')
+                query = doc.metadata.get('query', 'Unknown')
+                text += f"Research Type: {research_type}\n"
+                text += f"Query: {query}\n"
+            elif doc_type == "experiment_design":
+                experiment_type = doc.metadata.get('experiment_type', 'Unknown')
+                research_question = doc.metadata.get('research_question', 'Unknown')
+                text += f"Experiment Type: {experiment_type}\n"
+                text += f"Research Question: {research_question}\n"
+            elif doc_type == "academic_paper":
+                paper_type = doc.metadata.get('paper_type', 'Unknown')
+                research_topic = doc.metadata.get('research_topic', 'Unknown')
+                text += f"Paper Type: {paper_type}\n"
+                text += f"Topic: {research_topic}\n"
+            elif doc_type == "peer_review":
+                review_type = doc.metadata.get('review_type', 'Unknown')
+                paper_url = doc.metadata.get('paper_url', 'Unknown')
+                text += f"Review Type: {review_type}\n"
+                text += f"Paper URL: {paper_url}\n"
+            
+            text += f"\nContent Preview:\n{doc.page_content[:300]}..."
+            text += "\n" + "="*50
+            result.append(text)
+        
+        return "\n".join(result)
 
 
 def get_memory_subdir_abs(agent: Agent) -> str:
