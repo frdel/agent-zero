@@ -1,6 +1,6 @@
 // copy button
 import { openImageModal } from "./image_modal.js";
-import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
+import { marked } from "../vendor/marked/marked.esm.js";
 
 function createCopyButton() {
   const button = document.createElement("button");
@@ -675,7 +675,7 @@ function escapeHTML(str) {
 function convertPathsToLinks(str) {
   function generateLinks(match) {
     const parts = match.split("/");
-    if (!parts[0]) parts.shift(); // drop empty element left of first “/”
+    if (!parts[0]) parts.shift(); // drop empty element left of first "
     let conc = "";
     let html = "";
     for (const part of parts) {
@@ -700,7 +700,7 @@ function convertPathsToLinks(str) {
   return str
     .split(tagRegex) // keep tags & text separate
     .map((chunk) => {
-      // if it *starts* with '<', it’s a tag -> leave untouched
+      // if it *starts* with '<', it's a tag -> leave untouched
       if (chunk.startsWith("<")) return chunk;
       // otherwise run your link-generation
       return chunk.replace(pathRegex, generateLinks);
