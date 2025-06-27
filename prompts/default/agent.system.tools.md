@@ -4,6 +4,8 @@
 
 {{ include './agent.system.tool.call_sub.md' }}
 
+{{ include './agent.system.tool.team_agent.md' }}
+
 {{ include './agent.system.tool.behaviour.md' }}
 
 {{ include './agent.system.tool.search_engine.md' }}
