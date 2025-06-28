@@ -256,7 +256,7 @@ const fullComponentImplementation = function() {
 
             this.isLoading = true;
             try {
-                const response = await fetch('/scheduler_tasks_list', {
+                const response = await fetchApi('/scheduler_tasks_list', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -784,7 +784,7 @@ const fullComponentImplementation = function() {
                 console.log('Final task data being sent to API:', JSON.stringify(taskData, null, 2));
 
                 // Make API request
-                const response = await fetch(apiEndpoint, {
+                const response = await fetchApi(apiEndpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -874,7 +874,7 @@ const fullComponentImplementation = function() {
         // Run a task
         async runTask(taskId) {
             try {
-                const response = await fetch('/scheduler_task_run', {
+                const response = await fetchApi('/scheduler_task_run', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -918,7 +918,7 @@ const fullComponentImplementation = function() {
                 this.showLoadingState = true;
 
                 // Call API to update the task state
-                const response = await fetch('/scheduler_task_update', {
+                const response = await fetchApi('/scheduler_task_update', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -959,7 +959,7 @@ const fullComponentImplementation = function() {
                 // if we delete selected context, switch to another first
                 switchFromContext(taskId);
 
-                const response = await fetch('/scheduler_task_delete', {
+                const response = await fetchApi('/scheduler_task_delete', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

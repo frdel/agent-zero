@@ -1,0 +1,94 @@
+<html>
+<head>
+    <title>Create Backup</title>
+    <script type="module">
+        import { store } from "/components/settings/backup/backup-store.js";
+    </script>
+</head>
+<body>
+    <div x-data>
+        <template x-if="$store.backupStore">
+            <div x-init="$store.backupStore.initBackup()" x-destroy="$store.backupStore.onClose()">
+
+                <!-- Header with buttons (following MCP servers pattern) -->
+                <h3>Backup Configuration JSON
+                    <button class="btn slim" style="margin-left: 0.5em;"
+                        @click="$store.backupStore.formatJson()">Format</button>
+                    <button class="btn slim" style="margin-left: 0.5em;"
+                        @click="$store.backupStore.resetToDefaults()">Reset</button>
+                    <button class="btn slim" style="margin-left: 0.5em;"
+                        @click="$store.backupStore.dryRun()" :disabled="$store.backupStore.loading">Dry Run</button>
+                    <button class="btn slim primary" style="margin-left: 0.5em;"
+                        @click="$store.backupStore.createBackup()" :disabled="$store.backupStore.loading">Create Backup</button>
+                </h3>
+
+                <!-- JSON Editor (upper part) -->
+                <div id="backup-metadata-editor"></div>
+
+                <!-- File Operations Display (lower part) -->
+                <h3 id="backup-operations">File Operations</h3>
+
+                <!-- File listing textarea -->
+                <div class="file-operations-container">
+                    <textarea id="backup-file-list"
+                              x-model="$store.backupStore.fileOperationsLog"
+                              readonly
+                              placeholder="File operations will be displayed here..."></textarea>
+                </div>
+
+                <!-- Loading indicator -->
+                <div x-show="$store.backupStore.loading" class="backup-loading">
+                    <span x-text="$store.backupStore.loadingMessage || 'Processing...'"></span>
+                </div>
+
+                <!-- Error display -->
+                <div x-show="$store.backupStore.error" class="backup-error">
+                    <span x-text="$store.backupStore.error"></span>
+                </div>
+
+            </div>
+        </template>
+    </div>
+
+    <style>
+        .backup-loading {
+            width: 100%;
+            text-align: center;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+            color: var(--color-text-secondary);
+        }
+
+        #backup-metadata-editor {
+            width: 100%;
+            height: 25em;
+        }
+
+        .file-operations-container {
+            margin-top: 0.5em;
+            margin-bottom: 1em;
+        }
+
+        #backup-file-list {
+            width: 100%;
+            height: 15em;
+            font-family: monospace;
+            font-size: 0.85em;
+            background: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            padding: 0.5em;
+            resize: vertical;
+        }
+
+        .backup-error {
+            color: var(--color-error);
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: var(--color-error-bg);
+            border-radius: 4px;
+        }
+    </style>
+</body>
+</html>

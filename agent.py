@@ -296,7 +296,7 @@ class Agent:
         self.config = config
 
         # agent context
-        self.context = context or AgentContext(config)
+        self.context = context or AgentContext(config=config, agent0=self)
 
         # non-config vars
         self.number = number

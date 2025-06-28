@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="css/history.css">
     <link rel="stylesheet" href="css/scheduler-datepicker.css">
     <link rel="stylesheet" href="css/tunnel.css">
-    
+
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
@@ -117,8 +117,6 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" crossorigin="anonymous"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
         crossorigin="anonymous"></script>
-
-    <script src="https://rawgit.com/showdownjs/showdown/develop/dist/showdown.min.js"></script>
 
     <!-- Non-module scripts after Alpine.js -->
     <script type="text/javascript" src="js/settings.js"></script>
@@ -599,10 +597,14 @@
                                      :class="{'active': activeTab === 'scheduler'}"
                                      @click="switchTab('scheduler')"
                                      title="Task Scheduler">Task Scheduler</div>
+                                <div class="settings-tab"
+                                     :class="{'active': activeTab === 'backup'}"
+                                     @click="switchTab('backup')"
+                                     title="Backup & Restore">Backup & Restore</div>
                             </div>
                         </div>
 
-                        <!-- Display settings sections for agent, external, developer tabs -->
+                        <!-- Display settings sections for agent, external, developer, mcp, backup tabs -->
                         <div id="settings-sections" x-show="activeTab !== 'scheduler'">
                             <nav>
                                 <ul>
@@ -736,7 +738,7 @@
                                         <i class="fas fa-spinner fa-spin"></i>
                                         <span x-text="loadingText || 'Processing tunnel request...'"></span>
                                     </div>
-                                    
+
                                     <!-- Tunnel content when not loading -->
                                     <div x-show="!isLoading">
                                         <!-- Tunnel link display when generated -->

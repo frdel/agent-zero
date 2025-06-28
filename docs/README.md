@@ -42,6 +42,7 @@ To begin with Agent Zero, follow the links below for detailed guides on various 
   - [Voice Interface](usage.md#voice-interface)
   - [Mathematical Expressions](usage.md#mathematical-expressions)
   - [File Browser](usage.md#file-browser)
+  - [Backup & Restore](usage.md#backup--restore)
 - [Architecture Overview](architecture.md)
 - [Hacking and Customization](hacking_and_customization.md)
   - [System Architecture](architecture.md#system-architecture)

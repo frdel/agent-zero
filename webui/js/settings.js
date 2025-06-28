@@ -68,7 +68,7 @@ const settingsModalProxy = {
                     }
                 }
             }
-            
+
             // When switching to the tunnel tab, initialize tunnelSettings
             if (tabName === 'tunnel') {
                 console.log('Switching to tunnel tab, initializing tunnelSettings');
@@ -287,6 +287,10 @@ const settingsModalProxy = {
 
         if (field.id === "mcp_servers_config") {
             openModal("settings/mcp/client/mcp-servers.html");
+        } else if (field.id === "backup_create") {
+            openModal("settings/backup/backup.html");
+        } else if (field.id === "backup_restore") {
+            openModal("settings/backup/restore.html");
         }
     }
 };
@@ -359,7 +363,7 @@ document.addEventListener('alpine:init', function () {
             async fetchSettings() {
                 try {
                     this.isLoading = true;
-                    const response = await fetch('/api/settings_get', {
+                    const response = await fetchApi('/api/settings_get', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -387,15 +391,23 @@ document.addEventListener('alpine:init', function () {
                 // Filter sections based on active tab
                 if (this.activeTab === 'agent') {
                     this.filteredSections = this.settingsData.sections?.filter(section =>
-                        section.group === 'agent'
+                        section.tab === 'agent'
                     ) || [];
                 } else if (this.activeTab === 'external') {
                     this.filteredSections = this.settingsData.sections?.filter(section =>
-                        section.group === 'external'
+                        section.tab === 'external'
                     ) || [];
                 } else if (this.activeTab === 'developer') {
                     this.filteredSections = this.settingsData.sections?.filter(section =>
-                        section.group === 'developer'
+                        section.tab === 'developer'
+                    ) || [];
+                } else if (this.activeTab === 'mcp') {
+                    this.filteredSections = this.settingsData.sections?.filter(section =>
+                        section.tab === 'mcp'
+                    ) || [];
+                } else if (this.activeTab === 'backup') {
+                    this.filteredSections = this.settingsData.sections?.filter(section =>
+                        section.tab === 'backup'
                     ) || [];
                 } else {
                     // For any other tab, show nothing since those tabs have custom UI
@@ -424,7 +436,7 @@ document.addEventListener('alpine:init', function () {
                     }
 
                     // Send request
-                    const response = await fetch('/api/settings_save', {
+                    const response = await fetchApi('/api/settings_save', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -481,7 +493,7 @@ document.addEventListener('alpine:init', function () {
                     }
 
                     // Send test request
-                    const response = await fetch('/api/test_connection', {
+                    const response = await fetchApi('/api/test_connection', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'

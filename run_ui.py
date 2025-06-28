@@ -1,4 +1,5 @@
 import os
+import secrets
 import sys
 import time
 import socket
@@ -6,7 +7,8 @@ import struct
 from functools import wraps
 import threading
 import signal
-from flask import Flask, request, Response
+from typing import override
+from flask import Flask, request, Response, session
 from flask_basicauth import BasicAuth
 import initialize
 from python.helpers import errors, files, git, mcp_server
@@ -24,7 +26,12 @@ time.tzset()
 
 # initialize the internal Flask server
 webapp = Flask("app", static_folder=get_abs_path("./webui"), static_url_path="/")
-webapp.config["JSON_SORT_KEYS"] = False  # Disable key sorting in jsonify
+webapp.secret_key = os.getenv("FLASK_SECRET_KEY") or secrets.token_hex(32)
+webapp.config.update(
+    JSON_SORT_KEYS=False,
+    SESSION_COOKIE_SAMESITE="Strict",
+)
+
 
 lock = threading.Lock()
 
@@ -119,6 +126,18 @@ def requires_auth(f):
     return decorated
 
 
+def csrf_protect(f):
+    @wraps(f)
+    async def decorated(*args, **kwargs):
+        token = session.get("csrf_token")
+        header = request.headers.get("X-CSRF-Token")
+        if not token or not header or token != header:
+            return Response("CSRF token missing or invalid", 403)
+        return await f(*args, **kwargs)
+
+    return decorated
+
+
 # handle default address, load index
 @webapp.route("/", methods=["GET"])
 @requires_auth
@@ -164,35 +183,23 @@ def run():
         name = handler.__module__.split(".")[-1]
         instance = handler(app, lock)
 
+        async def handler_wrap():
+            return await instance.handle_request(request=request)
+
         if handler.requires_loopback():
-
-            @requires_loopback
-            async def handle_request():
-                return await instance.handle_request(request=request)
-
-        elif handler.requires_auth():
-
-            @requires_auth
-            async def handle_request():
-                return await instance.handle_request(request=request)
-
-        elif handler.requires_api_key():
-
-            @requires_api_key
-            async def handle_request():
-                return await instance.handle_request(request=request)
-
-        else:
-            # Fallback to requires_auth
-            @requires_auth
-            async def handle_request():
-                return await instance.handle_request(request=request)
+            handler_wrap = requires_loopback(handler_wrap)
+        if handler.requires_auth():
+            handler_wrap = requires_auth(handler_wrap)
+        if handler.requires_api_key():
+            handler_wrap = requires_api_key(handler_wrap)
+        if handler.requires_csrf():
+            handler_wrap = csrf_protect(handler_wrap)
 
         app.add_url_rule(
             f"/{name}",
             f"/{name}",
-            handle_request,
-            methods=["POST", "GET"],
+            handler_wrap,
+            methods=handler.get_methods(),
         )
 
     # initialize and register API handlers

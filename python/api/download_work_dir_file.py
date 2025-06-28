@@ -10,6 +10,11 @@ import os
 
 
 class DownloadFile(ApiHandler):
+
+    @classmethod
+    def get_methods(cls):
+        return ["GET"]
+
     async def process(self, input: Input, request: Request) -> Output:
         file_path = request.args.get("path", input.get("path", ""))
         if not file_path:

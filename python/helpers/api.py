@@ -3,13 +3,12 @@ import json
 import threading
 from typing import Union, TypedDict, Dict, Any
 from attr import dataclass
-from flask import Request, Response, jsonify, Flask
+from flask import Request, Response, jsonify, Flask, session, request
 from agent import AgentContext
 from initialize import initialize_agent
 from python.helpers.print_style import PrintStyle
 from python.helpers.errors import format_error
 from werkzeug.serving import make_server
-
 
 Input = dict
 Output = Union[Dict[str, Any], Response, TypedDict]  # type: ignore
@@ -31,6 +30,14 @@ class ApiHandler:
     @classmethod
     def requires_auth(cls) -> bool:
         return True
+
+    @classmethod
+    def get_methods(cls) -> list[str]:
+        return ["POST"]
+
+    @classmethod
+    def requires_csrf(cls) -> bool:
+        return cls.requires_auth()
 
     @abstractmethod
     async def process(self, input: Input, request: Request) -> Output:

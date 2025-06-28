@@ -11,6 +11,14 @@ class SchedulerTick(ApiHandler):
     def requires_loopback(cls) -> bool:
         return True
 
+    @classmethod
+    def requires_auth(cls) -> bool:
+        return False
+
+    @classmethod
+    def requires_csrf(cls) -> bool:
+        return False
+
     async def process(self, input: Input, request: Request) -> Output:
         # Get timezone from input (do not set if not provided, we then rely on poll() to set it)
         if timezone := input.get("timezone", None):
