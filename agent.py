@@ -26,6 +26,12 @@ from typing import Callable
 from python.helpers.localization import Localization
 
 
+@dataclass
+class ToolRequestData:
+    tool_request: dict | None
+    message: str
+
+
 class AgentContextType(Enum):
     USER = "user"
     TASK = "task"
@@ -720,12 +726,18 @@ class Agent:
     async def process_tools(self, msg: str):
         # search for tool usage requests in agent message
         tool_request = extract_tools.json_parse_dirty(msg)
-        if tool_request is None:
-            auto = await self.call_extensions(
-                "message_autoformat", message=msg, loop_data=self.loop_data
-            )
-            if isinstance(auto, dict):
-                tool_request = auto
+        
+        # Create tool request data object for extensions to modify
+        tool_request_data = ToolRequestData(tool_request=tool_request, message=msg)
+        
+        # Call tool_request extensions to allow modification
+        await self.call_extensions(
+            "tool_request", tool_request_data=tool_request_data, loop_data=self.loop_data
+        )
+        
+        # Use the potentially modified tool_request
+        tool_request = tool_request_data.tool_request
+
 
         if tool_request is not None:
             raw_tool_name = tool_request.get("tool_name", "")  # Get the raw tool name

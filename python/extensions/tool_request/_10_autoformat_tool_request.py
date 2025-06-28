@@ -3,55 +3,52 @@ from python.helpers.auto_format import auto_format_response, is_valid_agent_resp
 from agent import LoopData
 
 
-class AutoFormatResponse(Extension):
+class AutoformatToolRequest(Extension):
     """
-    Auto-formatting extension that detects and corrects malformed responses
+    Auto-formatting extension that detects and corrects malformed tool requests
     by creating a formatted version that can be used by the agent.
     """
     
-    async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
+    async def execute(self, tool_request_data=None, loop_data: LoopData = LoopData(), **kwargs):
         """
-        Detect malformed responses and attempt to provide auto-formatting guidance.
-        This runs at the end of each message loop iteration.
+        Detect malformed tool requests and attempt to auto-format them.
+        This runs for every tool request processing.
         """
+        if not tool_request_data:
+            return
+            
         try:
-            # Check if we have a recent response that might be malformed
-            if not hasattr(self.agent, 'last_raw_response'):
+            # Only process if tool_request is None (meaning original parsing failed)
+            if tool_request_data.tool_request is not None:
                 return
                 
-            raw_response = getattr(self.agent, 'last_raw_response', '')
-            if not raw_response:
+            message = tool_request_data.message
+            if not message:
                 return
                 
-            # Check if the response is likely malformed
-            if not detect_misformat(raw_response):
+            # Check if the message is likely malformed
+            if not detect_misformat(message):
                 return
                 
-            self.agent.context.log.log(type="info", content="Detected potentially malformed response, attempting auto-correction")
+            self.agent.context.log.log(type="info", content="Detected potentially malformed tool request, attempting auto-correction")
             
             # Try to auto-format the response
-            formatted_response = await self._auto_format_response(raw_response)
+            formatted_response = await self._auto_format_response(message)
             
             if formatted_response:
-                # Store the corrected version for reference
-                self.agent.set_data('auto_formatted_response', formatted_response)
+                # Try to parse the formatted response
+                from python.helpers import extract_tools
+                parsed = extract_tools.json_parse_dirty(formatted_response)
                 
-                # Add a helpful message to the agent's context
-                formatting_note = f"""
-Note: The previous response was auto-formatted to proper JSON structure.
-Original contained: {raw_response[:100]}...
-Formatted version: {formatted_response[:100]}...
-
-Please ensure future responses follow the exact JSON format:
-{{"thoughts": ["reasoning"], "tool_name": "tool", "tool_args": {{"key": "value"}}}}
-"""
-
-                # Add as a temporary context for the agent using loop_data
-                loop_data.extras_temporary["auto_format_note"] = formatting_note
-                
-                self.agent.context.log.log(type="info", content="Successfully auto-formatted response and provided guidance")
+                if parsed:
+                    # Update the tool request data object
+                    tool_request_data.tool_request = parsed
+                    
+                    self.agent.context.log.log(type="info", content="Successfully auto-formatted tool request")
+                else:
+                    self.agent.context.log.log(type="warning", content="Auto-formatting produced unparseable result")
             else:
-                self.agent.context.log.log(type="warning", content="Auto-formatting failed - response remains malformed")
+                self.agent.context.log.log(type="warning", content="Auto-formatting failed - tool request remains malformed")
 
         except Exception as e:
             self.agent.context.log.log(type="error", content=f"Auto-formatting extension error: {str(e)}")
