@@ -156,6 +156,7 @@ Users can create custom tools to extend Agent Zero's capabilities. Custom tools 
 > Tools are always present in system prompt, so you should keep them to minimum. 
 > To save yourself some tokens, use the [Instruments module](#adding-instruments) 
 > to call custom scripts or functions.
+> For more ideas on advanced tool usage and customization, see the [Hacking and Customization guide](hacking_and_customization.md).
 
 ### 3. Memory System
 The memory system is a critical component of Agent Zero, enabling the agent to learn and adapt from past interactions. It operates on a hybrid model where part of the memory is managed automatically by the framework while users can also manually input and extract information.
@@ -258,7 +259,7 @@ The `prompts` directory contains various Markdown files that control agent behav
 > Changes made through behavior rules persist across sessions while maintaining the core functionality.
 
 ### 5. Knowledge
-Knowledge refers to the user-provided information and data that agents can leverage:
+Knowledge refers to the user-provided information and data that agents can leverage. For a more comprehensive guide on leveraging the knowledge base and Retrieval Augmented Generation (RAG), please see our [Knowledge Base and RAG documentation](knowledge_and_rag.md).
 
 - **Custom Knowledge**: Add files to `/knowledge/custom/main` directory manually or through the "Import Knowledge" button in the UI
   - Supported formats: `.txt`, `.pdf`, `.csv`, `.html`, `.json`, `.md`
@@ -285,6 +286,7 @@ Instruments provide a way to add custom functionalities to Agent Zero without ad
 2. Add `.md` description file for the interface
 3. Add `.sh` script (or other executable) for implementation
 4. The agent will automatically detect and use the instrument
+Advanced customization examples involving instruments can be found in the [Hacking and Customization guide](hacking_and_customization.md).
 
 ### 7. Extensions
 Extensions are a powerful feature of Agent Zero, designed to keep the main codebase clean and organized while allowing for greater flexibility and modularity.
@@ -311,3 +313,4 @@ Extensions can be found in `python/extensions` directory:
 > [!NOTE]  
 > Consider contributing valuable custom components to the main repository.
 > See [Contributing](contribution.md) for more information.
+> Further discussion on how extensions fit into broader customization strategies is available in the [Hacking and Customization guide](hacking_and_customization.md).
