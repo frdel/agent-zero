@@ -1,6 +1,8 @@
 # Use the latest slim version of Kali Linux
 FROM kalilinux/kali-rolling
 
+# Create a non-root user
+RUN groupadd -r appuser && useradd -r -g appuser -s /bin/false appuser
 
 # Set locale to en_US.UTF-8 and timezone to UTC
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y locales tzdata
@@ -38,3 +40,6 @@ RUN bash /ins/after_install.sh
 
 # Keep container running infinitely
 CMD ["tail", "-f", "/dev/null"]
+
+# Switch to non-root user
+USER appuser
