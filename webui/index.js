@@ -347,6 +347,7 @@ function setConnectionStatus(connected) {
 let lastLogVersion = 0;
 let lastLogGuid = "";
 let lastSpokenNo = 0;
+let pendingSpeechContent = new Map(); // Buffer for incomplete responses
 
 async function poll() {
   let updated = false;
@@ -516,14 +517,17 @@ function afterMessagesUpdate(logs) {
 }
 
 function speakMessages(logs) {
-  // log.no, log.type, log.heading, log.content
+  // EXTENDED FIX: Only speak VERY long responses to ensure completeness
   for (let i = logs.length - 1; i >= 0; i--) {
     const log = logs[i];
-    if (log.type == "response") {
-      if (log.no > lastSpokenNo) {
+    if (log.type == "response" && !log.temp) {
+      if (log.no > lastSpokenNo && log.content.length > 300) { // Much higher threshold
         lastSpokenNo = log.no;
+        console.log(`[SPEECH] Speaking full response (${log.content.length} chars): "${log.content.substring(0, 200)}..."`);
         speech.speak(log.content);
         return;
+      } else if (log.content.length <= 300) {
+        console.log(`[SPEECH] Skipping short response (${log.content.length} chars): "${log.content.substring(0, 100)}..."`);
       }
     }
   }
@@ -713,6 +717,12 @@ export const setContext = function (id) {
   lastLogGuid = "";
   lastLogVersion = 0;
   lastSpokenNo = 0;
+  
+  // CRITICAL FIX: Clear speech buffer and stop any playing audio
+  pendingSpeechContent.clear();
+  if (window.speechStore) {
+    speechStore.stop();
+  }
 
   // Clear the chat history immediately to avoid showing stale content
   chatHistory.innerHTML = "";
@@ -1202,11 +1212,22 @@ window.handleFileUpload = function (event) {
   handleFiles(files, inputAD);
 };
 
-// Setup event handlers once the DOM is fully loaded
-document.addEventListener("DOMContentLoaded", function () {
+// Setup event handlers once Alpine.js is ready
+function initializeUI() {
   setupSidebarToggle();
   setupTabs();
   initializeActiveTab();
+}
+
+// Wait for Alpine.js to be ready
+document.addEventListener("DOMContentLoaded", function () {
+  // If Alpine is already available, initialize immediately
+  if (window.Alpine) {
+    initializeUI();
+  } else {
+    // Wait for Alpine to be loaded
+    document.addEventListener('alpine:init', initializeUI);
+  }
 });
 
 // Setup tabs functionality
@@ -1229,6 +1250,13 @@ function setupTabs() {
 }
 
 function activateTab(tabName) {
+  // Safety check for Alpine.js
+  if (!window.Alpine) {
+    console.error("Alpine.js not ready, deferring tab activation");
+    setTimeout(() => activateTab(tabName), 100);
+    return;
+  }
+
   const chatsTab = document.getElementById("chats-tab");
   const tasksTab = document.getElementById("tasks-tab");
   const chatsSection = document.getElementById("chats-section");

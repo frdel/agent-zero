@@ -7,14 +7,12 @@ import subprocess
 from typing import Any, Literal, TypedDict
 
 import models
-from python.helpers import runtime, whisper, defer, git
+from python.helpers import runtime, whisper, defer
 from . import files, dotenv
 from python.helpers.print_style import PrintStyle
 
 
 class Settings(TypedDict):
-    version: str
-
     chat_model_provider: str
     chat_model_name: str
     chat_model_kwargs: dict[str, str]
@@ -66,6 +64,8 @@ class Settings(TypedDict):
     stt_silence_threshold: float
     stt_silence_duration: int
     stt_waiting_timeout: int
+
+    tts_enabled: bool
 
     mcp_servers: str
     mcp_client_init_timeout: int
@@ -504,8 +504,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
     agent_fields.append(
         {
             "id": "agent_prompts_subdir",
-            "title": "A0 Prompts Subdirectory",
-            "description": "Subdirectory of /prompts folder to be used by default agent no. 0. Subordinate agents can be spawned with other subdirectories, that is on their superior agent to decide. This setting affects the behaviour of the top level agent you communicate with.",
+            "title": "Prompts Subdirectory",
+            "description": "Subdirectory of /prompts folder to use for agent prompts. Used to adjust agent behaviour.",
             "type": "select",
             "value": settings["agent_prompts_subdir"],
             "options": [
@@ -681,11 +681,24 @@ def convert_out(settings: Settings) -> SettingsOutput:
         }
     )
 
-    stt_section: SettingsSection = {
-        "id": "stt",
-        "title": "Speech to Text",
-        "description": "Voice transcription preferences and server turn detection settings.",
-        "fields": stt_fields,
+    # TTS fields
+    tts_fields: list[SettingsField] = []
+    
+    tts_fields.append(
+        {
+            "id": "tts_enabled",
+            "title": "Enable Kokoro TTS",
+            "description": "Enable server-side AI text-to-speech (Kokoro)",
+            "type": "switch",
+            "value": settings["tts_enabled"],
+        }
+    )
+
+    speech_section: SettingsSection = {
+        "id": "speech",
+        "title": "Speech",
+        "description": "Voice transcription and speech synthesis settings.",
+        "fields": stt_fields + tts_fields,
         "tab": "agent",
     }
 
@@ -815,7 +828,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             embed_model_section,
             browser_model_section,
             # memory_section,
-            stt_section,
+            speech_section,
             api_keys_section,
             auth_section,
             mcp_client_section,
@@ -881,11 +894,6 @@ def normalize_settings(settings: Settings) -> Settings:
     copy = settings.copy()
     default = get_default_settings()
 
-    # adjust settings values to match current version if needed
-    if "version" not in copy or copy["version"] != default["version"]:
-        _adjust_to_version(copy, default)
-        copy["version"] = default["version"] # sync version
-
     # remove keys that are not in default
     keys_to_remove = [key for key in copy if key not in default]
     for key in keys_to_remove:
@@ -906,13 +914,6 @@ def normalize_settings(settings: Settings) -> Settings:
 
     return copy
 
-
-def _adjust_to_version(settings: Settings, default: Settings):
-    # starting with 0.9, the default prompt subfolder for agent no. 0 is agent0
-    # switch to agent0 if the old default is used from v0.8
-    if "version" not in settings or settings["version"].startswith("v0.8"):
-        if "agent_prompts_subdir" not in settings or settings["agent_prompts_subdir"] == "default":
-            settings["agent_prompts_subdir"] = "agent0"
 
 def _read_settings_file() -> Settings | None:
     if os.path.exists(SETTINGS_FILE):
@@ -959,7 +960,6 @@ def get_default_settings() -> Settings:
     from models import ModelProvider
 
     return Settings(
-        version=_get_version(),
         chat_model_provider=ModelProvider.OPENAI.name,
         chat_model_name="gpt-4.1",
         chat_model_kwargs={"temperature": "0"},
@@ -990,7 +990,7 @@ def get_default_settings() -> Settings:
         auth_login="",
         auth_password="",
         root_password="",
-        agent_prompts_subdir="agent0",
+        agent_prompts_subdir="default",
         agent_memory_subdir="default",
         agent_knowledge_subdir="custom",
         rfc_auto_docker=True,
@@ -1003,7 +1003,8 @@ def get_default_settings() -> Settings:
         stt_silence_threshold=0.3,
         stt_silence_duration=1000,
         stt_waiting_timeout=2000,
-        mcp_servers='{\n    "mcpServers": {}\n}',
+        tts_enabled=False,
+        mcp_servers='{\n  "mcpServers": {\n    "render": {\n      "command": "docker",\n      "args": [\n        "run",\n        "-i",\n        "--rm",\n        "-e",\n        "RENDER_API_KEY",\n        "-v",\n        "render-mcp-server-config:/config",\n        "ghcr.io/render-oss/render-mcp-server"\n      ],\n      "env": {\n        "RENDER_API_KEY": "rnd_C2reJ87CxaM8vQI8DqtBfL2ymwzA"\n      }\n    }\n  }\n}',
         mcp_client_init_timeout=5,
         mcp_client_tool_timeout=120,
         mcp_server_enabled=False,
@@ -1091,14 +1092,14 @@ def _apply_settings(previous: Settings | None):
             )  # TODO overkill, replace with background task
 
         # update token in mcp server
-        current_token = (
-            create_auth_token()
-        )  # TODO - ugly, token in settings is generated from dotenv and does not always correspond
-        if not previous or current_token != previous["mcp_server_token"]:
+        current_token = create_auth_token() #TODO - ugly, token in settings is generated from dotenv and does not always correspond
+        if (
+            not previous
+            or current_token != previous["mcp_server_token"]
+        ):
 
             async def update_mcp_token(token: str):
                 from python.helpers.mcp_server import DynamicMcpProxy
-
                 DynamicMcpProxy.get_instance().reconfigure(token=token)
 
             task3 = defer.DeferredTask().start_task(
@@ -1176,7 +1177,6 @@ def create_auth_token() -> str:
     # encode as base64 and remove any non-alphanumeric chars (like +, /, =)
     b64_token = base64.urlsafe_b64encode(hash_bytes).decode().replace("=", "")
     return b64_token[:16]
-
 
 def _get_version():
     try:
