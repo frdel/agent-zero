@@ -7,7 +7,7 @@ function createCopyButton() {
   button.className = "copy-button";
   button.textContent = "Copy";
 
-  button.addEventListener("click", async function (e) {
+  button.addEventListener("click", async function(e) {
     e.stopPropagation();
     const container = this.closest(".msg-content, .kvps-row, .message-text");
     let textToCopy;
@@ -155,7 +155,7 @@ export function _drawMessage(
   return messageDiv;
 }
 
-function addBlankTargetsToLinks(str) {
+export function addBlankTargetsToLinks(str) {
   const doc = new DOMParser().parseFromString(str, 'text/html');
 
   doc.querySelectorAll('a').forEach(anchor => {
@@ -603,14 +603,14 @@ function drawKvps(container, kvps, latex) {
             copyText(span.textContent, span);
           });
 
-      // KaTeX rendering for markdown
-      if (latex) {
-        span.querySelectorAll("latex").forEach((element) => {
-          katex.render(element.innerHTML, element, {
-            throwOnError: false,
-          });
-        });
-      }
+          // KaTeX rendering for markdown
+          if (latex) {
+            span.querySelectorAll("latex").forEach((element) => {
+              katex.render(element.innerHTML, element, {
+                throwOnError: false,
+              });
+            });
+          }
         }
       }
       //   } else {
@@ -633,7 +633,7 @@ function convertToTitleCase(str) {
   return str
     .replace(/_/g, " ") // Replace underscores with spaces
     .toLowerCase() // Convert the entire string to lowercase
-    .replace(/\b\w/g, function (match) {
+    .replace(/\b\w/g, function(match) {
       return match.toUpperCase(); // Capitalize the first letter of each word
     });
 }
