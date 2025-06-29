@@ -245,6 +245,15 @@ def init_a0():
 
     # only wait for init chats, otherwise they would seem to dissapear for a while on restart
     init_chats.result_sync()
+    
+    # preload Kokoro TTS model
+    try:
+        from python.helpers import kokoro_tts
+        import asyncio
+        asyncio.run(kokoro_tts.preload())
+        PrintStyle().debug("Kokoro TTS model preloaded successfully")
+    except Exception as e:
+        PrintStyle().error(f"Failed to preload Kokoro TTS model: {e}")
 
 
 # run the internal server

@@ -1,0 +1,10 @@
+<svg width="100%" height="100%" data-name="Layer 2" viewBox="0 0 56 56" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+  <!-- Speech bubble outline -->
+  <path d="M19 27c0-5 5-9 11-9h12c6 0 11 4 11 9v9c0 5-5 9-11 9h-6l-6 6v-6h-6c-6 0-11-4-11-9v-9z" fill="none"/>
+  <!-- Accent stroke (bubble base) -->
+  <path d="M20 35v-7c0-3 3-6 7-6" stroke="#5E8AF7"/>
+  <!-- Speech wave lines -->
+  <path d="M31 34h10" stroke="#5E8AF7"/>
+  <path d="M33 37h6" stroke="#5E8AF7"/>
+  <path d="M35 31h2" stroke="#5E8AF7"/>
+</svg>
