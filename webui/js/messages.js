@@ -155,7 +155,7 @@ export function _drawMessage(
   return messageDiv;
 }
 
-function addBlankTargetsToLinks(str) {
+export function addBlankTargetsToLinks(str) {
   const doc = new DOMParser().parseFromString(str, 'text/html');
 
   doc.querySelectorAll('a').forEach(anchor => {
