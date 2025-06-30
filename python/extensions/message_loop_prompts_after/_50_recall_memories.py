@@ -2,15 +2,17 @@ import asyncio
 from python.helpers.extension import Extension
 from python.helpers.memory import Memory
 from agent import LoopData
+from python.tools.memory_load import DEFAULT_THRESHOLD as DEFAULT_MEMORY_THRESHOLD
 
 DATA_NAME_TASK = "_recall_memories_task"
+
 
 class RecallMemories(Extension):
 
     INTERVAL = 3
     HISTORY = 10000
-    RESULTS = 3
-    THRESHOLD = 0.6
+    RESULTS = 5
+    THRESHOLD = DEFAULT_MEMORY_THRESHOLD
 
     async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
 
@@ -22,7 +24,6 @@ class RecallMemories(Extension):
 
         # set to agent to be able to wait for it
         self.agent.set_data(DATA_NAME_TASK, task)
-            
 
     async def search_memories(self, loop_data: LoopData, **kwargs):
 
@@ -86,8 +87,10 @@ class RecallMemories(Extension):
 
         # concatenate memory.page_content in memories:
         memories_text = ""
-        for memory in memories:
-            memories_text += memory.page_content + "\n\n"
+        for index, memory in enumerate(memories):
+            memories_text += memory.page_content
+            if index < len(memories) - 1:
+                memories_text += "\n\n" + ("-" * 80) + "\n\n"
         memories_text = memories_text.strip()
 
         # log the full results
