@@ -1,4 +1,4 @@
-from typing import Any, List, Sequence
+import astfrom typing import Any, List, Sequence
 import uuid
 from langchain_community.vectorstores import FAISS
 
@@ -113,7 +113,7 @@ def cosine_normalizer(val: float) -> float:
 def get_comparator(condition: str):
     def comparator(data: dict[str, Any]):
         try:
-            return eval(condition, {}, data)
+            return ast.literal_eval(condition, {}, data)
         except Exception as e:
             # PrintStyle.error(f"Error evaluating condition: {e}")
             return False
