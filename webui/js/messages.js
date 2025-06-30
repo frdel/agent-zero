@@ -537,7 +537,7 @@ function drawKvps(container, kvps, latex) {
     for (let [key, value] of Object.entries(kvps)) {
       const row = table.insertRow();
       row.classList.add("kvps-row");
-      if (key === "thoughts" || key === "reflection")
+      if (key === "thoughts" || key === "reasoning") // TODO: find a better way to determine special class assignment
         row.classList.add("msg-thoughts");
 
       const th = row.insertCell();
@@ -545,6 +545,9 @@ function drawKvps(container, kvps, latex) {
       th.classList.add("kvps-key");
 
       const td = row.insertCell();
+      const tdiv = document.createElement("div");
+      tdiv.classList.add("kvps-val");
+      td.appendChild(tdiv);
 
       if (Array.isArray(value)) {
         for (const item of value) {
@@ -562,7 +565,7 @@ function drawKvps(container, kvps, latex) {
           imgElement.classList.add("kvps-img");
           imgElement.src = value.replace("img://", "/image_get?path=");
           imgElement.alt = "Image Attachment";
-          td.appendChild(imgElement);
+          tdiv.appendChild(imgElement);
 
           // Add click handler and cursor change
           imgElement.style.cursor = "pointer";
@@ -570,15 +573,14 @@ function drawKvps(container, kvps, latex) {
             openImageModal(imgElement.src, 1000);
           });
 
-          td.appendChild(imgElement);
         } else {
           const pre = document.createElement("pre");
-          pre.classList.add("kvps-val");
+          // pre.classList.add("kvps-val");
           //   if (row.classList.contains("msg-thoughts")) {
           const span = document.createElement("span");
           span.innerHTML = convertHTML(value);
           pre.appendChild(span);
-          td.appendChild(pre);
+          tdiv.appendChild(pre);
           addCopyButtonToElement(row);
 
           // Add click handler

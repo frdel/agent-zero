@@ -1572,6 +1572,11 @@ input:checked + .slider:before {
   display: auto;
 }
 
+.msg-thoughts .kvps-val {
+  max-height: 20em;
+  overflow: auto;
+}
+
 .msg-content {
   margin-bottom: 0;
 }

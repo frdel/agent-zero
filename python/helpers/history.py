@@ -534,10 +534,17 @@ def _merge_outputs(a: MessageContent, b: MessageContent) -> MessageContent:
     if isinstance(a, str) and isinstance(b, str):
         return a + "\n" + b
 
-    if not isinstance(a, list):
-        a = [a]
-    if not isinstance(b, list):
-        b = [b]
+    def make_list(obj: MessageContent) -> list[MessageContent]:
+        if isinstance(obj, list):
+            return obj  # type: ignore
+        if isinstance(obj, dict):
+            return [obj]
+        if isinstance(obj, str):
+            return [{"type": "text", "text": obj}]
+        return [obj]
+
+    a = make_list(a)
+    b = make_list(b)
 
     return cast(MessageContent, a + b)
 
