@@ -73,6 +73,8 @@ class Settings(TypedDict):
     mcp_server_enabled: bool
     mcp_server_token: str
 
+    preferred_language: str
+
 
 class PartialSettings(Settings, total=False):
     pass
@@ -459,10 +461,24 @@ def convert_out(settings: Settings) -> SettingsOutput:
             }
         )
 
+    auth_fields.append(
+        {
+            "id": "preferred_language",
+            "title": "Preferred Language",
+            "description": "Select the preferred language for the Web UI.",
+            "type": "select",
+            "value": settings["preferred_language"],
+            "options": [
+                {"value": "en", "label": "English"},
+                {"value": "zh", "label": "中文"},
+            ],
+        }
+    )
+
     auth_section: SettingsSection = {
         "id": "auth",
-        "title": "Authentication",
-        "description": "Settings for authentication to use Agent Zero Web UI.",
+        "title": "Authentication & Language",
+        "description": "Settings for authentication and language preferences for Agent Zero Web UI.",
         "fields": auth_fields,
         "tab": "external",
     }
@@ -1008,6 +1024,7 @@ def get_default_settings() -> Settings:
         mcp_client_tool_timeout=120,
         mcp_server_enabled=False,
         mcp_server_token=create_auth_token(),
+        preferred_language="en",
     )
 
 

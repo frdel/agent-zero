@@ -2,6 +2,63 @@ import * as msgs from "./js/messages.js";
 import { speech } from "./js/speech.js";
 import * as api from "./js/api.js";
 
+// Internationalization (i18n)
+let currentLocale = 'en';
+let translations = {};
+
+async function loadTranslations(locale) {
+    try {
+        const response = await fetch(`locales/${locale}.json`);
+        if (!response.ok) {
+            console.error(`Failed to load translations for ${locale}`);
+            // Fallback to English if the locale file is not found or fails to load
+            if (locale !== 'en') {
+                await loadTranslations('en');
+            }
+            return;
+        }
+        translations = await response.json();
+        currentLocale = locale;
+        updateUIWithTranslations();
+    } catch (error) {
+        console.error(`Error loading translations for ${locale}:`, error);
+        if (locale !== 'en') {
+            await loadTranslations('en');
+        }
+    }
+}
+
+function t(key) {
+    return translations[key] || key;
+}
+
+function updateUIWithTranslations() {
+    document.querySelectorAll('[data-i18n]').forEach(element => {
+        const key = element.getAttribute('data-i18n');
+        // For regular elements, set textContent
+        if (element.tagName !== 'INPUT' && element.tagName !== 'TEXTAREA') {
+            element.textContent = t(key);
+        }
+        // For input/textarea, set placeholder
+        if (element.placeholder) {
+            element.placeholder = t(key);
+        }
+        // For elements with title attribute
+        if (element.title) {
+            element.title = t(key);
+        }
+        // Special handling for aria-label
+        if (element.hasAttribute('aria-label')) {
+            element.setAttribute('aria-label', t(key));
+        }
+    });
+    // Update dynamic content if necessary, e.g., toast messages or dynamically created elements
+    // Example: Update the title of the page
+    document.title = t('Agent Zero');
+}
+
+// --- End of i18n ---
+
 window.fetchApi = api.fetchApi; // TODO - backward compatibility for non-modular scripts, remove once refactored to alpine
 
 const leftPanel = document.getElementById("left-panel");
@@ -819,10 +876,21 @@ window.restart = async function () {
 };
 
 // Modify this part
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const isDarkMode = localStorage.getItem("darkMode") !== "false";
   toggleDarkMode(isDarkMode);
+
+  // Load default or saved language
+  const savedLocale = localStorage.getItem('preferredLocale') || navigator.language.split('-')[0] || 'en';
+  await loadTranslations(savedLocale);
 });
+
+// Expose loadTranslations to be called from HTML for language switching
+window.changeLanguage = async function(locale) {
+    await loadTranslations(locale);
+    localStorage.setItem('preferredLocale', locale);
+}
+
 
 function toggleCssProperty(selector, property, value) {
   // Get the stylesheet that contains the class
@@ -979,8 +1047,15 @@ function toast(text, type = "info", timeout = 5000) {
   const updateAndShowToast = () => {
     // Update the toast content and type
     const title = type.charAt(0).toUpperCase() + type.slice(1);
+    // Update the toast content and type
+    // const title = type.charAt(0).toUpperCase() + type.slice(1); // Original
+    const titleKey = `toast_title_${type}`; // e.g., toast_title_success
+    const title = t(titleKey); // Translate title
+
     toast.querySelector(".toast__title").textContent = title;
+    // toast.querySelector(".toast__message").textContent = text; // Original - text is dynamic, not from i18n
     toast.querySelector(".toast__message").textContent = text;
+
 
     // Remove old classes and add new ones
     toast.classList.remove("toast--success", "toast--error", "toast--info");
