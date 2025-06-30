@@ -296,6 +296,9 @@ const settingsModalProxy = {
 };
 
 
+// Make settingsModalProxy globally available
+window.settingsModalProxy = settingsModalProxy;
+
 // function initSettingsModal() {
 
 //     window.openSettings = function () {
