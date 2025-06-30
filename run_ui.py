@@ -131,7 +131,9 @@ def csrf_protect(f):
     async def decorated(*args, **kwargs):
         token = session.get("csrf_token")
         header = request.headers.get("X-CSRF-Token")
-        if not token or not header or token != header:
+        cookie = request.cookies.get("csrf_token")
+        sent = header or cookie
+        if not token or not sent or token != sent:
             return Response("CSRF token missing or invalid", 403)
         return await f(*args, **kwargs)
 

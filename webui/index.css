@@ -689,6 +689,18 @@ pre {
   background-color: #4b3a69;
 }
 
+.message-code-exe .message-body {
+  min-height: 5em;
+  background-color: var(--color-panel);
+  border-radius: 0.5em;
+  margin: 0.3em;
+  padding: 0.3em;
+}
+
+.light-mode .message-code-exe .message-body {
+  border: 1px solid var(--color-border);
+}
+
 .message-browser {
   background-color: #4b3a69;
 }
@@ -725,6 +737,11 @@ pre {
   width: 100%;
 }
 
+.kvps-val pre {
+  white-space: pre-wrap; /* keep \n, collapse no spaces, allow wrapping */
+  word-break: break-word; /* optional – forces really long “words” to break */
+}
+
 .msg-kvps th,
 .msg-kvps td {
   align-content: center;
@@ -744,6 +761,9 @@ pre {
 
 .msg-heading {
   margin: 0;
+  padding-right: 5.5em; /* space for buttons */
+  position: relative;
+  display: block;
 }
 
 /* Message Actions */
@@ -1735,6 +1755,9 @@ input:checked + .slider:before {
 
   .kvps-val {
     margin: 0 0 0.4rem 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -3080,4 +3103,13 @@ nav ul li a img {
   padding: 0.5em;
   border: 1px solid rgba(142, 142, 142, 0.1);
   border-radius: 0.3em;
+}
+
+.msg-min-max-btns {
+  position: absolute;
+  top: -0.2em;
+  right: -0.5em;
+  display: flex;
+  gap: 0.3em;
+  z-index: 1;
 }

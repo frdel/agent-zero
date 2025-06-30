@@ -33,6 +33,7 @@ from langchain_core.messages import (
 from langchain.embeddings.base import Embeddings
 
 load_dotenv()
+os.environ['LITELLM_LOG'] = "ERROR" # only errors
 
 
 class ModelType(Enum):
