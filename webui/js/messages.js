@@ -1,6 +1,7 @@
 // copy button
 import { openImageModal } from "./image_modal.js";
-import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
+import { marked } from "../vendor/marked/marked.esm.js";
+import { store as messageResizeStore } from "/components/messages/resize/message-resize-store.js";
 
 function createCopyButton() {
   const button = document.createElement("button");
@@ -81,23 +82,39 @@ export function _drawMessage(
   content,
   temp,
   followUp,
+  mainClass = "",
   kvps = null,
   messageClasses = [],
   contentClasses = [],
   latex = false,
-  markdown = false
+  markdown = false,
+  resizeBtns = true
 ) {
   const messageDiv = document.createElement("div");
-  messageDiv.classList.add("message", ...messageClasses);
+  messageDiv.classList.add("message", mainClass, ...messageClasses);
 
   if (heading) {
     const headingElement = document.createElement("h4");
     headingElement.classList.add("msg-heading");
     headingElement.textContent = heading;
     messageDiv.appendChild(headingElement);
+
+    if (resizeBtns) {
+      const minMaxBtn = document.createElement("div");
+      minMaxBtn.classList.add("msg-min-max-btns");
+      minMaxBtn.innerHTML = `
+        <a href="#" class="msg-min-max-btn" @click.prevent="$store.messageResize.minimizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined">minimize</span></a>
+        <a href="#" class="msg-min-max-btn" @click.prevent="$store.messageResize.maximizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined">expand_all</span></a>
+      `;
+      headingElement.appendChild(minMaxBtn);
+    }
   }
 
-  drawKvps(messageDiv, kvps, false);
+  const bodyDiv = document.createElement("div");
+  bodyDiv.classList.add("message-body");
+  messageDiv.appendChild(bodyDiv);
+
+  drawKvps(bodyDiv, kvps, false);
 
   if (content && content.trim().length > 0) {
     if (markdown) {
@@ -124,7 +141,7 @@ export function _drawMessage(
 
       contentDiv.appendChild(spanElement);
       addCopyButtonToElement(contentDiv);
-      messageDiv.appendChild(contentDiv);
+      bodyDiv.appendChild(contentDiv);
     } else {
       const preElement = document.createElement("pre");
       preElement.classList.add("msg-content", ...contentClasses);
@@ -141,7 +158,7 @@ export function _drawMessage(
 
       preElement.appendChild(spanElement);
       addCopyButtonToElement(preElement);
-      messageDiv.appendChild(preElement);
+      bodyDiv.appendChild(preElement);
     }
   }
 
@@ -150,6 +167,11 @@ export function _drawMessage(
   if (followUp) {
     messageContainer.classList.add("message-followup");
   }
+
+  // autoscroll the body if needed
+  setTimeout(() => {
+    bodyDiv.scrollTop = bodyDiv.scrollHeight;
+  }, 0);
 
   return messageDiv;
 }
@@ -169,8 +191,9 @@ export function drawMessageDefault(
     content,
     temp,
     false,
+    "message-default",
     kvps,
-    ["message-ai", "message-default"],
+    ["message-ai"],
     ["msg-json"],
     false,
     false
@@ -198,8 +221,9 @@ export function drawMessageAgent(
     content,
     temp,
     false,
+    "message-agent",
     kvpsFlat,
-    ["message-ai", "message-agent"],
+    ["message-ai"],
     ["msg-json"],
     false,
     false
@@ -221,8 +245,9 @@ export function drawMessageResponse(
     content,
     temp,
     true,
+    "message-agent-response",
     null,
-    ["message-ai", "message-agent-response"],
+    ["message-ai"],
     [],
     true,
     true
@@ -244,8 +269,9 @@ export function drawMessageDelegation(
     content,
     temp,
     true,
+    "message-agent-delegation",
     kvps,
-    ["message-ai", "message-agent", "message-agent-delegation"],
+    ["message-ai", "message-agent"],
     [],
     true,
     false
@@ -364,8 +390,9 @@ export function drawMessageTool(
     content,
     temp,
     true,
+    "message-tool",
     kvps,
-    ["message-ai", "message-tool"],
+    ["message-ai"],
     ["msg-output"],
     false,
     false
@@ -387,8 +414,9 @@ export function drawMessageCodeExe(
     content,
     temp,
     true,
+    "message-code-exe",
     null,
-    ["message-ai", "message-code-exe"],
+    ["message-ai"],
     [],
     false,
     false
@@ -410,8 +438,9 @@ export function drawMessageBrowser(
     content,
     temp,
     true,
+    "message-browser",
     kvps,
-    ["message-ai", "message-browser"],
+    ["message-ai"],
     ["msg-json"],
     false,
     false
@@ -419,7 +448,7 @@ export function drawMessageBrowser(
 }
 
 export function drawMessageAgentPlain(
-  classes,
+  mainClass,
   messageContainer,
   id,
   type,
@@ -434,8 +463,9 @@ export function drawMessageAgentPlain(
     content,
     temp,
     false,
+    mainClass,
     kvps,
-    [...classes],
+    [],
     [],
     false,
     false
@@ -453,7 +483,7 @@ export function drawMessageInfo(
   kvps = null
 ) {
   return drawMessageAgentPlain(
-    ["message-info"],
+    "message-info",
     messageContainer,
     id,
     type,
@@ -479,8 +509,9 @@ export function drawMessageUtil(
     content,
     temp,
     false,
+    "message-util",
     kvps,
-    ["message-util"],
+    [],
     ["msg-json"],
     false,
     false
@@ -498,7 +529,7 @@ export function drawMessageWarning(
   kvps = null
 ) {
   return drawMessageAgentPlain(
-    ["message-warning"],
+    "message-warning",
     messageContainer,
     id,
     type,
@@ -519,7 +550,7 @@ export function drawMessageError(
   kvps = null
 ) {
   return drawMessageAgentPlain(
-    ["message-error"],
+    "message-error",
     messageContainer,
     id,
     type,
@@ -537,7 +568,8 @@ function drawKvps(container, kvps, latex) {
     for (let [key, value] of Object.entries(kvps)) {
       const row = table.insertRow();
       row.classList.add("kvps-row");
-      if (key === "thoughts" || key === "reflection")
+      if (key === "thoughts" || key === "reasoning")
+        // TODO: find a better way to determine special class assignment
         row.classList.add("msg-thoughts");
 
       const th = row.insertCell();
@@ -545,6 +577,9 @@ function drawKvps(container, kvps, latex) {
       th.classList.add("kvps-key");
 
       const td = row.insertCell();
+      const tdiv = document.createElement("div");
+      tdiv.classList.add("kvps-val");
+      td.appendChild(tdiv);
 
       if (Array.isArray(value)) {
         for (const item of value) {
@@ -554,6 +589,11 @@ function drawKvps(container, kvps, latex) {
         addValue(value);
       }
 
+      // autoscroll the KVP value if needed
+      setTimeout(() => {
+        tdiv.scrollTop = tdiv.scrollHeight;
+      }, 0);
+
       function addValue(value) {
         if (typeof value === "object") value = JSON.stringify(value, null, 2);
 
@@ -562,23 +602,21 @@ function drawKvps(container, kvps, latex) {
           imgElement.classList.add("kvps-img");
           imgElement.src = value.replace("img://", "/image_get?path=");
           imgElement.alt = "Image Attachment";
-          td.appendChild(imgElement);
+          tdiv.appendChild(imgElement);
 
           // Add click handler and cursor change
           imgElement.style.cursor = "pointer";
           imgElement.addEventListener("click", () => {
             openImageModal(imgElement.src, 1000);
           });
-
-          td.appendChild(imgElement);
         } else {
           const pre = document.createElement("pre");
-          pre.classList.add("kvps-val");
+          // pre.classList.add("kvps-val");
           //   if (row.classList.contains("msg-thoughts")) {
           const span = document.createElement("span");
           span.innerHTML = convertHTML(value);
           pre.appendChild(span);
-          td.appendChild(pre);
+          tdiv.appendChild(pre);
           addCopyButtonToElement(row);
 
           // Add click handler
@@ -586,14 +624,14 @@ function drawKvps(container, kvps, latex) {
             copyText(span.textContent, span);
           });
 
-      // KaTeX rendering for markdown
-      if (latex) {
-        span.querySelectorAll("latex").forEach((element) => {
-          katex.render(element.innerHTML, element, {
-            throwOnError: false,
-          });
-        });
-      }
+          // KaTeX rendering for markdown
+          if (latex) {
+            span.querySelectorAll("latex").forEach((element) => {
+              katex.render(element.innerHTML, element, {
+                throwOnError: false,
+              });
+            });
+          }
         }
       }
       //   } else {
@@ -675,7 +713,7 @@ function escapeHTML(str) {
 function convertPathsToLinks(str) {
   function generateLinks(match) {
     const parts = match.split("/");
-    if (!parts[0]) parts.shift(); // drop empty element left of first “/”
+    if (!parts[0]) parts.shift(); // drop empty element left of first "
     let conc = "";
     let html = "";
     for (const part of parts) {
@@ -700,7 +738,7 @@ function convertPathsToLinks(str) {
   return str
     .split(tagRegex) // keep tags & text separate
     .map((chunk) => {
-      // if it *starts* with '<', it’s a tag -> leave untouched
+      // if it *starts* with '<', it's a tag -> leave untouched
       if (chunk.startsWith("<")) return chunk;
       // otherwise run your link-generation
       return chunk.replace(pathRegex, generateLinks);

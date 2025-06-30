@@ -8,6 +8,7 @@ usage:
     "thoughts": [
         "...",
     ],
+    "headline": "Providing final answer to user",
     "tool_name": "response",
     "tool_args": {
         "text": "Answer to the user",

@@ -22,7 +22,11 @@ async def preload():
         async def preload_embedding():
             if set["embed_model_provider"] == models.ModelProvider.HUGGINGFACE.name:
                 try:
-                    emb_mod = models.get_huggingface_embedding(set["embed_model_name"])
+                    # Use the new LiteLLM-based model system
+                    emb_mod = models.get_embedding_model(
+                        models.ModelProvider.HUGGINGFACE,
+                        set["embed_model_name"]
+                    )
                     emb_txt = await emb_mod.aembed_query("test")
                     return emb_txt
                 except Exception as e:

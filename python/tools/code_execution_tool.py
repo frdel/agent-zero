@@ -219,7 +219,7 @@ class CodeExecution(Tool):
         while True:
             await asyncio.sleep(sleep_time)
             full_output, partial_output = await self.state.shells[session].read_output(
-                timeout=3, reset_full_output=reset_full_output
+                timeout=1, reset_full_output=reset_full_output
             )
             reset_full_output = False  # only reset once
 

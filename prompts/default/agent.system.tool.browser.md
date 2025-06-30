@@ -13,6 +13,7 @@ usage:
 ```json
 {
   "thoughts": ["I need to log in to..."],
+  "headline": "Opening new browser session for login",
   "tool_name": "browser_agent",
   "tool_args": {
     "message": "Open and log me into...",
@@ -24,6 +25,7 @@ usage:
 ```json
 {
   "thoughts": ["I need to log in to..."],
+  "headline": "Continuing with existing browser session",
   "tool_name": "browser_agent",
   "tool_args": {
     "message": "Considering open pages, click...",
