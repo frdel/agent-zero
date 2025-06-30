@@ -6,6 +6,14 @@ from flask import Request, Response, send_file
 
 
 class ImageGet(ApiHandler):
+    @classmethod
+    def get_methods(cls) -> list[str]:
+        return ["GET"]
+
+    @classmethod
+    def requires_auth(cls) -> bool:
+        return False
+
     async def process(self, input: dict, request: Request) -> dict | Response:
             # input data
             path = input.get("path", request.args.get("path", ""))
