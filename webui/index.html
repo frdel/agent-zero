@@ -366,7 +366,7 @@
             </div>
             <div id="progress-bar-box" x-data="{ isSpeaking: false }" x-init="
             // Watch the speech synthesis status to update isSpeaking
-            setInterval(() => isSpeaking = window.speech.isSpeaking(), 100)
+            setInterval(() => isSpeaking = !!(window.speech && window.speech.isSpeaking()), 100)
         ">
                 <h4 id="progress-bar-h">
                     <span id="progress-bar-i">|></span><span id="progress-bar"></span>
