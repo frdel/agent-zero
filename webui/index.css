@@ -1290,15 +1290,17 @@ pre {
   position: absolute;
   bottom: 100%;
   left: 0;
-  right: 0;
   background-color: var(--color-panel);
   border: 1px solid var(--color-border);
   border-radius: 4px;
   z-index: 1000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   max-height: 200px;
+  min-width: 100px;
+  width: max-content;
   overflow-y: auto;
   margin-bottom: 2px;
+  white-space: nowrap;
 }
 
 .persona-option {
@@ -1307,6 +1309,11 @@ pre {
   font-size: 0.7rem;
   transition: background-color 0.2s;
   border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 100px;
 }
 
 .persona-option:last-child {
