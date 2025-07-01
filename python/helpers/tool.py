@@ -42,9 +42,9 @@ class Tool:
 
     def get_log_object(self):
         if self.method:
-            heading = f"{self.agent.agent_name}: Using tool '{self.name}:{self.method}'"
+            heading = f"icon://construction {self.agent.agent_name}: Using tool '{self.name}:{self.method}'"
         else:
-            heading = f"{self.agent.agent_name}: Using tool '{self.name}'"
+            heading = f"icon://construction {self.agent.agent_name}: Using tool '{self.name}'"
         return self.agent.context.log.log(type="tool", heading=heading, content="", kvps=self.args)
 
     def nice_key(self, key:str):

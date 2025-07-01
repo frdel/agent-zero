@@ -170,8 +170,8 @@ export function _drawMessage(
       const minMaxBtn = document.createElement("div");
       minMaxBtn.classList.add("msg-min-max-btns");
       minMaxBtn.innerHTML = `
-        <a href="#" class="msg-min-max-btn" @click.prevent="$store.messageResize.minimizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined">minimize</span></a>
-        <a href="#" class="msg-min-max-btn" @click.prevent="$store.messageResize.maximizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined">expand_all</span></a>
+        <a href="#" class="msg-min-max-btn" @click.prevent="$store.messageResize.minimizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined" x-text="$store.messageResize.getSetting('${mainClass}').minimized ? 'expand_content' : 'minimize'"></span></a>
+        <a href="#" class="msg-min-max-btn" x-show="!$store.messageResize.getSetting('${mainClass}').minimized" @click.prevent="$store.messageResize.maximizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined" x-text="$store.messageResize.getSetting('${mainClass}').maximized ? 'expand' : 'expand_all'"></span></a>
       `;
       headingElement.appendChild(minMaxBtn);
     }
@@ -208,6 +208,7 @@ export function _drawMessage(
 
       contentDiv.appendChild(spanElement);
       addCopyButtonToElement(contentDiv);
+      adjustMarkdownRender(contentDiv);
       bodyDiv.appendChild(contentDiv);
     } else {
       const preElement = document.createElement("pre");
@@ -360,7 +361,7 @@ export function drawMessageUser(
 
   const headingElement = document.createElement("h4");
   headingElement.classList.add("msg-heading");
-  headingElement.textContent = "User message";
+  headingElement.innerHTML = "User message <span class='icon material-symbols-outlined'>person</span>";
   messageDiv.appendChild(headingElement);
 
   if (content && content.trim().length > 0) {
@@ -766,7 +767,7 @@ function convertImgFilePaths(str) {
   return str.replace("img://", "/image_get?path=");
 }
 
-function convertIcons(str) {
+export function convertIcons(str) {
   return str.replace(
     /icon:\/\/([a-zA-Z0-9_]+)/g,
     '<span class="icon material-symbols-outlined">$1</span>'
@@ -818,6 +819,24 @@ function convertPathsToLinks(str) {
       return chunk.replace(pathRegex, generateLinks);
     })
     .join("");
+}
+
+function adjustMarkdownRender(element) {
+  // find all tables in the element
+  const tables = element.querySelectorAll('table');
+  
+  // wrap each table with a div with class message-markdown-table-wrap
+  tables.forEach(table => {
+    // create wrapper div
+    const wrapper = document.createElement('div');
+    wrapper.className = 'message-markdown-table-wrap';
+    
+    // insert wrapper before table in the DOM
+    table.parentNode.insertBefore(wrapper, table);
+    
+    // move table into wrapper
+    wrapper.appendChild(table);
+  });
 }
 
 // function convertPathsToLinksInHtml(htmlString) {

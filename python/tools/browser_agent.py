@@ -313,7 +313,7 @@ class BrowserAgent(Tool):
     def get_log_object(self):
         return self.agent.context.log.log(
             type="browser",
-            heading=f"{self.agent.agent_name}: Using tool '{self.name}'",
+            heading=f"icon://captive_portal {self.agent.agent_name}: Calling Browser Agent",
             content="",
             kvps=self.args,
         )

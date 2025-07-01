@@ -32,12 +32,8 @@ class RecallSolutions(Extension):
             del extras["solutions"]
         
         # try:
-        # show temp info message
-        self.agent.context.log.log(
-            type="info", content="Searching memory for solutions...", temp=True
-        )
 
-        # show full util message, this will hide temp message immediately if turned on
+        # show full util message
         log_item = self.agent.context.log.log(
             type="util",
             heading="Searching memory for solutions...",

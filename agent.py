@@ -300,7 +300,7 @@ class Agent:
 
         # non-config vars
         self.number = number
-        self.agent_name = f"Agent {self.number}"
+        self.agent_name = f"A{self.number}"
 
         self.history = history.History(self)
         self.last_user_message: history.Message | None = None
@@ -333,19 +333,8 @@ class Agent:
                         # prepare LLM chain (model, system, history)
                         prompt = await self.prepare_prompt(loop_data=self.loop_data)
 
-                        # output that the agent is starting
-                        PrintStyle(
-                            bold=True,
-                            font_color="green",
-                            padding=True,
-                            background_color="white",
-                        ).print(f"{self.agent_name}: Generating")
-                        # create log message right away, more responsive
-                        self.loop_data.params_temporary["log_item_generating"] = (
-                            self.context.log.log(
-                                type="agent", heading=f"{self.agent_name}: Generating..."
-                            )
-                        )
+                        # call before_main_llm_call extensions
+                        await self.call_extensions("before_main_llm_call", loop_data=self.loop_data)
 
                         async def reasoning_callback(chunk: str, full: str):
                             if chunk == full:
@@ -360,6 +349,7 @@ class Agent:
                             printer.stream(chunk)
                             await self.handle_response_stream(full)
 
+                        # call main LLM
                         agent_response, _reasoning = await self.call_chat_model(
                             messages=prompt,
                             response_callback=stream_callback,

@@ -5,6 +5,7 @@ import asyncio
 from python.helpers.log import LogItem
 from python.helpers import log
 import math
+from python.extensions.before_main_llm_call._10_log_for_stream import build_heading, build_default_heading
 
 
 class LogFromStream(Extension):
@@ -17,17 +18,17 @@ class LogFromStream(Extension):
         **kwargs,
     ):
 
-        heading = f"{self.agent.agent_name}: Generating..."
+        heading = build_default_heading(self.agent)
         if "headline" in parsed:
-            heading = f"{self.agent.agent_name}: {parsed['headline']}"
+            heading = build_heading(self.agent, parsed['headline'])
         elif "thoughts" in parsed:
             # thought length indicator
             thoughts = "\n".join(parsed["thoughts"])
-            length = math.ceil(len(thoughts) / 10) * 10
-            heading = f"{self.agent.agent_name}: Thinking ({length})..."
+            pipes = "|" * math.ceil(math.sqrt(len(thoughts)))
+            heading = build_heading(self.agent, f"Thinking... {pipes}")
 
-        if "tool_name" in parsed:
-            heading += f" ({parsed['tool_name']})"
+        # if "tool_name" in parsed:
+        #     heading += f" ({parsed['tool_name']})"
 
         # create log message and store it in loop data temporary params
         if "log_item_generating" not in loop_data.params_temporary:
