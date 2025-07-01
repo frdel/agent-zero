@@ -29,6 +29,13 @@
                 title="Create Test Notification">
             <div class="notification-icon">🧪</div>
         </button>
+
+        <!-- Test Frontend Error Button (for development) -->
+        <button class="notification-test-button frontend-error"
+                @click="toastFrontendError('Backend connection failed', 'Connection Error')"
+                title="Test Frontend Error Toast">
+            <div class="notification-icon">⚠️</div>
+        </button>
     </div>
 </body>
 </html>

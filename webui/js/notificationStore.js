@@ -366,9 +366,96 @@ const model = {
     // Legacy method for backward compatibility
     toggleNotifications() {
         this.openModal();
+    },
+
+    // NEW: Add frontend-only toast directly to stack (for connection errors, etc.)
+    addFrontendToast(type, message, title = "", display_time = 5) {
+        const timestamp = new Date().toISOString();
+        const notification = {
+            id: `frontend-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            type: type,
+            title: title,
+            message: message,
+            detail: "",
+            timestamp: timestamp,
+            display_time: display_time,
+            read: false,
+            frontend: true  // Mark as frontend-only
+        };
+
+        // Create toast object with auto-dismiss timer
+        const toast = {
+            ...notification,
+            toastId: `toast-${notification.id}`,
+            addedAt: Date.now(),
+            autoRemoveTimer: null
+        };
+
+        // Add to bottom of stack (newest at bottom)
+        this.toastStack.push(toast);
+
+        // Enforce max stack limit (remove oldest from top)
+        if (this.toastStack.length > this.maxToastStack) {
+            const removed = this.toastStack.shift(); // Remove from top
+            if (removed.autoRemoveTimer) {
+                clearTimeout(removed.autoRemoveTimer);
+            }
+        }
+
+        // Set auto-dismiss timer
+        toast.autoRemoveTimer = setTimeout(() => {
+            this.removeFromToastStack(toast.toastId);
+        }, notification.display_time * 1000);
+
+        console.log(`Frontend toast added: ${notification.type} - ${notification.message}`);
+        return notification.id;
+    },
+
+    // NEW: Convenience methods for frontend-only notifications
+    frontendError(message, title = "Connection Error", display_time = 8) {
+        return this.addFrontendToast('error', message, title, display_time);
+    },
+
+    frontendWarning(message, title = "Warning", display_time = 5) {
+        return this.addFrontendToast('warning', message, title, display_time);
+    },
+
+    frontendInfo(message, title = "Info", display_time = 3) {
+        return this.addFrontendToast('info', message, title, display_time);
     }
 };
 
 // Create and export the store
 const store = createStore("notificationStore", model);
+
+// NEW: Global function for frontend error toasts (replaces toastFetchError)
+window.toastFrontendError = function(message, title = "Connection Error") {
+    if (window.Alpine && window.Alpine.store && window.Alpine.store('notificationStore')) {
+        return window.Alpine.store('notificationStore').frontendError(message, title);
+    } else {
+        // Fallback if Alpine/store not ready
+        console.error('Frontend Error:', title, '-', message);
+        return null;
+    }
+};
+
+// NEW: Additional global convenience functions
+window.toastFrontendWarning = function(message, title = "Warning") {
+    if (window.Alpine && window.Alpine.store && window.Alpine.store('notificationStore')) {
+        return window.Alpine.store('notificationStore').frontendWarning(message, title);
+    } else {
+        console.warn('Frontend Warning:', title, '-', message);
+        return null;
+    }
+};
+
+window.toastFrontendInfo = function(message, title = "Info") {
+    if (window.Alpine && window.Alpine.store && window.Alpine.store('notificationStore')) {
+        return window.Alpine.store('notificationStore').frontendInfo(message, title);
+    } else {
+        console.log('Frontend Info:', title, '-', message);
+        return null;
+    }
+};
+
 export { store };

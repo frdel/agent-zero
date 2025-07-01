@@ -109,6 +109,17 @@
     font-size: 1.2rem;
 }
 
+/* Frontend Error Test Button - distinct orange/red styling */
+.notification-test-button.frontend-error {
+    background: rgba(255, 152, 0, 0.15);
+    border-color: rgba(255, 152, 0, 0.4);
+}
+
+.notification-test-button.frontend-error:hover {
+    background: rgba(255, 152, 0, 0.25);
+    border-color: rgba(255, 152, 0, 0.6);
+}
+
 /* Light Mode Styles */
 .light-mode .notification-toggle {
     background: rgba(0, 0, 0, 0.05);
@@ -138,6 +149,16 @@
 .light-mode .notification-test-button:hover {
     background: rgba(33, 150, 243, 0.2);
     border-color: rgba(33, 150, 243, 0.5);
+}
+
+.light-mode .notification-test-button.frontend-error {
+    background: rgba(255, 152, 0, 0.15);
+    border-color: rgba(255, 152, 0, 0.4);
+}
+
+.light-mode .notification-test-button.frontend-error:hover {
+    background: rgba(255, 152, 0, 0.25);
+    border-color: rgba(255, 152, 0, 0.6);
 }
 
 /* Animations */
