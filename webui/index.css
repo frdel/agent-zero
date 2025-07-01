@@ -67,6 +67,22 @@
     hue-rotate(177deg) brightness(87%) contrast(85%);
 }
 
+.crt-mode {
+  --color-background-dark: #0a1a0a;
+  --color-text-dark: #33ff33;
+  --color-primary-dark: #33ff33;
+  --color-secondary-dark: #2c5c2c;
+  --color-accent-dark: #50ff50;
+  --color-message-bg-dark: #0f2a0f;
+  --color-message-text-dark: #33ff33;
+  --color-panel-dark: #081408;
+  --color-border-dark: #224422;
+  --color-input-dark: #0f2a0f;
+  --color-input-focus-dark: #143514;
+
+  --border-radius: 0.25rem; /* Reduced for a more angular look */
+}
+
 /* Reset and Base Styles */
 body,
 html {
@@ -83,6 +99,13 @@ html {
   position: fixed;
   -webkit-font-smoothing: antialiased; /* Improve font rendering */
   -moz-osx-font-smoothing: grayscale; /* Improve font rendering */
+}
+
+.crt-mode body,
+.crt-mode html {
+  font-family: "Roboto Mono", monospace;
+  background-image: linear-gradient(rgba(0, 255, 0, 0.05) 50%, transparent 50%);
+  background-size: 100% 2px;
 }
 
 body {
@@ -521,6 +544,7 @@ pre {
   display: flex;
   justify-content: space-between;
   z-index: 1001;
+  border-top: 1px solid var(--color-border-dark);
 }
 
 #progress-bar-box h4 {
@@ -528,7 +552,7 @@ pre {
 }
 
 #progress-bar-h {
-  color: var(--color-primary);
+  color: var(--color-primary-dark);
   display: flex;
   align-items: left;
   justify-content: flex-start;
@@ -542,7 +566,7 @@ pre {
 #progress-bar-i {
   font-weight: bold;
   padding-right: 0.5em;
-  color: var(--color-secondary);
+  color: var(--color-secondary-dark);
 }
 
 .progress-bar h4 {
@@ -661,36 +685,36 @@ pre {
 .message-util,
 .message-warning,
 .message-error {
-  color: #e0e0e0;
+  color: var(--color-text-dark);
 }
 
 .message-default {
-  background-color: #1a242f;
+  background-color: #0f2a0f;
 }
 
 .message-agent {
-  background-color: #34506b;
+  background-color: #143514;
 }
 
 .message-agent-response {
   min-width: 255px;
-  background-color: #1f3c1e;
+  background-color: #1a401a;
 }
 
 .message-agent-delegation {
-  background-color: #12685e;
+  background-color: #0a200a;
 }
 
 .message-tool {
-  background-color: #2a4170;
+  background-color: #143514;
 }
 
 .message-code-exe {
-  background-color: #4b3a69;
+  background-color: #1a401a;
 }
 
 .message-browser {
-  background-color: #4b3a69;
+  background-color: #1a401a;
 }
 
 .message-info {
@@ -698,16 +722,16 @@ pre {
 }
 
 .message-util {
-  background-color: #23211a;
+  background-color: #0f2a0f;
   display: none;
 }
 
 .message-warning {
-  background-color: #bc8036;
+  background-color: #403000;
 }
 
 .message-error {
-  background-color: #af2222;
+  background-color: #400000;
 }
 
 /* Agent and AI Info */
@@ -881,6 +905,8 @@ pre {
 
 #chat-input {
   outline: 1px solid var(--color-border);
+  box-shadow: 0 0 2px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
 }
 
 #expand-button {
@@ -936,6 +962,8 @@ pre {
   font-size: 0.955rem;
   padding-top: 0.45rem;
   background-color: var(--color-input-focus);
+  box-shadow: 0 0 8px var(--color-primary-dark), inset 0 0 8px var(--color-primary-dark);
+  text-shadow: 0 0 8px var(--color-primary-dark);
 }
 
 #chat-input::placeholder {
@@ -975,6 +1003,7 @@ pre {
   background-color: var(--color-background);
   border: 0.1rem solid var(--color-border);
   border-radius: var(--spacing-xs);
+  color: var(--color-text);
   cursor: pointer;
   display: inline;
   font-family: "Rubik", Arial, Helvetica, sans-serif;
@@ -997,6 +1026,27 @@ pre {
 
 .config-button:active {
   opacity: 0.5;
+}
+
+.crt-mode .config-button {
+  background-color: transparent;
+  border: 1px solid var(--color-primary-dark);
+  color: var(--color-primary-dark);
+  border-radius: var(--border-radius);
+  font-family: "Roboto Mono", monospace;
+  box-shadow: 0 0 2px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .config-button:hover {
+  background-color: var(--color-secondary-dark);
+  opacity: 1;
+  box-shadow: 0 0 8px var(--color-primary-dark), inset 0 0 8px var(--color-primary-dark);
+}
+
+.crt-mode .config-button:active {
+  opacity: 0.5;
+  box-shadow: 0 0 12px var(--color-primary-dark), inset 0 0 12px var(--color-primary-dark);
 }
 
 #settings {
@@ -1275,6 +1325,26 @@ pre {
   opacity: 0.5;
 }
 
+.crt-mode .text-button {
+  border-radius: var(--border-radius);
+  color: var(--color-text);
+  font-family: "Roboto Mono", monospace;
+  box-shadow: 0 0 2px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .text-button:hover {
+  opacity: 1;
+  background-color: var(--color-secondary-dark);
+  box-shadow: 0 0 8px var(--color-primary-dark), inset 0 0 8px var(--color-primary-dark);
+  text-shadow: 0 0 8px var(--color-primary-dark);
+}
+
+.crt-mode .text-button:active {
+  opacity: 0.5;
+  box-shadow: 0 0 12px var(--color-primary-dark), inset 0 0 12px var(--color-primary-dark);
+}
+
 .text-button svg {
   width: 14px;
   height: 14px;
@@ -1312,22 +1382,26 @@ pre {
   transition: all var(--transition-speed), transform 0.1s ease-in-out;
 }
 
-#send-button {
-  background-color: #4248f1;
+.crt-mode #send-button {
+  background-color: var(--color-primary-dark);
+  box-shadow: 0 0 2px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
 }
 
-#send-button:hover {
+.crt-mode #send-button:hover {
   -webkit-transform: scale(1.05);
   transform: scale(1.05);
   transform-origin: center;
-  background-color: #353bc5;
+  background-color: var(--color-accent-dark);
+  box-shadow: 0 0 8px var(--color-accent-dark), inset 0 0 8px var(--color-accent-dark);
 }
 
-#send-button:active {
+.crt-mode #send-button:active {
   -webkit-transform: scale(1);
   transform: scale(1);
   transform-origin: center;
-  background-color: #2b309c;
+  background-color: var(--color-accent-dark);
+  box-shadow: 0 0 12px var(--color-accent-dark), inset 0 0 12px var(--color-accent-dark);
 }
 
 .chat-button svg {
