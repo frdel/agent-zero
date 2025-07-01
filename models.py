@@ -54,6 +54,7 @@ class ModelProvider(Enum):
     OPENAI = "OpenAI"
     OPENAI_AZURE = "OpenAI Azure"
     OPENROUTER = "OpenRouter"
+    REQUESTY = "Requesty"
     SAMBANOVA = "Sambanova"
     OTHER = "Other"
 
@@ -364,6 +365,51 @@ def get_openrouter_embedding(
         base_url = (
             dotenv.get_dotenv_value("OPEN_ROUTER_BASE_URL")
             or "https://openrouter.ai/api/v1"
+        )
+    return OpenAIEmbeddings(model=model_name, api_key=api_key, base_url=base_url, **kwargs)  # type: ignore
+
+
+# Requesty models
+def get_requesty_chat(
+    model_name: str,
+    api_key=None,
+    base_url=None,
+    **kwargs,
+):
+    if not api_key:
+        api_key = get_api_key("requesty")
+    if not base_url:
+        base_url = (
+            dotenv.get_dotenv_value("REQUESTY_BASE_URL")
+            or "https://router.requesty.ai/v1"
+        )
+    return ChatOpenAI(
+        api_key=api_key, # type: ignore
+        model=model_name,
+        base_url=base_url,
+        stream_usage=True,
+        model_kwargs={
+            "extra_headers": {
+                "HTTP-Referer": "https://agent-zero.ai",
+                "X-Title": "Agent Zero",
+            }
+        },
+        **kwargs,
+    )
+
+
+def get_requesty_embedding(
+    model_name: str,
+    api_key=None,
+    base_url=None,
+    **kwargs,
+):
+    if not api_key:
+        api_key = get_api_key("requesty")
+    if not base_url:
+        base_url = (
+            dotenv.get_dotenv_value("REQUESTY_BASE_URL")
+            or "https://router.requesty.ai/v1"
         )
     return OpenAIEmbeddings(model=model_name, api_key=api_key, base_url=base_url, **kwargs)  # type: ignore
 
