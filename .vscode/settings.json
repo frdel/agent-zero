@@ -13,5 +13,5 @@
     },
     // Optional: point VSCode to jsconfig.json if you add one
     "jsconfig.json": "${workspaceFolder}/jsconfig.json",
-    "cursorpyright.analysis.typeCheckingMode": "standard"
+    "pyright.analysis.typeCheckingMode": "standard"
 }
