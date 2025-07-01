@@ -780,6 +780,15 @@ window.nudge = async function () {
   }
 };
 
+window.setPersona = async function () {
+  try {
+    const resp = await sendJsonData("/set_persona", { ctxid: getContext(), persona: persona });
+  } catch (e) {
+    toastFetchError("Error setting persona", e);
+  }
+};
+
+
 window.restart = async function () {
   try {
     if (!getConnectionStatus()) {

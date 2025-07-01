@@ -1285,6 +1285,47 @@ pre {
   margin-block: 0;
 }
 
+/* Persona dropdown */
+.persona-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 2px;
+}
+
+.persona-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.persona-option:last-child {
+  border-bottom: none;
+}
+
+.persona-option:hover {
+  background-color: var(--color-secondary);
+}
+
+.persona-option.selected {
+  background-color: var(--color-accent);
+  color: white;
+}
+
+.text-button {
+  position: relative;
+}
+
 /* Chat buttons (Send and Mic) */
 
 #chat-buttons-wrapper {
