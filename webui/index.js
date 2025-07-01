@@ -331,6 +331,7 @@ async function poll() {
 
     const response = await sendJsonData("/poll", {
       log_from: lastLogVersion,
+      notifications_from: globalThis.Alpine?.store('notificationStore')?.lastNotificationVersion || 0,
       context: context || null,
       timezone: timezone,
     });
@@ -369,6 +370,11 @@ async function poll() {
     lastLogGuid = response.log_guid;
 
     updateProgress(response.log_progress, response.log_progress_active);
+
+    // Update notifications from response
+    if (globalThis.Alpine?.store('notificationStore')) {
+      globalThis.Alpine.store('notificationStore').updateFromPoll(response);
+    }
 
     //set ui model vars from backend
     if (window.Alpine && inputSection) {
