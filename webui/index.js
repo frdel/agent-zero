@@ -235,34 +235,9 @@ updateUserTime();
 setInterval(updateUserTime, 1000);
 
 function setMessage(id, type, heading, content, temp, kvps = null) {
-  // Search for the existing message container by id
-  let messageContainer = document.getElementById(`message-${id}`);
-
-  if (messageContainer) {
-    // Don't re-render user messages
-    if (type === "user") {
-      return; // Skip re-rendering
-    }
-    // For other types, update the message
-    messageContainer.innerHTML = "";
-  } else {
-    // Create a new container if not found
-    const sender = type === "user" ? "user" : "ai";
-    messageContainer = document.createElement("div");
-    messageContainer.id = `message-${id}`;
-    messageContainer.classList.add("message-container", `${sender}-container`);
-    if (temp) messageContainer.classList.add("message-temp");
-  }
-
-  const handler = msgs.getHandler(type);
-  handler(messageContainer, id, type, heading, content, temp, kvps);
-
-  // If the container was found, it was already in the DOM, no need to append again
-  if (!document.getElementById(`message-${id}`)) {
-    chatHistory.appendChild(messageContainer);
-  }
-
+  const result = msgs.setMessage(id, type, heading, content, temp, kvps);
   if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
+  return result;
 }
 
 window.loadKnowledge = async function () {

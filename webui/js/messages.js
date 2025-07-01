@@ -3,6 +3,71 @@ import { openImageModal } from "./image_modal.js";
 import { marked } from "../vendor/marked/marked.esm.js";
 import { store as messageResizeStore } from "/components/messages/resize/message-resize-store.js";
 
+const chatHistory = document.getElementById("chat-history");
+
+let messageGroup = null;
+
+export function setMessage(id, type, heading, content, temp, kvps = null) {
+  // Search for the existing message container by id
+  let messageContainer = document.getElementById(`message-${id}`);
+
+  if (messageContainer) {
+    // Don't re-render user messages
+    if (type === "user") {
+      return; // Skip re-rendering
+    }
+    // For other types, update the message
+    messageContainer.innerHTML = "";
+  } else {
+    // Create a new container if not found
+    const sender = type === "user" ? "user" : "ai";
+    messageContainer = document.createElement("div");
+    messageContainer.id = `message-${id}`;
+    messageContainer.classList.add("message-container", `${sender}-container`);
+    // if (temp) messageContainer.classList.add("message-temp");
+  }
+
+  const handler = getHandler(type);
+  handler(messageContainer, id, type, heading, content, temp, kvps);
+
+  // If the container was found, it was already in the DOM, no need to append again
+  if (!document.getElementById(`message-${id}`)) {
+    // message type visual grouping
+    const groupTypeMap = {
+      user: "right",
+      info: "mid",
+      warning: "mid",
+      error: "mid",
+      rate_limit: "mid",
+      util: "mid",
+      hint: "mid",
+      // anything else is "left"
+    };
+
+    //force new group on these types
+    const groupStart = {
+      agent: true,
+      // anything else is false
+    };
+
+    const groupType = groupTypeMap[type] || "left";
+
+    if (
+      !messageGroup || // no group yet exists
+      groupStart[type] || // message type forces new group
+      groupType != messageGroup.getAttribute("data-group-type") // message type changes group
+    ) {
+      messageGroup = document.createElement("div");
+      messageGroup.id = `message-group-${id}`;
+      messageGroup.classList.add(`message-group`, `message-group-${groupType}`);
+      messageGroup.setAttribute("data-group-type", groupType);
+    }
+
+    messageGroup.appendChild(messageContainer);
+    chatHistory.appendChild(messageGroup);
+  }
+}
+
 function createCopyButton() {
   const button = document.createElement("button");
   button.className = "copy-button";
@@ -94,9 +159,11 @@ export function _drawMessage(
   messageDiv.classList.add("message", mainClass, ...messageClasses);
 
   if (heading) {
-    const headingElement = document.createElement("h4");
+    const headingElement = document.createElement("div");
     headingElement.classList.add("msg-heading");
-    headingElement.textContent = heading;
+    const headingH4 = document.createElement("h4");
+    headingH4.innerHTML = convertIcons(escapeHTML(heading));
+    headingElement.appendChild(headingH4);
     messageDiv.appendChild(headingElement);
 
     if (resizeBtns) {
@@ -301,8 +368,8 @@ export function drawMessageUser(
     textDiv.classList.add("message-text");
 
     // Create a span for the content
-    const spanElement = document.createElement("span");
-    spanElement.innerHTML = convertHTML(content);
+    const spanElement = document.createElement("pre");
+    spanElement.innerHTML = escapeHTML(content);
     textDiv.appendChild(spanElement);
 
     // Add click handler
@@ -697,6 +764,13 @@ function convertHTML(str) {
 
 function convertImgFilePaths(str) {
   return str.replace("img://", "/image_get?path=");
+}
+
+function convertIcons(str) {
+  return str.replace(
+    /icon:\/\/([a-zA-Z0-9_]+)/g,
+    '<span class="icon material-symbols-outlined">$1</span>'
+  );
 }
 
 function escapeHTML(str) {
