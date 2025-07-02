@@ -1,3 +1,4 @@
+from datetime import timedelta
 import os
 import secrets
 import sys
@@ -29,7 +30,10 @@ webapp = Flask("app", static_folder=get_abs_path("./webui"), static_url_path="/"
 webapp.secret_key = os.getenv("FLASK_SECRET_KEY") or secrets.token_hex(32)
 webapp.config.update(
     JSON_SORT_KEYS=False,
+    SESSION_COOKIE_NAME="session_" + secrets.token_hex(8),  # randomize the session cookie name to prevent session collision on same host
     SESSION_COOKIE_SAMESITE="Strict",
+    SESSION_PERMANENT=True,
+    PERMANENT_SESSION_LIFETIME=timedelta(days=7)
 )
 
 
