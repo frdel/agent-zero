@@ -4,6 +4,9 @@
 **/__pycache__/
 **/.conda/
 
+# Ignore personal folder
+a0Folder/
+
 # Ignore docker/run/agent-zero directory
 docker/run/agent-zero/
 
