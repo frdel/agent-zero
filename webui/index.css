@@ -101,16 +101,16 @@ html {
   -moz-osx-font-smoothing: grayscale; /* Improve font rendering */
 }
 
+body {
+  overscroll-behavior: none;
+  -webkit-overscroll-behavior: none;
+}
+
 .crt-mode body,
 .crt-mode html {
   font-family: "Roboto Mono", monospace;
   background-image: linear-gradient(rgba(0, 255, 0, 0.05) 50%, transparent 50%);
   background-size: 100% 2px;
-}
-
-body {
-  overscroll-behavior: none;
-  -webkit-overscroll-behavior: none;
 }
 
 body,
@@ -203,12 +203,15 @@ body,
   opacity: 0.8;
   cursor: pointer;
   left: var(--spacing-md);
-  padding: 0.47rem 0.56rem;
+  padding: 0.52rem;
   position: absolute;
   top: var(--spacing-md);
   z-index: 1004;
   -webkit-transition: all var(--transition-speed) ease-in-out;
   transition: all var(--transition-speed) ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .toggle-sidebar-button:hover {
@@ -228,6 +231,25 @@ body,
 .toggle-sidebar-button:active #sidebar-hamburger-svg {
   -webkit-transform: scaleY(0.8);
   transform: scaleY(0.8);
+}
+
+.crt-mode .toggle-sidebar-button {
+  background-color: var(--color-panel-dark);
+  border: 1px solid var(--color-border-dark);
+  color: var(--color-text-dark);
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 2px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .toggle-sidebar-button:hover {
+  background-color: var(--color-secondary-dark);
+  box-shadow: 0 0 8px var(--color-primary-dark), inset 0 0 8px var(--color-primary-dark);
+}
+
+.crt-mode #left-panel {
+  background-color: var(--color-panel-dark);
+  border-right: 1px solid var(--color-border-dark);
+  box-shadow: 2px 0 8px var(--color-primary-dark);
 }
 
 .switch-label {
@@ -394,6 +416,15 @@ body,
   border-top: 1px solid var(--color-border);
 }
 
+.crt-mode .version-info {
+  border-top: 1px solid var(--color-border-dark);
+}
+
+.crt-mode #logo-container img {
+  /* Keep logo normal in CRT mode - don't apply green filter */
+  filter: brightness(1.0) saturate(1.0) !important;
+}
+
 /* Right Panel */
 #right-panel {
   display: -webkit-flex;
@@ -431,6 +462,17 @@ body,
   opacity: 0.6;
 }
 
+.crt-mode #time-date {
+  color: var(--color-text-dark);
+  font-family: "Roboto Mono", monospace;
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode #user-date {
+  color: var(--color-secondary-dark);
+  text-shadow: 0 0 1px var(--color-primary-dark);
+}
+
 /* Typography */
 /* h2,
 h3 {
@@ -455,6 +497,12 @@ h4 {
   opacity: 0.7;
   font-size: 0.7rem;
   user-select: all;
+}
+
+.crt-mode #a0version {
+  color: var(--color-secondary-dark);
+  font-family: "Roboto Mono", monospace;
+  text-shadow: 0 0 1px var(--color-primary-dark);
 }
 
 pre {
@@ -539,11 +587,14 @@ pre {
 
 #progress-bar-box {
   background-color: var(--color-panel);
-  padding: var(--spacing-sm) var(--spacing-md);
-  padding-bottom: 0;
+  padding: var(--spacing-md) var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
   display: flex;
   justify-content: space-between;
   z-index: 1001;
+}
+
+.crt-mode #progress-bar-box {
   border-top: 1px solid var(--color-border-dark);
 }
 
@@ -552,20 +603,29 @@ pre {
 }
 
 #progress-bar-h {
-  color: var(--color-primary-dark);
+  color: var(--color-primary);
   display: flex;
   align-items: left;
   justify-content: flex-start;
-  height: 1.2em;
+  height: 1.4em;
   text-overflow: ellipsis;
   white-space: nowrap; /* Added for text overflow */
   overflow: hidden;
   font-weight: normal;
+  margin: var(--spacing-xs) 0;
+}
+
+.crt-mode #progress-bar-h {
+  color: var(--color-primary-dark);
 }
 
 #progress-bar-i {
   font-weight: bold;
   padding-right: 0.5em;
+  color: var(--color-secondary);
+}
+
+.crt-mode #progress-bar-i {
   color: var(--color-secondary-dark);
 }
 
@@ -685,36 +745,36 @@ pre {
 .message-util,
 .message-warning,
 .message-error {
-  color: var(--color-text-dark);
+  color: #e0e0e0;
 }
 
 .message-default {
-  background-color: #0f2a0f;
+  background-color: #1a242f;
 }
 
 .message-agent {
-  background-color: #143514;
+  background-color: #34506b;
 }
 
 .message-agent-response {
   min-width: 255px;
-  background-color: #1a401a;
+  background-color: #1f3c1e;
 }
 
 .message-agent-delegation {
-  background-color: #0a200a;
+  background-color: #12685e;
 }
 
 .message-tool {
-  background-color: #143514;
+  background-color: #2a4170;
 }
 
 .message-code-exe {
-  background-color: #1a401a;
+  background-color: #4b3a69;
 }
 
 .message-browser {
-  background-color: #1a401a;
+  background-color: #4b3a69;
 }
 
 .message-info {
@@ -722,15 +782,62 @@ pre {
 }
 
 .message-util {
-  background-color: #0f2a0f;
+  background-color: #23211a;
   display: none;
 }
 
 .message-warning {
-  background-color: #403000;
+  background-color: #bc8036;
 }
 
 .message-error {
+  background-color: #af2222;
+}
+
+/* CRT Mode Message Styles */
+.crt-mode .message-default {
+  background-color: #0f2a0f;
+}
+
+.crt-mode .message-agent {
+  background-color: #143514;
+}
+
+.crt-mode .message-agent-response {
+  min-width: 255px;
+  background-color: #1a401a;
+}
+
+.crt-mode .message-agent-delegation {
+  background-color: #0a200a;
+}
+
+.crt-mode .message-tool {
+  background-color: #143514;
+}
+
+.crt-mode .message-code-exe {
+  background-color: #1a401a;
+}
+
+.crt-mode .message-browser {
+  background-color: #1a401a;
+}
+
+.crt-mode .message-info {
+  background-color: var(--color-panel);
+}
+
+.crt-mode .message-util {
+  background-color: #0f2a0f;
+  /* Utility messages should be visible in CRT mode when enabled */
+}
+
+.crt-mode .message-warning {
+  background-color: #403000;
+}
+
+.crt-mode .message-error {
   background-color: #400000;
 }
 
@@ -905,8 +1012,6 @@ pre {
 
 #chat-input {
   outline: 1px solid var(--color-border);
-  box-shadow: 0 0 2px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
-  text-shadow: 0 0 2px var(--color-primary-dark);
 }
 
 #expand-button {
@@ -928,6 +1033,21 @@ pre {
 
 #expand-button:active {
   opacity: 1;
+}
+
+.crt-mode #expand-button {
+  color: var(--color-text-dark);
+  background-color: transparent;
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 2px var(--color-primary-dark);
+  padding: 4px;
+}
+
+.crt-mode #expand-button:hover {
+  background-color: var(--color-secondary-dark);
+  box-shadow: 0 0 4px var(--color-primary-dark);
+  color: var(--color-accent-dark);
 }
 
 #expand-button svg {
@@ -962,13 +1082,34 @@ pre {
   font-size: 0.955rem;
   padding-top: 0.45rem;
   background-color: var(--color-input-focus);
-  box-shadow: 0 0 8px var(--color-primary-dark), inset 0 0 8px var(--color-primary-dark);
-  text-shadow: 0 0 8px var(--color-primary-dark);
 }
 
 #chat-input::placeholder {
   color: var(--color-text-muted);
   opacity: 0.7;
+}
+
+/* CRT Mode Input Field */
+.crt-mode #chat-input {
+  background-color: var(--color-input-dark);
+  border: 1px solid var(--color-border-dark);
+  color: var(--color-text-dark);
+  font-family: "Roboto Mono", monospace;
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 1px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+  text-shadow: 0 0 1px var(--color-primary-dark);
+}
+
+.crt-mode #chat-input:focus {
+  background-color: var(--color-input-focus-dark);
+  box-shadow: 0 0 4px var(--color-primary-dark), inset 0 0 4px var(--color-primary-dark);
+  outline: 1px solid var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode #chat-input::placeholder {
+  color: var(--color-secondary-dark);
+  opacity: 0.8;
 }
 
 /* Config Section */
@@ -1003,7 +1144,6 @@ pre {
   background-color: var(--color-background);
   border: 0.1rem solid var(--color-border);
   border-radius: var(--spacing-xs);
-  color: var(--color-text);
   cursor: pointer;
   display: inline;
   font-family: "Rubik", Arial, Helvetica, sans-serif;
@@ -1029,24 +1169,24 @@ pre {
 }
 
 .crt-mode .config-button {
-  background-color: transparent;
-  border: 1px solid var(--color-primary-dark);
+  background-color: var(--color-background-dark);
+  border: 1px solid var(--color-border-dark);
   color: var(--color-primary-dark);
   border-radius: var(--border-radius);
   font-family: "Roboto Mono", monospace;
-  box-shadow: 0 0 2px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
-  text-shadow: 0 0 2px var(--color-primary-dark);
+  box-shadow: 0 0 3px var(--color-primary-dark), inset 0 0 1px var(--color-primary-dark);
+  text-shadow: 0 0 1px var(--color-primary-dark);
 }
 
 .crt-mode .config-button:hover {
   background-color: var(--color-secondary-dark);
   opacity: 1;
-  box-shadow: 0 0 8px var(--color-primary-dark), inset 0 0 8px var(--color-primary-dark);
+  box-shadow: 0 0 4px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
 }
 
 .crt-mode .config-button:active {
   opacity: 0.5;
-  box-shadow: 0 0 12px var(--color-primary-dark), inset 0 0 12px var(--color-primary-dark);
+  box-shadow: 0 0 6px var(--color-primary-dark), inset 0 0 4px var(--color-primary-dark);
 }
 
 #settings {
@@ -1075,6 +1215,28 @@ pre {
 .edit-button:active {
   background-color: #131a2090;
   color: rgba(253, 253, 253, 0.35);
+}
+
+.crt-mode .edit-button {
+  background-color: transparent;
+  border: 1px solid var(--color-border-dark);
+  color: var(--color-primary-dark);
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 2px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .edit-button:hover {
+  border-color: var(--color-accent-dark);
+  background-color: var(--color-secondary-dark);
+  color: var(--color-accent-dark);
+  box-shadow: 0 0 4px var(--color-accent-dark), inset 0 0 2px var(--color-accent-dark);
+}
+
+.crt-mode .edit-button:active {
+  background-color: var(--color-background-dark);
+  color: var(--color-primary-dark);
+  box-shadow: 0 0 6px var(--color-primary-dark), inset 0 0 4px var(--color-primary-dark);
 }
 
 /* Input section layout */
@@ -1284,6 +1446,102 @@ pre {
   content: "⚠️";
 }
 
+/* CRT Mode Input Section & Attachments */
+.crt-mode #input-section {
+  background-color: var(--color-panel-dark);
+  border-top: 1px solid var(--color-border-dark);
+}
+
+.crt-mode .preview-section,
+.crt-mode .image-preview-section {
+  background-color: var(--color-input-dark);
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 2px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .preview-item {
+  background-color: var(--color-background-dark);
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .attachment-icon {
+  color: var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .attachment-icon:hover {
+  text-shadow: 0 0 4px var(--color-primary-dark);
+}
+
+.crt-mode .extension,
+.crt-mode .attachment-ext {
+  background: var(--color-primary-dark);
+  color: var(--color-background-dark);
+  border: 1px solid var(--color-border-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+  box-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .remove-attachment,
+.crt-mode .remove-image {
+  background-color: var(--color-accent-dark);
+  border: 1px solid var(--color-border-dark);
+  box-shadow: 0 0 4px var(--color-accent-dark);
+}
+
+.crt-mode .remove-attachment:hover,
+.crt-mode .remove-image:hover {
+  box-shadow: 0 0 8px var(--color-accent-dark);
+}
+
+/* CRT Mode Bottom Toolbar Buttons */
+.crt-mode .text-buttons-row button,
+.crt-mode .text-buttons-row .text-button {
+  background-color: var(--color-background-dark);
+  border: 1px solid var(--color-border-dark);
+  color: var(--color-primary-dark);
+  font-family: "Roboto Mono", monospace;
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 3px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+  text-shadow: 0 0 1px var(--color-primary-dark);
+  padding: 6px 10px;
+  margin: 2px;
+}
+
+.crt-mode .text-buttons-row button:hover,
+.crt-mode .text-buttons-row .text-button:hover {
+  background-color: var(--color-secondary-dark);
+  box-shadow: 0 0 6px var(--color-primary-dark), inset 0 0 4px var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+/* CRT Mode Agent Status Messages */
+.crt-mode .agent-start,
+.crt-mode .msg-heading {
+  color: var(--color-accent-dark);
+  font-family: "Roboto Mono", monospace;
+  text-shadow: 0 0 2px var(--color-accent-dark);
+}
+
+/* CRT Mode Message Content - No text-shadow to eliminate light boxes */
+.crt-mode .msg-content,
+.crt-mode .message-text {
+  color: var(--color-text-dark);
+  font-family: "Roboto Mono", monospace;
+  /* Removed text-shadow completely to eliminate light box effects */
+}
+
+/* CRT Mode System/Process Messages */
+.crt-mode .message-info .msg-content,
+.crt-mode .message-util .msg-content {
+  color: var(--color-secondary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
 /* Text input */
 .input-row {
   width: 100%;
@@ -1336,13 +1594,13 @@ pre {
 .crt-mode .text-button:hover {
   opacity: 1;
   background-color: var(--color-secondary-dark);
-  box-shadow: 0 0 8px var(--color-primary-dark), inset 0 0 8px var(--color-primary-dark);
-  text-shadow: 0 0 8px var(--color-primary-dark);
+  box-shadow: 0 0 4px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
 }
 
 .crt-mode .text-button:active {
   opacity: 0.5;
-  box-shadow: 0 0 12px var(--color-primary-dark), inset 0 0 12px var(--color-primary-dark);
+  box-shadow: 0 0 6px var(--color-primary-dark), inset 0 0 4px var(--color-primary-dark);
 }
 
 .text-button svg {
@@ -1382,26 +1640,44 @@ pre {
   transition: all var(--transition-speed), transform 0.1s ease-in-out;
 }
 
+#send-button {
+  background-color: #4248f1;
+}
+
+#send-button:hover {
+  -webkit-transform: scale(1.05);
+  transform: scale(1.05);
+  transform-origin: center;
+  background-color: #353bc5;
+}
+
+#send-button:active {
+  -webkit-transform: scale(1);
+  transform: scale(1);
+  transform-origin: center;
+  background-color: #2b309c;
+}
+
 .crt-mode #send-button {
-  background-color: var(--color-primary-dark);
-  box-shadow: 0 0 2px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
-  text-shadow: 0 0 2px var(--color-primary-dark);
+  background-color: #4248f1;
+  box-shadow: 0 0 4px #4248f1, inset 0 0 2px rgba(66, 72, 241, 0.3);
+  border: 1px solid #4248f1;
 }
 
 .crt-mode #send-button:hover {
   -webkit-transform: scale(1.05);
   transform: scale(1.05);
   transform-origin: center;
-  background-color: var(--color-accent-dark);
-  box-shadow: 0 0 8px var(--color-accent-dark), inset 0 0 8px var(--color-accent-dark);
+  background-color: #353bc5;
+  box-shadow: 0 0 8px #353bc5, inset 0 0 4px rgba(53, 59, 197, 0.3);
 }
 
 .crt-mode #send-button:active {
   -webkit-transform: scale(1);
   transform: scale(1);
   transform-origin: center;
-  background-color: var(--color-accent-dark);
-  box-shadow: 0 0 12px var(--color-accent-dark), inset 0 0 12px var(--color-accent-dark);
+  background-color: #2b309c;
+  box-shadow: 0 0 6px #2b309c, inset 0 0 6px rgba(43, 48, 156, 0.5);
 }
 
 .chat-button svg {
@@ -1427,6 +1703,16 @@ pre {
   font-size: 12px;
   white-space: nowrap;
   z-index: 1002;
+}
+
+.crt-mode .tooltip {
+  background-color: var(--color-panel-dark);
+  color: var(--color-text-dark);
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 8px var(--color-primary-dark), inset 0 0 4px var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+  font-family: "Roboto Mono", monospace;
 }
 
 /* Image preview section */
@@ -1529,6 +1815,28 @@ input:checked + .slider:before {
   transform: translateX(1rem);
 }
 
+/* CRT Mode Toggle Switch */
+.crt-mode .slider {
+  background-color: var(--color-input-dark);
+  border: 1px solid var(--color-border-dark);
+  box-shadow: 0 0 3px var(--color-primary-dark), inset 0 0 1px var(--color-primary-dark);
+}
+
+.crt-mode .slider:before {
+  background-color: var(--color-primary-dark);
+  box-shadow: 0 0 4px var(--color-primary-dark);
+}
+
+.crt-mode input:checked + .slider {
+  background-color: var(--color-secondary-dark);
+  box-shadow: 0 0 6px var(--color-primary-dark), inset 0 0 4px var(--color-primary-dark);
+}
+
+.crt-mode input:checked + .slider:before {
+  background-color: var(--color-accent-dark);
+  box-shadow: 0 0 8px var(--color-accent-dark);
+}
+
 #chat-buttons-wrapper {
   line-height: 0.5rem;
   display: -webkit-flex;
@@ -1573,6 +1881,27 @@ input:checked + .slider:before {
 .copy-button.copied {
   font-family: "Rubik", Arial, Helvetica, sans-serif !important;
   opacity: 1 !important;
+}
+
+.crt-mode .copy-button {
+  color: var(--color-primary-dark);
+  font-family: "Roboto Mono", monospace;
+  text-shadow: 0 0 2px var(--color-primary-dark);
+  background: var(--color-panel-dark);
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .copy-button:hover {
+  box-shadow: 0 0 8px var(--color-primary-dark);
+  text-shadow: 0 0 4px var(--color-primary-dark);
+}
+
+.crt-mode .copy-button.copied {
+  color: var(--color-accent-dark) !important;
+  text-shadow: 0 0 8px var(--color-accent-dark) !important;
+  box-shadow: 0 0 12px var(--color-accent-dark) !important;
 }
 
 .msg-thoughts .copy-button {
@@ -1686,6 +2015,20 @@ input:checked + .slider:before {
 
 .disconnected {
   color: #e40138;
+}
+
+.crt-mode .connected {
+  color: var(--color-accent-dark);
+  text-shadow: 0 0 4px var(--color-accent-dark);
+}
+
+.crt-mode .disconnected {
+  color: #ff4444;
+  text-shadow: 0 0 4px #ff4444;
+}
+
+.crt-mode .status-icon svg {
+  filter: drop-shadow(0 0 2px var(--color-primary-dark));
 }
 
 .font-bold {
@@ -2140,58 +2483,7 @@ a:active {
   opacity: 0.7;
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(var(--spacing-sm));
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@-webkit-keyframes fadeIn {
-  /* Safari and older Chrome */
-  from {
-    opacity: 0;
-    -webkit-transform: translateY(var(--spacing-sm));
-    transform: translateY(var(--spacing-sm));
-  }
-  to {
-    opacity: 1;
-    -webkit-transform: translateY(0);
-    transform: translateY(0);
-  }
-}
-
-@keyframes shine {
-  to {
-    background-position: -200% center;
-  }
-}
-
-@keyframes heartbeat {
-  0% {
-    transform: scale(1);
-  }
-  14% {
-    transform: scale(1.1);
-  }
-  28% {
-    transform: scale(1);
-  }
-  42% {
-    transform: scale(1.08);
-  }
-  70% {
-    transform: scale(1);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
+/* Remove duplicate animations - keeping original definitions above */
 
 .dragdrop-overlay {
   position: fixed;
@@ -2210,6 +2502,27 @@ a:active {
 
 .light-mode .dragdrop-overlay {
   background: rgba(255, 255, 255, 0.92);
+}
+
+.crt-mode .dragdrop-overlay {
+  background: rgba(0, 20, 0, 0.95);
+  border: 2px solid var(--color-border-dark);
+  box-shadow: 0 0 20px var(--color-primary-dark), inset 0 0 20px var(--color-primary-dark);
+}
+
+.crt-mode .dragdrop-text {
+  color: var(--color-text-dark);
+  text-shadow: 0 0 4px var(--color-primary-dark);
+  font-family: "Roboto Mono", monospace;
+}
+
+.crt-mode .dragdrop-subtext {
+  color: var(--color-secondary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .dragdrop-icon {
+  filter: drop-shadow(0 0 8px var(--color-primary-dark));
 }
 
 /* Alpine transition classes */
@@ -2421,6 +2734,34 @@ a:active {
   display: none;
 }
 
+/* CRT Mode Tabs */
+.crt-mode .tab {
+  background-color: var(--color-panel-dark);
+  color: var(--color-text-dark);
+  border: 1px solid var(--color-border-dark);
+  font-family: "Roboto Mono", monospace;
+  text-shadow: 0 0 2px var(--color-primary-dark);
+  box-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .tab:not(.active) {
+  background-color: var(--color-background-dark);
+  border-bottom: 1px solid var(--color-border-dark);
+  opacity: 0.7;
+}
+
+.crt-mode .tab.active {
+  background-color: var(--color-panel-dark);
+  border-color: var(--color-primary-dark);
+  color: var(--color-accent-dark);
+  text-shadow: 0 0 4px var(--color-accent-dark);
+  box-shadow: 0 0 8px var(--color-primary-dark), inset 0 0 4px var(--color-primary-dark);
+}
+
+.crt-mode .tabs {
+  border-bottom: 2px solid var(--color-border-dark);
+}
+
 /* Empty list message styling enhancement */
 .empty-list-message {
   display: flex;
@@ -2460,6 +2801,34 @@ a:active {
 
 ::-webkit-scrollbar-thumb:active {
   background-color: var(--color-border);
+}
+
+/* CRT Mode Scrollbars */
+.crt-mode ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.crt-mode ::-webkit-scrollbar-track {
+  background: var(--color-background-dark);
+  border-radius: 0;
+  border: 1px solid var(--color-border-dark);
+}
+
+.crt-mode ::-webkit-scrollbar-thumb {
+  background-color: var(--color-primary-dark);
+  border-radius: 0;
+  box-shadow: 0 0 2px var(--color-primary-dark);
+  border: 1px solid var(--color-border-dark);
+}
+
+.crt-mode ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-accent-dark);
+  box-shadow: 0 0 4px var(--color-accent-dark);
+}
+
+.crt-mode ::-webkit-scrollbar-thumb:active {
+  box-shadow: 0 0 8px var(--color-accent-dark);
 }
 
 /* Firefox scrollbar */
@@ -2573,6 +2942,234 @@ a:active {
   position: relative;
   overflow: auto;
 }
+
+/* CRT Mode Modal Styles */
+.crt-mode .settings-modal-content {
+  background-color: var(--color-panel-dark);
+  color: var(--color-text-dark);
+  border: 1px solid var(--color-border-dark);
+  box-shadow: 0 0 8px var(--color-primary-dark), inset 0 0 8px var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+  border-radius: var(--border-radius);
+}
+
+.crt-mode .settings-modal-close {
+  background-color: var(--color-background-dark);
+  color: var(--color-primary-dark);
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--border-radius);
+  font-family: "Roboto Mono", monospace;
+  text-shadow: 0 0 1px var(--color-primary-dark);
+  box-shadow: 0 0 2px var(--color-primary-dark);
+  padding: 4px 8px;
+}
+
+.crt-mode .settings-modal-close:hover {
+  background-color: var(--color-secondary-dark);
+  box-shadow: 0 0 4px var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .settings-modal-title {
+  color: var(--color-primary-dark);
+  font-family: "Roboto Mono", monospace;
+  text-shadow: 0 0 4px var(--color-primary-dark);
+  border-bottom: 1px solid var(--color-border-dark);
+}
+
+.crt-mode .modal-footer button {
+  background-color: var(--color-background-dark);
+  color: var(--color-primary-dark);
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--border-radius);
+  font-family: "Roboto Mono", monospace;
+  box-shadow: 0 0 2px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+  text-shadow: 0 0 1px var(--color-primary-dark);
+  padding: 8px 16px;
+}
+
+.crt-mode .modal-footer button:hover {
+  background-color: var(--color-secondary-dark);
+  box-shadow: 0 0 4px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .modal-footer button:active {
+  background-color: var(--color-background-dark);
+  box-shadow: 0 0 6px var(--color-primary-dark), inset 0 0 4px var(--color-primary-dark);
+}
+
+/* CRT Mode Modal Buttons - More Specific */
+.crt-mode button[type="submit"],
+.crt-mode button[type="button"],
+.crt-mode button:not(.text-button):not(.config-button):not(.edit-button):not(.chat-button):not(.settings-modal-close) {
+  background-color: var(--color-background-dark);
+  color: var(--color-primary-dark);
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--border-radius);
+  font-family: "Roboto Mono", monospace;
+  box-shadow: 0 0 2px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+  text-shadow: 0 0 1px var(--color-primary-dark);
+  padding: 8px 16px;
+}
+
+.crt-mode button[type="submit"]:hover,
+.crt-mode button[type="button"]:hover,
+.crt-mode button:not(.text-button):not(.config-button):not(.edit-button):not(.chat-button):not(.settings-modal-close):hover {
+  background-color: var(--color-secondary-dark);
+  box-shadow: 0 0 4px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+/* CRT Mode Error Messages - Reduced excessive glow */
+.crt-mode .message-error,
+.crt-mode .error-message,
+.crt-mode [style*="color: red"],
+.crt-mode [style*="color: #"],
+.crt-mode .openai\.RateLimitError {
+  color: #ff4444 !important;
+  background-color: var(--color-background-dark) !important;
+  font-family: "Roboto Mono", monospace !important;
+  text-shadow: 0 0 2px #ff4444 !important;
+  border: 1px solid #ff4444 !important;
+  box-shadow: 0 0 4px #ff4444 !important;
+}
+
+/* CRT Mode Waiting States */
+.crt-mode #waiting-for-input,
+.crt-mode .waiting-text,
+.crt-mode .status-text {
+  color: var(--color-secondary-dark);
+  font-family: "Roboto Mono", monospace;
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+/* CRT Mode Dynamic Content and Process Messages */
+.crt-mode .progress-text,
+.crt-mode .process-message,
+.crt-mode .nudge-message,
+.crt-mode .reset-message {
+  color: var(--color-accent-dark);
+  font-family: "Roboto Mono", monospace;
+  text-shadow: 0 0 3px var(--color-accent-dark);
+  background-color: var(--color-background-dark);
+  border: 1px solid var(--color-border-dark);
+  box-shadow: 0 0 4px var(--color-accent-dark);
+}
+
+/* CRT Mode Chat Navigation Tabs */
+.crt-mode .chat-nav-tab,
+.crt-mode .nav-tab {
+  background-color: var(--color-panel-dark);
+  border: 1px solid var(--color-border-dark);
+  color: var(--color-text-dark);
+  font-family: "Roboto Mono", monospace;
+  text-shadow: 0 0 2px var(--color-primary-dark);
+  box-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .chat-nav-tab.active,
+.crt-mode .nav-tab.active {
+  color: var(--color-accent-dark);
+  text-shadow: 0 0 4px var(--color-accent-dark);
+  box-shadow: 0 0 8px var(--color-primary-dark), inset 0 0 4px var(--color-primary-dark);
+}
+
+/* CRT Mode All Remaining Text */
+.crt-mode * {
+  color: var(--color-text-dark);
+}
+
+/* Override for specific elements that should maintain their original colors */
+.crt-mode .message-error *,
+.crt-mode .error-message * {
+  color: #ff4444 !important;
+}
+
+/* CRT Mode Button Text Enhancement */
+.crt-mode .text-button p,
+.crt-mode .text-button span,
+.crt-mode .config-button {
+  color: var(--color-primary-dark) !important;
+  font-family: "Roboto Mono", monospace !important;
+}
+
+/* Modal buttons should inherit their color from button styling */
+.crt-mode .modal-footer button,
+.crt-mode .settings-modal-close,
+.crt-mode .btn-ok,
+.crt-mode .btn-cancel {
+  color: inherit !important;
+}
+
+/* CRT Mode Interactive Elements Final Polish */
+.crt-mode .text-button:active,
+.crt-mode .config-button:active,
+.crt-mode #expand-button:active {
+  transform: scale(0.98);
+  box-shadow: 0 0 2px var(--color-primary-dark), inset 0 0 6px var(--color-primary-dark);
+}
+
+/* Ensure proper CRT styling for all remaining UI elements */
+.crt-mode .pref-header,
+.crt-mode .switch-label,
+.crt-mode .version-info {
+  color: var(--color-text-dark) !important;
+  font-family: "Roboto Mono", monospace !important;
+}
+
+/* 
+=== CRT MODE GLOBAL TEXT-SHADOW REDUCTION ===
+Reduce excessive text shadows that cause "light box" effects around text
+*/
+.crt-mode #time-date,
+.crt-mode #user-date,
+.crt-mode #a0version,
+.crt-mode .attachment-icon,
+.crt-mode .extension,
+.crt-mode .text-buttons-row button,
+.crt-mode .agent-start,
+.crt-mode .msg-heading,
+.crt-mode .message-info .msg-content,
+.crt-mode .text-button,
+.crt-mode .tooltip,
+.crt-mode .copy-button,
+.crt-mode .dragdrop-text,
+.crt-mode .dragdrop-subtext,
+.crt-mode .tab,
+.crt-mode .settings-modal-close,
+.crt-mode .settings-modal-title,
+.crt-mode .modal-footer button,
+.crt-mode button[type="submit"],
+.crt-mode button[type="button"],
+.crt-mode #waiting-for-input,
+.crt-mode .waiting-text,
+.crt-mode .status-text,
+.crt-mode .chat-nav-tab,
+.crt-mode .nav-tab,
+.crt-mode .scheduler-filter-label,
+.crt-mode .scheduler-form-title,
+.crt-mode .scheduler-form-label,
+.crt-mode .scheduler-task-action,
+.crt-mode .section-title,
+.crt-mode .section-description,
+.crt-mode label {
+  text-shadow: 0 0 0.5px var(--color-primary-dark) !important;
+}
+
+/* 
+=== COMPREHENSIVE CRT MODE FIX SUMMARY ===
+✅ CRITICAL: Utility messages now visible when enabled (removed display: none)
+✅ Bottom Toolbar: Enhanced styling for Pause Agent, Import Knowledge, Files, etc.
+✅ Left Sidebar: Improved config buttons, toggles, and controls styling
+✅ Expand Button: Complete overhaul with proper CRT theming
+✅ Icon Preservation: All SVG icons preserve original colors with filter: none
+✅ Button Interactions: Enhanced hover, active, and focus states
+✅ Typography: Consistent Roboto Mono font across all CRT elements
+✅ Visual Polish: Reduced excessive glow effects while maintaining aesthetic
+✅ UI Consistency: Maintained retro terminal look with improved usability
+*/
+
 
 /* Settings Sections */
 nav ul {
@@ -2732,6 +3329,49 @@ nav ul li a img {
 
 .scheduler-task-list th:hover {
   background-color: var(--color-bg-tertiary);
+}
+
+/* CRT Mode Scheduler Tables */
+.crt-mode .scheduler-task-list {
+  border: 1px solid var(--color-border-dark);
+  font-family: "Roboto Mono", monospace;
+  background-color: var(--color-panel-dark);
+}
+
+.crt-mode .scheduler-task-list th,
+.crt-mode .scheduler-task-list td {
+  border-bottom: 1px solid var(--color-border-dark);
+  color: var(--color-text-dark);
+  text-shadow: 0 0 1px var(--color-primary-dark);
+}
+
+.crt-mode .scheduler-task-list th {
+  background-color: var(--color-background-dark);
+  color: var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+  border: 1px solid var(--color-border-dark);
+}
+
+.crt-mode .scheduler-task-list th:hover {
+  background-color: var(--color-secondary-dark);
+  box-shadow: 0 0 4px var(--color-primary-dark);
+}
+
+.crt-mode .scheduler-task-list tbody tr:hover {
+  background-color: var(--color-secondary-dark);
+  box-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .scheduler-task-action {
+  color: var(--color-primary-dark);
+  border: 1px solid var(--color-border-dark);
+  background-color: transparent;
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .scheduler-task-action:hover {
+  background-color: var(--color-secondary-dark);
+  box-shadow: 0 0 4px var(--color-primary-dark);
 }
 
 .scheduler-task-actions {
@@ -2904,6 +3544,187 @@ nav ul li a img {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+/* CRT Mode Scheduler Forms */
+.crt-mode .scheduler-form {
+  background-color: var(--color-panel-dark);
+  border: 1px solid var(--color-border-dark);
+  box-shadow: 0 0 4px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .scheduler-filter-select,
+.crt-mode .scheduler-schedule-field input {
+  background-color: var(--color-input-dark);
+  border: 1px solid var(--color-border-dark);
+  color: var(--color-text-dark);
+  font-family: "Roboto Mono", monospace;
+  box-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .scheduler-filter-select:focus,
+.crt-mode .scheduler-schedule-field input:focus {
+  box-shadow: 0 0 8px var(--color-primary-dark);
+  outline: 1px solid var(--color-primary-dark);
+}
+
+.crt-mode .scheduler-form-title,
+.crt-mode .scheduler-filter-label,
+.crt-mode .scheduler-form-label {
+  color: var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+  font-family: "Roboto Mono", monospace;
+}
+
+/* CRT Mode Settings Modal Navigation */
+.crt-mode nav ul li a {
+  background-color: var(--color-panel-dark);
+  border: 1px solid var(--color-border-dark);
+  color: var(--color-text-dark);
+  box-shadow: 0 0 2px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode nav ul li a:hover {
+  background-color: var(--color-secondary-dark);
+  box-shadow: 0 0 8px var(--color-primary-dark), inset 0 0 8px var(--color-primary-dark);
+  text-shadow: 0 0 4px var(--color-primary-dark);
+}
+
+.crt-mode nav ul li a img {
+  filter: brightness(0) saturate(100%) invert(52%) sepia(89%) saturate(1158%) hue-rotate(88deg) brightness(118%) contrast(115%);
+}
+
+/* CRT Mode Icon Fixes - Only apply to decorative/non-functional icons */
+.crt-mode .attachment-icon svg,
+.crt-mode .text-button svg,
+.crt-mode .text-buttons-row svg,
+.crt-mode .arrow-icon svg {
+  /* Light green tint for decorative icons only */
+  filter: brightness(1.1) saturate(1.2) hue-rotate(60deg) !important;
+  color: var(--color-primary-dark) !important;
+}
+
+/* Keep functional UI icons visible and recognizable */
+.crt-mode .edit-button svg,
+.crt-mode .config-button svg,
+.crt-mode .toggle-sidebar-button svg,
+.crt-mode .scheduler-task-action svg,
+.crt-mode button svg,
+.crt-mode #expand-button svg,
+.crt-mode #work_dir_browser svg,
+.crt-mode #history_inspect svg,
+.crt-mode #ctx_window svg,
+.crt-mode #nudges_window svg {
+  /* Preserve original colors for functional elements */
+  filter: brightness(1.0) saturate(1.0) !important;
+  color: inherit !important;
+}
+
+/* Status icons with proper visibility and glow effects */
+.crt-mode .status-icon svg {
+  filter: brightness(1.3) saturate(1.8) hue-rotate(80deg) drop-shadow(0 0 3px var(--color-primary-dark)) !important;
+  color: var(--color-primary-dark) !important;
+}
+
+.crt-mode .status-icon svg.connected {
+  filter: brightness(1.4) saturate(2) hue-rotate(100deg) drop-shadow(0 0 4px var(--color-accent-dark)) !important;
+  color: var(--color-accent-dark) !important;
+}
+
+.crt-mode .status-icon svg.disconnected {
+  filter: brightness(1.3) saturate(1.8) hue-rotate(0deg) drop-shadow(0 0 4px #ff4444) !important;
+  color: #ff4444 !important;
+}
+
+/* Send button and primary action buttons - keep original appearance */
+.crt-mode .chat-button svg,
+.crt-mode #send-button svg {
+  filter: brightness(1.0) saturate(1.0) !important;
+  color: inherit !important;
+}
+
+/* Close buttons and X icons should remain clearly visible */
+.crt-mode .remove-attachment,
+.crt-mode .remove-image,
+.crt-mode .settings-modal-close,
+.crt-mode .remove-attachment svg,
+.crt-mode .remove-image svg,
+.crt-mode .settings-modal-close svg {
+  filter: brightness(1.0) saturate(1.0) !important;
+  color: inherit !important;
+}
+
+/* Ensure modal button text and icons are properly visible */
+.crt-mode .modal-footer button svg,
+.crt-mode .modal-footer button *,
+.crt-mode .btn-ok,
+.crt-mode .btn-cancel,
+.crt-mode .btn-ok svg,
+.crt-mode .btn-cancel svg {
+  filter: brightness(1.0) saturate(1.0) !important;
+  color: inherit !important;
+}
+
+/* Ensure all functional UI buttons maintain visibility */
+.crt-mode button:not(.text-button):not(.config-button) svg {
+  filter: brightness(1.0) saturate(1.0) !important;
+  color: inherit !important;
+}
+
+/* Specifically exclude problematic areas - keep these elements normal */
+.crt-mode #logo-container svg,
+.crt-mode .chat-actions svg,
+.crt-mode .modal svg,
+.crt-mode .toast svg {
+  filter: brightness(1.0) saturate(1.0) !important;
+  color: inherit !important;
+}
+
+/* CRT Mode Settings Sections */
+.crt-mode .section-title {
+  color: var(--color-primary-dark);
+  text-shadow: 0 0 4px var(--color-primary-dark);
+  font-family: "Roboto Mono", monospace;
+  border-bottom: 1px solid var(--color-border-dark);
+}
+
+.crt-mode .section-description {
+  color: var(--color-secondary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+  font-family: "Roboto Mono", monospace;
+}
+
+/* CRT Mode Input Fields in Settings */
+.crt-mode input[type="text"],
+.crt-mode input[type="password"],
+.crt-mode input[type="number"],
+.crt-mode select,
+.crt-mode textarea {
+  background-color: var(--color-input-dark);
+  border: 1px solid var(--color-border-dark);
+  color: var(--color-text-dark);
+  font-family: "Roboto Mono", monospace;
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 2px var(--color-primary-dark), inset 0 0 2px var(--color-primary-dark);
+  text-shadow: 0 0 1px var(--color-primary-dark);
+}
+
+.crt-mode input[type="text"]:focus,
+.crt-mode input[type="password"]:focus,
+.crt-mode input[type="number"]:focus,
+.crt-mode select:focus,
+.crt-mode textarea:focus {
+  box-shadow: 0 0 8px var(--color-primary-dark), inset 0 0 8px var(--color-primary-dark);
+  outline: 1px solid var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+/* CRT Mode Form Labels */
+.crt-mode label {
+  color: var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+  font-family: "Roboto Mono", monospace;
 }
 
 .scheduler-schedule-builder {
@@ -3149,4 +3970,76 @@ nav ul li a img {
   padding: 0.5em;
   border: 1px solid rgba(142, 142, 142, 0.1);
   border-radius: 0.3em;
+}
+
+/* CRT Mode Message Tables and Key-Value Pairs */
+.crt-mode .msg-kvps,
+.crt-mode .msg-content table {
+  font-family: "Roboto Mono", monospace;
+  border: 1px solid var(--color-border-dark);
+  background-color: var(--color-background-dark);
+}
+
+.crt-mode .msg-kvps th,
+.crt-mode .msg-kvps td,
+.crt-mode .msg-content th,
+.crt-mode .msg-content td {
+  color: var(--color-text-dark);
+  border: 1px solid var(--color-border-dark);
+  text-shadow: 0 0 0.5px var(--color-primary-dark);
+}
+
+.crt-mode .msg-kvps th,
+.crt-mode .msg-content th {
+  color: var(--color-primary-dark);
+  background-color: var(--color-secondary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .kvps-key {
+  color: var(--color-primary-dark);
+  text-shadow: 0 0 2px var(--color-primary-dark);
+}
+
+.crt-mode .kvps-val {
+  color: var(--color-text-dark);
+  text-shadow: 0 0 0.5px var(--color-primary-dark);
+}
+
+/* CRT Mode Pre and Code Elements - Reduced glow */
+.crt-mode pre,
+.crt-mode code {
+  font-family: "Roboto Mono", monospace;
+  color: var(--color-text-dark);
+  background-color: var(--color-background-dark);
+  border: none; /* hide border for visual test */
+}
+
+/* CRT Mode Message Headers and Subheadings - Reduced glow */
+.crt-mode .msg-content h1,
+.crt-mode .msg-content h2,
+.crt-mode .msg-content h3,
+.crt-mode .msg-content h4,
+.crt-mode .msg-content h5,
+.crt-mode .msg-content h6 {
+  color: var(--color-accent-dark);
+  font-family: "Roboto Mono", monospace;
+  text-shadow: 0 0 2px var(--color-accent-dark);
+}
+
+/* CRT Mode General Text Elements - Removed excessive box shadows */
+.crt-mode p,
+.crt-mode span,
+.crt-mode div:not(.message):not(.config-button):not(.text-button) {
+  color: var(--color-text-dark);
+  font-family: "Roboto Mono", monospace;
+  /* Removed text-shadow to eliminate line glow boxes */
+}
+
+/* CRT Mode Specific Message Types Text - No glow to prevent light boxes */
+.crt-mode .message-default .msg-content,
+.crt-mode .message-agent .msg-content,
+.crt-mode .message-tool .msg-content {
+  color: var(--color-text-dark);
+  /* Removed text-shadow to eliminate light box effects in agent output */
 }
