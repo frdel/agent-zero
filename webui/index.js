@@ -766,6 +766,16 @@ window.toggleDarkMode = function (isDark) {
   localStorage.setItem("darkMode", isDark);
 };
 
+window.toggleCrtMode = function (isCrt) {
+  if (isCrt) {
+    document.body.classList.add("crt-mode");
+  } else {
+    document.body.classList.remove("crt-mode");
+  }
+  console.log("CRT mode:", isCrt);
+  localStorage.setItem("crtMode", isCrt);
+};
+
 window.toggleSpeech = function (isOn) {
   console.log("Speech:", isOn);
   localStorage.setItem("speech", isOn);
@@ -822,6 +832,9 @@ window.restart = async function () {
 document.addEventListener("DOMContentLoaded", () => {
   const isDarkMode = localStorage.getItem("darkMode") !== "false";
   toggleDarkMode(isDarkMode);
+
+  const isCrtMode = localStorage.getItem("crtMode") === "true";
+  toggleCrtMode(isCrtMode);
 });
 
 function toggleCssProperty(selector, property, value) {

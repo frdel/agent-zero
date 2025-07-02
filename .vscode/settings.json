@@ -12,5 +12,6 @@
         "*": ["webui/*"]
     },
     // Optional: point VSCode to jsconfig.json if you add one
-    "jsconfig.json": "${workspaceFolder}/jsconfig.json"
+    "jsconfig.json": "${workspaceFolder}/jsconfig.json",
+    "pyright.analysis.typeCheckingMode": "standard"
 }

@@ -87,7 +87,10 @@ const model = {
   async _statusCheck() {
     const resp = await API.callJsonApi("mcp_servers_status", null);
     if (resp.success) {
-      this.servers = resp.status;
+      this.servers = resp.status.map((s) => ({
+        ...s,
+        disabled: s.error === "Disabled in config",
+      }));
       this.servers.sort((a, b) => a.name.localeCompare(b.name));
     }
   },
@@ -105,7 +108,10 @@ const model = {
         mcp_servers: this.getEditorValue(),
       });
       if (resp.success) {
-        this.servers = resp.status;
+        this.servers = resp.status.map((s) => ({
+          ...s,
+          disabled: s.error === "Disabled in config",
+        }));
         this.servers.sort((a, b) => a.name.localeCompare(b.name));
       }
       this.loading = false;
@@ -137,6 +143,30 @@ const model = {
       this.serverDetail = resp.detail;
       openModal("settings/mcp/client/mcp-server-tools.html");
     }
+  },
+
+  async toggleServer(serverName, enabled) {
+    if (this.loading) return;
+    this.loading = true;
+    try {
+      const resp = await API.callJsonApi("mcp_server_toggle", {
+        server_name: serverName,
+        enabled: enabled,
+      });
+      if (resp.success) {
+        this.servers = resp.status.map((s) => ({
+          ...s,
+          disabled: s.error === "Disabled in config",
+        }));
+        this.servers.sort((a, b) => a.name.localeCompare(b.name));
+      } else if (resp.error) {
+        alert(resp.error);
+      }
+    } catch (error) {
+      console.error("Failed to toggle MCP server:", error);
+      alert("Failed to toggle MCP server: " + error.message);
+    }
+    this.loading = false;
   },
 };
 
