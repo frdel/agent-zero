@@ -13,6 +13,7 @@ from typing import (
 )
 
 from litellm import completion, acompletion, embedding
+import litellm
 from python.helpers import dotenv
 from python.helpers.dotenv import load_dotenv
 from python.helpers.rate_limiter import RateLimiter
@@ -34,6 +35,7 @@ from langchain.embeddings.base import Embeddings
 
 load_dotenv()
 os.environ['LITELLM_LOG'] = "ERROR" # only errors
+litellm.suppress_debug_info = True
 
 
 class ModelType(Enum):
@@ -428,11 +430,12 @@ def _get_litellm_chat(
     base_url = dotenv.get_dotenv_value(f"{provider_name.upper()}_BASE_URL")
 
     # If a base_url is set, ensure api_key is not passed to litellm
-    if base_url:
-        if "api_key" in kwargs:
-            del kwargs["api_key"]
+    # > remove, this can be handled by api_key=None
+    # if base_url:
+    #     if "api_key" in kwargs:
+    #         del kwargs["api_key"]
     # Only pass API key if no base_url is set and key is not a placeholder
-    elif api_key and api_key not in ("None", "NA"):
+    if api_key and api_key not in ("None", "NA"):
         kwargs["api_key"] = api_key
 
     # for openrouter add app reference
@@ -459,11 +462,12 @@ def get_litellm_embedding(model_name: str, provider: str, **kwargs: Any):
     base_url = dotenv.get_dotenv_value(f"{provider.upper()}_BASE_URL")
 
     # If a base_url is set, ensure api_key is not passed to litellm
-    if base_url:
-        if "api_key" in kwargs:
-            del kwargs["api_key"]
+    # > remove, this can be handled by api_key=None
+    # if base_url:
+    #     if "api_key" in kwargs:
+    #         del kwargs["api_key"]
     # Only pass API key if no base_url is set and key is not a placeholder
-    elif api_key and api_key not in ("None", "NA"):
+    if api_key and api_key not in ("None", "NA"):
         kwargs["api_key"] = api_key
 
     return LiteLLMEmbeddingWrapper(model=model_name, provider=provider, **kwargs)

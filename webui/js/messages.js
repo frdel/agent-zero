@@ -2,6 +2,7 @@
 import { openImageModal } from "./image_modal.js";
 import { marked } from "../vendor/marked/marked.esm.js";
 import { store as messageResizeStore } from "/components/messages/resize/message-resize-store.js";
+import { getAutoScroll } from "/index.js";
 
 const chatHistory = document.getElementById("chat-history");
 
@@ -237,9 +238,10 @@ export function _drawMessage(
   }
 
   // autoscroll the body if needed
-  setTimeout(() => {
-    bodyDiv.scrollTop = bodyDiv.scrollHeight;
-  }, 0);
+  // if (getAutoScroll()) #TODO needs a better redraw system
+    setTimeout(() => {
+      bodyDiv.scrollTop = bodyDiv.scrollHeight;
+    }, 0);
 
   return messageDiv;
 }
@@ -361,7 +363,8 @@ export function drawMessageUser(
 
   const headingElement = document.createElement("h4");
   headingElement.classList.add("msg-heading");
-  headingElement.innerHTML = "User message <span class='icon material-symbols-outlined'>person</span>";
+  headingElement.innerHTML =
+    "User message <span class='icon material-symbols-outlined'>person</span>";
   messageDiv.appendChild(headingElement);
 
   if (content && content.trim().length > 0) {
@@ -658,6 +661,7 @@ function drawKvps(container, kvps, latex) {
       }
 
       // autoscroll the KVP value if needed
+      // if (getAutoScroll()) #TODO needs a better redraw system
       setTimeout(() => {
         tdiv.scrollTop = tdiv.scrollHeight;
       }, 0);
@@ -823,17 +827,17 @@ function convertPathsToLinks(str) {
 
 function adjustMarkdownRender(element) {
   // find all tables in the element
-  const tables = element.querySelectorAll('table');
-  
+  const tables = element.querySelectorAll("table");
+
   // wrap each table with a div with class message-markdown-table-wrap
-  tables.forEach(table => {
+  tables.forEach((table) => {
     // create wrapper div
-    const wrapper = document.createElement('div');
-    wrapper.className = 'message-markdown-table-wrap';
-    
+    const wrapper = document.createElement("div");
+    wrapper.className = "message-markdown-table-wrap";
+
     // insert wrapper before table in the DOM
     table.parentNode.insertBefore(wrapper, table);
-    
+
     // move table into wrapper
     wrapper.appendChild(table);
   });

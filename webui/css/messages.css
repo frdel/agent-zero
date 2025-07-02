@@ -244,7 +244,7 @@
   margin: 0;
   /* width: calc(100% - 4em); */
   margin-right: 4em;
-  overflow-y: hidden;
+  overflow: hidden;
   text-overflow: ellipsis;
 }
 

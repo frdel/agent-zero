@@ -30,7 +30,10 @@ from python.helpers.log import Log, LogItem
 from enum import Enum
 from agent import Agent, ModelConfig
 import models
+import logging
 
+# Raise the log level so WARNING messages aren't shown
+logging.getLogger("langchain_core.vectorstores.base").setLevel(logging.ERROR)
 
 class MyFaiss(FAISS):
     # override aget_by_ids

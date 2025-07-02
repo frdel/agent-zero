@@ -13,6 +13,7 @@ const model = {
 
   _getDefaultSettings() {
     return {
+      "message": { minimized: false, maximized: false },
       "message-agent": { minimized: true, maximized: false },
       "message-agent-response": { minimized: false, maximized: true },
     };
@@ -116,12 +117,12 @@ const model = {
     toggleCssProperty(
       `.${className} .message-body`,
       "max-height",
-      setting.maximized ? undefined : "30em"
+      setting.maximized ? "unset" : "30em"
     );
     toggleCssProperty(
       `.${className} .message-body`,
       "overflow-y",
-      setting.maximized ? undefined : "auto"
+      setting.maximized ? "unset" : "auto"
     );
     toggleCssProperty(
       `.${className} .message-body`,

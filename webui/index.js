@@ -28,6 +28,10 @@ setupSidebarToggle();
 // Initialize tabs
 setupTabs();
 
+export function getAutoScroll() {
+  return autoScroll;
+}
+
 function isMobile() {
   return window.innerWidth <= 768;
 }
