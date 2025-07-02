@@ -7,7 +7,6 @@ import struct
 from functools import wraps
 import threading
 import signal
-from typing import override
 from flask import Flask, request, Response, session
 from flask_basicauth import BasicAuth
 import initialize

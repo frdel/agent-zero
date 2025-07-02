@@ -5,6 +5,7 @@ from langchain.embeddings import CacheBackedEmbeddings
 
 # from langchain_chroma import Chroma
 from langchain_community.vectorstores import FAISS
+from langchain_text_splitters import CharacterTextSplitter
 
 # faiss needs to be patched for python 3.12 on arm #TODO remove once not needed
 from python.helpers import faiss_monkey_patch
@@ -359,25 +360,39 @@ class Memory:
         return ids[0]
 
     async def insert_documents(self, docs: list[Document]):
+        from langchain.text_splitter import CharacterTextSplitter
         ids = [str(uuid.uuid4()) for _ in range(len(docs))]
         timestamp = self.get_timestamp()
+        max_chunk_size = 2048
+
+        chunked_docs = []
+        chunked_ids = []
+        splitter = CharacterTextSplitter(chunk_size=max_chunk_size, chunk_overlap=0)
 
         if ids:
             for doc, id in zip(docs, ids):
-                doc.metadata["id"] = id  # add ids to documents metadata
-                doc.metadata["timestamp"] = timestamp  # add timestamp
+                doc.metadata["id"] = id
+                doc.metadata["timestamp"] = timestamp
                 if not doc.metadata.get("area", ""):
                     doc.metadata["area"] = Memory.Area.MAIN.value
 
-            # rate limiter
-            docs_txt = "".join(self.format_docs_plain(docs))
-            await self.agent.rate_limiter(
-                model_config=self.agent.config.embeddings_model, input=docs_txt
-            )
+                # Split each doc's content into safe-size chunks
+                text_chunks = splitter.split_text(doc.page_content)
+                for i, chunk in enumerate(text_chunks):
+                    chunk_metadata = dict(doc.metadata)
+                    chunk_metadata["chunk"] = i
+                    chunked_docs.append(Document(page_content=chunk, metadata=chunk_metadata))
+                    chunked_ids.append(id if len(text_chunks) == 1 else f"{id}_{i}")
 
-            await self.db.aadd_documents(documents=docs, ids=ids)
+            # Rate limiter applies to individual chunks if needed
+            for chunk in chunked_docs:
+                await self.agent.rate_limiter(
+                    model_config=self.agent.config.embeddings_model, input=chunk.page_content
+                )
+
+            await self.db.aadd_documents(documents=chunked_docs, ids=chunked_ids)
             self._save_db()  # persist
-        return ids
+        return chunked_ids
 
     def _save_db(self):
         Memory._save_db_file(self.db, self.memory_subdir)

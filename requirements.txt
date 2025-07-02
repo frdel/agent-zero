@@ -19,6 +19,7 @@ langchain-mistralai==0.2.4
 langchain-ollama==0.3.0
 langchain-openai==0.3.11
 langchain-unstructured[all-docs]==0.1.6
+langchain_aws
 openai-whisper==20240930
 lxml_html_clean==0.3.1
 markdown==3.7
@@ -42,3 +43,4 @@ pdf2image==1.17.0
 crontab==1.0.1
 pathspec>=0.12.1
 psutil>=7.0.0
+boto3

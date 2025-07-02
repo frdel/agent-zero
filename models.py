@@ -1,5 +1,6 @@
 from enum import Enum
 import os
+import boto3
 from typing import Any
 from langchain_openai import (
     ChatOpenAI,
@@ -26,15 +27,21 @@ from langchain_google_genai import (
     embeddings as google_embeddings,
 )
 from langchain_mistralai import ChatMistralAI
+from langchain_aws.chat_models import ChatBedrock
+from langchain_aws.embeddings import BedrockEmbeddings
 
 # from pydantic.v1.types import SecretStr
 from python.helpers import dotenv, runtime
 from python.helpers.dotenv import load_dotenv
 from python.helpers.rate_limiter import RateLimiter
 
+#clean out old AWS creds and use ones in .env
+for key in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"]:
+    if key in os.environ:
+        del os.environ[key]
+
 # environment variables
 load_dotenv()
-
 
 class ModelType(Enum):
     CHAT = "Chat"
@@ -43,6 +50,7 @@ class ModelType(Enum):
 
 class ModelProvider(Enum):
     ANTHROPIC = "Anthropic"
+    BEDROCK = "Bedrock"
     CHUTES = "Chutes"
     DEEPSEEK = "DeepSeek"
     GOOGLE = "Google"
@@ -431,3 +439,60 @@ def get_chutes_chat(
             dotenv.get_dotenv_value("CHUTES_BASE_URL") or "https://llm.chutes.ai/v1"
         )
     return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
+
+
+# Bedrock models
+def get_bedrock_chat(
+    model_id: str,
+    **kwargs,
+):
+    """
+    Returns a Bedrock chat model for the given model_id.
+    Only accepts standard Bedrock model IDs.
+    """
+    session = boto3.Session(
+        profile_name='bedrock-profile'
+    )
+    bedrock_client = session.client(service_name="bedrock-runtime")
+    return ChatBedrock(client=bedrock_client, model_id=model_id, **kwargs)
+
+# Bedrock: Claude Opus 4 chat model
+def get_bedrock_chat_claude_opus(
+    model_name: str = "anthropic.claude-opus-4-20250514-v1:0",
+    **kwargs,
+):
+    """
+    Returns a Bedrock Claude Opus 4 chat model.
+    """
+    session = boto3.Session(
+        profile_name='bedrock-profile'
+    )
+    bedrock_client = session.client(service_name="bedrock-runtime")
+    return ChatBedrock(client=bedrock_client, model_id=model_name, **kwargs)
+
+# Bedrock: Claude Sonnet 3.7 chat model (utility LLM)
+def get_bedrock_chat_claude_sonnet37(
+    model_name: str = "anthropic.claude-3-7-sonnet-20250219-v1:0",
+    **kwargs,
+):
+    """
+    Returns a Bedrock Claude Sonnet 3.7 chat model.
+    """
+    session = boto3.Session(
+        profile_name='bedrock-profile'
+    )
+    bedrock_client = session.client(service_name="bedrock-runtime")
+    return ChatBedrock(client=bedrock_client, model_id=model_name, **kwargs)
+
+# Cohere embeddings via Bedrock using BedrockEmbeddings
+def get_bedrock_embedding(
+    model_name: str = "cohere.embed-multilingual-v3",
+    **kwargs,
+):
+    """
+    Returns Cohere multilingual v3 embeddings via Bedrock using BedrockEmbeddings.
+    """
+    session = boto3.Session(profile_name='bedrock-profile')
+    bedrock_client = session.client(service_name="bedrock-runtime")
+    return BedrockEmbeddings(client=bedrock_client, model_id=model_name, **kwargs)
+
