@@ -527,6 +527,11 @@
   font-size: var(--font-size-smaller);
 }
 
+.message-agent-response .msg-content img{
+  max-width: 100%;
+  max-height: 100em;
+}
+
 .msg-content h1 {
   font-size: 1.25em;
   font-weight: 800;
