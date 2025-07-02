@@ -21,15 +21,14 @@ class LogFromStream(Extension):
         heading = build_default_heading(self.agent)
         if "headline" in parsed:
             heading = build_heading(self.agent, parsed['headline'])
+        elif "tool_name" in parsed:
+            heading = build_heading(self.agent, f"Using tool {parsed['tool_name']}") # if the llm skipped headline
         elif "thoughts" in parsed:
             # thought length indicator
             thoughts = "\n".join(parsed["thoughts"])
             pipes = "|" * math.ceil(math.sqrt(len(thoughts)))
             heading = build_heading(self.agent, f"Thinking... {pipes}")
-
-        # if "tool_name" in parsed:
-        #     heading += f" ({parsed['tool_name']})"
-
+        
         # create log message and store it in loop data temporary params
         if "log_item_generating" not in loop_data.params_temporary:
             loop_data.params_temporary["log_item_generating"] = (

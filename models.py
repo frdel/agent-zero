@@ -32,10 +32,16 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain.embeddings.base import Embeddings
+from sentence_transformers import SentenceTransformer
 
+# disable extra logging
+def turn_off_logging():
+    os.environ['LITELLM_LOG'] = "ERROR" # only errors
+    litellm.suppress_debug_info = True
+
+# init
 load_dotenv()
-os.environ['LITELLM_LOG'] = "ERROR" # only errors
-litellm.suppress_debug_info = True
+turn_off_logging()
 
 
 class ModelType(Enum):
@@ -123,16 +129,6 @@ def get_rate_limiter(
     limiter.limits["input"] = input or 0
     limiter.limits["output"] = output or 0
     return limiter
-
-
-def parse_chunk(chunk: Any):
-    if isinstance(chunk, str):
-        content = chunk
-    elif hasattr(chunk, "content"):
-        content = str(chunk.content)
-    else:
-        content = str(chunk)
-    return content
 
 
 def _parse_chunk(chunk: Any) -> ChatChunk:
@@ -339,6 +335,9 @@ class BrowserCompatibleChatWrapper(LiteLLMChatWrapper):
     A wrapper for browser agent that can filter/sanitize messages
     before sending them to the LLM.
     """
+    def __init__(self, *args, **kwargs):
+        turn_off_logging()
+        super().__init__(*args, **kwargs)
 
     def _call(
         self,
@@ -347,7 +346,7 @@ class BrowserCompatibleChatWrapper(LiteLLMChatWrapper):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        # In the future, message filtering logic can be added here.
+        turn_off_logging()
         result = super()._call(messages, stop, run_manager, **kwargs)
         return result
 
@@ -358,7 +357,7 @@ class BrowserCompatibleChatWrapper(LiteLLMChatWrapper):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        # In the future, message filtering logic can be added here.
+        turn_off_logging()
         async for chunk in super()._astream(messages, stop, run_manager, **kwargs):
             yield chunk
 
@@ -374,27 +373,20 @@ class LiteLLMEmbeddingWrapper(Embeddings):
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         resp = embedding(model=self.model_name, input=texts, **self.kwargs)
         return [
-            item.get("embedding") if isinstance(item, dict) else item.embedding
-            for item in resp.data
+            item.get("embedding") if isinstance(item, dict) else item.embedding # type: ignore
+            for item in resp.data # type: ignore
         ]
 
     def embed_query(self, text: str) -> List[float]:
         resp = embedding(model=self.model_name, input=[text], **self.kwargs)
-        item = resp.data[0]
-        return item.get("embedding") if isinstance(item, dict) else item.embedding
+        item = resp.data[0] # type: ignore
+        return item.get("embedding") if isinstance(item, dict) else item.embedding # type: ignore
 
 
 class LocalSentenceTransformerWrapper(Embeddings):
     """Local wrapper for sentence-transformers models to avoid HuggingFace API calls"""
 
     def __init__(self, model_name: str, **kwargs: Any):
-        try:
-            from sentence_transformers import SentenceTransformer
-        except ImportError:
-            raise ImportError(
-                "sentence-transformers library is required for local embeddings. Install with: pip install sentence-transformers"
-            )
-
         # Remove the "sentence-transformers/" prefix if present
         if model_name.startswith("sentence-transformers/"):
             model_name = model_name[len("sentence-transformers/") :]
@@ -403,15 +395,15 @@ class LocalSentenceTransformerWrapper(Embeddings):
         self.model_name = model_name
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        embeddings = self.model.encode(texts, convert_to_tensor=False)
-        return embeddings.tolist() if hasattr(embeddings, "tolist") else embeddings
+        embeddings = self.model.encode(texts, convert_to_tensor=False) # type: ignore
+        return embeddings.tolist() if hasattr(embeddings, "tolist") else embeddings # type: ignore
 
     def embed_query(self, text: str) -> List[float]:
-        embedding = self.model.encode([text], convert_to_tensor=False)
+        embedding = self.model.encode([text], convert_to_tensor=False) # type: ignore
         result = (
             embedding[0].tolist() if hasattr(embedding[0], "tolist") else embedding[0]
         )
-        return result
+        return result # type: ignore
 
 
 def _get_litellm_chat(

@@ -1,6 +1,13 @@
 import secrets
-from python.helpers.api import ApiHandler, Input, Output, Request, Response, session
-
+from python.helpers.api import (
+    ApiHandler,
+    Input,
+    Output,
+    Request,
+    Response,
+    session,
+)
+from python.helpers import runtime
 
 class GetCsrfToken(ApiHandler):
 
@@ -15,4 +22,4 @@ class GetCsrfToken(ApiHandler):
     async def process(self, input: Input, request: Request) -> Output:
         if "csrf_token" not in session:
             session["csrf_token"] = secrets.token_urlsafe(32)
-        return {"token": session["csrf_token"]}
+        return {"token": session["csrf_token"], "runtime_id": runtime.get_runtime_id()}
