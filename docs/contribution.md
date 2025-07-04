@@ -12,6 +12,9 @@ Contributions to improve Agent Zero are very welcome!  This guide outlines how t
 
 * **Code Style:** Follow the existing code style. Agent Zero generally follows PEP 8 conventions.
 * **Documentation:**  Update the documentation if your changes affect user-facing functionality. The documentation is written in Markdown.
+* **Filter Language:** If your change affects the *filter expression* grammar
+  used by the memory/vector-DB helpers, update `docs/filter_expressions.md` and
+  adjust the unit tests in `tests/test_comparator.py`.
 * **Commit Messages:**  Write clear and concise commit messages that explain the purpose of your changes.
 
 ## Submitting a Pull Request
