@@ -41,7 +41,7 @@ class SSHInteractiveSession:
                     allow_agent=False,
                     look_for_keys=False,
                 )
-                self.shell = self.client.invoke_shell(width=160, height=48)
+                self.shell = self.client.invoke_shell(width=80, height=40)
                 # self.shell.send(f'PS1="{SSHInteractiveSession.ps1_label}"'.encode())
                 # return
                 while True:  # wait for end of initial output

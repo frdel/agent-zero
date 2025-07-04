@@ -826,20 +826,15 @@ function convertPathsToLinks(str) {
 }
 
 function adjustMarkdownRender(element) {
-  // find all tables in the element
-  const tables = element.querySelectorAll("table");
+  // find all tables and code blocks in the element
+  const elements = element.querySelectorAll("table, code");
 
-  // wrap each table with a div with class message-markdown-table-wrap
-  tables.forEach((table) => {
-    // create wrapper div
+  // wrap each with a div with class message-markdown-table-wrap
+  elements.forEach((el) => {
     const wrapper = document.createElement("div");
     wrapper.className = "message-markdown-table-wrap";
-
-    // insert wrapper before table in the DOM
-    table.parentNode.insertBefore(wrapper, table);
-
-    // move table into wrapper
-    wrapper.appendChild(table);
+    el.parentNode.insertBefore(wrapper, el);
+    wrapper.appendChild(el);
   });
 }
 

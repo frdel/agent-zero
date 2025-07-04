@@ -58,7 +58,7 @@ class RecallMemories(Extension):
         query = await self.agent.call_utility_model(
             system=system,
             message=(
-                loop_data.user_message.output_text() if loop_data.user_message else ""
+                loop_data.user_message.output_text() if loop_data.user_message else "None"
             ),
             callback=log_callback,
         )

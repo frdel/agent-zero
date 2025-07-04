@@ -13,7 +13,9 @@ class RenameChat(Extension):
         try:
             # prepare history
             history_text = self.agent.history.output_text()
-            ctx_length = int(self.agent.config.utility_model.ctx_length * 0.3)
+            ctx_length = min(
+                int(self.agent.config.utility_model.ctx_length * 0.7), 5000
+            )
             history_text = tokens.trim_to_tokens(history_text, ctx_length, "start")
             # prepare system and user prompt
             system = self.agent.read_prompt("fw.rename_chat.sys.md")

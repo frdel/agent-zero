@@ -278,12 +278,14 @@ class LiteLLMChatWrapper(SimpleChatModel):
         self,
         system_message="",
         user_message="",
-        messages: List[BaseMessage] = [],
+        messages: List[BaseMessage]|None = None,
         response_callback: Callable[[str, str], Awaitable[None]] | None = None,
         reasoning_callback: Callable[[str, str], Awaitable[None]] | None = None,
         tokens_callback: Callable[[str, int], Awaitable[None]] | None = None,
         **kwargs: Any,
     ) -> Tuple[str, str]:
+        if not messages:
+            messages = []
         # construct messages
         if system_message:
             messages.insert(0, SystemMessage(content=system_message))

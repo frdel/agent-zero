@@ -135,19 +135,22 @@ class CodeExecution(Tool):
     async def execute_python_code(self, session: int, code: str, reset: bool = False):
         escaped_code = shlex.quote(code)
         command = f"ipython -c {escaped_code}"
-        return await self.terminal_session(session, command, reset)
+        prefix = "python> "+self.format_command_for_output(code)+"\n\n"
+        return await self.terminal_session(session, command, reset, prefix)
 
     async def execute_nodejs_code(self, session: int, code: str, reset: bool = False):
         escaped_code = shlex.quote(code)
-        command = f"node /exe/node_eval.js {escaped_code}"
-        return await self.terminal_session(session, command, reset)
+        command = f"node /exe/node_eval.js {escaped_code}"        
+        prefix = "node> "+self.format_command_for_output(code)+"\n\n"
+        return await self.terminal_session(session, command, reset, prefix)
 
     async def execute_terminal_command(
         self, session: int, command: str, reset: bool = False
     ):
-        return await self.terminal_session(session, command, reset)
+        prefix = "bash> "+self.format_command_for_output(command)+"\n\n"
+        return await self.terminal_session(session, command, reset, prefix)
 
-    async def terminal_session(self, session: int, command: str, reset: bool = False):
+    async def terminal_session(self, session: int, command: str, reset: bool = False, prefix: str = ""):
 
         await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
         # try again on lost connection
@@ -181,7 +184,7 @@ class CodeExecution(Tool):
                 PrintStyle(
                     background_color="white", font_color="#1B4F72", bold=True
                 ).print(f"{self.agent.agent_name} code execution output")
-                return await self.get_terminal_output(session)
+                return await self.get_terminal_output(session=session, prefix=prefix)
 
             except Exception as e:
                 if i == 1:
@@ -192,6 +195,19 @@ class CodeExecution(Tool):
                 else:
                     raise e
 
+    def format_command_for_output(self, command: str):
+        # truncate long commands
+        short_cmd = command[:200]
+        # normalize whitespace for cleaner output
+        short_cmd = " ".join(short_cmd.split())
+        # replace any sequence of ', ", or ` with a single '
+        # short_cmd = re.sub(r"['\"`]+", "'", short_cmd) # no need anymore
+        # final length
+        short_cmd = truncate_text_string(short_cmd, 100)
+        return f"{short_cmd}"
+        
+
+
     async def get_terminal_output(
         self,
         session=0,
@@ -201,6 +217,7 @@ class CodeExecution(Tool):
         dialog_timeout=5,  # potential dialog detection timeout
         max_exec_timeout=180,  # hard cap on total runtime
         sleep_time=0.1,
+        prefix=""
     ):
         # Common shell prompt regex patterns (add more as needed)
         prompt_patterns = [
@@ -223,6 +240,10 @@ class CodeExecution(Tool):
         truncated_output = ""
         got_output = False
 
+        # if prefix, log right away
+        if prefix:
+            self.log.update(content=prefix)
+
         while True:
             await asyncio.sleep(sleep_time)
             full_output, partial_output = await self.state.shells[session].read_output(
@@ -238,7 +259,7 @@ class CodeExecution(Tool):
                 # full_output += partial_output # Append new output
                 truncated_output = self.fix_full_output(full_output)
                 heading = self.get_heading_from_output(truncated_output, 0)
-                self.log.update(content=truncated_output, heading=heading)
+                self.log.update(content=prefix + truncated_output, heading=heading)
                 last_output_time = now
                 got_output = True
 
@@ -270,7 +291,7 @@ class CodeExecution(Tool):
                     response = truncated_output + "\n\n" + response
                 PrintStyle.warning(sysinfo)
                 heading = self.get_heading_from_output(truncated_output, 0)
-                self.log.update(content=response, heading=heading)
+                self.log.update(content=prefix + response, heading=heading)
                 return response
 
             # Waiting for first output
@@ -281,7 +302,7 @@ class CodeExecution(Tool):
                     )
                     response = self.agent.read_prompt("fw.code.info.md", info=sysinfo)
                     PrintStyle.warning(sysinfo)
-                    self.log.update(content=response)
+                    self.log.update(content=prefix + response)
                     return response
             else:
                 # Waiting for more output after first output
@@ -294,7 +315,7 @@ class CodeExecution(Tool):
                         response = truncated_output + "\n\n" + response
                     PrintStyle.warning(sysinfo)
                     heading = self.get_heading_from_output(truncated_output, 0)
-                    self.log.update(content=response, heading=heading)
+                    self.log.update(content=prefix + response, heading=heading)
                     return response
 
                 # potential dialog detection
@@ -322,7 +343,7 @@ class CodeExecution(Tool):
                                 heading = self.get_heading_from_output(
                                     truncated_output, 0
                                 )
-                                self.log.update(content=response, heading=heading)
+                                self.log.update(content=prefix + response, heading=heading)
                                 return response
 
     async def reset_terminal(self, session=0, reason: str | None = None):

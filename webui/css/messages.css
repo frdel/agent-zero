@@ -162,7 +162,7 @@
   display: block;
   width: 100%;
   overflow-x: auto;
-  margin-bottom: 1em;
+  padding-bottom: 1em;
 }
 
 .message-body .message-markdown-table-wrap table {

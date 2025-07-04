@@ -56,7 +56,7 @@ class RecallSolutions(Extension):
 
         # call util llm to summarize conversation
         query = await self.agent.call_utility_model(
-            system=system, message=loop_data.user_message.output_text() if loop_data.user_message else "", callback=log_callback
+            system=system, message=loop_data.user_message.output_text() if loop_data.user_message else "None", callback=log_callback
         )
 
         # get solutions database
