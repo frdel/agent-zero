@@ -471,7 +471,7 @@ def get_litellm_embedding(model_name: str, provider: str, **kwargs: Any):
 
 def get_model(type: ModelType, provider: ModelProvider, name: str, **kwargs: Any):
     provider_name = provider.name.lower()
-    kwargs = _normalize_chat_kwargs(kwargs)
+    kwargs = _normalize_chat_kwargs(provider, kwargs)
     if type == ModelType.CHAT:
         return _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
     elif type == ModelType.EMBEDDING:
@@ -484,7 +484,7 @@ def get_chat_model(
     provider: ModelProvider, name: str, **kwargs: Any
 ) -> LiteLLMChatWrapper:
     provider_name = _get_litellm_provider(provider)
-    kwargs = _normalize_chat_kwargs(kwargs)
+    kwargs = _normalize_chat_kwargs(provider, kwargs)
     model = _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
     return model
 
@@ -493,7 +493,7 @@ def get_browser_model(
     provider: ModelProvider, name: str, **kwargs: Any
 ) -> BrowserCompatibleChatWrapper:
     provider_name = provider.name.lower()
-    kwargs = _normalize_chat_kwargs(kwargs)
+    kwargs = _normalize_chat_kwargs(provider, kwargs)
     model = _get_litellm_chat(
         BrowserCompatibleChatWrapper, name, provider_name, **kwargs
     )
@@ -509,7 +509,11 @@ def get_embedding_model(
     return model
 
 
-def _normalize_chat_kwargs(kwargs: Any) -> Any:
+def _normalize_chat_kwargs(provider: ModelProvider, kwargs: Any) -> Any:
+    # this prevents using openai api key for other providers
+    if provider == ModelProvider.OTHER:
+        if "api_key" not in kwargs:
+            kwargs["api_key"] = "None"
     return kwargs
 
 
@@ -523,5 +527,7 @@ def _get_litellm_provider(provider: ModelProvider) -> str:
     # exceptions
     if name == "google":
         name = "gemini"
+    elif name == "other":
+        name = "openai"
 
     return name

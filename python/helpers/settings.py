@@ -208,7 +208,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "chat_model_kwargs",
             "title": "Chat model additional parameters",
-            "description": "Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.",
+            "description": """Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.
+            For OpenAI compatible providers not listed here, select 'other' and specify api_base=https://... and api_key=... as additional parameters.""",
             "type": "textarea",
             "value": _dict_to_env(settings["chat_model_kwargs"]),
         }
@@ -278,7 +279,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "util_model_kwargs",
             "title": "Utility model additional parameters",
-            "description": "Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.",
+           "description": """Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.
+            For OpenAI compatible providers not listed here, select 'other' and specify api_base=https://... and api_key=... as additional parameters.""",
             "type": "textarea",
             "value": _dict_to_env(settings["util_model_kwargs"]),
         }
@@ -338,7 +340,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "embed_model_kwargs",
             "title": "Embedding model additional parameters",
-            "description": "Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.",
+            "description": """Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.
+            For OpenAI compatible providers not listed here, select 'other' and specify api_base=https://... and api_key=... as additional parameters.""",
             "type": "textarea",
             "value": _dict_to_env(settings["embed_model_kwargs"]),
         }
