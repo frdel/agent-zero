@@ -146,12 +146,53 @@ def cosine_normalizer(val: float) -> float:
 
 
 def get_comparator(condition: str):
+    """Return a safe comparator callable for the given *condition* string.
+
+    Implements the same safe AST-based evaluation strategy as
+    ``Memory._get_comparator`` to prevent arbitrary code execution.
+    """
+
+    import ast
+
+    try:
+        expr_ast = ast.parse(condition, mode="eval")
+    except SyntaxError:
+        raise ValueError("Invalid filter expression") from None
+
+    allowed_nodes: tuple[type[ast.AST], ...] = (
+        ast.Expression,
+        ast.BoolOp,
+        ast.BinOp,
+        ast.Compare,
+        ast.UnaryOp,
+        ast.Name,
+        ast.Load,
+        ast.Constant,
+        ast.And,
+        ast.Or,
+        ast.Not,
+        ast.Eq,
+        ast.NotEq,
+        ast.Lt,
+        ast.LtE,
+        ast.Gt,
+        ast.GtE,
+        ast.Is,
+        ast.IsNot,
+        ast.In,
+        ast.NotIn,
+    )
+
+    for node in ast.walk(expr_ast):
+        if not isinstance(node, allowed_nodes):
+            raise ValueError("Unsupported or unsafe expression element in filter")
+
+    code_obj = compile(expr_ast, filename="<filter>", mode="eval")
+
     def comparator(data: dict[str, Any]):
         try:
-            result = eval(condition, {}, data)
-            return result
-        except Exception as e:
-            # PrintStyle.error(f"Error evaluating condition: {e}")
+            return bool(eval(code_obj, {"__builtins__": {}}, data))
+        except Exception:
             return False
 
     return comparator

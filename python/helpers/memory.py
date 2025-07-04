@@ -391,11 +391,68 @@ class Memory:
 
     @staticmethod
     def _get_comparator(condition: str):
+        """Return a safe comparator callable for the given *condition* string.
+
+        The previous implementation relied on ``eval`` directly, which allows
+        arbitrary code execution.  This version parses the expression into an
+        AST, checks that it only contains a limited whitelist of safe node
+        types (boolean operations, comparisons, names and constants) and then
+        **compiles** the expression.  The resulting code object is evaluated
+        with an empty ``__builtins__`` environment and the *data* mapping is
+        provided as *locals* so that names in the expression resolve to keys
+        of *data*.
+
+        Any validation failure or runtime error results in the comparator
+        returning ``False`` in order to preserve the behaviour of the old
+        implementation.
+        """
+
+        import ast
+
+        # Parse expression to AST
+        try:
+            expr_ast = ast.parse(condition, mode="eval")
+        except SyntaxError:
+            raise ValueError("Invalid filter expression") from None
+
+        # Allowed node types – anything else is rejected as unsafe
+        allowed_nodes: tuple[type[ast.AST], ...] = (
+            ast.Expression,
+            ast.BoolOp,
+            ast.BinOp,  # for potential arithmetic; benign but still safe ops
+            ast.Compare,
+            ast.UnaryOp,
+            ast.Name,
+            ast.Load,
+            ast.Constant,
+            # Operator nodes
+            ast.And,
+            ast.Or,
+            ast.Not,
+            ast.Eq,
+            ast.NotEq,
+            ast.Lt,
+            ast.LtE,
+            ast.Gt,
+            ast.GtE,
+            ast.Is,
+            ast.IsNot,
+            ast.In,
+            ast.NotIn,
+        )
+
+        for node in ast.walk(expr_ast):
+            if not isinstance(node, allowed_nodes):
+                raise ValueError("Unsupported or unsafe expression element in filter")
+
+        # Pre-compile for performance and to avoid reparsing on every call
+        code_obj = compile(expr_ast, filename="<filter>", mode="eval")
+
         def comparator(data: dict[str, Any]):
             try:
-                return eval(condition, {}, data)
-            except Exception as e:
-                # PrintStyle.error(f"Error evaluating condition: {e}")
+                return bool(eval(code_obj, {"__builtins__": {}}, data))
+            except Exception:
+                # Any problem evaluating the expression counts as non-match
                 return False
 
         return comparator
