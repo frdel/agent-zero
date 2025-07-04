@@ -34,10 +34,12 @@ from langchain_core.messages import (
 from langchain.embeddings.base import Embeddings
 from sentence_transformers import SentenceTransformer
 
+
 # disable extra logging
 def turn_off_logging():
-    os.environ['LITELLM_LOG'] = "ERROR" # only errors
+    os.environ["LITELLM_LOG"] = "ERROR"  # only errors
     litellm.suppress_debug_info = True
+
 
 # init
 load_dotenv()
@@ -85,9 +87,10 @@ def configure_litellm_environment():
         "API_KEY_MISTRAL": "MISTRAL_API_KEY",
         "API_KEY_OLLAMA": "OLLAMA_API_KEY",
         "API_KEY_HUGGINGFACE": "HUGGINGFACE_API_KEY",
-        "API_KEY_OPENAI_AZURE": "AZURE_API_KEY",
+        "API_KEY_OPENAI_AZURE": "AZURE_AI_API_KEY",
         "API_KEY_DEEPSEEK": "DEEPSEEK_API_KEY",
         "API_KEY_SAMBANOVA": "SAMBANOVA_API_KEY",
+        "API_KEY_GOOGLE": "GEMINI_API_KEY",
     }
     base_url_mappings = {
         "OPENAI_BASE_URL": "OPENAI_API_BASE",
@@ -97,7 +100,7 @@ def configure_litellm_environment():
         "MISTRAL_BASE_URL": "MISTRAL_API_BASE",
         "OLLAMA_BASE_URL": "OLLAMA_API_BASE",
         "HUGGINGFACE_BASE_URL": "HUGGINGFACE_API_BASE",
-        "AZURE_BASE_URL": "AZURE_API_BASE",
+        "AZURE_BASE_URL": "AZURE_AI_API_BASE",
         "DEEPSEEK_BASE_URL": "DEEPSEEK_API_BASE",
         "SAMBANOVA_BASE_URL": "SAMBANOVA_API_BASE",
     }
@@ -139,8 +142,8 @@ def _parse_chunk(chunk: Any) -> ChatChunk:
         if isinstance(delta, dict)
         else getattr(delta, "content", "")
     ) or (
-        message.get("content", "") 
-        if isinstance(message, dict) 
+        message.get("content", "")
+        if isinstance(message, dict)
         else getattr(message, "content", "")
     )
     reasoning_delta = (
@@ -335,6 +338,7 @@ class BrowserCompatibleChatWrapper(LiteLLMChatWrapper):
     A wrapper for browser agent that can filter/sanitize messages
     before sending them to the LLM.
     """
+
     def __init__(self, *args, **kwargs):
         turn_off_logging()
         super().__init__(*args, **kwargs)
@@ -373,14 +377,14 @@ class LiteLLMEmbeddingWrapper(Embeddings):
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         resp = embedding(model=self.model_name, input=texts, **self.kwargs)
         return [
-            item.get("embedding") if isinstance(item, dict) else item.embedding # type: ignore
-            for item in resp.data # type: ignore
+            item.get("embedding") if isinstance(item, dict) else item.embedding  # type: ignore
+            for item in resp.data  # type: ignore
         ]
 
     def embed_query(self, text: str) -> List[float]:
         resp = embedding(model=self.model_name, input=[text], **self.kwargs)
-        item = resp.data[0] # type: ignore
-        return item.get("embedding") if isinstance(item, dict) else item.embedding # type: ignore
+        item = resp.data[0]  # type: ignore
+        return item.get("embedding") if isinstance(item, dict) else item.embedding  # type: ignore
 
 
 class LocalSentenceTransformerWrapper(Embeddings):
@@ -395,15 +399,15 @@ class LocalSentenceTransformerWrapper(Embeddings):
         self.model_name = model_name
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        embeddings = self.model.encode(texts, convert_to_tensor=False) # type: ignore
-        return embeddings.tolist() if hasattr(embeddings, "tolist") else embeddings # type: ignore
+        embeddings = self.model.encode(texts, convert_to_tensor=False)  # type: ignore
+        return embeddings.tolist() if hasattr(embeddings, "tolist") else embeddings  # type: ignore
 
     def embed_query(self, text: str) -> List[float]:
-        embedding = self.model.encode([text], convert_to_tensor=False) # type: ignore
+        embedding = self.model.encode([text], convert_to_tensor=False)  # type: ignore
         result = (
             embedding[0].tolist() if hasattr(embedding[0], "tolist") else embedding[0]
         )
-        return result # type: ignore
+        return result  # type: ignore
 
 
 def _get_litellm_chat(
@@ -419,7 +423,7 @@ def _get_litellm_chat(
     api_key = kwargs.pop("api_key", None) or get_api_key(provider_name)
 
     # litellm will pick up base_url from env. We just need to control the api_key.
-    base_url = dotenv.get_dotenv_value(f"{provider_name.upper()}_BASE_URL")
+    # base_url = dotenv.get_dotenv_value(f"{provider_name.upper()}_BASE_URL")
 
     # If a base_url is set, ensure api_key is not passed to litellm
     # > remove, this can be handled by api_key=None
@@ -479,7 +483,7 @@ def get_model(type: ModelType, provider: ModelProvider, name: str, **kwargs: Any
 def get_chat_model(
     provider: ModelProvider, name: str, **kwargs: Any
 ) -> LiteLLMChatWrapper:
-    provider_name = provider.name.lower()
+    provider_name = _get_litellm_provider(provider)
     kwargs = _normalize_chat_kwargs(kwargs)
     model = _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
     return model
@@ -511,3 +515,13 @@ def _normalize_chat_kwargs(kwargs: Any) -> Any:
 
 def _normalize_embedding_kwargs(kwargs: Any) -> Any:
     return kwargs
+
+
+def _get_litellm_provider(provider: ModelProvider) -> str:
+    name = provider.name.lower()
+
+    # exceptions
+    if name == "google":
+        name = "gemini"
+
+    return name
