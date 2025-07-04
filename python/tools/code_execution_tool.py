@@ -73,7 +73,9 @@ class CodeExecution(Tool):
         if not text:
             text = f"{self.name} - {self.args['runtime']}"
         text = truncate_text_string(text, 60)
-        return f"icon://terminal {text}"
+        session = self.args.get("session", None)
+        session_text = f"[{session}] " if session or session == 0 else ""
+        return f"icon://terminal {session_text}{text}"
 
     async def after_execution(self, response, **kwargs):
         self.agent.hist_add_tool_result(self.name, response.message)
@@ -135,22 +137,24 @@ class CodeExecution(Tool):
     async def execute_python_code(self, session: int, code: str, reset: bool = False):
         escaped_code = shlex.quote(code)
         command = f"ipython -c {escaped_code}"
-        prefix = "python> "+self.format_command_for_output(code)+"\n\n"
+        prefix = "python> " + self.format_command_for_output(code) + "\n\n"
         return await self.terminal_session(session, command, reset, prefix)
 
     async def execute_nodejs_code(self, session: int, code: str, reset: bool = False):
         escaped_code = shlex.quote(code)
-        command = f"node /exe/node_eval.js {escaped_code}"        
-        prefix = "node> "+self.format_command_for_output(code)+"\n\n"
+        command = f"node /exe/node_eval.js {escaped_code}"
+        prefix = "node> " + self.format_command_for_output(code) + "\n\n"
         return await self.terminal_session(session, command, reset, prefix)
 
     async def execute_terminal_command(
         self, session: int, command: str, reset: bool = False
     ):
-        prefix = "bash> "+self.format_command_for_output(command)+"\n\n"
+        prefix = "bash> " + self.format_command_for_output(command) + "\n\n"
         return await self.terminal_session(session, command, reset, prefix)
 
-    async def terminal_session(self, session: int, command: str, reset: bool = False, prefix: str = ""):
+    async def terminal_session(
+        self, session: int, command: str, reset: bool = False, prefix: str = ""
+    ):
 
         await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
         # try again on lost connection
@@ -205,8 +209,6 @@ class CodeExecution(Tool):
         # final length
         short_cmd = truncate_text_string(short_cmd, 100)
         return f"{short_cmd}"
-        
-
 
     async def get_terminal_output(
         self,
@@ -217,7 +219,7 @@ class CodeExecution(Tool):
         dialog_timeout=5,  # potential dialog detection timeout
         max_exec_timeout=180,  # hard cap on total runtime
         sleep_time=0.1,
-        prefix=""
+        prefix="",
     ):
         # Common shell prompt regex patterns (add more as needed)
         prompt_patterns = [
@@ -343,7 +345,9 @@ class CodeExecution(Tool):
                                 heading = self.get_heading_from_output(
                                     truncated_output, 0
                                 )
-                                self.log.update(content=prefix + response, heading=heading)
+                                self.log.update(
+                                    content=prefix + response, heading=heading
+                                )
                                 return response
 
     async def reset_terminal(self, session=0, reason: str | None = None):
@@ -384,7 +388,7 @@ class CodeExecution(Tool):
 
     def fix_full_output(self, output: str):
         # remove any single byte \xXX escapes
-        output = re.sub(r'(?<!\\)\\x[0-9A-Fa-f]{2}', '', output)
+        output = re.sub(r"(?<!\\)\\x[0-9A-Fa-f]{2}", "", output)
         # Strip every line of output before truncation
         output = "\n".join(line.strip() for line in output.splitlines())
         output = truncate_text_agent(agent=self.agent, output=output, threshold=10000)

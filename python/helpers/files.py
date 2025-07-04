@@ -12,7 +12,6 @@ import zipfile
 import importlib
 import importlib.util
 import inspect
-from python.helpers.print_style import PrintStyle
 
 
 class VariablesPlugin(ABC):
