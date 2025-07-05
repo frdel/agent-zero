@@ -596,3 +596,7 @@ function showToast(message, type = 'info') {
         }, 300);
     }, 3000);
 }
+
+// Make showToast globally available
+window.showToast = showToast;
+

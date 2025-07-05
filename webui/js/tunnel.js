@@ -5,6 +5,7 @@ document.addEventListener('alpine:init', () => {
         tunnelLink: '',
         linkGenerated: false,
         loadingText: '',
+        provider: 'serveo', // Default tunnel provider
 
         init() {
             this.checkTunnelStatus();
