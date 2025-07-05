@@ -136,6 +136,8 @@ export function getHandler(type) {
       return drawMessageUtil;
     case "hint":
       return drawMessageInfo;
+    case "ag_ui":
+      return drawMessageAGUI;
     default:
       return drawMessageDefault;
   }
@@ -865,3 +867,88 @@ function adjustMarkdownRender(element) {
 //   walk(wrapper);
 //   return wrapper.innerHTML;
 // }
+
+export function drawMessageAGUI(
+  messageContainer,
+  id,
+  type,
+  heading,
+  content,
+  temp,
+  kvps = null
+) {
+  // Create AG-UI specific message structure
+  const messageDiv = document.createElement("div");
+  messageDiv.classList.add("message", "message-ag-ui");
+  
+  if (heading) {
+    const headingElement = document.createElement("div");
+    headingElement.classList.add("msg-heading");
+    const headingH4 = document.createElement("h4");
+    headingH4.innerHTML = convertIcons(escapeHTML(heading));
+    headingElement.appendChild(headingH4);
+    messageDiv.appendChild(headingElement);
+  }
+
+  const bodyDiv = document.createElement("div");
+  bodyDiv.classList.add("message-body", "ag-ui-body");
+  messageDiv.appendChild(bodyDiv);
+
+  // Draw KVPs if present
+  drawKvps(bodyDiv, kvps, false);
+
+  // Handle AG-UI content
+  if (content && content.trim().length > 0) {
+    const contentDiv = document.createElement("div");
+    contentDiv.classList.add("msg-content", "ag-ui-content");
+    
+    try {
+      // Try to parse as JSON first (for structured AG-UI data)
+      const parsedContent = JSON.parse(content);
+      
+      if (parsedContent.ui_components) {
+        // Render AG-UI components
+        contentDiv.innerHTML = parsedContent.ui_components;
+        
+        // Initialize Alpine.js components if present
+        if (window.Alpine && contentDiv.querySelectorAll('[x-data]').length > 0) {
+          window.Alpine.initTree(contentDiv);
+        }
+        
+        // Initialize AG-UI state management
+        if (window.initializeAGUIStateFor) {
+          window.initializeAGUIStateFor(contentDiv);
+        }
+      } else {
+        // Fallback to regular content rendering
+        contentDiv.innerHTML = marked.parse(content, { breaks: true });
+      }
+    } catch (e) {
+      // If not JSON, treat as HTML/markdown content
+      if (content.includes('<div') || content.includes('<button') || content.includes('ag-ui-')) {
+        // Likely AG-UI HTML content
+        contentDiv.innerHTML = content;
+        
+        // Initialize Alpine.js components if present
+        if (window.Alpine && contentDiv.querySelectorAll('[x-data]').length > 0) {
+          window.Alpine.initTree(contentDiv);
+        }
+        
+        // Initialize AG-UI state management
+        if (window.initializeAGUIStateFor) {
+          window.initializeAGUIStateFor(contentDiv);
+        }
+      } else {
+        // Regular markdown content
+        contentDiv.innerHTML = marked.parse(content, { breaks: true });
+      }
+    }
+    
+    bodyDiv.appendChild(contentDiv);
+  }
+
+  messageContainer.appendChild(messageDiv);
+  
+  // Add copy button for the entire AG-UI component
+  addCopyButtonToElement(messageDiv);
+}
