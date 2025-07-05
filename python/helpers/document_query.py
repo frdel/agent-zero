@@ -20,21 +20,10 @@ from langchain_community.document_transformers import MarkdownifyTransformer
 from langchain_community.document_loaders.parsers.images import TesseractBlobParser
 
 from langchain_core.documents import Document
-from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage
-from langchain.storage import LocalFileStore, InMemoryStore
-from langchain.embeddings import CacheBackedEmbeddings
-
-from langchain_community.vectorstores import FAISS
-import faiss
-from langchain_community.docstore.in_memory import InMemoryDocstore
-from langchain_community.vectorstores.utils import (
-    DistanceStrategy,
-)
-from langchain_core.embeddings import Embeddings
 
 from python.helpers.print_style import PrintStyle
-from python.helpers import files
+from python.helpers import files, errors
 from agent import Agent
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -106,7 +95,7 @@ class DocumentQueryStore:
         return normalized
 
     def init_vector_db(self):
-        return VectorDB(self.agent)
+        return VectorDB(self.agent, cache=True)
 
     async def add_document(
         self, text: str, document_uri: str, metadata: dict | None = None
@@ -168,7 +157,8 @@ class DocumentQueryStore:
             )
             return True, ids
         except Exception as e:
-            PrintStyle.error(f"Error adding document '{document_uri}': {str(e)}")
+            err_text = errors.format_error(e)
+            PrintStyle.error(f"Error adding document '{document_uri}': {err_text}")
             return False, []
 
     async def get_document(self, document_uri: str) -> Optional[Document]:

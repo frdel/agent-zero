@@ -1,4 +1,5 @@
 from enum import Enum
+import logging
 import os
 from typing import (
     Any,
@@ -14,6 +15,7 @@ from typing import (
 
 from litellm import completion, acompletion, embedding
 import litellm
+
 from python.helpers import dotenv
 from python.helpers.dotenv import load_dotenv
 from python.helpers.rate_limiter import RateLimiter
@@ -35,10 +37,14 @@ from langchain.embeddings.base import Embeddings
 from sentence_transformers import SentenceTransformer
 
 
-# disable extra logging
+# disable extra logging, must be done repeatedly, otherwise browser-use will turn it back on for some reason
 def turn_off_logging():
     os.environ["LITELLM_LOG"] = "ERROR"  # only errors
     litellm.suppress_debug_info = True
+    # Silence **all** LiteLLM sub-loggers (utils, cost_calculator…)
+    for name in logging.Logger.manager.loggerDict:
+        if name.lower().startswith("litellm"):
+            logging.getLogger(name).setLevel(logging.ERROR)
 
 
 # init
@@ -392,13 +398,13 @@ class LiteLLMEmbeddingWrapper(Embeddings):
 class LocalSentenceTransformerWrapper(Embeddings):
     """Local wrapper for sentence-transformers models to avoid HuggingFace API calls"""
 
-    def __init__(self, model_name: str, **kwargs: Any):
+    def __init__(self, provider: str, model: str, **kwargs: Any):
         # Remove the "sentence-transformers/" prefix if present
-        if model_name.startswith("sentence-transformers/"):
-            model_name = model_name[len("sentence-transformers/") :]
+        if model.startswith("sentence-transformers/"):
+            model = model[len("sentence-transformers/") :]
 
-        self.model = SentenceTransformer(model_name, **kwargs)
-        self.model_name = model_name
+        self.model = SentenceTransformer(model, **kwargs)
+        self.model_name = model
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         embeddings = self.model.encode(texts, convert_to_tensor=False)  # type: ignore
@@ -450,14 +456,14 @@ def get_litellm_embedding(model_name: str, provider: str, **kwargs: Any):
     # Check if this is a local sentence-transformers model
     if provider == "huggingface" and model_name.startswith("sentence-transformers/"):
         # Use local sentence-transformers instead of LiteLLM for local models
-        return LocalSentenceTransformerWrapper(model_name=model_name, **kwargs)
+        return LocalSentenceTransformerWrapper(provider=provider, model=model_name, **kwargs)
 
     configure_litellm_environment()
     # Use original provider name for API key lookup, fallback to mapped provider name
     api_key = kwargs.pop("api_key", None) or get_api_key(provider)
 
     # litellm will pick up base_url from env. We just need to control the api_key.
-    base_url = dotenv.get_dotenv_value(f"{provider.upper()}_BASE_URL")
+    # base_url = dotenv.get_dotenv_value(f"{provider.upper()}_BASE_URL")
 
     # If a base_url is set, ensure api_key is not passed to litellm
     # > remove, this can be handled by api_key=None
