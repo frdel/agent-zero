@@ -26,12 +26,12 @@ document.addEventListener('alpine:init', () => {
                     // Update the stored URL if it's different from what we have
                     if (this.tunnelLink !== data.tunnel_url) {
                         this.tunnelLink = data.tunnel_url;
-                        localStorage.setItem('agent_zero_tunnel_url', data.tunnel_url);
+                        localStorage.setItem('deepgaza_tunnel_url', data.tunnel_url);
                     }
                     this.linkGenerated = true;
                 } else {
                     // Check if we have a stored tunnel URL
-                    const storedTunnelUrl = localStorage.getItem('agent_zero_tunnel_url');
+                    const storedTunnelUrl = localStorage.getItem('deepgaza_tunnel_url');
                     
                     if (storedTunnelUrl) {
                         // Use the stored URL but verify it's still valid
@@ -50,7 +50,7 @@ document.addEventListener('alpine:init', () => {
                             this.linkGenerated = true;
                         } else {
                             // Clear stale URL
-                            localStorage.removeItem('agent_zero_tunnel_url');
+                            localStorage.removeItem('deepgaza_tunnel_url');
                             this.tunnelLink = '';
                             this.linkGenerated = false;
                         }
@@ -140,9 +140,9 @@ document.addEventListener('alpine:init', () => {
                 // If no authentication is set, warn the user
                 if (!hasAuth) {
                     const proceed = confirm(
-                        "WARNING: No authentication is configured for your Agent Zero instance.\n\n" +
+                        "WARNING: No authentication is configured for your DeepGaza instance.\n\n" +
                         "Creating a public tunnel without authentication means anyone with the URL " +
-                        "can access your Agent Zero instance.\n\n" +
+                        "can access your DeepGaza instance.\n\n" +
                         "It is recommended to set up authentication in the Settings > Authentication section " +
                         "before creating a public tunnel.\n\n" +
                         "Do you want to proceed anyway?"
@@ -191,7 +191,7 @@ document.addEventListener('alpine:init', () => {
                 
                 if (data.success && data.tunnel_url) {
                     // Store the tunnel URL in localStorage for persistence
-                    localStorage.setItem('agent_zero_tunnel_url', data.tunnel_url);
+                    localStorage.setItem('deepgaza_tunnel_url', data.tunnel_url);
                     
                     this.tunnelLink = data.tunnel_url;
                     this.linkGenerated = true;
@@ -219,7 +219,7 @@ document.addEventListener('alpine:init', () => {
                         
                         if (statusData.success && statusData.tunnel_url) {
                             // Tunnel is now running, we can update the UI
-                            localStorage.setItem('agent_zero_tunnel_url', statusData.tunnel_url);
+                            localStorage.setItem('deepgaza_tunnel_url', statusData.tunnel_url);
                             this.tunnelLink = statusData.tunnel_url;
                             this.linkGenerated = true;
                             window.toast("Tunnel created successfully", "success", 3000);
@@ -271,7 +271,7 @@ document.addEventListener('alpine:init', () => {
                     
                     if (data.success) {
                         // Clear the stored URL
-                        localStorage.removeItem('agent_zero_tunnel_url');
+                        localStorage.removeItem('deepgaza_tunnel_url');
                         
                         // Update UI state
                         this.tunnelLink = '';
