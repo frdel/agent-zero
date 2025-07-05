@@ -149,15 +149,6 @@
   background-color: #4b3a69;
 }
 
-.message-code-exe .message-body {
-  min-height: 5em;
-  width: 100%;
-  background-color: var(--color-panel);
-  border-radius: 0.5em;
-  margin-top: 0.5em;
-  padding: 0.3em;
-}
-
 .message-body .message-markdown-table-wrap {
   display: block;
   width: 100%;
@@ -195,6 +186,16 @@
 .message-error {
   background-color: #af2222;
 }
+
+.message-code-exe .message-body {
+  min-height: 5em;
+  width: 100%;
+  background-color: var(--color-panel);
+  border-radius: 0.5em;
+  margin-top: 0.5em;
+  padding: 0.3em;
+}
+
 
 /* Agent and AI Info */
 .agent-start {
