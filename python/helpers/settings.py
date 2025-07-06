@@ -913,6 +913,11 @@ def _adjust_to_version(settings: Settings, default: Settings):
     if "version" not in settings or settings["version"].startswith("v0.8"):
         if "agent_prompts_subdir" not in settings or settings["agent_prompts_subdir"] == "default":
             settings["agent_prompts_subdir"] = "agent0"
+    
+    # Switch to VisuaLearn educational profile for all users
+    # This ensures the UI loads the educational agent by default
+    if settings.get("agent_prompts_subdir") in ["default", "agent0"]:
+        settings["agent_prompts_subdir"] = "visuallearn"
 
 def _read_settings_file() -> Settings | None:
     if os.path.exists(SETTINGS_FILE):
@@ -990,7 +995,7 @@ def get_default_settings() -> Settings:
         auth_login="",
         auth_password="",
         root_password="",
-        agent_prompts_subdir="agent0",
+        agent_prompts_subdir="visuallearn",
         agent_memory_subdir="default",
         agent_knowledge_subdir="custom",
         rfc_auto_docker=True,
