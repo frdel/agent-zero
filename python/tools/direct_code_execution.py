@@ -17,7 +17,7 @@ class DirectCodeExecution(Tool):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Create a persistent namespace for code execution
+        # Create a persistent namespace for code 
         if not hasattr(self.agent, '_code_namespace'):
             self.agent._code_namespace = {
                 '__builtins__': __builtins__,
