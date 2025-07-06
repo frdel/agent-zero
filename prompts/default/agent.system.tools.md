@@ -21,3 +21,5 @@
 {{ include './agent.system.tool.document_query.md' }}
 
 {{ include './agent.system.tool.ag_ui_tool.md' }}
+
+{{ include './agent.system.tool.ui_modification.md' }}

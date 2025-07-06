@@ -84,7 +84,12 @@ class AGUITool(Tool):
         })
 
         try:
-            component_spec = json.loads(ag_ui_spec) if isinstance(ag_ui_spec, str) else ag_ui_spec
+            if isinstance(ag_ui_spec, str):
+                # Clean the JSON string before parsing
+                cleaned_spec = self._clean_json_string(ag_ui_spec)
+                component_spec = json.loads(cleaned_spec)
+            else:
+                component_spec = ag_ui_spec
 
             # Validate the component specification
             validation_result = self._validate_component_spec(component_spec)
@@ -227,9 +232,31 @@ class AGUITool(Tool):
             )
 
         except (ValueError, json.JSONDecodeError, AGUIValidationError) as e:
+            # Try to fix JSON issues if it's a JSONDecodeError
+            if isinstance(e, json.JSONDecodeError) and isinstance(ag_ui_spec, str):
+                try:
+                    print(f"🔧 Attempting to fix malformed JSON at position {getattr(e, 'pos', 'unknown')}")
+                    fixed_json = self._fix_malformed_json(ag_ui_spec)
+                    component_spec = json.loads(fixed_json)
+
+                    # If we get here, the fix worked - continue processing
+                    validation_result = self._validate_component_spec(component_spec)
+                    parsed_component = self._parse_component_spec(component_spec)
+                    ui_components = self._generate_ui_components(parsed_component)
+
+                    if ui_components:
+                        self._emit_streaming_content(ui_components)
+                        return Response(
+                            message="✅ AG-UI component generated successfully (JSON auto-repaired)",
+                            break_loop=False
+                        )
+                except Exception as fix_error:
+                    print(f"❌ JSON auto-repair failed: {fix_error}")
+
             error_details = {
                 "error_message": str(e),
                 "error_type": type(e).__name__,
+                "error_position": getattr(e, 'pos', None) if isinstance(e, json.JSONDecodeError) else None,
                 "input_spec_preview": str(ag_ui_spec)[:200] + "..." if len(str(ag_ui_spec)) > 200 else str(ag_ui_spec),
                 "timestamp": self._get_timestamp()
             }
@@ -329,8 +356,13 @@ class AGUITool(Tool):
             variant_class = f"ag-ui-button-{variant}" if variant != "primary" else ""
 
             # Generate button with both Alpine.js and fallback event handling
-            events_json = json.dumps(component.events) if component.events else "{}"
-            properties_json = json.dumps(component.properties)
+            try:
+                events_json = json.dumps(component.events) if component.events else "{}"
+                properties_json = json.dumps(component.properties)
+            except (TypeError, ValueError) as e:
+                events_json = "{}"
+                properties_json = "{}"
+                print(f"JSON serialization error in button: {e}")
 
             # Create fallback onclick handler
             fallback_onclick = ""
@@ -368,8 +400,13 @@ class AGUITool(Tool):
             required = "required" if component.properties.get("required") else ""
 
             # Generate input with Alpine.js data binding for proper event handling
-            events_json = json.dumps(component.events) if component.events else "{}"
-            properties_json = json.dumps(component.properties)
+            try:
+                events_json = json.dumps(component.events) if component.events else "{}"
+                properties_json = json.dumps(component.properties)
+            except (TypeError, ValueError) as e:
+                events_json = "{}"
+                properties_json = "{}"
+                print(f"JSON serialization error in input: {e}")
 
             # Create fallback event handlers
             fallback_events = ""
@@ -426,8 +463,13 @@ class AGUITool(Tool):
             method = component.properties.get("method", "POST")
 
             # Generate form with Alpine.js data binding for proper event handling
-            events_json = json.dumps(component.events) if component.events else "{}"
-            properties_json = json.dumps(component.properties)
+            try:
+                events_json = json.dumps(component.events) if component.events else "{}"
+                properties_json = json.dumps(component.properties)
+            except (TypeError, ValueError) as e:
+                events_json = "{}"
+                properties_json = "{}"
+                print(f"JSON serialization error in form: {e}")
 
             # Create fallback event handlers
             fallback_events = ""
@@ -861,8 +903,8 @@ class AGUITool(Tool):
         elif component.type == "canvas":
             nodes = component.properties.get("nodes", [])
             edges = component.properties.get("edges", [])
-            width = component.properties.get("width", "100%")
-            
+            width = "100%"  # Force full width
+
             # Calculate dynamic height based on node positions
             max_y = 0
             max_x = 0
@@ -871,7 +913,7 @@ class AGUITool(Tool):
                 x, y = position.get("x", 0), position.get("y", 0)
                 max_y = max(max_y, y)
                 max_x = max(max_x, x)
-            
+
             # Add padding and set minimum height
             calculated_height = max_y + 120  # Add 120px padding for node height + margin
             min_height = 400
@@ -914,14 +956,110 @@ class AGUITool(Tool):
             return f'''
 <div id="{component_id}"
      class="ag-ui-canvas"
-     style="width: {width}; height: {height}; position: relative; overflow: hidden;"
+     style="width: 100% !important; max-width: 100% !important; height: {height}; position: relative; overflow: hidden; box-sizing: border-box;"
      x-data="aguiCanvas({canvas_data_json})">
     <div class="ag-ui-canvas-nodes">{nodes_html}</div>
     <div class="ag-ui-canvas-edges">{edges_html}</div>
     <svg class="ag-ui-canvas-svg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;">
         {self._generate_canvas_edges_svg(edges, nodes)}
     </svg>
-</div>'''
+</div>
+
+<script>
+// FORCE DRAG FUNCTIONALITY - FUCK ALPINE.JS
+setTimeout(function() {{
+    console.log('🔧 FORCING drag for canvas {component_id}');
+
+    const canvas = document.getElementById('{component_id}');
+    if (!canvas) {{
+        console.error('Canvas {component_id} not found');
+        return;
+    }}
+
+    // KILL ALL EXISTING EVENT LISTENERS
+    const newCanvas = canvas.cloneNode(true);
+    canvas.parentNode.replaceChild(newCanvas, canvas);
+
+    let isDragging = false;
+    let selectedNode = null;
+    let dragOffset = {{ x: 0, y: 0 }};
+
+    // DIRECT EVENT HANDLERS - NO BULLSHIT
+    newCanvas.onmousedown = function(event) {{
+        const nodeElement = event.target.closest('.ag-ui-canvas-node');
+        if (nodeElement) {{
+            console.log('🎯 DRAG START:', nodeElement.getAttribute('data-node-id'));
+
+            selectedNode = nodeElement;
+            isDragging = true;
+
+            const rect = nodeElement.getBoundingClientRect();
+            const canvasRect = newCanvas.getBoundingClientRect();
+
+            dragOffset = {{
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top
+            }};
+
+            nodeElement.style.cursor = 'grabbing !important';
+            nodeElement.style.zIndex = '1000';
+            nodeElement.style.transition = 'none';
+            nodeElement.style.pointerEvents = 'auto';
+
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        }}
+    }};
+
+    newCanvas.onmousemove = function(event) {{
+        if (isDragging && selectedNode) {{
+            const canvasRect = newCanvas.getBoundingClientRect();
+            const newX = event.clientX - canvasRect.left - dragOffset.x;
+            const newY = event.clientY - canvasRect.top - dragOffset.y;
+
+            // Constrain to canvas bounds
+            const maxX = newCanvas.clientWidth - selectedNode.offsetWidth;
+            const maxY = newCanvas.clientHeight - selectedNode.offsetHeight;
+            const constrainedX = Math.max(0, Math.min(newX, maxX));
+            const constrainedY = Math.max(0, Math.min(newY, maxY));
+
+            selectedNode.style.left = constrainedX + 'px';
+            selectedNode.style.top = constrainedY + 'px';
+
+            event.preventDefault();
+            return false;
+        }}
+    }};
+
+    newCanvas.onmouseup = function(event) {{
+        if (isDragging && selectedNode) {{
+            console.log('🎯 DRAG END');
+
+            selectedNode.style.cursor = 'grab';
+            selectedNode.style.zIndex = '2';
+            selectedNode.style.transition = 'all 0.2s ease';
+
+            isDragging = false;
+            selectedNode = null;
+        }}
+    }};
+
+    newCanvas.onmouseleave = newCanvas.onmouseup;
+
+    // FORCE DRAGGABLE STYLES ON ALL NODES
+    const nodes = newCanvas.querySelectorAll('.ag-ui-canvas-node');
+    nodes.forEach(function(node) {{
+        node.style.cursor = 'grab !important';
+        node.style.userSelect = 'none !important';
+        node.style.pointerEvents = 'auto !important';
+        node.style.position = 'absolute !important';
+        node.draggable = false;
+    }});
+
+    console.log('✅ DRAG FORCED for canvas {component_id} with', nodes.length, 'nodes');
+}}, 500);
+</script>'''
 
         else:
             # Generic component rendering
@@ -1067,6 +1205,94 @@ class AGUITool(Tool):
         """
         import time
         return int(time.time() * 1000)
+
+    def _clean_json_string(self, json_str):
+        """Clean JSON string to fix common parsing issues"""
+        import re
+
+        # Remove any trailing commas before closing brackets/braces
+        json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+
+        # Fix unescaped quotes in strings - be more careful about this
+        # Only fix obvious cases where quotes are clearly unescaped
+        lines = json_str.split('\n')
+        cleaned_lines = []
+
+        for line in lines:
+            # Fix trailing commas in objects/arrays
+            line = re.sub(r',(\s*[}\]])', r'\1', line)
+
+            # Fix obvious unescaped quotes in JavaScript event handlers
+            if '"click"' in line or '"change"' in line or '"submit"' in line:
+                # Look for patterns like "click": "function() { alert("hello"); }"
+                # and fix to "click": "function() { alert('hello'); }"
+                def fix_inner_quotes(match):
+                    full_match = match.group(0)
+                    # Replace inner double quotes with single quotes
+                    fixed = full_match.replace('""', '"').replace('" "', "' '")
+                    # More sophisticated quote fixing
+                    parts = full_match.split('"')
+                    if len(parts) >= 4:
+                        # Reconstruct with proper quoting
+                        key = parts[0] + '"' + parts[1] + '"'
+                        value_content = '"'.join(parts[3:-1])
+                        value_content = value_content.replace('"', "'")
+                        return key + ': "' + value_content + '"'
+                    return full_match
+
+                line = re.sub(r'"[^"]*":\s*"[^"]*"[^"]*"[^"]*"', fix_inner_quotes, line)
+
+            cleaned_lines.append(line)
+
+        return '\n'.join(cleaned_lines)
+
+    def _fix_malformed_json(self, json_str):
+        """More aggressive JSON fixing for malformed JSON"""
+        import re
+
+        # First, try the basic cleaning
+        json_str = self._clean_json_string(json_str)
+
+        # Fix common issues that cause JSON parsing to fail
+
+        # 1. Fix unescaped quotes in string values
+        def fix_unescaped_quotes(match):
+            key = match.group(1)
+            value = match.group(2)
+            # Escape any unescaped quotes in the value
+            fixed_value = value.replace('\\"', '___ESCAPED_QUOTE___')  # Temporarily replace escaped quotes
+            fixed_value = fixed_value.replace('"', '\\"')  # Escape unescaped quotes
+            fixed_value = fixed_value.replace('___ESCAPED_QUOTE___', '\\"')  # Restore escaped quotes
+            return f'"{key}": "{fixed_value}"'
+
+        # Look for patterns like "key": "value with "quotes" inside"
+        json_str = re.sub(r'"([^"]+)":\s*"([^"]*"[^"]*)"', fix_unescaped_quotes, json_str)
+
+        # 2. Fix trailing commas
+        json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+
+        # 3. Fix missing commas between object properties
+        json_str = re.sub(r'"\s*\n\s*"', '",\n"', json_str)
+
+        # 4. Fix JavaScript function calls in event handlers
+        def fix_js_functions(match):
+            full_match = match.group(0)
+            # Replace problematic characters in JavaScript
+            fixed = full_match.replace('"', "'").replace('\n', ' ').replace('\t', ' ')
+            # Ensure it's properly quoted
+            if not fixed.startswith('"'):
+                fixed = '"' + fixed
+            if not fixed.endswith('"'):
+                fixed = fixed + '"'
+            return fixed
+
+        # Fix JavaScript in event handlers
+        json_str = re.sub(r'"[^"]*function[^"]*"', fix_js_functions, json_str)
+
+        # 5. Remove any null bytes or control characters
+        json_str = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', json_str)
+
+        return json_str
 
     def _get_agent_metadata(self) -> dict:
         """

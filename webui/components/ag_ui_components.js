@@ -1002,8 +1002,14 @@ Alpine.data('aguiCanvas', (config) => ({
     
     init() {
         console.log('AG-UI Canvas initializing:', this.id, this.nodes);
-        this.setupCanvasEvents();
         this.initializeNodePositions();
+        this.setupCanvasEvents();
+
+        // Force re-initialization after a short delay to ensure DOM is ready
+        setTimeout(() => {
+            this.setupCanvasEvents();
+            console.log('Canvas events re-initialized for:', this.id);
+        }, 100);
     },
     
     initializeNodePositions() {
@@ -1017,45 +1023,64 @@ Alpine.data('aguiCanvas', (config) => ({
     
     setupCanvasEvents() {
         console.log('Setting up canvas events for:', this.id);
-        
-        // Mouse and touch event handlers for canvas interaction
-        this.$el.addEventListener('mousedown', this.handleMouseDown.bind(this));
-        this.$el.addEventListener('mousemove', this.handleMouseMove.bind(this));
-        this.$el.addEventListener('mouseup', this.handleMouseUp.bind(this));
-        this.$el.addEventListener('mouseleave', this.handleMouseUp.bind(this));
-        
+
+        // Remove existing event listeners to prevent duplicates
+        this.$el.removeEventListener('mousedown', this.handleMouseDown);
+        this.$el.removeEventListener('mousemove', this.handleMouseMove);
+        this.$el.removeEventListener('mouseup', this.handleMouseUp);
+        this.$el.removeEventListener('mouseleave', this.handleMouseUp);
+
+        // Add event listeners with proper binding
+        this.$el.addEventListener('mousedown', this.handleMouseDown.bind(this), { passive: false });
+        this.$el.addEventListener('mousemove', this.handleMouseMove.bind(this), { passive: false });
+        this.$el.addEventListener('mouseup', this.handleMouseUp.bind(this), { passive: false });
+        this.$el.addEventListener('mouseleave', this.handleMouseUp.bind(this), { passive: false });
+
         // Touch events for mobile support
-        this.$el.addEventListener('touchstart', this.handleTouchStart.bind(this));
-        this.$el.addEventListener('touchmove', this.handleTouchMove.bind(this));
-        this.$el.addEventListener('touchend', this.handleTouchEnd.bind(this));
-        
+        this.$el.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
+        this.$el.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
+        this.$el.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
+
         // Prevent default drag behavior on nodes
         this.$el.addEventListener('dragstart', (e) => e.preventDefault());
+
+        // Ensure nodes are properly set up for dragging
+        this.$nextTick(() => {
+            const nodes = this.$el.querySelectorAll('.ag-ui-canvas-node');
+            nodes.forEach(node => {
+                node.style.cursor = 'grab';
+                node.style.pointerEvents = 'auto';
+                node.style.userSelect = 'none';
+            });
+        });
     },
     
     handleMouseDown(event) {
         const nodeElement = event.target.closest('.ag-ui-canvas-node');
         if (nodeElement) {
             console.log('Mouse down on node:', nodeElement.getAttribute('data-node-id'));
-            
+
             const nodeId = nodeElement.getAttribute('data-node-id');
             this.selectedNode = nodeId;
             this.isDragging = true;
-            
+
             const rect = nodeElement.getBoundingClientRect();
             const canvasRect = this.$el.getBoundingClientRect();
-            
+
             this.dragOffset = {
                 x: event.clientX - rect.left,
                 y: event.clientY - rect.top
             };
-            
+
             // Add visual feedback
             nodeElement.classList.add('dragging');
-            
-            // Prevent text selection
+            nodeElement.style.cursor = 'grabbing';
+            nodeElement.style.zIndex = '1000';
+
+            // Prevent text selection and default behavior
             event.preventDefault();
-            
+            event.stopPropagation();
+
             this.triggerEvent('CANVAS_NODE_CLICK', {
                 nodeId: nodeId,
                 position: { x: event.clientX - canvasRect.left, y: event.clientY - canvasRect.top }
@@ -1079,8 +1104,11 @@ Alpine.data('aguiCanvas', (config) => ({
                 const constrainedX = Math.max(0, Math.min(newX, maxX));
                 const constrainedY = Math.max(0, Math.min(newY, maxY));
 
+                // Update node position immediately with no transition
                 nodeElement.style.left = constrainedX + 'px';
                 nodeElement.style.top = constrainedY + 'px';
+                nodeElement.style.transform = 'none';
+                nodeElement.style.transition = 'none';
 
                 // Update the node data
                 const nodeIndex = this.nodes.findIndex(n => n.id === this.selectedNode);
@@ -1090,6 +1118,10 @@ Alpine.data('aguiCanvas', (config) => ({
 
                 // Redraw edges if they exist
                 this.updateEdges();
+
+                // Prevent default behavior
+                event.preventDefault();
+                event.stopPropagation();
             }
 
             this.triggerEvent('CANVAS_NODE_DRAG', {
@@ -1102,18 +1134,24 @@ Alpine.data('aguiCanvas', (config) => ({
     handleMouseUp() {
         if (this.isDragging) {
             console.log('Mouse up - ending drag');
-            
+
+            // Store the node ID before clearing it
+            const draggedNodeId = this.selectedNode;
+
             // Remove visual feedback
             const nodeElement = this.$el.querySelector(`[data-node-id="${this.selectedNode}"]`);
             if (nodeElement) {
                 nodeElement.classList.remove('dragging');
+                nodeElement.style.cursor = 'grab';
+                nodeElement.style.zIndex = '2';
+                nodeElement.style.transition = 'all 0.2s ease'; // Restore transition
             }
-            
+
             this.isDragging = false;
             this.selectedNode = null;
-            
+
             this.triggerEvent('CANVAS_NODE_DROP', {
-                nodeId: this.selectedNode
+                nodeId: draggedNodeId
             });
         }
     },

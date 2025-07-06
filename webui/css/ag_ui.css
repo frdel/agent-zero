@@ -925,6 +925,18 @@
     position: relative;
     overflow: hidden;
     min-height: 300px;
+    width: 100% !important; /* Force full width */
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Force AG-UI components to take full width in message containers */
+.message-group .ag-ui-canvas,
+.message-container .ag-ui-canvas,
+.message .ag-ui-canvas {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
 }
 
 .ag-ui-canvas-node {
@@ -938,11 +950,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: move;
+    cursor: grab;
     user-select: none;
     z-index: 2;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     transition: all 0.2s ease;
+    pointer-events: auto !important;
+    touch-action: none !important;
 }
 
 .ag-ui-canvas-node:hover {
@@ -964,12 +978,13 @@
 .ag-ui-node-content {
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text);
+    color: var(--color-text) !important;
     text-align: center;
     line-height: 1.3;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
     word-wrap: break-word;
     max-width: 100px;
+    pointer-events: none; /* Prevent text selection interfering with drag */
 }
 
 .ag-ui-canvas-edges {

@@ -623,10 +623,10 @@
   margin-top: 0.5em;
   margin-bottom: 0.5em;
   display: inline-grid;
-  grid-template-columns: minmax(0, max-content);
+  grid-template-columns: minmax(0, 1fr);
   grid-auto-rows: auto;
   max-width: 100%;
-  width: fit-content;
+  width: 100%;
   gap: var(--spacing-xs);
 }
 
