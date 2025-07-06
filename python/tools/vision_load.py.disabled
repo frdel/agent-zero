@@ -18,17 +18,30 @@ class VisionLoad(Tool):
         template: list[dict[str, str]] = []  # type: ignore
 
         for path in paths:
-            if not await runtime.call_development_function(files.exists, str(path)):
-                continue
+            # For local development, use direct file operations
+            try:
+                if not files.exists(str(path)):
+                    continue
+            except Exception:
+                # Fallback to RFC if direct access fails
+                if not await runtime.call_development_function_safe(files.exists, str(path)):
+                    continue
 
             if path not in self.images_dict:
                 mime_type, _ = guess_type(str(path))
                 if mime_type and mime_type.startswith("image/"):
                     try:
-                        # Read binary file
-                        file_content = await runtime.call_development_function(
-                            files.read_file_base64, str(path)
-                        )
+                        # Try direct file access first for local development
+                        try:
+                            file_content = files.read_file_base64(str(path))
+                        except Exception:
+                            # Fallback to RFC call if direct access fails
+                            file_content = await runtime.call_development_function_safe(
+                                files.read_file_base64, str(path)
+                            )
+                            if file_content is None:
+                                continue
+                        
                         file_content = base64.b64decode(file_content)
                         # Compress and convert to JPEG
                         compressed = images.compress_image(

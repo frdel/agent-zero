@@ -66,17 +66,29 @@ async def call_development_function(func: Callable[..., T], *args, **kwargs) -> 
 
 async def call_development_function(func: Union[Callable[..., T], Callable[..., Awaitable[T]]], *args, **kwargs) -> T:
     if is_development():
-        url = _get_rfc_url()
-        password = _get_rfc_password()
-        result = await rfc.call_rfc(
-            url=url,
-            password=password,
-            module=func.__module__,
-            function_name=func.__name__,
-            args=list(args),
-            kwargs=kwargs,
-        )
-        return cast(T, result)
+        # For local development, try to call function directly first
+        try:
+            if inspect.iscoroutinefunction(func):
+                return await func(*args, **kwargs)
+            else:
+                return func(*args, **kwargs) # type: ignore
+        except Exception as e:
+            # If direct call fails, try RFC if password is available
+            password = _get_rfc_password_safe()
+            if password:
+                url = _get_rfc_url()
+                result = await rfc.call_rfc(
+                    url=url,
+                    password=password,
+                    module=func.__module__,
+                    function_name=func.__name__,
+                    args=list(args),
+                    kwargs=kwargs,
+                )
+                return cast(T, result)
+            else:
+                # Re-raise the original exception if no RFC password
+                raise e
     else:
         if inspect.iscoroutinefunction(func):
             return await func(*args, **kwargs)
@@ -93,6 +105,11 @@ def _get_rfc_password() -> str:
     if not password:
         raise Exception("No RFC password, cannot handle RFC calls.")
     return password
+
+
+def _get_rfc_password_safe() -> str | None:
+    """Get RFC password without throwing exception if not found"""
+    return dotenv.get_dotenv_value(dotenv.KEY_RFC_PASSWORD)
 
 
 def _get_rfc_url() -> str:
@@ -141,3 +158,14 @@ def get_tunnel_api_port():
         or 55520
     )
     return tunnel_api_port
+
+async def call_development_function_safe(func, *args, **kwargs):
+    """
+    Safe version of call_development_function that returns None instead of raising
+    exceptions when RFC is not available or fails.
+    """
+    try:
+        return await call_development_function(func, *args, **kwargs)
+    except Exception as e:
+        # Return None if RFC fails, allowing tools to handle gracefully
+        return None

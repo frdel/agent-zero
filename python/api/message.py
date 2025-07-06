@@ -3,6 +3,7 @@ from python.helpers.api import ApiHandler
 from flask import Request, Response
 
 from python.helpers import files
+from python.helpers.document_processor import DocumentProcessor
 import os
 from werkzeug.utils import secure_filename
 from python.helpers.defer import DeferredTask
@@ -52,6 +53,28 @@ class Message(ApiHandler):
 
         # Now process the message
         message = text
+        
+        # Process attachments automatically if any exist
+        processed_content = ""
+        if attachment_paths:
+            processor = DocumentProcessor()
+            # Convert internal paths to external paths for processing
+            external_paths = []
+            for path in attachment_paths:
+                if path.startswith("/a0/"):
+                    # Convert internal Docker path to external path
+                    external_path = files.get_abs_path(path.replace("/a0/", ""))
+                else:
+                    # Already external path
+                    external_path = files.get_abs_path(path)
+                external_paths.append(external_path)
+            
+            processed_data = await processor.process_attachments(external_paths)
+            processed_content = processor.format_for_agent(processed_data)
+            
+            # Append processed content to the message
+            if processed_content:
+                message = f"{text}\n\n{processed_content}"
 
         # Obtain agent context
         context = self.get_context(ctxid)
