@@ -17,6 +17,7 @@ class Settings(TypedDict):
 
     chat_model_provider: str
     chat_model_name: str
+    chat_model_api_base: str
     chat_model_kwargs: dict[str, str]
     chat_model_ctx_length: int
     chat_model_ctx_history: float
@@ -27,6 +28,7 @@ class Settings(TypedDict):
 
     util_model_provider: str
     util_model_name: str
+    util_model_api_base: str
     util_model_kwargs: dict[str, str]
     util_model_ctx_length: int
     util_model_ctx_input: float
@@ -36,12 +38,14 @@ class Settings(TypedDict):
 
     embed_model_provider: str
     embed_model_name: str
+    embed_model_api_base: str
     embed_model_kwargs: dict[str, str]
     embed_model_rl_requests: int
     embed_model_rl_input: int
 
     browser_model_provider: str
     browser_model_name: str
+    browser_model_api_base: str
     browser_model_vision: bool
     browser_model_kwargs: dict[str, str]
 
@@ -143,6 +147,16 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     chat_model_fields.append(
         {
+            "id": "chat_model_api_base",
+            "title": "Chat model API base URL",
+            "description": "API base URL for main chat model. Leave empty for default. Only relevant for Azure, local and custom (other) providers.",
+            "type": "text",
+            "value": settings["chat_model_api_base"],
+        }
+    )
+
+    chat_model_fields.append(
+        {
             "id": "chat_model_ctx_length",
             "title": "Chat model context length",
             "description": "Maximum number of tokens in the context window for LLM. System prompt, chat history, RAG and response all count towards this limit.",
@@ -208,8 +222,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "chat_model_kwargs",
             "title": "Chat model additional parameters",
-            "description": """Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.
-            For OpenAI compatible providers not listed here, select 'other' and specify api_base=https://... and api_key=... as additional parameters.""",
+            "description": "Any other parameters supported by <a href='https://docs.litellm.ai/docs/set_keys' target='_blank'>LiteLLM</a>. Format is KEY=VALUE on individual lines, just like .env file.",
             "type": "textarea",
             "value": _dict_to_env(settings["chat_model_kwargs"]),
         }
@@ -247,6 +260,16 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     util_model_fields.append(
         {
+            "id": "util_model_api_base",
+            "title": "Utility model API base URL",
+            "description": "API base URL for utility model. Leave empty for default. Only relevant for Azure, local and custom (other) providers.",
+            "type": "text",
+            "value": settings["util_model_api_base"],
+        }
+    )
+
+    util_model_fields.append(
+        {
             "id": "util_model_rl_requests",
             "title": "Requests per minute limit",
             "description": "Limits the number of requests per minute to the utility model. Waits if the limit is exceeded. Set to 0 to disable rate limiting.",
@@ -279,8 +302,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "util_model_kwargs",
             "title": "Utility model additional parameters",
-           "description": """Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.
-            For OpenAI compatible providers not listed here, select 'other' and specify api_base=https://... and api_key=... as additional parameters.""",
+            "description": "Any other parameters supported by <a href='https://docs.litellm.ai/docs/set_keys' target='_blank'>LiteLLM</a>. Format is KEY=VALUE on individual lines, just like .env file.",
             "type": "textarea",
             "value": _dict_to_env(settings["util_model_kwargs"]),
         }
@@ -318,6 +340,16 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     embed_model_fields.append(
         {
+            "id": "embed_model_api_base",
+            "title": "Embedding model API base URL",
+            "description": "API base URL for embedding model. Leave empty for default. Only relevant for Azure, local and custom (other) providers.",
+            "type": "text",
+            "value": settings["embed_model_api_base"],
+        }
+    )
+
+    embed_model_fields.append(
+        {
             "id": "embed_model_rl_requests",
             "title": "Requests per minute limit",
             "description": "Limits the number of requests per minute to the embedding model. Waits if the limit is exceeded. Set to 0 to disable rate limiting.",
@@ -340,8 +372,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "embed_model_kwargs",
             "title": "Embedding model additional parameters",
-            "description": """Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.
-            For OpenAI compatible providers not listed here, select 'other' and specify api_base=https://... and api_key=... as additional parameters.""",
+            "description": "Any other parameters supported by <a href='https://docs.litellm.ai/docs/set_keys' target='_blank'>LiteLLM</a>. Format is KEY=VALUE on individual lines, just like .env file.",
             "type": "textarea",
             "value": _dict_to_env(settings["embed_model_kwargs"]),
         }
@@ -391,7 +422,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "browser_model_kwargs",
             "title": "Web Browser model additional parameters",
-            "description": "Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.",
+            "description": "Any other parameters supported by <a href='https://docs.litellm.ai/docs/set_keys' target='_blank'>LiteLLM</a>. Format is KEY=VALUE on individual lines, just like .env file.",
             "type": "textarea",
             "value": _dict_to_env(settings["browser_model_kwargs"]),
         }
@@ -472,26 +503,9 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     # api keys model section
     api_keys_fields: list[SettingsField] = []
-    api_keys_fields.append(_get_api_key_field(settings, "openai", "OpenAI API Key"))
-    api_keys_fields.append(
-        _get_api_key_field(settings, "anthropic", "Anthropic API Key")
-    )
-    api_keys_fields.append(_get_api_key_field(settings, "chutes", "Chutes API Key"))
-    api_keys_fields.append(_get_api_key_field(settings, "deepseek", "DeepSeek API Key"))
-    api_keys_fields.append(_get_api_key_field(settings, "google", "Google API Key"))
-    api_keys_fields.append(_get_api_key_field(settings, "groq", "Groq API Key"))
-    api_keys_fields.append(
-        _get_api_key_field(settings, "huggingface", "HuggingFace API Key")
-    )
-    api_keys_fields.append(
-        _get_api_key_field(settings, "mistralai", "MistralAI API Key")
-    )
-    api_keys_fields.append(
-        _get_api_key_field(settings, "openrouter", "OpenRouter API Key")
-    )
-    api_keys_fields.append(
-        _get_api_key_field(settings, "sambanova", "Sambanova API Key")
-    )
+
+    for provider in ModelProvider:
+        api_keys_fields.append(_get_api_key_field(settings, provider.name.lower(), provider.value))
 
     api_keys_section: SettingsSection = {
         "id": "api_keys",
@@ -965,6 +979,7 @@ def get_default_settings() -> Settings:
         version=_get_version(),
         chat_model_provider=ModelProvider.OPENROUTER.name,
         chat_model_name="openai/gpt-4.1",
+        chat_model_api_base="",
         chat_model_kwargs={"temperature": "0"},
         chat_model_ctx_length=100000,
         chat_model_ctx_history=0.7,
@@ -974,6 +989,7 @@ def get_default_settings() -> Settings:
         chat_model_rl_output=0,
         util_model_provider=ModelProvider.OPENROUTER.name,
         util_model_name="openai/gpt-4.1-nano",
+        util_model_api_base="",
         util_model_ctx_length=100000,
         util_model_ctx_input=0.7,
         util_model_kwargs={"temperature": "0"},
@@ -982,11 +998,13 @@ def get_default_settings() -> Settings:
         util_model_rl_output=0,
         embed_model_provider=ModelProvider.HUGGINGFACE.name,
         embed_model_name="sentence-transformers/all-MiniLM-L6-v2",
+        embed_model_api_base="",
         embed_model_kwargs={},
         embed_model_rl_requests=0,
         embed_model_rl_input=0,
         browser_model_provider=ModelProvider.OPENROUTER.name,
         browser_model_name="openai/gpt-4.1",
+        browser_model_api_base="",
         browser_model_vision=True,
         browser_model_kwargs={"temperature": "0"},
         api_keys={},

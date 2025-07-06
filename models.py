@@ -59,19 +59,18 @@ class ModelType(Enum):
 
 class ModelProvider(Enum):
     ANTHROPIC = "Anthropic"
-    CHUTES = "Chutes"
     DEEPSEEK = "DeepSeek"
-    GOOGLE = "Google"
+    GEMINI = "Google"
     GROQ = "Groq"
     HUGGINGFACE = "HuggingFace"
-    LMSTUDIO = "LM Studio"
-    MISTRALAI = "Mistral AI"
+    LM_STUDIO = "LM Studio"
+    MISTRAL = "Mistral AI"
     OLLAMA = "Ollama"
     OPENAI = "OpenAI"
     AZURE = "OpenAI Azure"
     OPENROUTER = "OpenRouter"
     SAMBANOVA = "Sambanova"
-    OTHER = "Other"
+    OTHER = "Other OpenAI compatible"
 
 
 class ChatChunk(TypedDict):
@@ -82,42 +81,6 @@ class ChatChunk(TypedDict):
 
 
 rate_limiters: dict[str, RateLimiter] = {}
-
-
-def configure_litellm_environment():
-    env_mappings = {
-        "API_KEY_OPENAI": "OPENAI_API_KEY",
-        "API_KEY_ANTHROPIC": "ANTHROPIC_API_KEY",
-        "API_KEY_GROQ": "GROQ_API_KEY",
-        "API_KEY_GOOGLE": "GOOGLE_API_KEY",
-        "API_KEY_MISTRAL": "MISTRAL_API_KEY",
-        "API_KEY_OLLAMA": "OLLAMA_API_KEY",
-        "API_KEY_HUGGINGFACE": "HUGGINGFACE_API_KEY",
-        "API_KEY_OPENAI_AZURE": "AZURE_AI_API_KEY",
-        "API_KEY_DEEPSEEK": "DEEPSEEK_API_KEY",
-        "API_KEY_SAMBANOVA": "SAMBANOVA_API_KEY",
-        "API_KEY_GOOGLE": "GEMINI_API_KEY",
-    }
-    base_url_mappings = {
-        "OPENAI_BASE_URL": "OPENAI_API_BASE",
-        "ANTHROPIC_BASE_URL": "ANTHROPIC_API_BASE",
-        "GROQ_BASE_URL": "GROQ_API_BASE",
-        "GOOGLE_BASE_URL": "GOOGLE_API_BASE",
-        "MISTRAL_BASE_URL": "MISTRAL_API_BASE",
-        "OLLAMA_BASE_URL": "OLLAMA_API_BASE",
-        "HUGGINGFACE_BASE_URL": "HUGGINGFACE_API_BASE",
-        "AZURE_BASE_URL": "AZURE_AI_API_BASE",
-        "DEEPSEEK_BASE_URL": "DEEPSEEK_API_BASE",
-        "SAMBANOVA_BASE_URL": "SAMBANOVA_API_BASE",
-    }
-    for a0, llm in env_mappings.items():
-        val = dotenv.get_dotenv_value(a0)
-        if val and not os.getenv(llm):
-            os.environ[llm] = val
-    for a0_base, llm_base in base_url_mappings.items():
-        val = dotenv.get_dotenv_value(a0_base)
-        if val and not os.getenv(llm_base):
-            os.environ[llm_base] = val
 
 
 def get_api_key(service: str) -> str:
@@ -138,26 +101,6 @@ def get_rate_limiter(
     limiter.limits["input"] = input or 0
     limiter.limits["output"] = output or 0
     return limiter
-
-
-def _parse_chunk(chunk: Any) -> ChatChunk:
-    delta = chunk["choices"][0].get("delta", {})
-    message = chunk["choices"][0].get("model_extra", {}).get("message", {})
-    response_delta = (
-        delta.get("content", "")
-        if isinstance(delta, dict)
-        else getattr(delta, "content", "")
-    ) or (
-        message.get("content", "")
-        if isinstance(message, dict)
-        else getattr(message, "content", "")
-    )
-    reasoning_delta = (
-        delta.get("reasoning_content", "")
-        if isinstance(delta, dict)
-        else getattr(delta, "reasoning_content", "")
-    )
-    return ChatChunk(reasoning_delta=reasoning_delta, response_delta=response_delta)
 
 
 class LiteLLMChatWrapper(SimpleChatModel):
@@ -284,7 +227,7 @@ class LiteLLMChatWrapper(SimpleChatModel):
         self,
         system_message="",
         user_message="",
-        messages: List[BaseMessage]|None = None,
+        messages: List[BaseMessage] | None = None,
         response_callback: Callable[[str, str], Awaitable[None]] | None = None,
         reasoning_callback: Callable[[str, str], Awaitable[None]] | None = None,
         tokens_callback: Callable[[str, int], Awaitable[None]] | None = None,
@@ -424,24 +367,66 @@ def _get_litellm_chat(
     provider_name: str = "",
     **kwargs: Any,
 ):
-    provider_name = provider_name.lower()
-
-    configure_litellm_environment()
-    # Use original provider name for API key lookup, fallback to mapped provider name
+    # use api key from kwargs or env
     api_key = kwargs.pop("api_key", None) or get_api_key(provider_name)
 
-    # litellm will pick up base_url from env. We just need to control the api_key.
-    # base_url = dotenv.get_dotenv_value(f"{provider_name.upper()}_BASE_URL")
-
-    # If a base_url is set, ensure api_key is not passed to litellm
-    # > remove, this can be handled by api_key=None
-    # if base_url:
-    #     if "api_key" in kwargs:
-    #         del kwargs["api_key"]
-    # Only pass API key if no base_url is set and key is not a placeholder
+    # Only pass API key if key is not a placeholder
     if api_key and api_key not in ("None", "NA"):
         kwargs["api_key"] = api_key
 
+    provider_name, model_name, kwargs = _adjust_call_args(
+        provider_name, model_name, kwargs
+    )
+    return cls(provider=provider_name, model=model_name, **kwargs)
+
+
+def _get_litellm_embedding(model_name: str, provider_name: str, **kwargs: Any):
+    # Check if this is a local sentence-transformers model
+    if provider_name == "huggingface" and model_name.startswith(
+        "sentence-transformers/"
+    ):
+        # Use local sentence-transformers instead of LiteLLM for local models
+        provider_name, model_name, kwargs = _adjust_call_args(
+            provider_name, model_name, kwargs
+        )
+        return LocalSentenceTransformerWrapper(
+            provider=provider_name, model=model_name, **kwargs
+        )
+
+    # use api key from kwargs or env
+    api_key = kwargs.pop("api_key", None) or get_api_key(provider_name)
+
+    # Only pass API key if key is not a placeholder
+    if api_key and api_key not in ("None", "NA"):
+        kwargs["api_key"] = api_key
+
+    provider_name, model_name, kwargs = _adjust_call_args(
+        provider_name, model_name, kwargs
+    )
+    return LiteLLMEmbeddingWrapper(model=model_name, provider=provider_name, **kwargs)
+
+
+def _parse_chunk(chunk: Any) -> ChatChunk:
+    delta = chunk["choices"][0].get("delta", {})
+    message = chunk["choices"][0].get("model_extra", {}).get("message", {})
+    response_delta = (
+        delta.get("content", "")
+        if isinstance(delta, dict)
+        else getattr(delta, "content", "")
+    ) or (
+        message.get("content", "")
+        if isinstance(message, dict)
+        else getattr(message, "content", "")
+    )
+    reasoning_delta = (
+        delta.get("reasoning_content", "")
+        if isinstance(delta, dict)
+        else getattr(delta, "reasoning_content", "")
+    )
+    return ChatChunk(reasoning_delta=reasoning_delta, response_delta=response_delta)
+
+
+def _adjust_call_args(provider_name: str, model_name: str, kwargs: dict):
     # for openrouter add app reference
     if provider_name == "openrouter":
         kwargs["extra_headers"] = {
@@ -449,41 +434,19 @@ def _get_litellm_chat(
             "X-Title": "Agent Zero",
         }
 
-    return cls(model=model_name, provider=provider_name, **kwargs)
+    # remap other to openai for litellm
+    if provider_name == "other":
+        provider_name = "openai"
 
-
-def get_litellm_embedding(model_name: str, provider: str, **kwargs: Any):
-    # Check if this is a local sentence-transformers model
-    if provider == "huggingface" and model_name.startswith("sentence-transformers/"):
-        # Use local sentence-transformers instead of LiteLLM for local models
-        return LocalSentenceTransformerWrapper(provider=provider, model=model_name, **kwargs)
-
-    configure_litellm_environment()
-    # Use original provider name for API key lookup, fallback to mapped provider name
-    api_key = kwargs.pop("api_key", None) or get_api_key(provider)
-
-    # litellm will pick up base_url from env. We just need to control the api_key.
-    # base_url = dotenv.get_dotenv_value(f"{provider.upper()}_BASE_URL")
-
-    # If a base_url is set, ensure api_key is not passed to litellm
-    # > remove, this can be handled by api_key=None
-    # if base_url:
-    #     if "api_key" in kwargs:
-    #         del kwargs["api_key"]
-    # Only pass API key if no base_url is set and key is not a placeholder
-    if api_key and api_key not in ("None", "NA"):
-        kwargs["api_key"] = api_key
-
-    return LiteLLMEmbeddingWrapper(model=model_name, provider=provider, **kwargs)
+    return provider_name, model_name, kwargs
 
 
 def get_model(type: ModelType, provider: ModelProvider, name: str, **kwargs: Any):
     provider_name = provider.name.lower()
-    kwargs = _normalize_chat_kwargs(provider, kwargs)
     if type == ModelType.CHAT:
         return _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
     elif type == ModelType.EMBEDDING:
-        return get_litellm_embedding(name, provider_name, **kwargs)
+        return _get_litellm_embedding(name, provider_name, **kwargs)
     else:
         raise ValueError(f"Unsupported model type: {type}")
 
@@ -491,8 +454,7 @@ def get_model(type: ModelType, provider: ModelProvider, name: str, **kwargs: Any
 def get_chat_model(
     provider: ModelProvider, name: str, **kwargs: Any
 ) -> LiteLLMChatWrapper:
-    provider_name = _get_litellm_provider(provider)
-    kwargs = _normalize_chat_kwargs(provider, kwargs)
+    provider_name = provider.name.lower()
     model = _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
     return model
 
@@ -501,7 +463,6 @@ def get_browser_model(
     provider: ModelProvider, name: str, **kwargs: Any
 ) -> BrowserCompatibleChatWrapper:
     provider_name = provider.name.lower()
-    kwargs = _normalize_chat_kwargs(provider, kwargs)
     model = _get_litellm_chat(
         BrowserCompatibleChatWrapper, name, provider_name, **kwargs
     )
@@ -512,30 +473,5 @@ def get_embedding_model(
     provider: ModelProvider, name: str, **kwargs: Any
 ) -> LiteLLMEmbeddingWrapper | LocalSentenceTransformerWrapper:
     provider_name = provider.name.lower()
-    kwargs = _normalize_embedding_kwargs(kwargs)
-    model = get_litellm_embedding(name, provider_name, **kwargs)
+    model = _get_litellm_embedding(name, provider_name, **kwargs)
     return model
-
-
-def _normalize_chat_kwargs(provider: ModelProvider, kwargs: Any) -> Any:
-    # this prevents using openai api key for other providers
-    if provider == ModelProvider.OTHER:
-        if "api_key" not in kwargs:
-            kwargs["api_key"] = "None"
-    return kwargs
-
-
-def _normalize_embedding_kwargs(kwargs: Any) -> Any:
-    return kwargs
-
-
-def _get_litellm_provider(provider: ModelProvider) -> str:
-    name = provider.name.lower()
-
-    # exceptions
-    if name == "google":
-        name = "gemini"
-    elif name == "other":
-        name = "openai"
-
-    return name

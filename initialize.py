@@ -29,6 +29,7 @@ def initialize_agent():
     chat_llm = ModelConfig(
         provider=models.ModelProvider[current_settings["chat_model_provider"]],
         name=current_settings["chat_model_name"],
+        api_base=current_settings["chat_model_api_base"],
         ctx_length=current_settings["chat_model_ctx_length"],
         vision=current_settings["chat_model_vision"],
         limit_requests=current_settings["chat_model_rl_requests"],
@@ -41,6 +42,7 @@ def initialize_agent():
     utility_llm = ModelConfig(
         provider=models.ModelProvider[current_settings["util_model_provider"]],
         name=current_settings["util_model_name"],
+        api_base=current_settings["util_model_api_base"],
         ctx_length=current_settings["util_model_ctx_length"],
         limit_requests=current_settings["util_model_rl_requests"],
         limit_input=current_settings["util_model_rl_input"],
@@ -51,6 +53,7 @@ def initialize_agent():
     embedding_llm = ModelConfig(
         provider=models.ModelProvider[current_settings["embed_model_provider"]],
         name=current_settings["embed_model_name"],
+        api_base=current_settings["embed_model_api_base"],
         limit_requests=current_settings["embed_model_rl_requests"],
         kwargs=_normalize_model_kwargs(current_settings["embed_model_kwargs"]),
     )
@@ -58,6 +61,7 @@ def initialize_agent():
     browser_llm = ModelConfig(
         provider=models.ModelProvider[current_settings["browser_model_provider"]],
         name=current_settings["browser_model_name"],
+        api_base=current_settings["browser_model_api_base"],
         vision=current_settings["browser_model_vision"],
         kwargs=_normalize_model_kwargs(current_settings["browser_model_kwargs"]),
     )

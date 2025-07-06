@@ -206,6 +206,7 @@ class AgentContext:
 class ModelConfig:
     provider: models.ModelProvider
     name: str
+    api_base: str = ""
     ctx_length: int = 0
     limit_requests: int = 0
     limit_input: int = 0
@@ -581,22 +582,28 @@ class Agent:
         return models.get_chat_model(
             self.config.chat_model.provider,
             self.config.chat_model.name,
-            **self.config.chat_model.kwargs,
+            **self._get_model_kwargs(self.config.chat_model),
         )
 
     def get_utility_model(self):
         return models.get_chat_model(
             self.config.utility_model.provider,
             self.config.utility_model.name,
-            **self.config.utility_model.kwargs,
+            **self._get_model_kwargs(self.config.utility_model),
         )
 
     def get_embedding_model(self):
         return models.get_embedding_model(
             self.config.embeddings_model.provider,
             self.config.embeddings_model.name,
-            **self.config.embeddings_model.kwargs,
+            **self._get_model_kwargs(self.config.embeddings_model),
         )
+
+    def _get_model_kwargs(self, model_config: ModelConfig):
+        kwargs = model_config.kwargs.copy() or {}
+        if model_config.api_base and "api_base" not in kwargs:
+            kwargs["api_base"] = model_config.api_base
+        return kwargs
 
     async def call_utility_model(
         self,

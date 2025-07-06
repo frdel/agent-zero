@@ -57,7 +57,13 @@ class State:
                 viewport={"width": 1024, "height": 2048},
                 args=["--headless=new"],
                 # Use a unique user data directory to avoid conflicts
-                user_data_dir=str(Path.home() / ".config" / "browseruse" / "profiles" / f"agent_{self.agent.context.id}"),
+                user_data_dir=str(
+                    Path.home()
+                    / ".config"
+                    / "browseruse"
+                    / "profiles"
+                    / f"agent_{self.agent.context.id}"
+                ),
             )
         )
 
@@ -119,11 +125,10 @@ class State:
             )
             return result
 
-
         model = models.get_browser_model(
             provider=self.agent.config.browser_model.provider,
             name=self.agent.config.browser_model.name,
-            **self.agent.config.browser_model.kwargs,
+            **self.agent._get_model_kwargs(self.agent.config.browser_model),
         )
 
         try:
@@ -140,7 +145,9 @@ class State:
                 # available_file_paths=[],
             )
         except Exception as e:
-            raise Exception(f"Browser agent initialization failed. This might be due to model compatibility issues. Error: {e}") from e
+            raise Exception(
+                f"Browser agent initialization failed. This might be due to model compatibility issues. Error: {e}"
+            ) from e
 
         self.iter_no = get_iter_no(self.agent)
 
@@ -298,13 +305,17 @@ class BrowserAgent(Tool):
                 f"Task reached step limit without completion. Last page: {current_url}. "
                 f"The browser agent may need clearer instructions on when to finish."
             )
-        
+
         # update the log (without screenshot path here, user can click)
         self.log.update(answer=answer_text)
 
         # add screenshot to the answer if we have it
-        if self.log.kvps and "screenshot" in self.log.kvps and self.log.kvps['screenshot']:
-            path = self.log.kvps['screenshot'].split('//', 1)[-1].split('&', 1)[0]
+        if (
+            self.log.kvps
+            and "screenshot" in self.log.kvps
+            and self.log.kvps["screenshot"]
+        ):
+            path = self.log.kvps["screenshot"].split("//", 1)[-1].split("&", 1)[0]
             answer_text += f"\n\nScreenshot: {path}"
 
         # respond (with screenshot path)
@@ -416,7 +427,9 @@ def get_use_agent_log(use_agent: browser_use.Agent | None):
                 if item.success:
                     short_log.append(f"✅ Done")
                 else:
-                    short_log.append(f"❌ Error: {item.error or item.extracted_content or 'Unknown error'}")
+                    short_log.append(
+                        f"❌ Error: {item.error or item.extracted_content or 'Unknown error'}"
+                    )
 
             # progress messages
             else:
