@@ -71,6 +71,11 @@
   /* margin-bottom: var(--spacing-sm); */
 }
 
+.message .message-body{
+  padding-top:0.5em;
+  padding-bottom:0.5em;
+}
+
 .message-user {
   background-color: #4a4a4a;
   /* border-bottom-right-radius: var(--spacing-xxs); */
@@ -512,11 +517,6 @@
 .light-mode .message-user {
   background-color: var(--color-panel);
   color: #4e4e4e;
-}
-
-.message-body{
-  padding-top:0.5em;
-  padding-bottom:0.5em;
 }
 
 /* Markdown in messages */
