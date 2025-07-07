@@ -158,6 +158,7 @@ docker run -p 50001:80 frdel/agent-zero-run
 ## 🎯 Changelog
 
 ### v0.9.1 - LiteLLM, UI improvements
+[Release video](https://youtu.be/crwr0M4Spcg)
 - Langchain replaced with LiteLLM
     - Support for reasoning models streaming
     - Support for more providers
