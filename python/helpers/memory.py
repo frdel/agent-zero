@@ -120,10 +120,17 @@ class Memory:
             os.makedirs(em_dir, exist_ok=True)
             store = LocalFileStore(em_dir)
 
+        # HOTFIX TODO: unify with agent.py
+        def _get_model_kwargs(model_config: ModelConfig):
+            kwargs = model_config.kwargs.copy() or {}
+            if model_config.api_base and "api_base" not in kwargs:
+                kwargs["api_base"] = model_config.api_base
+            return kwargs
+
         embeddings_model = models.get_embedding_model(
             model_config.provider,
             model_config.name,
-            **model_config.kwargs,
+            **_get_model_kwargs(model_config),
         )
         embeddings_model_id = files.safe_file_name(
             model_config.provider.name + "_" + model_config.name
