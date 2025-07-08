@@ -3,6 +3,11 @@ import sys
 import time
 import socket
 import struct
+import os
+import sys
+import time
+import socket
+import struct
 from functools import wraps
 import threading
 import signal
@@ -15,6 +20,7 @@ from python.helpers import runtime, dotenv, process
 from python.helpers.extract_tools import load_classes_from_folder
 from python.helpers.api import ApiHandler
 from python.helpers.print_style import PrintStyle
+from python.helpers.auth_decorators import requires_auth
 
 
 # Set the new timezone to 'UTC'
@@ -94,26 +100,6 @@ def requires_loopback(f):
                 403,
                 {},
             )
-        return await f(*args, **kwargs)
-
-    return decorated
-
-
-# require authentication for handlers
-def requires_auth(f):
-    @wraps(f)
-    async def decorated(*args, **kwargs):
-        user = dotenv.get_dotenv_value("AUTH_LOGIN")
-        password = dotenv.get_dotenv_value("AUTH_PASSWORD")
-        if user and password:
-            auth = request.authorization
-            if not auth or not (auth.username == user and auth.password == password):
-                return Response(
-                    "Could not verify your access level for that URL.\n"
-                    "You have to login with proper credentials",
-                    401,
-                    {"WWW-Authenticate": 'Basic realm="Login Required"'},
-                )
         return await f(*args, **kwargs)
 
     return decorated
@@ -199,6 +185,27 @@ def run():
     handlers = load_classes_from_folder("python/api", "*.py", ApiHandler)
     for handler in handlers:
         register_api_handler(webapp, handler)
+
+    # Register Ollama management blueprint
+    try:
+        from python.api.ollama_management import ollama_management_bp
+        webapp.register_blueprint(ollama_management_bp)
+        PrintStyle().debug("Registered Ollama management API blueprint.")
+    except ImportError:
+        PrintStyle().warning("Ollama management blueprint not found or could not be imported.")
+    except Exception as e:
+        PrintStyle().error(f"Error registering Ollama management blueprint: {e}")
+
+    # Register OpenRouter proxy blueprint
+    try:
+        from python.api.openrouter_proxy import openrouter_proxy_bp
+        webapp.register_blueprint(openrouter_proxy_bp)
+        PrintStyle().debug("Registered OpenRouter proxy API blueprint.")
+    except ImportError:
+        PrintStyle().warning("OpenRouter proxy blueprint not found or could not be imported.")
+    except Exception as e:
+        PrintStyle().error(f"Error registering OpenRouter proxy blueprint: {e}")
+
 
     # add the webapp and mcp to the app
     app = DispatcherMiddleware(

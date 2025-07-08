@@ -287,6 +287,344 @@ const settingsModalProxy = {
         if (field.id === "mcp_servers_config") {
             openModal("settings/mcp/client/mcp-servers.html");
         }
+        // Handle Ollama buttons - this assumes button IDs are like 'ollama_refresh_status_button_chat_model'
+        const ollamaActionMatch = field.id.match(/^ollama_(\w+)_button_(\w+)$/);
+        if (ollamaActionMatch) {
+            const action = ollamaActionMatch[1]; // e.g., refresh_status, refresh_local_models, pull_model
+            const prefix = ollamaActionMatch[2]; // e.g., chat_model, util_model, embed_model
+            this.handleOllamaAction(action, prefix, field);
+        }
+    },
+
+    async handleOllamaAction(action, prefix, field) {
+        console.log(`Handling Ollama action: ${action} for prefix: ${prefix}`);
+        switch (action) {
+            case 'refresh_status':
+                await this.refreshOllamaStatus(prefix);
+                break;
+            case 'refresh_local_models':
+                await this.fetchOllamaLocalModels(prefix);
+                break;
+            case 'pull_model':
+                await this.pullOllamaModel(prefix);
+                break;
+            default:
+                console.warn(`Unknown Ollama action: ${action}`);
+        }
+    },
+
+    async refreshOllamaStatus(prefix) {
+        const statusFieldId = `ollama_status_${prefix}`;
+        const statusField = this.findFieldById(statusFieldId);
+        if (!statusField) return;
+
+        statusField.value = "Checking...";
+        try {
+            const response = await fetch('/api/ollama/status');
+            const data = await response.json();
+            if (response.ok) {
+                statusField.value = `Status: ${data.status} - ${data.message} (URL: ${data.url || 'N/A'})`;
+            } else {
+                statusField.value = `Error: ${data.error || 'Unknown error'} (URL: ${data.url || 'N/A'})`;
+            }
+        } catch (e) {
+            statusField.value = `Failed to fetch status: ${e.message}`;
+            window.toastFetchError("Error fetching Ollama status", e);
+        }
+        this.updateFieldValueInSettings(statusFieldId, statusField.value);
+    },
+
+    async fetchOllamaLocalModels(prefix) {
+        const modelsListFieldId = `ollama_local_models_list_${prefix}`;
+        const modelsListField = this.findFieldById(modelsListFieldId);
+        if (!modelsListField) return;
+
+        modelsListField.value = "Fetching models...";
+        try {
+            const response = await fetch('/api/ollama/models');
+            const data = await response.json();
+            if (response.ok) {
+                if (data.models && data.models.length > 0) {
+                    modelsListField.value = data.models.map(m => `${m.name} (Size: ${(m.size / 1e9).toFixed(2)}GB, Family: ${m.details.family || 'N/A'})`).join('\n');
+                } else {
+                    modelsListField.value = "No local models found or Ollama service not running.";
+                }
+            } else {
+                modelsListField.value = `Error fetching models: ${data.error || 'Unknown error'}`;
+            }
+        } catch (e) {
+            modelsListField.value = `Failed to fetch models: ${e.message}`;
+            window.toastFetchError("Error fetching Ollama local models", e);
+        }
+        this.updateFieldValueInSettings(modelsListFieldId, modelsListField.value);
+    },
+
+    async pullOllamaModel(prefix) {
+        const modelNameFieldId = `ollama_pull_model_name_${prefix}`;
+        const pullStatusFieldId = `ollama_pull_model_status_${prefix}`;
+
+        const modelNameField = this.findFieldById(modelNameFieldId);
+        const pullStatusField = this.findFieldById(pullStatusFieldId);
+
+        if (!modelNameField || !pullStatusField) return;
+
+        const modelName = modelNameField.value;
+        if (!modelName || modelName.trim() === "") {
+            pullStatusField.value = "Please enter a model name to pull.";
+            this.updateFieldValueInSettings(pullStatusFieldId, pullStatusField.value);
+            return;
+        }
+
+        pullStatusField.value = `Starting to pull ${modelName}...`;
+        this.updateFieldValueInSettings(pullStatusFieldId, pullStatusField.value);
+
+        const eventSource = new EventSource(`/api/ollama/pull`, {
+            method: 'POST', // EventSource doesn't directly support POST, this is a conceptual workaround
+                            // Actual implementation requires fetch with stream and manual SSE parsing or a library
+                            // For simplicity, assuming a backend that can handle POST for SSE initiation if possible,
+                            // or this needs to be a GET endpoint if using EventSource directly.
+                            // Given the python backend uses stream_with_context, it should work with a POST request
+                            // initiated by fetch, and then the JS needs to read the stream.
+                            // Let's adjust to use fetch for streaming.
+        });
+
+        // This is a simplified representation. Proper SSE handling with POST is more complex.
+        // Typically, you'd use fetch() and read the stream.
+        // The backend is set up for SSE, so fetch should work.
+
+        try {
+            const response = await fetch('/api/ollama/pull', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/event-stream'
+                },
+                body: JSON.stringify({ model_name: modelName, stream: true })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json(); // Try to get JSON error from initial response
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = "";
+
+            pullStatusField.value = `Pulling ${modelName}: \n`;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    pullStatusField.value += "\nPull stream finished.";
+                    this.updateFieldValueInSettings(pullStatusFieldId, pullStatusField.value);
+                    // Automatically refresh local models list after pull
+                    await this.fetchOllamaLocalModels(prefix);
+                    break;
+                }
+
+                buffer += decoder.decode(value, { stream: true });
+
+                // Process buffer line by line for SSE messages
+                let eolIndex;
+                while ((eolIndex = buffer.indexOf('\n')) >= 0) {
+                    const line = buffer.substring(0, eolIndex).trim();
+                    buffer = buffer.substring(eolIndex + 1);
+
+                    if (line.startsWith("data: ")) {
+                        const jsonData = line.substring(6); // Remove "data: "
+                        try {
+                            const eventData = JSON.parse(jsonData);
+                            let statusMsg = "";
+                            if(eventData.status) statusMsg += `Status: ${eventData.status}`;
+                            if(eventData.digest) statusMsg += ` Digest: ${eventData.digest}`;
+                            if(eventData.total && eventData.completed) {
+                                const percent = eventData.total > 0 ? ((eventData.completed / eventData.total) * 100).toFixed(2) : 0;
+                                statusMsg += ` Progress: ${percent}% (${(eventData.completed/1024/1024).toFixed(2)}MB / ${(eventData.total/1024/1024).toFixed(2)}MB)`;
+                            } else if (eventData.total) {
+                                statusMsg += ` Total: ${(eventData.total/1024/1024).toFixed(2)}MB`;
+                            }
+
+                            if (eventData.error) {
+                                statusMsg = `Error: ${eventData.error}`;
+                                if(eventData.details) statusMsg += ` Details: ${typeof eventData.details === 'string' ? eventData.details : JSON.stringify(eventData.details)}`;
+                                pullStatusField.value += statusMsg + "\n";
+                                this.updateFieldValueInSettings(pullStatusFieldId, pullStatusField.value);
+                                return; // Stop on error
+                            }
+
+                            if (statusMsg) {
+                                // Append to existing status, creating a log-like view
+                                pullStatusField.value = pullStatusField.value.split('\n').slice(0, 1).join('\n') + '\n' + statusMsg; // Keep first line, update with latest
+                                // To make it a log:
+                                // pullStatusField.value += statusMsg + "\n";
+                                this.updateFieldValueInSettings(pullStatusFieldId, pullStatusField.value);
+                            }
+
+                            if (eventData.status === 'success' || eventData.status === 'completed pull process') {
+                                pullStatusField.value += "\nPull complete!";
+                                this.updateFieldValueInSettings(pullStatusFieldId, pullStatusField.value);
+                                // Automatically refresh local models list after pull
+                                await this.fetchOllamaLocalModels(prefix);
+                                return; // Exit loop
+                            }
+                        } catch (e) {
+                            console.warn("Failed to parse SSE JSON data:", jsonData, e);
+                            // pullStatusField.value += "Received non-JSON data: " + jsonData + "\n";
+                            // this.updateFieldValueInSettings(pullStatusFieldId, pullStatusField.value);
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            pullStatusField.value = `Failed to pull model: ${e.message}`;
+            this.updateFieldValueInSettings(pullStatusFieldId, pullStatusField.value);
+            window.toastFetchError(`Error pulling Ollama model ${modelName}`, e);
+        }
+    },
+
+    // Helper to find a field in the settings structure by its ID
+    findFieldById(fieldId) {
+        if (!this.settings || !this.settings.sections) return null;
+        for (const section of this.settings.sections) {
+            if (section.fields) {
+                const field = section.fields.find(f => f.id === fieldId);
+                if (field) return field;
+            }
+        }
+        console.warn(`Field with ID ${fieldId} not found in settings structure.`);
+        return null;
+    },
+
+    // Helper to update field value in the settings model to ensure Alpine reactivity
+    updateFieldValueInSettings(fieldId, newValue) {
+        if (!this.settings || !this.settings.sections) return;
+        let found = false;
+        for (const section of this.settings.sections) {
+            if (section.fields) {
+                const field = section.fields.find(f => f.id === fieldId);
+                if (field) {
+                    field.value = newValue;
+                    found = true;
+                    break;
+                }
+            }
+        }
+        // This is important if Alpine is not directly watching nested properties
+        // Force a reactivity update if necessary, e.g. by reassigning this.settings
+        // this.settings = { ...this.settings }; // Or a more targeted update if possible
+    },
+
+    // --- OpenRouter Autocomplete Logic ---
+    openRouterFreeModels: [], // Stores fetched free models for OpenRouter
+    currentOpenRouterSuggestions: [], // Stores current suggestions for the active input
+    activeOpenRouterInputPrefix: null, // Tracks which model input (chat, util, embed) is active for suggestions
+
+    async fetchOpenRouterFreeModels() {
+        if (this.openRouterFreeModels.length > 0) { // Cache results
+            // console.log("Using cached OpenRouter free models.");
+            return;
+        }
+        console.log("Fetching OpenRouter free models...");
+        try {
+            const response = await fetch('/api/openrouter/models'); // Assuming this endpoint is created
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || `Failed to fetch OpenRouter models: ${response.status}`);
+            }
+            const data = await response.json();
+            this.openRouterFreeModels = data.models || [];
+            console.log("Fetched OpenRouter free models:", this.openRouterFreeModels.length);
+        } catch (e) {
+            this.openRouterFreeModels = []; // Clear on error
+            window.toastFetchError("Error fetching OpenRouter models", e);
+            console.error("Error fetching OpenRouter models:", e);
+        }
+    },
+
+    // Call this when an OpenRouter model name input gets focus or input
+    // providerPrefix: 'chat_model', 'util_model', or 'embed_model'
+    // currentInputValue: the current text in the model name input
+    updateOpenRouterSuggestions(providerPrefix, currentInputValue) {
+        this.activeOpenRouterInputPrefix = providerPrefix;
+        const modelProviderField = this.findFieldById(`${providerPrefix}_provider`);
+
+        if (!modelProviderField || modelProviderField.value !== 'OPENROUTER') {
+            this.currentOpenRouterSuggestions = [];
+            return;
+        }
+
+        if (!currentInputValue || currentInputValue.trim() === "") {
+            this.currentOpenRouterSuggestions = this.openRouterFreeModels.slice(0, 10); // Show some initial suggestions or all if few
+        } else {
+            const lowerInput = currentInputValue.toLowerCase();
+            this.currentOpenRouterSuggestions = this.openRouterFreeModels.filter(model =>
+                (model.id && model.id.toLowerCase().includes(lowerInput)) ||
+                (model.name && model.name.toLowerCase().includes(lowerInput))
+            ).slice(0, 10); // Limit suggestions
+        }
+        // console.log("Updated OpenRouter suggestions for", providerPrefix, ":", this.currentOpenRouterSuggestions.length);
+        // In a real UI, you'd now re-render the suggestions dropdown.
+        // With Alpine, this.currentOpenRouterSuggestions being reactive would update the UI.
+    },
+
+    // Call this when a suggestion is selected
+    selectOpenRouterSuggestion(suggestion) {
+        if (!this.activeOpenRouterInputPrefix || !suggestion || !suggestion.id) return;
+
+        const modelNameFieldId = `${this.activeOpenRouterInputPrefix}_name`;
+        const modelNameField = this.findFieldById(modelNameFieldId);
+        if (modelNameField) {
+            modelNameField.value = suggestion.id; // Set the model ID as the value
+            this.updateFieldValueInSettings(modelNameFieldId, suggestion.id); // Ensure Alpine knows
+        }
+        this.currentOpenRouterSuggestions = []; // Clear suggestions
+        this.activeOpenRouterInputPrefix = null; // Reset active input
+        // console.log("Selected OpenRouter suggestion:", suggestion.id);
+    },
+
+    // This function should be triggered when a model provider <select> changes.
+    // It needs to be wired up in the HTML, or called from an event listener on those select elements.
+    async handleProviderChange(providerFieldId, providerPrefix) {
+        const providerField = this.findFieldById(providerFieldId);
+        if (providerField && providerField.value === 'OPENROUTER') {
+            await this.fetchOpenRouterFreeModels();
+        }
+        // Hide/show Ollama fields based on provider (example)
+        this.toggleOllamaFieldsVisibility(providerPrefix, providerField.value === 'OLLAMA');
+
+        // Clear suggestions if provider is not OpenRouter
+        if (providerField && providerField.value !== 'OPENROUTER' && this.activeOpenRouterInputPrefix === providerPrefix) {
+            this.currentOpenRouterSuggestions = [];
+        }
+    },
+
+    // Helper to toggle Ollama fields. Assumes specific IDs.
+    // This is a basic example; more robust handling might be needed in Alpine templates.
+    toggleOllamaFieldsVisibility(prefix, show) {
+        const ollamaFieldIds = [
+            `ollama_status_${prefix}`,
+            `ollama_refresh_status_button_${prefix}`,
+            `ollama_local_models_list_${prefix}`,
+            `ollama_refresh_local_models_button_${prefix}`,
+            `ollama_pull_model_name_${prefix}`,
+            `ollama_pull_model_button_${prefix}`,
+            `ollama_pull_model_status_${prefix}`,
+        ];
+        // This part is tricky without direct DOM access or Alpine's x-show.
+        // If using Alpine, x-show on the field containers in HTML is the way.
+        // This JS function is more of a placeholder for the logic.
+        console.log(`Logic to ${show ? 'show' : 'hide'} Ollama fields for prefix ${prefix} should be handled by Alpine's x-show in the template.`);
+
+        // If not using x-show, you'd find the DOM elements and toggle display:
+        // ollamaFieldIds.forEach(id => {
+        //     const element = document.getElementById(id); // Or a more specific selector
+        //     if (element) {
+        //          // Find the parent container of the field to hide/show the whole row
+        //         const fieldContainer = element.closest('.settings-field-container'); // Example selector
+        //         if (fieldContainer) fieldContainer.style.display = show ? '' : 'none';
+        //     }
+        // });
     }
 };
 

@@ -6,3 +6,24 @@ services:
       - ./agent-zero:/a0
     ports:
       - "50080:80"
+    depends_on:
+      - ollama
+
+  ollama:
+    container_name: ollama
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    # Uncomment the following lines to enable GPU acceleration with Nvidia
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+volumes:
+  ollama_data:

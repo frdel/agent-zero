@@ -211,6 +211,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "value": _dict_to_env(settings["chat_model_kwargs"]),
         }
     )
+    chat_model_fields.extend(_get_ollama_management_fields("chat_model"))
 
     chat_model_section: SettingsSection = {
         "id": "chat_model",
@@ -281,6 +282,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "value": _dict_to_env(settings["util_model_kwargs"]),
         }
     )
+    util_model_fields.extend(_get_ollama_management_fields("util_model"))
 
     util_model_section: SettingsSection = {
         "id": "util_model",
@@ -341,6 +343,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "value": _dict_to_env(settings["embed_model_kwargs"]),
         }
     )
+    embed_model_fields.extend(_get_ollama_management_fields("embed_model"))
 
     embed_model_section: SettingsSection = {
         "id": "embed_model",
@@ -789,6 +792,61 @@ def convert_out(settings: Settings) -> SettingsOutput:
     }
     return result
 
+
+def _get_ollama_management_fields(provider_prefix: str) -> list[SettingsField]:
+    """Helper function to generate common Ollama management fields."""
+    return [
+        {
+            "id": f"ollama_status_{provider_prefix}", # e.g., ollama_status_chat_model
+            "title": "Ollama Service Status",
+            "description": "Status of the Ollama service connection. Click 'Refresh Status' to update.",
+            "type": "text", # Will be dynamically updated by JS; not a user input. Could also be a custom display type if supported.
+            "value": "Click 'Refresh Status'", # Initial value
+            # This field would ideally be non-editable or a special display type.
+            # The frontend will need to handle making this appear as a status display.
+        },
+        {
+            "id": f"ollama_refresh_status_button_{provider_prefix}",
+            "title": "Refresh Ollama Status",
+            "type": "button",
+            "value": "Refresh Status", # Button text
+        },
+        {
+            "id": f"ollama_local_models_list_{provider_prefix}",
+            "title": "Available Local Ollama Models",
+            "description": "Models currently available in your local Ollama instance. Click 'Refresh Local Models' to update.",
+            "type": "textarea", # Using textarea for display; JS will make it read-only
+            "value": "Click 'Refresh Local Models' to see list.",
+            # Attributes like 'rows' could be added if supported, or controlled by CSS
+        },
+        {
+            "id": f"ollama_refresh_local_models_button_{provider_prefix}",
+            "title": "Refresh Local Models",
+            "type": "button",
+            "value": "Refresh List",
+        },
+        {
+            "id": f"ollama_pull_model_name_{provider_prefix}",
+            "title": "Pull New Ollama Model",
+            "description": "Enter the name of the model to pull from Ollama Hub (e.g., 'llama3:latest', 'orca-mini').",
+            "type": "text",
+            "value": "", # Empty for user input
+        },
+        {
+            "id": f"ollama_pull_model_button_{provider_prefix}",
+            "title": "Pull Model",
+            "type": "button",
+            "value": "Pull Model",
+        },
+        {
+            "id": f"ollama_pull_model_status_{provider_prefix}",
+            "title": "Pull Status",
+            "description": "Status of the model pulling operation.",
+            "type": "text", # For displaying pull progress/status from SSE
+            "value": "",
+             # This field would ideally be non-editable or a special display type.
+        },
+    ]
 
 def _get_api_key_field(settings: Settings, provider: str, title: str) -> SettingsField:
     key = settings["api_keys"].get(provider, models.get_api_key(provider))

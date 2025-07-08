@@ -104,10 +104,15 @@ def parse_chunk(chunk: Any):
 
 # Ollama models
 def get_ollama_base_url():
-    return (
-        dotenv.get_dotenv_value("OLLAMA_BASE_URL")
-        or f"http://{runtime.get_local_url()}:11434"
-    )
+    # Prioritize environment variable if set
+    env_url = dotenv.get_dotenv_value("OLLAMA_BASE_URL")
+    if env_url:
+        return env_url
+    # If running in Docker, default to the service name
+    if runtime.is_dockerized():
+        return "http://ollama:11434"
+    # Fallback for non-Docker local instances
+    return f"http://{runtime.get_local_url()}:11434"
 
 
 def get_ollama_chat(
