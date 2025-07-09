@@ -125,11 +125,7 @@ class State:
             )
             return result
 
-        model = models.get_browser_model(
-            provider=self.agent.config.browser_model.provider,
-            name=self.agent.config.browser_model.name,
-            **self.agent._get_model_kwargs(self.agent.config.browser_model),
-        )
+        model = self.agent.get_browser_model()
 
         try:
             self.use_agent = browser_use.Agent(

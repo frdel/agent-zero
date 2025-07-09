@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from enum import Enum
 import logging
 import os
@@ -71,6 +72,26 @@ class ModelProvider(Enum):
     OPENROUTER = "OpenRouter"
     SAMBANOVA = "Sambanova"
     OTHER = "Other OpenAI compatible"
+
+
+@dataclass
+class ModelConfig:
+    type: ModelType
+    provider: ModelProvider
+    name: str
+    api_base: str = ""
+    ctx_length: int = 0
+    limit_requests: int = 0
+    limit_input: int = 0
+    limit_output: int = 0
+    vision: bool = False
+    kwargs: dict = field(default_factory=dict)
+
+    def build_kwargs(self):
+        kwargs = self.kwargs.copy() or {}
+        if self.api_base and "api_base" not in kwargs:
+            kwargs["api_base"] = self.api_base
+        return kwargs
 
 
 class ChatChunk(TypedDict):
@@ -233,6 +254,9 @@ class LiteLLMChatWrapper(SimpleChatModel):
         tokens_callback: Callable[[str, int], Awaitable[None]] | None = None,
         **kwargs: Any,
     ) -> Tuple[str, str]:
+
+        turn_off_logging()
+
         if not messages:
             messages = []
         # construct messages
@@ -408,7 +432,9 @@ def _get_litellm_embedding(model_name: str, provider_name: str, **kwargs: Any):
 
 def _parse_chunk(chunk: Any) -> ChatChunk:
     delta = chunk["choices"][0].get("delta", {})
-    message = chunk["choices"][0].get("model_extra", {}).get("message", {})
+    message = chunk["choices"][0].get("message", {}) or chunk["choices"][0].get(
+        "model_extra", {}
+    ).get("message", {})
     response_delta = (
         delta.get("content", "")
         if isinstance(delta, dict)

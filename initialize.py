@@ -1,5 +1,5 @@
 import models
-from agent import AgentConfig, ModelConfig
+from agent import AgentConfig
 from python.helpers import runtime, settings, defer
 from python.helpers.print_style import PrintStyle
 
@@ -26,7 +26,8 @@ def initialize_agent():
         return result
 
     # chat model from user settings
-    chat_llm = ModelConfig(
+    chat_llm = models.ModelConfig(
+        type=models.ModelType.CHAT,
         provider=models.ModelProvider[current_settings["chat_model_provider"]],
         name=current_settings["chat_model_name"],
         api_base=current_settings["chat_model_api_base"],
@@ -39,7 +40,8 @@ def initialize_agent():
     )
 
     # utility model from user settings
-    utility_llm = ModelConfig(
+    utility_llm = models.ModelConfig(
+        type=models.ModelType.CHAT,
         provider=models.ModelProvider[current_settings["util_model_provider"]],
         name=current_settings["util_model_name"],
         api_base=current_settings["util_model_api_base"],
@@ -50,7 +52,8 @@ def initialize_agent():
         kwargs=_normalize_model_kwargs(current_settings["util_model_kwargs"]),
     )
     # embedding model from user settings
-    embedding_llm = ModelConfig(
+    embedding_llm = models.ModelConfig(
+        type=models.ModelType.EMBEDDING,
         provider=models.ModelProvider[current_settings["embed_model_provider"]],
         name=current_settings["embed_model_name"],
         api_base=current_settings["embed_model_api_base"],
@@ -58,7 +61,8 @@ def initialize_agent():
         kwargs=_normalize_model_kwargs(current_settings["embed_model_kwargs"]),
     )
     # browser model from user settings
-    browser_llm = ModelConfig(
+    browser_llm = models.ModelConfig(
+        type=models.ModelType.CHAT,
         provider=models.ModelProvider[current_settings["browser_model_provider"]],
         name=current_settings["browser_model_name"],
         api_base=current_settings["browser_model_api_base"],

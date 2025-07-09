@@ -30,7 +30,7 @@ unstructured-client==0.31.0
 webcolors==24.6.0
 nest-asyncio==1.6.0
 crontab==1.0.1
-litellm==1.72.4
+litellm==1.74
 markdownify==1.1.0
 pymupdf==1.25.3
 pytesseract==0.3.13

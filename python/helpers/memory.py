@@ -28,7 +28,7 @@ import uuid
 from python.helpers import knowledge_import
 from python.helpers.log import Log, LogItem
 from enum import Enum
-from agent import Agent, ModelConfig
+from agent import Agent
 import models
 import logging
 
@@ -96,7 +96,7 @@ class Memory:
     @staticmethod
     def initialize(
         log_item: LogItem | None,
-        model_config: ModelConfig,
+        model_config: models.ModelConfig,
         memory_subdir: str,
         in_memory=False,
     ) -> tuple[MyFaiss, bool]:
@@ -120,17 +120,10 @@ class Memory:
             os.makedirs(em_dir, exist_ok=True)
             store = LocalFileStore(em_dir)
 
-        # HOTFIX TODO: unify with agent.py
-        def _get_model_kwargs(model_config: ModelConfig):
-            kwargs = model_config.kwargs.copy() or {}
-            if model_config.api_base and "api_base" not in kwargs:
-                kwargs["api_base"] = model_config.api_base
-            return kwargs
-
         embeddings_model = models.get_embedding_model(
             model_config.provider,
             model_config.name,
-            **_get_model_kwargs(model_config),
+            **model_config.build_kwargs(),
         )
         embeddings_model_id = files.safe_file_name(
             model_config.provider.name + "_" + model_config.name

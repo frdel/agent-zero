@@ -202,25 +202,13 @@ class AgentContext:
             agent.handle_critical_exception(e)
 
 
-@dataclass
-class ModelConfig:
-    provider: models.ModelProvider
-    name: str
-    api_base: str = ""
-    ctx_length: int = 0
-    limit_requests: int = 0
-    limit_input: int = 0
-    limit_output: int = 0
-    vision: bool = False
-    kwargs: dict = field(default_factory=dict)
-
 
 @dataclass
 class AgentConfig:
-    chat_model: ModelConfig
-    utility_model: ModelConfig
-    embeddings_model: ModelConfig
-    browser_model: ModelConfig
+    chat_model: models.ModelConfig
+    utility_model: models.ModelConfig
+    embeddings_model: models.ModelConfig
+    browser_model: models.ModelConfig
     mcp_servers: str
     prompts_subdir: str = ""
     memory_subdir: str = ""
@@ -582,28 +570,29 @@ class Agent:
         return models.get_chat_model(
             self.config.chat_model.provider,
             self.config.chat_model.name,
-            **self._get_model_kwargs(self.config.chat_model),
+            **self.config.chat_model.build_kwargs(),
         )
 
     def get_utility_model(self):
         return models.get_chat_model(
             self.config.utility_model.provider,
             self.config.utility_model.name,
-            **self._get_model_kwargs(self.config.utility_model),
+            **self.config.utility_model.build_kwargs(),
+        )
+
+    def get_browser_model(self):
+        return models.get_browser_model(
+            self.config.browser_model.provider,
+            self.config.browser_model.name,
+            **self.config.browser_model.build_kwargs(),
         )
 
     def get_embedding_model(self):
         return models.get_embedding_model(
             self.config.embeddings_model.provider,
             self.config.embeddings_model.name,
-            **self._get_model_kwargs(self.config.embeddings_model),
+            **self.config.embeddings_model.build_kwargs(),
         )
-
-    def _get_model_kwargs(self, model_config: ModelConfig):
-        kwargs = model_config.kwargs.copy() or {}
-        if model_config.api_base and "api_base" not in kwargs:
-            kwargs["api_base"] = model_config.api_base
-        return kwargs
 
     async def call_utility_model(
         self,
@@ -670,7 +659,7 @@ class Agent:
         return response, reasoning
 
     async def rate_limiter(
-        self, model_config: ModelConfig, input: str, background: bool = False
+        self, model_config: models.ModelConfig, input: str, background: bool = False
     ):
         # rate limiter log
         wait_log = None

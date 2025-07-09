@@ -122,6 +122,7 @@ _settings: Settings | None = None
 
 def convert_out(settings: Settings) -> SettingsOutput:
     from models import ModelProvider
+    default_settings = get_default_settings()
 
     # main model section
     chat_model_fields: list[SettingsField] = []
@@ -381,7 +382,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     embed_model_section: SettingsSection = {
         "id": "embed_model",
         "title": "Embedding Model",
-        "description": "Settings for the embedding model used by Agent Zero.",
+        "description": f"Settings for the embedding model used by Agent Zero.<br><h4>⚠️ No need to change</h4>The default HuggingFace model {default_settings['embed_model_name']} is preloaded and runs locally within the docker container and there's no need to change it unless you have a specific requirements for embedding.",
         "fields": embed_model_fields,
         "tab": "agent",
     }
@@ -405,6 +406,16 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "description": "Exact name of model from selected provider",
             "type": "text",
             "value": settings["browser_model_name"],
+        }
+    )
+
+    browser_model_fields.append(
+        {
+            "id": "browser_model_api_base",
+            "title": "Web Browser model API base URL",
+            "description": "API base URL for web browser model. Leave empty for default. Only relevant for Azure, local and custom (other) providers.",
+            "type": "text",
+            "value": settings["browser_model_api_base"],
         }
     )
 
@@ -436,24 +447,6 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "tab": "agent",
     }
 
-    # # Memory settings section
-    # memory_fields: list[SettingsField] = []
-    # memory_fields.append(
-    #     {
-    #         "id": "memory_settings",
-    #         "title": "Memory Settings",
-    #         "description": "<settings for memory>",
-    #         "type": "text",
-    #         "value": "",
-    #     }
-    # )
-
-    # memory_section: SettingsSection = {
-    #     "id": "memory",
-    #     "title": "Memory Settings",
-    #     "description": "<settings for memory management here>",
-    #     "fields": memory_fields,
-    # }
 
     # basic auth section
     auth_fields: list[SettingsField] = []
@@ -829,9 +822,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
             agent_section,
             chat_model_section,
             util_model_section,
-            embed_model_section,
             browser_model_section,
-            # memory_section,
+            embed_model_section,
             stt_section,
             api_keys_section,
             auth_section,
