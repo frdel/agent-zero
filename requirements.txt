@@ -38,3 +38,11 @@ pdf2image==1.17.0
 crontab==1.0.1
 pathspec>=0.12.1
 psutil>=7.0.0
+# Data Analysis Dependencies for data_analyst profile
+pandas>=1.5.0
+matplotlib>=3.6.0
+seaborn>=0.12.0
+numpy>=1.24.0
+scikit-learn>=1.2.0
+seaborn>=0.13.2
+openai>=1.0.0

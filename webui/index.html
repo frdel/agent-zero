@@ -128,6 +128,7 @@
     <script type="text/javascript" src="js/file_browser.js"></script>
     <script type="text/javascript" src="js/modal.js"></script>
     <script type="text/javascript" src="js/tunnel.js"></script>
+
 </head>
 
 <body class="dark-mode">
@@ -564,6 +565,21 @@
                         <p>Nudge</p>
                     </button>
 
+                    <div class="text-button" x-data="personaSelector" @click="setPersona()">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                        </svg>
+                        <p>Profile</p>
+                        <div x-show="isOpen" @click.away="isOpen = false" x-transition class="persona-dropdown">
+                            <template x-for="option in options" :key="option.value">
+                                <div @click.stop="selectPersona(option.value)" 
+                                     :class="{'persona-option': true, 'selected': option.value === currentPersona}"
+                                     x-text="option.label">
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -721,7 +737,7 @@
                             </template>
 
                             <!-- Tunnel section content - only visible in External Services tab -->
-                            <div id="section-tunnel" class="section" x-show="activeTab === 'external'">
+                            <div id="section-tunnel" class="section" x-show="activeTab === 'external'" x-data="tunnelSettings">
                                 <div class="section-title">Flare Tunnel</div>
                                 <div class="section-description">Create a secure public URL to access your Agent Zero instance anytime, anywhere.</div>
                                 <div class="field">
@@ -737,7 +753,7 @@
                                     </div>
                                 </div>
                                 <!-- Tunnel content UI -->
-                                <div class="tunnel-container" x-data="tunnelSettings">
+                                <div class="tunnel-container">
                                     <!-- Loading spinner for tunnel operations -->
                                     <div class="loading-spinner" x-show="isLoading">
                                         <i class="fas fa-spinner fa-spin"></i>
@@ -1703,6 +1719,8 @@
         <div class="dragdrop-text">Drop files to attach them to your message</div>
         <div class="dragdrop-subtext"></div>
     </div>
+
+
 
 </body>
 
