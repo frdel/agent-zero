@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  # LM Studio service
+  lmstudio:
+    image: nvidia/cuda:12.1-runtime-ubuntu22.04
+    container_name: lmstudio
+    restart: unless-stopped
+    ports:
+      - "1234:1234"  # LM Studio API port
+    volumes:
+      - lmstudio_models:/models
+      - lmstudio_config:/config
+      - ./lmstudio-config:/app/config
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    command: >
+      bash -c "
+        apt-get update && 
+        apt-get install -y curl wget python3 python3-pip &&
+        pip3 install lmstudio &&
+        lmstudio server start --host 0.0.0.0 --port 1234 --models-path /models
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1234/v1/models"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # Agent Zero service
+  agent-zero:
+    image: frdel/agent-zero-run:latest
+    container_name: agent-zero-lmstudio
+    restart: unless-stopped
+    depends_on:
+      lmstudio:
+        condition: service_healthy
+    ports:
+      - "50080:80"      # Web UI
+      - "55022:22"      # SSH
+      - "55080:55080"   # Additional services
+    volumes:
+      - agent_zero_data:/a0
+      - agent_zero_memory:/a0/memory
+      - agent_zero_knowledge:/a0/knowledge
+      - agent_zero_logs:/a0/logs
+      - ./agent-config:/a0/config
+      - ./lmstudio.env:/a0/.env
+    environment:
+      - LM_STUDIO_BASE_URL=http://lmstudio:1234/v1
+      - CHAT_MODEL_PROVIDER=LMSTUDIO
+      - UTIL_MODEL_PROVIDER=LMSTUDIO
+      - EMBED_MODEL_PROVIDER=LMSTUDIO
+      - BROWSER_MODEL_PROVIDER=LMSTUDIO
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  # Optional: Monitoring service
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower-agent-zero
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=3600  # Check for updates every hour
+      - WATCHTOWER_INCLUDE_STOPPED=true
+    command: agent-zero-lmstudio lmstudio
+
+volumes:
+  lmstudio_models:
+    driver: local
+  lmstudio_config:
+    driver: local
+  agent_zero_data:
+    driver: local
+  agent_zero_memory:
+    driver: local
+  agent_zero_knowledge:
+    driver: local
+  agent_zero_logs:
+    driver: local
+
+networks:
+  default:
+    name: agent-zero-network
