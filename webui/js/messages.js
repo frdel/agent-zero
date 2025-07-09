@@ -394,48 +394,108 @@ export function drawMessageUser(
       const attachmentDiv = document.createElement("div");
       attachmentDiv.classList.add("attachment-item");
 
-      if (typeof attachment === "string") {
-        // attachment is filename
-        const filename = attachment;
-        const extension = filename.split(".").pop().toUpperCase();
+      // Get attachment store for enhanced device sync support
+      const attachmentStore = window.Alpine && window.Alpine.store('chatAttachments');
 
-        attachmentDiv.classList.add("file-type");
-        attachmentDiv.innerHTML = `
-                    <div class="file-preview">
-                        <span class="filename">${filename}</span>
-                        <span class="extension">${extension}</span>
-                    </div>
-                `;
-      } else if (attachment.type === "image") {
-        // Existing logic for images
-        const imgWrapper = document.createElement("div");
-        imgWrapper.classList.add("image-wrapper");
+      // Helper function to generate server-side image URL (fallback if store not available)
+      const getServerImageUrl = (filename) => {
+        if (attachmentStore) {
+          return attachmentStore.getServerFileUrl(filename);
+        }
+        return `/image_get?path=/a0/tmp/uploads/${encodeURIComponent(filename)}`;
+      };
+
+      // Helper function to check if file is an image (fallback if store not available)
+      const isImageFile = (filename) => {
+        if (attachmentStore) {
+          return attachmentStore.isImageFile(filename);
+        }
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+        const extension = filename.split('.').pop().toLowerCase();
+        return imageExtensions.includes(extension);
+      };
+
+      // Use enhanced attachment store methods for better device sync
+      let displayInfo;
+      if (attachmentStore) {
+        displayInfo = attachmentStore.getAttachmentDisplayInfo(attachment);
+      } else {
+        // Fallback for when store is not available
+        if (typeof attachment === "string") {
+          const filename = attachment;
+          const extension = filename.split(".").pop();
+          displayInfo = {
+            filename: filename,
+            extension: extension.toUpperCase(),
+            isImage: isImageFile(filename),
+            previewUrl: getServerImageUrl(filename),
+            clickHandler: () => {
+              if (isImageFile(filename) && window.Alpine && window.Alpine.store('chatAttachments')) {
+                window.Alpine.store('chatAttachments').openImageModal(getServerImageUrl(filename), filename);
+              }
+            }
+          };
+        } else {
+          displayInfo = {
+            filename: attachment.name,
+            extension: attachment.extension.toUpperCase(),
+            isImage: attachment.type === 'image',
+            previewUrl: attachment.url,
+            clickHandler: () => {
+              if (attachment.type === 'image' && window.Alpine && window.Alpine.store('chatAttachments')) {
+                window.Alpine.store('chatAttachments').openImageModal(attachment.url, attachment.name);
+              }
+            }
+          };
+        }
+      }
+
+      if (displayInfo.isImage) {
+        // Render as image tile with bottom badge
+        attachmentDiv.classList.add("image-type");
 
         const img = document.createElement("img");
-        img.src = attachment.url;
-        img.alt = attachment.name;
+        img.src = displayInfo.previewUrl;
+        img.alt = displayInfo.filename;
         img.classList.add("attachment-preview");
+        img.style.cursor = "pointer";
+        img.addEventListener('click', displayInfo.clickHandler);
 
-        const fileInfo = document.createElement("div");
-        fileInfo.classList.add("file-info");
-        fileInfo.innerHTML = `
-                    <span class="filename">${attachment.name}</span>
-                    <span class="extension">${attachment.extension.toUpperCase()}</span>
-                `;
+        const imageBadge = document.createElement("div");
+        imageBadge.classList.add("image-badge");
+        imageBadge.textContent = displayInfo.extension;
 
-        imgWrapper.appendChild(img);
-        attachmentDiv.appendChild(imgWrapper);
-        attachmentDiv.appendChild(fileInfo);
+        attachmentDiv.appendChild(img);
+        attachmentDiv.appendChild(imageBadge);
       } else {
-        // Existing logic for non-image files
+        // Render as file tile with title and icon
         attachmentDiv.classList.add("file-type");
-        attachmentDiv.innerHTML = `
-                    <div class="file-preview">
-                        <span class="filename">${attachment.name}</span>
-                        <span class="extension">${attachment.extension.toUpperCase()}</span>
-                    </div>
-                `;
+        
+        // File icon
+        if (displayInfo.previewUrl && displayInfo.previewUrl !== displayInfo.filename) {
+          const iconImg = document.createElement("img");
+          iconImg.src = displayInfo.previewUrl;
+          iconImg.alt = `${displayInfo.extension} file`;
+          iconImg.classList.add("file-icon");
+          attachmentDiv.appendChild(iconImg);
+        }
+        
+        // File title (filename without extension)
+        const fileTitle = document.createElement("div");
+        fileTitle.classList.add("file-title");
+        const nameWithoutExt = displayInfo.filename.replace(/\.[^/.]+$/, "");
+        fileTitle.textContent = nameWithoutExt;
+        
+        // File extension badge
+        const fileExtension = document.createElement("div");
+        fileExtension.classList.add("file-extension");
+        fileExtension.textContent = displayInfo.extension;
+        
+        attachmentDiv.appendChild(fileTitle);
+        attachmentDiv.appendChild(fileExtension);
       }
+
+
 
       attachmentsContainer.appendChild(attachmentDiv);
     });
