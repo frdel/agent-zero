@@ -1,3 +1,7 @@
+
+
+import { fetchApi } from "./api.js";
+
 // Tunnel settings for the Settings modal
 document.addEventListener('alpine:init', () => {
     Alpine.data('tunnelSettings', () => ({

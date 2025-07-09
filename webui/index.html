@@ -102,7 +102,6 @@
     <script type="module" src="js/scheduler.js"></script>
     <script type="module" src="js/speech.js"></script>
     <script type="module" src="js/history.js"></script>
-    <script type="module" src="components/chat/attachments/attachmentsStore.js"></script>
     <script type="module" src="index.js"></script>
 
     <!-- Then load Alpine.js -->
@@ -128,7 +127,7 @@
     <script type="text/javascript" src="js/settings.js"></script>
     <script type="text/javascript" src="js/file_browser.js"></script>
     <script type="text/javascript" src="js/modal.js"></script>
-    <script type="text/javascript" src="js/tunnel.js"></script>
+    <script type="module" src="js/tunnel.js"></script>
 </head>
 
 <body class="dark-mode">
@@ -364,7 +363,7 @@
             </div>
             <div id="progress-bar-box" x-data="{ isSpeaking: false }" x-init="
             // Watch the speech synthesis status to update isSpeaking
-            setInterval(() => isSpeaking = window.speech.isSpeaking(), 100)
+            setInterval(() => isSpeaking = window.speech && window.speech.isSpeaking(), 1000)
         ">
                 <h4 id="progress-bar-h">
                     <span id="progress-bar-i">|></span><span id="progress-bar"></span>
@@ -377,27 +376,11 @@
                 paused: false
             }">
 
-                <!-- Preview section -->
-                <div x-show="$store.chatAttachments.hasAttachments" class="preview-section">
-                    <template x-for="(attachment, index) in $store.chatAttachments.attachments" :key="index">
-                        <div class="preview-item" :class="{'image-preview': attachment.type === 'image'}">
-                            <template x-if="attachment.type === 'image'">
-                                <img :src="attachment.url" :alt="attachment.name" 
-                                     style="cursor: pointer;" 
-                                     @click="$store.chatAttachments.openImageModal(attachment.url, attachment.name)">
-                            </template>
-                            <template x-if="attachment.type === 'file'">
-                                <div class="file-preview">
-                                    <span class="filename" x-text="attachment.name"></span>
-                                    <span class="extension" x-text="attachment.extension.toUpperCase()"></span>
-                                </div>
-                            </template>
-                            <button @click="$store.chatAttachments.removeAttachment(index)"
-                                class="remove-attachment">&times;</button>
-                        </div>
-                    </template>
+                <!-- Attachment Preview section -->
+                <div>
+                    <x-component path="/chat/attachments/inputPreview.html" />
                 </div>
-
+               
                 <!-- Top row with input and buttons -->
                 <div class="input-row">
                     <!-- Attachment icon with tooltip -->

@@ -18,6 +18,8 @@ export function createStore(name, initialState) {
       return true;
     },
     get(target, prop) {
+      const store = globalThis.Alpine?.store(name);
+      if (store) return store[prop];
       return target[prop];
     }
   });

@@ -1,8 +1,9 @@
 // copy button
 import { openImageModal } from "./image_modal.js";
 import { marked } from "../vendor/marked/marked.esm.js";
-import { store as messageResizeStore } from "/components/messages/resize/message-resize-store.js";
 import { getAutoScroll } from "/index.js";
+import { store as _messageResizeStore } from "/components/messages/resize/message-resize-store.js"; // keep here, required in html
+import { store as attachmentsStore } from "/components/chat/attachments/attachmentsStore.js";
 
 const chatHistory = document.getElementById("chat-history");
 
@@ -394,64 +395,9 @@ export function drawMessageUser(
       const attachmentDiv = document.createElement("div");
       attachmentDiv.classList.add("attachment-item");
 
-      // Get attachment store for enhanced device sync support
-      const attachmentStore = window.Alpine && window.Alpine.store('chatAttachments');
-
-      // Helper function to generate server-side image URL (fallback if store not available)
-      const getServerImageUrl = (filename) => {
-        if (attachmentStore) {
-          return attachmentStore.getServerFileUrl(filename);
-        }
-        return `/image_get?path=/a0/tmp/uploads/${encodeURIComponent(filename)}`;
-      };
-
-      // Helper function to check if file is an image (fallback if store not available)
-      const isImageFile = (filename) => {
-        if (attachmentStore) {
-          return attachmentStore.isImageFile(filename);
-        }
-        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
-        const extension = filename.split('.').pop().toLowerCase();
-        return imageExtensions.includes(extension);
-      };
-
-      // Use enhanced attachment store methods for better device sync
-      let displayInfo;
-      if (attachmentStore) {
-        displayInfo = attachmentStore.getAttachmentDisplayInfo(attachment);
-      } else {
-        // Fallback for when store is not available
-        if (typeof attachment === "string") {
-          const filename = attachment;
-          const extension = filename.split(".").pop();
-          displayInfo = {
-            filename: filename,
-            extension: extension.toUpperCase(),
-            isImage: isImageFile(filename),
-            previewUrl: getServerImageUrl(filename),
-            clickHandler: () => {
-              if (isImageFile(filename) && window.Alpine && window.Alpine.store('chatAttachments')) {
-                window.Alpine.store('chatAttachments').openImageModal(getServerImageUrl(filename), filename);
-              }
-            }
-          };
-        } else {
-          displayInfo = {
-            filename: attachment.name,
-            extension: attachment.extension.toUpperCase(),
-            isImage: attachment.type === 'image',
-            previewUrl: attachment.url,
-            clickHandler: () => {
-              if (attachment.type === 'image' && window.Alpine && window.Alpine.store('chatAttachments')) {
-                window.Alpine.store('chatAttachments').openImageModal(attachment.url, attachment.name);
-              }
-            }
-          };
-        }
-      }
+      const displayInfo = attachmentsStore.getAttachmentDisplayInfo(attachment);
 
       if (displayInfo.isImage) {
-        // Render as image tile with bottom badge
         attachmentDiv.classList.add("image-type");
 
         const img = document.createElement("img");
@@ -459,14 +405,9 @@ export function drawMessageUser(
         img.alt = displayInfo.filename;
         img.classList.add("attachment-preview");
         img.style.cursor = "pointer";
-        img.addEventListener('click', displayInfo.clickHandler);
 
-        const imageBadge = document.createElement("div");
-        imageBadge.classList.add("image-badge");
-        imageBadge.textContent = displayInfo.extension;
 
         attachmentDiv.appendChild(img);
-        attachmentDiv.appendChild(imageBadge);
       } else {
         // Render as file tile with title and icon
         attachmentDiv.classList.add("file-type");
@@ -480,22 +421,15 @@ export function drawMessageUser(
           attachmentDiv.appendChild(iconImg);
         }
         
-        // File title (filename without extension)
+        // File title
         const fileTitle = document.createElement("div");
         fileTitle.classList.add("file-title");
-        const nameWithoutExt = displayInfo.filename.replace(/\.[^/.]+$/, "");
-        fileTitle.textContent = nameWithoutExt;
-        
-        // File extension badge
-        const fileExtension = document.createElement("div");
-        fileExtension.classList.add("file-extension");
-        fileExtension.textContent = displayInfo.extension;
-        
+        fileTitle.textContent = displayInfo.filename;
+                
         attachmentDiv.appendChild(fileTitle);
-        attachmentDiv.appendChild(fileExtension);
       }
 
-
+      attachmentDiv.addEventListener('click', displayInfo.clickHandler);
 
       attachmentsContainer.appendChild(attachmentDiv);
     });
@@ -743,8 +677,6 @@ function drawKvps(container, kvps, latex) {
           });
         } else {
           const pre = document.createElement("pre");
-          // pre.classList.add("kvps-val");
-          //   if (row.classList.contains("msg-thoughts")) {
           const span = document.createElement("span");
           span.innerHTML = convertHTML(value);
           pre.appendChild(span);
@@ -766,17 +698,7 @@ function drawKvps(container, kvps, latex) {
           }
         }
       }
-      //   } else {
-      //     pre.textContent = value;
 
-      //     // Add click handler
-      //     pre.addEventListener("click", () => {
-      //       copyText(value, pre);
-      //     });
-
-      //     td.appendChild(pre);
-      //     addCopyButtonToElement(row);
-      //   }
     }
     container.appendChild(table);
   }
@@ -897,31 +819,3 @@ function adjustMarkdownRender(element) {
     wrapper.appendChild(el);
   });
 }
-
-// function convertPathsToLinksInHtml(htmlString) {
-//   // 1. Parse the input safely
-//   const wrapper = document.createElement("div");
-//   wrapper.innerHTML = htmlString;
-
-//   // 2. Depth-first walk
-//   function walk(node) {
-//     // Skip <script> and <style> blocks entirely
-//     if (node.nodeName === "SCRIPT" || node.nodeName === "STYLE") return;
-
-//     if (node.nodeType === Node.TEXT_NODE) {
-//       const original = node.nodeValue;
-//       const replaced = convertPathsToLinks(original);
-//       if (replaced !== original) {
-//         // Turn the replacement HTML string into real nodes
-//         const frag = document.createRange().createContextualFragment(replaced);
-//         node.replaceWith(frag);
-//       }
-//     } else {
-//       // Recurse into children
-//       for (const child of Array.from(node.childNodes)) walk(child);
-//     }
-//   }
-
-//   walk(wrapper);
-//   return wrapper.innerHTML;
-// }

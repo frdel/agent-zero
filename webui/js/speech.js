@@ -1,5 +1,6 @@
 // import { pipeline, read_audio } from '../transformers@3.0.2.js';
 import { updateChatInput, sendMessage } from "../index.js";
+import { fetchApi } from "./api.js";
 
 const microphoneButton = document.getElementById("microphone-button");
 let microphoneInput = null;
@@ -400,24 +401,34 @@ class Speech {
   }
 
   stripEmojis(str) {
-    return str
-      .replace(
-        /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g,
-        ""
-      )
-      .replace(/\s+/g, " ")
-      .trim();
+    // Remove emojis
+    return str.replace(
+      /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g,
+      ""
+    );
+  }
+
+  normalizeWhitespace(str) {
+    // Replace multiple spaces with a single space while preserving newlines
+    str = str.split('\n').map(line => {
+      return line.replace(/\s+/g, ' ').trim();
+    }).join('\n');
+    
+    return str.trim();
   }
 
   speak(text) {
-    console.log("Speaking:", text);
+    console.log("Starting speak:", text);
     // Stop any current utterance
     this.stop();
 
-    // Remove emojis and create a new utterance
-    text = this.stripEmojis(text);
+    // Process text for speech synthesis
+    text = this.stripEmojis(text);           // remove emojis
+    text = this.normalizeWhitespace(text);   // normalize whitespace while preserving newlines
     text = this.replaceURLs(text);
     text = this.replaceGuids(text);
+
+    console.log("Speaking text:", text);
     this.utterance = new SpeechSynthesisUtterance(text);
 
     // Speak the new utterance

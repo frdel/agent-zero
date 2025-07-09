@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 
-from agent import Agent
+from agent import Agent, LoopData
 from python.helpers.print_style import PrintStyle
 from python.helpers.strings import sanitize_string
 
@@ -13,11 +13,12 @@ class Response:
 
 class Tool:
 
-    def __init__(self, agent: Agent, name: str, method: str | None, args: dict[str,str], message: str, **kwargs) -> None:
+    def __init__(self, agent: Agent, name: str, method: str | None, args: dict[str,str], message: str, loop_data: LoopData | None, **kwargs) -> None:
         self.agent = agent
         self.name = name
         self.method = method
         self.args = args
+        self.loop_data = loop_data
         self.message = message
 
     @abstractmethod
