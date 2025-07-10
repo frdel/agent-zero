@@ -2,6 +2,7 @@ import * as msgs from "./js/messages.js";
 import { speech } from "./js/speech.js";
 import * as api from "./js/api.js";
 import * as css from "./js/css.js";
+import { sleep } from "./js/sleep.js";
 import { store as attachmentsStore } from "./components/chat/attachments/attachmentsStore.js";
 
 window.fetchApi = api.fetchApi; // TODO - backward compatibility for non-modular scripts, remove once refactored to alpine
@@ -95,29 +96,40 @@ export async function sendMessage() {
   try {
     const message = chatInput.value.trim();
     // const attachmentsStore = attachmentsStore; //window.Alpine ? Alpine.store('chatAttachments') : null;
-    const attachments = attachmentsStore.attachments; // attachmentsStore ? attachmentsStore.attachments : [];
-    const hasAttachments = attachmentsStore.hasAttachments; // attachmentsStore ? attachmentsStore.hasAttachments : false;
+    const attachmentsWithUrls = attachmentsStore.getAttachmentsForSending();
+    const hasAttachments = attachmentsWithUrls.length > 0;
 
     if (message || hasAttachments) {
       let response;
       const messageId = generateGUID();
 
+      // Clear input and attachments
+      chatInput.value = "";
+      attachmentsStore.clearAttachments();
+      adjustTextareaHeight();
+
       // Include attachments in the user message
       if (hasAttachments) {
-        const attachmentsWithUrls = attachmentsStore.getAttachmentsForSending();
+        const heading =
+          attachmentsWithUrls.length > 0
+            ? "Uploading attachments..."
+            : "User message";
 
         // Render user message with attachments
-        setMessage(messageId, "user", "", message, false, {
-          attachments: attachmentsWithUrls,
+        setMessage(messageId, "user", heading, message, false, {
+          // attachments: attachmentsWithUrls, // skip here, let the backend properly log them
         });
+
+        // sleep one frame to render the message before upload starts - better UX
+        sleep(0);
 
         const formData = new FormData();
         formData.append("text", message);
         formData.append("context", context);
         formData.append("message_id", messageId);
 
-        for (let i = 0; i < attachments.length; i++) {
-          formData.append("attachments", attachments[i].file);
+        for (let i = 0; i < attachmentsWithUrls.length; i++) {
+          formData.append("attachments", attachmentsWithUrls[i].file);
         }
 
         response = await api.fetchApi("/message_async", {
@@ -144,24 +156,9 @@ export async function sendMessage() {
       const jsonResponse = await response.json();
       if (!jsonResponse) {
         toast("No response returned.", "error");
-      }
-      // else if (!jsonResponse.ok) {
-      //     if (jsonResponse.message) {
-      //         toast(jsonResponse.message, "error");
-      //     } else {
-      //         toast("Undefined error.", "error");
-      //     }
-      // }
-      else {
+      } else {
         setContext(jsonResponse.context);
       }
-
-      // Clear input and attachments
-      chatInput.value = "";
-      // if (attachmentsStore) {
-      attachmentsStore.clearAttachments();
-      // }
-      adjustTextareaHeight();
     }
   } catch (e) {
     toastFetchError("Error sending message", e);
@@ -1097,20 +1094,6 @@ async function startPolling() {
 
 document.addEventListener("DOMContentLoaded", startPolling);
 
-// Drag and drop functionality has been moved to attachmentsStore.js
-
-// Update handleFileUpload to use the attachments store
-window.handleFileUpload = function (event) {
-  // console.log('handleFileUpload called with files:', event.target.files.length);
-  const files = event.target.files;
-  // if (window.Alpine && Alpine.store('chatAttachments')) {
-  //     console.log('Calling store handleFiles...');
-  //     Alpine.store('chatAttachments').handleFiles(files);
-  // } else {
-  //     console.error('Alpine or chatAttachments store not found!');
-  // }
-  attachmentsStore.handleFiles(files);
-};
 
 // Setup event handlers once the DOM is fully loaded
 document.addEventListener("DOMContentLoaded", function () {

@@ -15,9 +15,9 @@ export function setMessage(id, type, heading, content, temp, kvps = null) {
 
   if (messageContainer) {
     // Don't re-render user messages
-    if (type === "user") {
-      return; // Skip re-rendering
-    }
+    // if (type === "user") {
+    //   return; // Skip re-rendering
+    // }
     // For other types, update the message
     messageContainer.innerHTML = "";
   } else {
@@ -365,7 +365,7 @@ export function drawMessageUser(
   const headingElement = document.createElement("h4");
   headingElement.classList.add("msg-heading");
   headingElement.innerHTML =
-    "User message <span class='icon material-symbols-outlined'>person</span>";
+    `${heading} <span class='icon material-symbols-outlined'>person</span>`;
   messageDiv.appendChild(headingElement);
 
   if (content && content.trim().length > 0) {

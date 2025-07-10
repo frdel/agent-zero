@@ -207,6 +207,13 @@ const model = {
     }
   },
 
+  // Update handleFileUpload to use the attachments store
+  handleFileUpload(event) {
+    const files = event.target.files;
+    this.handleFiles(files);
+    event.target.value = ""; // clear uploader selection to fix issue where same file is ignored the second time
+  },
+
   // File handling logic (moved from index.js)
   handleFiles(files) {
     console.log("handleFiles called with", files.length, "files");
@@ -264,20 +271,6 @@ const model = {
   getServerFileUrl(filename) {
     return `/a0/tmp/uploads/${encodeURIComponent(filename)}`;
   },
-
-  // // Get file metadata from server (for device sync and enhanced UI)
-  // async getFileMetadata(filename) {
-  //   try {
-  //     const response = await fetch(`/image_get?path=/a0/tmp/uploads/${encodeURIComponent(filename)}&metadata=true`);
-  //     if (response.ok) {
-  //       return await response.json();
-  //     }
-  //     return null;
-  //   } catch (error) {
-  //     console.error('Failed to get file metadata:', error);
-  //     return null;
-  //   }
-  // },
 
   // Check if file is an image based on extension
   isImageFile(filename) {
