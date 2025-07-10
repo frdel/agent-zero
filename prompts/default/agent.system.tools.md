@@ -12,6 +12,12 @@
 
 {{ include './agent.system.tool.code_exe.md' }}
 
+{{ include './agent.system.tool.code_diff.md' }}
+
+{{ include './agent.system.tool.text_replace.md' }}
+
+{{ include './agent.system.tool.file_system.md' }}
+
 {{ include './agent.system.tool.input.md' }}
 
 {{ include './agent.system.tool.browser.md' }}
