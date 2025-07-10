@@ -1,0 +1,70 @@
+{
+  "agents": [
+    {
+      "agent_id": "agent_zero",
+      "name": "Agent Zero - agent_zero",
+      "description": "Agent Zero instance with AG-UI capabilities",
+      "version": "1.0.0",
+      "protocol_version": "1.0",
+      "framework": "agent_zero",
+      "capabilities": [
+        "multi_component_support",
+        "streaming_responses",
+        "event_handling",
+        "table_operations",
+        "form_processing",
+        "canvas_interaction",
+        "state_management",
+        "ui_generation"
+      ],
+      "role": "executor",
+      "coordination_enabled": true,
+      "can_delegate": true,
+      "can_collaborate": true,
+      "preferred_components": [
+        "button",
+        "form",
+        "card",
+        "modal",
+        "table"
+      ],
+      "max_components_per_request": 10,
+      "enable_streaming": true,
+      "persist_state": true,
+      "state_ttl_minutes": 60,
+      "share_state_with_agents": [],
+      "allow_custom_html": false,
+      "allow_javascript_events": true,
+      "validate_all_inputs": true,
+      "sanitize_content": true,
+      "metadata": {
+        "created_at": "2025-07-05T15:06:05.955908",
+        "framework": "agent_zero",
+        "ag_ui_version": "1.0"
+      }
+    }
+  ],
+  "registry": {
+    "agent_zero": {
+      "name": "Agent Zero - agent_zero",
+      "capabilities": [
+        "multi_component_support",
+        "streaming_responses",
+        "event_handling",
+        "table_operations",
+        "form_processing",
+        "canvas_interaction",
+        "state_management",
+        "ui_generation"
+      ],
+      "role": "executor",
+      "active": true,
+      "last_seen": "2025-07-05T15:06:05.955929",
+      "metadata": {
+        "created_at": "2025-07-05T15:06:05.955908",
+        "framework": "agent_zero",
+        "ag_ui_version": "1.0"
+      }
+    }
+  }
+}
