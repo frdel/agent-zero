@@ -1,0 +1,9 @@
+#! kustomization.yaml
+# Generated code, do not edit
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+    - ../../base
+patches:
+    - path: web-C:\agent0range\agent0range\minion-webui-persistentVolumeClaim.yaml
+    - path: web-service.yaml

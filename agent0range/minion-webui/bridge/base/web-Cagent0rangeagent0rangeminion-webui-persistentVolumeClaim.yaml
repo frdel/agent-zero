@@ -1,0 +1,18 @@
+#! web-C:\agent0range\agent0range\minion-webui-persistentVolumeClaim.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+    name: web-c--agent0range-agent0range-minion-webui
+    namespace: minion-webui
+    labels:
+        com.docker.compose.service: web
+        com.docker.compose.volume: C:\agent0range\agent0range\minion-webui
+spec:
+    accessModes:
+        # TODO would need to check which services use this volume
+        - ReadWriteOnce
+    volumeMode: Filesystem
+    resources:
+        requests:
+            storage: 100Mi

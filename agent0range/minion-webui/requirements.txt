@@ -1,0 +1,10 @@
+Flask
+Flask-Login
+Flask-SQLAlchemy
+Flask-Migrate
+flask_jwt_extended
+Flask-SocketIO
+python-dotenv
+Werkzeug
+PyJWT
+eventlet

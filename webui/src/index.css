@@ -1,0 +1,90 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  background: #181c24;
+  color: #fff;
+}
+
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #181c24 60%, #ff6600 100%);
+}
+
+.login-shell {
+  position: relative;
+  z-index: 2;
+  background: rgba(24,28,36,0.7);
+  box-shadow: 0 8px 32px 0 rgba(31,38,135,0.37);
+  backdrop-filter: blur(12px);
+  border-radius: 24px;
+  padding: 3rem 2.5rem 2.5rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 340px;
+  max-width: 90vw;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  animation: fadeIn 1.2s cubic-bezier(.4,0,.2,1);
+}
+
+.login-form input {
+  margin: 1rem 0 0.5rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: none;
+  width: 100%;
+  font-size: 1.1rem;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  outline: none;
+  transition: background 0.2s;
+}
+.login-form input:focus {
+  background: rgba(255,255,255,0.18);
+}
+.login-form button {
+  margin-top: 1.2rem;
+  padding: 0.8rem 2.2rem;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(90deg, #ff6600 0%, #ffb347 100%);
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255,102,0,0.15);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.login-form button:hover {
+  background: linear-gradient(90deg, #ffb347 0%, #ff6600 100%);
+  box-shadow: 0 4px 16px rgba(255,102,0,0.25);
+}
+.error-msg {
+  color: #ff4d4f;
+  margin-top: 0.8rem;
+  font-size: 1rem;
+  text-align: center;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.main-content {
+  z-index: 2;
+  padding: 2rem 3rem;
+  background: rgba(24,28,36,0.8);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px 0 rgba(31,38,135,0.37);
+  min-width: 340px;
+  max-width: 90vw;
+  animation: fadeIn 1.2s cubic-bezier(.4,0,.2,1);
+}

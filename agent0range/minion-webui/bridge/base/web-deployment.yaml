@@ -1,0 +1,46 @@
+#! web-deployment.yaml
+# Generated code, do not edit
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: web
+    namespace: minion-webui
+    labels:
+        com.docker.compose.project: minion-webui
+        com.docker.compose.service: web
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            com.docker.compose.project: minion-webui
+            com.docker.compose.service: web
+    strategy:
+        type: Recreate
+    template:
+        metadata:
+            labels:
+                com.docker.compose.project: minion-webui
+                com.docker.compose.service: web
+                com.docker.compose.network.default: "true"
+        spec:
+            containers:
+                - name: web
+                  image: minion-webui-web
+                  imagePullPolicy: IfNotPresent
+                  env:
+                    - name: DATABASE_URL
+                      value: "sqlite:///minions.db"
+                    - name: JWT_SECRET
+                      value: "3feLIeNKIA8q-9DoPlD8s9LiGDF1cstzK-GdHkEuziw"
+                    - name: SECRET_KEY
+                      value: "elyhbV2tn8EBY61PO0B1QJKnVC0RZ8YruZms12soF0U"
+                  ports:
+                    - name: web-5000
+                      containerPort: 5000
+                  volumeMounts:
+                    - name: app
+                      mountPath: /app
+            volumes:
+                - name: app
+                  hostPath:
+                    path: C:\agent0range\agent0range\minion-webui
