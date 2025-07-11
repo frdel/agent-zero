@@ -16,6 +16,13 @@ from langchain_community.vectorstores.utils import (
 from langchain.embeddings import CacheBackedEmbeddings
 
 from agent import Agent
+from python.helpers.settings import get_settings
+
+# Conditional import to avoid errors if mem0 not installed or disabled
+try:
+    from python.helpers.memory_mem0 import Mem0Memory  # type: ignore
+except Exception:
+    Mem0Memory = None  # type: ignore
 
 
 class MyFaiss(FAISS):
@@ -58,23 +65,49 @@ class VectorDB:
 
     def __init__(self, agent: Agent, cache: bool = True):
         self.agent = agent
-        self.cache = cache  # store cache preference
-        self.embeddings = self._get_embeddings(agent, cache=cache)
-        self.index = faiss.IndexFlatIP(len(self.embeddings.embed_query("example")))
 
-        self.db = MyFaiss(
-            embedding_function=self.embeddings,
-            index=self.index,
-            docstore=InMemoryDocstore(),
-            index_to_docstore_id={},
-            distance_strategy=DistanceStrategy.COSINE,
-            # normalize_L2=True,
-            relevance_score_fn=cosine_normalizer,
+        # Determine if we should use mem0 backend
+        settings = get_settings()
+        self._use_mem0: bool = (
+            settings.get("memory_backend") == "mem0" and settings.get("mem0_enabled", False)
         )
+
+        # Initialize FAISS backend only if mem0 is not used
+        if not self._use_mem0:
+            self.cache = cache  # store cache preference
+            self.embeddings = self._get_embeddings(agent, cache=cache)
+            self.index = faiss.IndexFlatIP(len(self.embeddings.embed_query("example")))
+
+            self.db = MyFaiss(
+                embedding_function=self.embeddings,
+                index=self.index,
+                docstore=InMemoryDocstore(),
+                index_to_docstore_id={},
+                distance_strategy=DistanceStrategy.COSINE,
+                # normalize_L2=True,
+                relevance_score_fn=cosine_normalizer,
+            )
+        else:
+            # For mem0 we lazily obtain the Mem0Memory instance when needed
+            self.cache = False
+            self.embeddings = None  # type: ignore
+            self.index = None  # type: ignore
+            self.db = None  # type: ignore
 
     async def search_by_similarity_threshold(
         self, query: str, limit: int, threshold: float, filter: str = ""
     ):
+        # If mem0 backend is active, delegate to Mem0Memory
+        if self._use_mem0 and Mem0Memory:
+            mem0_db = await Mem0Memory.get(self.agent)
+            return await mem0_db.search_similarity_threshold(
+                query=query,
+                limit=limit,
+                threshold=threshold,
+                filter=filter,
+            )
+
+        # FAISS backend (original behavior)
         comparator = get_comparator(filter) if filter else None
 
         # rate limiter
@@ -91,6 +124,17 @@ class VectorDB:
         )
 
     async def search_by_metadata(self, filter: str, limit: int = 0) -> list[Document]:
+        # If mem0 backend is active, approximate metadata search using similarity threshold with low threshold
+        if self._use_mem0 and Mem0Memory:
+            mem0_db = await Mem0Memory.get(self.agent)
+            # mem0 supports filter in search function; use an empty query and rely on filter
+            results = await mem0_db.search_similarity_threshold(
+                query="", limit=limit or 100, threshold=0.0, filter=filter
+            )
+            # If limit == 0, return all results else sliced
+            return results if limit == 0 else results[:limit]
+
+        # FAISS backend
         comparator = get_comparator(filter)
         all_docs = self.db.get_all_docs()
         result = []
@@ -103,6 +147,12 @@ class VectorDB:
         return result
 
     async def insert_documents(self, docs: list[Document]):
+        # If mem0 backend is active, delegate to Mem0Memory
+        if self._use_mem0 and Mem0Memory:
+            mem0_db = await Mem0Memory.get(self.agent)
+            return await mem0_db.insert_documents(docs)
+
+        # FAISS backend
         ids = [str(uuid.uuid4()) for _ in range(len(docs))]
 
         if ids:
@@ -119,13 +169,16 @@ class VectorDB:
         return ids
 
     async def delete_documents_by_ids(self, ids: list[str]):
-        # aget_by_ids is not yet implemented in faiss, need to do a workaround
-        rem_docs = await self.db.aget_by_ids(
-            ids
-        )  # existing docs to remove (prevents error)
+        # If mem0 backend is active, delegate to Mem0Memory
+        if self._use_mem0 and Mem0Memory:
+            mem0_db = await Mem0Memory.get(self.agent)
+            return await mem0_db.delete_documents_by_ids(ids)
+
+        # FAISS backend
+        rem_docs = await self.db.aget_by_ids(ids)  # type: ignore
         if rem_docs:
-            rem_ids = [doc.metadata["id"] for doc in rem_docs]  # ids to remove
-            await self.db.adelete(ids=rem_ids)
+            rem_ids = [doc.metadata["id"] for doc in rem_docs]
+            await self.db.adelete(ids=rem_ids)  # type: ignore
         return rem_docs
 
 

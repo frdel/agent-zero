@@ -60,6 +60,23 @@ class Memory:
 
     @staticmethod
     async def get(agent: Agent):
+        """Factory method to get the appropriate memory backend based on configuration"""
+        from python.helpers.settings import get_settings
+        settings = get_settings()
+        
+        # Check if mem0 backend is selected
+        if settings.get("memory_backend") == "mem0" and settings.get("mem0_enabled", False):
+            try:
+                from python.helpers.memory_mem0 import Mem0Memory
+                return await Mem0Memory.get(agent)
+            except ImportError:
+                PrintStyle.error("mem0 package not installed, falling back to FAISS backend")
+                # Fall back to FAISS if mem0 is not available
+            except Exception as e:
+                PrintStyle.error(f"mem0 initialization failed: {str(e)}, falling back to FAISS backend")
+                # Fall back to FAISS if mem0 fails for any reason
+                
+        # Default FAISS backend
         memory_subdir = agent.config.memory_subdir or "default"
         if Memory.index.get(memory_subdir) is None:
             log_item = agent.context.log.log(
@@ -88,6 +105,19 @@ class Memory:
 
     @staticmethod
     async def reload(agent: Agent):
+        """Reload the memory backend, handling both FAISS and mem0"""
+        from python.helpers.settings import get_settings
+        settings = get_settings()
+        
+        # Check if mem0 backend is selected
+        if settings.get("memory_backend") == "mem0" and settings.get("mem0_enabled", False):
+            try:
+                from python.helpers.memory_mem0 import Mem0Memory
+                return await Mem0Memory.reload(agent)
+            except ImportError:
+                PrintStyle.error("mem0 package not installed, falling back to FAISS backend")
+                
+        # Default FAISS backend reload
         memory_subdir = agent.config.memory_subdir or "default"
         if Memory.index.get(memory_subdir):
             del Memory.index[memory_subdir]
@@ -445,5 +475,13 @@ def get_custom_knowledge_subdir_abs(agent: Agent) -> str:
 
 
 def reload():
-    # clear the memory index, this will force all DBs to reload
+    """Reload all memory instances, handling both FAISS and mem0"""
+    # Clear the memory index, this will force all DBs to reload
     Memory.index = {}
+    
+    # Also clear mem0 index if it exists
+    try:
+        from python.helpers.memory_mem0 import Mem0Memory
+        Mem0Memory.index = {}
+    except ImportError:
+        pass

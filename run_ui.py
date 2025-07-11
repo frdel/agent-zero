@@ -256,6 +256,34 @@ def init_a0():
 
 # run the internal server
 if __name__ == "__main__":
+    # Initialize runtime first to handle all arguments
     runtime.initialize()
     dotenv.load_dotenv()
-    run()
+
+    # Check for knowledge preloading arguments using runtime system
+    preload_knowledge = runtime.get_arg("preload-knowledge") or runtime.get_arg("preload_knowledge")
+    max_docs = int(runtime.get_arg("max-docs") or runtime.get_arg("max_docs") or "500")
+    batch_size = int(runtime.get_arg("batch-size") or runtime.get_arg("batch_size") or "20")
+
+    if preload_knowledge:
+        PrintStyle.standard("🚀 Preloading knowledge before starting UI...")
+        import asyncio
+        from preload_knowledge import KnowledgePreloader
+
+        async def preload_and_run():
+            preloader = KnowledgePreloader(
+                memory_subdir="default",
+                max_docs=max_docs,
+                batch_size=batch_size
+            )
+            success = await preloader.preload()
+            if success:
+                PrintStyle.standard("✅ Knowledge preloading completed! Starting UI...")
+                run()
+            else:
+                PrintStyle.error("❌ Knowledge preloading failed. Exiting.")
+                sys.exit(1)
+
+        asyncio.run(preload_and_run())
+    else:
+        run()

@@ -88,8 +88,25 @@ class AgentContext:
     @staticmethod
     def remove(id: str):
         context = AgentContext._contexts.pop(id, None)
-        if context and context.task:
-            context.task.kill()
+        if context:
+            # Cancel any background tasks
+            if hasattr(context, '_background_tasks'):
+                for task in context._background_tasks:
+                    if not task.done():
+                        task.cancel()
+                context._background_tasks.clear()
+            
+            # Clean up mem0 clients if using mem0 backend
+            try:
+                from python.helpers.memory_mem0 import Mem0Memory
+                memory_subdir = getattr(context.config, 'memory_subdir', 'default')
+                Mem0Memory.cleanup_client(memory_subdir, context.id)
+            except:
+                pass  # Ignore if mem0 not available
+            
+            # Kill the main task
+            if context.task:
+                context.task.kill()
         return context
 
     def serialize(self):

@@ -5,8 +5,10 @@ docker==7.1.0
 duckduckgo-search==6.1.12
 faiss-cpu==1.11.0
 fastmcp==2.3.4
-flask[async]==3.0.3
+flask[async]==3.1.1
 flask-basicauth==0.2.0
+asgiref>=3.2.10
+blinker>=1.7.0
 flaredantic==0.1.4
 GitPython==3.1.43
 inputimeout==1.0.4
@@ -38,3 +40,5 @@ pdf2image==1.17.0
 crontab==1.0.1
 pathspec>=0.12.1
 psutil>=7.0.0
+mem0ai==0.1.114
+qdrant-client>=1.7.0
