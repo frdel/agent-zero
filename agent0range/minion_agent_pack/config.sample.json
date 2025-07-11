@@ -1,4 +1,0 @@
-{
-    "server_url": "wss://your-agentzero-server:443/minion",
-    "token": "REPLACE_WITH_YOUR_SECRET_TOKEN"
-}
