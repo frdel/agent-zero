@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="css/history.css">
     <link rel="stylesheet" href="css/scheduler-datepicker.css">
     <link rel="stylesheet" href="css/tunnel.css">
+    <link rel="stylesheet" href="css/notification.css">
 
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -102,6 +103,7 @@
     <script type="module" src="js/scheduler.js"></script>
     <script type="module" src="js/speech.js"></script>
     <script type="module" src="js/history.js"></script>
+    <script type="module" src="js/notificationStore.js"></script>
     <script type="module" src="index.js"></script>
 
     <!-- Then load Alpine.js -->
@@ -121,7 +123,7 @@
 
     <!-- Google Icons -->
     <link rel="stylesheet" href="vendor/google/google-icons.css" />
-    
+
 
     <!-- Non-module scripts after Alpine.js -->
     <script type="text/javascript" src="js/settings.js"></script>
@@ -349,9 +351,15 @@
                             stroke-width="3" x-bind:opacity="connected ? 0 : 1" />
                     </svg>
                 </div>
+                <!-- Notification Toggle positioned next to time-date -->
+                <x-component path="notifications/notification-icons.html"></x-component>
             </div>
             <div id="chat-history">
             </div>
+
+            <!-- NEW: Toast Stack Component -->
+            <x-component path="notifications/notification-toast-stack.html"></x-component>
+
             <div id="toast" class="toast">
                 <div class="toast__content">
                     <div class="toast__title"></div>

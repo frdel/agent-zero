@@ -36,6 +36,7 @@ class AgentContext:
 
     _contexts: dict[str, "AgentContext"] = {}
     _counter: int = 0
+    _notification_manager = None
 
     def __init__(
         self,
@@ -84,6 +85,13 @@ class AgentContext:
     @staticmethod
     def all():
         return list(AgentContext._contexts.values())
+
+    @classmethod
+    def get_notification_manager(cls):
+        if cls._notification_manager is None:
+            from python.helpers.notification import NotificationManager
+            cls._notification_manager = NotificationManager()
+        return cls._notification_manager
 
     @staticmethod
     def remove(id: str):

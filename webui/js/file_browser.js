@@ -53,7 +53,7 @@ const fileBrowserModalProxy = {
         this.browser.entries = [];
       }
     } catch (error) {
-      window.toastFetchError("Error fetching files", error);
+      window.toastFrontendError("Error fetching files: " + error.message, "File Browser Error");
       this.browser.entries = [];
     } finally {
       this.isLoading = false;
@@ -134,7 +134,7 @@ const fileBrowserModalProxy = {
         alert(`Error deleting file: ${await response.text()}`);
       }
     } catch (error) {
-      window.toastFetchError("Error deleting file", error);
+      window.toastFrontendError("Error deleting file: " + error.message, "File Delete Error");
       alert("Error deleting file");
     }
   },
@@ -188,7 +188,7 @@ const fileBrowserModalProxy = {
         alert(data.message);
       }
     } catch (error) {
-      window.toastFetchError("Error uploading files", error);
+      window.toastFrontendError("Error uploading files: " + error.message, "File Upload Error");
       alert("Error uploading files");
     }
   },
@@ -215,7 +215,7 @@ const fileBrowserModalProxy = {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(link.href);
     } catch (error) {
-      window.toastFetchError("Error downloading file", error);
+      window.toastFrontendError("Error downloading file: " + error.message, "File Download Error");
       alert("Error downloading file");
     }
   },
@@ -267,7 +267,7 @@ openFileLink = async function (path) {
   try {
     const resp = await window.sendJsonData("/file_info", { path });
     if (!resp.exists) {
-      window.toast("File does not exist.", "error");
+      window.toastFrontendError("File does not exist.", "File Error");
       return;
     }
 
@@ -280,7 +280,7 @@ openFileLink = async function (path) {
       });
     }
   } catch (e) {
-    window.toastFetchError("Error opening file", e);
+    window.toastFrontendError("Error opening file: " + e.message, "File Open Error");
   }
 };
 window.openFileLink = openFileLink;

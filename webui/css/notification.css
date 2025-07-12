@@ -1,0 +1,124 @@
+/* ===== NOTIFICATION SYSTEM STYLES ===== */
+
+/* Notification Toggle Button */
+.notification-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    margin: 0;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.notification-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.notification-toggle .notification-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    line-height: 1;
+    vertical-align: middle;
+    margin: 0;
+    padding: 0;
+}
+
+.notification-toggle.has-unread {
+    border-color: #2196F3;
+    background: rgba(33, 150, 243, 0.1);
+    animation: pulse 2s infinite;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #F44336;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 0.2rem 0.4rem;
+    border-radius: 10px;
+    min-width: 1.2rem;
+    text-align: center;
+    line-height: 1;
+    border: 2px solid var(--bg-color);
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notification-toggle.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.notification-toggle.has-notifications {
+    opacity: 1;
+}
+
+.notification-toggle.disabled:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: none;
+}
+
+
+
+/* Light Mode Styles */
+.light-mode .notification-toggle {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.light-mode .notification-toggle:hover {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+.light-mode .notification-toggle.has-unread {
+    border-color: #2196F3;
+    background: rgba(33, 150, 243, 0.1);
+}
+
+.light-mode .notification-toggle.disabled:hover {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+
+
+/* Animations */
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .notification-toggle {
+        min-width: 40px;
+        min-height: 40px;
+        padding: 0.4rem;
+    }
+}

@@ -3,6 +3,7 @@ import { createStore } from "/js/AlpineStore.js";
 // Global function references
 const sendJsonData = window.sendJsonData;
 const toast = window.toast;
+const fetchApi = window.fetchApi;
 
 // ⚠️ CRITICAL: The .env file contains API keys and essential configuration.
 // This file is REQUIRED for Agent Zero to function and must be backed up.
@@ -375,9 +376,9 @@ const model = {
     const fileList = this.previewFiles.map(f => f.path).join('\n');
     try {
       await navigator.clipboard.writeText(fileList);
-      toast('File list copied to clipboard', 'success');
+      window.toastFrontendInfo('File list copied to clipboard', 'Clipboard');
     } catch (error) {
-      toast('Failed to copy to clipboard', 'error');
+      window.toastFrontendError('Failed to copy to clipboard', 'Clipboard Error');
     }
   },
 
@@ -419,7 +420,7 @@ const model = {
         window.URL.revokeObjectURL(url);
 
         this.addFileOperation('Backup created and downloaded successfully!');
-        toast('Backup created and downloaded successfully', 'success');
+        window.toastFrontendInfo('Backup created and downloaded successfully', 'Backup Status');
       } else {
         // Try to parse error response
         const errorText = await response.text();
@@ -677,7 +678,7 @@ const model = {
     }
 
     if (warnings.length > 0) {
-      toast(`Compatibility warnings: ${warnings.join(', ')}`, 'warning');
+      window.toastFrontendWarning(`Compatibility warnings: ${warnings.join(', ')}`, 'Backup Compatibility');
     }
   },
 
@@ -746,7 +747,7 @@ const model = {
 
         this.addFileOperation(`\nRestore completed: ${deletedCount} deleted, ${restoredCount} restored, ${skippedCount} skipped, ${errorCount} errors`);
         this.restoreResult = result;
-        toast('Restore completed successfully', 'success');
+        window.toastFrontendInfo('Restore completed successfully', 'Restore Status');
       } else {
         this.error = result.error;
         this.addFileOperation(`Error: ${result.error}`);

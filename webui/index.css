@@ -198,7 +198,7 @@ img {
   padding: 0.47rem 0.56rem;
   position: absolute;
   top: var(--spacing-md);
-  z-index: 1004;
+  z-index: 999;
   -webkit-transition: all var(--transition-speed) ease-in-out;
   transition: all var(--transition-speed) ease-in-out;
 }
@@ -403,11 +403,10 @@ img {
 
 #time-date-container {
   position: fixed;
-  right: 0;
+  right: var(--spacing-md);
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  margin-right: var(--spacing-md);
   margin-top: var(--spacing-md);
 }
 
@@ -466,7 +465,7 @@ pre {
   position: fixed;
   margin-left: 4.6rem;
   margin-top: var(--spacing-md);
-  z-index: 1004;
+  z-index: 999;
   -webkit-transition: margin-left var(--transition-speed) ease-in-out;
   transition: margin-left var(--transition-speed) ease-in-out;
 }

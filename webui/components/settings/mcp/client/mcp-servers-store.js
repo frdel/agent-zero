@@ -113,7 +113,6 @@ const model = {
       scrollModal("mcp-servers-status");
     } catch (error) {
       console.error("Failed to apply MCP servers:", error);
-      alert("Failed to apply MCP servers: " + error.message);
     }
     this.loading = false;
   },

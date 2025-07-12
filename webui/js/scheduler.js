@@ -59,11 +59,27 @@ import { switchFromContext } from '../index.js';
 
 // Add this near the top of the scheduler.js file, outside of any function
 const showToast = function(message, type = 'info') {
-    // Use the global toast function if available, otherwise fallback to console
-    if (typeof window.toast === 'function') {
-        window.toast(message, type);
+    // Use new frontend notification system
+    if (window.Alpine && window.Alpine.store && window.Alpine.store('notificationStore')) {
+        const store = window.Alpine.store('notificationStore');
+        switch (type.toLowerCase()) {
+            case 'error':
+                return store.frontendError(message, "Scheduler", 5);
+            case 'success':
+                return store.frontendInfo(message, "Scheduler", 3);
+            case 'warning':
+                return store.frontendWarning(message, "Scheduler", 4);
+            case 'info':
+            default:
+                return store.frontendInfo(message, "Scheduler", 3);
+        }
     } else {
-        console.log(`Toast (${type}): ${message}`);
+        // Fallback to global toast function or console
+        if (typeof window.toast === 'function') {
+            window.toast(message, type);
+        } else {
+            console.log(`SCHEDULER ${type.toUpperCase()}: ${message}`);
+        }
     }
 };
 
@@ -976,7 +992,7 @@ const fullComponentImplementation = function() {
                 }
 
                 showToast('Task deleted successfully', 'success');
-                
+
                 // If we were viewing the detail of the deleted task, close the detail view
                 if (this.selectedTaskForDetail && this.selectedTaskForDetail.uuid === taskId) {
                     this.closeTaskDetail();
