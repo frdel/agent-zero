@@ -1,8 +1,9 @@
-from a2h import A2HRequest, A2HResponse, ResponseType, create_a2h_request, create_a2h_response
+from a2h import A2HRequest, A2HResponse, ResponseType, create_a2h_response
+from a2h_tools import request_human_approval, process_human_response
 
 def agent_action():
     """Simulates an agent performing an action and requiring human approval."""
-    request = create_a2h_request(
+    request = request_human_approval(
         intent="Design a landing page for a fitness app.",
         justification="I have created a draft, but I’m 70% confident about the header section layout.",
         confidence_score=0.7,
@@ -29,7 +30,12 @@ def main():
     """Main function to run the example."""
     request = agent_action()
     response = human_interaction(request)
-    print(f"Agent received response: {response}")
+    response_type, payload = process_human_response(response)
+
+    print(f"Agent received response: {response_type.value}")
+    if payload:
+        print(f"Payload: {payload}")
+
 
 if __name__ == "__main__":
     main()
