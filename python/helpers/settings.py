@@ -692,10 +692,12 @@ def convert_out(settings: Settings) -> SettingsOutput:
     )
 
     stt_section: SettingsSection = {
-        "id": "stt",
-        "title": "Speech to Text",
-        "description": "Voice transcription preferences and server turn detection settings.",
-        "fields": stt_fields,
+    # TTS fields
+    tts_fields: list[SettingsField] = []
+    
+    tts_fields.append(
+        {
+            "id": "tts_enabled",
         "tab": "agent",
     }
 
@@ -825,6 +827,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             browser_model_section,
             embed_model_section,
             stt_section,
+            speech_section,
             api_keys_section,
             auth_section,
             mcp_client_section,
@@ -1016,6 +1019,7 @@ def get_default_settings() -> Settings:
         stt_silence_threshold=0.3,
         stt_silence_duration=1000,
         stt_waiting_timeout=2000,
+        tts_enabled=False,
         mcp_servers='{\n    "mcpServers": {}\n}',
         mcp_client_init_timeout=10,
         mcp_client_tool_timeout=120,

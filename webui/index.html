@@ -100,7 +100,6 @@
 
     <!-- Load module scripts first -->
     <script type="module" src="js/scheduler.js"></script>
-    <script type="module" src="js/speech.js"></script>
     <script type="module" src="js/history.js"></script>
     <script type="module" src="index.js"></script>
 
@@ -361,15 +360,12 @@
                 <button class="toast__copy" style="display: none;">Copy</button>
                 <button class="toast__close">Close</button>
             </div>
-            <div id="progress-bar-box" x-data="{ isSpeaking: false }" x-init="
-            // Watch the speech synthesis status to update isSpeaking
-            setInterval(() => isSpeaking = window.speech && window.speech.isSpeaking(), 1000)
-        ">
+            <div id="progress-bar-box">
                 <h4 id="progress-bar-h">
                     <span id="progress-bar-i">|></span><span id="progress-bar"></span>
                 </h4>
-                <h4 id="progress-bar-stop-speech" x-show="isSpeaking">
-                    <span id="stop-speech" @click="window.speech.stop()" style="cursor: pointer">Stop Speech</span>
+                <h4 id="progress-bar-stop-speech" x-data x-cloak x-show="$store.speech.isSpeaking">
+                    <span id="stop-speech" @click="$store.speech.stop()" style="cursor: pointer">Stop Speech</span>
                 </h4>
             </div>
             <div id="input-section" x-data="{
@@ -424,7 +420,9 @@
 
                         <!-- Microphone button -->
                         <button class="chat-button mic-inactive" id="microphone-button"
-                            aria-label="Start/Stop recording">
+                            aria-label="Start/Stop recording"
+                            @click="$store.speech.handleMicrophoneClick()"
+                            x-effect="$store.speech.updateMicrophoneButtonUI()">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 18" fill="currentColor">
                                 <path
                                     d="m8,12c1.66,0,3-1.34,3-3V3c0-1.66-1.34-3-3-3s-3,1.34-3,3v6c0,1.66,1.34,3,3,3Zm-1,1.9c-2.7-.4-4.8-2.6-5-5.4H0c.2,3.8,3.1,6.9,7,7.5v2h2v-2c3.9-.6,6.8-3.7,7-7.5h-2c-.2,2.8-2.3,5-5,5.4h-2Z" />

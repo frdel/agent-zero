@@ -1,9 +1,9 @@
 import * as msgs from "./js/messages.js";
-import { speech } from "./js/speech.js";
 import * as api from "./js/api.js";
 import * as css from "./js/css.js";
 import { sleep } from "./js/sleep.js";
 import { store as attachmentsStore } from "./components/chat/attachments/attachmentsStore.js";
+import { store as speechStore } from "./js/speech-store.js";
 
 window.fetchApi = api.fetchApi; // TODO - backward compatibility for non-modular scripts, remove once refactored to alpine
 
@@ -509,7 +509,7 @@ function speakMessages(logs) {
     if (log.type == "response" && log.kvps && log.kvps.finished) {
       if (log.no > lastSpokenNo) {
         lastSpokenNo = log.no;
-        speech.speak(log.content);
+        speechStore.speak(log.content);
         return;
       }
       // finished LLM headline, not response
@@ -522,7 +522,7 @@ function speakMessages(logs) {
     ) {
       if (log.no > lastSpokenNo) {
         lastSpokenNo = log.no;
-        speech.speak(log.kvps.headline);
+        speechStore.speak(log.kvps.headline);
         return;
       }
     }
@@ -715,6 +715,9 @@ export const setContext = function (id) {
   lastLogGuid = "";
   lastLogVersion = 0;
   lastSpokenNo = 0;
+  
+  // Stop speech when switching chats
+  speechStore.stop();
 
   // Clear the chat history immediately to avoid showing stale content
   chatHistory.innerHTML = "";
@@ -775,7 +778,7 @@ window.toggleDarkMode = function (isDark) {
 window.toggleSpeech = function (isOn) {
   console.log("Speech:", isOn);
   localStorage.setItem("speech", isOn);
-  if (!isOn) speech.stop();
+  if (!isOn) speechStore.stop();
 };
 
 window.nudge = async function () {
