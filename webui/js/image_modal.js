@@ -4,13 +4,13 @@ let activeIntervalId = null;
 export async function openImageModal(src, refreshInterval = 0) {
   try {
     let imgSrc = src;
-    
+
     // Clear any existing refresh interval
     if (activeIntervalId !== null) {
       clearInterval(activeIntervalId);
       activeIntervalId = null;
     }
-    
+
     if (refreshInterval > 0) {
       // Add or update timestamp to bypass cache
       const addTimestamp = (url) => {
@@ -23,7 +23,7 @@ export async function openImageModal(src, refreshInterval = 0) {
       const isImageViewerActive = () => {
         const container = document.querySelector('#image-viewer-container');
         if (!container) return false;
-        
+
         // Check if element or any parent is hidden
         let element = container;
         while (element) {
@@ -46,7 +46,7 @@ export async function openImageModal(src, refreshInterval = 0) {
           tempImg.onerror = reject;
           tempImg.src = nextSrc;
         });
-        
+
         try {
           // Wait for preload to complete
           const loadedSrc = await preloadPromise;
@@ -58,9 +58,9 @@ export async function openImageModal(src, refreshInterval = 0) {
           console.error('Failed to preload image:', err);
         }
       };
-      
+
       imgSrc = addTimestamp(src);
-      
+
       // Set up periodic refresh with preloading
       activeIntervalId = setInterval(() => {
         if (!isImageViewerActive()) {
@@ -77,11 +77,11 @@ export async function openImageModal(src, refreshInterval = 0) {
 
     const html = `<div id="image-viewer-container"><img class="image-viewer-img" src="${imgSrc}" /></div>`;
     const fileName = src.split("/").pop();
-    
+
     // Open the modal with the generated HTML
     await window.genericModalProxy.openModal(fileName, "", html);
   } catch (e) {
-    window.toastFetchError("Error fetching history", e);
+    window.toastFrontendError("Error fetching history: " + e.message, "Image History Error");
     return;
   }
 }

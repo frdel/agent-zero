@@ -8,7 +8,7 @@ export async function openHistoryModal() {
         const size = hist.tokens
         await showEditorModal(data, "markdown", `History ~${size} tokens`, "Conversation history visible to the LLM. History is compressed to fit into the context window over time.");
     } catch (e) {
-        window.toastFetchError("Error fetching history", e)
+        window.toastFrontendError("Error fetching history: " + e.message, "Chat History Error");
         return
     }
 }
@@ -20,7 +20,7 @@ export async function openCtxWindowModal() {
         const size = win.tokens
         await showEditorModal(data, "markdown", `Context window ~${size} tokens`, "Data passed to the LLM during last interaction. Contains system message, conversation history and RAG.");
     } catch (e) {
-        window.toastFetchError("Error fetching context", e)
+        window.toastFrontendError("Error fetching context: " + e.message, "Context Error");
         return
     }
 }

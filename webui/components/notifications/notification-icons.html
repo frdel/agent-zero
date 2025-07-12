@@ -2,12 +2,11 @@
 <head>
     <script type="module">
         import { store } from "/js/notificationStore.js";
-        console.log('Notification component script loaded');
     </script>
 </head>
 <body>
     <div x-data>
-        <!-- Notification Toggle Button (always visible and clickable) -->
+        <!-- Notification Toggle Button -->
         <div class="notification-toggle"
              :class="{
                  'has-unread': $store.notificationStore.unreadCount > 0,
@@ -22,20 +21,6 @@
                   class="notification-badge"
                   x-text="$store.notificationStore.unreadCount"></span>
         </div>
-
-        <!-- Test Notification Button (for development) -->
-        <button class="notification-test-button"
-                @click="$store.notificationStore.info('Test notification message', 'Test Title', '<p>This is test detail content with <strong>HTML</strong> formatting.</p>')"
-                title="Create Test Notification">
-            <div class="notification-icon">🧪</div>
-        </button>
-
-        <!-- Test Frontend Error Button (for development) -->
-        <button class="notification-test-button frontend-error"
-                @click="toastFrontendError('Backend connection failed', 'Connection Error')"
-                title="Test Frontend Error Toast">
-            <div class="notification-icon">⚠️</div>
-        </button>
     </div>
 </body>
 </html>

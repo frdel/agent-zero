@@ -83,42 +83,7 @@
     transform: none;
 }
 
-/* Test Button (for development) - positioned next to bell icon */
-.notification-test-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    background: rgba(33, 150, 243, 0.1);
-    border: 1px solid rgba(33, 150, 243, 0.3);
-    border-radius: 6px;
-    color: var(--color-text);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 0.85rem;
-    margin-left: 0.5rem;
-}
 
-.notification-test-button:hover {
-    background: rgba(33, 150, 243, 0.2);
-    border-color: rgba(33, 150, 243, 0.5);
-}
-
-.notification-test-button .notification-icon {
-    font-size: 1.2rem;
-}
-
-/* Frontend Error Test Button - distinct orange/red styling */
-.notification-test-button.frontend-error {
-    background: rgba(255, 152, 0, 0.15);
-    border-color: rgba(255, 152, 0, 0.4);
-}
-
-.notification-test-button.frontend-error:hover {
-    background: rgba(255, 152, 0, 0.25);
-    border-color: rgba(255, 152, 0, 0.6);
-}
 
 /* Light Mode Styles */
 .light-mode .notification-toggle {
@@ -141,25 +106,7 @@
     border-color: rgba(0, 0, 0, 0.1);
 }
 
-.light-mode .notification-test-button {
-    background: rgba(33, 150, 243, 0.1);
-    border-color: rgba(33, 150, 243, 0.3);
-}
 
-.light-mode .notification-test-button:hover {
-    background: rgba(33, 150, 243, 0.2);
-    border-color: rgba(33, 150, 243, 0.5);
-}
-
-.light-mode .notification-test-button.frontend-error {
-    background: rgba(255, 152, 0, 0.15);
-    border-color: rgba(255, 152, 0, 0.4);
-}
-
-.light-mode .notification-test-button.frontend-error:hover {
-    background: rgba(255, 152, 0, 0.25);
-    border-color: rgba(255, 152, 0, 0.6);
-}
 
 /* Animations */
 @keyframes pulse {

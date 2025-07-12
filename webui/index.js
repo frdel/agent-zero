@@ -23,7 +23,7 @@ const timeDate = document.getElementById("time-date-container");
 
 let autoScroll = true;
 let context = "";
-let connectionStatus = false;
+let connectionStatus = undefined; // undefined = not checked yet, true = connected, false = disconnected
 
 // Initialize the toggle button
 setupSidebarToggle();
@@ -161,20 +161,26 @@ export async function sendMessage() {
       }
     }
   } catch (e) {
-    toastFetchError("Error sending message", e);
+    toastFetchError("Error sending message", e); // Will use new notification system
   }
 }
 
 function toastFetchError(text, error) {
+  console.error(text, error);
+  // Use new frontend error notification system (async, but we don't need to wait)
+  const errorMessage = error?.message || error?.toString() || "Unknown error";
+
   if (getConnectionStatus()) {
-    toast(`${text}: ${error.message}`, "error");
+    // Backend is connected, just show the error
+    toastFrontendError(`${text}: ${errorMessage}`).catch(e =>
+      console.error('Failed to show error toast:', e)
+    );
   } else {
-    toast(
-      `${text} (it seems the backend is not running): ${error.message}`,
-      "error"
+    // Backend is disconnected, show connection error
+    toastFrontendError(`${text} (backend appears to be disconnected): ${errorMessage}`, "Connection Error").catch(e =>
+      console.error('Failed to show connection error toast:', e)
     );
   }
-  console.error(text, error);
 }
 window.toastFetchError = toastFetchError;
 
@@ -373,7 +379,17 @@ async function poll() {
 
     // Update notifications from response
     if (globalThis.Alpine?.store('notificationStore')) {
-      globalThis.Alpine.store('notificationStore').updateFromPoll(response);
+      const notificationStore = globalThis.Alpine.store('notificationStore');
+
+      // Ensure store is initialized
+      if (!notificationStore.lastNotificationGuid && response.notifications_guid) {
+        console.log('Initializing notification store on fresh load');
+        notificationStore.initialize();
+      }
+
+      notificationStore.updateFromPoll(response);
+    } else {
+      console.warn('Notification store not available during poll');
     }
 
     //set ui model vars from backend
@@ -813,8 +829,6 @@ window.restart = async function () {
         const resp = await sendJsonData("/health", {});
         // Server is back up, show success message
         await new Promise((resolve) => setTimeout(resolve, 250));
-        hideToast();
-        await new Promise((resolve) => setTimeout(resolve, 400));
         toast("Restarted", "success", 5000);
         return;
       } catch (e) {
@@ -825,8 +839,6 @@ window.restart = async function () {
     }
 
     // If we get here, restart failed or took too long
-    hideToast();
-    await new Promise((resolve) => setTimeout(resolve, 400));
     toast("Restart timed out or failed", "error", 5000);
   }
 };
@@ -955,95 +967,32 @@ function removeClassFromElement(element, className) {
 }
 
 function toast(text, type = "info", timeout = 5000) {
-  const toast = document.getElementById("toast");
-  const isVisible = toast.classList.contains("show");
+  // Convert timeout from milliseconds to seconds for new notification system
+  const display_time = Math.max(timeout / 1000, 3); // Minimum 3 seconds
 
-  // Clear any existing timeout immediately
-  if (toast.timeoutId) {
-    clearTimeout(toast.timeoutId);
-    toast.timeoutId = null;
-  }
-
-  // Function to update toast content and show it
-  const updateAndShowToast = () => {
-    // Update the toast content and type
-    const title = type.charAt(0).toUpperCase() + type.slice(1);
-    toast.querySelector(".toast__title").textContent = title;
-    toast.querySelector(".toast__message").textContent = text;
-
-    // Remove old classes and add new ones
-    toast.classList.remove("toast--success", "toast--error", "toast--info");
-    toast.classList.add(`toast--${type}`);
-
-    // Show/hide copy button based on toast type
-    const copyButton = toast.querySelector(".toast__copy");
-    copyButton.style.display = type === "error" ? "inline-block" : "none";
-
-    // Add the close button event listener
-    const closeButton = document.querySelector(".toast__close");
-    closeButton.onclick = () => {
-      hideToast();
-    };
-
-    // Add the copy button event listener
-    copyButton.onclick = () => {
-      navigator.clipboard.writeText(text);
-      copyButton.textContent = "Copied!";
-      setTimeout(() => {
-        copyButton.textContent = "Copy";
-      }, 2000);
-    };
-
-    // Show the toast
-    toast.style.display = "flex";
-    // Force a reflow to ensure the animation triggers
-    void toast.offsetWidth;
-    toast.classList.add("show");
-
-    // Set timeout if specified
-    if (timeout) {
-      const minTimeout = Math.max(timeout, 5000);
-      toast.timeoutId = setTimeout(() => {
-        hideToast();
-      }, minTimeout);
+  // Use new frontend notification system based on type
+  if (window.Alpine && window.Alpine.store && window.Alpine.store('notificationStore')) {
+    const store = window.Alpine.store('notificationStore');
+    switch (type.toLowerCase()) {
+      case 'error':
+        return store.frontendError(text, "Error", display_time);
+      case 'success':
+        return store.frontendInfo(text, "Success", display_time);
+      case 'warning':
+        return store.frontendWarning(text, "Warning", display_time);
+      case 'info':
+      default:
+        return store.frontendInfo(text, "Info", display_time);
     }
-  };
-
-  if (isVisible) {
-    // If a toast is visible, hide it first then show the new one
-    toast.classList.remove("show");
-    toast.classList.add("hide");
-
-    // Wait for hide animation to complete before showing new toast
-    setTimeout(() => {
-      toast.classList.remove("hide");
-      updateAndShowToast();
-    }, 400); // Match this with CSS transition duration
   } else {
-    // If no toast is visible, show the new one immediately
-    updateAndShowToast();
+    // Fallback if Alpine/store not ready
+    console.log(`${type.toUpperCase()}: ${text}`);
+    return null;
   }
 }
 window.toast = toast;
 
-function hideToast() {
-  const toast = document.getElementById("toast");
-
-  // Clear any existing timeout
-  if (toast.timeoutId) {
-    clearTimeout(toast.timeoutId);
-    toast.timeoutId = null;
-  }
-
-  toast.classList.remove("show");
-  toast.classList.add("hide");
-
-  // Wait for the hide animation to complete before removing from display
-  setTimeout(() => {
-    toast.style.display = "none";
-    toast.classList.remove("hide");
-  }, 400); // Match this with CSS transition duration
-}
+// OLD: hideToast function removed - now using new notification system
 
 function scrollChanged(isAtBottom) {
   if (window.Alpine && autoScrollSwitch) {
@@ -1106,6 +1055,14 @@ document.addEventListener("DOMContentLoaded", function () {
   setupSidebarToggle();
   setupTabs();
   initializeActiveTab();
+
+  // Initialize notification store early to ensure it's ready for polling
+  setTimeout(() => {
+    if (globalThis.Alpine?.store('notificationStore')) {
+      globalThis.Alpine.store('notificationStore').initialize();
+      console.log('Notification store initialized on DOM ready');
+    }
+  }, 100); // Small delay to ensure Alpine is ready
 });
 
 // Setup tabs functionality

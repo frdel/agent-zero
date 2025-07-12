@@ -14,7 +14,6 @@ const model = {
 
     // Initialize the notification store
     initialize() {
-        console.log("NotificationStore: Initializing with toast stack");
         this.loading = true;
         this.updateUnreadCount();
         this.removeOldNotifications();
@@ -31,6 +30,8 @@ const model = {
     updateFromPoll(pollData) {
         if (!pollData) return;
 
+        const isFirstLoad = !this.lastNotificationGuid && pollData.notifications_guid;
+
         // Check if GUID changed (system restart)
         if (pollData.notifications_guid !== this.lastNotificationGuid) {
             this.lastNotificationVersion = 0;
@@ -45,7 +46,7 @@ const model = {
                 const isNew = !this.notifications.find(n => n.id === notification.id);
                 this.addOrUpdateNotification(notification);
 
-                // Add new notifications to toast stack
+                // Add new unread notifications to toast stack
                 if (isNew && !notification.read) {
                     this.addToToastStack(notification);
                 }
@@ -70,6 +71,21 @@ const model = {
 
     // NEW: Add notification to toast stack
     addToToastStack(notification) {
+        // If notification has a group, remove any existing toasts with the same group
+        if (notification.group && notification.group.trim() !== "") {
+            const existingToastIndex = this.toastStack.findIndex(t =>
+                t.group === notification.group
+            );
+
+            if (existingToastIndex >= 0) {
+                const existingToast = this.toastStack[existingToastIndex];
+                if (existingToast.autoRemoveTimer) {
+                    clearTimeout(existingToast.autoRemoveTimer);
+                }
+                this.toastStack.splice(existingToastIndex, 1);
+            }
+        }
+
         // Create toast object with auto-dismiss timer
         const toast = {
             ...notification,
@@ -93,8 +109,6 @@ const model = {
         toast.autoRemoveTimer = setTimeout(() => {
             this.removeFromToastStack(toast.toastId);
         }, notification.display_time * 1000);
-
-        console.log(`Toast added: ${notification.type} - ${notification.message}`);
     },
 
     // NEW: Remove toast from stack
@@ -106,7 +120,6 @@ const model = {
                 clearTimeout(toast.autoRemoveTimer);
             }
             this.toastStack.splice(index, 1);
-            console.log(`Toast removed: ${toastId}`);
         }
     },
 
@@ -118,7 +131,6 @@ const model = {
             }
         });
         this.toastStack = [];
-        console.log('Toast stack cleared');
     },
 
     // NEW: Clean up expired toasts (backup cleanup)
@@ -140,7 +152,6 @@ const model = {
 
     // NEW: Handle toast click (opens modal)
     async handleToastClick(toastId) {
-        console.log(`Toast clicked: ${toastId}`);
         await this.openModal();
         // Modal opening will clear toast stack via markAllAsRead
     },
@@ -213,7 +224,6 @@ const model = {
         this.clearToastStack(); // Also clear toast stack
 
         // Note: We don't sync clear with backend as notifications are stored in memory only
-        console.log('All notifications cleared');
     },
 
     // Get notifications by type
@@ -309,18 +319,18 @@ const model = {
     },
 
     // Create notification via backend (will appear via polling)
-    async createNotification(type, message, title = "", detail = "", display_time = 3) {
+    async createNotification(type, message, title = "", detail = "", display_time = 3, group = "") {
         try {
             const response = await window.sendJsonData('/notification_create', {
                 type: type,
                 message: message,
                 title: title,
                 detail: detail,
-                display_time: display_time
+                display_time: display_time,
+                group: group
             });
 
             if (response.success) {
-                console.log('Notification created:', response.notification_id);
                 return response.notification_id;
             } else {
                 console.error('Failed to create notification:', response.error);
@@ -333,24 +343,24 @@ const model = {
     },
 
     // Convenience methods for different notification types
-    async info(message, title = "", detail = "", display_time = 3) {
-        return await this.createNotification('info', message, title, detail, display_time);
+    async info(message, title = "", detail = "", display_time = 3, group = "") {
+        return await this.createNotification('info', message, title, detail, display_time, group);
     },
 
-    async success(message, title = "", detail = "", display_time = 3) {
-        return await this.createNotification('success', message, title, detail, display_time);
+    async success(message, title = "", detail = "", display_time = 3, group = "") {
+        return await this.createNotification('success', message, title, detail, display_time, group);
     },
 
-    async warning(message, title = "", detail = "", display_time = 3) {
-        return await this.createNotification('warning', message, title, detail, display_time);
+    async warning(message, title = "", detail = "", display_time = 3, group = "") {
+        return await this.createNotification('warning', message, title, detail, display_time, group);
     },
 
-    async error(message, title = "", detail = "", display_time = 3) {
-        return await this.createNotification('error', message, title, detail, display_time);
+    async error(message, title = "", detail = "", display_time = 3, group = "") {
+        return await this.createNotification('error', message, title, detail, display_time, group);
     },
 
-    async progress(message, title = "", detail = "", display_time = 3) {
-        return await this.createNotification('progress', message, title, detail, display_time);
+    async progress(message, title = "", detail = "", display_time = 3, group = "") {
+        return await this.createNotification('progress', message, title, detail, display_time, group);
     },
 
     // Enhanced: Open modal and clear toast stack
@@ -368,8 +378,24 @@ const model = {
         this.openModal();
     },
 
-    // NEW: Add frontend-only toast directly to stack (for connection errors, etc.)
-    addFrontendToast(type, message, title = "", display_time = 5) {
+    // NEW: Check if backend connection is available
+    isConnected() {
+        // Use the global connection status from index.js, but default to true if undefined
+        // This handles the case where polling hasn't run yet but backend is actually available
+        const pollingStatus = typeof window.getConnectionStatus === 'function' ? window.getConnectionStatus() : undefined;
+
+        // If polling status is explicitly false, respect that
+        if (pollingStatus === false) {
+            return false;
+        }
+
+        // If polling status is undefined/true, assume backend is available
+        // (since the page loaded successfully, backend must be working)
+        return true;
+    },
+
+    // NEW: Add frontend-only toast directly to stack (renamed from original addFrontendToast)
+    addFrontendToastOnly(type, message, title = "", display_time = 5, group = "") {
         const timestamp = new Date().toISOString();
         const notification = {
             id: `frontend-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -380,8 +406,24 @@ const model = {
             timestamp: timestamp,
             display_time: display_time,
             read: false,
-            frontend: true  // Mark as frontend-only
+            frontend: true,  // Mark as frontend-only
+            group: group
         };
+
+        // If notification has a group, remove any existing toasts with the same group
+        if (group && group.trim() !== "") {
+            const existingToastIndex = this.toastStack.findIndex(t =>
+                t.group === group
+            );
+
+            if (existingToastIndex >= 0) {
+                const existingToast = this.toastStack[existingToastIndex];
+                if (existingToast.autoRemoveTimer) {
+                    clearTimeout(existingToast.autoRemoveTimer);
+                }
+                this.toastStack.splice(existingToastIndex, 1);
+            }
+        }
 
         // Create toast object with auto-dismiss timer
         const toast = {
@@ -407,21 +449,41 @@ const model = {
             this.removeFromToastStack(toast.toastId);
         }, notification.display_time * 1000);
 
-        console.log(`Frontend toast added: ${notification.type} - ${notification.message}`);
         return notification.id;
     },
 
-    // NEW: Convenience methods for frontend-only notifications
-    frontendError(message, title = "Connection Error", display_time = 8) {
-        return this.addFrontendToast('error', message, title, display_time);
+        // NEW: Enhanced frontend toast that tries backend first, falls back to frontend-only
+    async addFrontendToast(type, message, title = "", display_time = 5, group = "") {
+        // Try to send to backend first if connected
+        if (this.isConnected()) {
+            try {
+                const notificationId = await this.createNotification(type, message, title, "", display_time, group);
+                if (notificationId) {
+                    // Backend handled it, notification will arrive via polling
+                    return notificationId;
+                }
+            } catch (error) {
+                console.log(`Backend unavailable for notification, showing as frontend-only: ${error.message || error}`);
+            }
+        } else {
+            console.log('Backend disconnected, showing as frontend-only toast');
+        }
+
+        // Fallback to frontend-only toast
+        return this.addFrontendToastOnly(type, message, title, display_time, group);
     },
 
-    frontendWarning(message, title = "Warning", display_time = 5) {
-        return this.addFrontendToast('warning', message, title, display_time);
+    // NEW: Convenience methods for frontend notifications (updated to use new backend-first logic)
+    async frontendError(message, title = "Connection Error", display_time = 8, group = "") {
+        return await this.addFrontendToast('error', message, title, display_time, group);
     },
 
-    frontendInfo(message, title = "Info", display_time = 3) {
-        return this.addFrontendToast('info', message, title, display_time);
+    async frontendWarning(message, title = "Warning", display_time = 5, group = "") {
+        return await this.addFrontendToast('warning', message, title, display_time, group);
+    },
+
+    async frontendInfo(message, title = "Info", display_time = 3, group = "") {
+        return await this.addFrontendToast('info', message, title, display_time, group);
     }
 };
 
@@ -429,9 +491,16 @@ const model = {
 const store = createStore("notificationStore", model);
 
 // NEW: Global function for frontend error toasts (replaces toastFetchError)
-window.toastFrontendError = function(message, title = "Connection Error") {
+window.toastFrontendError = async function(message, title = "Connection Error") {
     if (window.Alpine && window.Alpine.store && window.Alpine.store('notificationStore')) {
-        return window.Alpine.store('notificationStore').frontendError(message, title);
+        try {
+            return await window.Alpine.store('notificationStore').frontendError(message, title);
+        } catch (error) {
+            console.error('Failed to create frontend error notification:', error);
+            // Fallback to console if something goes wrong
+            console.error('Frontend Error:', title, '-', message);
+            return null;
+        }
     } else {
         // Fallback if Alpine/store not ready
         console.error('Frontend Error:', title, '-', message);
@@ -440,18 +509,30 @@ window.toastFrontendError = function(message, title = "Connection Error") {
 };
 
 // NEW: Additional global convenience functions
-window.toastFrontendWarning = function(message, title = "Warning") {
+window.toastFrontendWarning = async function(message, title = "Warning") {
     if (window.Alpine && window.Alpine.store && window.Alpine.store('notificationStore')) {
-        return window.Alpine.store('notificationStore').frontendWarning(message, title);
+        try {
+            return await window.Alpine.store('notificationStore').frontendWarning(message, title);
+        } catch (error) {
+            console.error('Failed to create frontend warning notification:', error);
+            console.warn('Frontend Warning:', title, '-', message);
+            return null;
+        }
     } else {
         console.warn('Frontend Warning:', title, '-', message);
         return null;
     }
 };
 
-window.toastFrontendInfo = function(message, title = "Info") {
+window.toastFrontendInfo = async function(message, title = "Info") {
     if (window.Alpine && window.Alpine.store && window.Alpine.store('notificationStore')) {
-        return window.Alpine.store('notificationStore').frontendInfo(message, title);
+        try {
+            return await window.Alpine.store('notificationStore').frontendInfo(message, title);
+        } catch (error) {
+            console.error('Failed to create frontend info notification:', error);
+            console.log('Frontend Info:', title, '-', message);
+            return null;
+        }
     } else {
         console.log('Frontend Info:', title, '-', message);
         return null;

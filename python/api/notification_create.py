@@ -15,6 +15,7 @@ class NotificationCreate(ApiHandler):
         title = input.get("title", "")
         detail = input.get("detail", "")
         display_time = input.get("display_time", 3)  # Default to 3 seconds
+        group = input.get("group", "")  # Group parameter for notification grouping
 
         # Validate required fields
         if not message:
@@ -38,17 +39,17 @@ class NotificationCreate(ApiHandler):
         # Create notification using the appropriate helper method
         try:
             if notification_type == NotificationType.INFO:
-                notification = AgentNotification.info(message, title, detail, display_time)
+                notification = AgentNotification.info(message, title, detail, display_time, group)
             elif notification_type == NotificationType.SUCCESS:
-                notification = AgentNotification.success(message, title, detail, display_time)
+                notification = AgentNotification.success(message, title, detail, display_time, group)
             elif notification_type == NotificationType.WARNING:
-                notification = AgentNotification.warning(message, title, detail, display_time)
+                notification = AgentNotification.warning(message, title, detail, display_time, group)
             elif notification_type == NotificationType.ERROR:
-                notification = AgentNotification.error(message, title, detail, display_time)
+                notification = AgentNotification.error(message, title, detail, display_time, group)
             elif notification_type == NotificationType.PROGRESS:
-                notification = AgentNotification.progress(message, title, detail, display_time)
+                notification = AgentNotification.progress(message, title, detail, display_time, group)
             else:
-                notification = AgentNotification.info(message, title, detail, display_time)
+                notification = AgentNotification.info(message, title, detail, display_time, group)
 
             return {
                 "success": True,

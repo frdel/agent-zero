@@ -24,6 +24,7 @@ class NotificationItem:
     display_time: int = 3  # Display duration in seconds, default 3 seconds
     read: bool = False
     id: str = ""
+    group: str = ""  # Group identifier for grouping related notifications
 
     def __post_init__(self):
         if not self.id:
@@ -47,6 +48,7 @@ class NotificationItem:
             "timestamp": self.timestamp.isoformat(),
             "display_time": self.display_time,
             "read": self.read,
+            "group": self.group,
         }
 
 
@@ -64,6 +66,7 @@ class NotificationManager:
         title: str = "",
         detail: str = "",
         display_time: int = 3,
+        group: str = "",
     ) -> NotificationItem:
         # Create notification item
         item = NotificationItem(
@@ -75,6 +78,7 @@ class NotificationManager:
             detail=detail,
             timestamp=datetime.now(timezone.utc),
             display_time=display_time,
+            group=group,
         )
 
         # Add to notifications
@@ -139,36 +143,36 @@ class NotificationManager:
 
 class AgentNotification:
     @staticmethod
-    def info(message: str, title: str = "", detail: str = "", display_time: int = 3) -> NotificationItem:
+    def info(message: str, title: str = "", detail: str = "", display_time: int = 3, group: str = "") -> NotificationItem:
         from agent import AgentContext
         return AgentContext.get_notification_manager().add_notification(
-            NotificationType.INFO, message, title, detail, display_time
+            NotificationType.INFO, message, title, detail, display_time, group
         )
 
     @staticmethod
-    def success(message: str, title: str = "", detail: str = "", display_time: int = 3) -> NotificationItem:
+    def success(message: str, title: str = "", detail: str = "", display_time: int = 3, group: str = "") -> NotificationItem:
         from agent import AgentContext
         return AgentContext.get_notification_manager().add_notification(
-            NotificationType.SUCCESS, message, title, detail, display_time
+            NotificationType.SUCCESS, message, title, detail, display_time, group
         )
 
     @staticmethod
-    def warning(message: str, title: str = "", detail: str = "", display_time: int = 3) -> NotificationItem:
+    def warning(message: str, title: str = "", detail: str = "", display_time: int = 3, group: str = "") -> NotificationItem:
         from agent import AgentContext
         return AgentContext.get_notification_manager().add_notification(
-            NotificationType.WARNING, message, title, detail, display_time
+            NotificationType.WARNING, message, title, detail, display_time, group
         )
 
     @staticmethod
-    def error(message: str, title: str = "", detail: str = "", display_time: int = 3) -> NotificationItem:
+    def error(message: str, title: str = "", detail: str = "", display_time: int = 3, group: str = "") -> NotificationItem:
         from agent import AgentContext
         return AgentContext.get_notification_manager().add_notification(
-            NotificationType.ERROR, message, title, detail, display_time
+            NotificationType.ERROR, message, title, detail, display_time, group
         )
 
     @staticmethod
-    def progress(message: str, title: str = "", detail: str = "", display_time: int = 3) -> NotificationItem:
+    def progress(message: str, title: str = "", detail: str = "", display_time: int = 3, group: str = "") -> NotificationItem:
         from agent import AgentContext
         return AgentContext.get_notification_manager().add_notification(
-            NotificationType.PROGRESS, message, title, detail, display_time
+            NotificationType.PROGRESS, message, title, detail, display_time, group
         )
