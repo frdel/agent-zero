@@ -160,6 +160,13 @@ Users can create custom tools to extend Agent Zero's capabilities. Custom tools 
 ### 3. Memory System
 The memory system is a critical component of Agent Zero, enabling the agent to learn and adapt from past interactions. It operates on a hybrid model where part of the memory is managed automatically by the framework while users can also manually input and extract information.
 
+#### Filter Expressions
+Many memory-related helper methods support *filter expressions* so that agents
+can retrieve or delete only the documents that match certain metadata
+criteria.  The expression language is intentionally kept small for security
+reasons (boolean operators, comparisons, literals).  See
+[Filter Expression Syntax](filter_expressions.md) for details and examples.
+
 #### Memory Structure
 The memory is categorized into four distinct areas:
 - **Storage and retrieval** of user-provided information (e.g., names, API keys)
