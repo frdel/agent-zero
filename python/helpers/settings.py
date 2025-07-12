@@ -76,6 +76,15 @@ class Settings(TypedDict):
     mcp_client_tool_timeout: int
     mcp_server_enabled: bool
     mcp_server_token: str
+    
+    # Biomni biomedical research settings
+    biomni_data_lake_path: str
+    biomni_cache_size_gb: int
+    biomni_regulatory_mode: str
+    biomni_max_concurrent_analyses: int
+    biomni_session_timeout_seconds: int
+    biomni_clinical_data_encryption: str
+    biomni_audit_logging: bool
 
 
 class PartialSettings(Settings, total=False):
@@ -1021,6 +1030,15 @@ def get_default_settings() -> Settings:
         mcp_client_tool_timeout=120,
         mcp_server_enabled=False,
         mcp_server_token=create_auth_token(),
+        
+        # Biomni biomedical research settings
+        biomni_data_lake_path="/tmp/biomni_data",
+        biomni_cache_size_gb=5,
+        biomni_regulatory_mode="standard",
+        biomni_max_concurrent_analyses=3,
+        biomni_session_timeout_seconds=3600,
+        biomni_clinical_data_encryption="AES256",
+        biomni_audit_logging=True,
     )
 
 
