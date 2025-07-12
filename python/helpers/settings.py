@@ -71,6 +71,8 @@ class Settings(TypedDict):
     stt_silence_duration: int
     stt_waiting_timeout: int
 
+    tts_enabled: bool
+
     mcp_servers: str
     mcp_client_init_timeout: int
     mcp_client_tool_timeout: int
@@ -691,13 +693,24 @@ def convert_out(settings: Settings) -> SettingsOutput:
         }
     )
 
-    stt_section: SettingsSection = {
     # TTS fields
     tts_fields: list[SettingsField] = []
     
     tts_fields.append(
         {
             "id": "tts_enabled",
+            "title": "Enable Kokoro TTS",
+            "description": "Enable server-side AI text-to-speech (Kokoro)",
+            "type": "switch",
+            "value": settings["tts_enabled"],
+        }
+    )
+
+    speech_section: SettingsSection = {
+        "id": "speech",
+        "title": "Speech",
+        "description": "Voice transcription and speech synthesis settings.",
+        "fields": stt_fields + tts_fields,
         "tab": "agent",
     }
 
@@ -826,7 +839,6 @@ def convert_out(settings: Settings) -> SettingsOutput:
             util_model_section,
             browser_model_section,
             embed_model_section,
-            stt_section,
             speech_section,
             api_keys_section,
             auth_section,
