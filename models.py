@@ -62,6 +62,7 @@ class ModelProvider(Enum):
     ANTHROPIC = "Anthropic"
     DEEPSEEK = "DeepSeek"
     GEMINI = "Google"
+    GOOGLE = "Google"  # Alias for backward compatibility
     GROQ = "Groq"
     HUGGINGFACE = "HuggingFace"
     LM_STUDIO = "LM Studio"

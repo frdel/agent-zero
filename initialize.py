@@ -149,10 +149,10 @@ def initialize_job_loop():
 def _args_override(config):
     # update config with runtime args
     for key, value in runtime.args.items():
-        if hasattr(config, key):
+        if hasattr(config, key) and value is not None:
             # conversion based on type of config[key]
             if isinstance(getattr(config, key), bool):
-                value = value.lower().strip() == "true"
+                value = str(value).lower().strip() == "true"
             elif isinstance(getattr(config, key), int):
                 value = int(value)
             elif isinstance(getattr(config, key), float):

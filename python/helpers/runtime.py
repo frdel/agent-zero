@@ -31,6 +31,33 @@ def initialize():
     parser.add_argument(
         "--development", type=bool, default=False, help="Development mode"
     )
+    parser.add_argument(
+        "--dockerized", type=str, default=None, help="Dockerized mode"
+    )
+    parser.add_argument(
+        "--code_exec_docker_enabled", type=str, default=None, help="Enable Docker code execution"
+    )
+    parser.add_argument(
+        "--code_exec_ssh_enabled", type=str, default=None, help="Enable SSH code execution"
+    )
+    parser.add_argument(
+        "--preload-knowledge", action="store_true", help="Preload knowledge documents into mem0 before starting UI"
+    )
+    parser.add_argument(
+        "--preload_knowledge", action="store_true", help="Preload knowledge documents into mem0 before starting UI"
+    )
+    parser.add_argument(
+        "--max-docs", type=int, default=500, help="Maximum documents to preload (default: 500)"
+    )
+    parser.add_argument(
+        "--max_docs", type=int, default=500, help="Maximum documents to preload (default: 500)"
+    )
+    parser.add_argument(
+        "--batch-size", type=int, default=20, help="Batch size for knowledge preloading (default: 20)"
+    )
+    parser.add_argument(
+        "--batch_size", type=int, default=20, help="Batch size for knowledge preloading (default: 20)"
+    )
 
     known, unknown = parser.parse_known_args()
     args = vars(known)

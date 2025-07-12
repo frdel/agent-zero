@@ -14,7 +14,11 @@ class MemoryLoad(Tool):
         if len(docs) == 0:
             result = self.agent.read_prompt("fw.memories_not_found.md", query=query)
         else:
-            text = "\n\n".join(Memory.format_docs_plain(docs))
+            # Handle both FAISS and mem0 backends
+            if hasattr(db, 'format_docs_plain'):
+                text = "\n\n".join(db.format_docs_plain(docs))
+            else:
+                text = "\n\n".join(Memory.format_docs_plain(docs))
             result = str(text)
 
         return Response(message=result, break_loop=False)
