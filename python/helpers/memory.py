@@ -31,9 +31,12 @@ from enum import Enum
 from agent import Agent
 import models
 import logging
+from simpleeval import simple_eval
+
 
 # Raise the log level so WARNING messages aren't shown
 logging.getLogger("langchain_core.vectorstores.base").setLevel(logging.ERROR)
+
 
 class MyFaiss(FAISS):
     # override aget_by_ids
@@ -346,7 +349,9 @@ class Memory:
 
     async def delete_documents_by_ids(self, ids: list[str]):
         # aget_by_ids is not yet implemented in faiss, need to do a workaround
-        rem_docs = await self.db.aget_by_ids(ids)  # existing docs to remove (prevents error)
+        rem_docs = await self.db.aget_by_ids(
+            ids
+        )  # existing docs to remove (prevents error)
         if rem_docs:
             rem_ids = [doc.metadata["id"] for doc in rem_docs]  # ids to remove
             await self.db.adelete(ids=rem_ids)
@@ -393,9 +398,10 @@ class Memory:
     def _get_comparator(condition: str):
         def comparator(data: dict[str, Any]):
             try:
-                return eval(condition, {}, data)
+                result = simple_eval(condition, names=data)
+                return result
             except Exception as e:
-                # PrintStyle.error(f"Error evaluating condition: {e}")
+                PrintStyle.error(f"Error evaluating condition: {e}")
                 return False
 
         return comparator

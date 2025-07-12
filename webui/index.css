@@ -646,17 +646,17 @@ pre {
   white-space: nowrap;
 }
 
-.remove-attachment,
-.remove-image {
+.remove-attachment {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 0.1em;
+  right: 0.1em;
   background-color: var(--color-accent);
   color: white;
   border: none;
   border-radius: 50%;
-  width: 24px;
-  height: 24px;
+  width: 2em;
+  height: 2em;
+  /* font-size: 1em; */
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -667,22 +667,30 @@ pre {
   transform: scale(0.8);
 }
 
-.preview-item:hover .remove-attachment,
-.attachment-item:hover .remove-attachment,
-.preview-item:hover .remove-image,
-.attachment-item:hover .remove-image {
+.device-pointer .preview-item:hover .remove-attachment,
+.device-pointer .attachment-item:hover .remove-attachment {
   opacity: 1;
   transform: scale(1);
 }
 
-.remove-attachment:hover,
-.remove-image:hover {
+.device-touch .remove-attachment {
+  opacity: 1 !important;
+  transform: scale(1.25) !important;
+  /* font-size: 1.5em; */
+  top: 0.5em;
+  right: 0.5em;
+}
+
+.remove-attachment:hover {
   background-color: var(--color-accent-dark);
   transform: scale(1.1) !important;
 }
 
-.remove-attachment:active,
-.remove-image:active {
+.device-touch .remove-attachment:active {
+  transform: scale(1.1) !important;
+}
+
+.remove-attachment:active {
   transform: scale(0.9) !important;
 }
 
@@ -1108,24 +1116,6 @@ pre {
   border-radius: 4px;
   font-size: 0.7rem;
   text-transform: uppercase;
-}
-
-.remove-attachment {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-  z-index: 1;
 }
 
 .remove-attachment:hover {

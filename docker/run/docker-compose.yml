@@ -4,6 +4,5 @@ services:
     image: frdel/agent-zero:latest
     volumes:
       - ./agent-zero:/a0
-      - ../../webui:/a0/webui
     ports:
       - "50080:80"

@@ -1,7 +1,3 @@
-
-
-import { fetchApi } from "./api.js";
-
 // Tunnel settings for the Settings modal
 document.addEventListener('alpine:init', () => {
     Alpine.data('tunnelSettings', () => ({
@@ -9,7 +5,6 @@ document.addEventListener('alpine:init', () => {
         tunnelLink: '',
         linkGenerated: false,
         loadingText: '',
-        provider: 'serveo', // Default tunnel provider
 
         init() {
             this.checkTunnelStatus();
@@ -17,7 +12,7 @@ document.addEventListener('alpine:init', () => {
 
         async checkTunnelStatus() {
             try {
-                const response = await fetchApi('/tunnel_proxy', {
+                const response = await fetch('/tunnel_proxy', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -40,7 +35,7 @@ document.addEventListener('alpine:init', () => {
                     
                     if (storedTunnelUrl) {
                         // Use the stored URL but verify it's still valid
-                        const verifyResponse = await fetchApi('/tunnel_proxy', {
+                        const verifyResponse = await fetch('/tunnel_proxy', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -87,7 +82,7 @@ document.addEventListener('alpine:init', () => {
                 
                 try {
                     // First stop any existing tunnel
-                    const stopResponse = await fetchApi('/tunnel_proxy', {
+                    const stopResponse = await fetch('/tunnel_proxy', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -121,7 +116,7 @@ document.addEventListener('alpine:init', () => {
         async generateLink() {
             // First check if authentication is enabled
             try {
-                const authCheckResponse = await fetchApi('/settings_get');
+                const authCheckResponse = await fetch('/settings_get');
                 const authData = await authCheckResponse.json();
                 
                 // Find the auth_login and auth_password in the settings
@@ -165,8 +160,10 @@ document.addEventListener('alpine:init', () => {
             this.isLoading = true;
             this.loadingText = 'Creating tunnel...';
 
-            // Use the local provider setting
-            const provider = this.provider || 'serveo'; // Default to serveo if not set
+            // Get provider from the parent settings modal scope
+            const modalEl = document.getElementById('settingsModal');
+            const modalAD = Alpine.$data(modalEl);
+            const provider = modalAD.provider || 'cloudflared'; // Default to cloudflared if not set
             
             // Change create button appearance
             const createButton = document.querySelector('.tunnel-actions .btn-ok');
@@ -178,7 +175,7 @@ document.addEventListener('alpine:init', () => {
             
             try {
                 // Call the backend API to create a tunnel
-                const response = await fetchApi('/tunnel_proxy', {
+                const response = await fetch('/tunnel_proxy', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -210,7 +207,7 @@ document.addEventListener('alpine:init', () => {
                     
                     // Check if tunnel is running now
                     try {
-                        const statusResponse = await fetchApi('/tunnel_proxy', {
+                        const statusResponse = await fetch('/tunnel_proxy', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -262,7 +259,7 @@ document.addEventListener('alpine:init', () => {
                 
                 try {
                     // Call the backend to stop the tunnel
-                    const response = await fetchApi('/tunnel_proxy', {
+                    const response = await fetch('/tunnel_proxy', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

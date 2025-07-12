@@ -95,7 +95,6 @@ document.addEventListener("DOMContentLoaded", setupSidebarToggle);
 export async function sendMessage() {
   try {
     const message = chatInput.value.trim();
-    // const attachmentsStore = attachmentsStore; //window.Alpine ? Alpine.store('chatAttachments') : null;
     const attachmentsWithUrls = attachmentsStore.getAttachmentsForSending();
     const hasAttachments = attachmentsWithUrls.length > 0;
 

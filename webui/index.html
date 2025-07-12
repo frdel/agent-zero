@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="css/tunnel.css">
 
     <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="vendor/font-awesome/all.min.css">
 
     <!-- Flatpickr for datetime picker -->
     <link rel="stylesheet" href="vendor/flatpickr/flatpickr.min.css">
@@ -130,7 +130,7 @@
     <script type="module" src="js/tunnel.js"></script>
 </head>
 
-<body class="dark-mode">
+<body class="dark-mode device-pointer">
     <div class="container">
         <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
         <div class="icons-section" id="hide-button" x-data="{ connected: true }">
@@ -520,7 +520,7 @@
     <div id="settingsModal" x-data="settingsModalProxy">
         <template x-teleport="body">
             <div x-show="isOpen" class="modal-overlay" @click.self="handleCancel()"
-                @keydown.escape.window="handleCancel()" x-transition>
+                @keydown.escape.window="isOpen && handleCancel()" x-transition>
                 <div class="modal-container">
                     <div class="modal-header">
                         <h2 x-text="settings.title"></h2>
@@ -682,8 +682,8 @@
                                         </div>
                                         <div class="field-control">
                                             <select id="tunnel-provider" x-model="provider" :disabled="isLoading">
-                                                <option value="serveo">Serveo</option>
                                                 <option value="cloudflared">Cloudflare</option>
+                                                <option value="serveo">Serveo</option>
                                             </select>
                                         </div>
                                     </div>
