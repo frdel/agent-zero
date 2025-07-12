@@ -79,5 +79,6 @@ async function getCsrfToken() {
     credentials: "same-origin",
   }).then((r) => r.json());
   csrfToken = response.token;
+  document.cookie = `csrf_token_${response.runtime_id}=${csrfToken}; SameSite=Strict; Path=/`;
   return csrfToken;
 }

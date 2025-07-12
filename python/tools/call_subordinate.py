@@ -32,3 +32,11 @@ class Delegation(Tool):
 
         # result
         return Response(message=result, break_loop=False)
+
+    def get_log_object(self):
+        return self.agent.context.log.log(
+            type="tool",
+            heading=f"icon://communication {self.agent.agent_name}: Calling Subordinate Agent",
+            content="",
+            kvps=self.args,
+        )

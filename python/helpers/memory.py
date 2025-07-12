@@ -28,9 +28,12 @@ import uuid
 from python.helpers import knowledge_import
 from python.helpers.log import Log, LogItem
 from enum import Enum
-from agent import Agent, ModelConfig
+from agent import Agent
 import models
+import logging
 
+# Raise the log level so WARNING messages aren't shown
+logging.getLogger("langchain_core.vectorstores.base").setLevel(logging.ERROR)
 
 class MyFaiss(FAISS):
     # override aget_by_ids
@@ -93,7 +96,7 @@ class Memory:
     @staticmethod
     def initialize(
         log_item: LogItem | None,
-        model_config: ModelConfig,
+        model_config: models.ModelConfig,
         memory_subdir: str,
         in_memory=False,
     ) -> tuple[MyFaiss, bool]:
@@ -117,11 +120,10 @@ class Memory:
             os.makedirs(em_dir, exist_ok=True)
             store = LocalFileStore(em_dir)
 
-        embeddings_model = models.get_model(
-            models.ModelType.EMBEDDING,
+        embeddings_model = models.get_embedding_model(
             model_config.provider,
             model_config.name,
-            **model_config.kwargs,
+            **model_config.build_kwargs(),
         )
         embeddings_model_id = files.safe_file_name(
             model_config.provider.name + "_" + model_config.name

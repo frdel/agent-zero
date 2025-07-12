@@ -7,6 +7,7 @@
     <title>Agent Zero</title>
     <link rel="icon" type="image/svg+xml" href="public/favicon.svg">
     <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="css/messages.css">
     <link rel="stylesheet" href="css/toast.css">
     <link rel="stylesheet" href="css/settings.css">
     <link rel="stylesheet" href="css/file_browser.css">
@@ -21,8 +22,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
     <!-- Flatpickr for datetime picker -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="vendor/flatpickr/flatpickr.min.css">
+    <script src="vendor/flatpickr/flatpickr.min.js"></script>
 
     <script>
         window.safeCall = function (name, ...args) {
@@ -104,19 +105,23 @@
     <script type="module" src="index.js"></script>
 
     <!-- Then load Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.3/dist/cdn.min.js"></script>
+    <script defer src="vendor/alpine/alpine.collapse.min.js"></script>
     <!-- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script> -->
     <script type="module" src="js/initFw.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.36.5/src-noconflict/ace.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/ace-builds@1.36.5/css/ace.min.css" rel="stylesheet">
+    <script src="vendor/ace/ace.js"></script>
+    <link href="vendor/ace/ace.min.css" rel="stylesheet">
     <!-- KaTeX CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="vendor/katex/katex.min.css" crossorigin="anonymous">
 
     <!-- KaTeX javascript -->
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" crossorigin="anonymous"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+    <script defer src="vendor/katex/katex.min.js" crossorigin="anonymous"></script>
+    <script defer src="vendor/katex/katex.auto-render.min.js"
         crossorigin="anonymous"></script>
+
+    <!-- Google Icons -->
+    <link rel="stylesheet" href="vendor/google/google-icons.css" />
+    
 
     <!-- Non-module scripts after Alpine.js -->
     <script type="text/javascript" src="js/settings.js"></script>

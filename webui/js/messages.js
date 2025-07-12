@@ -1,6 +1,73 @@
 // copy button
 import { openImageModal } from "./image_modal.js";
-import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
+import { marked } from "../vendor/marked/marked.esm.js";
+import { store as messageResizeStore } from "/components/messages/resize/message-resize-store.js";
+import { getAutoScroll } from "/index.js";
+
+const chatHistory = document.getElementById("chat-history");
+
+let messageGroup = null;
+
+export function setMessage(id, type, heading, content, temp, kvps = null) {
+  // Search for the existing message container by id
+  let messageContainer = document.getElementById(`message-${id}`);
+
+  if (messageContainer) {
+    // Don't re-render user messages
+    if (type === "user") {
+      return; // Skip re-rendering
+    }
+    // For other types, update the message
+    messageContainer.innerHTML = "";
+  } else {
+    // Create a new container if not found
+    const sender = type === "user" ? "user" : "ai";
+    messageContainer = document.createElement("div");
+    messageContainer.id = `message-${id}`;
+    messageContainer.classList.add("message-container", `${sender}-container`);
+    // if (temp) messageContainer.classList.add("message-temp");
+  }
+
+  const handler = getHandler(type);
+  handler(messageContainer, id, type, heading, content, temp, kvps);
+
+  // If the container was found, it was already in the DOM, no need to append again
+  if (!document.getElementById(`message-${id}`)) {
+    // message type visual grouping
+    const groupTypeMap = {
+      user: "right",
+      info: "mid",
+      warning: "mid",
+      error: "mid",
+      rate_limit: "mid",
+      util: "mid",
+      hint: "mid",
+      // anything else is "left"
+    };
+
+    //force new group on these types
+    const groupStart = {
+      agent: true,
+      // anything else is false
+    };
+
+    const groupType = groupTypeMap[type] || "left";
+
+    if (
+      !messageGroup || // no group yet exists
+      groupStart[type] || // message type forces new group
+      groupType != messageGroup.getAttribute("data-group-type") // message type changes group
+    ) {
+      messageGroup = document.createElement("div");
+      messageGroup.id = `message-group-${id}`;
+      messageGroup.classList.add(`message-group`, `message-group-${groupType}`);
+      messageGroup.setAttribute("data-group-type", groupType);
+    }
+
+    messageGroup.appendChild(messageContainer);
+    chatHistory.appendChild(messageGroup);
+  }
+}
 
 function createCopyButton() {
   const button = document.createElement("button");
@@ -81,23 +148,41 @@ export function _drawMessage(
   content,
   temp,
   followUp,
+  mainClass = "",
   kvps = null,
   messageClasses = [],
   contentClasses = [],
   latex = false,
-  markdown = false
+  markdown = false,
+  resizeBtns = true
 ) {
   const messageDiv = document.createElement("div");
-  messageDiv.classList.add("message", ...messageClasses);
+  messageDiv.classList.add("message", mainClass, ...messageClasses);
 
   if (heading) {
-    const headingElement = document.createElement("h4");
+    const headingElement = document.createElement("div");
     headingElement.classList.add("msg-heading");
-    headingElement.textContent = heading;
+    const headingH4 = document.createElement("h4");
+    headingH4.innerHTML = convertIcons(escapeHTML(heading));
+    headingElement.appendChild(headingH4);
     messageDiv.appendChild(headingElement);
+
+    if (resizeBtns) {
+      const minMaxBtn = document.createElement("div");
+      minMaxBtn.classList.add("msg-min-max-btns");
+      minMaxBtn.innerHTML = `
+        <a href="#" class="msg-min-max-btn" @click.prevent="$store.messageResize.minimizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined" x-text="$store.messageResize.getSetting('${mainClass}').minimized ? 'expand_content' : 'minimize'"></span></a>
+        <a href="#" class="msg-min-max-btn" x-show="!$store.messageResize.getSetting('${mainClass}').minimized" @click.prevent="$store.messageResize.maximizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined" x-text="$store.messageResize.getSetting('${mainClass}').maximized ? 'expand' : 'expand_all'"></span></a>
+      `;
+      headingElement.appendChild(minMaxBtn);
+    }
   }
 
-  drawKvps(messageDiv, kvps, false);
+  const bodyDiv = document.createElement("div");
+  bodyDiv.classList.add("message-body");
+  messageDiv.appendChild(bodyDiv);
+
+  drawKvps(bodyDiv, kvps, false);
 
   if (content && content.trim().length > 0) {
     if (markdown) {
@@ -124,7 +209,8 @@ export function _drawMessage(
 
       contentDiv.appendChild(spanElement);
       addCopyButtonToElement(contentDiv);
-      messageDiv.appendChild(contentDiv);
+      adjustMarkdownRender(contentDiv);
+      bodyDiv.appendChild(contentDiv);
     } else {
       const preElement = document.createElement("pre");
       preElement.classList.add("msg-content", ...contentClasses);
@@ -141,7 +227,7 @@ export function _drawMessage(
 
       preElement.appendChild(spanElement);
       addCopyButtonToElement(preElement);
-      messageDiv.appendChild(preElement);
+      bodyDiv.appendChild(preElement);
     }
   }
 
@@ -150,6 +236,12 @@ export function _drawMessage(
   if (followUp) {
     messageContainer.classList.add("message-followup");
   }
+
+  // autoscroll the body if needed
+  // if (getAutoScroll()) #TODO needs a better redraw system
+    setTimeout(() => {
+      bodyDiv.scrollTop = bodyDiv.scrollHeight;
+    }, 0);
 
   return messageDiv;
 }
@@ -169,8 +261,9 @@ export function drawMessageDefault(
     content,
     temp,
     false,
+    "message-default",
     kvps,
-    ["message-ai", "message-default"],
+    ["message-ai"],
     ["msg-json"],
     false,
     false
@@ -198,8 +291,9 @@ export function drawMessageAgent(
     content,
     temp,
     false,
+    "message-agent",
     kvpsFlat,
-    ["message-ai", "message-agent"],
+    ["message-ai"],
     ["msg-json"],
     false,
     false
@@ -221,8 +315,9 @@ export function drawMessageResponse(
     content,
     temp,
     true,
+    "message-agent-response",
     null,
-    ["message-ai", "message-agent-response"],
+    ["message-ai"],
     [],
     true,
     true
@@ -244,8 +339,9 @@ export function drawMessageDelegation(
     content,
     temp,
     true,
+    "message-agent-delegation",
     kvps,
-    ["message-ai", "message-agent", "message-agent-delegation"],
+    ["message-ai", "message-agent"],
     [],
     true,
     false
@@ -267,7 +363,8 @@ export function drawMessageUser(
 
   const headingElement = document.createElement("h4");
   headingElement.classList.add("msg-heading");
-  headingElement.textContent = "User message";
+  headingElement.innerHTML =
+    "User message <span class='icon material-symbols-outlined'>person</span>";
   messageDiv.appendChild(headingElement);
 
   if (content && content.trim().length > 0) {
@@ -275,8 +372,8 @@ export function drawMessageUser(
     textDiv.classList.add("message-text");
 
     // Create a span for the content
-    const spanElement = document.createElement("span");
-    spanElement.innerHTML = convertHTML(content);
+    const spanElement = document.createElement("pre");
+    spanElement.innerHTML = escapeHTML(content);
     textDiv.appendChild(spanElement);
 
     // Add click handler
@@ -364,8 +461,9 @@ export function drawMessageTool(
     content,
     temp,
     true,
+    "message-tool",
     kvps,
-    ["message-ai", "message-tool"],
+    ["message-ai"],
     ["msg-output"],
     false,
     false
@@ -387,8 +485,9 @@ export function drawMessageCodeExe(
     content,
     temp,
     true,
+    "message-code-exe",
     null,
-    ["message-ai", "message-code-exe"],
+    ["message-ai"],
     [],
     false,
     false
@@ -410,8 +509,9 @@ export function drawMessageBrowser(
     content,
     temp,
     true,
+    "message-browser",
     kvps,
-    ["message-ai", "message-browser"],
+    ["message-ai"],
     ["msg-json"],
     false,
     false
@@ -419,7 +519,7 @@ export function drawMessageBrowser(
 }
 
 export function drawMessageAgentPlain(
-  classes,
+  mainClass,
   messageContainer,
   id,
   type,
@@ -434,8 +534,9 @@ export function drawMessageAgentPlain(
     content,
     temp,
     false,
+    mainClass,
     kvps,
-    [...classes],
+    [],
     [],
     false,
     false
@@ -453,7 +554,7 @@ export function drawMessageInfo(
   kvps = null
 ) {
   return drawMessageAgentPlain(
-    ["message-info"],
+    "message-info",
     messageContainer,
     id,
     type,
@@ -479,8 +580,9 @@ export function drawMessageUtil(
     content,
     temp,
     false,
+    "message-util",
     kvps,
-    ["message-util"],
+    [],
     ["msg-json"],
     false,
     false
@@ -498,7 +600,7 @@ export function drawMessageWarning(
   kvps = null
 ) {
   return drawMessageAgentPlain(
-    ["message-warning"],
+    "message-warning",
     messageContainer,
     id,
     type,
@@ -519,7 +621,7 @@ export function drawMessageError(
   kvps = null
 ) {
   return drawMessageAgentPlain(
-    ["message-error"],
+    "message-error",
     messageContainer,
     id,
     type,
@@ -537,7 +639,8 @@ function drawKvps(container, kvps, latex) {
     for (let [key, value] of Object.entries(kvps)) {
       const row = table.insertRow();
       row.classList.add("kvps-row");
-      if (key === "thoughts" || key === "reflection")
+      if (key === "thoughts" || key === "reasoning")
+        // TODO: find a better way to determine special class assignment
         row.classList.add("msg-thoughts");
 
       const th = row.insertCell();
@@ -545,6 +648,9 @@ function drawKvps(container, kvps, latex) {
       th.classList.add("kvps-key");
 
       const td = row.insertCell();
+      const tdiv = document.createElement("div");
+      tdiv.classList.add("kvps-val");
+      td.appendChild(tdiv);
 
       if (Array.isArray(value)) {
         for (const item of value) {
@@ -554,6 +660,12 @@ function drawKvps(container, kvps, latex) {
         addValue(value);
       }
 
+      // autoscroll the KVP value if needed
+      // if (getAutoScroll()) #TODO needs a better redraw system
+      setTimeout(() => {
+        tdiv.scrollTop = tdiv.scrollHeight;
+      }, 0);
+
       function addValue(value) {
         if (typeof value === "object") value = JSON.stringify(value, null, 2);
 
@@ -562,23 +674,21 @@ function drawKvps(container, kvps, latex) {
           imgElement.classList.add("kvps-img");
           imgElement.src = value.replace("img://", "/image_get?path=");
           imgElement.alt = "Image Attachment";
-          td.appendChild(imgElement);
+          tdiv.appendChild(imgElement);
 
           // Add click handler and cursor change
           imgElement.style.cursor = "pointer";
           imgElement.addEventListener("click", () => {
             openImageModal(imgElement.src, 1000);
           });
-
-          td.appendChild(imgElement);
         } else {
           const pre = document.createElement("pre");
-          pre.classList.add("kvps-val");
+          // pre.classList.add("kvps-val");
           //   if (row.classList.contains("msg-thoughts")) {
           const span = document.createElement("span");
           span.innerHTML = convertHTML(value);
           pre.appendChild(span);
-          td.appendChild(pre);
+          tdiv.appendChild(pre);
           addCopyButtonToElement(row);
 
           // Add click handler
@@ -586,14 +696,14 @@ function drawKvps(container, kvps, latex) {
             copyText(span.textContent, span);
           });
 
-      // KaTeX rendering for markdown
-      if (latex) {
-        span.querySelectorAll("latex").forEach((element) => {
-          katex.render(element.innerHTML, element, {
-            throwOnError: false,
-          });
-        });
-      }
+          // KaTeX rendering for markdown
+          if (latex) {
+            span.querySelectorAll("latex").forEach((element) => {
+              katex.render(element.innerHTML, element, {
+                throwOnError: false,
+              });
+            });
+          }
         }
       }
       //   } else {
@@ -661,6 +771,13 @@ function convertImgFilePaths(str) {
   return str.replace("img://", "/image_get?path=");
 }
 
+export function convertIcons(str) {
+  return str.replace(
+    /icon:\/\/([a-zA-Z0-9_]+)/g,
+    '<span class="icon material-symbols-outlined">$1</span>'
+  );
+}
+
 function escapeHTML(str) {
   const escapeChars = {
     "&": "&amp;",
@@ -675,7 +792,7 @@ function escapeHTML(str) {
 function convertPathsToLinks(str) {
   function generateLinks(match) {
     const parts = match.split("/");
-    if (!parts[0]) parts.shift(); // drop empty element left of first “/”
+    if (!parts[0]) parts.shift(); // drop empty element left of first "
     let conc = "";
     let html = "";
     for (const part of parts) {
@@ -700,12 +817,25 @@ function convertPathsToLinks(str) {
   return str
     .split(tagRegex) // keep tags & text separate
     .map((chunk) => {
-      // if it *starts* with '<', it’s a tag -> leave untouched
+      // if it *starts* with '<', it's a tag -> leave untouched
       if (chunk.startsWith("<")) return chunk;
       // otherwise run your link-generation
       return chunk.replace(pathRegex, generateLinks);
     })
     .join("");
+}
+
+function adjustMarkdownRender(element) {
+  // find all tables and code blocks in the element
+  const elements = element.querySelectorAll("table, code");
+
+  // wrap each with a div with class message-markdown-table-wrap
+  elements.forEach((el) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "message-markdown-table-wrap";
+    el.parentNode.insertBefore(wrapper, el);
+    wrapper.appendChild(el);
+  });
 }
 
 // function convertPathsToLinksInHtml(htmlString) {

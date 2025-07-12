@@ -41,7 +41,7 @@ class SSHInteractiveSession:
                     allow_agent=False,
                     look_for_keys=False,
                 )
-                self.shell = self.client.invoke_shell(width=160, height=48)
+                self.shell = self.client.invoke_shell(width=100, height=50)
                 # self.shell.send(f'PS1="{SSHInteractiveSession.ps1_label}"'.encode())
                 # return
                 while True:  # wait for end of initial output
@@ -192,6 +192,9 @@ class SSHInteractiveSession:
         # Remove ANSI escape codes
         ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
         cleaned = ansi_escape.sub("", input_string)
+
+        # remove null bytes
+        cleaned = cleaned.replace("\x00", "")
 
         # Replace '\r\n' with '\n'
         cleaned = cleaned.replace("\r\n", "\n")

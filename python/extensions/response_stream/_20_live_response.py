@@ -30,7 +30,7 @@ class LiveResponse(Extension):
                 loop_data.params_temporary["log_item_response"] = (
                     self.agent.context.log.log(
                         type="response",
-                        heading=f"{self.agent.agent_name}: Responding",
+                        heading=f"icon://chat {self.agent.agent_name}: Responding",
                     )
                 )
 

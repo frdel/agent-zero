@@ -1,3 +1,4 @@
+from datetime import timedelta
 import os
 import secrets
 import sys
@@ -29,7 +30,10 @@ webapp = Flask("app", static_folder=get_abs_path("./webui"), static_url_path="/"
 webapp.secret_key = os.getenv("FLASK_SECRET_KEY") or secrets.token_hex(32)
 webapp.config.update(
     JSON_SORT_KEYS=False,
+    SESSION_COOKIE_NAME="session_" + runtime.get_runtime_id(),  # bind the session cookie name to runtime id to prevent session collision on same host
     SESSION_COOKIE_SAMESITE="Strict",
+    SESSION_PERMANENT=True,
+    PERMANENT_SESSION_LIFETIME=timedelta(days=1)
 )
 
 
@@ -131,7 +135,9 @@ def csrf_protect(f):
     async def decorated(*args, **kwargs):
         token = session.get("csrf_token")
         header = request.headers.get("X-CSRF-Token")
-        if not token or not header or token != header:
+        cookie = request.cookies.get("csrf_token_" + runtime.get_runtime_id())
+        sent = header or cookie
+        if not token or not sent or token != sent:
             return Response("CSRF token missing or invalid", 403)
         return await f(*args, **kwargs)
 

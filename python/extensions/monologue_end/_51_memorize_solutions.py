@@ -12,13 +12,8 @@ class MemorizeSolutions(Extension):
 
     async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
         # try:
-
-        # show temp info message
-        self.agent.context.log.log(
-            type="info", content="Memorizing succesful solutions...", temp=True
-        )
-
-        # show full util message, this will hide temp message immediately if turned on
+ 
+        # show full util message
         log_item = self.agent.context.log.log(
             type="util",
             heading="Memorizing succesful solutions...",

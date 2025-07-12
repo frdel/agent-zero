@@ -12,6 +12,7 @@ only bitmaps supported convert first if needed
     "thoughts": [
         "I need to see the image...",
     ],
+    "headline": "Loading image for visual analysis",
     "tool_name": "vision_load",
     "tool_args": {
         "paths": ["/path/to/image.png"],

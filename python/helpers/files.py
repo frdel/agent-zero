@@ -12,7 +12,6 @@ import zipfile
 import importlib
 import importlib.util
 import inspect
-from python.helpers.print_style import PrintStyle
 
 
 class VariablesPlugin(ABC):
@@ -59,7 +58,6 @@ def load_plugin_variables(file: str, backup_dirs: list[str] | None = None) -> di
         # iterate backwards to skip imported superclasses
         for cls in reversed(class_list):
             if cls[1] is not VariablesPlugin and issubclass(cls[1], VariablesPlugin):
-                PrintStyle().debug(f"Loading prompt variables from {plugin_file}")
                 return cls[1]().get_variables()  # type: ignore
     return {}
 

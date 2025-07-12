@@ -1,5 +1,6 @@
 import argparse
 import inspect
+import secrets
 from typing import TypeVar, Callable, Awaitable, Union, overload, cast
 from python.helpers import dotenv, rfc, settings
 import asyncio
@@ -12,6 +13,7 @@ R = TypeVar('R')
 parser = argparse.ArgumentParser()
 args = {}
 dockerman = None
+runtime_id = None
 
 
 def initialize():
@@ -38,7 +40,6 @@ def initialize():
             key = key.lstrip("-")
             args[key] = value
 
-
 def get_arg(name: str):
     global args
     return args.get(name, None)
@@ -57,6 +58,12 @@ def get_local_url():
     if is_dockerized():
         return "host.docker.internal"
     return "127.0.0.1"
+
+def get_runtime_id() -> str:
+    global runtime_id
+    if not runtime_id:
+        runtime_id = secrets.token_hex(8)   
+    return runtime_id
 
 @overload
 async def call_development_function(func: Callable[..., Awaitable[T]], *args, **kwargs) -> T: ...

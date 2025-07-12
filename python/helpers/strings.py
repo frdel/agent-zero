@@ -120,3 +120,13 @@ def dict_to_text(d: dict) -> str:
         parts.append("")  # Add empty line between entries
     
     return "\n".join(parts).rstrip()  # rstrip to remove trailing newline
+
+def truncate_text(text: str, length: int, at_end: bool = True, replacement: str = "...") -> str:
+    orig_length = len(text)
+    if orig_length <= length:
+        return text
+    if at_end:
+         return text[:length] + replacement
+    else:
+        return replacement + text[-length:]
+    

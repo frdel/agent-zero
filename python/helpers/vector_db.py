@@ -36,12 +36,14 @@ class VectorDB:
     _cached_embeddings: dict[str, CacheBackedEmbeddings] = {}
 
     @staticmethod
-    def _get_embeddings(agent: Agent):
+    def _get_embeddings(agent: Agent, cache: bool = True):
         model = agent.get_embedding_model()
+        if not cache:
+            return model  # return raw embeddings if cache is False
         namespace = getattr(
             model,
-            "model",
-            getattr(model, "model_name", "default"),
+            "model_name",
+            "default",
         )
         if namespace not in VectorDB._cached_embeddings:
             store = InMemoryByteStore()
@@ -54,9 +56,10 @@ class VectorDB:
             )
         return VectorDB._cached_embeddings[namespace]
 
-    def __init__(self, agent: Agent):
+    def __init__(self, agent: Agent, cache: bool = True):
         self.agent = agent
-        self.embeddings = self._get_embeddings(agent)
+        self.cache = cache  # store cache preference
+        self.embeddings = self._get_embeddings(agent, cache=cache)
         self.index = faiss.IndexFlatIP(len(self.embeddings.embed_query("example")))
 
         self.db = MyFaiss(

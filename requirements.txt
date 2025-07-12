@@ -10,14 +10,8 @@ flask-basicauth==0.2.0
 flaredantic==0.1.4
 GitPython==3.1.43
 inputimeout==1.0.4
-langchain-anthropic==0.3.3
+langchain-core==0.3.49
 langchain-community==0.3.19
-langchain-google-genai==2.1.2
-langchain-groq==0.2.2
-langchain-huggingface==0.1.2
-langchain-mistralai==0.2.4
-langchain-ollama==0.3.0
-langchain-openai==0.3.11
 langchain-unstructured[all-docs]==0.1.6
 openai-whisper==20240930
 lxml_html_clean==0.3.1
@@ -35,6 +29,8 @@ unstructured[all-docs]==0.16.23
 unstructured-client==0.31.0
 webcolors==24.6.0
 nest-asyncio==1.6.0
+crontab==1.0.1
+litellm==1.74
 markdownify==1.1.0
 pymupdf==1.25.3
 pytesseract==0.3.13

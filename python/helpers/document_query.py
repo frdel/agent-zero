@@ -20,27 +20,17 @@ from langchain_community.document_transformers import MarkdownifyTransformer
 from langchain_community.document_loaders.parsers.images import TesseractBlobParser
 
 from langchain_core.documents import Document
-from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage
-from langchain.storage import LocalFileStore, InMemoryStore
-from langchain.embeddings import CacheBackedEmbeddings
-
-from langchain_community.vectorstores import FAISS
-import faiss
-from langchain_community.docstore.in_memory import InMemoryDocstore
-from langchain_community.vectorstores.utils import (
-    DistanceStrategy,
-)
-from langchain_core.embeddings import Embeddings
 
 from python.helpers.print_style import PrintStyle
-from python.helpers import files
+from python.helpers import files, errors
 from agent import Agent
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
 DEFAULT_SEARCH_THRESHOLD = 0.5
+
 
 class DocumentQueryStore:
     """
@@ -85,7 +75,7 @@ class DocumentQueryStore:
             Normalized URI
         """
         # Convert to lowercase
-        normalized = uri.strip() # uri.lower()
+        normalized = uri.strip()  # uri.lower()
 
         # Parse the URL to get scheme
         parsed = urlparse(normalized)
@@ -105,7 +95,7 @@ class DocumentQueryStore:
         return normalized
 
     def init_vector_db(self):
-        return VectorDB(self.agent)
+        return VectorDB(self.agent, cache=True)
 
     async def add_document(
         self, text: str, document_uri: str, metadata: dict | None = None
@@ -167,7 +157,8 @@ class DocumentQueryStore:
             )
             return True, ids
         except Exception as e:
-            PrintStyle.error(f"Error adding document '{document_uri}': {str(e)}")
+            err_text = errors.format_error(e)
+            PrintStyle.error(f"Error adding document '{document_uri}': {err_text}")
             return False, []
 
     async def get_document(self, document_uri: str) -> Optional[Document]:
@@ -368,7 +359,9 @@ class DocumentQueryStore:
 
 class DocumentQueryHelper:
 
-    def __init__(self, agent: Agent, progress_callback: Callable[[str], None] | None = None):
+    def __init__(
+        self, agent: Agent, progress_callback: Callable[[str], None] | None = None
+    ):
         self.agent = agent
         self.store = DocumentQueryStore.get(agent)
         self.progress_callback = progress_callback or (lambda x: None)
@@ -414,30 +407,34 @@ class DocumentQueryHelper:
             content = f"!!! No content found for document: {document_uri} matching queries: {json.dumps(questions)}"
             return False, content
 
-        self.progress_callback(f"Processing {len(questions)} questions in context of {len(selected_chunks)} chunks")
+        self.progress_callback(
+            f"Processing {len(questions)} questions in context of {len(selected_chunks)} chunks"
+        )
 
         questions_str = "\n".join([f" *  {question}" for question in questions])
-        content = "\n\n----\n\n".join([chunk.page_content for chunk in selected_chunks.values()])
+        content = "\n\n----\n\n".join(
+            [chunk.page_content for chunk in selected_chunks.values()]
+        )
 
         qa_system_message = self.agent.parse_prompt(
             "fw.document_query.system_prompt.md"
         )
         qa_user_message = f"# Document:\n{content}\n\n# Queries:\n{questions_str}"
 
-        ai_response = await self.agent.call_chat_model(
-            prompt=ChatPromptTemplate.from_messages(
-                [
-                    SystemMessage(content=qa_system_message),
-                    HumanMessage(content=qa_user_message),
-                ]
-            )
+        ai_response, _reasoning = await self.agent.call_chat_model(
+            messages=[
+                SystemMessage(content=qa_system_message),
+                HumanMessage(content=qa_user_message),
+            ]
         )
 
         self.progress_callback(f"Q&A process completed")
 
         return True, str(ai_response)
 
-    async def document_get_content(self, document_uri: str, add_to_db: bool = False) -> str:
+    async def document_get_content(
+        self, document_uri: str, add_to_db: bool = False
+    ) -> str:
         self.progress_callback(f"Fetching document content")
         url = urlparse(document_uri)
         scheme = url.scheme or "file"
@@ -518,7 +515,9 @@ class DocumentQueryHelper:
                 )
             if add_to_db:
                 self.progress_callback(f"Indexing document")
-                success, ids = await self.store.add_document(document_content, document_uri_norm)
+                success, ids = await self.store.add_document(
+                    document_content, document_uri_norm
+                )
                 if not success:
                     self.progress_callback(f"Failed to index document")
                     raise ValueError(

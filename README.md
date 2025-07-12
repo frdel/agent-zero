@@ -154,12 +154,31 @@ docker run -p 50001:80 frdel/agent-zero-run
 | [Contributing](./docs/contribution.md) | How to contribute |
 | [Troubleshooting](./docs/troubleshooting.md) | Common issues and their solutions |
 
-## Coming soon
-
-- **MCP**
-- **Knowledge and RAG Tools**
 
 ## 🎯 Changelog
+
+### v0.9.1 - LiteLLM, UI improvements
+[Release video](https://youtu.be/crwr0M4Spcg)
+- Langchain replaced with LiteLLM
+    - Support for reasoning models streaming
+    - Support for more providers
+    - Openrouter set as default instead of OpenAI
+- UI improvements
+    - New message grouping system
+    - Communication smoother and more efficient
+    - Collapsible messages by type
+    - Code execution tool output improved
+    - Tables and code blocks scrollable
+    - More space efficient on mobile
+- Streamable HTTP MCP servers support
+- LLM API URL added to models config for Azure, local and custom providers
+    
+
+### v0.9.0 - Agent roles, backup/restore
+[Release video](https://www.youtube.com/watch?v=rMIe-TC6H-k)
+- subordinate agents can use prompt profiles for different roles
+- backup/restore functionality for easier upgrades
+- security and bug fixes
 
 ### v0.8.7 - Formatting, Document RAG Latest
 [Release video](https://youtu.be/OQJkfofYbus)

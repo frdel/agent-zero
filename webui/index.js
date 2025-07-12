@@ -1,6 +1,7 @@
 import * as msgs from "./js/messages.js";
 import { speech } from "./js/speech.js";
 import * as api from "./js/api.js";
+import * as css from "./js/css.js";
 
 window.fetchApi = api.fetchApi; // TODO - backward compatibility for non-modular scripts, remove once refactored to alpine
 
@@ -26,6 +27,10 @@ let connectionStatus = false;
 setupSidebarToggle();
 // Initialize tabs
 setupTabs();
+
+export function getAutoScroll() {
+  return autoScroll;
+}
 
 function isMobile() {
   return window.innerWidth <= 768;
@@ -235,34 +240,9 @@ updateUserTime();
 setInterval(updateUserTime, 1000);
 
 function setMessage(id, type, heading, content, temp, kvps = null) {
-  // Search for the existing message container by id
-  let messageContainer = document.getElementById(`message-${id}`);
-
-  if (messageContainer) {
-    // Don't re-render user messages
-    if (type === "user") {
-      return; // Skip re-rendering
-    }
-    // For other types, update the message
-    messageContainer.innerHTML = "";
-  } else {
-    // Create a new container if not found
-    const sender = type === "user" ? "user" : "ai";
-    messageContainer = document.createElement("div");
-    messageContainer.id = `message-${id}`;
-    messageContainer.classList.add("message-container", `${sender}-container`);
-    if (temp) messageContainer.classList.add("message-temp");
-  }
-
-  const handler = msgs.getHandler(type);
-  handler(messageContainer, id, type, heading, content, temp, kvps);
-
-  // If the container was found, it was already in the DOM, no need to append again
-  if (!document.getElementById(`message-${id}`)) {
-    chatHistory.appendChild(messageContainer);
-  }
-
+  const result = msgs.setMessage(id, type, heading, content, temp, kvps);
   if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
+  return result;
 }
 
 window.loadKnowledge = async function () {
@@ -538,6 +518,8 @@ function updateProgress(progress, active) {
     addClassToElement(progressBar, "shiny-text");
   }
 
+  progress = msgs.convertIcons(progress);
+
   if (progressBar.innerHTML != progress) {
     progressBar.innerHTML = progress;
   }
@@ -734,13 +716,11 @@ window.toggleAutoScroll = async function (_autoScroll) {
 };
 
 window.toggleJson = async function (showJson) {
-  // add display:none to .msg-json class definition
-  toggleCssProperty(".msg-json", "display", showJson ? "block" : "none");
+  css.toggleCssProperty(".msg-json", "display", showJson ? "block" : "none");
 };
 
 window.toggleThoughts = async function (showThoughts) {
-  // add display:none to .msg-json class definition
-  toggleCssProperty(
+  css.toggleCssProperty(
     ".msg-thoughts",
     "display",
     showThoughts ? undefined : "none"
@@ -748,10 +728,11 @@ window.toggleThoughts = async function (showThoughts) {
 };
 
 window.toggleUtils = async function (showUtils) {
-  // add display:none to .msg-json class definition
-  toggleCssProperty(".message-util", "display", showUtils ? undefined : "none");
-  // toggleCssProperty('.message-util .msg-kvps', 'display', showUtils ? undefined : 'none');
-  // toggleCssProperty('.message-util .msg-content', 'display', showUtils ? undefined : 'none');
+  css.toggleCssProperty(
+    ".message-util",
+    "display",
+    showUtils ? undefined : "none"
+  );
 };
 
 window.toggleDarkMode = function (isDark) {
@@ -823,30 +804,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const isDarkMode = localStorage.getItem("darkMode") !== "false";
   toggleDarkMode(isDarkMode);
 });
-
-function toggleCssProperty(selector, property, value) {
-  // Get the stylesheet that contains the class
-  const styleSheets = document.styleSheets;
-
-  // Iterate through all stylesheets to find the class
-  for (let i = 0; i < styleSheets.length; i++) {
-    const styleSheet = styleSheets[i];
-    const rules = styleSheet.cssRules || styleSheet.rules;
-
-    for (let j = 0; j < rules.length; j++) {
-      const rule = rules[j];
-      if (rule.selectorText == selector) {
-        // Check if the property is already applied
-        if (value === undefined) {
-          rule.style.removeProperty(property);
-        } else {
-          rule.style.setProperty(property, value);
-        }
-        return;
-      }
-    }
-  }
-}
 
 window.loadChats = async function () {
   try {

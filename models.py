@@ -1,39 +1,56 @@
+from dataclasses import dataclass, field
 from enum import Enum
+import logging
 import os
-from typing import Any
-from langchain_openai import (
-    ChatOpenAI,
-    OpenAI,
-    OpenAIEmbeddings,
-    AzureChatOpenAI,
-    AzureOpenAIEmbeddings,
-    AzureOpenAI,
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    List,
+    Optional,
+    Iterator,
+    AsyncIterator,
+    Tuple,
+    TypedDict,
 )
-from langchain_community.llms.ollama import Ollama
-from langchain_ollama import ChatOllama
-from langchain_community.embeddings import OllamaEmbeddings
-from langchain_anthropic import ChatAnthropic
-from langchain_groq import ChatGroq
-from langchain_huggingface import (
-    HuggingFaceEmbeddings,
-    ChatHuggingFace,
-    HuggingFaceEndpoint,
-)
-from langchain_google_genai import (
-    ChatGoogleGenerativeAI,
-    HarmBlockThreshold,
-    HarmCategory,
-    embeddings as google_embeddings,
-)
-from langchain_mistralai import ChatMistralAI
 
-# from pydantic.v1.types import SecretStr
-from python.helpers import dotenv, runtime
+from litellm import completion, acompletion, embedding
+import litellm
+
+from python.helpers import dotenv
 from python.helpers.dotenv import load_dotenv
 from python.helpers.rate_limiter import RateLimiter
+from python.helpers.tokens import approximate_tokens
 
-# environment variables
+from langchain_core.language_models.chat_models import SimpleChatModel
+from langchain_core.outputs.chat_generation import ChatGenerationChunk
+from langchain_core.callbacks.manager import (
+    CallbackManagerForLLMRun,
+    AsyncCallbackManagerForLLMRun,
+)
+from langchain_core.messages import (
+    BaseMessage,
+    AIMessageChunk,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain.embeddings.base import Embeddings
+from sentence_transformers import SentenceTransformer
+
+
+# disable extra logging, must be done repeatedly, otherwise browser-use will turn it back on for some reason
+def turn_off_logging():
+    os.environ["LITELLM_LOG"] = "ERROR"  # only errors
+    litellm.suppress_debug_info = True
+    # Silence **all** LiteLLM sub-loggers (utils, cost_calculator…)
+    for name in logging.Logger.manager.loggerDict:
+        if name.lower().startswith("litellm"):
+            logging.getLogger(name).setLevel(logging.ERROR)
+
+
+# init
 load_dotenv()
+turn_off_logging()
 
 
 class ModelType(Enum):
@@ -43,391 +60,444 @@ class ModelType(Enum):
 
 class ModelProvider(Enum):
     ANTHROPIC = "Anthropic"
-    CHUTES = "Chutes"
     DEEPSEEK = "DeepSeek"
-    GOOGLE = "Google"
+    GEMINI = "Google"
     GROQ = "Groq"
     HUGGINGFACE = "HuggingFace"
-    LMSTUDIO = "LM Studio"
-    MISTRALAI = "Mistral AI"
+    LM_STUDIO = "LM Studio"
+    MISTRAL = "Mistral AI"
     OLLAMA = "Ollama"
     OPENAI = "OpenAI"
-    OPENAI_AZURE = "OpenAI Azure"
+    AZURE = "OpenAI Azure"
     OPENROUTER = "OpenRouter"
     SAMBANOVA = "Sambanova"
-    OTHER = "Other"
+    OTHER = "Other OpenAI compatible"
+
+
+@dataclass
+class ModelConfig:
+    type: ModelType
+    provider: ModelProvider
+    name: str
+    api_base: str = ""
+    ctx_length: int = 0
+    limit_requests: int = 0
+    limit_input: int = 0
+    limit_output: int = 0
+    vision: bool = False
+    kwargs: dict = field(default_factory=dict)
+
+    def build_kwargs(self):
+        kwargs = self.kwargs.copy() or {}
+        if self.api_base and "api_base" not in kwargs:
+            kwargs["api_base"] = self.api_base
+        return kwargs
+
+
+class ChatChunk(TypedDict):
+    """Simplified response chunk for chat models."""
+
+    response_delta: str
+    reasoning_delta: str
 
 
 rate_limiters: dict[str, RateLimiter] = {}
 
 
-# Utility function to get API keys from environment variables
-def get_api_key(service):
+def get_api_key(service: str) -> str:
     return (
         dotenv.get_dotenv_value(f"API_KEY_{service.upper()}")
         or dotenv.get_dotenv_value(f"{service.upper()}_API_KEY")
-        or dotenv.get_dotenv_value(
-            f"{service.upper()}_API_TOKEN"
-        )  # Added for CHUTES_API_TOKEN
+        or dotenv.get_dotenv_value(f"{service.upper()}_API_TOKEN")
         or "None"
     )
-
-
-def get_model(type: ModelType, provider: ModelProvider, name: str, **kwargs):
-    fnc_name = f"get_{provider.name.lower()}_{type.name.lower()}"  # function name of model getter
-    model = globals()[fnc_name](name, **kwargs)  # call function by name
-    return model
 
 
 def get_rate_limiter(
     provider: ModelProvider, name: str, requests: int, input: int, output: int
 ) -> RateLimiter:
-    # get or create
     key = f"{provider.name}\\{name}"
     rate_limiters[key] = limiter = rate_limiters.get(key, RateLimiter(seconds=60))
-    # always update
     limiter.limits["requests"] = requests or 0
     limiter.limits["input"] = input or 0
     limiter.limits["output"] = output or 0
     return limiter
 
 
-def parse_chunk(chunk: Any):
-    if isinstance(chunk, str):
-        content = chunk
-    elif hasattr(chunk, "content"):
-        content = str(chunk.content)
+class LiteLLMChatWrapper(SimpleChatModel):
+    model_name: str
+    provider: str
+    kwargs: dict = {}
+
+    def __init__(self, model: str, provider: str, **kwargs: Any):
+        model_value = f"{provider}/{model}"
+        super().__init__(model_name=model_value, provider=provider, kwargs=kwargs)  # type: ignore
+
+    @property
+    def _llm_type(self) -> str:
+        return "litellm-chat"
+
+    def _convert_messages(self, messages: List[BaseMessage]) -> List[dict]:
+        result = []
+        # Map LangChain message types to LiteLLM roles
+        role_mapping = {
+            "human": "user",
+            "ai": "assistant",
+            "system": "system",
+            "tool": "tool",
+        }
+        for m in messages:
+            role = role_mapping.get(m.type, m.type)
+            message_dict = {"role": role, "content": m.content}
+
+            # Handle tool calls for AI messages
+            tool_calls = getattr(m, "tool_calls", None)
+            if tool_calls:
+                # Convert LangChain tool calls to LiteLLM format
+                new_tool_calls = []
+                for tool_call in tool_calls:
+                    # Ensure arguments is a JSON string
+                    args = tool_call["args"]
+                    if isinstance(args, dict):
+                        import json
+
+                        args_str = json.dumps(args)
+                    else:
+                        args_str = str(args)
+
+                    new_tool_calls.append(
+                        {
+                            "id": tool_call.get("id", ""),
+                            "type": "function",
+                            "function": {
+                                "name": tool_call["name"],
+                                "arguments": args_str,
+                            },
+                        }
+                    )
+                message_dict["tool_calls"] = new_tool_calls
+
+            # Handle tool call ID for ToolMessage
+            tool_call_id = getattr(m, "tool_call_id", None)
+            if tool_call_id:
+                message_dict["tool_call_id"] = tool_call_id
+
+            result.append(message_dict)
+        return result
+
+    def _call(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        msgs = self._convert_messages(messages)
+        resp = completion(
+            model=self.model_name, messages=msgs, stop=stop, **{**self.kwargs, **kwargs}
+        )
+        parsed = _parse_chunk(resp)
+        return parsed["response_delta"]
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        msgs = self._convert_messages(messages)
+        for chunk in completion(
+            model=self.model_name,
+            messages=msgs,
+            stream=True,
+            stop=stop,
+            **{**self.kwargs, **kwargs},
+        ):
+            parsed = _parse_chunk(chunk)
+            # Only yield chunks with non-None content
+            if parsed["response_delta"]:
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(content=parsed["response_delta"])
+                )
+
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        msgs = self._convert_messages(messages)
+        response = await acompletion(
+            model=self.model_name,
+            messages=msgs,
+            stream=True,
+            stop=stop,
+            **{**self.kwargs, **kwargs},
+        )
+        async for chunk in response:  # type: ignore
+            parsed = _parse_chunk(chunk)
+            # Only yield chunks with non-None content
+            if parsed["response_delta"]:
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(content=parsed["response_delta"])
+                )
+
+    async def unified_call(
+        self,
+        system_message="",
+        user_message="",
+        messages: List[BaseMessage] | None = None,
+        response_callback: Callable[[str, str], Awaitable[None]] | None = None,
+        reasoning_callback: Callable[[str, str], Awaitable[None]] | None = None,
+        tokens_callback: Callable[[str, int], Awaitable[None]] | None = None,
+        **kwargs: Any,
+    ) -> Tuple[str, str]:
+
+        turn_off_logging()
+
+        if not messages:
+            messages = []
+        # construct messages
+        if system_message:
+            messages.insert(0, SystemMessage(content=system_message))
+        if user_message:
+            messages.append(HumanMessage(content=user_message))
+
+        # convert to litellm format
+        msgs_conv = self._convert_messages(messages)
+
+        # call model
+        _completion = await acompletion(
+            model=self.model_name,
+            messages=msgs_conv,
+            stream=True,
+            **{**self.kwargs, **kwargs},
+        )
+
+        # results
+        reasoning = ""
+        response = ""
+
+        # iterate over chunks
+        async for chunk in _completion:  # type: ignore
+            parsed = _parse_chunk(chunk)
+            # collect reasoning delta and call callbacks
+            if parsed["reasoning_delta"]:
+                reasoning += parsed["reasoning_delta"]
+                if reasoning_callback:
+                    await reasoning_callback(parsed["reasoning_delta"], reasoning)
+                if tokens_callback:
+                    await tokens_callback(
+                        parsed["reasoning_delta"],
+                        approximate_tokens(parsed["reasoning_delta"]),
+                    )
+            # collect response delta and call callbacks
+            if parsed["response_delta"]:
+                response += parsed["response_delta"]
+                if response_callback:
+                    await response_callback(parsed["response_delta"], response)
+                if tokens_callback:
+                    await tokens_callback(
+                        parsed["response_delta"],
+                        approximate_tokens(parsed["response_delta"]),
+                    )
+
+        # return complete results
+        return response, reasoning
+
+
+class BrowserCompatibleChatWrapper(LiteLLMChatWrapper):
+    """
+    A wrapper for browser agent that can filter/sanitize messages
+    before sending them to the LLM.
+    """
+
+    def __init__(self, *args, **kwargs):
+        turn_off_logging()
+        super().__init__(*args, **kwargs)
+
+    def _call(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        turn_off_logging()
+        result = super()._call(messages, stop, run_manager, **kwargs)
+        return result
+
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        turn_off_logging()
+        async for chunk in super()._astream(messages, stop, run_manager, **kwargs):
+            yield chunk
+
+
+class LiteLLMEmbeddingWrapper(Embeddings):
+    model_name: str
+    kwargs: dict = {}
+
+    def __init__(self, model: str, provider: str, **kwargs: Any):
+        self.model_name = f"{provider}/{model}" if provider != "openai" else model
+        self.kwargs = kwargs
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        resp = embedding(model=self.model_name, input=texts, **self.kwargs)
+        return [
+            item.get("embedding") if isinstance(item, dict) else item.embedding  # type: ignore
+            for item in resp.data  # type: ignore
+        ]
+
+    def embed_query(self, text: str) -> List[float]:
+        resp = embedding(model=self.model_name, input=[text], **self.kwargs)
+        item = resp.data[0]  # type: ignore
+        return item.get("embedding") if isinstance(item, dict) else item.embedding  # type: ignore
+
+
+class LocalSentenceTransformerWrapper(Embeddings):
+    """Local wrapper for sentence-transformers models to avoid HuggingFace API calls"""
+
+    def __init__(self, provider: str, model: str, **kwargs: Any):
+        # Remove the "sentence-transformers/" prefix if present
+        if model.startswith("sentence-transformers/"):
+            model = model[len("sentence-transformers/") :]
+
+        self.model = SentenceTransformer(model, **kwargs)
+        self.model_name = model
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        embeddings = self.model.encode(texts, convert_to_tensor=False)  # type: ignore
+        return embeddings.tolist() if hasattr(embeddings, "tolist") else embeddings  # type: ignore
+
+    def embed_query(self, text: str) -> List[float]:
+        embedding = self.model.encode([text], convert_to_tensor=False)  # type: ignore
+        result = (
+            embedding[0].tolist() if hasattr(embedding[0], "tolist") else embedding[0]
+        )
+        return result  # type: ignore
+
+
+def _get_litellm_chat(
+    cls: type = LiteLLMChatWrapper,
+    model_name: str = "",
+    provider_name: str = "",
+    **kwargs: Any,
+):
+    # use api key from kwargs or env
+    api_key = kwargs.pop("api_key", None) or get_api_key(provider_name)
+
+    # Only pass API key if key is not a placeholder
+    if api_key and api_key not in ("None", "NA"):
+        kwargs["api_key"] = api_key
+
+    provider_name, model_name, kwargs = _adjust_call_args(
+        provider_name, model_name, kwargs
+    )
+    return cls(provider=provider_name, model=model_name, **kwargs)
+
+
+def _get_litellm_embedding(model_name: str, provider_name: str, **kwargs: Any):
+    # Check if this is a local sentence-transformers model
+    if provider_name == "huggingface" and model_name.startswith(
+        "sentence-transformers/"
+    ):
+        # Use local sentence-transformers instead of LiteLLM for local models
+        provider_name, model_name, kwargs = _adjust_call_args(
+            provider_name, model_name, kwargs
+        )
+        return LocalSentenceTransformerWrapper(
+            provider=provider_name, model=model_name, **kwargs
+        )
+
+    # use api key from kwargs or env
+    api_key = kwargs.pop("api_key", None) or get_api_key(provider_name)
+
+    # Only pass API key if key is not a placeholder
+    if api_key and api_key not in ("None", "NA"):
+        kwargs["api_key"] = api_key
+
+    provider_name, model_name, kwargs = _adjust_call_args(
+        provider_name, model_name, kwargs
+    )
+    return LiteLLMEmbeddingWrapper(model=model_name, provider=provider_name, **kwargs)
+
+
+def _parse_chunk(chunk: Any) -> ChatChunk:
+    delta = chunk["choices"][0].get("delta", {})
+    message = chunk["choices"][0].get("message", {}) or chunk["choices"][0].get(
+        "model_extra", {}
+    ).get("message", {})
+    response_delta = (
+        delta.get("content", "")
+        if isinstance(delta, dict)
+        else getattr(delta, "content", "")
+    ) or (
+        message.get("content", "")
+        if isinstance(message, dict)
+        else getattr(message, "content", "")
+    )
+    reasoning_delta = (
+        delta.get("reasoning_content", "")
+        if isinstance(delta, dict)
+        else getattr(delta, "reasoning_content", "")
+    )
+    return ChatChunk(reasoning_delta=reasoning_delta, response_delta=response_delta)
+
+
+def _adjust_call_args(provider_name: str, model_name: str, kwargs: dict):
+    # for openrouter add app reference
+    if provider_name == "openrouter":
+        kwargs["extra_headers"] = {
+            "HTTP-Referer": "https://agent-zero.ai",
+            "X-Title": "Agent Zero",
+        }
+
+    # remap other to openai for litellm
+    if provider_name == "other":
+        provider_name = "openai"
+
+    return provider_name, model_name, kwargs
+
+
+def get_model(type: ModelType, provider: ModelProvider, name: str, **kwargs: Any):
+    provider_name = provider.name.lower()
+    if type == ModelType.CHAT:
+        return _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
+    elif type == ModelType.EMBEDDING:
+        return _get_litellm_embedding(name, provider_name, **kwargs)
     else:
-        content = str(chunk)
-    return content
+        raise ValueError(f"Unsupported model type: {type}")
 
 
-# Ollama models
-def get_ollama_base_url():
-    return (
-        dotenv.get_dotenv_value("OLLAMA_BASE_URL")
-        or f"http://{runtime.get_local_url()}:11434"
+def get_chat_model(
+    provider: ModelProvider, name: str, **kwargs: Any
+) -> LiteLLMChatWrapper:
+    provider_name = provider.name.lower()
+    model = _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
+    return model
+
+
+def get_browser_model(
+    provider: ModelProvider, name: str, **kwargs: Any
+) -> BrowserCompatibleChatWrapper:
+    provider_name = provider.name.lower()
+    model = _get_litellm_chat(
+        BrowserCompatibleChatWrapper, name, provider_name, **kwargs
     )
+    return model
 
 
-def get_ollama_chat(
-    model_name: str,
-    base_url=None,
-    num_ctx=8192,
-    **kwargs,
-):
-    if not base_url:
-        base_url = get_ollama_base_url()
-    return ChatOllama(
-        model=model_name,
-        base_url=base_url,
-        num_ctx=num_ctx,
-        **kwargs,
-    )
-
-
-def get_ollama_embedding(
-    model_name: str,
-    base_url=None,
-    num_ctx=8192,
-    **kwargs,
-):
-    if not base_url:
-        base_url = get_ollama_base_url()
-    return OllamaEmbeddings(
-        model=model_name, base_url=base_url, num_ctx=num_ctx, **kwargs
-    )
-
-
-# HuggingFace models
-def get_huggingface_chat(
-    model_name: str,
-    api_key=None,
-    **kwargs,
-):
-    # different naming convention here
-    if not api_key:
-        api_key = get_api_key("huggingface") or os.environ["HUGGINGFACEHUB_API_TOKEN"]
-
-    # Initialize the HuggingFaceEndpoint with the specified model and parameters
-    llm = HuggingFaceEndpoint(
-        repo_id=model_name,
-        task="text-generation",
-        do_sample=True,
-        **kwargs,
-    )
-
-    # Initialize the ChatHuggingFace with the configured llm
-    return ChatHuggingFace(llm=llm)
-
-
-def get_huggingface_embedding(model_name: str, **kwargs):
-    return HuggingFaceEmbeddings(model_name=model_name, **kwargs)
-
-
-# LM Studio and other OpenAI compatible interfaces
-def get_lmstudio_base_url():
-    return (
-        dotenv.get_dotenv_value("LM_STUDIO_BASE_URL")
-        or f"http://{runtime.get_local_url()}:1234/v1"
-    )
-
-
-def get_lmstudio_chat(
-    model_name: str,
-    base_url=None,
-    **kwargs,
-):
-    if not base_url:
-        base_url = get_lmstudio_base_url()
-    return ChatOpenAI(model_name=model_name, base_url=base_url, api_key="none", **kwargs)  # type: ignore
-
-
-def get_lmstudio_embedding(
-    model_name: str,
-    base_url=None,
-    **kwargs,
-):
-    if not base_url:
-        base_url = get_lmstudio_base_url()
-    return OpenAIEmbeddings(model=model_name, api_key="none", base_url=base_url, check_embedding_ctx_length=False, **kwargs)  # type: ignore
-
-
-# Anthropic models
-def get_anthropic_chat(
-    model_name: str,
-    api_key=None,
-    base_url=None,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("anthropic")
-    if not base_url:
-        base_url = (
-            dotenv.get_dotenv_value("ANTHROPIC_BASE_URL") or "https://api.anthropic.com"
-        )
-    return ChatAnthropic(model_name=model_name, api_key=api_key, base_url=base_url, **kwargs)  # type: ignore
-
-
-# right now anthropic does not have embedding models, but that might change
-def get_anthropic_embedding(
-    model_name: str,
-    api_key=None,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("anthropic")
-    return OpenAIEmbeddings(model=model_name, api_key=api_key, **kwargs)  # type: ignore
-
-
-# OpenAI models
-def get_openai_chat(
-    model_name: str,
-    api_key=None,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("openai")
-    return ChatOpenAI(model_name=model_name, api_key=api_key, **kwargs)  # type: ignore
-
-
-def get_openai_embedding(model_name: str, api_key=None, **kwargs):
-    if not api_key:
-        api_key = get_api_key("openai")
-    return OpenAIEmbeddings(model=model_name, api_key=api_key, **kwargs)  # type: ignore
-
-
-def get_openai_azure_chat(
-    deployment_name: str,
-    api_key=None,
-    azure_endpoint=None,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("openai_azure")
-    if not azure_endpoint:
-        azure_endpoint = dotenv.get_dotenv_value("OPENAI_AZURE_ENDPOINT")
-    return AzureChatOpenAI(deployment_name=deployment_name, api_key=api_key, azure_endpoint=azure_endpoint, **kwargs)  # type: ignore
-
-
-def get_openai_azure_embedding(
-    deployment_name: str,
-    api_key=None,
-    azure_endpoint=None,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("openai_azure")
-    if not azure_endpoint:
-        azure_endpoint = dotenv.get_dotenv_value("OPENAI_AZURE_ENDPOINT")
-    return AzureOpenAIEmbeddings(deployment_name=deployment_name, api_key=api_key, azure_endpoint=azure_endpoint, **kwargs)  # type: ignore
-
-
-# Google models
-def get_google_chat(
-    model_name: str,
-    api_key=None,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("google")
-    return ChatGoogleGenerativeAI(model=model_name, google_api_key=api_key, safety_settings={HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE}, **kwargs)  # type: ignore
-
-
-def get_google_embedding(
-    model_name: str,
-    api_key=None,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("google")
-    return google_embeddings.GoogleGenerativeAIEmbeddings(model=model_name, google_api_key=api_key, **kwargs)  # type: ignore
-
-
-# Mistral models
-def get_mistralai_chat(
-    model_name: str,
-    api_key=None,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("mistral")
-    return ChatMistralAI(model=model_name, api_key=api_key, **kwargs)  # type: ignore
-
-
-# Groq models
-def get_groq_chat(
-    model_name: str,
-    api_key=None,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("groq")
-    return ChatGroq(model_name=model_name, api_key=api_key, **kwargs)  # type: ignore
-
-
-# DeepSeek models
-def get_deepseek_chat(
-    model_name: str,
-    api_key=None,
-    base_url=None,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("deepseek")
-    if not base_url:
-        base_url = (
-            dotenv.get_dotenv_value("DEEPSEEK_BASE_URL") or "https://api.deepseek.com"
-        )
-
-    return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
-
-
-# OpenRouter models
-def get_openrouter_chat(
-    model_name: str,
-    api_key=None,
-    base_url=None,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("openrouter")
-    if not base_url:
-        base_url = (
-            dotenv.get_dotenv_value("OPEN_ROUTER_BASE_URL")
-            or "https://openrouter.ai/api/v1"
-        )
-    return ChatOpenAI(
-        api_key=api_key, # type: ignore
-        model=model_name,
-        base_url=base_url,
-        stream_usage=True,
-        model_kwargs={
-            "extra_headers": {
-                "HTTP-Referer": "https://agent-zero.ai",
-                "X-Title": "Agent Zero",
-            }
-        },
-        **kwargs,
-    )
-
-
-def get_openrouter_embedding(
-    model_name: str,
-    api_key=None,
-    base_url=None,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("openrouter")
-    if not base_url:
-        base_url = (
-            dotenv.get_dotenv_value("OPEN_ROUTER_BASE_URL")
-            or "https://openrouter.ai/api/v1"
-        )
-    return OpenAIEmbeddings(model=model_name, api_key=api_key, base_url=base_url, **kwargs)  # type: ignore
-
-
-# Sambanova models
-def get_sambanova_chat(
-    model_name: str,
-    api_key=None,
-    base_url=None,
-    max_tokens=1024,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("sambanova")
-    if not base_url:
-        base_url = (
-            dotenv.get_dotenv_value("SAMBANOVA_BASE_URL")
-            or "https://fast-api.snova.ai/v1"
-        )
-    return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, max_tokens=max_tokens, **kwargs)  # type: ignore
-
-
-# right now sambanova does not have embedding models, but that might change
-def get_sambanova_embedding(
-    model_name: str,
-    api_key=None,
-    base_url=None,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("sambanova")
-    if not base_url:
-        base_url = (
-            dotenv.get_dotenv_value("SAMBANOVA_BASE_URL")
-            or "https://fast-api.snova.ai/v1"
-        )
-    return OpenAIEmbeddings(model=model_name, api_key=api_key, base_url=base_url, **kwargs)  # type: ignore
-
-
-# Other OpenAI compatible models
-def get_other_chat(
-    model_name: str,
-    api_key=None,
-    base_url=None,
-    **kwargs,
-):
-    return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
-
-
-def get_other_embedding(model_name: str, api_key=None, base_url=None, **kwargs):
-    return OpenAIEmbeddings(model=model_name, api_key=api_key, base_url=base_url, **kwargs)  # type: ignore
-
-
-# Chutes models
-def get_chutes_chat(
-    model_name: str,
-    api_key=None,
-    base_url=None,
-    **kwargs,
-):
-    if not api_key:
-        api_key = get_api_key("chutes")
-    if not base_url:
-        base_url = (
-            dotenv.get_dotenv_value("CHUTES_BASE_URL") or "https://llm.chutes.ai/v1"
-        )
-    return ChatOpenAI(api_key=api_key, model=model_name, base_url=base_url, **kwargs)  # type: ignore
+def get_embedding_model(
+    provider: ModelProvider, name: str, **kwargs: Any
+) -> LiteLLMEmbeddingWrapper | LocalSentenceTransformerWrapper:
+    provider_name = provider.name.lower()
+    model = _get_litellm_embedding(name, provider_name, **kwargs)
+    return model

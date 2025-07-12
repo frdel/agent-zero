@@ -20,6 +20,7 @@ Additionally, you can pass a list of "queries" - in this case, the tool returns 
     "thoughts": [
         "...",
     ],
+    "headline": "Reading web document content",
     "tool_name": "document_query",
     "tool_args": {
         "document": "https://...somexample",
@@ -38,6 +39,7 @@ Additionally, you can pass a list of "queries" - in this case, the tool returns 
     "thoughts": [
         "...",
     ],
+    "headline": "Analyzing document to answer specific questions",
     "tool_name": "document_query",
     "tool_args": {
         "document": "https://...somexample",
