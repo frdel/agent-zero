@@ -289,22 +289,30 @@ class DynamicMcpProxy:
         sse_path = f"/t-{self.token}/sse"
         message_path = f"/t-{self.token}/messages/"
 
-        # Update settings in the MCP server instance if provided
-        mcp_server.settings.message_path = message_path
-        mcp_server.settings.sse_path = sse_path
+        # Update global settings instead of instance settings (deprecated)
+        import fastmcp.settings
+        fastmcp.settings.message_path = message_path
+        fastmcp.settings.sse_path = sse_path
 
         # Create a new MCP app with updated settings
         with self._lock:
-            self.app = create_sse_app(
-                server=mcp_server,
-                message_path=mcp_server.settings.message_path,
-                sse_path=mcp_server.settings.sse_path,
-                auth_server_provider=mcp_server._auth_server_provider,
-                auth_settings=mcp_server.settings.auth,
-                debug=mcp_server.settings.debug,
-                routes=mcp_server._additional_http_routes,
-                middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
-            )
+            try:
+                self.app = create_sse_app(
+                    server=mcp_server,
+                    message_path=message_path,
+                    sse_path=sse_path,
+                    auth=getattr(mcp_server, 'auth', None),
+                    debug=getattr(fastmcp.settings, 'debug', False),
+                    routes=mcp_server._additional_http_routes,
+                    middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
+                )
+            except TypeError:
+                # Fallback for older fastmcp versions without auth/debug parameters
+                self.app = create_sse_app(
+                    server=mcp_server,
+                    message_path=message_path,
+                    sse_path=sse_path,
+                )
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """Forward the ASGI calls to the current app"""
