@@ -1,9 +1,10 @@
-import { createStore } from "./AlpineStore.js";
-import { updateChatInput, sendMessage } from "../index.js";
+import { createStore } from "/js/AlpineStore.js";
+import { updateChatInput, sendMessage } from "/index.js";
+import { sleep } from "/js/sleep.js";
 
 const Status = {
   INACTIVE: "inactive",
-  ACTIVATING: "activating", 
+  ACTIVATING: "activating",
   LISTENING: "listening",
   RECORDING: "recording",
   WAITING: "waiting",
@@ -14,24 +15,28 @@ const Status = {
 const model = {
   // STT Settings
   stt_model_size: "tiny",
-  stt_language: "en", 
+  stt_language: "en",
   stt_silence_threshold: 0.05,
   stt_silence_duration: 1000,
   stt_waiting_timeout: 2000,
-  
+
   // TTS Settings
   tts_enabled: false,
-  
+
   // TTS State
   isSpeaking: false,
+  speakingId: "",
+  speakingText: "",
   currentAudio: null,
   audioContext: null,
   userHasInteracted: false,
-  
+  stopSpeechChain: false,
+  ttsStream: null,
+
   // STT State
   microphoneInput: null,
   isProcessingClick: false,
-  
+
   // Getter for micStatus - delegates to microphoneInput
   get micStatus() {
     return this.microphoneInput?.status || Status.INACTIVE;
@@ -42,7 +47,12 @@ const model = {
     if (!microphoneButton) return;
     const status = this.micStatus;
     microphoneButton.classList.remove(
-      'mic-inactive', 'mic-activating', 'mic-listening', 'mic-recording', 'mic-waiting', 'mic-processing'
+      "mic-inactive",
+      "mic-activating",
+      "mic-listening",
+      "mic-recording",
+      "mic-waiting",
+      "mic-processing"
     );
     microphoneButton.classList.add(`mic-${status.toLowerCase()}`);
     microphoneButton.setAttribute("data-status", status);
@@ -55,7 +65,7 @@ const model = {
       if (!this.microphoneInput) {
         await this.initMicrophone();
       }
-      
+
       if (this.microphoneInput) {
         await this.microphoneInput.toggle();
       }
@@ -66,7 +76,6 @@ const model = {
     }
   },
 
-  
   // Initialize speech functionality
   async init() {
     await this.loadSettings();
@@ -79,10 +88,12 @@ const model = {
     try {
       const response = await fetchApi("/settings_get", { method: "POST" });
       const data = await response.json();
-      const speechSection = data.settings.sections.find(s => s.title === "Speech");
+      const speechSection = data.settings.sections.find(
+        (s) => s.title === "Speech"
+      );
 
       if (speechSection) {
-        speechSection.fields.forEach(field => {
+        speechSection.fields.forEach((field) => {
           if (this.hasOwnProperty(field.id)) {
             this[field.id] = field.value;
           }
@@ -106,10 +117,11 @@ const model = {
       if (!this.userHasInteracted) {
         this.userHasInteracted = true;
         console.log("User interaction detected - audio playback enabled");
-        
+
         // Create a dummy audio context to "unlock" audio
         try {
-          this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          this.audioContext = new (window.AudioContext ||
+            window.webkitAudioContext)();
           this.audioContext.resume();
         } catch (e) {
           console.log("AudioContext not available");
@@ -118,31 +130,196 @@ const model = {
     };
 
     // Listen for any user interaction
-    const events = ['click', 'touchstart', 'keydown', 'mousedown'];
-    events.forEach(event => {
-      document.addEventListener(event, enableAudio, { once: true, passive: true });
+    const events = ["click", "touchstart", "keydown", "mousedown"];
+    events.forEach((event) => {
+      document.addEventListener(event, enableAudio, {
+        once: true,
+        passive: true,
+      });
     });
   },
 
-  // Main speak function
-  async speak(text) {
-    if (!this.tts_enabled) return;
-    if (this.isSpeaking) return;
+  // main speak function, allows to speak a stream of text that is generated piece by piece
+  async speakStream(id, text, finished = false) {
 
-    text = this.cleanText(text);
-    if (!text.trim()) return;
 
-    if (!this.userHasInteracted) {
-      this.showAudioPermissionPrompt();
+    // if already running the same stream, do nothing
+    if (
+      this.ttsStream &&
+      this.ttsStream.id === id &&
+      this.ttsStream.text === text &&
+      this.ttsStream.finished === finished
+    )
       return;
+
+    // if user has not interacted (after reload), do not play audio
+    if (!this.userHasInteracted) return this.showAudioPermissionPrompt();
+
+    // new stream
+    if (!this.ttsStream || this.ttsStream.id !== id) {
+      // this.stop(); // stop potential previous stream
+      // create new stream data
+      this.ttsStream = {
+        id,
+        text,
+        finished,
+        running: false,
+        lastChunkIndex: -1,
+        stopped: false,
+        chunks: [],
+      };
+    } else {
+      // update existing stream data
+      this.ttsStream.finished = finished;
+      this.ttsStream.text = text;
     }
 
-    try {
-      await this.speakWithKokoro(text);
-    } catch (error) {
-      console.error("TTS error:", error);
-      this.speakWithBrowser(text);
+    // cleanup text
+    const cleanText = this.cleanText(text);
+    if (!cleanText.trim()) return;
+
+    // chunk it for faster processing
+    this.ttsStream.chunks = this.chunkText(cleanText);
+    if (this.ttsStream.chunks.length == 0) return;
+
+    // if stream was already running, just updating chunks is enough
+    if (this.ttsStream.running) return;
+    else this.ttsStream.running = true; // proceed to running phase
+
+    // terminator function to kill the stream if new stream has started
+    const terminator = () =>
+      this.ttsStream?.id !== id || this.ttsStream?.stopped;
+
+    // loop chunks from last spoken chunk index
+    for (
+      let i = this.ttsStream.lastChunkIndex + 1;
+      i < this.ttsStream.chunks.length;
+      i++
+    ) {
+      // do not speak the last chunk until finished (it is being generated)
+      if (i == this.ttsStream.chunks.length - 1 && !this.ttsStream.finished)
+        break;
+
+      // set the index of last spoken chunk
+      this.ttsStream.lastChunkIndex = i;
+
+      // speak the chunk
+      await this._speak(this.ttsStream.chunks[i], i > 0, () => terminator());
     }
+
+    // at the end, finish stream data
+    this.ttsStream.running = false;
+  },
+
+  // simplified speak function, speak a single finished piece of text
+  async speak(text) {
+    const id = Math.random();
+    return await this.speakStream(id, text, true);
+  },
+
+  // speak wrapper
+  async _speak(text, waitForPrevious, terminator) {
+    // default browser speech
+    if (!this.tts_enabled)
+      return await this.speakWithBrowser(text, waitForPrevious, terminator);
+
+    // kokoro tts
+    try {
+      await await this.speakWithKokoro(text, waitForPrevious, terminator);
+    } catch (error) {
+      console.error(error);
+      return await this.speakWithBrowser(text, waitForPrevious, terminator);
+    }
+  },
+
+  chunkText(text, { maxChunkLength = 135, lineSeparator = "..." } = {}) {
+    const INC_LIMIT = maxChunkLength * 2;
+    const chunks = [];
+    let buffer = "";
+
+    // Helper to push chunk if not empty
+    const push = (s) => {
+      if (s) chunks.push(s.trimEnd());
+    };
+    const flush = () => {
+      push(buffer);
+      buffer = "";
+    };
+
+    // Only split by ,/word if needed (unchanged)
+    const splitDeep = (seg) => {
+      if (seg.length <= INC_LIMIT) return [seg];
+      const byComma = seg.match(/[^,]+(?:,|$)/g);
+      if (byComma.length > 1)
+        return byComma.flatMap((p, i) =>
+          splitDeep(i < byComma.length - 1 ? p : p.replace(/,$/, ""))
+        );
+      const out = [];
+      let part = "";
+      for (const word of seg.split(/\s+/)) {
+        const need = part ? part.length + 1 + word.length : word.length;
+        if (need <= maxChunkLength) {
+          part += (part ? " " : "") + word;
+        } else {
+          push(part);
+          if (word.length > maxChunkLength) {
+            for (let i = 0; i < word.length; i += maxChunkLength)
+              out.push(word.slice(i, i + maxChunkLength));
+            part = "";
+          } else {
+            part = word;
+          }
+        }
+      }
+      push(part);
+      return out;
+    };
+
+    // Only split on [.!?] followed by space
+    const sentenceTokens = (line) => {
+      const toks = [];
+      let start = 0;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (
+          (c === "." || c === "!" || c === "?") &&
+          /\s/.test(line[i + 1] || "")
+        ) {
+          toks.push(line.slice(start, i + 1));
+          i += 1;
+          start = i + 1;
+        }
+      }
+      if (start < line.length) toks.push(line.slice(start));
+      return toks;
+    };
+
+    // --- main loop: JOIN lines with separator *only if they fit in buffer* ---
+    const lines = text.split(/\n+/).filter((l) => l.trim());
+    for (let i = 0; i < lines.length; ++i) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      // Expand line into sentence tokens and join them back, so only lines are joined with separator
+      const sentenceStr = sentenceTokens(line).join(" ");
+
+      // If buffer is empty, just start with the line
+      if (!buffer) {
+        buffer = sentenceStr;
+      } else {
+        // Try joining the line with separator
+        const join = buffer + " " + lineSeparator + " " + sentenceStr;
+        if (join.length <= maxChunkLength) {
+          buffer = join;
+        } else {
+          // Flush buffer, start new chunk with this line
+          flush();
+          buffer = sentenceStr;
+        }
+      }
+    }
+    flush();
+
+    return chunks;
   },
 
   // Show a prompt to user to enable audio
@@ -155,49 +332,66 @@ const model = {
   },
 
   // Browser TTS
-  speakWithBrowser(text) {
+  async speakWithBrowser(text, waitForPrevious = false, terminator = null) {
+    // wait for previous to finish if requested
+    while (waitForPrevious && this.isSpeaking) await sleep(25);
+    if (terminator && terminator()) return;
+
+    // stop previous if any
+    this.stopAudio();
+
     this.browserUtterance = new SpeechSynthesisUtterance(text);
-    this.browserUtterance.onstart = () => { this.isSpeaking = true; };
-    this.browserUtterance.onend = () => { this.isSpeaking = false; };
+    this.browserUtterance.onstart = () => {
+      this.isSpeaking = true;
+    };
+    this.browserUtterance.onend = () => {
+      this.isSpeaking = false;
+    };
     this.synth.speak(this.browserUtterance);
   },
 
   // Kokoro TTS
-  async speakWithKokoro(text) {
+  async speakWithKokoro(text, waitForPrevious = false, terminator = null) {
     try {
+      // synthesize on the backend
       const response = await sendJsonData("/synthesize", { text });
-      
+
+      // wait for previous to finish if requested
+      while (waitForPrevious && this.isSpeaking) await sleep(25);
+      if (terminator && terminator()) return;
+
+      // stop previous if any
+      this.stopAudio();
+
       if (response.success) {
         if (response.audio_parts) {
           // Multiple chunks - play sequentially
           for (const audioPart of response.audio_parts) {
+            if (terminator && terminator()) return;
             await this.playAudio(audioPart);
-            await new Promise(resolve => setTimeout(resolve, 100)); // Brief pause
+            await sleep(100); // Brief pause
           }
         } else if (response.audio) {
           // Single audio
-          await this.playAudio(response.audio);
+          this.playAudio(response.audio);
         }
       } else {
-        console.error("Kokoro TTS error:", response.error);
-        this.speakWithBrowser(text);
+        throw new Error("Kokoro TTS error:", response.error);
       }
     } catch (error) {
-      console.error("Kokoro TTS error:", error);
-      this.speakWithBrowser(text);
+      throw new Error("Kokoro TTS error:", error);
     }
   },
-
 
   // Play base64 audio
   async playAudio(base64Audio) {
     return new Promise((resolve, reject) => {
       const audio = new Audio();
-      
-      audio.onplay = () => { 
-        this.isSpeaking = true; 
+
+      audio.onplay = () => {
+        this.isSpeaking = true;
       };
-      audio.onended = () => { 
+      audio.onended = () => {
         this.isSpeaking = false;
         this.currentAudio = null;
         resolve();
@@ -210,12 +404,12 @@ const model = {
 
       audio.src = `data:audio/wav;base64,${base64Audio}`;
       this.currentAudio = audio;
-      
-      audio.play().catch(error => {
+
+      audio.play().catch((error) => {
         this.isSpeaking = false;
         this.currentAudio = null;
-        
-        if (error.name === 'NotAllowedError') {
+
+        if (error.name === "NotAllowedError") {
           this.showAudioPermissionPrompt();
           this.userHasInteracted = false;
         }
@@ -224,57 +418,136 @@ const model = {
     });
   },
 
-  // Stop all speech
+  // Stop current speech chain
   stop() {
+    this.stopAudio(); // stop current audio immediately
+    if (this.ttsStream) this.ttsStream.stopped = true; // set stop on current stream
+  },
+
+  // Stop current speech audio
+  stopAudio() {
     if (this.synth?.speaking) {
       this.synth.cancel();
     }
-    
+
     if (this.currentAudio) {
       this.currentAudio.pause();
       this.currentAudio.currentTime = 0;
       this.currentAudio = null;
     }
-    
+
     this.isSpeaking = false;
   },
 
   // Clean text for TTS
   cleanText(text) {
-    return text
-      .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, "")
-      .replace(/https?:\/\/[^\s]+/g, "")
-      .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
+    // kokoro can have trouble speaking short list items, so we group them them
+    text = joinShortMarkdownLists(text);
+    // Remove code blocks: ```...```
+    text = text.replace(/```[\s\S]*?```/g, "");
+    // Remove inline code ticks: `...`
+    text = text.replace(/`([^`]*)`/g, "$1"); // remove backticks but keep content
+
+    // Remove markdown links: [label](url) → label
+    text = text.replace(/\[([^\]]+)\]\([^\)]+\)/g, "$1");
+
+    // Remove markdown formatting: *, _, #
+    text = text.replace(/[*_#]+/g, "");
+
+    // Remove tables (basic): lines with |...|
+    text = text.replace(/\|[^\n]*\|/g, "");
+
+    // Remove emojis and private unicode blocks
+    text = text.replace(
+      /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g,
+      ""
+    );
+
+    // Replace URLs with just the domain name
+    text = text.replace(/https?:\/\/[^\s]+/g, (match) => {
+      try {
+        return new URL(match).hostname;
+      } catch {
+        return "";
+      }
+    });
+
+    // kokoro can have trouble speaking short list items, so we group them them
+    function joinShortMarkdownLists(txt, minItemLength = 40) {
+      const lines = txt.split(/\r?\n/);
+      const newLines = [];
+      let buffer = [];
+      const isShortList = (line) =>
+        /^\s*-\s+/.test(line) && line.trim().length < minItemLength;
+      for (let i = 0; i < lines.length; i++) {
+        if (isShortList(lines[i])) {
+          buffer.push(lines[i].replace(/^\s*-\s+/, "").trim());
+        } else {
+          if (buffer.length > 1) {
+            newLines.push(buffer.join(", "));
+            buffer = [];
+          } else if (buffer.length === 1) {
+            newLines.push(buffer[0]);
+            buffer = [];
+          }
+          newLines.push(lines[i]);
+        }
+      }
+      if (buffer.length > 1) {
+        newLines.push(buffer.join(", "));
+      } else if (buffer.length === 1) {
+        newLines.push(buffer[0]);
+      }
+      return newLines.join("\n");
+    }
+
+    // Remove email addresses
+    // text = text.replace(/\S+@\S+/g, "");
+
+    // Replace UUIDs with 'UUID'
+    text = text.replace(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g,
+      "UUID"
+    );
+
+    // Collapse multiple spaces/tabs to a single space, but preserve newlines
+    text = text.replace(/[ \t]+/g, " ");
+
+    // Trim leading/trailing whitespace
+    text = text.trim();
+
+    return text;
   },
 
   // Initialize microphone input
   async initMicrophone() {
     if (this.microphoneInput) return this.microphoneInput;
-    
-    this.microphoneInput = new MicrophoneInput(
-      async (text, isFinal) => {
-        if (isFinal) {
-          updateChatInput(text);
-          if (!this.microphoneInput.messageSent) {
-            this.microphoneInput.messageSent = true;
-            await sendMessage();
-          }
-        }
+
+    this.microphoneInput = new MicrophoneInput(async (text, isFinal) => {
+      if (isFinal) {
+        this.sendMessage(text);
       }
-    );
-    
+    });
+
     const initialized = await this.microphoneInput.initialize();
     return initialized ? this.microphoneInput : null;
   },
 
+  async sendMessage(text) {
+    text = "(voice) " + text;
+    updateChatInput(text);
+    if (!this.microphoneInput.messageSent) {
+      this.microphoneInput.messageSent = true;
+      await sendMessage();
+    }
+  },
+
   // Request microphone permission - delegate to MicrophoneInput
   async requestMicrophonePermission() {
-    return this.microphoneInput ? 
-      this.microphoneInput.requestPermission() : 
-      MicrophoneInput.prototype.requestPermission.call(null);
-  }
+    return this.microphoneInput
+      ? this.microphoneInput.requestPermission()
+      : MicrophoneInput.prototype.requestPermission.call(null);
+  },
 };
 
 // Microphone Input Class (simplified for store integration)
@@ -302,7 +575,7 @@ class MicrophoneInput {
 
   set status(newStatus) {
     if (this._status === newStatus) return;
-    
+
     const oldStatus = this._status;
     this._status = newStatus;
     console.log(`Mic status changed from ${oldStatus} to ${newStatus}`);
@@ -315,27 +588,19 @@ class MicrophoneInput {
     this.status = Status.ACTIVATING;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 }
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          channelCount: 1,
+        },
       });
-
-      // Log which device is being used
-      const audioTrack = stream.getAudioTracks()[0];
-      const deviceId = audioTrack.getSettings().deviceId;
-      if (deviceId) {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const device = devices.find(d => d.deviceId === deviceId);
-        if (device) {
-          console.log(`Microphone input device: ${device.label} (ID: ${device.deviceId})`);
-        } else {
-          console.log(`Microphone input device ID: ${deviceId} (label not found)`);
-        }
-      } else {
-        console.log('Microphone input deviceId not available');
-      }
 
       this.mediaRecorder = new MediaRecorder(stream);
       this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0 && (this.status === Status.RECORDING || this.status === Status.WAITING)) {
+        if (
+          event.data.size > 0 &&
+          (this.status === Status.RECORDING || this.status === Status.WAITING)
+        ) {
           if (this.lastChunk) {
             this.audioChunks.push(this.lastChunk);
             this.lastChunk = null;
@@ -424,7 +689,8 @@ class MicrophoneInput {
   }
 
   setupAudioAnalysis(stream) {
-    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    this.audioContext = new (window.AudioContext ||
+      window.webkitAudioContext)();
     this.mediaStreamSource = this.audioContext.createMediaStreamSource(stream);
     this.analyserNode = this.audioContext.createAnalyser();
     this.analyserNode.fftSize = 2048;
@@ -454,7 +720,11 @@ class MicrophoneInput {
         this.lastAudioTime = now;
         this.silenceStartTime = null;
 
-        if ((this.status === Status.LISTENING || this.status === Status.WAITING) && !store.isSpeaking && !store.isGenerating) {
+        if (
+          (this.status === Status.LISTENING ||
+            this.status === Status.WAITING) &&
+          !store.isSpeaking
+        ) {
           this.status = Status.RECORDING;
         }
       } else if (this.status === Status.RECORDING) {
@@ -543,12 +813,12 @@ class MicrophoneInput {
     if (ok) return text;
     else console.log(`Discarding transcription: ${text}`);
   }
-  
+
   // Toggle microphone between active and inactive states
   async toggle() {
     const hasPermission = await this.requestPermission();
     if (!hasPermission) return;
-    
+
     // Toggle between listening and inactive
     if (this.status === Status.INACTIVE || this.status === Status.ACTIVATING) {
       this.status = Status.LISTENING;
@@ -564,13 +834,16 @@ class MicrophoneInput {
       return true;
     } catch (err) {
       console.error("Error accessing microphone:", err);
-      toast("Microphone access denied. Please enable microphone access in your browser settings.", "error");
+      toast(
+        "Microphone access denied. Please enable microphone access in your browser settings.",
+        "error"
+      );
       return false;
     }
   }
 }
 
-export const store = createStore('speech', model);
+export const store = createStore("speech", model);
 
 // Initialize speech store
 // window.speechStore = speechStore;

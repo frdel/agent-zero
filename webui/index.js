@@ -1,9 +1,9 @@
-import * as msgs from "./js/messages.js";
-import * as api from "./js/api.js";
-import * as css from "./js/css.js";
-import { sleep } from "./js/sleep.js";
-import { store as attachmentsStore } from "./components/chat/attachments/attachmentsStore.js";
-import { store as speechStore } from "./js/speech-store.js";
+import * as msgs from "/js/messages.js";
+import * as api from "/js/api.js";
+import * as css from "/js/css.js";
+import { sleep } from "/js/sleep.js";
+import { store as attachmentsStore } from "/components/chat/attachments/attachmentsStore.js";
+import { store as speechStore } from "/components/chat/speech/speech-store.js";
 
 window.fetchApi = api.fetchApi; // TODO - backward compatibility for non-modular scripts, remove once refactored to alpine
 
@@ -23,6 +23,7 @@ const timeDate = document.getElementById("time-date-container");
 
 let autoScroll = true;
 let context = "";
+let resetCounter = 0;
 let connectionStatus = false;
 
 // Initialize the toggle button
@@ -505,13 +506,16 @@ function speakMessages(logs) {
   // log.no, log.type, log.heading, log.content
   for (let i = logs.length - 1; i >= 0; i--) {
     const log = logs[i];
+
+    // if already spoken, end
+    // if(log.no < lastSpokenNo) break;
+
     // finished response
-    if (log.type == "response" && log.kvps && log.kvps.finished) {
-      if (log.no > lastSpokenNo) {
-        lastSpokenNo = log.no;
-        speechStore.speak(log.content);
+    if (log.type == "response") {
+        // lastSpokenNo = log.no;
+        speechStore.speakStream(getChatBasedId(log.no), log.content, log.kvps?.finished);
         return;
-      }
+      
       // finished LLM headline, not response
     } else if (
       log.type == "agent" &&
@@ -520,11 +524,9 @@ function speakMessages(logs) {
       log.kvps.tool_args &&
       log.kvps.tool_name != "response"
     ) {
-      if (log.no > lastSpokenNo) {
-        lastSpokenNo = log.no;
-        speechStore.speak(log.kvps.headline);
+        // lastSpokenNo = log.no;
+        speechStore.speakStream(getChatBasedId(log.no), log.kvps.headline, true);
         return;
-      }
     }
   }
 }
@@ -558,6 +560,7 @@ window.resetChat = async function (ctxid = null) {
     const resp = await sendJsonData("/chat_reset", {
       context: ctxid === null ? context : ctxid,
     });
+    resetCounter++;
     if (ctxid === null) updateAfterScroll();
   } catch (e) {
     window.toastFetchError("Error resetting chat", e);
@@ -715,9 +718,9 @@ export const setContext = function (id) {
   lastLogGuid = "";
   lastLogVersion = 0;
   lastSpokenNo = 0;
-  
+
   // Stop speech when switching chats
-  speechStore.stop();
+  speechStore.stopAudio();
 
   // Clear the chat history immediately to avoid showing stale content
   chatHistory.innerHTML = "";
@@ -737,6 +740,10 @@ export const setContext = function (id) {
 
 export const getContext = function () {
   return context;
+};
+
+export const getChatBasedId = function (id) {
+  return context+"-"+resetCounter+"-"+id;
 };
 
 window.toggleAutoScroll = async function (_autoScroll) {
@@ -778,7 +785,7 @@ window.toggleDarkMode = function (isDark) {
 window.toggleSpeech = function (isOn) {
   console.log("Speech:", isOn);
   localStorage.setItem("speech", isOn);
-  if (!isOn) speechStore.stop();
+  if (!isOn) speechStore.stopAudio();
 };
 
 window.nudge = async function () {
@@ -1095,7 +1102,6 @@ async function startPolling() {
 }
 
 document.addEventListener("DOMContentLoaded", startPolling);
-
 
 // Setup event handlers once the DOM is fully loaded
 document.addEventListener("DOMContentLoaded", function () {

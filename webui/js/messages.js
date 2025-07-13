@@ -252,6 +252,8 @@ export function addBlankTargetsToLinks(str) {
   const doc = new DOMParser().parseFromString(str, 'text/html');
 
   doc.querySelectorAll('a').forEach(anchor => {
+    const href = anchor.getAttribute('href') || '';
+    if (href.startsWith('#') || href.trim().toLowerCase().startsWith('javascript')) return;
     if (!anchor.hasAttribute('target') || anchor.getAttribute('target') === '') {
       anchor.setAttribute('target', '_blank');
     }
@@ -825,8 +827,8 @@ function convertPathsToLinks(str) {
 }
 
 function adjustMarkdownRender(element) {
-  // find all tables and code blocks in the element
-  const elements = element.querySelectorAll("table, code");
+  // find all tables in the element
+  const elements = element.querySelectorAll("table");
 
   // wrap each with a div with class message-markdown-table-wrap
   elements.forEach((el) => {
