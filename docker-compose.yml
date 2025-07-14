@@ -1,0 +1,34 @@
+version: '3.8'
+services:
+  webui:
+    build: ./webui
+    ports:
+      - "42069:80"
+    depends_on:
+      - backend-minion
+    environment:
+      - VITE_API_URL=http://localhost:43069/api
+  backend-minion:
+    build: ./agent0range/minion-webui
+    command: uvicorn app.api:app --host 0.0.0.0 --port 8001
+    volumes:
+      - minion-data:/app/app/minions_data
+    environment:
+      - DATABASE_URL=sqlite:///app/minions_data/minions.db
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - SMTP_USER=
+      - SMTP_PASS=
+      - SECRET_KEY=devsecret
+      - JWT_SECRET=devjwtsecret
+    ports:
+      - "43069:8001"
+    depends_on:
+      - mailhog
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "43070:8025"
+      - "1025:1025"
+volumes:
+  minion-data:
