@@ -15,7 +15,7 @@ This project provides a unified, containerized platform for agent0range, includi
 
 ### 2. Build & Run All Services
 ```sh
-git clone <repo-url> agent0range
+git clone https://github.com/frdel/agent-zero.git agent0range
 cd agent0range
 docker compose up --build
 ```
