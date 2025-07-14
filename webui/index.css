@@ -938,6 +938,7 @@ pre {
   border-radius: 8px;
   max-width: 600px; /* Limits to ~5 columns at 120px each */
   overflow: visible;
+  justify-items: end;
 }
 
 .attachment-item {
@@ -981,6 +982,8 @@ pre {
   height: 100%;
   object-fit: cover;
   border-radius: 10px;
+  background: repeating-linear-gradient(45deg, #fff 0 10px, #e0e0e0 10px 20px);
+
 }
 
 /* File attachment styling */
@@ -1017,6 +1020,8 @@ pre {
   height: 100%;
   object-fit: cover;
   border-radius: 10px;
+  background: repeating-linear-gradient(45deg, #fff 0 10px, #e0e0e0 10px 20px);
+
 }
 
 .attachment-image .attachment-preview {

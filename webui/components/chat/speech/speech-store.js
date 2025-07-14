@@ -1,6 +1,7 @@
 import { createStore } from "/js/AlpineStore.js";
 import { updateChatInput, sendMessage } from "/index.js";
 import { sleep } from "/js/sleep.js";
+import { store as microphoneSettingStore } from "/components/settings/speech/microphone-setting-store.js";
 
 const Status = {
   INACTIVE: "inactive",
@@ -21,7 +22,7 @@ const model = {
   stt_waiting_timeout: 2000,
 
   // TTS Settings
-  tts_enabled: false,
+  tts_kokoro: false,
 
   // TTS State
   isSpeaking: false,
@@ -36,6 +37,7 @@ const model = {
   // STT State
   microphoneInput: null,
   isProcessingClick: false,
+  selectedDevice: null,
 
   // Getter for micStatus - delegates to microphoneInput
   get micStatus() {
@@ -62,6 +64,15 @@ const model = {
     if (this.isProcessingClick) return;
     this.isProcessingClick = true;
     try {
+
+      // reset mic input if device has changed in settings
+      const device = microphoneSettingStore.getSelectedDevice();
+      if(device!=this.selectedDevice){
+        this.selectedDevice = device;
+        this.microphoneInput = null;
+        console.log("Device changed, microphoneInput reset");
+      }
+
       if (!this.microphoneInput) {
         await this.initMicrophone();
       }
@@ -220,7 +231,7 @@ const model = {
   // speak wrapper
   async _speak(text, waitForPrevious, terminator) {
     // default browser speech
-    if (!this.tts_enabled)
+    if (!this.tts_kokoro)
       return await this.speakWithBrowser(text, waitForPrevious, terminator);
 
     // kokoro tts
@@ -347,6 +358,7 @@ const model = {
     this.browserUtterance.onend = () => {
       this.isSpeaking = false;
     };
+    
     this.synth.speak(this.browserUtterance);
   },
 
@@ -587,8 +599,12 @@ class MicrophoneInput {
     // Set status to activating at the start of initialization
     this.status = Status.ACTIVATING;
     try {
+      // get selected device from microphone settings
+      const selectedDevice = microphoneSettingStore.getSelectedDevice();
+      
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
+          deviceId: selectedDevice && selectedDevice.deviceId ? { exact: selectedDevice.deviceId } : undefined,
           echoCancellation: true,
           noiseSuppression: true,
           channelCount: 1,

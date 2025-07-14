@@ -220,7 +220,7 @@ const model = {
     Array.from(files).forEach((file) => {
       console.log("Processing file:", file.name, file.type);
       const ext = file.name.split(".").pop().toLowerCase();
-      const isImage = ["jpg", "jpeg", "png", "bmp", "gif", "webp"].includes(
+      const isImage = ["jpg", "jpeg", "png", "bmp", "gif", "webp", "svg"].includes(
         ext
       );
 
