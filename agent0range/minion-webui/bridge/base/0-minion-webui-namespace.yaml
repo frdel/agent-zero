@@ -1,0 +1,8 @@
+#! 0-minion-webui-namespace.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: minion-webui
+    labels:
+        com.docker.compose.project: minion-webui

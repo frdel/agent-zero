@@ -1,3 +1,42 @@
+---
+
+# 🚀 agent0range: Local Production-like Deployment
+
+This project provides a unified, containerized platform for agent0range, including:
+
+- **webui**: React frontend (served by Nginx)
+- **backend-minion**: FastAPI backend (with SQLite, persistent volume)
+- **MailHog**: Dummy SMTP server for local email testing
+
+## Quickstart
+
+### 1. Prerequisites
+- [Docker](https://www.docker.com/get-started/) installed
+
+### 2. Build & Run All Services
+```sh
+git clone https://github.com/frdel/agent-zero.git agent0range
+cd agent0range
+docker compose up --build
+```
+
+### 3. Access the Services
+- **Frontend (webui):** [http://localhost:42069](http://localhost:42069)
+- **Backend API (docs):** [http://localhost:43069/docs](http://localhost:43069/docs)
+- **MailHog UI:** [http://localhost:43070](http://localhost:43070)
+
+### 4. Environment Variables
+- See `/webui/.env.example` and `/agent0range/minion-webui/.env.example` for configuration.
+- The backend uses SQLite for local persistence and MailHog for email.
+
+### 5. Stopping & Cleaning Up
+```sh
+docker compose down
+# To remove persistent data:
+docker volume rm agent0range_minion-data
+```
+
+---
 <div align="center">
 
 # `Agent Zero`

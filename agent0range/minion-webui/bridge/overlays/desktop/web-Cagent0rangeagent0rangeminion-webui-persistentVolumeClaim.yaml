@@ -1,0 +1,9 @@
+#! web-C:\agent0range\agent0range\minion-webui-persistentVolumeClaim.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+    name: web-c--agent0range-agent0range-minion-webui
+    namespace: minion-webui
+spec:
+    storageClassName: "hostpath" # see docker/desktop-storage-provisioner

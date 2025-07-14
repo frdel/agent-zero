@@ -1,0 +1,21 @@
+# check if there is at least one published port
+
+#! web-service.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: Service
+metadata:
+    name: web-published
+    namespace: minion-webui
+    labels:
+        com.docker.compose.project: minion-webui
+        com.docker.compose.service: web
+spec:
+    selector:
+        com.docker.compose.project: minion-webui
+        com.docker.compose.service: web
+    ports:
+        - name: web-5000
+          port: 5000
+          protocol: TCP
+          targetPort: web-5000
