@@ -31,9 +31,15 @@ spec:
                     - name: DATABASE_URL
                       value: "sqlite:///minions.db"
                     - name: JWT_SECRET
-                      value: "3feLIeNKIA8q-9DoPlD8s9LiGDF1cstzK-GdHkEuziw"
+                      valueFrom:
+                        secretKeyRef:
+                          name: web-secrets
+                          key: jwt_secret
                     - name: SECRET_KEY
-                      value: "elyhbV2tn8EBY61PO0B1QJKnVC0RZ8YruZms12soF0U"
+                      valueFrom:
+                        secretKeyRef:
+                          name: web-secrets
+                          key: secret_key
                   ports:
                     - name: web-5000
                       containerPort: 5000
