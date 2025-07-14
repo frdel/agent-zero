@@ -34,8 +34,8 @@ app.add_exception_handler(429, _rate_limit_exceeded_handler)
 
 @app.post("/api/auth/login")
 @limiter.limit("5/minute")
-def login(request: Request, response: Response):
-    data = request.json() if hasattr(request, 'json') else request._json
+async def login(request: Request, response: Response):
+    data = await request.json()
     username = data.get("username")
     password = data.get("password")
     user = get_user(username)
