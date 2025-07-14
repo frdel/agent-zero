@@ -460,6 +460,12 @@ const model = {
     // Remove inline code ticks: `...`
     text = text.replace(/`([^`]*)`/g, "$1"); // remove backticks but keep content
 
+    // Remove HTML tags and their content: <tag>content</tag>
+    text = text.replace(/<[a-zA-Z][a-zA-Z0-9]*>.*?<\/[a-zA-Z][a-zA-Z0-9]*>/gs, "");
+    
+    // Remove self-closing HTML tags: <tag/>
+    text = text.replace(/<[a-zA-Z][a-zA-Z0-9]*(\/| [^>]*\/>)/g, "");
+
     // Remove markdown links: [label](url) → label
     text = text.replace(/\[([^\]]+)\]\([^\)]+\)/g, "$1");
 

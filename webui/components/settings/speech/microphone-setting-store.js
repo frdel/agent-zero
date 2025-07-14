@@ -26,7 +26,7 @@ const model = {
 
     requestPermission() {
         navigator.mediaDevices.getUserMedia({ audio: true });
-        this.loadDevices();
+        setTimeout(() => this.loadDevices(), 1000);
     },
 
     async selectDevice(deviceId) {
