@@ -3,7 +3,7 @@ from concurrent import futures
 import grpc
 import time
 import os
-from proto import agent_pb2, agent_pb2_grpc
+from agent_core.proto import agent_pb2, agent_pb2_grpc
 
 AGENT_VERSION = os.environ.get("AGENT_VERSION", "0.1.0")
 START_TIME = time.time()
