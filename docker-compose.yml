@@ -10,7 +10,7 @@ services:
       - VITE_API_URL=http://localhost:43069/api
   backend-minion:
     build: ./agent0range/minion-webui
-    command: uvicorn app.api:app --host 0.0.0.0 --port 8001
+    command: python -m uvicorn app.api:app --host 0.0.0.0 --port 8001
     volumes:
       - minion-data:/app/app/minions_data
     environment:
