@@ -40,7 +40,11 @@ async def preload():
                 PrintStyle().error(f"Error in preload_kokoro: {e}")
 
         # async tasks to preload
-        tasks = [preload_whisper(), preload_embedding(), preload_kokoro()]
+        tasks = [
+            preload_embedding(),
+            # preload_whisper(),
+            # preload_kokoro()
+        ] # no longer preload kokoro and whisper, do it JIT
 
         await asyncio.gather(*tasks, return_exceptions=True)
         PrintStyle().print("Preload completed")

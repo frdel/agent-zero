@@ -12,7 +12,7 @@ class Synthesize(ApiHandler):
         ctxid = input.get("ctxid", "")
         
         context = self.get_context(ctxid)
-        if await kokoro_tts.is_downloading():
+        if not await kokoro_tts.is_downloaded():
             context.log.log(type="info", content="Kokoro TTS model is currently being downloaded, please wait...")
 
         try:
