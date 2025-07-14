@@ -1,3 +1,4 @@
+bash
 Flask
 Flask-Login
 Flask-SQLAlchemy
@@ -8,3 +9,4 @@ python-dotenv
 Werkzeug
 PyJWT
 eventlet
+uvicorn[standard]

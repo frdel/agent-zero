@@ -12,33 +12,17 @@ A quietly elite, modular, and ultra-secure agent system.
 
 ## Quickstart
 
-### 1. Backend (FastAPI)
+### 🚀 One-Command Start (Recommended)
+Start the entire stack (frontend, backend, agent core, and mailhog) with Docker Compose:
 ```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+docker compose up --build
 ```
-- Endpoints: `/api/auth/login`, `/api/auth/logout`, `/api/auth/me`
-- Security: JWT in HttpOnly cookie, rate limiting, security headers, anti-bot
 
-### 2. Agent Core (gRPC)
-```bash
-cd agent_core
-pip install grpcio grpcio-tools
-python -m grpc_tools.protoc -I./proto --python_out=. --grpc_python_out=. ./proto/agent.proto
-python server.py
-```
-- Endpoints: Inference, Status, HotSwap (see proto)
-- Hot-swap: Deploy new Docker image, update backend config
+- Web UI: http://localhost:42069
+- Backend API: http://localhost:43069/docs
+- MailHog (email testing): http://localhost:43070
 
-### 3. Frontend (React+Vite)
-```bash
-cd webui
-npm install
-npm run dev
-```
-- Security: Animated noise, decoy DOM, dynamic watermark
-- Call `hardenDOM()`, `addNoiseOverlay()`, `addWatermark()` in `App.tsx`
+All dependencies are containerized. No manual setup needed.
 
 ---
 
