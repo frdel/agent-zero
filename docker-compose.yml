@@ -2,11 +2,10 @@ version: '3.8'
 services:
   backend-minion:
     build: ./agent0range/minion-webui
-    command: uvicorn app.api:app --host 0.0.0.0 --port 8001
     volumes:
       - minion-data:/app/app/minions_data
     environment:
-      - DATABASE_URL=sqlite:///app/minions_data/minions.db
+      - DATABASE_URL=sqlite:////app/app/minions_data/minions.db
       - SMTP_HOST=mailhog
       - SMTP_PORT=1025
       - SMTP_USER=
@@ -16,7 +15,7 @@ services:
     ports:
       - "43069:8001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/docs"]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,34 +38,3 @@ services:
 
 volumes:
   minion-data:
-  backend-minion:
-    build: ./agent0range/minion-webui
-    command: uvicorn app.api:app --host 0.0.0.0 --port 8001
-    volumes:
-      - minion-data:/app/app/minions_data
-    environment:
-      - DATABASE_URL=sqlite:///app/minions_data/minions.db
-      - SMTP_HOST=mailhog
-      - SMTP_PORT=1025
-      - SMTP_USER=
-      - SMTP_PASS=
-      - SECRET_KEY=SEC-3e91d9b6-df2a-4d47-8996-6bb2c12fe857
-      - JWT_SECRET=JT-14cbd7e2-17e5-4c66-b8c0-91fc3d66a820
-    ports:
-      - "43069:8001"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/docs"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    depends_on:
-      - mailhog
-  webui:
-    build: ./webui
-    ports:
-      - "42069:80"
-    depends_on:
-      backend-minion:
-        condition: service_healthy
-    environment:
-      - VITE_API_URL=http://localhost:43069/api

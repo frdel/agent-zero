@@ -20,9 +20,17 @@ def api_login():
 @jwt_required()
 def minions():
     if request.method=='POST':
-        data = request.json
+        data = request.get_json(force=True)
+        if not isinstance(data, dict):
+            return jsonify(msg='Invalid input'), 400
         m = Minion(**data)
-        db.session.add(m); db.session.commit()
-        return jsonify(msg='created'),201
+        db.session.add(m)
+        db.session.commit()
+        return jsonify(msg='created'), 201
     all_ = Minion.query.all()
     return jsonify([i.serialize() for i in all_])
+ 
+# Public health endpoint for Docker healthchecks
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify(status='ok'), 200

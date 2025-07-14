@@ -3,8 +3,11 @@
 <head>
     <title>MCP Server Detail</title>
 
+    <!-- Alpine.js for declarative UI bindings -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script type="module">
-        import { store } from "/components/settings/mcp/client/mcp-servers-store.js";
+        // Import the store module relatively so it resolves at runtime
+        import { store } from "./mcp-servers-store.js";
     </script>
 </head>
 

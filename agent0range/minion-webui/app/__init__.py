@@ -10,6 +10,7 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET')  # for flask_jwt_extended
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -22,3 +23,6 @@ login_manager.login_view = 'auth.login'
 socketio = SocketIO(app, cors_allowed_origins='*')
 
 from app import models, auth, routes, api, socketio_events
+# Register blueprints to activate their routes
+app.register_blueprint(api.api)
+app.register_blueprint(routes.routes)

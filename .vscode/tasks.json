@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Docker Compose Up",
+			"type": "shell",
+			"command": "docker compose up --build",
+			"group": "build",
+			"isBackground": false
+		}
+	]
+}
