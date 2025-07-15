@@ -22,6 +22,10 @@ const model = {
 
   // TTS Settings
   tts_enabled: false,
+  kokoro_voice: "af_alloy",
+  kokoro_voice_blend: "",
+  kokoro_voice_ratio: 0.5,
+  kokoro_speed: 1.1,
 
   // TTS State
   isSpeaking: false,

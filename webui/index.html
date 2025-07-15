@@ -639,7 +639,7 @@
                                                             :step="field.step" :value="field.value"
                                                             :disabled="field.readonly === true"
                                                             @input="field.value = $event.target.value"
-                                                            :class="field.classes">
+                                                            :class="field.id.includes('kokoro') ? 'voice-range' : field.classes">
                                                         <span class="range-value" x-text="field.value"></span>
                                                     </div>
                                                 </template>
@@ -653,13 +653,38 @@
 
                                                 <!-- Select field -->
                                                 <template x-if="field.type === 'select'">
-                                                    <select :class="field.classes" x-model="field.value"
-                                                        :disabled="field.readonly === true">
-                                                        <template x-for="option in field.options" :key="option.value">
-                                                            <option :value="option.value" x-text="option.label"
-                                                                :selected="option.value === field.value"></option>
+                                                    <div class="voice-select-container" 
+                                                         x-data="{ showTooltip: false, tooltipText: '' }">
+                                                        <select :class="field.id.includes('kokoro_voice') ? 'voice-select' : field.classes" 
+                                                                x-model="field.value"
+                                                                :disabled="field.readonly === true"
+                                                                @change="field.id.includes('kokoro_voice') && updateTooltip($event.target)">
+                                                            <template x-for="option in field.options" :key="option.value">
+                                                                <option :value="option.value" 
+                                                                        x-text="option.label"
+                                                                        :data-tooltip="option['data-tooltip']"
+                                                                        :selected="option.value === field.value"></option>
+                                                            </template>
+                                                        </select>
+                                                        
+                                                        <!-- Tooltip for voice selection -->
+                                                        <template x-if="field.id.includes('kokoro_voice') && field.value">
+                                                            <div class="voice-tooltip" 
+                                                                 x-show="showTooltip"
+                                                                 x-text="tooltipText"
+                                                                 @mouseenter="showTooltip = true"
+                                                                 @mouseleave="showTooltip = false"
+                                                                 x-init="updateTooltip(); 
+                                                                         $el.parentElement.querySelector('select').addEventListener('mouseenter', () => { 
+                                                                             updateTooltip(); 
+                                                                             showTooltip = true; 
+                                                                         });
+                                                                         $el.parentElement.querySelector('select').addEventListener('mouseleave', () => { 
+                                                                             showTooltip = false; 
+                                                                         });">
+                                                            </div>
                                                         </template>
-                                                    </select>
+                                                    </div>
                                                 </template>
                                             </div>
                                         </div>

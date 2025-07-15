@@ -11,9 +11,38 @@ from python.helpers.print_style import PrintStyle
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 _pipeline = None
-_voice = "am_puck,am_onyx"
-_speed = 1.1
 is_updating_model = False
+
+def _get_voice_settings():
+    """Get voice configuration from settings"""
+    from python.helpers import settings
+    current_settings = settings.get_settings()
+    
+    primary_voice = current_settings.get("kokoro_voice", "af_alloy")
+    secondary_voice = current_settings.get("kokoro_voice_blend", "")
+    voice_ratio = current_settings.get("kokoro_voice_ratio", 0.5)
+    speed = current_settings.get("kokoro_speed", 1.1)
+    
+    # Validate primary voice exists and is not a placeholder
+    if (not primary_voice or not primary_voice.strip() or 
+        primary_voice in ["", "No blending"]):
+        primary_voice = "af_alloy"  # fallback to default
+    
+    # Validate speed is within reasonable bounds
+    if speed < 0.1 or speed > 5.0:
+        speed = 1.1  # fallback to default
+    
+    # Build voice string for Kokoro
+    if (secondary_voice and secondary_voice.strip() and 
+        secondary_voice != primary_voice and 
+        secondary_voice not in ["", "No blending"]):
+        # Voice blending: use ratio to determine blend
+        voice_string = f"{primary_voice},{secondary_voice}"
+    else:
+        # Single voice
+        voice_string = primary_voice
+    
+    return voice_string, speed
 
 async def preload():
     try:
@@ -65,12 +94,15 @@ async def synthesize_sentences(sentences: list[str]):
 async def _synthesize_sentences(sentences: list[str]):
     await _preload()
 
+    # Get current voice settings
+    voice_string, speed = _get_voice_settings()
+
     combined_audio = []
 
     try:
         for sentence in sentences:
             if sentence.strip():
-                segments = _pipeline(sentence.strip(), voice=_voice, speed=_speed)
+                segments = _pipeline(sentence.strip(), voice=voice_string, speed=speed)
                 segment_list = list(segments)
                 
                 for segment in segment_list:

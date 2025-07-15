@@ -596,3 +596,22 @@ function showToast(message, type = 'info') {
         }, 300);
     }, 3000);
 }
+
+// Update tooltip for voice selection
+window.updateTooltip = function(selectElement) {
+    if (!selectElement) return;
+    
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    if (selectedOption && selectedOption.dataset.tooltip) {
+        const tooltipElement = selectElement.parentElement.querySelector('.voice-tooltip');
+        if (tooltipElement) {
+            tooltipElement.textContent = selectedOption.dataset.tooltip;
+        }
+        
+        // Update Alpine.js data
+        const alpineData = Alpine.$data(selectElement.parentElement);
+        if (alpineData) {
+            alpineData.tooltipText = selectedOption.dataset.tooltip;
+        }
+    }
+}
