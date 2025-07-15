@@ -1,6 +1,4 @@
-from python.helpers import tokens
-from python.helpers.api import ApiHandler
-from flask import Request, Response
+from python.helpers.api import ApiHandler, Request, Response
 
 
 class GetHistory(ApiHandler):

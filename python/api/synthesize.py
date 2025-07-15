@@ -1,8 +1,6 @@
 # api/synthesize.py
 
-import re
-from python.helpers.api import ApiHandler
-from flask import Request, Response
+from python.helpers.api import ApiHandler, Request, Response
 
 from python.helpers import runtime, settings, kokoro_tts
 

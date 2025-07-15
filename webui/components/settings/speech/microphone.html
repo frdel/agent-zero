@@ -25,8 +25,14 @@
                             :selected="option.deviceId === $store.microphoneSetting.selectedDevice"></option>
                     </template>
                 </select>
-                <button class="btn btn-field" x-show="$store.microphoneSetting.devices.length == 0"
-                    @click="$store.microphoneSetting.requestPermission()">Request permission</button>
+                <button class="btn btn-field" 
+                    x-show="$store.microphoneSetting.devices.length == 0 && !$store.microphoneSetting.requestingPermission"
+                    @click="$store.microphoneSetting.requestPermission()">Request permission to select device</button>
+                <button class="btn btn-field" 
+                    x-show="$store.microphoneSetting.requestingPermission"
+                    @click="$store.microphoneSetting.requestPermission()">
+                    <span>Waiting for devices... [retry]</span>
+                </button>
             </div>
 
         </template>
