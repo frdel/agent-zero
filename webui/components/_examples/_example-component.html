@@ -1,0 +1,36 @@
+<html>
+
+<head>
+    <title>Example component or modal</title>
+
+    <!-- Import the alpine store -->
+    <script type="module">
+        import { store } from "/components/_examples/_example-store.js";
+    </script>
+</head>
+
+<body>
+
+    <!-- This construct of x-data + x-if is used to ensure the component is only rendered when the store is available -->
+    <div x-data>
+        <template x-if="$store.exampleStore">
+            
+            <!-- Keep in mind that <template> can have only one root element inside -->
+            <div>
+                <p x-text="$store.exampleStore.example1"></p>
+                <p x-text="$store.exampleStore.example2"></p>
+            </div>
+
+        </template>
+    </div>
+
+    <!-- Optional style for the component -->
+    <style>
+        #example-component {
+            width: 100%;
+        }
+    </style>
+
+</body>
+
+</html>

@@ -12,8 +12,8 @@ class Synthesize(ApiHandler):
         ctxid = input.get("ctxid", "")
         
         context = self.get_context(ctxid)
-        if await kokoro_tts.is_downloading():
-            context.log.log(type="info", content="Kokoro TTS model is currently being downloaded, please wait...")
+        if not await kokoro_tts.is_downloaded():
+            context.log.log(type="info", content="Kokoro TTS model is currently being initialized, please wait...")
 
         try:
             # # Clean and chunk text for long responses
@@ -32,7 +32,7 @@ class Synthesize(ApiHandler):
             #         audio_parts.append(chunk_audio)
             #     return {"audio_parts": audio_parts, "success": True}
 
-
+            # audio is chunked on the frontend for better flow
             audio = await kokoro_tts.synthesize_sentences([text])
             return {"audio": audio, "success": True}
         except Exception as e:

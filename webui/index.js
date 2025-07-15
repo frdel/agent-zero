@@ -24,6 +24,7 @@ const timeDate = document.getElementById("time-date-container");
 let autoScroll = true;
 let context = "";
 let resetCounter = 0;
+let skipOneSpeech = false;
 let connectionStatus = false;
 
 // Initialize the toggle button
@@ -503,6 +504,10 @@ function afterMessagesUpdate(logs) {
 }
 
 function speakMessages(logs) {
+  if (skipOneSpeech) {
+    skipOneSpeech = false;
+    return;
+  }
   // log.no, log.type, log.heading, log.content
   for (let i = logs.length - 1; i >= 0; i--) {
     const log = logs[i];
@@ -512,10 +517,14 @@ function speakMessages(logs) {
 
     // finished response
     if (log.type == "response") {
-        // lastSpokenNo = log.no;
-        speechStore.speakStream(getChatBasedId(log.no), log.content, log.kvps?.finished);
-        return;
-      
+      // lastSpokenNo = log.no;
+      speechStore.speakStream(
+        getChatBasedId(log.no),
+        log.content,
+        log.kvps?.finished
+      );
+      return;
+
       // finished LLM headline, not response
     } else if (
       log.type == "agent" &&
@@ -524,9 +533,9 @@ function speakMessages(logs) {
       log.kvps.tool_args &&
       log.kvps.tool_name != "response"
     ) {
-        // lastSpokenNo = log.no;
-        speechStore.speakStream(getChatBasedId(log.no), log.kvps.headline, true);
-        return;
+      // lastSpokenNo = log.no;
+      speechStore.speakStream(getChatBasedId(log.no), log.kvps.headline, true);
+      return;
     }
   }
 }
@@ -736,6 +745,9 @@ export const setContext = function (id) {
       if (tasksAD) tasksAD.selected = id;
     }
   }
+
+  //skip one speech if enabled when switching context
+  if (localStorage.getItem("speech") == "true") skipOneSpeech = true;
 };
 
 export const getContext = function () {
@@ -743,7 +755,7 @@ export const getContext = function () {
 };
 
 export const getChatBasedId = function (id) {
-  return context+"-"+resetCounter+"-"+id;
+  return context + "-" + resetCounter + "-" + id;
 };
 
 window.toggleAutoScroll = async function (_autoScroll) {

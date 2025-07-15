@@ -586,9 +586,9 @@
 
                                     <template x-for="(field, fieldIndex) in section.fields.filter(f => !f.hidden)" :key="fieldIndex">
                                         <div :class="{'field': true, 'field-full': field.type === 'textarea'}">
-                                            <div class="field-label">
-                                                <div class="field-title" x-text="field.title"></div>
-                                                <div class="field-description" x-html="field.description || ''"></div>
+                                            <div class="field-label" x-show="field.title || field.description">
+                                                <div class="field-title" x-text="field.title" x-show="field.title"></div>
+                                                <div class="field-description" x-html="field.description || ''" x-show="field.description"></div>
                                             </div>
 
                                             <div class="field-control">
@@ -685,6 +685,11 @@
                                                             </div>
                                                         </template>
                                                     </div>
+                                                </template>
+
+                                                <!-- HTML field -->
+                                                <template x-if="field.type === 'html'">
+                                                    <div :class="field.classes" x-html="field.value"></div>
                                                 </template>
                                             </div>
                                         </div>
