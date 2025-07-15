@@ -1740,6 +1740,12 @@ a:active {
   color: inherit;
 }
 
+/* Global dropdown consistency fixes for all browsers */
+select option {
+  background-color: var(--color-background);
+  color: var(--color-text);
+}
+
 /* Light mode class */
 .light-mode {
   --color-background: var(--color-background-light);
@@ -1753,6 +1759,12 @@ a:active {
   --color-border: var(--color-border-light);
   --color-input: var(--color-input-light);
   --color-input-focus: var(--color-input-focus-light);
+}
+
+/* Light mode dropdown options */
+.light-mode select option {
+  background-color: var(--color-background-light);
+  color: var(--color-text-light);
 }
 
 

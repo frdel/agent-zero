@@ -71,7 +71,11 @@ class Settings(TypedDict):
     stt_silence_duration: int
     stt_waiting_timeout: int
 
-    tts_kokoro: bool
+    tts_enabled: bool
+    kokoro_voice: str
+    kokoro_voice_blend: str
+    kokoro_voice_ratio: float
+    kokoro_speed: float
 
     mcp_servers: str
     mcp_client_init_timeout: int
@@ -94,7 +98,7 @@ class SettingsField(TypedDict, total=False):
     title: str
     description: str
     type: Literal[
-        "text", "number", "select", "range", "textarea", "password", "switch", "button", "html"
+        "text", "number", "select", "range", "textarea", "password", "switch", "button"
     ]
     value: Any
     min: float
@@ -119,6 +123,98 @@ class SettingsOutput(TypedDict):
 PASSWORD_PLACEHOLDER = "****PSWD****"
 
 SETTINGS_FILE = files.get_abs_path("tmp/settings.json")
+
+# Kokoro TTS Voice Database with metadata from HuggingFace
+def get_kokoro_voices():
+    return [
+        # American English Female
+        {"value": "af_heart", "label": "🇺🇸 AF Heart (Female)", "gender": "F", "lang": "American English", "grade": "A", "desc": "High-quality female American voice with excellent training"},
+        {"value": "af_alloy", "label": "🇺🇸 AF Alloy (Female)", "gender": "F", "lang": "American English", "grade": "A-", "desc": "Professional female American voice, well-balanced"},
+        {"value": "af_aoede", "label": "🇺🇸 AF Aoede (Female)", "gender": "F", "lang": "American English", "grade": "A-", "desc": "Clear female American voice with musical quality"},
+        {"value": "af_bella", "label": "🇺🇸 AF Bella (Female)", "gender": "F", "lang": "American English", "grade": "B+", "desc": "Warm female American voice"},
+        {"value": "af_jessica", "label": "🇺🇸 AF Jessica (Female)", "gender": "F", "lang": "American English", "grade": "B+", "desc": "Friendly female American voice"},
+        {"value": "af_kore", "label": "🇺🇸 AF Kore (Female)", "gender": "F", "lang": "American English", "grade": "B", "desc": "Natural female American voice"},
+        {"value": "af_nicole", "label": "🇺🇸 AF Nicole (Female)", "gender": "F", "lang": "American English", "grade": "B+", "desc": "Smooth female American voice"},
+        {"value": "af_nova", "label": "🇺🇸 AF Nova (Female)", "gender": "F", "lang": "American English", "grade": "A-", "desc": "Modern female American voice"},
+        {"value": "af_river", "label": "🇺🇸 AF River (Female)", "gender": "F", "lang": "American English", "grade": "B+", "desc": "Flowing female American voice"},
+        {"value": "af_sarah", "label": "🇺🇸 AF Sarah (Female)", "gender": "F", "lang": "American English", "grade": "B+", "desc": "Classic female American voice"},
+        {"value": "af_sky", "label": "🇺🇸 AF Sky (Female)", "gender": "F", "lang": "American English", "grade": "B", "desc": "Light female American voice"},
+        
+        # American English Male
+        {"value": "am_adam", "label": "🇺🇸 AM Adam (Male)", "gender": "M", "lang": "American English", "grade": "A", "desc": "Strong male American voice with excellent clarity"},
+        {"value": "am_echo", "label": "🇺🇸 AM Echo (Male)", "gender": "M", "lang": "American English", "grade": "A-", "desc": "Resonant male American voice"},
+        {"value": "am_eric", "label": "🇺🇸 AM Eric (Male)", "gender": "M", "lang": "American English", "grade": "B+", "desc": "Professional male American voice"},
+        {"value": "am_fenrir", "label": "🇺🇸 AM Fenrir (Male)", "gender": "M", "lang": "American English", "grade": "B+", "desc": "Deep male American voice"},
+        {"value": "am_liam", "label": "🇺🇸 AM Liam (Male)", "gender": "M", "lang": "American English", "grade": "B+", "desc": "Young male American voice"},
+        {"value": "am_michael", "label": "🇺🇸 AM Michael (Male)", "gender": "M", "lang": "American English", "grade": "A-", "desc": "Classic male American voice"},
+        {"value": "am_onyx", "label": "🇺🇸 AM Onyx (Male)", "gender": "M", "lang": "American English", "grade": "A-", "desc": "Rich male American voice"},
+        {"value": "am_puck", "label": "🇺🇸 AM Puck (Male)", "gender": "M", "lang": "American English", "grade": "A", "desc": "Playful male American voice"},
+        {"value": "am_santa", "label": "🇺🇸 AM Santa (Male)", "gender": "M", "lang": "American English", "grade": "B", "desc": "Jolly male American voice"},
+        
+        # British English Female
+        {"value": "bf_emma", "label": "🇬🇧 BF Emma (Female)", "gender": "F", "lang": "British English", "grade": "A-", "desc": "Elegant British female voice"},
+        {"value": "bf_grace", "label": "🇬🇧 BF Grace (Female)", "gender": "F", "lang": "British English", "grade": "B+", "desc": "Graceful British female voice"},
+        {"value": "bf_isabella", "label": "🇬🇧 BF Isabella (Female)", "gender": "F", "lang": "British English", "grade": "B+", "desc": "Refined British female voice"},
+        {"value": "bf_lily", "label": "🇬🇧 BF Lily (Female)", "gender": "F", "lang": "British English", "grade": "B", "desc": "Delicate British female voice"},
+        
+        # British English Male
+        {"value": "bm_george", "label": "🇬🇧 BM George (Male)", "gender": "M", "lang": "British English", "grade": "A", "desc": "Distinguished British male voice"},
+        {"value": "bm_james", "label": "🇬🇧 BM James (Male)", "gender": "M", "lang": "British English", "grade": "A-", "desc": "Classic British male voice"},
+        {"value": "bm_lewis", "label": "🇬🇧 BM Lewis (Male)", "gender": "M", "lang": "British English", "grade": "B+", "desc": "Modern British male voice"},
+        {"value": "bm_william", "label": "🇬🇧 BM William (Male)", "gender": "M", "lang": "British English", "grade": "A-", "desc": "Traditional British male voice"},
+        
+        # Japanese Female
+        {"value": "jf_rei", "label": "🇯🇵 JF Rei (Female)", "gender": "F", "lang": "Japanese", "grade": "B+", "desc": "Clear Japanese female voice"},
+        {"value": "jf_yuki", "label": "🇯🇵 JF Yuki (Female)", "gender": "F", "lang": "Japanese", "grade": "B", "desc": "Gentle Japanese female voice"},
+        {"value": "jf_hina", "label": "🇯🇵 JF Hina (Female)", "gender": "F", "lang": "Japanese", "grade": "B", "desc": "Young Japanese female voice"},
+        {"value": "jf_sakura", "label": "🇯🇵 JF Sakura (Female)", "gender": "F", "lang": "Japanese", "grade": "B-", "desc": "Sweet Japanese female voice"},
+        
+        # Japanese Male
+        {"value": "jm_kaito", "label": "🇯🇵 JM Kaito (Male)", "gender": "M", "lang": "Japanese", "grade": "B", "desc": "Strong Japanese male voice"},
+        
+        # Mandarin Chinese Female
+        {"value": "cf_qianyun", "label": "🇨🇳 CF Qianyun (Female)", "gender": "F", "lang": "Mandarin Chinese", "grade": "B+", "desc": "Melodious Chinese female voice"},
+        {"value": "cf_xiaohan", "label": "🇨🇳 CF Xiaohan (Female)", "gender": "F", "lang": "Mandarin Chinese", "grade": "B", "desc": "Clear Chinese female voice"},
+        {"value": "cf_xiaoxiao", "label": "🇨🇳 CF Xiaoxiao (Female)", "gender": "F", "lang": "Mandarin Chinese", "grade": "B", "desc": "Youthful Chinese female voice"},
+        {"value": "cf_yunxi", "label": "🇨🇳 CF Yunxi (Female)", "gender": "F", "lang": "Mandarin Chinese", "grade": "B-", "desc": "Soft Chinese female voice"},
+        
+        # Mandarin Chinese Male
+        {"value": "cm_yunyang", "label": "🇨🇳 CM Yunyang (Male)", "gender": "M", "lang": "Mandarin Chinese", "grade": "B+", "desc": "Strong Chinese male voice"},
+        {"value": "cm_xiaobei", "label": "🇨🇳 CM Xiaobei (Male)", "gender": "M", "lang": "Mandarin Chinese", "grade": "B", "desc": "Young Chinese male voice"},
+        {"value": "cm_yunzheng", "label": "🇨🇳 CM Yunzheng (Male)", "gender": "M", "lang": "Mandarin Chinese", "grade": "B", "desc": "Mature Chinese male voice"},
+        {"value": "cm_xiaomo", "label": "🇨🇳 CM Xiaomo (Male)", "gender": "M", "lang": "Mandarin Chinese", "grade": "B-", "desc": "Gentle Chinese male voice"},
+        
+        # Spanish Female
+        {"value": "sf_maria", "label": "🇪🇸 SF Maria (Female)", "gender": "F", "lang": "Spanish", "grade": "B+", "desc": "Warm Spanish female voice"},
+        
+        # Spanish Male
+        {"value": "sm_diego", "label": "🇪🇸 SM Diego (Male)", "gender": "M", "lang": "Spanish", "grade": "B", "desc": "Strong Spanish male voice"},
+        {"value": "sm_carlos", "label": "🇪🇸 SM Carlos (Male)", "gender": "M", "lang": "Spanish", "grade": "B", "desc": "Classic Spanish male voice"},
+        
+        # French Female
+        {"value": "ff_siwis", "label": "🇫🇷 FF Siwis (Female)", "gender": "F", "lang": "French", "grade": "B-", "desc": "Elegant French female voice"},
+        
+        # Hindi Female
+        {"value": "hf_aditi", "label": "🇮🇳 HF Aditi (Female)", "gender": "F", "lang": "Hindi", "grade": "B", "desc": "Clear Hindi female voice"},
+        {"value": "hf_kavya", "label": "🇮🇳 HF Kavya (Female)", "gender": "F", "lang": "Hindi", "grade": "B-", "desc": "Gentle Hindi female voice"},
+        
+        # Hindi Male
+        {"value": "hm_ravi", "label": "🇮🇳 HM Ravi (Male)", "gender": "M", "lang": "Hindi", "grade": "B", "desc": "Strong Hindi male voice"},
+        {"value": "hm_arjun", "label": "🇮🇳 HM Arjun (Male)", "gender": "M", "lang": "Hindi", "grade": "B-", "desc": "Young Hindi male voice"},
+        
+        # Italian Female
+        {"value": "if_chiara", "label": "🇮🇹 IF Chiara (Female)", "gender": "F", "lang": "Italian", "grade": "B", "desc": "Melodious Italian female voice"},
+        
+        # Italian Male
+        {"value": "im_marco", "label": "🇮🇹 IM Marco (Male)", "gender": "M", "lang": "Italian", "grade": "B", "desc": "Rich Italian male voice"},
+        
+        # Brazilian Portuguese Female
+        {"value": "pf_camila", "label": "🇧🇷 PF Camila (Female)", "gender": "F", "lang": "Brazilian Portuguese", "grade": "B", "desc": "Warm Brazilian female voice"},
+        
+        # Brazilian Portuguese Male
+        {"value": "pm_ricardo", "label": "🇧🇷 PM Ricardo (Male)", "gender": "M", "lang": "Brazilian Portuguese", "grade": "B", "desc": "Strong Brazilian male voice"},
+        {"value": "pm_thiago", "label": "🇧🇷 PM Thiago (Male)", "gender": "M", "lang": "Brazilian Portuguese", "grade": "B-", "desc": "Young Brazilian male voice"},
+    ]
 _settings: Settings | None = None
 
 
@@ -634,19 +730,9 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     stt_fields.append(
         {
-            "id": "stt_microphone_section",
-            "title": "Microphone device",
-            "description": "Select the microphone device to use for speech-to-text.",
-            "value": "<x-component path='/settings/speech/microphone.html' />",
-            "type": "html",
-        }
-    )
-
-    stt_fields.append(
-        {
             "id": "stt_model_size",
-            "title": "Speech-to-text model size",
-            "description": "Select the speech-to-text model size",
+            "title": "Model Size",
+            "description": "Select the speech recognition model size",
             "type": "select",
             "value": settings["stt_model_size"],
             "options": [
@@ -663,7 +749,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     stt_fields.append(
         {
             "id": "stt_language",
-            "title": "Speech-to-text language code",
+            "title": "Language Code",
             "description": "Language code (e.g. en, fr, it)",
             "type": "text",
             "value": settings["stt_language"],
@@ -673,8 +759,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
     stt_fields.append(
         {
             "id": "stt_silence_threshold",
-            "title": "Microphone silence threshold",
-            "description": "Silence detection threshold. Lower values are more sensitive to noise.",
+            "title": "Silence threshold",
+            "description": "Silence detection threshold. Lower values are more sensitive.",
             "type": "range",
             "min": 0,
             "max": 1,
@@ -686,8 +772,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
     stt_fields.append(
         {
             "id": "stt_silence_duration",
-            "title": "Microphone silence duration (ms)",
-            "description": "Duration of silence before the system considers speaking to have ended.",
+            "title": "Silence duration (ms)",
+            "description": "Duration of silence before the server considers speaking to have ended.",
             "type": "text",
             "value": settings["stt_silence_duration"],
         }
@@ -696,8 +782,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
     stt_fields.append(
         {
             "id": "stt_waiting_timeout",
-            "title": "Microphone waiting timeout (ms)",
-            "description": "Duration of silence before the system closes the microphone.",
+            "title": "Waiting timeout (ms)",
+            "description": "Duration before the server closes the microphone.",
             "type": "text",
             "value": settings["stt_waiting_timeout"],
         }
@@ -708,11 +794,71 @@ def convert_out(settings: Settings) -> SettingsOutput:
     
     tts_fields.append(
         {
-            "id": "tts_kokoro",
+            "id": "tts_enabled",
             "title": "Enable Kokoro TTS",
-            "description": "Enable higher quality server-side AI (Kokoro) instead of browser-based text-to-speech.",
+            "description": "Enable server-side AI text-to-speech (Kokoro)",
             "type": "switch",
-            "value": settings["tts_kokoro"],
+            "value": settings["tts_enabled"],
+        }
+    )
+
+    # Voice selection with rich metadata
+    kokoro_voices = get_kokoro_voices()
+    voice_options = []
+    for voice in kokoro_voices:
+        voice_options.append({
+            "value": voice["value"],
+            "label": voice["label"],
+            "data-tooltip": f"Grade: {voice['grade']} | {voice['desc']} | Optimal: 100-200 tokens"
+        })
+
+    tts_fields.append(
+        {
+            "id": "kokoro_voice",
+            "title": "Primary Voice",
+            "description": "Select the primary Kokoro TTS voice. Hover over options for detailed information about voice quality and characteristics.",
+            "type": "select",
+            "value": settings["kokoro_voice"],
+            "options": voice_options,
+        }
+    )
+
+    # Optional voice blending
+    blend_options = [{"value": "", "label": "No blending", "data-tooltip": "Use only the primary voice without blending"}] + voice_options
+    tts_fields.append(
+        {
+            "id": "kokoro_voice_blend",
+            "title": "Secondary Voice (Optional)",
+            "description": "Optional secondary voice for blending. Leave empty to use only the primary voice.",
+            "type": "select",
+            "value": settings["kokoro_voice_blend"],
+            "options": blend_options,
+        }
+    )
+
+    tts_fields.append(
+        {
+            "id": "kokoro_voice_ratio",
+            "title": "Voice Blend Ratio",
+            "description": "Ratio for blending voices (0.0 = primary only, 1.0 = secondary only). Only applies when secondary voice is selected.",
+            "type": "range",
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.1,
+            "value": settings["kokoro_voice_ratio"],
+        }
+    )
+
+    tts_fields.append(
+        {
+            "id": "kokoro_speed",
+            "title": "Speech Speed",
+            "description": "Adjust the speed of speech synthesis (0.5x = slow, 1.0x = normal, 2.0x = fast)",
+            "type": "range",
+            "min": 0.5,
+            "max": 2.0,
+            "step": 0.1,
+            "value": settings["kokoro_speed"],
         }
     )
 
@@ -1041,7 +1187,11 @@ def get_default_settings() -> Settings:
         stt_silence_threshold=0.3,
         stt_silence_duration=1000,
         stt_waiting_timeout=2000,
-        tts_kokoro=True,
+        tts_enabled=False,
+        kokoro_voice="af_alloy",
+        kokoro_voice_blend="",
+        kokoro_voice_ratio=0.5,
+        kokoro_speed=1.1,
         mcp_servers='{\n    "mcpServers": {}\n}',
         mcp_client_init_timeout=10,
         mcp_client_tool_timeout=120,

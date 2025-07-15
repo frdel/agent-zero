@@ -142,11 +142,62 @@ input[type="range"] {
 /* Select Styles */
 select {
   cursor: pointer;
+  /* Ensure consistent appearance across browsers */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  /* Add custom dropdown arrow */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23737a81' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem;
 }
 
 select:disabled {
   background-color: var(--color-background);
   cursor: not-allowed;
+}
+
+/* Dropdown option styling for consistent appearance */
+select option {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  padding: 0.5rem;
+  border: none;
+}
+
+/* Light mode dropdown options */
+.light-mode select option {
+  background-color: var(--color-background-light);
+  color: var(--color-text-light);
+}
+
+/* Browser-specific fixes for Chromium */
+@supports (-webkit-appearance: none) {
+  select option {
+    background-color: var(--color-background) !important;
+    color: var(--color-text) !important;
+  }
+
+  .light-mode select option {
+    background-color: var(--color-background-light) !important;
+    color: var(--color-text-light) !important;
+  }
+}
+
+/* Additional browser compatibility for dropdown styling */
+@-moz-document url-prefix() {
+  /* Firefox-specific styles */
+  select option {
+    background-color: var(--color-background);
+    color: var(--color-text);
+  }
+
+  .light-mode select option {
+    background-color: var(--color-background-light);
+    color: var(--color-text-light);
+  }
 }
 
 /* Navigation Links */
@@ -245,6 +296,212 @@ nav ul li a img {
     width: 30px;
     height: 30px;
   }
+}
+
+/* Kokoro Voice Selection Tooltips */
+.voice-select-container {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.voice-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-panel);
+  color: var(--color-text);
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+  transform: translateX(-50%) translateY(4px);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 350px;
+  white-space: normal;
+  text-align: center;
+}
+
+.voice-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--color-panel);
+}
+
+.voice-tooltip::before {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top-color: var(--color-border);
+  z-index: -1;
+}
+
+.voice-select-container:hover .voice-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Enhanced select styling for voice selection */
+.voice-select {
+  position: relative;
+  background: linear-gradient(135deg, var(--color-input) 0%, var(--color-background) 100%);
+  border: 2px solid var(--color-border);
+  transition: all 0.3s ease;
+}
+
+.voice-select:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.voice-select:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(207, 102, 121, 0.1);
+  outline: none;
+}
+
+/* Voice option styling */
+.voice-option {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.2s ease;
+  background-color: var(--color-background) !important;
+  color: var(--color-text) !important;
+}
+
+.voice-option:hover {
+  background-color: var(--color-secondary) !important;
+}
+
+.voice-option:last-child {
+  border-bottom: none;
+}
+
+/* Light mode voice options */
+.light-mode .voice-option {
+  background-color: var(--color-background-light) !important;
+  color: var(--color-text-light) !important;
+}
+
+.light-mode .voice-option:hover {
+  background-color: var(--color-secondary-light) !important;
+}
+
+/* Language grouping in dropdown */
+.voice-option[data-lang] {
+  font-weight: 500;
+}
+
+.voice-option[data-lang]:not(:first-child) {
+  border-top: 2px solid var(--color-border);
+  margin-top: 4px;
+  padding-top: 12px;
+}
+
+/* Speech controls section styling */
+.speech-controls {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.voice-preview-btn {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: 8px;
+}
+
+.voice-preview-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.voice-preview-btn:active {
+  transform: translateY(0);
+}
+
+/* Range slider styling for voice controls */
+input[type="range"].voice-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-border);
+  outline: none;
+  transition: background 0.3s ease;
+}
+
+input[type="range"].voice-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+input[type="range"].voice-range::-webkit-slider-thumb:hover {
+  background: var(--color-primary);
+  transform: scale(1.1);
+}
+
+input[type="range"].voice-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+input[type="range"].voice-range::-moz-range-thumb:hover {
+  background: var(--color-primary);
+  transform: scale(1.1);
+}
+
+/* Light mode overrides */
+.light-mode select {
+  /* Update dropdown arrow color for light mode */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23384653' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+.light-mode .voice-tooltip {
+  background-color: var(--color-panel-light);
+  color: var(--color-text-light);
+  border-color: var(--color-border-light);
+}
+
+.light-mode .voice-tooltip::after {
+  border-top-color: var(--color-panel-light);
+}
+
+.light-mode .voice-tooltip::before {
+  border-top-color: var(--color-border-light);
 }
 
 /* Settings Tab Styles */

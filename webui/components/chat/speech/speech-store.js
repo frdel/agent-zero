@@ -1,7 +1,6 @@
 import { createStore } from "/js/AlpineStore.js";
 import { updateChatInput, sendMessage } from "/index.js";
 import { sleep } from "/js/sleep.js";
-import { store as microphoneSettingStore } from "/components/settings/speech/microphone-setting-store.js";
 
 const Status = {
   INACTIVE: "inactive",
@@ -22,7 +21,11 @@ const model = {
   stt_waiting_timeout: 2000,
 
   // TTS Settings
-  tts_kokoro: false,
+  tts_enabled: false,
+  kokoro_voice: "af_alloy",
+  kokoro_voice_blend: "",
+  kokoro_voice_ratio: 0.5,
+  kokoro_speed: 1.1,
 
   // TTS State
   isSpeaking: false,
@@ -37,7 +40,6 @@ const model = {
   // STT State
   microphoneInput: null,
   isProcessingClick: false,
-  selectedDevice: null,
 
   // Getter for micStatus - delegates to microphoneInput
   get micStatus() {
@@ -64,15 +66,6 @@ const model = {
     if (this.isProcessingClick) return;
     this.isProcessingClick = true;
     try {
-
-      // reset mic input if device has changed in settings
-      const device = microphoneSettingStore.getSelectedDevice();
-      if(device!=this.selectedDevice){
-        this.selectedDevice = device;
-        this.microphoneInput = null;
-        console.log("Device changed, microphoneInput reset");
-      }
-
       if (!this.microphoneInput) {
         await this.initMicrophone();
       }
@@ -231,7 +224,7 @@ const model = {
   // speak wrapper
   async _speak(text, waitForPrevious, terminator) {
     // default browser speech
-    if (!this.tts_kokoro)
+    if (!this.tts_enabled)
       return await this.speakWithBrowser(text, waitForPrevious, terminator);
 
     // kokoro tts
@@ -358,7 +351,6 @@ const model = {
     this.browserUtterance.onend = () => {
       this.isSpeaking = false;
     };
-    
     this.synth.speak(this.browserUtterance);
   },
 
@@ -459,12 +451,6 @@ const model = {
     text = text.replace(/```[\s\S]*?```/g, "");
     // Remove inline code ticks: `...`
     text = text.replace(/`([^`]*)`/g, "$1"); // remove backticks but keep content
-
-    // Remove HTML tags and their content: <tag>content</tag>
-    text = text.replace(/<[a-zA-Z][a-zA-Z0-9]*>.*?<\/[a-zA-Z][a-zA-Z0-9]*>/gs, "");
-    
-    // Remove self-closing HTML tags: <tag/>
-    text = text.replace(/<[a-zA-Z][a-zA-Z0-9]*(\/| [^>]*\/>)/g, "");
 
     // Remove markdown links: [label](url) → label
     text = text.replace(/\[([^\]]+)\]\([^\)]+\)/g, "$1");
@@ -605,12 +591,8 @@ class MicrophoneInput {
     // Set status to activating at the start of initialization
     this.status = Status.ACTIVATING;
     try {
-      // get selected device from microphone settings
-      const selectedDevice = microphoneSettingStore.getSelectedDevice();
-      
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          deviceId: selectedDevice && selectedDevice.deviceId ? { exact: selectedDevice.deviceId } : undefined,
           echoCancellation: true,
           noiseSuppression: true,
           channelCount: 1,
