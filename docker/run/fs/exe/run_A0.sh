@@ -4,7 +4,7 @@
 . "/ins/copy_A0.sh" "$@"
 
 python /a0/prepare.py --dockerized=true
-python /a0/preload.py --dockerized=true
+# python /a0/preload.py --dockerized=true # no need to run preload if it's done during container build
 
 echo "Starting A0..."
 exec python /a0/run_ui.py \

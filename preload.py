@@ -42,9 +42,9 @@ async def preload():
         # async tasks to preload
         tasks = [
             preload_embedding(),
-            # preload_whisper(),
-            # preload_kokoro()
-        ] # no longer preload kokoro and whisper, do it JIT
+            preload_whisper(),
+            preload_kokoro()
+        ]
 
         await asyncio.gather(*tasks, return_exceptions=True)
         PrintStyle().print("Preload completed")
