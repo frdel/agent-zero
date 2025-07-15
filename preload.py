@@ -4,9 +4,6 @@ from python.helpers.print_style import PrintStyle
 from python.helpers import kokoro_tts
 import models
 
-PrintStyle().print("Running preload...")
-runtime.initialize()
-
 
 async def preload():
     try:
@@ -34,10 +31,11 @@ async def preload():
 
         # preload kokoro tts model if enabled
         async def preload_kokoro():
-            try:
-                return await kokoro_tts.preload()
-            except Exception as e:
-                PrintStyle().error(f"Error in preload_kokoro: {e}")
+            if set["tts_kokoro"]:
+                try:
+                    return await kokoro_tts.preload()
+                except Exception as e:
+                    PrintStyle().error(f"Error in preload_kokoro: {e}")
 
         # async tasks to preload
         tasks = [
@@ -53,4 +51,7 @@ async def preload():
 
 
 # preload transcription model
-asyncio.run(preload())
+if __name__ == "__main__":
+    PrintStyle().print("Running preload...")
+    runtime.initialize()
+    asyncio.run(preload())
