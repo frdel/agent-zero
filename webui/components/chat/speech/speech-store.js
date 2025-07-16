@@ -193,8 +193,6 @@ const model = {
     this.ttsStream.chunks = this.chunkText(cleanText);
     if (this.ttsStream.chunks.length == 0) return;
 
-    console.log("chunks updated", JSON.stringify(cleanText), this.ttsStream.chunks)
-
     // if stream was already running, just updating chunks is enough
     if (this.ttsStream.running) return;
     else this.ttsStream.running = true; // proceed to running phase
@@ -222,7 +220,6 @@ const model = {
       spoken.push(this.ttsStream.chunks[i]);
       await this._speak(this.ttsStream.chunks[i], i > 0, () => terminator());
     }
-    console.log("finished speaking", spoken)
 
     // at the end, finish stream data
     this.ttsStream.running = false;
