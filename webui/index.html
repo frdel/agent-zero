@@ -692,7 +692,7 @@
                                     </div>
                                     <!-- Loading spinner for tunnel operations -->
                                     <div class="loading-spinner" x-show="isLoading">
-                                        <i class="fas fa-spinner fa-spin"></i>
+                                        <span class="icon material-symbols-outlined spin">progress_activity</span>
                                         <span x-text="loadingText || 'Processing tunnel request...'"></span>
                                     </div>
 
@@ -704,10 +704,10 @@
                                                 <input type="text" class="tunnel-link-input" :value="tunnelLink" readonly>
                                                 <div class="buttons-row">
                                                     <button class="copy-link-button" @click="copyToClipboard()" title="Copy to clipboard">
-                                                        <i class="fas fa-copy"></i> Copy
+                                                        <span class="icon material-symbols-outlined">content_copy</span> Copy
                                                     </button>
                                                     <button class="refresh-link-button" @click="refreshLink()" title="Generate new URL">
-                                                        <i class="fas fa-sync-alt"></i> Refresh
+                                                        <span class="icon material-symbols-outlined">refresh</span> Refresh
                                                     </button>
                                                 </div>
                                             </div>
@@ -719,14 +719,14 @@
                                             </div>
                                             <div class="stop-tunnel-container">
                                                 <button class="btn btn-danger" @click="stopTunnel()">
-                                                    <i class="fas fa-stop-circle"></i> Stop Tunnel
+                                                    <span class="icon material-symbols-outlined">stop_circle</span> Stop Tunnel
                                                 </button>
                                             </div>
                                         </div>
                                         <!-- Generate tunnel button when no link exists -->
                                         <div class="tunnel-actions" x-show="!linkGenerated">
                                             <button class="btn btn-ok" @click="generateLink()">
-                                                <i class="fas fa-play-circle"></i> Create Tunnel
+                                                <span class="icon material-symbols-outlined">play_circle</span> Create Tunnel
                                             </button>
                                         </div>
                                     </div>

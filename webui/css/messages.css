@@ -72,8 +72,8 @@
 }
 
 .message .message-body {
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
+  /* padding-top: 0.5em;
+  padding-bottom: 0.5em; */
 }
 
 .message-user {
@@ -396,6 +396,8 @@
 
 .msg-content {
   margin-bottom: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 .message-temp {

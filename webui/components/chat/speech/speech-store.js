@@ -29,6 +29,7 @@ const model = {
   speakingId: "",
   speakingText: "",
   currentAudio: null,
+  audioEl: null,
   audioContext: null,
   userHasInteracted: false,
   stopSpeechChain: false,
@@ -64,10 +65,9 @@ const model = {
     if (this.isProcessingClick) return;
     this.isProcessingClick = true;
     try {
-
       // reset mic input if device has changed in settings
       const device = microphoneSettingStore.getSelectedDevice();
-      if(device!=this.selectedDevice){
+      if (device != this.selectedDevice) {
         this.selectedDevice = device;
         this.microphoneInput = null;
         console.log("Device changed, microphoneInput reset");
@@ -152,8 +152,6 @@ const model = {
 
   // main speak function, allows to speak a stream of text that is generated piece by piece
   async speakStream(id, text, finished = false) {
-
-
     // if already running the same stream, do nothing
     if (
       this.ttsStream &&
@@ -201,7 +199,7 @@ const model = {
     const terminator = () =>
       this.ttsStream?.id !== id || this.ttsStream?.stopped;
 
-    const spoken = []
+    const spoken = [];
 
     // loop chunks from last spoken chunk index
     for (
@@ -249,7 +247,7 @@ const model = {
   chunkText(text, { maxChunkLength = 135, lineSeparator = "..." } = {}) {
     const INC_LIMIT = maxChunkLength * 2;
     const MIN_CHUNK_LENGTH = 20; // minimum length for a chunk before merging
-    
+
     // Only split by ,/word if needed (unchanged)
     const splitDeep = (seg) => {
       if (seg.length <= INC_LIMIT) return [seg];
@@ -297,41 +295,44 @@ const model = {
       if (start < line.length) toks.push(line.slice(start));
       return toks;
     };
-    
+
     // Step 1: Split all newlines into individual chunks first
     let initialChunks = [];
-    const lines = text.split(/\n+/).filter(l => l.trim());
-    
+    const lines = text.split(/\n+/).filter((l) => l.trim());
+
     for (const line of lines) {
       if (!line.trim()) continue;
       // Process each line into sentence tokens and add to chunks
       const sentenceStr = sentenceTokens(line.trim()).join(" ");
       initialChunks.push(sentenceStr);
     }
-    
+
     // Step 2: Merge short chunks until they meet minimum length criteria
     const finalChunks = [];
     let currentChunk = "";
-    
+
     for (let i = 0; i < initialChunks.length; i++) {
       const chunk = initialChunks[i];
-      
+
       // If current chunk is empty, start with this chunk
       if (!currentChunk) {
         currentChunk = chunk;
         // If this is the last chunk or it's already long enough, add it
-        if (i === initialChunks.length - 1 || currentChunk.length >= MIN_CHUNK_LENGTH) {
+        if (
+          i === initialChunks.length - 1 ||
+          currentChunk.length >= MIN_CHUNK_LENGTH
+        ) {
           finalChunks.push(currentChunk);
           currentChunk = "";
         }
         continue;
       }
-      
+
       // Current chunk exists, check if we should merge
       if (currentChunk.length < MIN_CHUNK_LENGTH) {
         // Try to merge with separator
         const merged = currentChunk + " " + lineSeparator + " " + chunk;
-        
+
         // Check if merged chunk fits within max length
         if (merged.length <= maxChunkLength) {
           currentChunk = merged;
@@ -345,14 +346,14 @@ const model = {
         finalChunks.push(currentChunk);
         currentChunk = chunk;
       }
-      
+
       // If this is the last chunk, add whatever is in the buffer
       if (i === initialChunks.length - 1 && currentChunk) {
         finalChunks.push(currentChunk);
       }
     }
-    
-    return finalChunks.map(chunk => chunk.trimEnd());
+
+    return finalChunks.map((chunk) => chunk.trimEnd());
   },
 
   // Show a prompt to user to enable audio
@@ -380,7 +381,7 @@ const model = {
     this.browserUtterance.onend = () => {
       this.isSpeaking = false;
     };
-    
+
     this.synth.speak(this.browserUtterance);
   },
 
@@ -420,7 +421,11 @@ const model = {
   // Play base64 audio
   async playAudio(base64Audio) {
     return new Promise((resolve, reject) => {
-      const audio = new Audio();
+      const audio = this.audioEl ? this.audioEl : (this.audioEl = new Audio());
+
+      // Reset any previous playback state
+      audio.pause();
+      audio.currentTime = 0;
 
       audio.onplay = () => {
         this.isSpeaking = true;
@@ -464,12 +469,11 @@ const model = {
       this.synth.cancel();
     }
 
-    if (this.currentAudio) {
-      this.currentAudio.pause();
-      this.currentAudio.currentTime = 0;
-      this.currentAudio = null;
+    if (this.audioEl) {
+      this.audioEl.pause();
+      this.audioEl.currentTime = 0;
     }
-
+    this.currentAudio = null;
     this.isSpeaking = false;
   },
 
@@ -479,13 +483,18 @@ const model = {
     const SUB = "\x1A"; // non-printable substitute character
     const codePlaceholder = SUB + "code" + SUB;
     const tablePlaceholder = SUB + "table" + SUB;
-    
+
     // Helper function to handle both closed and unclosed patterns
     // replacement can be a string or null (to remove)
-    function handlePatterns(inputText, closedPattern, unclosedPattern, replacement) {
+    function handlePatterns(
+      inputText,
+      closedPattern,
+      unclosedPattern,
+      replacement
+    ) {
       // Process closed patterns first
       let processed = inputText.replace(closedPattern, replacement || "");
-      
+
       // If the text changed, it means we found and replaced closed patterns
       if (processed !== inputText) {
         return processed;
@@ -497,35 +506,35 @@ const model = {
           return inputText.replace(unclosedPattern, replacement || "");
         }
       }
-      
+
       // No patterns found, return original
       return inputText;
     }
-    
+
     // Handle code blocks
     text = handlePatterns(
       text,
-      /```(?:[a-zA-Z0-9]*\n)?[\s\S]*?```/g,       // closed code blocks
-      /```(?:[a-zA-Z0-9]*\n)?[\s\S]*$/g,         // unclosed code blocks
+      /```(?:[a-zA-Z0-9]*\n)?[\s\S]*?```/g, // closed code blocks
+      /```(?:[a-zA-Z0-9]*\n)?[\s\S]*$/g, // unclosed code blocks
       codePlaceholder
     );
-    
+
     // Replace inline code ticks with content preserved
     text = text.replace(/`([^`]*)`/g, "$1"); // remove backticks but keep content
 
     // Handle HTML tags
     text = handlePatterns(
       text,
-      /<[a-zA-Z][a-zA-Z0-9]*>.*?<\/[a-zA-Z][a-zA-Z0-9]*>/gs,  // closed HTML tags
-      /<[a-zA-Z][a-zA-Z0-9]*>[\s\S]*$/g,                    // unclosed HTML tags
-      ""  // remove HTML tags completely
+      /<[a-zA-Z][a-zA-Z0-9]*>.*?<\/[a-zA-Z][a-zA-Z0-9]*>/gs, // closed HTML tags
+      /<[a-zA-Z][a-zA-Z0-9]*>[\s\S]*$/g, // unclosed HTML tags
+      "" // remove HTML tags completely
     );
-    
+
     // Handle self-closing HTML tags
     text = handlePatterns(
       text,
-      /<[a-zA-Z][a-zA-Z0-9]*(\/| [^>]*\/>)/g,  // complete self-closing tags
-      /<[a-zA-Z][a-zA-Z0-9]* [^>]*$/g,         // incomplete self-closing tags
+      /<[a-zA-Z][a-zA-Z0-9]*(\/| [^>]*\/>)/g, // complete self-closing tags
+      /<[a-zA-Z][a-zA-Z0-9]* [^>]*$/g, // incomplete self-closing tags
       ""
     );
 
@@ -539,7 +548,9 @@ const model = {
     // Check if text contains a table-like pattern
     if (text.includes("|")) {
       // Find consecutive lines with | characters (table rows)
-      const tableLines = text.split("\n").filter(line => line.includes("|") && line.trim().startsWith("|"));
+      const tableLines = text
+        .split("\n")
+        .filter((line) => line.includes("|") && line.trim().startsWith("|"));
       if (tableLines.length > 0) {
         // Replace each table line with a placeholder
         for (const line of tableLines) {
@@ -577,7 +588,7 @@ const model = {
 
     // Collapse multiple spaces/tabs to a single space, but preserve newlines
     text = text.replace(/[ \t]+/g, " ");
-    
+
     // Function to merge consecutive placeholders of any type
     function mergePlaceholders(txt, placeholder, replacement) {
       // Create regex for consecutive placeholders (with possible whitespace between)
@@ -589,7 +600,7 @@ const model = {
       // Replace all remaining placeholders with human-readable text
       return txt.replace(new RegExp(placeholder, "g"), replacement);
     }
-    
+
     // Apply placeholder merging for both types
     text = mergePlaceholders(text, codePlaceholder, "See code attached ...");
     text = mergePlaceholders(text, tablePlaceholder, "See table attached ...");
@@ -670,10 +681,13 @@ class MicrophoneInput {
     try {
       // get selected device from microphone settings
       const selectedDevice = microphoneSettingStore.getSelectedDevice();
-      
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          deviceId: selectedDevice && selectedDevice.deviceId ? { exact: selectedDevice.deviceId } : undefined,
+          deviceId:
+            selectedDevice && selectedDevice.deviceId
+              ? { exact: selectedDevice.deviceId }
+              : undefined,
           echoCancellation: true,
           noiseSuppression: true,
           channelCount: 1,
