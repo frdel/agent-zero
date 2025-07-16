@@ -15,7 +15,7 @@ class Input(Tool):
 
         # forward keyboard input to code execution tool
         args = {"runtime": "terminal", "code": keyboard, "session": session}
-        cet = CodeExecution(self.agent, "code_execution_tool", "", args, self.message)
+        cet = CodeExecution(self.agent, "code_execution_tool", "", args, self.message, self.loop_data)
         cet.log = self.log
         return await cet.execute(**args)
 
