@@ -121,9 +121,25 @@ PASSWORD_PLACEHOLDER = "****PSWD****"
 SETTINGS_FILE = files.get_abs_path("tmp/settings.json")
 _settings: Settings | None = None
 
+# TODO: this is temporary, will be replaced by a proper solution
+PROVIDERS: list[FieldOption] = [
+    {"value": "ANTHROPIC", "label": "Anthropic"},
+    {"value": "DEEPSEEK", "label": "DeepSeek"},
+    {"value": "GEMINI", "label": "Google"},
+    {"value": "GROQ", "label": "Groq"},
+    {"value": "HUGGINGFACE", "label": "HuggingFace"},
+    {"value": "LM_STUDIO", "label": "LM Studio"},
+    {"value": "MISTRAL", "label": "Mistral AI"},
+    {"value": "OLLAMA", "label": "Ollama"},
+    {"value": "OPENAI", "label": "OpenAI"},
+    {"value": "AZURE", "label": "OpenAI Azure"},
+    {"value": "OPENROUTER", "label": "OpenRouter"},
+    {"value": "SAMBANOVA", "label": "Sambanova"},
+    {"value": "OTHER", "label": "Other OpenAI compatible"},
+]
+
 
 def convert_out(settings: Settings) -> SettingsOutput:
-    from models import ModelProvider
     default_settings = get_default_settings()
 
     # main model section
@@ -135,7 +151,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "description": "Select provider for main chat model used by Agent Zero",
             "type": "select",
             "value": settings["chat_model_provider"],
-            "options": [{"value": p.name, "label": p.value} for p in ModelProvider],
+            "options": PROVIDERS,
         }
     )
     chat_model_fields.append(
@@ -248,7 +264,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "description": "Select provider for utility model used by the framework",
             "type": "select",
             "value": settings["util_model_provider"],
-            "options": [{"value": p.name, "label": p.value} for p in ModelProvider],
+            "options": PROVIDERS,
         }
     )
     util_model_fields.append(
@@ -328,7 +344,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "description": "Select provider for embedding model used by the framework",
             "type": "select",
             "value": settings["embed_model_provider"],
-            "options": [{"value": p.name, "label": p.value} for p in ModelProvider],
+            "options": PROVIDERS,
         }
     )
     embed_model_fields.append(
@@ -398,7 +414,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "description": "Select provider for web browser model used by <a href='https://github.com/browser-use/browser-use' target='_blank'>browser-use</a> framework",
             "type": "select",
             "value": settings["browser_model_provider"],
-            "options": [{"value": p.name, "label": p.value} for p in ModelProvider],
+            "options": PROVIDERS,
         }
     )
     browser_model_fields.append(
@@ -499,8 +515,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
     # api keys model section
     api_keys_fields: list[SettingsField] = []
 
-    for provider in ModelProvider:
-        api_keys_fields.append(_get_api_key_field(settings, provider.name.lower(), provider.value))
+    for provider in PROVIDERS:
+        api_keys_fields.append(_get_api_key_field(settings, provider["value"].lower(), provider["label"]))
 
     api_keys_section: SettingsSection = {
         "id": "api_keys",
@@ -990,11 +1006,9 @@ def _write_sensitive_settings(settings: Settings):
 
 
 def get_default_settings() -> Settings:
-    from models import ModelProvider
-
     return Settings(
         version=_get_version(),
-        chat_model_provider=ModelProvider.OPENROUTER.name,
+        chat_model_provider="OPENROUTER",
         chat_model_name="openai/gpt-4.1",
         chat_model_api_base="",
         chat_model_kwargs={"temperature": "0"},
@@ -1004,7 +1018,7 @@ def get_default_settings() -> Settings:
         chat_model_rl_requests=0,
         chat_model_rl_input=0,
         chat_model_rl_output=0,
-        util_model_provider=ModelProvider.OPENROUTER.name,
+        util_model_provider="OPENROUTER",
         util_model_name="openai/gpt-4.1-nano",
         util_model_api_base="",
         util_model_ctx_length=100000,
@@ -1013,13 +1027,13 @@ def get_default_settings() -> Settings:
         util_model_rl_requests=0,
         util_model_rl_input=0,
         util_model_rl_output=0,
-        embed_model_provider=ModelProvider.HUGGINGFACE.name,
+        embed_model_provider="HUGGINGFACE",
         embed_model_name="sentence-transformers/all-MiniLM-L6-v2",
         embed_model_api_base="",
         embed_model_kwargs={},
         embed_model_rl_requests=0,
         embed_model_rl_input=0,
-        browser_model_provider=ModelProvider.OPENROUTER.name,
+        browser_model_provider="OPENROUTER",
         browser_model_name="openai/gpt-4.1",
         browser_model_api_base="",
         browser_model_vision=True,

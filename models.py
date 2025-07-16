@@ -58,26 +58,10 @@ class ModelType(Enum):
     EMBEDDING = "Embedding"
 
 
-class ModelProvider(Enum):
-    ANTHROPIC = "Anthropic"
-    DEEPSEEK = "DeepSeek"
-    GEMINI = "Google"
-    GROQ = "Groq"
-    HUGGINGFACE = "HuggingFace"
-    LM_STUDIO = "LM Studio"
-    MISTRAL = "Mistral AI"
-    OLLAMA = "Ollama"
-    OPENAI = "OpenAI"
-    AZURE = "OpenAI Azure"
-    OPENROUTER = "OpenRouter"
-    SAMBANOVA = "Sambanova"
-    OTHER = "Other OpenAI compatible"
-
-
 @dataclass
 class ModelConfig:
     type: ModelType
-    provider: ModelProvider
+    provider: str
     name: str
     api_base: str = ""
     ctx_length: int = 0
@@ -114,9 +98,9 @@ def get_api_key(service: str) -> str:
 
 
 def get_rate_limiter(
-    provider: ModelProvider, name: str, requests: int, input: int, output: int
+    provider: str, name: str, requests: int, input: int, output: int
 ) -> RateLimiter:
-    key = f"{provider.name}\\{name}"
+    key = f"{provider}\\{name}"
     rate_limiters[key] = limiter = rate_limiters.get(key, RateLimiter(seconds=60))
     limiter.limits["requests"] = requests or 0
     limiter.limits["input"] = input or 0
@@ -467,8 +451,8 @@ def _adjust_call_args(provider_name: str, model_name: str, kwargs: dict):
     return provider_name, model_name, kwargs
 
 
-def get_model(type: ModelType, provider: ModelProvider, name: str, **kwargs: Any):
-    provider_name = provider.name.lower()
+def get_model(type: ModelType, provider: str, name: str, **kwargs: Any):
+    provider_name = provider.lower()
     if type == ModelType.CHAT:
         return _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
     elif type == ModelType.EMBEDDING:
@@ -478,17 +462,17 @@ def get_model(type: ModelType, provider: ModelProvider, name: str, **kwargs: Any
 
 
 def get_chat_model(
-    provider: ModelProvider, name: str, **kwargs: Any
+    provider: str, name: str, **kwargs: Any
 ) -> LiteLLMChatWrapper:
-    provider_name = provider.name.lower()
+    provider_name = provider.lower()
     model = _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
     return model
 
 
 def get_browser_model(
-    provider: ModelProvider, name: str, **kwargs: Any
+    provider: str, name: str, **kwargs: Any
 ) -> BrowserCompatibleChatWrapper:
-    provider_name = provider.name.lower()
+    provider_name = provider.lower()
     model = _get_litellm_chat(
         BrowserCompatibleChatWrapper, name, provider_name, **kwargs
     )
@@ -496,8 +480,8 @@ def get_browser_model(
 
 
 def get_embedding_model(
-    provider: ModelProvider, name: str, **kwargs: Any
+    provider: str, name: str, **kwargs: Any
 ) -> LiteLLMEmbeddingWrapper | LocalSentenceTransformerWrapper:
-    provider_name = provider.name.lower()
+    provider_name = provider.lower()
     model = _get_litellm_embedding(name, provider_name, **kwargs)
     return model

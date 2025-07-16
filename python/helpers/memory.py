@@ -129,7 +129,7 @@ class Memory:
             **model_config.build_kwargs(),
         )
         embeddings_model_id = files.safe_file_name(
-            model_config.provider.name + "_" + model_config.name
+            model_config.provider + "_" + model_config.name
         )
 
         # here we setup the embeddings model with the chosen cache storage
@@ -160,7 +160,7 @@ class Memory:
             if files.exists(emb_set_file):
                 embedding_set = json.loads(files.read_file(emb_set_file))
                 if (
-                    embedding_set["model_provider"] == model_config.provider.name
+                    embedding_set["model_provider"] == model_config.provider
                     and embedding_set["model_name"] == model_config.name
                 ):
                     # model matches
@@ -200,7 +200,7 @@ class Memory:
                 meta_file_path,
                 json.dumps(
                     {
-                        "model_provider": model_config.provider.name,
+                        "model_provider": model_config.provider,
                         "model_name": model_config.name,
                     }
                 ),
