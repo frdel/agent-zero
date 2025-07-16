@@ -4,12 +4,13 @@ import json
 import os
 import re
 import subprocess
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, TypedDict, cast
 
 import models
 from python.helpers import runtime, whisper, defer, git
 from . import files, dotenv
 from python.helpers.print_style import PrintStyle
+from python.helpers.providers import get_providers
 
 
 class Settings(TypedDict):
@@ -121,22 +122,6 @@ PASSWORD_PLACEHOLDER = "****PSWD****"
 SETTINGS_FILE = files.get_abs_path("tmp/settings.json")
 _settings: Settings | None = None
 
-# TODO: this is temporary, will be replaced by a proper solution
-PROVIDERS: list[FieldOption] = [
-    {"value": "ANTHROPIC", "label": "Anthropic"},
-    {"value": "DEEPSEEK", "label": "DeepSeek"},
-    {"value": "GEMINI", "label": "Google"},
-    {"value": "GROQ", "label": "Groq"},
-    {"value": "HUGGINGFACE", "label": "HuggingFace"},
-    {"value": "LM_STUDIO", "label": "LM Studio"},
-    {"value": "MISTRAL", "label": "Mistral AI"},
-    {"value": "OLLAMA", "label": "Ollama"},
-    {"value": "OPENAI", "label": "OpenAI"},
-    {"value": "AZURE", "label": "OpenAI Azure"},
-    {"value": "OPENROUTER", "label": "OpenRouter"},
-    {"value": "SAMBANOVA", "label": "Sambanova"},
-    {"value": "OTHER", "label": "Other OpenAI compatible"},
-]
 
 
 def convert_out(settings: Settings) -> SettingsOutput:
@@ -151,7 +136,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "description": "Select provider for main chat model used by Agent Zero",
             "type": "select",
             "value": settings["chat_model_provider"],
-            "options": PROVIDERS,
+            "options": cast(list[FieldOption], get_providers("chat")),
         }
     )
     chat_model_fields.append(
@@ -264,7 +249,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "description": "Select provider for utility model used by the framework",
             "type": "select",
             "value": settings["util_model_provider"],
-            "options": PROVIDERS,
+            "options": cast(list[FieldOption], get_providers("chat")),
         }
     )
     util_model_fields.append(
@@ -344,7 +329,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "description": "Select provider for embedding model used by the framework",
             "type": "select",
             "value": settings["embed_model_provider"],
-            "options": PROVIDERS,
+            "options": cast(list[FieldOption], get_providers("embedding")),
         }
     )
     embed_model_fields.append(
@@ -414,7 +399,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "description": "Select provider for web browser model used by <a href='https://github.com/browser-use/browser-use' target='_blank'>browser-use</a> framework",
             "type": "select",
             "value": settings["browser_model_provider"],
-            "options": PROVIDERS,
+            "options": cast(list[FieldOption], get_providers("chat")),
         }
     )
     browser_model_fields.append(
@@ -515,7 +500,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     # api keys model section
     api_keys_fields: list[SettingsField] = []
 
-    for provider in PROVIDERS:
+    for provider in get_providers("chat"):
         api_keys_fields.append(_get_api_key_field(settings, provider["value"].lower(), provider["label"]))
 
     api_keys_section: SettingsSection = {

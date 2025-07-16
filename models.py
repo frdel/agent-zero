@@ -19,6 +19,7 @@ import litellm
 
 from python.helpers import dotenv
 from python.helpers.dotenv import load_dotenv
+from python.helpers.providers import get_provider_config
 from python.helpers.rate_limiter import RateLimiter
 from python.helpers.tokens import approximate_tokens
 
@@ -448,6 +449,17 @@ def _adjust_call_args(provider_name: str, model_name: str, kwargs: dict):
     if provider_name == "other":
         provider_name = "openai"
 
+    # Treat unknown providers that expose a custom OpenAI-compatible endpoint
+    # (i.e. they pass an `api_base` URL) as generic OpenAI providers so that
+    # LiteLLM can route the call correctly. This keeps dedicated providers
+    # such as Azure and OpenRouter unchanged.
+    if kwargs.get("api_base") and provider_name not in (
+        "openai",
+        "azure",
+        "openrouter",
+    ):
+        provider_name = "openai"
+
     return provider_name, model_name, kwargs
 
 
@@ -465,6 +477,14 @@ def get_chat_model(
     provider: str, name: str, **kwargs: Any
 ) -> LiteLLMChatWrapper:
     provider_name = provider.lower()
+
+    # Merge provider-specific defaults from configuration file
+    cfg = get_provider_config("chat", provider_name)
+    if cfg:
+        extra = {k: v for k, v in cfg.items() if k not in ("id", "name", "value")}
+        for k, v in extra.items():
+            kwargs.setdefault(k, v)
+
     model = _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
     return model
 
@@ -473,6 +493,13 @@ def get_browser_model(
     provider: str, name: str, **kwargs: Any
 ) -> BrowserCompatibleChatWrapper:
     provider_name = provider.lower()
+
+    cfg = get_provider_config("chat", provider_name)
+    if cfg:
+        extra = {k: v for k, v in cfg.items() if k not in ("id", "name", "value")}
+        for k, v in extra.items():
+            kwargs.setdefault(k, v)
+
     model = _get_litellm_chat(
         BrowserCompatibleChatWrapper, name, provider_name, **kwargs
     )
@@ -483,5 +510,12 @@ def get_embedding_model(
     provider: str, name: str, **kwargs: Any
 ) -> LiteLLMEmbeddingWrapper | LocalSentenceTransformerWrapper:
     provider_name = provider.lower()
+
+    cfg = get_provider_config("embedding", provider_name)
+    if cfg:
+        extra = {k: v for k, v in cfg.items() if k not in ("id", "name", "value")}
+        for k, v in extra.items():
+            kwargs.setdefault(k, v)
+
     model = _get_litellm_embedding(name, provider_name, **kwargs)
     return model

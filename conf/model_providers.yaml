@@ -1,0 +1,55 @@
+# Supported model providers for Agent Zero
+# ---------------------------------------
+# Each entry must contain:
+#   id        – identifier used in settings (lower-case, no spaces)
+#   name      – human readable name
+# Optional extra parameters are accepted (api_base, kwargs …)
+# Chat-capable and embedding-capable providers are listed separately as not every
+# provider exposes both kinds of models.
+
+chat:
+  - id: anthropic
+    name: Anthropic
+  - id: deepseek
+    name: DeepSeek
+  - id: gemini
+    name: Google
+  - id: groq
+    name: Groq
+  - id: huggingface
+    name: HuggingFace
+  - id: lm_studio
+    name: LM Studio
+  - id: mistral
+    name: Mistral AI
+  - id: ollama
+    name: Ollama
+  - id: openai
+    name: OpenAI
+  - id: azure
+    name: OpenAI Azure
+  - id: openrouter
+    name: OpenRouter
+  - id: sambanova
+    name: Sambanova
+  - id: venice
+    name: Venice
+    api_base: https://api.venice.ai/api/v1
+  - id: other
+    name: Other OpenAI compatible
+
+embedding:
+  - id: huggingface
+    name: HuggingFace
+  - id: mistral
+    name: Mistral AI
+  - id: lm_studio
+    name: LM Studio
+  - id: ollama
+    name: Ollama
+  - id: openai
+    name: OpenAI
+  - id: azure
+    name: OpenAI Azure
+  - id: other
+    name: Other OpenAI compatible
