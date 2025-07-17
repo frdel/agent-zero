@@ -19,6 +19,7 @@ import litellm
 
 from python.helpers import dotenv
 from python.helpers.dotenv import load_dotenv
+from python.helpers.providers import get_provider_config
 from python.helpers.rate_limiter import RateLimiter
 from python.helpers.tokens import approximate_tokens
 
@@ -58,26 +59,10 @@ class ModelType(Enum):
     EMBEDDING = "Embedding"
 
 
-class ModelProvider(Enum):
-    ANTHROPIC = "Anthropic"
-    DEEPSEEK = "DeepSeek"
-    GEMINI = "Google"
-    GROQ = "Groq"
-    HUGGINGFACE = "HuggingFace"
-    LM_STUDIO = "LM Studio"
-    MISTRAL = "Mistral AI"
-    OLLAMA = "Ollama"
-    OPENAI = "OpenAI"
-    AZURE = "OpenAI Azure"
-    OPENROUTER = "OpenRouter"
-    SAMBANOVA = "Sambanova"
-    OTHER = "Other OpenAI compatible"
-
-
 @dataclass
 class ModelConfig:
     type: ModelType
-    provider: ModelProvider
+    provider: str
     name: str
     api_base: str = ""
     ctx_length: int = 0
@@ -114,9 +99,9 @@ def get_api_key(service: str) -> str:
 
 
 def get_rate_limiter(
-    provider: ModelProvider, name: str, requests: int, input: int, output: int
+    provider: str, name: str, requests: int, input: int, output: int
 ) -> RateLimiter:
-    key = f"{provider.name}\\{name}"
+    key = f"{provider}\\{name}"
     rate_limiters[key] = limiter = rate_limiters.get(key, RateLimiter(seconds=60))
     limiter.limits["requests"] = requests or 0
     limiter.limits["input"] = input or 0
@@ -366,6 +351,9 @@ class LocalSentenceTransformerWrapper(Embeddings):
     """Local wrapper for sentence-transformers models to avoid HuggingFace API calls"""
 
     def __init__(self, provider: str, model: str, **kwargs: Any):
+        # Clean common user-input mistakes
+        model = model.strip().strip('"').strip("'")
+
         # Remove the "sentence-transformers/" prefix if present
         if model.startswith("sentence-transformers/"):
             model = model[len("sentence-transformers/") :]
@@ -467,8 +455,36 @@ def _adjust_call_args(provider_name: str, model_name: str, kwargs: dict):
     return provider_name, model_name, kwargs
 
 
-def get_model(type: ModelType, provider: ModelProvider, name: str, **kwargs: Any):
-    provider_name = provider.name.lower()
+def _merge_provider_defaults(
+    provider_type: str, original_provider: str, kwargs: dict
+) -> tuple[str, dict]:
+    provider_name = original_provider  # default: unchanged
+    cfg = get_provider_config(provider_type, original_provider)
+    if cfg:
+        provider_name = cfg.get("litellm_provider", original_provider).lower()
+
+        # Extra arguments nested under `kwargs` for readability
+        extra_kwargs = cfg.get("kwargs") if isinstance(cfg, dict) else None  # type: ignore[arg-type]
+        if isinstance(extra_kwargs, dict):
+            for k, v in extra_kwargs.items():
+                kwargs.setdefault(k, v)
+
+        # Copy any additional top-level fields except metadata keys
+        for k, v in cfg.items():
+            if k not in ("id", "name", "value", "litellm_provider", "kwargs"):
+                kwargs.setdefault(k, v)
+
+    # Inject API key based on the *original* provider id if still missing
+    if "api_key" not in kwargs:
+        key = get_api_key(original_provider)
+        if key and key not in ("None", "NA"):
+            kwargs["api_key"] = key
+
+    return provider_name, kwargs
+
+
+def get_model(type: ModelType, provider: str, name: str, **kwargs: Any):
+    provider_name = provider.lower()
     if type == ModelType.CHAT:
         return _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
     elif type == ModelType.EMBEDDING:
@@ -478,26 +494,24 @@ def get_model(type: ModelType, provider: ModelProvider, name: str, **kwargs: Any
 
 
 def get_chat_model(
-    provider: ModelProvider, name: str, **kwargs: Any
+    provider: str, name: str, **kwargs: Any
 ) -> LiteLLMChatWrapper:
-    provider_name = provider.name.lower()
-    model = _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
-    return model
+    orig = provider.lower()
+    provider_name, kwargs = _merge_provider_defaults("chat", orig, kwargs)
+    return _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
 
 
 def get_browser_model(
-    provider: ModelProvider, name: str, **kwargs: Any
+    provider: str, name: str, **kwargs: Any
 ) -> BrowserCompatibleChatWrapper:
-    provider_name = provider.name.lower()
-    model = _get_litellm_chat(
-        BrowserCompatibleChatWrapper, name, provider_name, **kwargs
-    )
-    return model
+    orig = provider.lower()
+    provider_name, kwargs = _merge_provider_defaults("chat", orig, kwargs)
+    return _get_litellm_chat(BrowserCompatibleChatWrapper, name, provider_name, **kwargs)
 
 
 def get_embedding_model(
-    provider: ModelProvider, name: str, **kwargs: Any
+    provider: str, name: str, **kwargs: Any
 ) -> LiteLLMEmbeddingWrapper | LocalSentenceTransformerWrapper:
-    provider_name = provider.name.lower()
-    model = _get_litellm_embedding(name, provider_name, **kwargs)
-    return model
+    orig = provider.lower()
+    provider_name, kwargs = _merge_provider_defaults("embedding", orig, kwargs)
+    return _get_litellm_embedding(name, provider_name, **kwargs)
