@@ -24,20 +24,45 @@ class ProviderManager:
             self._load_providers()
 
     def _load_providers(self):
-        """Loads provider configurations from the YAML file."""
+        """Loads provider configurations from the YAML file and normalises them."""
         try:
             config_path = files.get_abs_path("conf/model_providers.yaml")
             with open(config_path, "r", encoding="utf-8") as f:
-                self._raw = yaml.safe_load(f) or {}
+                raw_yaml = yaml.safe_load(f) or {}
         except (FileNotFoundError, yaml.YAMLError):
-            self._raw = {}
+            raw_yaml = {}
 
-        # Build UI option lists (value / label) from raw data
+        # ------------------------------------------------------------
+        # Normalise the YAML so that internally we always work with a
+        # list-of-dicts [{id, name, ...}] for each provider type.  This
+        # keeps existing callers unchanged while allowing the new nested
+        # mapping format in the YAML (id -> { ... }).
+        # ------------------------------------------------------------
+        normalised: Dict[str, List[Dict[str, str]]] = {}
+
+        for p_type, providers in (raw_yaml or {}).items():
+            items: List[Dict[str, str]] = []
+
+            if isinstance(providers, dict):
+                # New format: mapping of id -> config
+                for pid, cfg in providers.items():
+                    entry = {"id": pid, **(cfg or {})}
+                    items.append(entry)
+            elif isinstance(providers, list):
+                # Legacy list format – use as-is
+                items.extend(providers or [])
+
+            normalised[p_type] = items
+
+        # Save raw
+        self._raw = normalised
+
+        # Build UI-friendly option list (value / label)
         self._options = {}
-        for p_type, providers in (self._raw or {}).items():
+        for p_type, providers in normalised.items():
             opts: List[FieldOption] = []
-            for p in providers or []:
-                pid = (p.get("id") or p.get("value") or "").upper()
+            for p in providers:
+                pid = (p.get("id") or p.get("value") or "").lower()
                 name = p.get("name") or p.get("label") or pid
                 if pid:
                     opts.append({"value": pid, "label": name})

@@ -500,8 +500,17 @@ def convert_out(settings: Settings) -> SettingsOutput:
     # api keys model section
     api_keys_fields: list[SettingsField] = []
 
-    for provider in get_providers("chat"):
-        api_keys_fields.append(_get_api_key_field(settings, provider["value"].lower(), provider["label"]))
+    # Collect unique providers from both chat and embedding sections
+    providers_seen: set[str] = set()
+    for p_type in ("chat", "embedding"):
+        for provider in get_providers(p_type):
+            pid_lower = provider["value"].lower()
+            if pid_lower in providers_seen:
+                continue
+            providers_seen.add(pid_lower)
+            api_keys_fields.append(
+                _get_api_key_field(settings, pid_lower, provider["label"])
+            )
 
     api_keys_section: SettingsSection = {
         "id": "api_keys",
@@ -993,7 +1002,7 @@ def _write_sensitive_settings(settings: Settings):
 def get_default_settings() -> Settings:
     return Settings(
         version=_get_version(),
-        chat_model_provider="OPENROUTER",
+        chat_model_provider="openrouter",
         chat_model_name="openai/gpt-4.1",
         chat_model_api_base="",
         chat_model_kwargs={"temperature": "0"},
@@ -1003,7 +1012,7 @@ def get_default_settings() -> Settings:
         chat_model_rl_requests=0,
         chat_model_rl_input=0,
         chat_model_rl_output=0,
-        util_model_provider="OPENROUTER",
+        util_model_provider="openrouter",
         util_model_name="openai/gpt-4.1-nano",
         util_model_api_base="",
         util_model_ctx_length=100000,
@@ -1012,13 +1021,13 @@ def get_default_settings() -> Settings:
         util_model_rl_requests=0,
         util_model_rl_input=0,
         util_model_rl_output=0,
-        embed_model_provider="HUGGINGFACE",
+        embed_model_provider="huggingface",
         embed_model_name="sentence-transformers/all-MiniLM-L6-v2",
         embed_model_api_base="",
         embed_model_kwargs={},
         embed_model_rl_requests=0,
         embed_model_rl_input=0,
-        browser_model_provider="OPENROUTER",
+        browser_model_provider="openrouter",
         browser_model_name="openai/gpt-4.1",
         browser_model_api_base="",
         browser_model_vision=True,

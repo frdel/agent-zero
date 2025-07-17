@@ -1,55 +1,90 @@
 # Supported model providers for Agent Zero
 # ---------------------------------------
-# Each entry must contain:
-#   id        – identifier used in settings (lower-case, no spaces)
-#   name      – human readable name
-# Optional extra parameters are accepted (api_base, kwargs …)
-# Chat-capable and embedding-capable providers are listed separately as not every
-# provider exposes both kinds of models.
+#
+# Each provider type ("chat", "embedding") contains a mapping of provider IDs
+# to their configurations.
+#
+# The provider ID (e.g., "anthropic") is used:
+#  - in the settings UI dropdowns.
+#  - to construct the environment variable for the API key (e.g., ANTHROPIC_API_KEY).
+#
+# Each provider configuration requires:
+#   name:             Human-readable name for the UI.
+#   litellm_provider: The corresponding provider name in LiteLLM.
+#
+# Optional fields:
+#   kwargs:           A dictionary of extra parameters to pass to LiteLLM.
+#                     This is useful for `api_base`, `extra_headers`, etc.
 
 chat:
-  - id: anthropic
+  anthropic:
     name: Anthropic
-  - id: deepseek
+    litellm_provider: anthropic
+  deepseek:
     name: DeepSeek
-  - id: gemini
+    litellm_provider: deepseek
+  gemini:
     name: Google
-  - id: groq
+    litellm_provider: gemini
+  groq:
     name: Groq
-  - id: huggingface
+    litellm_provider: groq
+  huggingface:
     name: HuggingFace
-  - id: lm_studio
+    litellm_provider: huggingface
+  lm_studio:
     name: LM Studio
-  - id: mistral
+    litellm_provider: lm_studio
+  mistral:
     name: Mistral AI
-  - id: ollama
+    litellm_provider: mistral
+  ollama:
     name: Ollama
-  - id: openai
+    litellm_provider: ollama
+  openai:
     name: OpenAI
-  - id: azure
+    litellm_provider: openai
+  azure:
     name: OpenAI Azure
-  - id: openrouter
+    litellm_provider: azure
+  openrouter:
     name: OpenRouter
-  - id: sambanova
+    litellm_provider: openrouter
+    kwargs:
+      extra_headers:
+        "HTTP-Referer": "https://agent-zero.ai/"
+        "X-Title": "Agent Zero"
+  sambanova:
     name: Sambanova
-  - id: venice
+    litellm_provider: sambanova
+  venice:
     name: Venice
-    api_base: https://api.venice.ai/api/v1
-  - id: other
+    litellm_provider: openai
+    kwargs:
+      api_base: https://api.venice.ai/api/v1
+  other:
     name: Other OpenAI compatible
+    litellm_provider: openai
 
 embedding:
-  - id: huggingface
+  huggingface:
     name: HuggingFace
-  - id: mistral
-    name: Mistral AI
-  - id: lm_studio
+    litellm_provider: huggingface
+  lm_studio:
     name: LM Studio
-  - id: ollama
+    litellm_provider: lm_studio
+  mistral:
+    name: Mistral AI
+    litellm_provider: mistral
+  ollama:
     name: Ollama
-  - id: openai
+    litellm_provider: ollama
+  openai:
     name: OpenAI
-  - id: azure
+    litellm_provider: openai
+  azure:
     name: OpenAI Azure
-  - id: other
+    litellm_provider: azure
+  other:
     name: Other OpenAI compatible
+    litellm_provider: openai

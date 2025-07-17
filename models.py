@@ -351,6 +351,9 @@ class LocalSentenceTransformerWrapper(Embeddings):
     """Local wrapper for sentence-transformers models to avoid HuggingFace API calls"""
 
     def __init__(self, provider: str, model: str, **kwargs: Any):
+        # Clean common user-input mistakes
+        model = model.strip().strip('"').strip("'")
+
         # Remove the "sentence-transformers/" prefix if present
         if model.startswith("sentence-transformers/"):
             model = model[len("sentence-transformers/") :]
@@ -449,18 +452,35 @@ def _adjust_call_args(provider_name: str, model_name: str, kwargs: dict):
     if provider_name == "other":
         provider_name = "openai"
 
-    # Treat unknown providers that expose a custom OpenAI-compatible endpoint
-    # (i.e. they pass an `api_base` URL) as generic OpenAI providers so that
-    # LiteLLM can route the call correctly. This keeps dedicated providers
-    # such as Azure and OpenRouter unchanged.
-    if kwargs.get("api_base") and provider_name not in (
-        "openai",
-        "azure",
-        "openrouter",
-    ):
-        provider_name = "openai"
-
     return provider_name, model_name, kwargs
+
+
+def _merge_provider_defaults(
+    provider_type: str, original_provider: str, kwargs: dict
+) -> tuple[str, dict]:
+    provider_name = original_provider  # default: unchanged
+    cfg = get_provider_config(provider_type, original_provider)
+    if cfg:
+        provider_name = cfg.get("litellm_provider", original_provider).lower()
+
+        # Extra arguments nested under `kwargs` for readability
+        extra_kwargs = cfg.get("kwargs") if isinstance(cfg, dict) else None  # type: ignore[arg-type]
+        if isinstance(extra_kwargs, dict):
+            for k, v in extra_kwargs.items():
+                kwargs.setdefault(k, v)
+
+        # Copy any additional top-level fields except metadata keys
+        for k, v in cfg.items():
+            if k not in ("id", "name", "value", "litellm_provider", "kwargs"):
+                kwargs.setdefault(k, v)
+
+    # Inject API key based on the *original* provider id if still missing
+    if "api_key" not in kwargs:
+        key = get_api_key(original_provider)
+        if key and key not in ("None", "NA"):
+            kwargs["api_key"] = key
+
+    return provider_name, kwargs
 
 
 def get_model(type: ModelType, provider: str, name: str, **kwargs: Any):
@@ -476,46 +496,22 @@ def get_model(type: ModelType, provider: str, name: str, **kwargs: Any):
 def get_chat_model(
     provider: str, name: str, **kwargs: Any
 ) -> LiteLLMChatWrapper:
-    provider_name = provider.lower()
-
-    # Merge provider-specific defaults from configuration file
-    cfg = get_provider_config("chat", provider_name)
-    if cfg:
-        extra = {k: v for k, v in cfg.items() if k not in ("id", "name", "value")}
-        for k, v in extra.items():
-            kwargs.setdefault(k, v)
-
-    model = _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
-    return model
+    orig = provider.lower()
+    provider_name, kwargs = _merge_provider_defaults("chat", orig, kwargs)
+    return _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
 
 
 def get_browser_model(
     provider: str, name: str, **kwargs: Any
 ) -> BrowserCompatibleChatWrapper:
-    provider_name = provider.lower()
-
-    cfg = get_provider_config("chat", provider_name)
-    if cfg:
-        extra = {k: v for k, v in cfg.items() if k not in ("id", "name", "value")}
-        for k, v in extra.items():
-            kwargs.setdefault(k, v)
-
-    model = _get_litellm_chat(
-        BrowserCompatibleChatWrapper, name, provider_name, **kwargs
-    )
-    return model
+    orig = provider.lower()
+    provider_name, kwargs = _merge_provider_defaults("chat", orig, kwargs)
+    return _get_litellm_chat(BrowserCompatibleChatWrapper, name, provider_name, **kwargs)
 
 
 def get_embedding_model(
     provider: str, name: str, **kwargs: Any
 ) -> LiteLLMEmbeddingWrapper | LocalSentenceTransformerWrapper:
-    provider_name = provider.lower()
-
-    cfg = get_provider_config("embedding", provider_name)
-    if cfg:
-        extra = {k: v for k, v in cfg.items() if k not in ("id", "name", "value")}
-        for k, v in extra.items():
-            kwargs.setdefault(k, v)
-
-    model = _get_litellm_embedding(name, provider_name, **kwargs)
-    return model
+    orig = provider.lower()
+    provider_name, kwargs = _merge_provider_defaults("embedding", orig, kwargs)
+    return _get_litellm_embedding(name, provider_name, **kwargs)
