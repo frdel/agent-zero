@@ -9,10 +9,10 @@ docker build -t agent-zero-base:local --no-cache  .
 docker login
 
 # with cache
-docker buildx build -t frdel/agent-zero-base:latest --platform linux/amd64,linux/arm64 --push --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
+docker buildx build -t agent0ai/agent-zero-base:latest --platform linux/amd64,linux/arm64 --push --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
 
 # without cache
-docker buildx build -t frdel/agent-zero-base:latest --platform linux/amd64,linux/arm64 --push --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) --no-cache .
+docker buildx build -t agent0ai/agent-zero-base:latest --platform linux/amd64,linux/arm64 --push --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) --no-cache .
 
 # plain output
 --progress=plain
