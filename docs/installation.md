@@ -58,10 +58,10 @@ The following user guide provides instructions for installing and running Agent 
 
 2. **Run Agent Zero:**
 
-- Note: Agent Zero also offers a Hacking Edition based on Kali linux with modified prompts for cybersecurity tasks. The setup is the same as the regular version, just use the frdel/agent-zero-run:hacking image instead of frdel/agent-zero-run.
+- Note: Agent Zero also offers a Hacking Edition based on Kali linux with modified prompts for cybersecurity tasks. The setup is the same as the regular version, just use the agent0ai/agent-zero:hacking image instead of agent0ai/agent-zero.
 
 2.1. Pull the Agent Zero Docker image:
-- Search for `frdel/agent-zero-run` in Docker Desktop
+- Search for `agent0ai/agent-zero` in Docker Desktop
 - Click the `Pull` button
 - The image will be downloaded to your machine in a few minutes
 
@@ -71,7 +71,7 @@ The following user guide provides instructions for installing and running Agent 
 > Alternatively, run the following command in your terminal:
 >
 > ```bash
-> docker pull frdel/agent-zero-run
+> docker pull agent0ai/agent-zero
 > ```
 
 2.2. Create a data directory for persistence:
@@ -92,7 +92,7 @@ The following user guide provides instructions for installing and running Agent 
 
 2.3. Run the container:
 - In Docker Desktop, go back to the "Images" tab
-- Click the `Run` button next to the `frdel/agent-zero-run` image
+- Click the `Run` button next to the `agent0ai/agent-zero` image
 - Open the "Optional settings" menu
 - Set the port to `0` in the second "Host port" field (for automatic port assignment)
 
@@ -111,7 +111,7 @@ Optionally you can map local folders for file persistence:
 > [!TIP]
 > Alternatively, run the following command in your terminal:
 > ```bash
-> docker run -p $PORT:80 -v /path/to/your/data:/a0 frdel/agent-zero-run
+> docker run -p $PORT:80 -v /path/to/your/data:/a0 agent0ai/agent-zero
 > ```
 > - Replace `$PORT` with the port you want to use (e.g., `50080`)
 > - Replace `/path/to/your/data` with your chosen directory path
@@ -315,7 +315,7 @@ For developers or users who need to run Agent Zero directly on their system,see 
 2. **Update Process (Docker Desktop)**
 - Go to Docker Desktop and stop the container from the "Containers" tab
 - Right-click and select "Remove" to remove the container
-- Go to "Images" tab and remove the `frdel/agent-zero-run` image or click the three dots to pull the difference and update the Docker image.
+- Go to "Images" tab and remove the `agent0ai/agent-zero` image or click the three dots to pull the difference and update the Docker image.
 
 ![docker delete image](res/setup/docker-delete-image-1.png)
 
@@ -338,13 +338,13 @@ For developers or users who need to run Agent Zero directly on their system,see 
 > docker rm agent-zero
 >
 > # Remove the old image
-> docker rmi frdel/agent-zero-run
+> docker rmi agent0ai/agent-zero
 >
 > # Pull the latest image
-> docker pull frdel/agent-zero-run
+> docker pull agent0ai/agent-zero
 >
 > # Run new container with the same volume mount
-> docker run -p $PORT:80 -v /path/to/your/data:/a0 frdel/agent-zero-run
+> docker run -p $PORT:80 -v /path/to/your/data:/a0 agent0ai/agent-zero
 > ```
 
 3. **Full Binaries**
@@ -403,9 +403,9 @@ For developers or users who need to run Agent Zero directly on their system,see 
 
 
 ## 2. Download Agent Zero
-- You can clone the Agent Zero repository (https://github.com/frdel/agent-zero) from GitHub if you know how to use Git. In this tutorial I will just show how to download the files.
+- You can clone the Agent Zero repository (https://github.com/agent0ai/agent-zero) from GitHub if you know how to use Git. In this tutorial I will just show how to download the files.
 
-1. Go to the Agent Zero releases [here](https://github.com/frdel/agent-zero/releases).
+1. Go to the Agent Zero releases [here](https://github.com/agent0ai/agent-zero/releases).
 2. The latest release is on the top of the list, click the "Source Code (zip)" button under "Assets" to download it.
 
 <img src="res/setup/image-14-u.png" alt="agent zero download" width="500"/>

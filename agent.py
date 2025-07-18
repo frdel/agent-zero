@@ -215,7 +215,7 @@ class AgentConfig:
     knowledge_subdirs: list[str] = field(default_factory=lambda: ["default", "custom"])
     code_exec_docker_enabled: bool = False
     code_exec_docker_name: str = "A0-dev"
-    code_exec_docker_image: str = "frdel/agent-zero-run:development"
+    code_exec_docker_image: str = "agent0ai/agent-zero-run:development"
     code_exec_docker_ports: dict[str, int] = field(
         default_factory=lambda: {"22/tcp": 55022, "80/tcp": 55080}
     )

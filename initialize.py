@@ -81,7 +81,7 @@ def initialize_agent():
         mcp_servers=current_settings["mcp_servers"],
         code_exec_docker_enabled=False,
         # code_exec_docker_name = "A0-dev",
-        # code_exec_docker_image = "frdel/agent-zero-run:development",
+        # code_exec_docker_image = "agent0ai/agent-zero:development",
         # code_exec_docker_ports = { "22/tcp": 55022, "80/tcp": 55080 }
         # code_exec_docker_volumes = {
         # files.get_base_dir(): {"bind": "/a0", "mode": "rw"},
