@@ -17,9 +17,13 @@
 
 <div align="center">
 
-> ### 📢 **NEWS: Agent Zero now includes MCP Server & Client functionality!** 📢
->
-> Agent Zero can now act as an MCP Server for other LLM tools and use external MCP servers as tools
+> ### 🚨 **IMPORTANT ANNOUNCEMENT** 🚨
+
+The original GitHub and DockerHub repositories for Agent Zero have been transferred to a new namespace:
+
+- **GitHub & DockerHub:** `agent0ai/agent-zero`
+
+From now on, please use this name for both `git clone` and `docker pull` commands.
 
 </div>
 
