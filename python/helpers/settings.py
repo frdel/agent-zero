@@ -1186,6 +1186,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             speech_section,
             api_keys_section,
             auth_section,
+            secrets_section,
             mcp_client_section,
             mcp_server_section,
             a2a_section,
