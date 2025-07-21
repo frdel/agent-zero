@@ -11,6 +11,7 @@ from python.helpers import runtime, whisper, defer, git
 from . import files, dotenv
 from python.helpers.print_style import PrintStyle
 from python.helpers.providers import get_providers
+from python.helpers.secrets import SecretsManager
 
 
 class Settings(TypedDict):
@@ -99,7 +100,7 @@ class Settings(TypedDict):
 
     a2a_server_enabled: bool
     
-
+    secrets: str
 
 class PartialSettings(Settings, total=False):
     pass
@@ -131,6 +132,7 @@ class SettingsField(TypedDict, total=False):
     step: float
     hidden: bool
     options: list[FieldOption]
+    has_expired_button: bool
 
 
 class SettingsSection(TypedDict, total=False):
@@ -1033,6 +1035,36 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "tab": "mcp",
     }
 
+   # Secrets section
+    secrets_fields: list[SettingsField] = []
+
+    secrets_manager = SecretsManager.get_instance()
+    current_secrets = ""
+    try:
+        with open(secrets_manager.secrets_file_path, 'r') as f:
+            current_secrets = f.read()
+    except FileNotFoundError:
+        current_secrets = ""
+
+    masked_secrets = secrets_manager.get_masked_content(current_secrets) if current_secrets else ""
+
+    secrets_fields.append({
+        "id": "secrets",
+        "title": "Secrets Store",
+        "description": "Store secrets and credentials in .env format. Use placeholders like §§MY_SECRET§§ in agent responses. Values are shown as *** for security. To update a secret, enter the real value - existing secrets with *** will be preserved.",
+        "type": "textarea",
+        "value": masked_secrets,
+        "has_expand_button": True,  # Add flag to indicate this field should have an expand button
+    })
+
+    secrets_section: SettingsSection = {
+        "id": "secrets",
+        "title": "Secrets Management",
+        "description": "Manage secrets and credentials that agents can reference without exposing values in chat history.",
+        "fields": secrets_fields,
+        "tab": "external",
+    }
+
     mcp_server_fields: list[SettingsField] = []
 
     mcp_server_fields.append(
@@ -1193,10 +1225,43 @@ def convert_in(settings: dict) -> Settings:
                         current[field["id"]] = _env_to_dict(field["value"])
                     elif field["id"].startswith("api_key_"):
                         current["api_keys"][field["id"]] = field["value"]
+                    elif field["id"] == "secrets":
+                        # Handle secrets separately - save to secrets file
+                        secrets_manager = SecretsManager.get_instance()
+
+                        # Check if the submitted content contains masked values (***) 
+                        # If so, preserve existing secrets instead of overwriting with ***
+                        submitted_content = field["value"]
+                        if "=***" in submitted_content:
+                            # User submitted masked content, preserve existing real values
+                            try:
+                                with open(secrets_manager.secrets_file_path, 'r') as f:
+                                    existing_content = f.read()
+                                # Parse both contents to merge them intelligently
+                                existing_secrets = secrets_manager._parse_env_content(existing_content)
+                                submitted_secrets = secrets_manager._parse_env_content(submitted_content)
+
+                                # Merge: keep existing real values, add new real values
+                                merged_secrets = existing_secrets.copy()
+                                for key, value in submitted_secrets.items():
+                                    if value != "***":  # Only update if not masked
+                                        merged_secrets[key] = value
+
+                                # Convert back to .env format
+                                merged_content = "\n".join([f"{k}={v}" for k, v in merged_secrets.items()])
+                                secrets_manager.save_secrets(merged_content)
+                            except FileNotFoundError:
+                                # No existing file, save as-is but warn about masked values
+                                secrets_manager.save_secrets(submitted_content)
+                        else:
+                            # Normal save - no masked values detected
+                            secrets_manager.save_secrets(submitted_content)
+
+                        secrets_manager.clear_cache()  # Clear cache to reload secrets
+                        current[field["id"]] = field["value"]
                     else:
                         current[field["id"]] = field["value"]
     return current
-
 
 def get_settings() -> Settings:
     global _settings
@@ -1286,6 +1351,7 @@ def _remove_sensitive_settings(settings: Settings):
     settings["rfc_password"] = ""
     settings["root_password"] = ""
     settings["mcp_server_token"] = ""
+    settings["secrets"] = ""
 
 
 def _write_sensitive_settings(settings: Settings):
@@ -1377,6 +1443,7 @@ def get_default_settings() -> Settings:
         mcp_server_enabled=False,
         mcp_server_token=create_auth_token(),
         a2a_server_enabled=False,
+        secrets="",
     )
 
 

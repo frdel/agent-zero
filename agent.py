@@ -14,6 +14,7 @@ import models
 from python.helpers import extract_tools, files, errors, history, tokens
 from python.helpers import dirty_json
 from python.helpers.print_style import PrintStyle
+from python.helpers.secrets import SecretsManager
 from langchain_core.prompts import (
     ChatPromptTemplate,
 )
@@ -465,13 +466,18 @@ class Agent:
             # Handling for general exceptions
             error_text = errors.error_text(exception)
             error_message = errors.format_error(exception)
-            PrintStyle(font_color="red", padding=True).print(error_message)
+                       
+            # Mask secrets in error messages
+            masked_error_message = SecretsManager.get_instance().mask_values(error_message)
+            masked_error_text = SecretsManager.get_instance().mask_values(error_text)
+            PrintStyle(font_color="red", padding=True).print(masked_error_message)
             self.context.log.log(
                 type="error",
                 heading="Error",
-                content=error_message,
-                kvps={"text": error_text},
+                content=masked_error_message,
+                kvps={"text": masked_error_text},
             )
+
             raise HandledException(exception)  # Re-raise the exception to kill the loop
 
     async def get_system_prompt(self, loop_data: LoopData) -> list[str]:

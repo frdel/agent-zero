@@ -469,6 +469,8 @@ document.addEventListener('alpine:init', function () {
                     this.revealToken(field);
                 } else if (field.action === 'generate_token') {
                     this.generateToken(field);
+                } else if (field.action === 'open_secrets_fullscreen') {
+                    this.openSecretsFullscreen();
                 } else {
                     console.warn('Unknown button action:', field.action);
                 }
@@ -561,6 +563,31 @@ document.addEventListener('alpine:init', function () {
                 }
             },
 
+            // Open secrets store in fullscreen modal
+            openSecretsFullscreen(field = null) {
+                // Use provided field or find the secrets field
+                let secretsField = field;
+                if (!secretsField) {
+                    for (const section of this.settingsData.sections) {
+                        for (const f of section.fields) {
+                            if (f.id === 'secrets') {
+                                secretsField = f;
+                                break;
+                            }
+                        }
+                        if (secretsField) break;
+                    }
+                }
+
+                if (secretsField) {
+                    // Open the secrets fullscreen modal
+                    const store = Alpine.store('secretsFullscreenModal');
+                    if (store) {
+                        store.openModal(secretsField);
+                    }
+                }
+            },
+
             closeModal() {
                 // Stop scheduler polling before closing the modal
                 const schedulerElement = document.querySelector('[x-data="schedulerSettings"]');
@@ -600,3 +627,11 @@ function showToast(message, type = 'info') {
         return null;
     }
 }
+
+// Global function to open secrets fullscreen modal
+window.openSecretsFullscreen = function(field) {
+    const store = Alpine.store('secretsFullscreenModal');
+    if (store) {
+        store.openModal(field);
+    }
+};
