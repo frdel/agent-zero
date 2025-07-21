@@ -102,7 +102,7 @@ From now on, please use this name for both `git clone` and `docker pull` command
 
 Click to open a video to learn how to install Agent Zero:
 
-[![Easy Installation guide](/docs/res/easy_ins_vid.png)](https://www.youtube.com/watch?v=L1_peV8szf8)
+[![Easy Installation guide](/docs/res/easy_ins_vid.png)](https://www.youtube.com/watch?v=w5v5Kjx51hs)
 
 A detailed setup guide for Windows, macOS, and Linux with a video can be found in the Agent Zero Documentation at [this page](./docs/installation.md).
 
@@ -155,6 +155,16 @@ docker run -p 50001:80 agent0ai/agent-zero
 
 
 ## 🎯 Changelog
+
+
+### v0.9.2 - Kokoro TTS, Attachments
+[Release video](https://www.youtube.com/watch?v=sPot_CAX62I)
+
+- Kokoro text-to-speech integration
+- New message attachments system
+- Minor updates: log truncation, hyperlink targets, component examples, api cleanup
+
+
 
 ### v0.9.1 - LiteLLM, UI improvements
 [Release video](https://youtu.be/crwr0M4Spcg)
