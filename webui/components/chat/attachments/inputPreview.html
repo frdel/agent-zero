@@ -1,0 +1,29 @@
+<script type="module">
+    import { store } from "/components/chat/attachments/attachmentsStore.js";
+</script>
+
+<div x-data>
+    <template x-if="$store.chatAttachments">
+
+        <div x-show="$store.chatAttachments.hasAttachments" class="preview-section">
+            <template x-for="(attachment, index) in $store.chatAttachments.attachments" :key="index">
+                <div class="attachment-item"
+                    :class="{'image-type': attachment.type === 'image', 'file-type': attachment.type === 'file'}">
+                    <template x-if="attachment.type === 'image'">
+                        <img :src="attachment.url" class="attachment-preview" :alt="attachment.name" style="cursor: pointer;"
+                            @click="$store.chatAttachments.openImageModal(attachment.url, attachment.name)">
+                    </template>
+                    <template x-if="attachment.type === 'file'">
+                        <div>
+                            <img :src="attachment.displayInfo.previewUrl" class="file-icon" :alt="attachment.extension">
+                            <span class="file-title" x-text="attachment.name"></span>
+                        </div>
+                    </template>
+                    <button @click="$store.chatAttachments.removeAttachment(index)"
+                        class="remove-attachment">&times;</button>
+                </div>
+            </template>
+        </div>
+
+    </template>
+</div>

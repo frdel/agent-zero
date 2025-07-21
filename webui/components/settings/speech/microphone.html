@@ -1,0 +1,47 @@
+<html>
+
+<head>
+    <title>Microhone settings</title>
+
+    <!-- Import the alpine store -->
+    <script type="module">
+        import { store } from "/components/settings/speech/microphone-setting-store.js";
+        console.log("microphone-setting-store.js loaded");
+    </script>
+</head>
+
+<body>
+
+    <!-- This construct of x-data + x-if is used to ensure the component is only rendered when the store is available -->
+    <div x-data>
+        <template x-if="$store.microphoneSetting">
+
+            <div>
+                <select x-model="$store.microphoneSetting.selectedDevice"
+                    @change="$store.microphoneSetting.onSelectDevice()"
+                    x-show="$store.microphoneSetting.devices.length > 0">
+                    <template x-for="option in $store.microphoneSetting.devices" :key="option.deviceId">
+                        <option :value="option.deviceId" x-text="option.label"
+                            :selected="option.deviceId === $store.microphoneSetting.selectedDevice"></option>
+                    </template>
+                </select>
+                <button class="btn btn-field" 
+                    x-show="$store.microphoneSetting.devices.length == 0 && !$store.microphoneSetting.requestingPermission"
+                    @click="$store.microphoneSetting.requestPermission()">Request permission to select device</button>
+                <button class="btn btn-field" 
+                    x-show="$store.microphoneSetting.requestingPermission"
+                    @click="$store.microphoneSetting.requestPermission()">
+                    <span>Waiting for devices... [retry]</span>
+                </button>
+            </div>
+
+        </template>
+    </div>
+
+    <!-- Optional style for the component -->
+    <style>
+    </style>
+
+</body>
+
+</html>

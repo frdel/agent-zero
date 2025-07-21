@@ -758,7 +758,7 @@ class MCPConfig(BaseModel):
     def get_tool(self, agent: Any, tool_name: str) -> MCPTool | None:
         if not self.has_tool(tool_name):
             return None
-        return MCPTool(agent=agent, name=tool_name, method=None, args={}, message="")
+        return MCPTool(agent=agent, name=tool_name, method=None, args={}, message="", loop_data=None)
 
     async def call_tool(
         self, tool_name: str, input_data: Dict[str, Any]

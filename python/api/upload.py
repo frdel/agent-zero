@@ -1,6 +1,4 @@
-from python.helpers.api import ApiHandler
-from flask import Request, Response
-
+from python.helpers.api import ApiHandler, Request, Response
 from python.helpers import files
 from werkzeug.utils import secure_filename
 

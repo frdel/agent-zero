@@ -23,7 +23,8 @@ from python.helpers.print_style import PrintStyle
 # Set the new timezone to 'UTC'
 os.environ["TZ"] = "UTC"
 # Apply the timezone change
-time.tzset()
+if hasattr(time, 'tzset'):
+    time.tzset()
 
 # initialize the internal Flask server
 webapp = Flask("app", static_folder=get_abs_path("./webui"), static_url_path="/")
@@ -248,6 +249,8 @@ def init_a0():
     initialize.initialize_mcp()
     # start job loop
     initialize.initialize_job_loop()
+    # preload
+    initialize.initialize_preload()
 
     # only wait for init chats, otherwise they would seem to dissapear for a while on restart
     init_chats.result_sync()

@@ -1,0 +1,148 @@
+<html>
+
+<head>
+    <title>Image Viewer</title>
+
+    <script type="module">
+        import { store } from "/components/chat/attachments/attachmentsStore.js";
+    </script>
+</head>
+
+<body>
+    <div x-data>
+        <template x-if="$store.chatAttachments">
+            <div id="image-modal-content" class="image-modal-container">
+                <!-- Image display area -->
+                <div class="image-display-wrapper">
+                    <img 
+                        x-show="$store.chatAttachments.currentImageUrl" 
+                        :src="$store.chatAttachments.currentImageUrl" 
+                        :alt="$store.chatAttachments.currentImageName || 'Image'"
+                        class="modal-image"
+                        @load="$store.chatAttachments.imageLoaded = true"
+                        @error="$store.chatAttachments.imageError = true"
+                    />
+                    
+                    <!-- Loading indicator -->
+                    <div x-show="!$store.chatAttachments.imageLoaded && !$store.chatAttachments.imageError" class="loading-indicator">
+                        <div class="loading-spinner"></div>
+                        <p>Loading image...</p>
+                    </div>
+                    
+                    <!-- Error indicator -->
+                    <div x-show="$store.chatAttachments.imageError" class="error-indicator">
+                        <p>Failed to load image</p>
+                    </div>
+                </div>
+
+                <!-- Simple zoom controls -->
+                <div class="zoom-controls">
+                    <button @click="$store.chatAttachments.zoomOut()" class="zoom-btn" title="Zoom Out">−</button>
+                    <button @click="$store.chatAttachments.resetZoom()" class="zoom-btn" title="Reset">⌂</button>
+                    <button @click="$store.chatAttachments.zoomIn()" class="zoom-btn" title="Zoom In">+</button>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <style>
+        .image-modal-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: var(--color-bg-secondary);
+        }
+
+        .image-display-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .modal-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.2s ease;
+            cursor: grab;
+        }
+
+        .modal-image:active {
+            cursor: grabbing;
+        }
+
+        .loading-indicator, .error-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-text-secondary);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--color-border);
+            border-top: 3px solid var(--color-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 6px;
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
+        }
+
+        .zoom-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            min-width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .zoom-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Dark mode adjustments */
+        .dark-mode .image-modal-container {
+            background: var(--color-bg-secondary);
+        }
+    </style>
+
+</body>
+
+</html> 

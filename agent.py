@@ -746,7 +746,7 @@ class Agent:
             # Fallback to local get_tool if MCP tool was not found or MCP lookup failed
             if not tool:
                 tool = self.get_tool(
-                    name=tool_name, method=tool_method, args=tool_args, message=msg
+                    name=tool_name, method=tool_method, args=tool_args, message=msg, loop_data=self.loop_data
                 )
 
             if tool:
@@ -801,7 +801,7 @@ class Agent:
             pass
 
     def get_tool(
-        self, name: str, method: str | None, args: dict, message: str, **kwargs
+        self, name: str, method: str | None, args: dict, message: str, loop_data: LoopData | None, **kwargs
     ):
         from python.tools.unknown import Unknown
         from python.helpers.tool import Tool
@@ -811,7 +811,7 @@ class Agent:
         )
         tool_class = classes[0] if classes else Unknown
         return tool_class(
-            agent=self, name=name, method=method, args=args, message=message, **kwargs
+            agent=self, name=name, method=method, args=args, message=message, loop_data=loop_data, **kwargs
         )
 
     async def call_extensions(self, folder: str, **kwargs) -> Any:

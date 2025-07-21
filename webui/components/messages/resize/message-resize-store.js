@@ -122,7 +122,7 @@ const model = {
     toggleCssProperty(
       `.${className} .message-body`,
       "overflow-y",
-      setting.maximized ? "unset" : "auto"
+      setting.maximized ? "hidden" : "auto"
     );
     toggleCssProperty(
       `.${className} .message-body`,

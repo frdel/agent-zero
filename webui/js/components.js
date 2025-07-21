@@ -5,7 +5,22 @@
 // cache object to store loaded components
 const componentCache = {};
 
+// Lock map to prevent multiple simultaneous imports of the same component
+const importLocks = new Map();
+
 export async function importComponent(path, targetElement) {
+  // Create a unique key for this import based on the target element
+  const lockKey = targetElement.id || targetElement.getAttribute('data-component-id') || targetElement;
+  
+  // If this component is already being loaded, return early
+  if (importLocks.get(lockKey)) {
+    console.log(`Component ${path} is already being loaded for target`, targetElement);
+    return;
+  }
+  
+  // Set the lock
+  importLocks.set(lockKey, true);
+  
   try {
     if (!targetElement) {
       throw new Error("Target element is required");
@@ -163,6 +178,9 @@ export async function importComponent(path, targetElement) {
   } catch (error) {
     console.error("Error importing component:", error);
     throw error;
+  } finally {
+    // Release the lock when done, regardless of success or failure
+    importLocks.delete(lockKey);
   }
 }
 

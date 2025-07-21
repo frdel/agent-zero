@@ -71,6 +71,8 @@ class Settings(TypedDict):
     stt_silence_duration: int
     stt_waiting_timeout: int
 
+    tts_kokoro: bool
+
     mcp_servers: str
     mcp_client_init_timeout: int
     mcp_client_tool_timeout: int
@@ -92,7 +94,7 @@ class SettingsField(TypedDict, total=False):
     title: str
     description: str
     type: Literal[
-        "text", "number", "select", "range", "textarea", "password", "switch", "button"
+        "text", "number", "select", "range", "textarea", "password", "switch", "button", "html"
     ]
     value: Any
     min: float
@@ -632,9 +634,19 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     stt_fields.append(
         {
+            "id": "stt_microphone_section",
+            "title": "Microphone device",
+            "description": "Select the microphone device to use for speech-to-text.",
+            "value": "<x-component path='/settings/speech/microphone.html' />",
+            "type": "html",
+        }
+    )
+
+    stt_fields.append(
+        {
             "id": "stt_model_size",
-            "title": "Model Size",
-            "description": "Select the speech recognition model size",
+            "title": "Speech-to-text model size",
+            "description": "Select the speech-to-text model size",
             "type": "select",
             "value": settings["stt_model_size"],
             "options": [
@@ -651,7 +663,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     stt_fields.append(
         {
             "id": "stt_language",
-            "title": "Language Code",
+            "title": "Speech-to-text language code",
             "description": "Language code (e.g. en, fr, it)",
             "type": "text",
             "value": settings["stt_language"],
@@ -661,8 +673,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
     stt_fields.append(
         {
             "id": "stt_silence_threshold",
-            "title": "Silence threshold",
-            "description": "Silence detection threshold. Lower values are more sensitive.",
+            "title": "Microphone silence threshold",
+            "description": "Silence detection threshold. Lower values are more sensitive to noise.",
             "type": "range",
             "min": 0,
             "max": 1,
@@ -674,8 +686,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
     stt_fields.append(
         {
             "id": "stt_silence_duration",
-            "title": "Silence duration (ms)",
-            "description": "Duration of silence before the server considers speaking to have ended.",
+            "title": "Microphone silence duration (ms)",
+            "description": "Duration of silence before the system considers speaking to have ended.",
             "type": "text",
             "value": settings["stt_silence_duration"],
         }
@@ -684,18 +696,31 @@ def convert_out(settings: Settings) -> SettingsOutput:
     stt_fields.append(
         {
             "id": "stt_waiting_timeout",
-            "title": "Waiting timeout (ms)",
-            "description": "Duration before the server closes the microphone.",
+            "title": "Microphone waiting timeout (ms)",
+            "description": "Duration of silence before the system closes the microphone.",
             "type": "text",
             "value": settings["stt_waiting_timeout"],
         }
     )
 
-    stt_section: SettingsSection = {
-        "id": "stt",
-        "title": "Speech to Text",
-        "description": "Voice transcription preferences and server turn detection settings.",
-        "fields": stt_fields,
+    # TTS fields
+    tts_fields: list[SettingsField] = []
+    
+    tts_fields.append(
+        {
+            "id": "tts_kokoro",
+            "title": "Enable Kokoro TTS",
+            "description": "Enable higher quality server-side AI (Kokoro) instead of browser-based text-to-speech.",
+            "type": "switch",
+            "value": settings["tts_kokoro"],
+        }
+    )
+
+    speech_section: SettingsSection = {
+        "id": "speech",
+        "title": "Speech",
+        "description": "Voice transcription and speech synthesis settings.",
+        "fields": stt_fields + tts_fields,
         "tab": "agent",
     }
 
@@ -824,7 +849,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             util_model_section,
             browser_model_section,
             embed_model_section,
-            stt_section,
+            speech_section,
             api_keys_section,
             auth_section,
             mcp_client_section,
@@ -1016,6 +1041,7 @@ def get_default_settings() -> Settings:
         stt_silence_threshold=0.3,
         stt_silence_duration=1000,
         stt_waiting_timeout=2000,
+        tts_kokoro=True,
         mcp_servers='{\n    "mcpServers": {}\n}',
         mcp_client_init_timeout=10,
         mcp_client_tool_timeout=120,

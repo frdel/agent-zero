@@ -1,7 +1,9 @@
-import * as msgs from "./js/messages.js";
-import { speech } from "./js/speech.js";
-import * as api from "./js/api.js";
-import * as css from "./js/css.js";
+import * as msgs from "/js/messages.js";
+import * as api from "/js/api.js";
+import * as css from "/js/css.js";
+import { sleep } from "/js/sleep.js";
+import { store as attachmentsStore } from "/components/chat/attachments/attachmentsStore.js";
+import { store as speechStore } from "/components/chat/speech/speech-store.js";
 
 window.fetchApi = api.fetchApi; // TODO - backward compatibility for non-modular scripts, remove once refactored to alpine
 
@@ -21,6 +23,8 @@ const timeDate = document.getElementById("time-date-container");
 
 let autoScroll = true;
 let context = "";
+let resetCounter = 0;
+let skipOneSpeech = false;
 let connectionStatus = false;
 
 // Initialize the toggle button
@@ -93,41 +97,40 @@ document.addEventListener("DOMContentLoaded", setupSidebarToggle);
 export async function sendMessage() {
   try {
     const message = chatInput.value.trim();
-    const inputAD = Alpine.$data(inputSection);
-    const attachments = inputAD.attachments;
-    const hasAttachments = attachments && attachments.length > 0;
+    const attachmentsWithUrls = attachmentsStore.getAttachmentsForSending();
+    const hasAttachments = attachmentsWithUrls.length > 0;
 
     if (message || hasAttachments) {
       let response;
       const messageId = generateGUID();
 
+      // Clear input and attachments
+      chatInput.value = "";
+      attachmentsStore.clearAttachments();
+      adjustTextareaHeight();
+
       // Include attachments in the user message
       if (hasAttachments) {
-        const attachmentsWithUrls = attachments.map((attachment) => {
-          if (attachment.type === "image") {
-            return {
-              ...attachment,
-              url: URL.createObjectURL(attachment.file),
-            };
-          } else {
-            return {
-              ...attachment,
-            };
-          }
-        });
+        const heading =
+          attachmentsWithUrls.length > 0
+            ? "Uploading attachments..."
+            : "User message";
 
         // Render user message with attachments
-        setMessage(messageId, "user", "", message, false, {
-          attachments: attachmentsWithUrls,
+        setMessage(messageId, "user", heading, message, false, {
+          // attachments: attachmentsWithUrls, // skip here, let the backend properly log them
         });
+
+        // sleep one frame to render the message before upload starts - better UX
+        sleep(0);
 
         const formData = new FormData();
         formData.append("text", message);
         formData.append("context", context);
         formData.append("message_id", messageId);
 
-        for (let i = 0; i < attachments.length; i++) {
-          formData.append("attachments", attachments[i].file);
+        for (let i = 0; i < attachmentsWithUrls.length; i++) {
+          formData.append("attachments", attachmentsWithUrls[i].file);
         }
 
         response = await api.fetchApi("/message_async", {
@@ -154,23 +157,9 @@ export async function sendMessage() {
       const jsonResponse = await response.json();
       if (!jsonResponse) {
         toast("No response returned.", "error");
-      }
-      // else if (!jsonResponse.ok) {
-      //     if (jsonResponse.message) {
-      //         toast(jsonResponse.message, "error");
-      //     } else {
-      //         toast("Undefined error.", "error");
-      //     }
-      // }
-      else {
+      } else {
         setContext(jsonResponse.context);
       }
-
-      // Clear input and attachments
-      chatInput.value = "";
-      inputAD.attachments = [];
-      inputAD.hasAttachments = false;
-      adjustTextareaHeight();
     }
   } catch (e) {
     toastFetchError("Error sending message", e);
@@ -320,8 +309,15 @@ function getConnectionStatus() {
 
 function setConnectionStatus(connected) {
   connectionStatus = connected;
-  const statusIcon = Alpine.$data(timeDate.querySelector(".status-icon"));
-  statusIcon.connected = connected;
+  if (window.Alpine && timeDate) {
+    const statusIconEl = timeDate.querySelector(".status-icon");
+    if (statusIconEl) {
+      const statusIcon = Alpine.$data(statusIconEl);
+      if (statusIcon) {
+        statusIcon.connected = connected;
+      }
+    }
+  }
 }
 
 let lastLogVersion = 0;
@@ -376,37 +372,48 @@ async function poll() {
     updateProgress(response.log_progress, response.log_progress_active);
 
     //set ui model vars from backend
-    const inputAD = Alpine.$data(inputSection);
-    inputAD.paused = response.paused;
+    if (window.Alpine && inputSection) {
+      const inputAD = Alpine.$data(inputSection);
+      if (inputAD) {
+        inputAD.paused = response.paused;
+      }
+    }
 
     // Update status icon state
     setConnectionStatus(true);
 
     // Update chats list and sort by created_at time (newer first)
-    const chatsAD = Alpine.$data(chatsSection);
-    const contexts = response.contexts || [];
-    chatsAD.contexts = contexts.sort(
-      (a, b) => (b.created_at || 0) - (a.created_at || 0)
-    );
+    let chatsAD = null;
+    let contexts = response.contexts || [];
+    if (window.Alpine && chatsSection) {
+      chatsAD = Alpine.$data(chatsSection);
+      if (chatsAD) {
+        chatsAD.contexts = contexts.sort(
+          (a, b) => (b.created_at || 0) - (a.created_at || 0)
+        );
+      }
+    }
 
     // Update tasks list and sort by creation time (newer first)
     const tasksSection = document.getElementById("tasks-section");
-    if (tasksSection) {
+    if (window.Alpine && tasksSection) {
       const tasksAD = Alpine.$data(tasksSection);
-      let tasks = response.tasks || [];
+      if (tasksAD) {
+        let tasks = response.tasks || [];
 
-      // Always update tasks to ensure state changes are reflected
-      if (tasks.length > 0) {
-        // Sort the tasks by creation time
-        const sortedTasks = [...tasks].sort(
-          (a, b) => (b.created_at || 0) - (a.created_at || 0)
-        );
+        // Always update tasks to ensure state changes are reflected
+        if (tasks.length > 0) {
+          // Sort the tasks by creation time
+          const sortedTasks = [...tasks].sort(
+            (a, b) => (b.created_at || 0) - (a.created_at || 0)
+          );
 
-        // Assign the sorted tasks to the Alpine data
-        tasksAD.tasks = sortedTasks;
-      } else {
-        // Make sure to use a new empty array instance
-        tasksAD.tasks = [];
+          // Assign the sorted tasks to the Alpine data
+          tasksAD.tasks = sortedTasks;
+        } else {
+          // Make sure to use a new empty array instance
+          tasksAD.tasks = [];
+        }
       }
     }
 
@@ -415,7 +422,7 @@ async function poll() {
       // Update selection in the active tab
       const activeTab = localStorage.getItem("activeTab") || "chats";
 
-      if (activeTab === "chats") {
+      if (activeTab === "chats" && chatsAD) {
         chatsAD.selected = context;
         localStorage.setItem("lastSelectedChat", context);
 
@@ -466,7 +473,8 @@ async function poll() {
       }
     } else if (
       contexts.length > 0 &&
-      localStorage.getItem("activeTab") === "chats"
+      localStorage.getItem("activeTab") === "chats" &&
+      chatsAD
     ) {
       // If we're in chats tab with no selection but have chats, select the first one
       const firstChatId = contexts[0].id;
@@ -496,15 +504,38 @@ function afterMessagesUpdate(logs) {
 }
 
 function speakMessages(logs) {
+  if (skipOneSpeech) {
+    skipOneSpeech = false;
+    return;
+  }
   // log.no, log.type, log.heading, log.content
   for (let i = logs.length - 1; i >= 0; i--) {
     const log = logs[i];
+
+    // if already spoken, end
+    // if(log.no < lastSpokenNo) break;
+
+    // finished response
     if (log.type == "response") {
-      if (log.no > lastSpokenNo) {
-        lastSpokenNo = log.no;
-        speech.speak(log.content);
-        return;
-      }
+      // lastSpokenNo = log.no;
+      speechStore.speakStream(
+        getChatBasedId(log.no),
+        log.content,
+        log.kvps?.finished
+      );
+      return;
+
+      // finished LLM headline, not response
+    } else if (
+      log.type == "agent" &&
+      log.kvps &&
+      log.kvps.headline &&
+      log.kvps.tool_args &&
+      log.kvps.tool_name != "response"
+    ) {
+      // lastSpokenNo = log.no;
+      speechStore.speakStream(getChatBasedId(log.no), log.kvps.headline, true);
+      return;
     }
   }
 }
@@ -538,6 +569,7 @@ window.resetChat = async function (ctxid = null) {
     const resp = await sendJsonData("/chat_reset", {
       context: ctxid === null ? context : ctxid,
     });
+    resetCounter++;
     if (ctxid === null) updateAfterScroll();
   } catch (e) {
     window.toastFetchError("Error resetting chat", e);
@@ -696,19 +728,34 @@ export const setContext = function (id) {
   lastLogVersion = 0;
   lastSpokenNo = 0;
 
+  // Stop speech when switching chats
+  speechStore.stopAudio();
+
   // Clear the chat history immediately to avoid showing stale content
   chatHistory.innerHTML = "";
 
   // Update both selected states
-  const chatsAD = Alpine.$data(chatsSection);
-  const tasksAD = Alpine.$data(tasksSection);
+  if (window.Alpine) {
+    if (chatsSection) {
+      const chatsAD = Alpine.$data(chatsSection);
+      if (chatsAD) chatsAD.selected = id;
+    }
+    if (tasksSection) {
+      const tasksAD = Alpine.$data(tasksSection);
+      if (tasksAD) tasksAD.selected = id;
+    }
+  }
 
-  chatsAD.selected = id;
-  tasksAD.selected = id;
+  //skip one speech if enabled when switching context
+  if (localStorage.getItem("speech") == "true") skipOneSpeech = true;
 };
 
 export const getContext = function () {
   return context;
+};
+
+export const getChatBasedId = function (id) {
+  return context + "-" + resetCounter + "-" + id;
 };
 
 window.toggleAutoScroll = async function (_autoScroll) {
@@ -750,7 +797,7 @@ window.toggleDarkMode = function (isDark) {
 window.toggleSpeech = function (isOn) {
   console.log("Speech:", isOn);
   localStorage.setItem("speech", isOn);
-  if (!isOn) speech.stop();
+  if (!isOn) speechStore.stopAudio();
 };
 
 window.nudge = async function () {
@@ -1014,8 +1061,12 @@ function hideToast() {
 }
 
 function scrollChanged(isAtBottom) {
-  const inputAS = Alpine.$data(autoScrollSwitch);
-  inputAS.autoScroll = isAtBottom;
+  if (window.Alpine && autoScrollSwitch) {
+    const inputAS = Alpine.$data(autoScrollSwitch);
+    if (inputAS) {
+      inputAS.autoScroll = isAtBottom;
+    }
+  }
   // autoScrollSwitch.checked = isAtBottom
 }
 
@@ -1063,101 +1114,6 @@ async function startPolling() {
 }
 
 document.addEventListener("DOMContentLoaded", startPolling);
-
-document.addEventListener("DOMContentLoaded", () => {
-  const dragDropOverlay = document.getElementById("dragdrop-overlay");
-  const inputSection = document.getElementById("input-section");
-  let dragCounter = 0;
-
-  // Prevent default drag behaviors
-  ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
-    document.addEventListener(
-      eventName,
-      (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      },
-      false
-    );
-  });
-
-  // Handle drag enter
-  document.addEventListener(
-    "dragenter",
-    (e) => {
-      dragCounter++;
-      if (dragCounter === 1) {
-        Alpine.$data(dragDropOverlay).isVisible = true;
-      }
-    },
-    false
-  );
-
-  // Handle drag leave
-  document.addEventListener(
-    "dragleave",
-    (e) => {
-      dragCounter--;
-      if (dragCounter === 0) {
-        Alpine.$data(dragDropOverlay).isVisible = false;
-      }
-    },
-    false
-  );
-
-  // Handle drop
-  dragDropOverlay.addEventListener(
-    "drop",
-    (e) => {
-      dragCounter = 0;
-      Alpine.$data(dragDropOverlay).isVisible = false;
-
-      const inputAD = Alpine.$data(inputSection);
-      const files = e.dataTransfer.files;
-      handleFiles(files, inputAD);
-    },
-    false
-  );
-});
-
-// Separate file handling logic to be used by both drag-drop and file input
-function handleFiles(files, inputAD) {
-  Array.from(files).forEach((file) => {
-    const ext = file.name.split(".").pop().toLowerCase();
-
-    const isImage = ["jpg", "jpeg", "png", "bmp"].includes(ext);
-
-    if (isImage) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        inputAD.attachments.push({
-          file: file,
-          url: e.target.result,
-          type: "image",
-          name: file.name,
-          extension: ext,
-        });
-        inputAD.hasAttachments = true;
-      };
-      reader.readAsDataURL(file);
-    } else {
-      inputAD.attachments.push({
-        file: file,
-        type: "file",
-        name: file.name,
-        extension: ext,
-      });
-      inputAD.hasAttachments = true;
-    }
-  });
-}
-
-// Modify the existing handleFileUpload to use the new handleFiles function
-window.handleFileUpload = function (event) {
-  const files = event.target.files;
-  const inputAD = Alpine.$data(inputSection);
-  handleFiles(files, inputAD);
-};
 
 // Setup event handlers once the DOM is fully loaded
 document.addEventListener("DOMContentLoaded", function () {
@@ -1217,8 +1173,8 @@ function activateTab(tabName) {
     chatsSection.style.display = "";
 
     // Get the available contexts from Alpine.js data
-    const chatsAD = Alpine.$data(chatsSection);
-    const availableContexts = chatsAD.contexts || [];
+    const chatsAD = window.Alpine ? Alpine.$data(chatsSection) : null;
+    const availableContexts = chatsAD?.contexts || [];
 
     // Restore previous chat selection
     const lastSelectedChat = localStorage.getItem("lastSelectedChat");
@@ -1241,8 +1197,8 @@ function activateTab(tabName) {
     tasksSection.style.flexDirection = "column";
 
     // Get the available tasks from Alpine.js data
-    const tasksAD = Alpine.$data(tasksSection);
-    const availableTasks = tasksAD.tasks || [];
+    const tasksAD = window.Alpine ? Alpine.$data(tasksSection) : null;
+    const availableTasks = tasksAD?.tasks || [];
 
     // Restore previous task selection
     const lastSelectedTask = localStorage.getItem("lastSelectedTask");
@@ -1308,7 +1264,7 @@ function openTaskDetail(taskId) {
       }
 
       // Get the Alpine.js data for the modal
-      const modalData = Alpine.$data(modalEl);
+      const modalData = window.Alpine ? Alpine.$data(modalEl) : null;
 
       // Use a timeout to ensure the modal is fully rendered
       setTimeout(() => {
@@ -1327,7 +1283,9 @@ function openTaskDetail(taskId) {
           }
 
           // Get the Alpine.js data for the scheduler component
-          const schedulerData = Alpine.$data(schedulerComponent);
+          const schedulerData = window.Alpine
+            ? Alpine.$data(schedulerComponent)
+            : null;
 
           // Show the task detail view for the specific task
           schedulerData.showTaskDetail(taskId);

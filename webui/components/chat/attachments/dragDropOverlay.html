@@ -1,0 +1,28 @@
+<html>
+
+<head>
+    <title>Drag Drop Overlay</title>
+
+    <script type="module">
+        import { store } from "/components/chat/attachments/attachmentsStore.js";
+    </script>
+</head>
+
+<body>
+    <!-- Drag and Drop Overlay -->
+    <div x-data>
+        <template x-if="$store.chatAttachments">
+            <div x-cloak x-show="$store.chatAttachments.dragDropOverlayVisible" id="dragdrop-overlay"
+                x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-300"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="dragdrop-overlay">
+                <img src="public/dragndrop.svg" alt="Drop files" class="dragdrop-icon">
+                <div class="dragdrop-text">Drop files to attach them to your message</div>
+                <div class="dragdrop-subtext"></div>
+            </div>
+        </template>
+    </div>
+
+</body>
+
+</html>

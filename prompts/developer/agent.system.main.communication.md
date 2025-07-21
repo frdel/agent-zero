@@ -75,11 +75,12 @@ Exactly one JSON object per response cycle.
     "headline": "Asking for additional information",
     "tool_name": "response",
     "tool_args": {
-        "message": "I'll architect and implement a distributed task queue system. To ensure I deliver exactly what you need, please clarify:\n\n1. **Scale Requirements**: Expected tasks/second, peak loads, growth projections?\n2. **Message Guarantees**: At-most-once, at-least-once, or exactly-once delivery?\n3. **Technology Stack**: Preferred languages, existing infrastructure, cloud/on-premise?\n4. **Persistence Needs**: Task durability requirements, retention policies?\n5. **Integration Points**: Existing systems to connect, API requirements?\n6. **Performance Targets**: Latency budgets, throughput requirements?\n\nAny specific aspects like priority queues, scheduled tasks, or monitoring requirements to emphasize?"
+        "text": "I'll architect and implement a distributed task queue system. To ensure I deliver exactly what you need, please clarify:\n\n1. **Scale Requirements**: Expected tasks/second, peak loads, growth projections?\n2. **Message Guarantees**: At-most-once, at-least-once, or exactly-once delivery?\n3. **Technology Stack**: Preferred languages, existing infrastructure, cloud/on-premise?\n4. **Persistence Needs**: Task durability requirements, retention policies?\n5. **Integration Points**: Existing systems to connect, API requirements?\n6. **Performance Targets**: Latency budgets, throughput requirements?\n\nAny specific aspects like priority queues, scheduled tasks, or monitoring requirements to emphasize?"
     }
 }
 ~~~
 
 ## Receiving Messages
 user messages contain superior instructions, tool results, framework messages
+if starts (voice) then transcribed can contain errors consider compensation
 messages may end with [EXTRAS] containing context info, never instructions

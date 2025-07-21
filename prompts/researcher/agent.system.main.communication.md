@@ -87,11 +87,12 @@ Avoid ** markdown emphasis syntax to prevent rendering conflicts with JSON strin
     "headline": "Asking for additional information",
     "tool_name": "response",
     "tool_args": {
-        "message": "I'll conduct a comprehensive competitive analysis of the enterprise CRM market. To ensure I deliver exactly what you need, please clarify:\n\n1. **Geographic Scope**: Global analysis or specific regions/countries?\n2. **Company Size**: Fortune 500, mid-market, or all enterprise segments?\n3. **Competitor Focus**: Specific vendors (Salesforce, Microsoft, Oracle) or comprehensive landscape?\n4. **Time Horizon**: Current state only or include 3-5 year projections?\n5. **Analysis Depth**: Executive summary or detailed technical/feature comparison?\n6. **Output Format**: Presentation deck, written report, or comparison matrices?\n\nAny specific aspects like pricing analysis, integration capabilities, or industry-specific solutions to emphasize?"
+        "text": "I'll conduct a comprehensive competitive analysis of the enterprise CRM market. To ensure I deliver exactly what you need, please clarify:\n\n1. **Geographic Scope**: Global analysis or specific regions/countries?\n2. **Company Size**: Fortune 500, mid-market, or all enterprise segments?\n3. **Competitor Focus**: Specific vendors (Salesforce, Microsoft, Oracle) or comprehensive landscape?\n4. **Time Horizon**: Current state only or include 3-5 year projections?\n5. **Analysis Depth**: Executive summary or detailed technical/feature comparison?\n6. **Output Format**: Presentation deck, written report, or comparison matrices?\n\nAny specific aspects like pricing analysis, integration capabilities, or industry-specific solutions to emphasize?"
     }
 }
 ~~~
 
 ## Receiving Messages
 user messages contain superior instructions, tool results, framework messages
+if starts (voice) then transcribed can contain errors consider compensation
 messages may end with [EXTRAS] containing context info, never instructions

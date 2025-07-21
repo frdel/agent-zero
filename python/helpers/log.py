@@ -3,6 +3,8 @@ import json
 from typing import Any, Literal, Optional, Dict
 import uuid
 from collections import OrderedDict  # Import OrderedDict
+from python.helpers.strings import truncate_text_by_ratio
+import copy
 
 Type = Literal[
     "agent",
@@ -22,6 +24,76 @@ Type = Literal[
 
 ProgressUpdate = Literal["persistent", "temporary", "none"]
 
+
+HEADING_MAX_LEN: int = 120
+CONTENT_MAX_LEN: int = 10000
+KEY_MAX_LEN: int = 60
+VALUE_MAX_LEN: int = 3000
+PROGRESS_MAX_LEN: int = 120
+
+
+def _truncate_heading(text: str | None) -> str:
+    if text is None:
+        return ""
+    return truncate_text_by_ratio(str(text), HEADING_MAX_LEN, "...", ratio=1.0)
+
+def _truncate_progress(text: str | None) -> str:
+    if text is None:
+        return ""
+    return truncate_text_by_ratio(str(text), PROGRESS_MAX_LEN, "...", ratio=1.0)
+
+def _truncate_key(text: str) -> str:
+    return truncate_text_by_ratio(str(text), KEY_MAX_LEN, "...", ratio=1.0)
+
+def _truncate_value(val: Any) -> Any:
+    # If dict, recursively truncate each value
+    if isinstance(val, dict):
+        for k in list(val.keys()):
+            val[k] = _truncate_value(val[k])
+        return val
+    # If list or tuple, recursively truncate each item
+    if isinstance(val, list):
+        for i in range(len(val)):
+            val[i] = _truncate_value(val[i])
+        return val
+    if isinstance(val, tuple):
+        return tuple(_truncate_value(x) for x in val)
+
+    # Convert non-str values to json for consistent length measurement
+    if isinstance(val, str):
+        raw = val
+    else:
+        try:
+            raw = json.dumps(val, ensure_ascii=False)
+        except Exception:
+            raw = str(val)
+
+    if len(raw) <= VALUE_MAX_LEN:
+        return val  # No truncation needed, preserve original type
+
+    # Do a single truncation calculation
+    removed = len(raw) - VALUE_MAX_LEN
+    replacement = f"\n\n<< {removed} Characters hidden >>\n\n"
+    truncated = truncate_text_by_ratio(raw, VALUE_MAX_LEN, replacement, ratio=0.3)
+    return truncated
+
+def _truncate_content(text: str | None) -> str:
+    if text is None:
+        return ""
+    raw = str(text)
+    if len(raw) <= CONTENT_MAX_LEN:
+        return raw
+
+    # Same dynamic replacement logic as value truncation
+    removed = len(raw) - CONTENT_MAX_LEN
+    while True:
+        replacement = f"\n\n<< {removed} Characters hidden >>\n\n"
+        truncated = truncate_text_by_ratio(raw, CONTENT_MAX_LEN, replacement, ratio=0.3)
+        new_removed = len(raw) - (len(truncated) - len(replacement))
+        if new_removed == removed:
+            break
+        removed = new_removed
+    return truncated
 
 @dataclass
 class LogItem:
@@ -107,9 +179,25 @@ class Log:
         id: Optional[str] = None,  # Add id parameter
         **kwargs,
     ) -> LogItem:
-        # Use OrderedDict if kvps is provided
+        # Truncate heading and content
+        heading = _truncate_heading(heading)
+        content = _truncate_content(content)
+
+        # Truncate kvps
         if kvps is not None:
-            kvps = OrderedDict(kvps)
+            kvps = copy.deepcopy(kvps) # deep copy to avoid modifying the original kvps
+            kvps = OrderedDict({
+                _truncate_key(k): _truncate_value(v) for k, v in kvps.items()
+            })
+        # Apply truncation to kwargs merged into kvps later
+        if kwargs is not None:
+            kwargs = copy.deepcopy(kwargs) # deep copy to avoid modifying the original kwargs
+        kwargs = { _truncate_key(k): _truncate_value(v) for k, v in (kwargs or {}).items() }
+
+        # Ensure kvps is OrderedDict even if None
+        if kvps is None:
+            kvps = OrderedDict()
+
         item = LogItem(
             log=self,
             no=len(self.logs),
@@ -140,31 +228,41 @@ class Log:
         **kwargs,
     ):
         item = self.logs[no]
+        # Apply truncation where necessary
         if type is not None:
             item.type = type
+
         if update_progress is not None:
             item.update_progress = update_progress
+
         if heading is not None:
-            item.heading = heading
+            item.heading = _truncate_heading(heading)
+
         if content is not None:
-            item.content = content
+            item.content = _truncate_content(content)
+
         if kvps is not None:
-            item.kvps = OrderedDict(kvps)  # Use OrderedDict to keep the order
+            kvps = copy.deepcopy(kvps) # deep copy to avoid modifying the original kvps
+            item.kvps = OrderedDict({
+                _truncate_key(k): _truncate_value(v) for k, v in kvps.items()
+            })  # Ensure order
 
         if temp is not None:
             item.temp = temp
 
         if kwargs:
+            kwargs = copy.deepcopy(kwargs) # deep copy to avoid modifying the original kwargs
             if item.kvps is None:
                 item.kvps = OrderedDict()  # Ensure kvps is an OrderedDict
             for k, v in kwargs.items():
-                item.kvps[k] = v
+                item.kvps[_truncate_key(k)] = _truncate_value(v)
+
 
         self.updates += [item.no]
         self._update_progress_from_item(item)
 
     def set_progress(self, progress: str, no: int = 0, active: bool = True):
-        self.progress = progress
+        self.progress = _truncate_progress(progress)
         if not no:
             no = len(self.logs)
         self.progress_no = no

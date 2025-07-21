@@ -1,6 +1,4 @@
-from python.helpers.api import ApiHandler
-from flask import Request, Response
-
+from python.helpers.api import ApiHandler, Request, Response
 from typing import Any
 
 from python.helpers.mcp_handler import MCPConfig

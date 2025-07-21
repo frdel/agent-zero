@@ -1,3 +1,4 @@
+
 // Tunnel settings for the Settings modal
 document.addEventListener('alpine:init', () => {
     Alpine.data('tunnelSettings', () => ({
@@ -76,7 +77,7 @@ document.addEventListener('alpine:init', () => {
                 // Change refresh button appearance
                 const refreshButton = document.querySelector('.refresh-link-button');
                 const originalContent = refreshButton.innerHTML;
-                refreshButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+                refreshButton.innerHTML = '<span class="icon material-symbols-outlined spin">progress_activity</span> Refreshing...';
                 refreshButton.disabled = true;
                 refreshButton.classList.add('refreshing');
                 
@@ -163,12 +164,12 @@ document.addEventListener('alpine:init', () => {
             // Get provider from the parent settings modal scope
             const modalEl = document.getElementById('settingsModal');
             const modalAD = Alpine.$data(modalEl);
-            const provider = modalAD.provider || 'serveo'; // Default to serveo if not set
+            const provider = modalAD.provider || 'cloudflared'; // Default to cloudflared if not set
             
             // Change create button appearance
             const createButton = document.querySelector('.tunnel-actions .btn-ok');
             if (createButton) {
-                createButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+                createButton.innerHTML = '<span class="icon material-symbols-outlined spin">progress_activity</span> Creating...';
                 createButton.disabled = true;
                 createButton.classList.add('creating');
             }
@@ -244,7 +245,7 @@ document.addEventListener('alpine:init', () => {
                 // Reset create button if it's still in the DOM
                 const createButton = document.querySelector('.tunnel-actions .btn-ok');
                 if (createButton) {
-                    createButton.innerHTML = '<i class="fas fa-play-circle"></i> Create Tunnel';
+                    createButton.innerHTML = '<span class="icon material-symbols-outlined">play_circle</span> Create Tunnel';
                     createButton.disabled = false;
                     createButton.classList.remove('creating');
                 }
@@ -310,7 +311,7 @@ document.addEventListener('alpine:init', () => {
             navigator.clipboard.writeText(this.tunnelLink)
                 .then(() => {
                     // Update button to show success state
-                    copyButton.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    copyButton.innerHTML = '<span class="icon material-symbols-outlined">check</span> Copied!';
                     copyButton.classList.add('copy-success');
                     
                     // Show toast notification
@@ -327,7 +328,7 @@ document.addEventListener('alpine:init', () => {
                     window.toast("Failed to copy tunnel URL", "error", 3000);
                     
                     // Show error state
-                    copyButton.innerHTML = '<i class="fas fa-times"></i> Failed';
+                    copyButton.innerHTML = '<span class="icon material-symbols-outlined">close</span> Failed';
                     copyButton.classList.add('copy-error');
                     
                     // Reset button after 2 seconds
