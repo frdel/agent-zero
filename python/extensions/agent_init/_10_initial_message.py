@@ -7,20 +7,13 @@ class InitialMessage(Extension):
 
     async def execute(self, **kwargs):
         """
-        Add an initial greeting message to the chat when agent is initialized.
-        This happens when a new chat is created or when chat is reset.
-        Only adds the message once per chat session using persisted metadata.
+        Add an initial greeting message when first user message is processed.
+        Called only once per session via _process_chain method.
         """
 
         # Only add initial message for main agent (A0), not subordinate agents
         if self.agent.number != 0:
             return
-
-        # Check if initial message already exists in history
-        history_output = self.agent.history.output()
-        for msg in history_output:
-            if "content" in msg and msg["content"]:
-                return  # Initial message already exists, skip
 
         # Construct the initial message from prompt template
         initial_message = self.agent.read_prompt("fw.initial_message.md")
@@ -36,10 +29,8 @@ class InitialMessage(Extension):
         initial_message_text = initial_message_json.get("tool_args", {}).get("text", "Hello! How can I help you?")
 
         # Add to log (green bubble) for immediate UI display
-        log_item = self.agent.context.log.log(
+        self.agent.context.log.log(
             type="response",
             heading=f"{self.agent.agent_name}: Welcome",
             content=initial_message_text
-        )
-        # Mark the log item as finished to clear from status bar
-        log_item.update(finished=True)
+        ).update(finished=True)
