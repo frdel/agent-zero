@@ -54,6 +54,10 @@ export function setMessage(id, type, heading, content, temp, kvps = null) {
 
     const groupType = groupTypeMap[type] || "left";
 
+    // here check if messageGroup is still in DOM, if not, then set it to null (context switch)
+    if(messageGroup && !document.getElementById(messageGroup.id))
+      messageGroup = null;
+
     if (
       !messageGroup || // no group yet exists
       groupStart[type] || // message type forces new group

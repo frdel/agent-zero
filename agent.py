@@ -186,11 +186,6 @@ class AgentContext:
     # this wrapper ensures that superior agents are called back if the chat was loaded from file and original callstack is gone
     async def _process_chain(self, agent: "Agent", msg: "UserMessage|str", user=True):
         try:
-            # Initialize agent with welcome message only once per session (before first user message)
-            if user and not agent.get_data("_session_initialized"):
-                await agent.call_extensions("agent_init")
-                agent.set_data("_session_initialized", True)
-
             msg_template = (
                 agent.hist_add_user_message(msg)  # type: ignore
                 if user
@@ -300,6 +295,10 @@ class Agent:
         self.last_user_message: history.Message | None = None
         self.intervention: UserMessage | None = None
         self.data = {}  # free data object all the tools can use
+
+
+        asyncio.run(self.call_extensions("agent_init"))
+
 
 
 
