@@ -469,11 +469,6 @@ def _merge_provider_defaults(
             for k, v in extra_kwargs.items():
                 kwargs.setdefault(k, v)
 
-        # Copy any additional top-level fields except metadata keys
-        for k, v in cfg.items():
-            if k not in ("id", "name", "value", "litellm_provider", "kwargs"):
-                kwargs.setdefault(k, v)
-
     # Inject API key based on the *original* provider id if still missing
     if "api_key" not in kwargs:
         key = get_api_key(original_provider)
@@ -483,19 +478,7 @@ def _merge_provider_defaults(
     return provider_name, kwargs
 
 
-def get_model(type: ModelType, provider: str, name: str, **kwargs: Any):
-    provider_name = provider.lower()
-    if type == ModelType.CHAT:
-        return _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
-    elif type == ModelType.EMBEDDING:
-        return _get_litellm_embedding(name, provider_name, **kwargs)
-    else:
-        raise ValueError(f"Unsupported model type: {type}")
-
-
-def get_chat_model(
-    provider: str, name: str, **kwargs: Any
-) -> LiteLLMChatWrapper:
+def get_chat_model(provider: str, name: str, **kwargs: Any) -> LiteLLMChatWrapper:
     orig = provider.lower()
     provider_name, kwargs = _merge_provider_defaults("chat", orig, kwargs)
     return _get_litellm_chat(LiteLLMChatWrapper, name, provider_name, **kwargs)
@@ -506,7 +489,9 @@ def get_browser_model(
 ) -> BrowserCompatibleChatWrapper:
     orig = provider.lower()
     provider_name, kwargs = _merge_provider_defaults("chat", orig, kwargs)
-    return _get_litellm_chat(BrowserCompatibleChatWrapper, name, provider_name, **kwargs)
+    return _get_litellm_chat(
+        BrowserCompatibleChatWrapper, name, provider_name, **kwargs
+    )
 
 
 def get_embedding_model(

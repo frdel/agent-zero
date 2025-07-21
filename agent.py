@@ -671,7 +671,7 @@ class Agent:
                     type="util",
                     update_progress="none",
                     heading=msg,
-                    model=f"{model_config.provider.value}\\{model_config.name}",
+                    model=f"{model_config.provider}\\{model_config.name}",
                 )
             wait_log.update(heading=msg, key=key, value=total, limit=limit)
             if not background:
