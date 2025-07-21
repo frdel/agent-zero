@@ -9,6 +9,7 @@ from python.helpers import runtime
 from python.helpers.print_style import PrintStyle
 
 warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 _pipeline = None
 _voice = "am_puck,am_onyx"
@@ -39,7 +40,7 @@ async def _preload():
         if not _pipeline:
             PrintStyle.standard("Loading Kokoro TTS model...")
             from kokoro import KPipeline
-            _pipeline = KPipeline(lang_code="a")
+            _pipeline = KPipeline(lang_code="a", repo_id="hexgrad/Kokoro-82M")
     finally:
         is_updating_model = False
 

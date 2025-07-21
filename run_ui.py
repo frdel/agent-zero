@@ -221,9 +221,8 @@ def run():
             "/mcp": ASGIMiddleware(app=mcp_server.DynamicMcpProxy.get_instance()),  # type: ignore
         },
     )
-    PrintStyle().debug("Registered middleware for MCP and MCP token")
 
-    PrintStyle().debug(f"Starting server at {host}:{port}...")
+    PrintStyle().debug(f"Starting server at http://{host}:{port} ...")
 
     server = make_server(
         host=host,

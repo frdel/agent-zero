@@ -7,11 +7,21 @@
 - The response format is a JSON array of text notes containing facts to memorize
 - If the history does not contain any useful information, the response will be an empty JSON array.
 
-# Example
+# Correct output examples
 ~~~json
 [
   "User's name is John Doe",
-  "User's age is 30"
+  "User's dog name is Max",
+  "AsyncRaceError in primary_modules.py was fixed by a thread lock on line 123"
+]
+~~~
+
+# Wrong output examples
+~~~json
+[
+  "User's name",
+  "Today is Monday",
+  "Market inquiry",
 ]
 ~~~
 
@@ -20,3 +30,4 @@
 - Do not include irrelevant details that are of no use in the future
 - Do not memorize facts that change like time, date etc.
 - Do not add your own details that are not specifically mentioned in the history
+- Never memorize vague or incomplete information

@@ -505,11 +505,11 @@ class MCPConfig(BaseModel):
     def __init__(self, servers_list: List[Dict[str, Any]]):
         from collections.abc import Mapping, Iterable
 
-        # DEBUG: Print the received servers_list
-        if servers_list:
-            PrintStyle(background_color="blue", font_color="white", padding=True).print(
-                f"MCPConfig.__init__ received servers_list: {servers_list}"
-            )
+        # # DEBUG: Print the received servers_list
+        # if servers_list:
+        #     PrintStyle(background_color="blue", font_color="white", padding=True).print(
+        #         f"MCPConfig.__init__ received servers_list: {servers_list}"
+        #     )
 
         # This empties the servers list if MCPConfig is a Pydantic model and servers is a field.
         # If servers is a field like `servers: List[MCPServer] = Field(default_factory=list)`,
