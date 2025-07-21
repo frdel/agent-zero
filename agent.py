@@ -296,6 +296,17 @@ class Agent:
         self.intervention: UserMessage | None = None
         self.data = {}  # free data object all the tools can use
 
+        # Initialize main agent with extensions (including initial message)
+        # Only for main agent (A0) to avoid multiple calls for subordinate agents
+        if self.number == 0:
+            try:
+                asyncio.run(self.call_extensions("agent_init"))
+            except RuntimeError:
+                # No event loop running, which is fine - initialization will happen on first use
+                pass
+
+
+
     async def monologue(self):
         while True:
             try:
