@@ -68,9 +68,16 @@ async def _transcribe(model_name:str, audio_bytes_b64: str):
     audio_bytes = base64.b64decode(audio_bytes_b64)
 
     # Create temp audio file
+    import os
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as audio_file:
         audio_file.write(audio_bytes)
-
-    # Transcribe the audio file
-    result = _model.transcribe(audio_file.name, fp16=False) # type: ignore
-    return result
+        temp_path = audio_file.name
+    try:
+        # Transcribe the audio file
+        result = _model.transcribe(temp_path, fp16=False) # type: ignore
+        return result
+    finally:
+        try:
+            os.remove(temp_path)
+        except Exception:
+            pass # ignore errors during cleanup
