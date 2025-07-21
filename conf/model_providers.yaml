@@ -1,0 +1,90 @@
+# Supported model providers for Agent Zero
+# ---------------------------------------
+#
+# Each provider type ("chat", "embedding") contains a mapping of provider IDs
+# to their configurations.
+#
+# The provider ID (e.g., "anthropic") is used:
+#  - in the settings UI dropdowns.
+#  - to construct the environment variable for the API key (e.g., ANTHROPIC_API_KEY).
+#
+# Each provider configuration requires:
+#   name:             Human-readable name for the UI.
+#   litellm_provider: The corresponding provider name in LiteLLM.
+#
+# Optional fields:
+#   kwargs:           A dictionary of extra parameters to pass to LiteLLM.
+#                     This is useful for `api_base`, `extra_headers`, etc.
+
+chat:
+  anthropic:
+    name: Anthropic
+    litellm_provider: anthropic
+  deepseek:
+    name: DeepSeek
+    litellm_provider: deepseek
+  gemini:
+    name: Google
+    litellm_provider: gemini
+  groq:
+    name: Groq
+    litellm_provider: groq
+  huggingface:
+    name: HuggingFace
+    litellm_provider: huggingface
+  lm_studio:
+    name: LM Studio
+    litellm_provider: lm_studio
+  mistral:
+    name: Mistral AI
+    litellm_provider: mistral
+  ollama:
+    name: Ollama
+    litellm_provider: ollama
+  openai:
+    name: OpenAI
+    litellm_provider: openai
+  azure:
+    name: OpenAI Azure
+    litellm_provider: azure
+  openrouter:
+    name: OpenRouter
+    litellm_provider: openrouter
+    kwargs:
+      extra_headers:
+        "HTTP-Referer": "https://agent-zero.ai/"
+        "X-Title": "Agent Zero"
+  sambanova:
+    name: Sambanova
+    litellm_provider: sambanova
+  venice:
+    name: Venice
+    litellm_provider: openai
+    kwargs:
+      api_base: https://api.venice.ai/api/v1
+  other:
+    name: Other OpenAI compatible
+    litellm_provider: openai
+
+embedding:
+  huggingface:
+    name: HuggingFace
+    litellm_provider: huggingface
+  lm_studio:
+    name: LM Studio
+    litellm_provider: lm_studio
+  mistral:
+    name: Mistral AI
+    litellm_provider: mistral
+  ollama:
+    name: Ollama
+    litellm_provider: ollama
+  openai:
+    name: OpenAI
+    litellm_provider: openai
+  azure:
+    name: OpenAI Azure
+    litellm_provider: azure
+  other:
+    name: Other OpenAI compatible
+    litellm_provider: openai
