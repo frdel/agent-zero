@@ -156,7 +156,23 @@ class FileBrowser:
                     if len(parts) < 9:
                         continue
 
-                    filename = ' '.join(parts[8:])  # Handle filenames with spaces
+                    # Check if this is a symlink (permissions start with 'l')
+                    permissions = parts[0]
+                    is_symlink = permissions.startswith('l')
+
+                    if is_symlink:
+                        # For symlinks, extract the name before the '->' arrow
+                        full_name_part = ' '.join(parts[8:])
+                        if ' -> ' in full_name_part:
+                            filename = full_name_part.split(' -> ')[0]
+                            symlink_target = full_name_part.split(' -> ')[1]
+                        else:
+                            filename = full_name_part
+                            symlink_target = None
+                    else:
+                        filename = ' '.join(parts[8:])  # Handle filenames with spaces
+                        symlink_target = None
+
                     if not filename:
                         continue
 
@@ -171,6 +187,11 @@ class FileBrowser:
                             "path": str(entry_path.relative_to(self.base_dir)),
                             "modified": datetime.fromtimestamp(stat_info.st_mtime).isoformat()
                         }
+
+                        # Add symlink information if this is a symlink
+                        if is_symlink and symlink_target:
+                            entry_data["symlink_target"] = symlink_target
+                            entry_data["is_symlink"] = True
 
                         if entry_path.is_file():
                             entry_data.update({
