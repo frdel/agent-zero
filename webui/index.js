@@ -6,6 +6,7 @@ const rightPanel = document.getElementById('right-panel');
 const container = document.querySelector('.container');
 const chatInput = document.getElementById('chat-input');
 const chatHistory = document.getElementById('chat-history');
+const toolPanel = document.getElementById('tool-output-panel');
 const sendButton = document.getElementById('send-button');
 const inputSection = document.getElementById('input-section');
 const statusSection = document.getElementById('status-section');
@@ -250,12 +251,12 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
     const handler = msgs.getHandler(type);
     handler(messageContainer, id, type, heading, content, temp, kvps);
 
-    // If the container was found, it was already in the DOM, no need to append again
+    const parent = (type === 'tool' || type === 'code_exe') ? toolPanel : chatHistory;
     if (!document.getElementById(`message-${id}`)) {
-        chatHistory.appendChild(messageContainer);
+        parent.appendChild(messageContainer);
     }
 
-    if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
+    if (autoScroll && parent === chatHistory) chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
 

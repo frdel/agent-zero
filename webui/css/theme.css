@@ -1,0 +1,47 @@
+:root {
+  --c-bg-primary: #1a1a1a;
+  --c-bg-secondary: #242424;
+  --c-text-primary: #e0e0e0;
+  --c-text-secondary: #bdbdbd;
+  --c-accent: #3b82f6;
+  --c-border: #444;
+}
+
+.light-mode {
+  --c-bg-primary: #ffffff;
+  --c-bg-secondary: #f5f5f5;
+  --c-text-primary: #222222;
+  --c-text-secondary: #555555;
+  --c-accent: #2563eb;
+  --c-border: #ccc;
+}
+
+/* basic message coloring overrides */
+.message-user {
+  background-color: var(--c-bg-secondary);
+  color: var(--c-text-primary);
+}
+.message-agent {
+  background-color: color-mix(in srgb, var(--c-accent) 20%, var(--c-bg-primary));
+}
+.message-tool,
+.message-code-exe {
+  background-color: color-mix(in srgb, var(--c-accent) 10%, var(--c-bg-primary));
+}
+
+.tool-panel {
+  border-top: 1px solid var(--c-border);
+  background-color: var(--c-bg-secondary);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.collapsible-message summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: var(--spacing-xs) 0;
+}
+
+.collapsible-message {
+  margin-bottom: var(--spacing-sm);
+}

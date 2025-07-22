@@ -88,6 +88,17 @@ export function _drawMessage(
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", ...messageClasses);
 
+  let wrapper = messageContainer;
+  if (messageClasses.includes("message-tool") || messageClasses.includes("message-code-exe")) {
+    const details = document.createElement("details");
+    details.classList.add("collapsible-message");
+    const summary = document.createElement("summary");
+    summary.textContent = heading || "Tool Output";
+    details.appendChild(summary);
+    wrapper.appendChild(details);
+    wrapper = details;
+  }
+
   if (heading) {
     const headingElement = document.createElement("h4");
     headingElement.textContent = heading;
@@ -123,7 +134,7 @@ export function _drawMessage(
     }
   }
 
-  messageContainer.appendChild(messageDiv);
+  wrapper.appendChild(messageDiv);
 
   if (followUp) {
     messageContainer.classList.add("message-followup");
@@ -513,6 +524,18 @@ function drawKvps(container, kvps, latex) {
       th.classList.add("kvps-key");
 
       const td = row.insertCell();
+      let wrapper = td;
+      if (row.classList.contains("msg-thoughts")) {
+        th.remove();
+        td.colSpan = 2;
+        const details = document.createElement("details");
+        details.classList.add("collapsible-message");
+        const summary = document.createElement("summary");
+        summary.textContent = convertToTitleCase(key);
+        details.appendChild(summary);
+        td.appendChild(details);
+        wrapper = details;
+      }
 
       if (Array.isArray(value)) {
         for (const item of value) {
@@ -546,8 +569,8 @@ function drawKvps(container, kvps, latex) {
           const span = document.createElement("span");
           span.innerHTML = convertHTML(value);
           pre.appendChild(span);
-          td.appendChild(pre);
-          addCopyButtonToElement(row);
+          wrapper.appendChild(pre);
+          addCopyButtonToElement(row.classList.contains("msg-thoughts") ? wrapper : row);
 
           // Add click handler
           span.addEventListener("click", () => {
