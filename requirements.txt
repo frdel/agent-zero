@@ -41,3 +41,10 @@ crontab==1.0.1
 pathspec>=0.12.1
 psutil>=7.0.0
 soundfile==0.13.1
+# A2A Protocol Dependencies
+starlette==0.41.3
+uvicorn[standard]==0.34.0
+httpx==0.28.1
+httpx-sse==0.4.0
+pydantic==2.10.4
+pydantic-ai==0.4.6

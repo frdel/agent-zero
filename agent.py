@@ -6,7 +6,7 @@ nest_asyncio.apply()
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Awaitable, Coroutine, Dict
+from typing import Any, Awaitable, Coroutine, Dict, List, Optional
 from enum import Enum
 import uuid
 import models
@@ -30,6 +30,7 @@ class AgentContextType(Enum):
     USER = "user"
     TASK = "task"
     MCP = "mcp"
+    A2A = "a2a"
 
 
 class AgentContext:
@@ -65,6 +66,12 @@ class AgentContext:
         self.no = AgentContext._counter
         # set to start of unix epoch
         self.last_message = last_message or datetime.now(timezone.utc)
+        
+        # A2A Protocol support - peer tracking and context management
+        self.a2a_peers: Dict[str, Any] = {}  # Track connected A2A peers
+        self.context_id: str = str(uuid.uuid4())  # Unique context ID for cross-agent tasks
+        self.a2a_server: Any = None  # A2A server instance if running as server
+        self.a2a_enabled: bool = config.additional.get("a2a_enabled", False) if hasattr(config, 'additional') else False
 
         existing = self._contexts.get(self.id, None)
         if existing:
@@ -93,7 +100,7 @@ class AgentContext:
         return context
 
     def serialize(self):
-        return {
+        data = {
             "id": self.id,
             "name": self.name,
             "created_at": (
@@ -113,6 +120,16 @@ class AgentContext:
             ),
             "type": self.type.value,
         }
+        
+        # Add A2A data if enabled (backward compatible)
+        if hasattr(self, 'a2a_enabled') and self.a2a_enabled:
+            data.update({
+                "context_id": self.context_id,
+                "a2a_peers_count": len(self.a2a_peers),
+                "a2a_server_running": self.a2a_server is not None
+            })
+        
+        return data
 
     @staticmethod
     def log_to_all(
@@ -201,6 +218,105 @@ class AgentContext:
         except Exception as e:
             agent.handle_critical_exception(e)
 
+    # A2A Protocol Methods
+    
+    def add_a2a_peer(self, peer_id: str, peer_info: Dict[str, Any]):
+        """Add an A2A peer to the context"""
+        if not hasattr(self, 'a2a_peers'):
+            self.a2a_peers = {}
+        
+        self.a2a_peers[peer_id] = {
+            **peer_info,
+            'added_at': datetime.now(timezone.utc).isoformat(),
+            'last_contact': datetime.now(timezone.utc).isoformat()
+        }
+        
+        PrintStyle(font_color="green").print(
+            f"A2A Peer added to context: {peer_id}"
+        )
+    
+    def remove_a2a_peer(self, peer_id: str) -> bool:
+        """Remove an A2A peer from the context"""
+        if not hasattr(self, 'a2a_peers'):
+            return False
+            
+        removed = self.a2a_peers.pop(peer_id, None)
+        if removed:
+            PrintStyle(font_color="yellow").print(
+                f"A2A Peer removed from context: {peer_id}"
+            )
+            return True
+        return False
+    
+    def get_a2a_peer(self, peer_id: str) -> Optional[Dict[str, Any]]:
+        """Get A2A peer information"""
+        if not hasattr(self, 'a2a_peers'):
+            return None
+        return self.a2a_peers.get(peer_id)
+    
+    def list_a2a_peers(self) -> List[str]:
+        """List all A2A peer IDs"""
+        if not hasattr(self, 'a2a_peers'):
+            return []
+        return list(self.a2a_peers.keys())
+    
+    def start_a2a_server(self, config: Dict[str, Any]) -> bool:
+        """Start the A2A server for this context"""
+        if not hasattr(self, 'a2a_enabled') or not self.a2a_enabled:
+            PrintStyle(font_color="yellow").print("A2A is not enabled for this context")
+            return False
+            
+        try:
+            from python.helpers.a2a_server import A2AServer
+            
+            # Merge context config with provided config
+            server_config = {
+                **config,
+                'agent_name': f"Agent Zero {self.id[:8]}",
+                'agent_description': f"Agent Zero instance - Context {self.name or self.id}",
+                'base_url': config.get('base_url', f'http://localhost:{config.get("port", 8008)}')
+            }
+            
+            self.a2a_server = A2AServer(server_config, self)
+            
+            # Start server in background task
+            import asyncio
+            self.task = self.run_task(
+                self.a2a_server.start_server,
+                host=config.get('host', '0.0.0.0'),
+                port=config.get('port', 8008),
+                ssl_keyfile=config.get('ssl_keyfile'),
+                ssl_certfile=config.get('ssl_certfile')
+            )
+            
+            PrintStyle(font_color="green", bold=True).print(
+                f"A2A Server started for context {self.id}"
+            )
+            return True
+            
+        except Exception as e:
+            PrintStyle(background_color="red", font_color="white").print(
+                f"Failed to start A2A server: {str(e)}"
+            )
+            return False
+    
+    def stop_a2a_server(self):
+        """Stop the A2A server"""
+        if hasattr(self, 'a2a_server') and self.a2a_server:
+            try:
+                # Stop the server
+                import asyncio
+                asyncio.create_task(self.a2a_server.stop_server())
+                self.a2a_server = None
+                
+                PrintStyle(font_color="yellow").print(
+                    f"A2A Server stopped for context {self.id}"
+                )
+            except Exception as e:
+                PrintStyle(background_color="red", font_color="white").print(
+                    f"Error stopping A2A server: {str(e)}"
+                )
+
 
 
 @dataclass
@@ -231,6 +347,24 @@ class AgentConfig:
     code_exec_ssh_user: str = "root"
     code_exec_ssh_pass: str = ""
     additional: Dict[str, Any] = field(default_factory=dict)
+    
+    # A2A Protocol Configuration
+    a2a_enabled: bool = field(default=False)
+    a2a_server_host: str = field(default="0.0.0.0")
+    a2a_server_port: int = field(default=8008)
+    a2a_server_base_url: str = field(default="")
+    a2a_auth_required: bool = field(default=True)
+    a2a_auth_schemes: List[str] = field(default_factory=lambda: ["bearer", "api_key"])
+    a2a_api_keys: Dict[str, str] = field(default_factory=dict)
+    a2a_peer_registry: List[str] = field(default_factory=list)
+    a2a_ssl_keyfile: Optional[str] = field(default=None)
+    a2a_ssl_certfile: Optional[str] = field(default=None)
+    a2a_capabilities: List[str] = field(default_factory=lambda: ["task_execution", "code_execution", "web_search"])
+    a2a_input_types: List[str] = field(default_factory=lambda: ["text/plain", "application/json"])
+    a2a_output_types: List[str] = field(default_factory=lambda: ["text/plain", "application/json"])
+    a2a_protocol_version: str = field(default="1.1.0")
+    a2a_cors_origins: List[str] = field(default_factory=lambda: ["*"])
+    a2a_max_task_age_hours: int = field(default=24)
 
 
 @dataclass
