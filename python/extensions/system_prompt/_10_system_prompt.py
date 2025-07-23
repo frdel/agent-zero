@@ -26,6 +26,17 @@ def get_main_prompt(agent: Agent):
 
 def get_tools_prompt(agent: Agent):
     prompt = agent.read_prompt("agent.system.tools.md")
+    
+    # Add mem0 tools documentation if enabled
+    from python.helpers.settings import get_settings
+    settings = get_settings()
+    if settings.get("memory_backend") == "mem0" and settings.get("mem0_enabled", False):
+        try:
+            mem0_tools = agent.read_prompt("agent.system.tool.memory.mem0.md")
+            prompt += '\n\n' + mem0_tools
+        except FileNotFoundError:
+            pass  # Gracefully handle missing mem0 documentation
+    
     if agent.config.chat_model.vision:
         prompt += '\n' + agent.read_prompt("agent.system.tools_vision.md")
     return prompt

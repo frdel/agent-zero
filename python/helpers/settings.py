@@ -93,7 +93,16 @@ class Settings(TypedDict):
     mem0_org_id: str
     mem0_project_id: str
     mem0_qdrant_url: str
+    mem0_qdrant_collection: str
     mem0_qdrant_api_key: str
+    
+    # Graph Memory (Neo4j) settings
+    mem0_enable_graph_memory: bool
+    mem0_auto_start_services: bool
+    mem0_neo4j_url: str
+    mem0_neo4j_username: str
+    mem0_neo4j_password: str
+    mem0_graph_custom_prompt: str
 
 
 class PartialSettings(Settings, total=False):
@@ -933,6 +942,15 @@ def convert_out(settings: Settings) -> SettingsOutput:
     )
     mem0_fields.append(
         {
+            "id": "mem0_qdrant_collection",
+            "title": "Qdrant Collection Name",
+            "description": "Name of the Qdrant collection to use for storing vector embeddings.",
+            "type": "text",
+            "value": settings.get("mem0_qdrant_collection", "mem0"),
+        }
+    )
+    mem0_fields.append(
+        {
             "id": "mem0_qdrant_api_key",
             "title": "Qdrant API Key",
             "description": "API key for remote Qdrant server (optional).",
@@ -942,6 +960,66 @@ def convert_out(settings: Settings) -> SettingsOutput:
                 if settings.get("mem0_qdrant_api_key")
                 else ""
             ),
+        }
+    )
+
+    # Neo4j Graph Memory Settings
+    mem0_fields.append(
+        {
+            "id": "mem0_enable_graph_memory",
+            "title": "Enable Graph Memory",
+            "description": "Enable Neo4j graph memory for storing relationships and entities.",
+            "type": "switch",
+            "value": settings.get("mem0_enable_graph_memory", True),
+        }
+    )
+    mem0_fields.append(
+        {
+            "id": "mem0_auto_start_services",
+            "title": "Auto-Start Services",
+            "description": "Automatically start required Docker services (Qdrant, Neo4j) when mem0 is enabled.",
+            "type": "switch",
+            "value": settings.get("mem0_auto_start_services", True),
+        }
+    )
+    mem0_fields.append(
+        {
+            "id": "mem0_neo4j_url",
+            "title": "Neo4j URL",
+            "description": "Connection URL for Neo4j database (bolt://host:port).",
+            "type": "text",
+            "value": settings.get("mem0_neo4j_url", "bolt://localhost:7688"),
+        }
+    )
+    mem0_fields.append(
+        {
+            "id": "mem0_neo4j_username",
+            "title": "Neo4j Username",
+            "description": "Username for Neo4j database connection.",
+            "type": "text",
+            "value": settings.get("mem0_neo4j_username", "neo4j"),
+        }
+    )
+    mem0_fields.append(
+        {
+            "id": "mem0_neo4j_password",
+            "title": "Neo4j Password",
+            "description": "Password for Neo4j database connection.",
+            "type": "password",
+            "value": (
+                PASSWORD_PLACEHOLDER
+                if settings.get("mem0_neo4j_password")
+                else ""
+            ),
+        }
+    )
+    mem0_fields.append(
+        {
+            "id": "mem0_graph_custom_prompt",
+            "title": "Graph Custom Prompt",
+            "description": "Custom prompt for graph memory operations (optional).",
+            "type": "textarea",
+            "value": settings.get("mem0_graph_custom_prompt", ""),
         }
     )
 
@@ -1224,7 +1302,16 @@ def get_default_settings() -> Settings:
         mem0_org_id="",
         mem0_project_id="",
         mem0_qdrant_url="http://localhost:6333",
+        mem0_qdrant_collection="mem0",
         mem0_qdrant_api_key="",
+        # Graph Memory settings
+        mem0_enable_graph_memory=True,
+        mem0_auto_start_services=True,
+        mem0_neo4j_url="bolt://localhost:7688",
+        mem0_neo4j_username="neo4j",
+        mem0_neo4j_password="mem0graph",
+        mem0_graph_custom_prompt="",
+        mem0_graph_llm_config={},
     )
 
 
@@ -1262,8 +1349,69 @@ def _apply_settings(previous: Settings | None):
             or _settings["mem0_api_key"] != previous.get("mem0_api_key", "")
             or _settings["mem0_qdrant_url"] != previous.get("mem0_qdrant_url", "")
             or _settings["mem0_qdrant_api_key"] != previous.get("mem0_qdrant_api_key", "")
+            or _settings["mem0_enable_graph_memory"] != previous.get("mem0_enable_graph_memory", False)
+            or _settings["mem0_auto_start_services"] != previous.get("mem0_auto_start_services", True)
+            or _settings["mem0_neo4j_url"] != previous.get("mem0_neo4j_url", "bolt://localhost:7687")
+            or _settings["mem0_neo4j_username"] != previous.get("mem0_neo4j_username", "neo4j")
+            or _settings["mem0_neo4j_password"] != previous.get("mem0_neo4j_password", "mem0graph")
         ):
             from python.helpers.memory import reload as memory_reload
+
+            # Proactively start mem0 services if mem0 is being enabled
+            if (_settings["memory_backend"] == "mem0" and _settings["mem0_enabled"] and
+                _settings.get("mem0_auto_start_services", True)):
+                from python.helpers.print_style import PrintStyle
+                
+                # Check if mem0 was just enabled (not previously enabled)
+                mem0_just_enabled = (not previous or 
+                                   previous.get("memory_backend") != "mem0" or 
+                                   not previous.get("mem0_enabled", False))
+                
+                if mem0_just_enabled:
+                    PrintStyle.standard("🚀 mem0 enabled - setting up services...")
+                    
+                    try:
+                        from python.helpers.docker_service_manager import docker_service_manager
+                        import asyncio
+                        import threading
+                        
+                        def setup_services():
+                            """Setup services in background thread"""
+                            try:
+                                # Run service setup in a new event loop
+                                loop = asyncio.new_event_loop()
+                                asyncio.set_event_loop(loop)
+                                
+                                # Determine required services
+                                required_services = ["mem0_store", "neo4j"]  # Always start both for robust mem0 setup
+                                
+                                # Note: Neo4j is always started to ensure Graph Memory is available
+                                # It can be disabled later via mem0_enable_graph_memory setting
+                                
+                                # Start services
+                                results = docker_service_manager.ensure_services_running(required_services)
+                                
+                                success_count = sum(1 for success in results.values() if success)
+                                total_count = len(results)
+                                
+                                if success_count == total_count:
+                                    PrintStyle.standard(f"✅ All {total_count} mem0 services started successfully!")
+                                else:
+                                    PrintStyle.warning(f"⚠️ {success_count}/{total_count} services started - will use fallbacks")
+                                    
+                                loop.close()
+                                
+                            except Exception as e:
+                                PrintStyle.warning(f"Service auto-start failed: {str(e)} - will use fallbacks")
+                        
+                        # Start services in background thread to not block settings application
+                        thread = threading.Thread(target=setup_services, daemon=True)
+                        thread.start()
+                        
+                    except ImportError:
+                        PrintStyle.info("Docker service manager not available - services will start when first accessed")
+                    except Exception as e:
+                        PrintStyle.warning(f"Service setup failed: {str(e)} - services will start when first accessed")
 
             memory_reload()
 

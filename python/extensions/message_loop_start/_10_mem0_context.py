@@ -38,8 +38,20 @@ class Mem0ContextRetrieval(Extension):
             # Get mem0 memory instance
             mem0_db = await Mem0Memory.get(self.agent)
             
-            # Get user message content
-            user_message = loop_data.user_message.content
+            # Get user message content with proper validation
+            user_message = loop_data.user_message
+            if hasattr(user_message, 'content'):
+                user_message = user_message.content
+            elif not isinstance(user_message, str):
+                user_message = str(user_message) if user_message is not None else ""
+            
+            # Ensure it's a string
+            if not isinstance(user_message, str):
+                user_message = str(user_message) if user_message is not None else ""
+                
+            user_message = user_message.strip()
+            if not user_message:
+                return
             
             # Retrieve relevant context using mem0's advanced search
             context_memories = await self._retrieve_context(mem0_db, user_message)
@@ -85,6 +97,14 @@ class Mem0ContextRetrieval(Extension):
     async def _retrieve_context(self, mem0_db, user_message: str) -> list:
         """Retrieve relevant context memories for the user message"""
         try:
+            # Validate user_message is a proper string
+            if not user_message or not isinstance(user_message, str):
+                return []
+            
+            user_message = str(user_message).strip()
+            if not user_message:
+                return []
+            
             # Multi-strategy context retrieval
             context_memories = []
             
@@ -100,13 +120,17 @@ class Mem0ContextRetrieval(Extension):
             # 2. Extract key concepts and search for related memories
             key_concepts = await self._extract_key_concepts(user_message)
             for concept in key_concepts:
-                concept_memories = await mem0_db.search_similarity_threshold(
-                    query=concept,
-                    limit=2,
-                    threshold=0.7,
-                    filter=""
-                )
-                context_memories.extend(concept_memories)
+                # Validate concept is a string
+                if concept and isinstance(concept, str):
+                    concept = str(concept).strip()
+                    if concept:
+                        concept_memories = await mem0_db.search_similarity_threshold(
+                            query=concept,
+                            limit=2,
+                            threshold=0.7,
+                            filter=""
+                        )
+                        context_memories.extend(concept_memories)
             
             # 3. Search for solution memories if the message seems like a problem
             if self._is_problem_query(user_message):

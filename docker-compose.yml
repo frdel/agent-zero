@@ -1,0 +1,64 @@
+services:
+  mem0_store:
+    image: qdrant/qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - mem0_storage:/mem0/storage
+    networks:
+      - mem0_network
+  
+  neo4j:
+    image: neo4j:5.26.4
+    ports:
+      - "7475:7474"  # HTTP (changed to avoid conflict)
+      - "7688:7687"  # Bolt (changed to avoid conflict)
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    environment:
+      - NEO4J_AUTH=neo4j/mem0graph
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_apoc_import_file_use__neo4j__config=true
+    networks:
+      - mem0_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+  
+  openmemory-mcp:
+    image: mem0/openmemory-mcp:latest
+    env_file:
+      - .env
+    environment:
+      - OPENAI_API_KEY=${API_KEY_OPENAI}
+      - USER=lazy
+      - QDRANT_HOST=mem0_store
+      - QDRANT_PORT=6333
+      - NEO4J_HOST=neo4j
+      - NEO4J_PORT=7687
+      - NEO4J_USERNAME=neo4j
+      - NEO4J_PASSWORD=mem0graph
+    depends_on:
+      mem0_store:
+        condition: service_started
+      neo4j:
+        condition: service_healthy
+    ports:
+      - "8765:8765"
+    networks:
+      - mem0_network
+
+volumes:
+  mem0_storage:
+  neo4j_data:
+  neo4j_logs:
+
+networks:
+  mem0_network:
+    driver: bridge

@@ -68,12 +68,21 @@ class Memory:
         if settings.get("memory_backend") == "mem0" and settings.get("mem0_enabled", False):
             try:
                 from python.helpers.memory_mem0 import Mem0Memory
-                return await Mem0Memory.get(agent)
+                mem0_instance = await Mem0Memory.get(agent)
+                # Return a Memory wrapper that uses mem0 as its backend
+                memory_subdir = agent.config.memory_subdir or "default"
+                return Memory(agent, mem0_instance, memory_subdir=memory_subdir)
             except ImportError:
                 PrintStyle.error("mem0 package not installed, falling back to FAISS backend")
                 # Fall back to FAISS if mem0 is not available
             except Exception as e:
                 PrintStyle.error(f"mem0 initialization failed: {str(e)}, falling back to FAISS backend")
+                # Clear any stale cached instances
+                try:
+                    from python.helpers.memory_mem0 import Mem0Memory
+                    Mem0Memory.clear_cache()
+                except:
+                    pass
                 # Fall back to FAISS if mem0 fails for any reason
                 
         # Default FAISS backend

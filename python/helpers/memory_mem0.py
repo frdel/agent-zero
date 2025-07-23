@@ -81,7 +81,15 @@ class Mem0Memory:
         memory_subdir = agent.config.memory_subdir or "default"
         if Mem0Memory.index.get(memory_subdir):
             del Mem0Memory.index[memory_subdir]
+        # Also clear client cache
+        Mem0Memory._clients.clear()
         return await Mem0Memory.get(agent)
+    
+    @staticmethod
+    def clear_cache():
+        """Clear all cached instances - useful for debugging"""
+        Mem0Memory.index.clear()
+        Mem0Memory._clients.clear()
 
     def __init__(self, agent: Agent, memory_subdir: str):
         self.agent = agent
@@ -97,6 +105,9 @@ class Mem0Memory:
             
             # Ensure memory directories exist
             self._ensure_memory_directories()
+            
+            # Auto-setup Docker services if needed
+            await self._ensure_services_running(log_item)
             
             # Ensure API keys are available as environment variables for mem0/litellm
             self._set_environment_api_keys(log_item)
@@ -164,14 +175,34 @@ class Mem0Memory:
         
         strategy = settings.get("mem0_user_id_strategy", "memory_subdir")
         
-        if strategy == "memory_subdir":
-            return f"agent_{self.memory_subdir}"
-        elif strategy == "session_id":
-            return f"session_{self.agent.context.id}"
-        elif strategy == "agent_id":
-            return f"agent_{self.agent.agent_name}"
-        else:
-            return f"agent_{self.memory_subdir}"  # fallback
+        try:
+            if strategy == "memory_subdir":
+                user_id = f"agent_{str(self.memory_subdir)}"
+            elif strategy == "session_id":
+                context_id = getattr(self.agent.context, 'id', 'default')
+                user_id = f"session_{str(context_id)}"
+            elif strategy == "agent_id":
+                agent_name = getattr(self.agent, 'agent_name', 'default')
+                user_id = f"agent_{str(agent_name)}"
+            else:
+                user_id = f"agent_{str(self.memory_subdir)}"  # fallback
+                
+            # Clean user_id to ensure it's a valid string
+            user_id = str(user_id).strip()
+            # Replace any problematic characters with underscores (temporarily simplified)
+            # import re
+            # user_id = re.sub(r'[^\w\-_]', '_', user_id)
+            # Simple character replacement to avoid regex issues
+            user_id = ''.join(c if c.isalnum() or c in '-_' else '_' for c in user_id)
+            
+            PrintStyle.info(f"Generated user_id: {user_id}")
+            return user_id
+            
+        except Exception as e:
+            PrintStyle.error(f"Error generating user_id: {e}")
+            fallback_id = f"agent_{str(self.memory_subdir) if hasattr(self, 'memory_subdir') else 'default'}"
+            # Simple character replacement to avoid regex issues
+            return ''.join(c if c.isalnum() or c in '-_' else '_' for c in fallback_id)
 
     def _get_mem0_config(self):
         """Build mem0 configuration from agent settings"""
@@ -248,16 +279,41 @@ class Mem0Memory:
         return self._build_memory_config(settings, vector_store_config)
     
     def _get_local_config(self, settings):
-        """Get configuration for local mem0 (current implementation)"""
-        # Use in-memory vector store to avoid conflicts
-        vector_store_config = {
-            "provider": "qdrant",
-            "config": {
-                "collection_name": f"mem0_{self.memory_subdir}_{getattr(self.agent.context, 'id', 'default').replace('-', '_')}",
-                "embedding_model_dims": 1536,  # Default for OpenAI
-                "on_disk": False,  # In-memory to avoid conflicts
+        """Get configuration for local mem0 with fallback to embedded alternatives"""
+        # Check if Qdrant service is available
+        try:
+            from python.helpers.docker_service_manager import docker_service_manager
+            service_status = docker_service_manager.get_service_status("mem0_store")
+            qdrant_available = service_status.get('running', False)
+        except:
+            qdrant_available = False
+        
+        if qdrant_available:
+            # Use external Qdrant service
+            qdrant_url = settings.get("mem0_qdrant_url", "http://localhost:6333")
+            collection_name = settings.get("mem0_qdrant_collection", f"mem0_{self.memory_subdir}")
+            
+            vector_store_config = {
+                "provider": "qdrant",
+                "config": {
+                    "url": qdrant_url,
+                    "collection_name": collection_name,
+                    "api_key": settings.get("mem0_qdrant_api_key"),  # Optional
+                }
             }
-        }
+        else:
+            # Fallback to embedded alternatives
+            PrintStyle.info("Qdrant not available - using embedded memory backend")
+            # Use in-memory configuration as fallback - mem0 will handle the absence gracefully
+            vector_store_config = {
+                "provider": "qdrant", 
+                "config": {
+                    "collection_name": f"embedded_{self.memory_subdir}_{getattr(self.agent.context, 'id', 'default').replace('-', '_')}",
+                    "on_disk": False,  # In-memory fallback
+                }
+            }
+            # Set flag to use embedded alternatives in operations
+            self._use_embedded_fallback = True
         
         return self._build_memory_config(settings, vector_store_config)
     
@@ -266,7 +322,13 @@ class Mem0Memory:
         from mem0.configs.base import MemoryConfig, EmbedderConfig, LlmConfig, VectorStoreConfig
         
         # Get embedding model configuration with validation
-        embed_model_name = self.agent.config.embeddings_model.name.strip()
+        try:
+            embed_model_name = str(self.agent.config.embeddings_model.name).strip()
+            if not embed_model_name:
+                raise ValueError("Empty embedding model name")
+        except Exception as e:
+            PrintStyle.error(f"Error getting embedding model name: {e}")
+            embed_model_name = "text-embedding-3-small"  # fallback
         
         # Safely get provider name with type checking
         provider_obj = self.agent.config.embeddings_model.provider
@@ -279,7 +341,7 @@ class Mem0Memory:
                 # Handle enum types like ModelProvider.OPENAI
                 embed_model_provider = str(provider_obj.value).lower()
             elif isinstance(provider_obj, str):
-                embed_model_provider = provider_obj.lower()
+                embed_model_provider = str(provider_obj).lower()
             elif isinstance(provider_obj, dict):
                 embed_model_provider = str(provider_obj.get('name', 'openai')).lower()
             else:
@@ -288,6 +350,9 @@ class Mem0Memory:
         except Exception as e:
             PrintStyle.error(f"Error getting embedding provider: {e}, using default 'openai'")
             embed_model_provider = 'openai'
+            
+        # Debug information
+        PrintStyle.info(f"Embedding model: {embed_model_name} (provider: {embed_model_provider})")
         
         # Validate that model name is not empty
         if not embed_model_name:
@@ -339,11 +404,33 @@ class Mem0Memory:
         
         # Create LLM configuration - use litellm to maintain compatibility
         llm_provider = settings.get("mem0_provider", "litellm")
-        llm_config_dict = {
-            "model": self.agent.config.utility_model.name,
-            "temperature": 0.1,
-            "max_tokens": 1000,
-        }
+        
+        # Get utility model configuration
+        util_model_name = self.agent.config.utility_model.name
+        util_provider_obj = getattr(self.agent.config.utility_model, 'provider', None)
+        
+        # Handle provider-specific model naming for litellm
+        if util_provider_obj and hasattr(util_provider_obj, 'name'):
+            provider_name = str(util_provider_obj.name).lower()
+            if provider_name == "openrouter":
+                # For OpenRouter, use the model name as-is (litellm handles the routing)
+                llm_config_dict = {
+                    "model": util_model_name,
+                    "temperature": 0.1,
+                    "max_tokens": 1000,
+                }
+            else:
+                llm_config_dict = {
+                    "model": util_model_name,
+                    "temperature": 0.1,
+                    "max_tokens": 1000,
+                }
+        else:
+            llm_config_dict = {
+                "model": util_model_name,
+                "temperature": 0.1,
+                "max_tokens": 1000,
+            }
         
         # For litellm, let it handle API key management through environment variables
         # API keys are set in _set_environment_api_keys() method
@@ -380,7 +467,6 @@ class Mem0Memory:
             # Fallback to in-memory for local setups
             vector_store_base_config = {
                 "collection_name": f"mem0_{self.memory_subdir}_{safe_context_id}",
-                "embedding_model_dims": embedding_dims,
                 "on_disk": False,  # Use in-memory to avoid file conflicts
             }
             
@@ -401,6 +487,11 @@ class Mem0Memory:
             "history_db_path": history_db_path
         }
         
+        # Add Graph Memory configuration if enabled
+        graph_memory_config = self._get_graph_memory_config(settings)
+        if graph_memory_config:
+            config_dict["graph_store"] = graph_memory_config
+        
         # Disable telemetry to prevent additional vector store conflicts
         config_dict["enable_telemetry"] = False
         
@@ -411,6 +502,102 @@ class Mem0Memory:
         config = MemoryConfig(**config_dict)
         
         return config
+
+    def _get_graph_memory_config(self, settings):
+        """Get Graph Memory (Neo4j) configuration if enabled"""
+        # Check if graph memory is enabled
+        if not settings.get("mem0_enable_graph_memory", False):
+            return None
+        
+        import os
+        
+        # Get Neo4j configuration from settings or environment  
+        # Use port 7688 as configured in docker-compose.yml
+        neo4j_config = {
+            "url": settings.get("mem0_neo4j_url") or os.getenv("NEO4J_URL", "bolt://localhost:7688"),
+            "username": settings.get("mem0_neo4j_username") or os.getenv("NEO4J_USERNAME", "neo4j"),
+            "password": settings.get("mem0_neo4j_password") or os.getenv("NEO4J_PASSWORD", "mem0graph")
+        }
+        
+        # Build graph store configuration
+        graph_store_config = {
+            "provider": "neo4j",
+            "config": neo4j_config
+        }
+        
+        # Add custom prompt if configured
+        custom_prompt = settings.get("mem0_graph_custom_prompt")
+        if custom_prompt:
+            graph_store_config["custom_prompt"] = custom_prompt
+            
+        # Add LLM config for graph operations if specified
+        graph_llm_config = settings.get("mem0_graph_llm_config")
+        if graph_llm_config:
+            graph_store_config["llm"] = graph_llm_config
+        
+        return graph_store_config
+
+    async def _ensure_services_running(self, log_item: LogItem | None = None):
+        """Ensure required Docker services are running"""
+        from python.helpers.settings import get_settings
+        settings = get_settings()
+        
+        # Check if auto-service management is disabled
+        if not settings.get("mem0_auto_start_services", True):
+            return
+        
+        # Only auto-start services if using self-hosted or local deployment
+        deployment_mode = settings.get("mem0_deployment", "local")
+        if deployment_mode == "hosted":
+            return  # Hosted mode doesn't need local services
+        
+        try:
+            from python.helpers.docker_service_manager import docker_service_manager
+            
+            # Determine which services are needed
+            required_services = ["mem0_store", "neo4j"]  # Always start both for robust mem0 setup
+            
+            # Note: Neo4j is always started to ensure Graph Memory is available
+            # It can be disabled later via mem0_enable_graph_memory setting
+            
+            if log_item:
+                log_item.stream(progress=f"\nChecking required services: {', '.join(required_services)}")
+            
+            # Check and start services as needed
+            results = docker_service_manager.ensure_services_running(required_services)
+            
+            success_count = sum(1 for success in results.values() if success)
+            total_count = len(results)
+            
+            if success_count == total_count:
+                if log_item:
+                    log_item.stream(progress=f"\n✅ All {total_count} services ready")
+                PrintStyle.standard(f"✅ All {total_count} mem0 services are ready")
+            else:
+                if log_item:
+                    log_item.stream(progress=f"\n⚠️ {success_count}/{total_count} services ready - using fallbacks")
+                PrintStyle.warning(f"⚠️ Only {success_count}/{total_count} services ready - using fallback options")
+                
+                # Update configuration to use fallbacks for failed services
+                if not results.get("mem0_store", False):
+                    PrintStyle.info("Using in-memory vector store instead of Qdrant")
+                if not results.get("neo4j", False) and settings.get("mem0_enable_graph_memory", False):
+                    PrintStyle.info("Graph memory disabled - Neo4j service unavailable")
+                    # Temporarily disable graph memory for this session
+                    settings["mem0_enable_graph_memory"] = False
+                    
+        except ImportError:
+            # Docker service manager not available - continue without auto-service management
+            if log_item:
+                log_item.stream(progress="\nSkipping auto-service management")
+            PrintStyle.info("Docker service auto-management not available")
+        except Exception as e:
+            # Don't fail initialization if service management fails
+            error_msg = f"Service auto-start failed: {str(e)}"
+            if log_item:
+                log_item.stream(progress=f"\n⚠️ {error_msg}")
+            PrintStyle.warning(error_msg)
+            PrintStyle.info("Continuing with available services...")
 
     async def _retry_api_call(self, api_call, operation_name: str, max_retries: int = 3, delay: float = 1.0):
         """Retry API calls with exponential backoff"""
@@ -481,6 +668,7 @@ class Mem0Memory:
         # Map provider names to environment variable names
         env_key_mapping = {
             "openai": "OPENAI_API_KEY",
+            "openrouter": "OPENROUTER_API_KEY",  # OpenRouter has its own API key
             "anthropic": "ANTHROPIC_API_KEY", 
             "google": "GOOGLE_API_KEY",
             "gemini": "GOOGLE_API_KEY",
@@ -509,22 +697,28 @@ class Mem0Memory:
             embed_provider = 'openai'
             
         # Get utility model provider with robust type checking
-        util_provider_obj = self.agent.config.utility_model.provider
         util_provider = 'openai'  # default fallback
         
         try:
-            if hasattr(util_provider_obj, 'name'):
-                util_provider = str(util_provider_obj.name).lower()
-            elif hasattr(util_provider_obj, 'value'):
-                util_provider = str(util_provider_obj.value).lower()
-            elif isinstance(util_provider_obj, str):
-                util_provider = util_provider_obj.lower()
-            elif isinstance(util_provider_obj, dict):
-                util_provider = str(util_provider_obj.get('name', 'openai')).lower()
-            else:
-                util_provider = str(util_provider_obj).lower()
-        except Exception:
-            util_provider = 'openai'
+            util_provider_obj = self.agent.config.utility_model.provider
+        except AttributeError:
+            # utility_model might not exist, use default
+            util_provider_obj = None
+        
+        if util_provider_obj is not None:
+            try:
+                if hasattr(util_provider_obj, 'name'):
+                    util_provider = str(util_provider_obj.name).lower()
+                elif hasattr(util_provider_obj, 'value'):
+                    util_provider = str(util_provider_obj.value).lower()
+                elif isinstance(util_provider_obj, str):
+                    util_provider = util_provider_obj.lower()
+                elif isinstance(util_provider_obj, dict):
+                    util_provider = str(util_provider_obj.get('name', 'openai')).lower()
+                else:
+                    util_provider = str(util_provider_obj).lower()
+            except Exception:
+                util_provider = 'openai'
             
         # Set environment variables for both providers
         providers_to_set = set([embed_provider, util_provider])
@@ -539,6 +733,14 @@ class Mem0Memory:
                         os.environ[env_var] = api_key
                         if log_item:
                             log_item.stream(progress=f"\nSet {env_var} environment variable")
+        
+        # Also ensure OPENROUTER_API_KEY is available for LiteLLM
+        if "OPENROUTER_API_KEY" not in os.environ or not os.environ["OPENROUTER_API_KEY"]:
+            openrouter_key = get_api_key("openrouter")
+            if openrouter_key and openrouter_key != "None":
+                os.environ["OPENROUTER_API_KEY"] = openrouter_key
+                if log_item:
+                    log_item.stream(progress=f"\nSet OPENROUTER_API_KEY environment variable")
 
     async def search_similarity_threshold(
         self, query: str, limit: int, threshold: float, filter: str = ""
@@ -548,20 +750,40 @@ class Mem0Memory:
             raise RuntimeError("mem0 client not initialized")
             
         try:
+            # Validate and clean query parameter
+            if not isinstance(query, str):
+                query = str(query) if query is not None else ""
+            
+            if not query.strip():
+                return []  # Empty query returns no results
+            
+            # Debug information
+            PrintStyle.info(f"mem0 search starting with query: '{query[:100]}...' (type: {type(query)})")
+            PrintStyle.info(f"User ID: {self.user_id} (type: {type(self.user_id)})")
+            PrintStyle.info(f"Client type: {type(self.mem0_client)}")
+            
             # Apply rate limiting
             await self.agent.rate_limiter(
                 model_config=self.agent.config.embeddings_model, input=query
             )
             
             # Search memories with mem0ai using retry logic
-            search_results = await self._retry_api_call(
-                lambda: self.mem0_client.search(
-                    query=query,
-                    user_id=self.user_id,
-                    limit=limit
-                ),
-                operation_name="search"
-            )
+            try:
+                search_results = await self._retry_api_call(
+                    lambda: self.mem0_client.search(
+                        query=str(query).strip(),
+                        user_id=str(self.user_id),
+                        limit=int(limit)
+                    ),
+                    operation_name="search"
+                )
+            except Exception as e:
+                error_details = str(e)
+                PrintStyle.error(f"Detailed mem0 search error: {error_details}")
+                PrintStyle.error(f"Query type: {type(query)}, value: {repr(query)}")
+                PrintStyle.error(f"User ID type: {type(self.user_id)}, value: {repr(self.user_id)}")
+                PrintStyle.error(f"Limit type: {type(limit)}, value: {repr(limit)}")
+                raise
             
             if not search_results:
                 return []
@@ -593,8 +815,47 @@ class Mem0Memory:
             return documents
             
         except Exception as e:
-            PrintStyle.error(f"Error searching mem0 memories: {str(e)}")
+            error_msg = str(e)
+            PrintStyle.error(f"Error searching mem0 memories: {error_msg}")
+            
+            # Check if it's the specific "expected string or buffer" error
+            if "expected string or buffer" in error_msg.lower():
+                PrintStyle.error("This is the 'expected string or buffer' error!")
+                PrintStyle.error(f"Query was: {repr(query)} (type: {type(query)})")
+                PrintStyle.error(f"User ID was: {repr(self.user_id)} (type: {type(self.user_id)})")
+                PrintStyle.error(f"Limit was: {repr(limit)} (type: {type(limit)})")
+                
+                # Try to get more details about the stack trace
+                import traceback
+                PrintStyle.error("Full traceback:")
+                traceback.print_exc()
+            
             return []
+
+    async def asearch(self, query, search_type="similarity_score_threshold", k=10, score_threshold=0.5, filter=None, **kwargs):
+        """
+        Compatibility method for FAISS-style asearch interface
+        This ensures the Mem0Memory class works with existing Memory interface calls
+        """
+        if search_type == "similarity_score_threshold":
+            # Convert FAISS-style parameters to mem0 search
+            docs = await self.search_similarity_threshold(
+                query=query,
+                limit=k,
+                threshold=score_threshold,
+                filter=""  # mem0 uses string-based filtering
+            )
+            # Return just the documents (not tuples) since that's what the existing code expects
+            return docs
+        else:
+            # For other search types, use basic similarity search
+            docs = await self.search_similarity_threshold(
+                query=query,
+                limit=k,
+                threshold=0.0,  # No threshold for basic similarity
+                filter=""
+            )
+            return docs
 
     async def delete_documents_by_query(
         self, query: str, threshold: float, filter: str = ""
@@ -682,6 +943,13 @@ class Mem0Memory:
             raise RuntimeError("mem0 client not initialized")
             
         try:
+            # Validate and clean text parameter
+            if not isinstance(text, str):
+                text = str(text) if text is not None else ""
+            
+            if not text.strip():
+                raise ValueError("Cannot insert empty text into memory")
+            
             # Prepare metadata
             if metadata is None:
                 metadata = {}
@@ -701,7 +969,7 @@ class Mem0Memory:
             # Add memory to mem0ai using the correct API with retry logic
             result = await self._retry_api_call(
                 lambda: self.mem0_client.add(
-                    messages=[{"role": "user", "content": text}],
+                    messages=[{"role": "user", "content": text.strip()}],
                     user_id=self.user_id,
                     metadata=metadata
                 ),
@@ -734,6 +1002,84 @@ class Mem0Memory:
             ids.append(doc_id)
             
         return ids
+
+    async def aadd_documents(self, documents: List[Document], ids: List[str] = None, **kwargs):
+        """
+        Compatibility method for FAISS-style aadd_documents interface
+        This ensures the Mem0Memory class works with existing Memory wrapper calls
+        """
+        if not documents:
+            return []
+            
+        # Use the existing insert_documents method
+        return await self.insert_documents(documents)
+
+    async def adelete(self, ids: List[str], **kwargs):
+        """
+        Compatibility method for FAISS-style adelete interface
+        """
+        return await self.delete_documents_by_ids(ids)
+
+    async def aget_by_ids(self, ids: List[str], **kwargs) -> List[Document]:
+        """
+        Compatibility method for FAISS-style aget_by_ids interface
+        """
+        if not self.mem0_client:
+            raise RuntimeError("mem0 client not initialized")
+            
+        # Validate and clean IDs
+        if not ids:
+            return []
+            
+        clean_ids = []
+        for id_val in ids:
+            if id_val and isinstance(id_val, str):
+                clean_ids.append(str(id_val).strip())
+        
+        if not clean_ids:
+            return []
+            
+        documents = []
+        for memory_id in clean_ids:
+            try:
+                # Validate memory_id is a proper string
+                if not memory_id or not isinstance(memory_id, str):
+                    continue
+                    
+                # Get memory details from mem0
+                memory = await self._retry_api_call(
+                    lambda: self.mem0_client.get(str(memory_id).strip(), user_id=str(self.user_id)),
+                    operation_name="get_memory"
+                )
+                if memory:
+                    # Ensure memory content is a string
+                    memory_content = memory.get("memory", "")
+                    if not isinstance(memory_content, str):
+                        memory_content = str(memory_content) if memory_content is not None else ""
+                    
+                    doc = Document(
+                        page_content=memory_content,
+                        metadata={
+                            "id": memory_id,
+                            "timestamp": memory.get("created_at", self.get_timestamp()),
+                            "area": memory.get("metadata", {}).get("area", Memory.Area.MAIN.value),
+                            **memory.get("metadata", {})
+                        }
+                    )
+                    documents.append(doc)
+            except Exception as e:
+                PrintStyle.error(f"Error getting memory {memory_id}: {str(e)}")
+                continue
+                
+        return documents
+
+    def save_local(self, folder_path: str = None, **kwargs):
+        """
+        Compatibility method for FAISS-style save_local interface
+        For mem0, this is a no-op since mem0 handles persistence automatically
+        """
+        # mem0 handles persistence automatically, so this is a no-op
+        pass
 
     async def preload_knowledge(
         self, log_item: LogItem | None, kn_dirs: List[str], memory_subdir: str
