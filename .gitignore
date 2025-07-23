@@ -56,3 +56,6 @@ instruments/**
 # Global rule to include .gitkeep files anywhere
 !**/.gitkeep
 agent_history.gif
+
+tests/
+docs/
