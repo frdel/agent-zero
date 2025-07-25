@@ -3,10 +3,11 @@
 /* Field Styles */
 .field {
   display: grid;
-  grid-template-columns: 60% 1fr;
+  grid-template-columns: 40% 1fr;
   align-items: center;
   margin-block: 1rem;
   padding: var(--spacing-xs) 0;
+  gap: 1rem;
 }
 
 .field.field-full {
@@ -70,8 +71,53 @@ textarea {
   border: 6px solid transparent;
 }
 
+/* Ensure textarea container takes full width */
+.field-control > div {
+  width: 100%;
+}
+
 textarea:focus {
   background-color: #151515;
+}
+
+/* Textarea expand button */
+.textarea-expand-button {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 30px;
+  height: 30px;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.textarea-expand-button:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.8);
+  transform: scale(1.75);
+}
+
+.textarea-expand-button svg {
+  width: 30px;
+  height: 30px;
+}
+
+.light-mode .textarea-expand-button {
+  background: rgba(255, 255, 255, 0.8);
+  color: #333;
+}
+
+.light-mode .textarea-expand-button:hover {
+  background: rgba(255, 255, 255, 0.95);
 }
 
 /* Button Disabled State */
