@@ -1,0 +1,1171 @@
+<html>
+
+<head>
+    <title>Memory Dashboard</title>
+    <script type="module">
+        import { store } from "/components/settings/memory/memory-dashboard-store.js";
+    </script>
+</head>
+
+<body>
+    <div x-data>
+        <template x-if="$store.memoryDashboardStore">
+            <div x-init="$store.memoryDashboardStore.initialize()" class="memory-dashboard">
+
+                <!-- Header with title and statistics -->
+                <div class="dashboard-header">
+                    <h3>Memory Dashboard</h3>
+                    <div class="memory-stats" x-show="!$store.memoryDashboardStore.loading">
+                        <div class="stat-item">
+                            <span class="stat-label">Total:</span>
+                            <span class="stat-value" x-text="$store.memoryDashboardStore.totalCount"></span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Knowledge:</span>
+                            <span class="stat-value" x-text="$store.memoryDashboardStore.knowledgeCount"></span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Conversation:</span>
+                            <span class="stat-value" x-text="$store.memoryDashboardStore.conversationCount"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters-section">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="area-filter">Area:</label>
+                            <select id="area-filter" x-model="$store.memoryDashboardStore.areaFilter">
+                                <option value="">All Areas</option>
+                                <option value="main">Main</option>
+                                <option value="fragments">Fragments</option>
+                                <option value="solutions">Solutions</option>
+                                <option value="instruments">Instruments</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="search-input">Search:</label>
+                            <input type="text" id="search-input" x-model="$store.memoryDashboardStore.searchQuery"
+                                   placeholder="Search memory content..." />
+                        </div>
+
+                        <div class="filter-actions">
+                            <button class="btn primary slim" @click="$store.memoryDashboardStore.applyFilters()"
+                                    :disabled="$store.memoryDashboardStore.loading">
+                                Apply Filters
+                            </button>
+                            <button class="btn slim" @click="$store.memoryDashboardStore.clearFilters()">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading state -->
+                <div x-show="$store.memoryDashboardStore.loading" class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <span>Loading memories...</span>
+                </div>
+
+                <!-- Error state -->
+                <div x-show="$store.memoryDashboardStore.error" class="error-state">
+                    <span x-text="$store.memoryDashboardStore.error"></span>
+                </div>
+
+                                    <!-- Memory table -->
+                    <div x-show="!$store.memoryDashboardStore.loading && !$store.memoryDashboardStore.error"
+                         class="memory-table-container">
+
+                        <!-- Pagination controls at top -->
+                        <div class="pagination-controls-top" x-show="$store.memoryDashboardStore.totalPages > 1">
+                            <div class="pagination-info-inline">
+                                <span>Page <span x-text="$store.memoryDashboardStore.currentPage"></span>
+                                      of <span x-text="$store.memoryDashboardStore.totalPages"></span>
+                                      (<span x-text="$store.memoryDashboardStore.memories.length"></span> total memories)
+                                </span>
+                            </div>
+
+                            <div class="pagination-controls">
+                                <button class="btn slim" @click="$store.memoryDashboardStore.prevPage()"
+                                        :disabled="$store.memoryDashboardStore.currentPage === 1">
+                                    Previous
+                                </button>
+
+                                <span class="page-numbers">
+                                    <template x-for="page in Array.from({length: $store.memoryDashboardStore.totalPages}, (_, i) => i + 1)" :key="page">
+                                        <button class="page-btn"
+                                                @click="$store.memoryDashboardStore.goToPage(page)"
+                                                :class="{'active': page === $store.memoryDashboardStore.currentPage}"
+                                                x-text="page">
+                                        </button>
+                                    </template>
+                                </span>
+
+                                <button class="btn slim" @click="$store.memoryDashboardStore.nextPage()"
+                                        :disabled="$store.memoryDashboardStore.currentPage === $store.memoryDashboardStore.totalPages">
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-wrapper">
+                            <table class="memory-table">
+                                <thead>
+                                    <tr>
+                                        <th class="col-area">Area</th>
+                                        <th class="col-timestamp">Timestamp</th>
+                                        <th class="col-source">Source</th>
+                                        <th class="col-preview">Preview</th>
+                                        <th class="col-actions">Actions</th>
+                                    </tr>
+                                </thead>
+                        <tbody>
+                            <template x-for="memory in $store.memoryDashboardStore.paginatedMemories" :key="memory.id">
+                                <tr class="memory-row">
+                                    <!-- Area with color indicator -->
+                                    <td class="area-cell">
+                                        <span class="area-badge"
+                                              :style="`background-color: ${$store.memoryDashboardStore.getAreaColor(memory.area)}`"
+                                              x-text="memory.area.toUpperCase()"></span>
+                                    </td>
+
+                                    <!-- Timestamp -->
+                                    <td class="timestamp-cell">
+                                        <span x-text="$store.memoryDashboardStore.formatTimestamp(memory.timestamp, true)"
+                                              :title="$store.memoryDashboardStore.formatTimestamp(memory.timestamp, false)"></span>
+                                    </td>
+
+                                    <!-- Source -->
+                                    <td class="source-cell">
+                                        <template x-if="memory.knowledge_source">
+                                            <div class="source-info">
+                                                <span class="source-type knowledge">Knowledge</span>
+                                                <span class="source-file" x-text="memory.source_file" x-show="memory.source_file"></span>
+                                            </div>
+                                        </template>
+                                        <template x-if="!memory.knowledge_source">
+                                            <span class="source-type conversation">Conversation</span>
+                                        </template>
+                                    </td>
+
+                                    <!-- Content preview -->
+                                    <td class="preview-cell">
+                                        <div class="content-preview" x-text="memory.content_preview"></div>
+                                        <div class="tags" x-show="memory.tags && memory.tags.length > 0">
+                                            <template x-for="tag in memory.tags" :key="tag">
+                                                <span class="tag" x-text="tag"></span>
+                                            </template>
+                                        </div>
+                                    </td>
+
+                                                                        <!-- Actions -->
+                                    <td class="actions-cell">
+                                        <button class="btn-action view" @click="$store.memoryDashboardStore.showMemoryDetails(memory)"
+                                                title="View Details">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                        <button class="btn-action copy" @click="$store.memoryDashboardStore.copyToClipboard(memory.content_full)"
+                                                title="Copy Content">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                            </svg>
+                                        </button>
+                                        <button class="btn-action delete" @click="$store.memoryDashboardStore.deleteMemory(memory)"
+                                                title="Delete Memory">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3,6 5,6 21,6"></polyline>
+                                                <path d="M19,6V20a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6M8,6V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2V6"></path>
+                                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                    </div>
+
+                                    <!-- No memories message -->
+                <div x-show="$store.memoryDashboardStore.memories.length === 0 && !$store.memoryDashboardStore.message" class="no-memories">
+                    No memories found matching the current filters.
+                </div>
+
+                <!-- Initialization message -->
+                <div x-show="$store.memoryDashboardStore.message" class="init-message">
+                    <span x-text="$store.memoryDashboardStore.message"></span>
+                </div>
+
+
+
+                    <!-- Export button -->
+                    <div class="export-section">
+                        <button class="btn slim" @click="$store.memoryDashboardStore.exportMemories()">
+                            Export Memories (JSON)
+                        </button>
+                    </div>
+                </div>
+
+                                <!-- Enhanced Detail Modal -->
+                <div x-show="$store.memoryDashboardStore.showDetailModal"
+                     x-transition:enter="modal-enter"
+                     x-transition:enter-start="modal-enter-start"
+                     x-transition:enter-end="modal-enter-end"
+                     x-transition:leave="modal-leave"
+                     x-transition:leave-start="modal-leave-start"
+                     x-transition:leave-end="modal-leave-end"
+                     class="modal-overlay"
+                     @click.self="$store.memoryDashboardStore.closeDetailModal()">
+                    <div class="modal-content memory-detail-modal" x-show="$store.memoryDashboardStore.selectedMemory" x-cloak>
+
+                        <!-- Modal Header with Memory Info -->
+                        <div class="modal-header-enhanced">
+                            <div class="header-left">
+                                <div class="memory-title">
+                                                                        <span class="area-badge-large"
+                                          :style="`background: linear-gradient(135deg, ${$store.memoryDashboardStore.getAreaColor($store.memoryDashboardStore.selectedMemory?.area)} 0%, ${$store.memoryDashboardStore.getAreaColor($store.memoryDashboardStore.selectedMemory?.area)}cc 100%)`"
+                                          x-text="$store.memoryDashboardStore.selectedMemory?.area?.toUpperCase() || 'UNKNOWN'"></span>
+                                    <h3>Memory Details</h3>
+                                </div>
+                                <div class="memory-meta-quick">
+                                    <span class="timestamp-badge" x-text="$store.memoryDashboardStore.formatTimestamp($store.memoryDashboardStore.selectedMemory?.timestamp, true)"></span>
+                                    <span class="source-badge"
+                                          :class="$store.memoryDashboardStore.selectedMemory?.knowledge_source ? 'knowledge' : 'conversation'"
+                                          x-text="$store.memoryDashboardStore.selectedMemory?.knowledge_source ? 'Knowledge' : 'Conversation'"></span>
+                                </div>
+                            </div>
+                                        <div class="header-actions">
+                <button class="btn-action-header copy" @click="$store.memoryDashboardStore.copyToClipboard($store.memoryDashboardStore.selectedMemory?.content_full)"
+                        title="Copy Full Content">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                </button>
+                <button class="btn-action-header delete" @click="$store.memoryDashboardStore.deleteMemory($store.memoryDashboardStore.selectedMemory)"
+                        title="Delete Memory">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3,6 5,6 21,6"></polyline>
+                        <path d="M19,6V20a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6M8,6V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2V6"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                </button>
+                <button class="btn-close-enhanced" @click="$store.memoryDashboardStore.closeDetailModal()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+                        </div>
+
+                        <!-- Modal Body with Enhanced Layout -->
+                        <div class="modal-body-enhanced">
+
+                            <!-- Content Section -->
+                            <div class="content-section-main">
+                                <div class="section-header">
+                                    <h4>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14,2 14,8 20,8"></polyline>
+                                        </svg>
+                                        Content
+                                    </h4>
+                                </div>
+                                <div class="content-display" x-text="$store.memoryDashboardStore.selectedMemory?.content_full"></div>
+                            </div>
+
+                            <!-- Metadata Sidebar -->
+                            <div class="metadata-sidebar">
+                                <div class="section-header">
+                                    <h4>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
+                                        </svg>
+                                        Metadata
+                                    </h4>
+                                </div>
+
+                                <div class="metadata-grid">
+                                    <div class="metadata-item">
+                                        <label>Memory ID</label>
+                                        <value class="monospace" x-text="$store.memoryDashboardStore.selectedMemory?.id"></value>
+                                    </div>
+
+                                    <div class="metadata-item">
+                                        <label>Area</label>
+                                        <value x-text="$store.memoryDashboardStore.selectedMemory?.area"></value>
+                                    </div>
+
+                                    <div class="metadata-item">
+                                        <label>Created</label>
+                                        <value x-text="$store.memoryDashboardStore.formatTimestamp($store.memoryDashboardStore.selectedMemory?.timestamp)"></value>
+                                    </div>
+
+                                    <div class="metadata-item">
+                                        <label>Source Type</label>
+                                        <value x-text="$store.memoryDashboardStore.selectedMemory?.knowledge_source ? 'Knowledge File' : 'Conversation'"></value>
+                                    </div>
+
+                                    <div class="metadata-item" x-show="$store.memoryDashboardStore.selectedMemory?.source_file">
+                                        <label>Source File</label>
+                                        <value class="monospace" x-text="$store.memoryDashboardStore.selectedMemory?.source_file"></value>
+                                    </div>
+
+                                    <div class="metadata-item" x-show="$store.memoryDashboardStore.selectedMemory?.file_type">
+                                        <label>File Type</label>
+                                        <value x-text="$store.memoryDashboardStore.selectedMemory?.file_type"></value>
+                                    </div>
+
+                                    <div class="metadata-item" x-show="$store.memoryDashboardStore.selectedMemory?.consolidation_action">
+                                        <label>Consolidation</label>
+                                        <value class="consolidation-badge" x-text="$store.memoryDashboardStore.selectedMemory?.consolidation_action"></value>
+                                    </div>
+
+                                    <div class="metadata-item" x-show="$store.memoryDashboardStore.selectedMemory?.tags && $store.memoryDashboardStore.selectedMemory?.tags.length > 0">
+                                        <label>Tags</label>
+                                        <div class="tags-display">
+                                            <template x-for="tag in $store.memoryDashboardStore.selectedMemory?.tags" :key="tag">
+                                                <span class="tag-pill" x-text="tag"></span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </template>
+    </div>
+
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        .memory-dashboard {
+            padding: 1rem;
+            max-width: 100%;
+            background: var(--color-background);
+            color: var(--color-text);
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .memory-stats {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem;
+            background: var(--color-panel);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            min-width: 80px;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--color-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .filters-section {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--color-panel);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .filter-group label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--color-text);
+        }
+
+        .filter-group input, .filter-group select {
+            padding: 0.5rem;
+            border: 1px solid var(--color-border);
+            background: var(--color-background);
+            color: var(--color-text);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            min-width: 200px;
+        }
+
+        .filter-group input:focus, .filter-group select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 2px rgba(115, 122, 129, 0.1);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .loading-state, .error-state, .no-memories, .init-message {
+            text-align: center;
+            padding: 2rem;
+            color: var(--color-secondary);
+            background: var(--color-panel);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .init-message {
+            color: var(--color-primary);
+            background: rgba(115, 122, 129, 0.1);
+            border-color: var(--color-primary);
+        }
+
+        .error-state {
+            color: var(--color-accent);
+            background: rgba(207, 102, 121, 0.1);
+            border-color: var(--color-accent);
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--color-border);
+            border-left-color: var(--color-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .memory-table-container {
+            background: var(--color-background);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .memory-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        /* Fixed column widths for proper fit */
+        .col-area { width: 15%; }
+        .col-timestamp { width: 18%; }
+        .col-source { width: 15%; }
+        .col-preview { width: 30%; }
+        .col-actions { width: 22%; }
+
+        .memory-table th,
+        .memory-table td {
+            padding: 1rem 0.75rem;
+            text-align: left;
+            vertical-align: top;
+            border-bottom: 1px solid var(--color-border);
+            overflow: hidden;
+        }
+
+        /* Allow source column to wrap properly */
+        .source-cell {
+            overflow: visible;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .memory-table th {
+            background: var(--color-panel);
+            font-weight: 600;
+            color: var(--color-text);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 2px solid var(--color-border);
+        }
+
+        .memory-table tbody tr {
+            border-bottom: 1px solid var(--color-border);
+            transition: background-color 0.2s ease;
+        }
+
+        .memory-table tbody tr:nth-child(even) {
+            background: var(--color-panel);
+        }
+
+        .memory-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .memory-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .area-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .timestamp-cell {
+            font-size: 0.85rem;
+            color: var(--color-secondary);
+            white-space: normal;
+            word-break: break-word;
+            font-family: monospace;
+            line-height: 1.2;
+        }
+
+        .source-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            align-items: flex-start;
+        }
+
+        .source-type {
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-align: center;
+            border: 1px solid;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .source-type.knowledge {
+            background: rgba(115, 122, 129, 0.1);
+            color: var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        .source-type.conversation {
+            background: rgba(101, 101, 101, 0.1);
+            color: var(--color-secondary);
+            border-color: var(--color-secondary);
+        }
+
+        .source-file {
+            font-size: 0.7rem;
+            color: var(--color-secondary);
+            font-family: monospace;
+            background: var(--color-panel);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--color-border);
+            word-break: break-all;
+            white-space: normal;
+            max-width: 100%;
+            overflow-wrap: break-word;
+        }
+
+        .content-preview {
+            line-height: 1.4;
+            font-size: 0.9rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tags {
+            display: flex;
+            gap: 0.25rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: var(--color-panel);
+            border: 1px solid var(--color-border);
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            color: var(--color-secondary);
+        }
+
+        .actions-cell {
+            white-space: nowrap;
+            text-align: center;
+            min-width: 140px;
+            padding: 0.5rem 0.25rem !important;
+        }
+
+        .btn-action {
+            background: none;
+            border: 1px solid var(--color-border);
+            padding: 0.3rem;
+            margin: 0 0.1rem;
+            cursor: pointer;
+            border-radius: 6px;
+            color: var(--color-secondary);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+        }
+
+        .btn-action:hover {
+            background: rgba(0, 0, 0, 0.05);
+            border-color: rgba(0, 0, 0, 0.2);
+            color: var(--color-text);
+            transform: translateY(-1px);
+        }
+
+        .btn-action.view:hover {
+            background: rgba(33, 150, 243, 0.1);
+            border-color: #2196F3;
+            color: #2196F3;
+        }
+
+        .btn-action.copy:hover {
+            background: rgba(76, 175, 80, 0.1);
+            border-color: #4CAF50;
+            color: #4CAF50;
+        }
+
+        .btn-action.delete:hover {
+            background: rgba(244, 67, 54, 0.1);
+            border-color: #f44336;
+            color: #f44336;
+        }
+
+        .pagination-controls-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: var(--color-panel);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+        }
+
+        .pagination-info-inline {
+            color: var(--color-secondary);
+            font-size: 0.9rem;
+        }
+
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: var(--color-panel);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+        }
+
+        .page-numbers {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .page-btn {
+            background: var(--color-background);
+            border: 1px solid var(--color-border);
+            color: var(--color-text);
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .page-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--color-primary);
+        }
+
+        .page-btn.active {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+
+        .export-section {
+            text-align: center;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--color-panel);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            border-top: 1px solid var(--color-border);
+        }
+
+        /* Enhanced Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 2rem 0;
+        }
+
+        .modal-enter {
+            transition: all 0.3s ease;
+        }
+
+        .modal-enter-start {
+            opacity: 0;
+        }
+
+        .modal-enter-end {
+            opacity: 1;
+        }
+
+        .modal-leave {
+            transition: all 0.2s ease;
+        }
+
+        .modal-leave-start {
+            opacity: 1;
+        }
+
+        .modal-leave-end {
+            opacity: 0;
+        }
+
+        .memory-detail-modal {
+            background: var(--color-background);
+            border: 1px solid var(--color-border);
+            border-radius: 16px;
+            width: 95%;
+            max-width: 1200px;
+            max-height: 90vh;
+            min-height: 60vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: modalSlideIn 0.3s ease-out;
+            margin: 0 auto;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(20px) scale(0.95);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-header-enhanced {
+            background: var(--color-panel);
+            padding: 1.5rem 2rem;
+            border-bottom: 2px solid var(--color-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .header-left {
+            flex: 1;
+        }
+
+        .memory-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .memory-title h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        .area-badge-large {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .memory-meta-quick {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .timestamp-badge {
+            background: var(--color-panel);
+            border: 1px solid var(--color-border);
+            color: var(--color-secondary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .source-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid;
+        }
+
+        .source-badge.knowledge {
+            background: rgba(115, 122, 129, 0.1);
+            color: var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        .source-badge.conversation {
+            background: rgba(101, 101, 101, 0.1);
+            color: var(--color-secondary);
+            border-color: var(--color-secondary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-start;
+        }
+
+        .btn-action-header {
+            background: var(--color-background);
+            border: 1px solid var(--color-border);
+            padding: 0.75rem;
+            border-radius: 12px;
+            cursor: pointer;
+            color: var(--color-secondary);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-action-header:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--color-primary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-action-header.copy:hover {
+            background: rgba(76, 175, 80, 0.05);
+            border-color: #4CAF50;
+            color: #4CAF50;
+        }
+
+        .btn-action-header.delete:hover {
+            background: rgba(244, 67, 54, 0.05);
+            border-color: #f44336;
+            color: #f44336;
+        }
+
+        .btn-close-enhanced {
+            background: rgba(207, 102, 121, 0.1);
+            border: 1px solid var(--color-accent);
+            padding: 0.75rem;
+            border-radius: 12px;
+            cursor: pointer;
+            color: var(--color-accent);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-close-enhanced:hover {
+            background: rgba(207, 102, 121, 0.15);
+            border-color: var(--color-accent);
+            transform: translateY(-1px);
+        }
+
+        .modal-body-enhanced {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .content-section-main {
+            flex: 2;
+            padding: 2rem;
+            overflow-y: auto;
+            background: var(--color-background);
+        }
+
+        .metadata-sidebar {
+            flex: 1;
+            min-width: 320px;
+            background: var(--color-panel);
+            border-left: 1px solid var(--color-border);
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .section-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h4 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--color-text);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .content-display {
+            background: var(--color-background);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--color-text);
+            white-space: pre-wrap;
+            max-height: 60vh;
+            overflow-y: auto;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .metadata-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .metadata-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .metadata-item label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--color-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metadata-item value {
+            font-size: 0.9rem;
+            color: var(--color-text);
+            background: var(--color-background);
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+            word-break: break-all;
+        }
+
+        .metadata-item value.monospace {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .consolidation-badge {
+            background: var(--color-accent) !important;
+            color: white !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 20px !important;
+            font-weight: 600 !important;
+            text-transform: capitalize !important;
+            border: none !important;
+        }
+
+        .tags-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            background: var(--color-background);
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+        }
+
+        .tag-pill {
+            background: var(--color-primary);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .modal-overlay {
+                padding: 1rem 0;
+            }
+
+            .memory-dashboard {
+                padding: 0.5rem;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .memory-stats {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group input, .filter-group select {
+                min-width: unset;
+                width: 100%;
+            }
+
+            .memory-table th,
+            .memory-table td {
+                padding: 0.5rem 0.25rem;
+                font-size: 0.85rem;
+            }
+
+            .actions-cell {
+                min-width: 120px;
+            }
+
+            .col-area { width: 15%; }
+            .col-timestamp { width: 15%; }
+            .col-source { width: 25%; }
+            .col-preview { width: 25%; }
+            .col-actions { width: 20%; }
+
+            .memory-detail-modal {
+                width: 98%;
+                max-height: 95vh;
+                min-height: 50vh;
+                margin: 0;
+            }
+
+            .modal-body-enhanced {
+                flex-direction: column;
+            }
+
+            .metadata-sidebar {
+                min-width: unset;
+                border-left: none;
+                border-top: 1px solid var(--color-border);
+            }
+
+            .modal-header-enhanced {
+                padding: 1rem;
+            }
+
+            .memory-title {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .content-section-main,
+            .metadata-sidebar {
+                padding: 1rem;
+            }
+
+            .pagination-controls-top {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .pagination-controls {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .page-numbers {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+
+</body>
+
+</html>

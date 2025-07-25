@@ -293,6 +293,8 @@ const settingsModalProxy = {
         } else if (field.id === "show_a2a_connection") {
             console.log('Opening A2A connection modal...');
             openModal("settings/external/a2a-connection.html");
+        } else if (field.id === "memory_dashboard") {
+            openModal("settings/memory/memory-dashboard.html");
         }
     }
 };

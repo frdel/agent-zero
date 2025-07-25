@@ -645,6 +645,16 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     memory_fields.append(
         {
+            "id": "memory_dashboard",
+            "title": "Memory Dashboard",
+            "description": "View and explore all stored memories in a table format with filtering and search capabilities.",
+            "type": "button",
+            "value": "Open Dashboard",
+        }
+    )
+
+    memory_fields.append(
+        {
             "id": "memory_recall_enabled",
             "title": "Memory auto-recall enabled",
             "description": "Agent Zero will automatically recall memories based on convesation context.",
