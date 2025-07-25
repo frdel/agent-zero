@@ -1,4 +1,5 @@
 import asyncio
+from python.helpers import settings
 from python.helpers.extension import Extension
 from python.helpers.memory import Memory
 from python.helpers.dirty_json import DirtyJson
@@ -11,6 +12,11 @@ class MemorizeSolutions(Extension):
 
     async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
         # try:
+
+        set = settings.get_settings()
+
+        if not set["memory_memorize_enabled"]:
+            return
  
         # show full util message
         log_item = self.agent.context.log.log(
@@ -23,6 +29,11 @@ class MemorizeSolutions(Extension):
         return task
 
     async def memorize(self, loop_data: LoopData, log_item: LogItem, **kwargs):
+
+        set = settings.get_settings()
+
+        db = await Memory.get(self.agent)
+
         # get system message and chat history for util llm
         system = self.agent.read_prompt("memory.solutions_sum.sys.md")
         msgs_text = self.agent.concat_messages(self.agent.history)
@@ -74,14 +85,15 @@ class MemorizeSolutions(Extension):
             log_item.update(heading="No successful solutions to memorize.")
             return
         else:
+            solutions_txt = "\n\n".join([str(solution) for solution in solutions]).strip()
             log_item.update(
-                heading=f"{len(solutions)} successful solutions to memorize."
+                heading=f"{len(solutions)} successful solutions to memorize.", solutions=solutions_txt
             )
 
         # Process solutions with intelligent consolidation
-        solutions_txt = ""
         total_processed = 0
         total_consolidated = 0
+        rem = []
 
         for solution in solutions:
             # Convert solution to structured text
@@ -92,67 +104,91 @@ class MemorizeSolutions(Extension):
             else:
                 # If solution is not a dict, convert it to string
                 txt = f"# Solution\n {str(solution)}"
-            solutions_txt += txt + "\n\n"
 
-            try:
-                # Use intelligent consolidation system
-                from python.helpers.memory_consolidation import create_memory_consolidator
-                consolidator = create_memory_consolidator(
-                    self.agent,
-                    similarity_threshold=DEFAULT_MEMORY_THRESHOLD,  # More permissive for discovery
-                    max_similar_memories=6,    # Fewer for solutions (more complex)
-                    max_llm_context_memories=3
-                )
-
-                # Create solution-specific log for detailed tracking
-                solution_log = self.agent.context.log.log(
-                    type="util",
-                    heading=f"Processing solution: {txt[:50]}...",
-                    temp=False,
-                    update_progress="none"  # Don't affect status bar
-                )
-
-                # Process with intelligent consolidation
-                result_obj = await consolidator.process_new_memory(
-                    new_memory=txt,
-                    area=Memory.Area.SOLUTIONS.value,
-                    metadata={"area": Memory.Area.SOLUTIONS.value},
-                    log_item=solution_log
-                )
-
-                # Update the individual log item with completion status but keep it temporary
-                if result_obj.get("success"):
-                    total_consolidated += 1
-                    solution_log.update(
-                        result="Solution processed successfully",
-                        heading=f"Solution completed: {txt[:50]}...",
-                        temp=False,  # Show completion message
-                        update_progress="none"  # Show briefly then disappear
+            if set["memory_memorize_consolidation"]:
+                try:
+                    # Use intelligent consolidation system
+                    from python.helpers.memory_consolidation import create_memory_consolidator
+                    consolidator = create_memory_consolidator(
+                        self.agent,
+                        similarity_threshold=DEFAULT_MEMORY_THRESHOLD,  # More permissive for discovery
+                        max_similar_memories=6,    # Fewer for solutions (more complex)
+                        max_llm_context_memories=3
                     )
-                else:
-                    solution_log.update(
-                        result="Solution processing failed",
-                        heading=f"Solution failed: {txt[:50]}...",
-                        temp=False,  # Show completion message
-                        update_progress="none"  # Show briefly then disappear
+
+                    # Create solution-specific log for detailed tracking
+                    solution_log = None # too many utility messages, skip log for now
+                    # solution_log = self.agent.context.log.log(
+                    #     type="util",
+                    #     heading=f"Processing solution: {txt[:50]}...",
+                    #     temp=False,
+                    #     update_progress="none"  # Don't affect status bar
+                    # )
+
+                    # Process with intelligent consolidation
+                    result_obj = await consolidator.process_new_memory(
+                        new_memory=txt,
+                        area=Memory.Area.SOLUTIONS.value,
+                        metadata={"area": Memory.Area.SOLUTIONS.value},
+                        log_item=solution_log
                     )
-                total_processed += 1
 
-            except Exception as e:
-                # Log error but continue processing
-                log_item.update(consolidation_error=str(e))
-                total_processed += 1
+                    # Update the individual log item with completion status but keep it temporary
+                    if result_obj.get("success"):
+                        total_consolidated += 1
+                        if solution_log:
+                            solution_log.update(
+                                result="Solution processed successfully",
+                                heading=f"Solution completed: {txt[:50]}...",
+                                temp=False,  # Show completion message
+                                update_progress="none"  # Show briefly then disappear
+                            )
+                    else:
+                        if solution_log:
+                            solution_log.update(
+                                result="Solution processing failed",
+                                heading=f"Solution failed: {txt[:50]}...",
+                                temp=False,  # Show completion message
+                                update_progress="none"  # Show briefly then disappear
+                            )
+                    total_processed += 1
 
-        # Update final results with structured logging
-        solutions_txt = solutions_txt.strip()
-        log_item.update(
-            heading=f"Solution memorization completed: {total_processed} solutions processed, {total_consolidated} intelligently consolidated",
-            solutions=solutions_txt,
-            result=f"{total_processed} solutions processed, {total_consolidated} intelligently consolidated",
-            solutions_processed=total_processed,
-            solutions_consolidated=total_consolidated,
-            update_progress="none"
-        )
+                except Exception as e:
+                    # Log error but continue processing
+                    log_item.update(consolidation_error=str(e))
+                    total_processed += 1
+
+                # Update final results with structured logging
+                log_item.update(
+                    heading=f"Solution memorization completed: {total_processed} solutions processed, {total_consolidated} intelligently consolidated",
+                    solutions=solutions_txt,
+                    result=f"{total_processed} solutions processed, {total_consolidated} intelligently consolidated",
+                    solutions_processed=total_processed,
+                    solutions_consolidated=total_consolidated,
+                    update_progress="none"
+                )
+            else:
+                # remove previous solutions too similiar to this one
+                if set["memory_memorize_replace_threshold"] > 0:
+                    rem += await db.delete_documents_by_query(
+                        query=txt,
+                        threshold=set["memory_memorize_replace_threshold"],
+                        filter=f"area=='{Memory.Area.SOLUTIONS.value}'",
+                    )
+                    if rem:
+                        rem_txt = "\n\n".join(Memory.format_docs_plain(rem))
+                        log_item.update(replaced=rem_txt)
+
+                # insert new solution
+                await db.insert_text(text=txt, metadata={"area": Memory.Area.SOLUTIONS.value})
+
+                log_item.update(
+                    result=f"{len(solutions)} solutions memorized.",
+                    heading=f"{len(solutions)} solutions memorized.",
+                )
+                if rem:
+                    log_item.stream(result=f"\nReplaced {len(rem)} previous solutions.")
+
 
     # except Exception as e:
     #     err = errors.format_error(e)

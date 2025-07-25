@@ -12,11 +12,12 @@ import zipfile
 import importlib
 import importlib.util
 import inspect
+import glob
 
 
 class VariablesPlugin(ABC):
     @abstractmethod
-    def get_variables(self) -> dict[str, Any]:  # type: ignore
+    def get_variables(self, file: str, backup_dirs: list[str] | None = None) -> dict[str, Any]:  # type: ignore
         pass
 
 
@@ -36,29 +37,36 @@ def load_plugin_variables(file: str, backup_dirs: list[str] | None = None) -> di
         plugin_file = None
 
     if plugin_file and exists(plugin_file):
+        
+        from python.helpers import extract_tools
+        classes = extract_tools.load_classes_from_file(plugin_file, VariablesPlugin, one_per_file=False)
+        for cls in classes:
+            return cls().get_variables(file, backup_dirs) # type: ignore < abstract class here is ok, it is always a subclass
+
         # load python code and extract variables variables from it
-        module = None
-        module_name = dirname(plugin_file).replace("/", ".") + "." + basename(plugin_file, '.py')
-        try:
-            spec = importlib.util.spec_from_file_location(module_name, plugin_file)
-            if not spec:
-                return {}
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[spec.name] = module
-            spec.loader.exec_module(module)  # type: ignore
-        except ImportError:
-            return {}
+        # module = None
+        # module_name = dirname(plugin_file).replace("/", ".") + "." + basename(plugin_file, '.py')
 
-        if module is None:
-            return {}
+        # try:
+        #     spec = importlib.util.spec_from_file_location(module_name, plugin_file)
+        #     if not spec:
+        #         return {}
+        #     module = importlib.util.module_from_spec(spec)
+        #     sys.modules[spec.name] = module
+        #     spec.loader.exec_module(module)  # type: ignore
+        # except ImportError:
+        #     return {}
 
-        # Get all classes in the module
-        class_list = inspect.getmembers(module, inspect.isclass)
-        # Filter for classes that are subclasses of VariablesPlugin
-        # iterate backwards to skip imported superclasses
-        for cls in reversed(class_list):
-            if cls[1] is not VariablesPlugin and issubclass(cls[1], VariablesPlugin):
-                return cls[1]().get_variables()  # type: ignore
+        # if module is None:
+        #     return {}
+
+        # # Get all classes in the module
+        # class_list = inspect.getmembers(module, inspect.isclass)
+        # # Filter for classes that are subclasses of VariablesPlugin
+        # # iterate backwards to skip imported superclasses
+        # for cls in reversed(class_list):
+        #     if cls[1] is not VariablesPlugin and issubclass(cls[1], VariablesPlugin):
+        #         return cls[1]().get_variables()  # type: ignore
     return {}
 
 from python.helpers.strings import sanitize_string
@@ -220,6 +228,20 @@ def find_file_in_dirs(file_path, backup_dirs):
         f"File '{file_path}' not found in the original path or backup directories."
     )
 
+def get_unique_filenames_in_dirs(dir_paths: list[str], pattern: str = "*"):
+    # returns absolute paths for unique filenames, priority by order in dir_paths
+    seen = set()
+    result = []
+    for dir_path in dir_paths:
+        full_dir = get_abs_path(dir_path)
+        for file_path in glob.glob(os.path.join(full_dir, pattern)):
+            fname = os.path.basename(file_path)
+            if fname not in seen and os.path.isfile(file_path):
+                seen.add(fname)
+                result.append(get_abs_path(file_path))
+    # sort by filename (basename), not the full path
+    result.sort(key=lambda path: os.path.basename(path))
+    return result
 
 def remove_code_fences(text):
     # Pattern to match code fences with optional language specifier
@@ -308,6 +330,10 @@ def make_dirs(relative_path: str):
 def get_abs_path(*relative_paths):
     "Convert relative paths to absolute paths based on the base directory."
     return os.path.join(get_base_dir(), *relative_paths)
+
+def deabsolute_path(path:str):
+    "Convert absolute paths to relative paths based on the base directory."
+    return os.path.relpath(path, get_base_dir())
 
 def fix_dev_path(path:str):
     "On dev environment, convert /a0/... paths to local absolute paths"

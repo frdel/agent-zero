@@ -91,6 +91,10 @@
   font-size: var(--font-size-small);
 }
 
+.message-user .message-text{
+  text-align: start;
+}
+
 .message-ai {
   /* border-bottom-left-radius: var(--spacing-xxs); */
 }

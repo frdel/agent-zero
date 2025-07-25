@@ -1,7 +1,8 @@
-import re, os, importlib, inspect
+import re, os, importlib, importlib.util, inspect
+from types import ModuleType
 from typing import Any, Type, TypeVar
 from .dirty_json import DirtyJson
-from .files import get_abs_path
+from .files import get_abs_path, deabsolute_path
 import regex
 from fnmatch import fnmatch
 
@@ -58,6 +59,20 @@ def fix_json_string(json_string):
 
 T = TypeVar('T')  # Define a generic type variable
 
+def import_module(file_path: str) -> ModuleType:
+    # Handle file paths with periods in the name using importlib.util
+    abs_path = get_abs_path(file_path)
+    module_name = os.path.basename(abs_path).replace('.py', '')
+    
+    # Create the module spec and load the module
+    spec = importlib.util.spec_from_file_location(module_name, abs_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load module from {abs_path}")
+        
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
 def load_classes_from_folder(folder: str, name_pattern: str, base_class: Type[T], one_per_file: bool = True) -> list[Type[T]]:
     classes = []
     abs_folder = get_abs_path(folder)
@@ -69,9 +84,9 @@ def load_classes_from_folder(folder: str, name_pattern: str, base_class: Type[T]
 
     # Iterate through the sorted list of files
     for file_name in py_files:
-        module_name = file_name[:-3]  # remove .py extension
-        module_path = folder.replace("/", ".") + "." + module_name
-        module = importlib.import_module(module_path)
+        file_path = os.path.join(abs_folder, file_name)
+        # Use the new import_module function
+        module = import_module(file_path)
 
         # Get all classes in the module
         class_list = inspect.getmembers(module, inspect.isclass)
@@ -84,4 +99,22 @@ def load_classes_from_folder(folder: str, name_pattern: str, base_class: Type[T]
                 if one_per_file:
                     break
 
+    return classes
+
+def load_classes_from_file(file: str, base_class: type[T], one_per_file: bool = True) -> list[type[T]]:
+    classes = []
+    # Use the new import_module function
+    module = import_module(file)
+    
+    # Get all classes in the module
+    class_list = inspect.getmembers(module, inspect.isclass)
+    
+    # Filter for classes that are subclasses of the given base_class
+    # iterate backwards to skip imported superclasses
+    for cls in reversed(class_list):
+        if cls[1] is not base_class and issubclass(cls[1], base_class):
+            classes.append(cls[1])
+            if one_per_file:
+                break
+                
     return classes

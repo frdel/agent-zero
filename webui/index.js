@@ -330,8 +330,9 @@ async function poll() {
     // Get timezone from navigator
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+    const log_from = lastLogVersion;
     const response = await sendJsonData("/poll", {
-      log_from: lastLogVersion,
+      log_from: log_from,
       context: context || null,
       timezone: timezone,
     });
@@ -345,9 +346,13 @@ async function poll() {
     if (!context) setContext(response.context);
     if (response.context != context) return; //skip late polls after context change
 
+    // if the chat has been reset, restart this poll as it may have been called with incorrect log_from
     if (lastLogGuid != response.log_guid) {
       chatHistory.innerHTML = "";
       lastLogVersion = 0;
+      lastLogGuid = response.log_guid;
+      await poll();
+      return;
     }
 
     if (lastLogVersion != response.log_version) {

@@ -65,6 +65,13 @@ def get_runtime_id() -> str:
         runtime_id = secrets.token_hex(8)   
     return runtime_id
 
+def get_persistent_id() -> str:
+    id = dotenv.get_dotenv_value("A0_PERSISTENT_RUNTIME_ID")
+    if not id:
+        id = secrets.token_hex(16)
+        dotenv.save_dotenv_value("A0_PERSISTENT_RUNTIME_ID", id)
+    return id
+
 @overload
 async def call_development_function(func: Callable[..., Awaitable[T]], *args, **kwargs) -> T: ...
 

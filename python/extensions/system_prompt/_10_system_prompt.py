@@ -1,9 +1,7 @@
-from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 from python.helpers.extension import Extension
 from python.helpers.mcp_handler import MCPConfig
 from agent import Agent, LoopData
-from python.helpers.localization import Localization
 
 
 class SystemPrompt(Extension):
@@ -27,7 +25,7 @@ def get_main_prompt(agent: Agent):
 def get_tools_prompt(agent: Agent):
     prompt = agent.read_prompt("agent.system.tools.md")
     if agent.config.chat_model.vision:
-        prompt += '\n' + agent.read_prompt("agent.system.tools_vision.md")
+        prompt += '\n\n' + agent.read_prompt("agent.system.tools_vision.md")
     return prompt
 
 

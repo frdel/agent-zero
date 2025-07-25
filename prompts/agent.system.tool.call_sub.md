@@ -9,6 +9,7 @@ reset arg usage:
   "false": continue existing subordinate
 if superior, orchestrate
 respond to existing subordinates using call_subordinate tool with reset false
+profile arg usage: select from available profiles for specialized subordinates, leave empty for default
 
 example usage
 ~~~json
@@ -19,8 +20,12 @@ example usage
     ],
     "tool_name": "call_subordinate",
     "tool_args": {
+        "profile": "",
         "message": "...",
         "reset": "true"
     }
 }
 ~~~
+
+**available profiles:**
+{{agent_profiles}}

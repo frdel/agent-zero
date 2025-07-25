@@ -75,7 +75,7 @@ def initialize_agent():
         utility_model=utility_llm,
         embeddings_model=embedding_llm,
         browser_model=browser_llm,
-        prompts_subdir=current_settings["agent_prompts_subdir"],
+        profile=current_settings["agent_profile"],
         memory_subdir=current_settings["agent_memory_subdir"],
         knowledge_subdirs=[current_settings["agent_knowledge_subdir"], "default"],
         mcp_servers=current_settings["mcp_servers"],

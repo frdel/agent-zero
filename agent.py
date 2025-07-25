@@ -24,7 +24,7 @@ from python.helpers.dirty_json import DirtyJson
 from python.helpers.defer import DeferredTask
 from typing import Callable
 from python.helpers.localization import Localization
-
+from python.helpers.extension import call_extensions
 
 class AgentContextType(Enum):
     USER = "user"
@@ -210,7 +210,7 @@ class AgentConfig:
     embeddings_model: models.ModelConfig
     browser_model: models.ModelConfig
     mcp_servers: str
-    prompts_subdir: str = ""
+    profile: str = ""
     memory_subdir: str = ""
     knowledge_subdirs: list[str] = field(default_factory=lambda: ["default", "custom"])
     code_exec_docker_enabled: bool = False
@@ -486,26 +486,26 @@ class Agent:
         return system_prompt
 
     def parse_prompt(self, file: str, **kwargs):
-        prompt_dir = files.get_abs_path("prompts/default")
+        prompt_dir = files.get_abs_path("prompts")
         backup_dir = []
         if (
-            self.config.prompts_subdir
+            self.config.profile
         ):  # if agent has custom folder, use it and use default as backup
-            prompt_dir = files.get_abs_path("prompts", self.config.prompts_subdir)
-            backup_dir.append(files.get_abs_path("prompts/default"))
+            prompt_dir = files.get_abs_path("agents", self.config.profile, "prompts")
+            backup_dir.append(files.get_abs_path("prompts"))
         prompt = files.parse_file(
             files.get_abs_path(prompt_dir, file), _backup_dirs=backup_dir, **kwargs
         )
         return prompt
 
     def read_prompt(self, file: str, **kwargs) -> str:
-        prompt_dir = files.get_abs_path("prompts/default")
+        prompt_dir = files.get_abs_path("prompts")
         backup_dir = []
         if (
-            self.config.prompts_subdir
+            self.config.profile
         ):  # if agent has custom folder, use it and use default as backup
-            prompt_dir = files.get_abs_path("prompts", self.config.prompts_subdir)
-            backup_dir.append(files.get_abs_path("prompts/default"))
+            prompt_dir = files.get_abs_path("agents", self.config.profile, "prompts")
+            backup_dir.append(files.get_abs_path("prompts"))
         prompt = files.read_file(
             files.get_abs_path(prompt_dir, file), _backup_dirs=backup_dir, **kwargs
         )
@@ -812,26 +812,29 @@ class Agent:
         from python.tools.unknown import Unknown
         from python.helpers.tool import Tool
 
-        classes = extract_tools.load_classes_from_folder(
-            "python/tools", name + ".py", Tool
-        )
+        classes = []
+
+        # try agent tools first
+        if self.config.profile:
+            try:
+                classes = extract_tools.load_classes_from_file(
+                    "agents/" + self.config.profile + "/tools/" + name + ".py", Tool
+                )
+            except Exception as e:
+                pass
+
+        # try default tools
+        if not classes:
+            try:
+                classes = extract_tools.load_classes_from_file(
+                    "python/tools/" + name + ".py", Tool
+                )
+            except Exception as e:
+                pass
         tool_class = classes[0] if classes else Unknown
         return tool_class(
             agent=self, name=name, method=method, args=args, message=message, loop_data=loop_data, **kwargs
         )
 
-    async def call_extensions(self, folder: str, **kwargs) -> Any:
-        from python.helpers.extension import Extension
-
-        cache = {}  # some extensions can be called very often, like response_stream
-
-        if folder in cache:
-            classes = cache[folder]
-        else:
-            classes = extract_tools.load_classes_from_folder(
-                "python/extensions/" + folder, "*", Extension
-            )
-            cache[folder] = classes
-
-        for cls in classes:
-            await cls(agent=self).execute(**kwargs)
+    async def call_extensions(self, extension_point: str, **kwargs) -> Any:
+        return await call_extensions(extension_point=extension_point, agent=self, **kwargs)

@@ -7,6 +7,11 @@
 - The response format is a plain text string containing the query
 - No other text, no formatting
 
+# Rules
+- Only focus on facts and events, ignore common conversation patterns, greeting etc.
+- Ignore AI thoughts and behavior
+- Focus on USER MESSAGE if provided, use HISTORY for context
+
 # Example
 ```json
 USER: "Write a song about my dog"
@@ -14,6 +19,3 @@ AI: "user's dog"
 USER: "following the results of the biology project, summarize..."
 AI: "biology project results"
 ```
-
-# HISTORY:
-{{history}}
