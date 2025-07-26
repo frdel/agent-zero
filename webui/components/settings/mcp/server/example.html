@@ -22,7 +22,11 @@
                     {
                         "agent-zero": {
                             "type": "sse",
-                            "serverUrl": `${url}/mcp/t-${token}/sse`
+                            "url": `${url}/mcp/t-${token}/sse`
+                        },
+                        "agent-zero-http": {
+                            "type": "streamable-http",
+                            "url": `${url}/mcp/t-${token}/http/`
                         }
                     }
                 }, null, 2);

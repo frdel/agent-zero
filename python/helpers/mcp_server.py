@@ -1,4 +1,3 @@
-from asyncio import current_task
 import os
 from typing import Annotated, Literal, Union
 from urllib.parse import urlparse
@@ -7,7 +6,7 @@ from pydantic import Field
 from fastmcp import FastMCP
 
 from agent import AgentContext, AgentContextType, UserMessage
-from python.helpers.persist_chat import save_tmp_chat, remove_chat
+from python.helpers.persist_chat import remove_chat
 from initialize import initialize_agent
 from python.helpers.print_style import PrintStyle
 from python.helpers import settings
@@ -225,7 +224,7 @@ async def _run_chat(
     try:
         _PRINTER.print("MCP Chat message received")
 
-        # Pcurrent_taskhment filenames for logging
+        # Attachment filenames for logging
         attachment_filenames = []
         if attachments:
             for attachment in attachments:
@@ -270,11 +269,14 @@ async def _run_chat(
 class DynamicMcpProxy:
     _instance: "DynamicMcpProxy | None" = None
 
-    """A dynamic proxy that allows swapping the underlying MCP application on the fly."""
+    """A dynamic proxy that allows swapping the underlying MCP applications on the fly."""
 
     def __init__(self):
         cfg = settings.get_settings()
-        self.app: ASGIApp | None = None
+        self.sse_app: ASGIApp | None = None
+        self.http_app: ASGIApp | None = None
+        self.http_session_manager = None
+        self.http_session_task_group = None
         self._lock = threading.RLock()  # Use RLock to avoid deadlocks
         self.reconfigure(cfg["mcp_server_token"])
 
@@ -287,15 +289,16 @@ class DynamicMcpProxy:
     def reconfigure(self, token: str):
         self.token = token
         sse_path = f"/t-{self.token}/sse"
+        http_path = f"/t-{self.token}/http"
         message_path = f"/t-{self.token}/messages/"
 
         # Update settings in the MCP server instance if provided
         mcp_server.settings.message_path = message_path
         mcp_server.settings.sse_path = sse_path
 
-        # Create a new MCP app with updated settings
+        # Create new MCP apps with updated settings
         with self._lock:
-            self.app = create_sse_app(
+            self.sse_app = create_sse_app(
                 server=mcp_server,
                 message_path=mcp_server.settings.message_path,
                 sse_path=mcp_server.settings.sse_path,
@@ -306,14 +309,105 @@ class DynamicMcpProxy:
                 middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
             )
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        """Forward the ASGI calls to the current app"""
-        with self._lock:
-            app = self.app
-        if app:
-            await app(scope, receive, send)
+            # For HTTP, we need to create a custom app since the lifespan manager
+            # doesn't work properly in our Flask/Werkzeug environment
+            self.http_app = self._create_custom_http_app(
+                http_path,
+                mcp_server._auth_server_provider,
+                mcp_server.settings.auth,
+                mcp_server.settings.debug,
+                mcp_server._additional_http_routes,
+            )
+
+    def _create_custom_http_app(self, streamable_http_path, auth_server_provider, auth_settings, debug, routes):
+        """Create a custom HTTP app that manages the session manager manually."""
+        from fastmcp.server.http import setup_auth_middleware_and_routes, create_base_app
+        from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
+        from starlette.routing import Mount
+        from mcp.server.auth.middleware.bearer_auth import RequireAuthMiddleware
+        import anyio
+
+        server_routes = []
+        server_middleware = []
+
+        # Create session manager
+        self.http_session_manager = StreamableHTTPSessionManager(
+            app=mcp_server._mcp_server,
+            event_store=None,
+            json_response=True,
+            stateless=False,
+        )
+
+        # Custom ASGI handler that ensures task group is initialized
+        async def handle_streamable_http(scope, receive, send):
+            # Lazy initialization of task group
+            if self.http_session_task_group is None:
+                self.http_session_task_group = anyio.create_task_group()
+                await self.http_session_task_group.__aenter__()
+                self.http_session_manager._task_group = self.http_session_task_group
+
+            await self.http_session_manager.handle_request(scope, receive, send)
+
+        # Get auth middleware and routes
+        auth_middleware, auth_routes, required_scopes = setup_auth_middleware_and_routes(
+            auth_server_provider, auth_settings
+        )
+
+        server_routes.extend(auth_routes)
+        server_middleware.extend(auth_middleware)
+
+        # Add StreamableHTTP routes with or without auth
+        if auth_server_provider:
+            server_routes.append(
+                Mount(
+                    streamable_http_path,
+                    app=RequireAuthMiddleware(handle_streamable_http, required_scopes),
+                )
+            )
         else:
-            raise RuntimeError("MCP app not initialized")
+            server_routes.append(
+                Mount(
+                    streamable_http_path,
+                    app=handle_streamable_http,
+                )
+            )
+
+        # Add custom routes with lowest precedence
+        if routes:
+            server_routes.extend(routes)
+
+        # Add middleware
+        server_middleware.append(Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware))
+
+        # Create and return the app
+        return create_base_app(
+            routes=server_routes,
+            middleware=server_middleware,
+            debug=debug,
+        )
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Forward the ASGI calls to the appropriate app based on the URL path"""
+        with self._lock:
+            sse_app = self.sse_app
+            http_app = self.http_app
+
+        if not sse_app or not http_app:
+            raise RuntimeError("MCP apps not initialized")
+
+        # Route based on path
+        path = scope.get("path", "")
+
+        if f"/t-{self.token}/sse" in path:
+            # Route to SSE app
+            await sse_app(scope, receive, send)
+        elif f"/t-{self.token}/http" in path:
+            # Route to HTTP app
+            await http_app(scope, receive, send)
+        else:
+            raise StarletteHTTPException(
+                status_code=403, detail="MCP forbidden"
+            )
 
 
 async def mcp_middleware(request: Request, call_next):
