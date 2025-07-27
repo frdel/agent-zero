@@ -12,9 +12,9 @@ from typing import override
 from flask import Flask, request, Response, session
 from flask_basicauth import BasicAuth
 import initialize
-from python.helpers import errors, files, git, mcp_server
+from python.helpers import errors, files, git_helper as git, mcp_server
 from python.helpers.files import get_abs_path
-from python.helpers import runtime, dotenv, process
+from python.helpers import runtime, env_helper, process
 from python.helpers.extract_tools import load_classes_from_folder
 from python.helpers.api import ApiHandler
 from python.helpers.print_style import PrintStyle
@@ -22,6 +22,8 @@ from python.helpers.print_style import PrintStyle
 
 # Set the new timezone to 'UTC'
 os.environ["TZ"] = "UTC"
+# Set tokenizer parallelism to false to prevent fork warnings
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 # Apply the timezone change
 if hasattr(time, 'tzset'):
     time.tzset()
@@ -81,7 +83,7 @@ def is_loopback_address(address):
 def requires_api_key(f):
     @wraps(f)
     async def decorated(*args, **kwargs):
-        valid_api_key = dotenv.get_dotenv_value("API_KEY")
+        valid_api_key = env_helper.get_dotenv_value("API_KEY")
         if api_key := request.headers.get("X-API-KEY"):
             if api_key != valid_api_key:
                 return Response("API key required", 401)
@@ -115,8 +117,8 @@ def requires_loopback(f):
 def requires_auth(f):
     @wraps(f)
     async def decorated(*args, **kwargs):
-        user = dotenv.get_dotenv_value("AUTH_LOGIN")
-        password = dotenv.get_dotenv_value("AUTH_PASSWORD")
+        user = env_helper.get_dotenv_value("AUTH_LOGIN")
+        password = env_helper.get_dotenv_value("AUTH_PASSWORD")
         if user and password:
             auth = request.authorization
             if not auth or not (auth.username == user and auth.password == password):
@@ -182,7 +184,7 @@ def run():
     # Get configuration from environment
     port = runtime.get_web_ui_port()
     host = (
-        runtime.get_arg("host") or dotenv.get_dotenv_value("WEB_UI_HOST") or "localhost"
+        runtime.get_arg("host") or env_helper.get_dotenv_value("WEB_UI_HOST") or "localhost"
     )
     server = None
 
@@ -258,5 +260,5 @@ def init_a0():
 # run the internal server
 if __name__ == "__main__":
     runtime.initialize()
-    dotenv.load_dotenv()
+    env_helper.load_dotenv()
     run()

@@ -4,6 +4,7 @@ import * as css from "/js/css.js";
 import { sleep } from "/js/sleep.js";
 import { store as attachmentsStore } from "/components/chat/attachments/attachmentsStore.js";
 import { store as speechStore } from "/components/chat/speech/speech-store.js";
+import { store as agentSelectorStore } from "/components/agents/agent-selector.js";
 
 window.fetchApi = api.fetchApi; // TODO - backward compatibility for non-modular scripts, remove once refactored to alpine
 
@@ -128,6 +129,7 @@ export async function sendMessage() {
         formData.append("text", message);
         formData.append("context", context);
         formData.append("message_id", messageId);
+        formData.append("target_agent_id", agentSelectorStore.selectedAgentId || "");
 
         for (let i = 0; i < attachmentsWithUrls.length; i++) {
           formData.append("attachments", attachmentsWithUrls[i].file);
@@ -143,6 +145,7 @@ export async function sendMessage() {
           text: message,
           context,
           message_id: messageId,
+          target_agent_id: agentSelectorStore.selectedAgentId,
         };
         response = await api.fetchApi("/message_async", {
           method: "POST",
@@ -183,6 +186,25 @@ chatInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     sendMessage();
+  }
+});
+
+// Add @ mention functionality
+chatInput.addEventListener("input", (e) => {
+  const cursorPosition = e.target.selectionStart;
+  const inputText = e.target.value;
+  
+  // Handle @ mentions
+  if (agentSelectorStore && agentSelectorStore.handleMentionInput) {
+    const mentionResult = agentSelectorStore.handleMentionInput(inputText, cursorPosition);
+    
+    if (mentionResult.showSuggestions && mentionResult.suggestions.length > 0) {
+      // Auto-complete if there's only one match
+      if (mentionResult.suggestions.length === 1) {
+        const agent = mentionResult.suggestions[0];
+        agentSelectorStore.applyMention(agent, e.target, mentionResult.mentionStart, mentionResult.mentionPrefix);
+      }
+    }
   }
 });
 
@@ -754,6 +776,9 @@ export const getContext = function () {
   return context;
 };
 
+// Make getContext globally available for Alpine stores
+window.getContext = getContext;
+
 export const getChatBasedId = function (id) {
   return context + "-" + resetCounter + "-" + id;
 };
@@ -1120,7 +1145,38 @@ document.addEventListener("DOMContentLoaded", function () {
   setupSidebarToggle();
   setupTabs();
   initializeActiveTab();
+  // setupActivityDrawerShortcuts(); // Commented out - activity drawer components removed
 });
+
+// Setup keyboard shortcuts for activity drawer - COMMENTED OUT (components removed during cleanup)
+/*
+function setupActivityDrawerShortcuts() {
+  document.addEventListener("keydown", function (e) {
+    // Ctrl+Shift+A to toggle activity drawer
+    if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+      e.preventDefault();
+      if (window.Alpine && window.Alpine.store('activityDrawer')) {
+        console.log('🎯 Toggling activity drawer via keyboard shortcut');
+        window.Alpine.store('activityDrawer').toggleDrawer();
+      } else {
+        console.warn('⚠️ Activity drawer store not available');
+      }
+    }
+  });
+
+  // Debug: Log when store becomes available
+  document.addEventListener('alpine:init', () => {
+    console.log('🚀 Alpine.js initialized, checking for activity drawer store...');
+    setTimeout(() => {
+      if (window.Alpine && window.Alpine.store('activityDrawer')) {
+        console.log('✅ Activity drawer store is available');
+      } else {
+        console.warn('❌ Activity drawer store is not available');
+      }
+    }, 500);
+  });
+}
+*/
 
 // Setup tabs functionality
 function setupTabs() {

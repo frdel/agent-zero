@@ -17,9 +17,10 @@
     <link rel="stylesheet" href="css/history.css">
     <link rel="stylesheet" href="css/scheduler-datepicker.css">
     <link rel="stylesheet" href="css/tunnel.css">
+    <link rel="stylesheet" href="css/agent-badges.css">
+    <link rel="stylesheet" href="css/activity-drawer.css">
 
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="vendor/font-awesome/all.min.css">
+    <!-- Font Awesome for icons - removed as not available -->
 
     <!-- Flatpickr for datetime picker -->
     <link rel="stylesheet" href="vendor/flatpickr/flatpickr.min.css">
@@ -349,6 +350,9 @@
                     </svg>
                 </div>
             </div>
+
+
+            
             <div id="chat-history">
             </div>
             <div id="toast" class="toast">
@@ -1641,6 +1645,341 @@
 
     <!-- Drag and Drop Overlay Component -->
     <x-component path="chat/attachments/dragDropOverlay.html"></x-component>
+
+    <!-- Subordinate Activity Monitor - Alpine version removed (not working) -->
+    <!-- <x-component path="/subordinates/activity-monitor.html"></x-component> -->
+
+    <!-- Simple Activity Monitor (Backup) - Disabled in favor of Activity Drawer -->
+    <!-- <script src="/components/subordinates/activity-monitor-simple.js"></script> -->
+
+    <!-- Activity Drawer Component -->
+    <div x-data="{
+        // Local drawer state since external store was removed
+        drawerState: {
+            isOpen: false,
+            isMinimized: false,
+            subordinates: [],
+            agents: [],
+            selectedAgentId: null,
+            isLoading: false,
+            getCounts() { 
+                const agents = this.agents || [];
+                const totalAgents = agents.length;
+                const mainAgent = agents.filter(a => a.type === 'main').length;
+                const subordinateAgents = agents.filter(a => a.type === 'subordinate').length;
+                const orphaned = agents.filter(a => a.status === 'orphaned').length;
+                return { 
+                    managed: subordinateAgents, 
+                    orphaned, 
+                    total: subordinateAgents, 
+                    totalAgents, 
+                    mainAgent, 
+                    subordinateAgents 
+                };
+            },
+            getAllAgents() { 
+                const agents = this.agents || [];
+                console.log('getAllAgents called, returning:', agents);
+                return agents; 
+            },
+            selectAgent(agentId) { 
+                this.selectedAgentId = agentId; 
+            },
+            getSelectedAgent() {
+                if (!this.selectedAgentId) return null;
+                return this.agents.find(agent => agent.id === this.selectedAgentId) || null;
+            },
+            getAgentStatusClass(agent) {
+                if (!agent) return '';
+                return `status-${agent.status || 'unknown'}`;
+            },
+            getAgentDisplayName(agent) {
+                if (!agent) return 'Unknown Agent';
+                return agent.id || 'Unknown Agent';
+            },
+            toggleDrawer() { this.isOpen = !this.isOpen; },
+            toggleMinimized() { this.isMinimized = !this.isMinimized; },
+            closeDrawer() { this.isOpen = false; },
+            async updateNow() {
+                this.isLoading = true;
+                try {
+                    const response = await window.fetchApi('/agents_list', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ context: window.context_id || '' })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        this.agents = data.agents || [];
+                        this.lastUpdate = new Date();
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch agents:', error);
+                } finally {
+                    this.isLoading = false;
+                }
+            },
+            async cleanupOrphaned() {
+                try {
+                    const response = await window.fetchApi('/cleanup_orphaned_agents', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        console.log('Cleanup completed:', data.message);
+                        // Refresh agents after cleanup
+                        await this.updateNow();
+                    } else {
+                        console.error('Cleanup failed:', data);
+                    }
+                } catch (error) {
+                    console.error('Error during cleanup:', error);
+                }
+            },
+            viewAgentWork: () => {},
+            lastUpdate: null
+        },
+        get store() {
+            return this.drawerState;
+        },
+        init() {
+            // Load agents on initialization
+            this.store.updateNow();
+            // Refresh agents every 10 seconds
+            setInterval(() => {
+                if (!this.store.isLoading) {
+                    this.store.updateNow();
+                }
+            }, 10000);
+        }
+    }">
+        <!-- Activity Drawer is always shown now with simplified functionality -->
+            <!-- Drawer Container -->
+            <div class="activity-drawer-container"
+                 :class="{
+                     'drawer-open': store.isOpen,
+                     'drawer-minimized': store.isMinimized
+                 }">
+
+                <!-- Drawer Tab (Always Visible) -->
+                <div class="activity-drawer-tab" @click="store.toggleDrawer()">
+                    <div class="tab-content">
+                        <span class="tab-text">Agents</span>
+                        <div class="tab-badge" x-show="store.getAllAgents && store.getAllAgents().length > 0">
+                            <span x-text="store.getAllAgents().length"></span>
+                        </div>
+                    </div>
+                    <div class="tab-arrow" :class="{ 'rotated': store.isOpen }">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                            <path d="M4 2L8 6L4 10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Drawer Content -->
+                <div class="activity-drawer-content" x-show="store.isOpen"
+                     x-transition:enter="drawer-enter"
+                     x-transition:enter-start="drawer-enter-start"
+                     x-transition:enter-end="drawer-enter-end"
+                     x-transition:leave="drawer-leave"
+                     x-transition:leave-start="drawer-leave-start"
+                     x-transition:leave-end="drawer-leave-end">
+
+                    <!-- Header -->
+                    <div class="drawer-header">
+                        <div class="header-title">
+                            <div class="header-main">
+                                <template x-if="store.getSelectedAgent && store.getSelectedAgent()">
+                                    <div class="selected-agent-display">
+                                        <div class="agent-status-indicator" :class="store.getAgentStatusClass(store.getSelectedAgent())"></div>
+                                        <span class="selected-agent-name" x-text="store.getAgentDisplayName(store.getSelectedAgent())"></span>
+                                        <span class="selected-agent-label">(Active)</span>
+                                    </div>
+                                </template>
+                                <template x-if="!store.getSelectedAgent || !store.getSelectedAgent()">
+                                    <h3>Agent Management</h3>
+                                </template>
+                            </div>
+                            <template x-if="store.getCounts().orphaned > 0">
+                                <span class="orphaned-warning">
+                                    ⚠️ <span x-text="store.getCounts().orphaned"></span> orphaned
+                                    <span class="auto-cleanup-indicator" title="Auto-cleanup in 30 seconds">⏱️</span>
+                                </span>
+                            </template>
+                        </div>
+                        <div class="header-controls">
+                            <button class="control-btn" @click="store.toggleMinimized()"
+                                    :title="store.isMinimized ? 'Expand' : 'Minimize'">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <template x-if="store.isMinimized">
+                                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                                    </template>
+                                    <template x-if="!store.isMinimized">
+                                        <path d="M19 13H5v-2h14v2z"/>
+                                    </template>
+                                </svg>
+                            </button>
+                            <button class="control-btn" @click="store.closeDrawer()" title="Close">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Status Bar -->
+                    <div class="drawer-status" x-show="!store.isMinimized">
+                        <div class="status-info">
+                            <template x-if="store.isLoading">
+                                <span class="status-loading">🔄 Loading agents...</span>
+                            </template>
+                            <template x-if="!store.isLoading">
+                                <span class="status-text">
+                                    <template x-if="store.getAllAgents && store.getAllAgents().length === 0">
+                                        No agents available
+                                    </template>
+                                    <template x-if="store.getAllAgents && store.getAllAgents().length > 0">
+                                        <span>
+                                            <span x-text="store.getCounts().totalAgents"></span> agents
+                                            <template x-if="store.getCounts().orphaned > 0">
+                                                • <span x-text="store.getCounts().orphaned"></span> orphaned
+                                                <span class="auto-cleanup-indicator" title="Auto-cleanup in 30 seconds">⏱️</span>
+                                            </template>
+                                        </span>
+                                    </template>
+                                </span>
+                            </template>
+                        </div>
+                        <div class="status-controls">
+                            <button class="status-btn" @click="store.updateNow()"
+                                    :disabled="store.isLoading" title="Refresh">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                                </svg>
+                            </button>
+                            <template x-if="store.getCounts().orphaned > 0">
+                                <button class="status-btn cleanup-btn" @click="store.cleanupOrphaned()"
+                                        :disabled="store.isLoading" title="Cleanup Orphaned">
+                                    🧹
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Agents List -->
+                    <div class="drawer-body" x-show="!store.isMinimized">
+                        <template x-if="!store.getAllAgents || store.getAllAgents().length === 0">
+                            <div class="empty-state">
+                                <div class="empty-icon">💤</div>
+                                <div class="empty-text">No agents available</div>
+                            </div>
+                        </template>
+
+                        <template x-if="store.getAllAgents && Array.isArray(store.getAllAgents()) && store.getAllAgents().length > 0">
+                            <div class="agents-list">
+                                <template x-for="(agent, index) in store.getAllAgents()" :key="`agent-${index}-${agent?.id || index}`">
+                                    <div class="agent-item"
+                                             x-data="{ agentData: agent || {} }"
+                                             :class="{
+                                                 'item-selected': agentData.id === store.selectedAgentId,
+                                                 'item-main': agentData.type === 'main',
+                                                 'item-subordinate': agentData.type === 'subordinate',
+                                                 'item-working': agentData.status === 'working',
+                                                 'item-orphaned': agentData.status === 'orphaned',
+                                                 'item-idle': agentData.status === 'idle'
+                                             }"
+                                             @click="store.selectAgent(agentData.id)"
+                                             x-show="agentData && agentData.id">
+
+                                        <div class="item-header">
+                                            <div class="item-info">
+                                                <div class="item-name" x-text="agentData.id || 'Unknown Agent'"></div>
+                                                <div class="item-type-role">
+                                                    <span class="item-type" x-text="agentData.type || 'subordinate'"></span>
+                                                    <template x-if="agentData.role && agentData.role !== 'unknown'">
+                                                        <span class="item-role"> • <span x-text="agentData.role"></span></span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                            <div class="item-status-container">
+                                                <template x-if="agentData.status">
+                                                    <div class="item-status"
+                                                         :class="'status-' + agentData.status"
+                                                         x-text="agentData.status.toUpperCase()"></div>
+                                                </template>
+                                                <template x-if="agentData.id === store.selectedAgentId">
+                                                    <div class="selected-indicator">ACTIVE</div>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                        <!-- Details for subordinate agents -->
+                                        <template x-if="agentData.type === 'subordinate'">
+                                            <div class="item-details">
+                                                <div class="item-port">Port: <span x-text="agentData.port || 'N/A'"></span></div>
+                                                <div class="item-tasks">Tasks: <span x-text="agentData.tasks || '0/0'"></span></div>
+                                            </div>
+                                        </template>
+
+                                        <!-- Details for main agent -->
+                                        <template x-if="agentData.type === 'main'">
+                                            <div class="item-details">
+                                                <div class="item-description">Primary agent with full capabilities</div>
+                                                <template x-if="agentData.capabilities && agentData.capabilities.length > 0">
+                                                    <div class="item-capabilities" x-text="agentData.capabilities.slice(0, 3).join(', ')"></div>
+                                                </template>
+                                            </div>
+                                        </template>
+
+                                        <!-- Progress bar for working subordinates -->
+                                        <template x-if="agentData.progress > 0">
+                                            <div class="item-progress">
+                                                <div class="progress-bar">
+                                                    <div class="progress-fill" :style="'width: ' + agentData.progress + '%'"></div>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <!-- Current task for subordinates -->
+                                        <template x-if="agentData.currentTask && agentData.type === 'subordinate'">
+                                            <div class="item-task">
+                                                <div class="task-text" x-text="agentData.currentTask"></div>
+                                            </div>
+                                        </template>
+
+                                        <!-- Footer with timing info -->
+                                        <template x-if="agentData.type === 'subordinate'">
+                                            <div class="item-footer">
+                                                <template x-if="agentData.lastActivity">
+                                                    <div class="item-time" x-text="agentData.lastActivity"></div>
+                                                </template>
+                                                <template x-if="agentData.taskId">
+                                                    <div class="item-id" x-text="'ID: ' + agentData.taskId.substring(0, 8)"></div>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="drawer-footer" x-show="!store.isMinimized">
+                        <div class="footer-info">
+                            <template x-if="store.lastUpdate">
+                                <span class="last-update">
+                                    Last update: <span x-text="store.lastUpdate.toLocaleTimeString()"></span>
+                                </span>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
 
 </body>
 

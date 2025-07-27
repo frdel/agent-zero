@@ -5,7 +5,7 @@ from agent import AgentContext
 from python.helpers import persist_chat
 from python.helpers.task_scheduler import TaskScheduler
 from python.helpers.localization import Localization
-from python.helpers.dotenv import get_dotenv_value
+from python.helpers.env_helper import get_dotenv_value
 
 
 class Poll(ApiHandler):

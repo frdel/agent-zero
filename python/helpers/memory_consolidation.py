@@ -297,7 +297,7 @@ class MemoryConsolidator:
 
             # Retrieve original memories to extract their metadata
             if memory_ids:
-                original_memories = await db.aget_by_ids(memory_ids)
+                original_memories = await db.db.aget_by_ids(memory_ids)
 
                 # Merge ALL metadata fields from original memories
                 for memory in original_memories:
@@ -645,7 +645,7 @@ class MemoryConsolidator:
         # Step 1: Validate similarity scores for replacement safety
         if result.memories_to_remove:
             # Get the memories to be removed and check their similarity scores
-            memories_to_check = await db.aget_by_ids(result.memories_to_remove)
+            memories_to_check = await db.db.aget_by_ids(result.memories_to_remove)
 
             unsafe_replacements = []
             for memory in memories_to_check:
@@ -728,7 +728,7 @@ class MemoryConsolidator:
 
             if memory_id and new_content:
                 # Validate that the memory exists before attempting to delete it
-                existing_docs = await db.aget_by_ids([memory_id])
+                existing_docs = await db.db.aget_by_ids([memory_id])
                 if not existing_docs:
                     PrintStyle().warning(f"Memory ID {memory_id} not found during update, skipping")
                     continue

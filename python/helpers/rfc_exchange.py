@@ -1,4 +1,4 @@
-from python.helpers import runtime, crypto, dotenv
+from python.helpers import runtime, crypto, env_helper as dotenv
 
 async def get_root_password():
     if runtime.is_dockerized():

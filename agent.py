@@ -71,7 +71,7 @@ class AgentContext:
         self.a2a_peers: Dict[str, Any] = {}  # Track connected A2A peers
         self.context_id: str = str(uuid.uuid4())  # Unique context ID for cross-agent tasks
         self.a2a_server: Any = None  # A2A server instance if running as server
-        self.a2a_enabled: bool = config.additional.get("a2a_enabled", False) if hasattr(config, 'additional') else False
+        self.a2a_enabled: bool = getattr(config, 'a2a_enabled', False)
         
         # A2A Subordinate management
         self.subordinate_manager: Any = None  # A2A subordinate manager instance
@@ -300,6 +300,26 @@ class AgentContext:
                     "capabilities": sub.capabilities,
                     "last_contact": sub.last_contact.isoformat()
                 })
+        
+        return agents
+    
+    def get_agent_roster(self) -> List[Dict[str, Any]]:
+        """Get complete agent roster including main agent and all A2A agents"""
+        agents = []
+        
+        # Add main agent (Agent Zero)
+        agents.append({
+            "id": self.agent0.agent_name,
+            "type": "main",
+            "role": "main",
+            "url": "",
+            "status": "paused" if self.paused else "active",
+            "capabilities": ["all_tools", "memory", "reasoning", "communication"],
+            "last_contact": ""
+        })
+        
+        # Add all A2A agents (peers and subordinates)
+        agents.extend(self.get_all_a2a_agents())
         
         return agents
     

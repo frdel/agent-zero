@@ -1,5 +1,5 @@
 from python.helpers.api import ApiHandler, Request, Response
-from python.helpers import errors, git
+from python.helpers import errors, git_helper as git
 
 class HealthCheck(ApiHandler):
 

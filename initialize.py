@@ -1,7 +1,11 @@
+import os
 from agent import AgentConfig
 import models
 from python.helpers import runtime, settings, defer
 from python.helpers.print_style import PrintStyle
+
+# Set tokenizer parallelism to false to prevent fork warnings
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 
 def initialize_agent():
@@ -80,6 +84,13 @@ def initialize_agent():
         knowledge_subdirs=[current_settings["agent_knowledge_subdir"], "default"],
         mcp_servers=current_settings["mcp_servers"],
         code_exec_docker_enabled=False,
+        
+        # A2A (Agent-to-Agent) Protocol Configuration
+        a2a_enabled=current_settings["a2a_enabled"],
+        a2a_server_port=current_settings["a2a_server_port"],
+        a2a_subordinate_base_port=current_settings["a2a_subordinate_base_port"],
+        a2a_subordinate_max_instances=current_settings["a2a_subordinate_max_instances"],
+        a2a_subordinate_auto_cleanup=current_settings["a2a_subordinate_auto_cleanup"],
         # code_exec_docker_name = "A0-dev",
         # code_exec_docker_image = "agent0ai/agent-zero:development",
         # code_exec_docker_ports = { "22/tcp": 55022, "80/tcp": 55080 }

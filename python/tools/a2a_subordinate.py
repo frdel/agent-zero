@@ -17,7 +17,7 @@ from python.helpers.print_style import PrintStyle
 from python.helpers.a2a_handler import A2AError
 
 
-class A2ASubordinate(Tool):
+class A2aSubordinate(Tool):
     """
     A2A-based subordinate agent tool for enhanced multi-agent collaboration.
     
@@ -32,7 +32,7 @@ class A2ASubordinate(Tool):
         super().__init__(agent, name, method, args, message, loop_data)
         
         # Initialize subordinate manager
-        if not hasattr(self.agent.context, 'subordinate_manager'):
+        if not hasattr(self.agent.context, 'subordinate_manager') or self.agent.context.subordinate_manager is None:
             self.agent.context.subordinate_manager = A2ASubordinateManager(
                 agent_context=self.agent.context,
                 base_port=getattr(self.agent.config, 'a2a_subordinate_base_port', 8100)
@@ -48,7 +48,7 @@ class A2ASubordinate(Tool):
         reset: str = "false",
         capabilities: Optional[List[str]] = None,
         context: Optional[Dict[str, Any]] = None,
-        timeout: int = 60,
+        timeout: int = 300,  # Allow more time for complex tasks with tools
         **kwargs
     ) -> Response:
         """
@@ -69,6 +69,34 @@ class A2ASubordinate(Tool):
         if not message.strip():
             return Response(
                 message="Error: Message is required for subordinate communication",
+                break_loop=False
+            )
+
+        # Validate and clean role parameter
+        role = role.strip()
+        if not role:
+            role = "specialist"
+            
+        # Normalize role to lowercase to prevent duplicates
+        role = role.lower()
+
+        # Check if role contains commas (multiple roles) - this is not supported
+        if ',' in role:
+            # Take only the first role and warn
+            original_role = role
+            role = role.split(',')[0].strip()
+            PrintStyle(font_color="yellow").print(
+                f"Warning: Multiple roles detected in '{original_role}'. Using first role: '{role}'"
+            )
+            PrintStyle(font_color="yellow").print(
+                "Note: Each subordinate should have a single role. Use separate tool calls for multiple subordinates."
+            )
+
+        # Validate role name (no special characters except underscore and hyphen)
+        import re
+        if not re.match(r'^[a-zA-Z0-9_-]+$', role):
+            return Response(
+                message=f"Error: Invalid role name '{role}'. Role names can only contain letters, numbers, underscores, and hyphens.",
                 break_loop=False
             )
         
@@ -95,6 +123,14 @@ class A2ASubordinate(Tool):
             # Check if we need to spawn a new subordinate
             force_new = str(reset).lower().strip() == "true"
             
+            # Check if subordinate already exists and is working
+            existing_subordinate = self.subordinate_manager.get_subordinate_by_role(role)
+            if existing_subordinate and existing_subordinate.status == 'working' and not force_new:
+                return Response(
+                    message=f"Subordinate {role} is currently working on another task. Please wait for completion or use reset=true to force a new subordinate.",
+                    break_loop=False
+                )
+
             # Spawn or get existing subordinate
             subordinate = await self.subordinate_manager.spawn_subordinate(
                 role=role,
@@ -103,22 +139,37 @@ class A2ASubordinate(Tool):
                 shared_context=shared_context,
                 force_new=force_new
             )
-            
+
             # Send message to subordinate
             PrintStyle(font_color="cyan").print(f"Communicating with A2A subordinate: {role}")
-            
-            response = await self.subordinate_manager.send_message_to_subordinate(
-                role=role,
-                message=message,
-                context_data=shared_context,
-                timeout=timeout
-            )
+
+            # Mark subordinate as working to prevent concurrent tasks
+            subordinate.status = 'working'
+
+            try:
+                response = await self.subordinate_manager.send_message_to_subordinate(
+                    role=role,
+                    message=message,
+                    context_data=shared_context,
+                    timeout=timeout
+                )
+
+                # Mark as idle after successful completion
+                subordinate.status = 'idle'
+
+            except Exception as e:
+                # Mark as error if task failed
+                subordinate.status = 'error'
+                raise
             
             # Log the interaction
             self._log_subordinate_interaction(subordinate, message, response)
             
+            # Format response with clear subordinate attribution
+            formatted_response = f"**@{role} ({subordinate.agent_id}):**\n\n{response}"
+            
             return Response(
-                message=response,
+                message=formatted_response,
                 break_loop=False
             )
             
@@ -156,14 +207,20 @@ class A2ASubordinate(Tool):
         try:
             # Get recent messages from agent history
             if hasattr(self.agent, 'history') and self.agent.history:
-                recent_messages = self.agent.history.get_messages()[-max_messages:]
+                recent_messages = self.agent.history.output()[-max_messages:]
                 
                 for msg in recent_messages:
-                    if hasattr(msg, 'message') and msg.message:
+                    if 'content' in msg and msg['content']:
+                        content = msg['content']
+                        if isinstance(content, str):
+                            content_str = content[:500]  # Truncate long messages
+                        else:
+                            content_str = str(content)[:500]
+                        
                         history.append({
-                            "role": getattr(msg, 'role', 'user'),
-                            "content": msg.message[:500],  # Truncate long messages
-                            "timestamp": getattr(msg, 'timestamp', None)
+                            "role": "assistant" if msg.get('ai', False) else "user",
+                            "content": content_str,
+                            "timestamp": None  # History doesn't store timestamps in output
                         })
         except Exception as e:
             PrintStyle(font_color="yellow").print(f"Warning: Could not extract history: {str(e)}")

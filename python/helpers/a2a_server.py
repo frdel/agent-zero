@@ -97,6 +97,7 @@ class A2AServer:
         
         # SSE client management
         self.sse_clients: Dict[str, Any] = {}
+        self.sent_task_updates: Dict[str, set] = {}  # Track which tasks have been sent to which clients
         
     def create_app(self) -> Starlette:
         """Create and configure Starlette application"""
@@ -132,6 +133,9 @@ class A2AServer:
             
             # Health check
             Route("/health", self.health_check, methods=["GET"]),
+            
+            # Context info for subordinate registration
+            Route("/context/info", self.get_context_info, methods=["GET"]),
         ]
         
         app = Starlette(
@@ -203,10 +207,21 @@ class A2AServer:
                 metadata=metadata
             )
             
-            # Execute task asynchronously
-            asyncio.create_task(
-                self.handler.execute_task(created_task_id, self.agent_context)
-            )
+            # Execute task asynchronously with error handling
+            async def execute_with_error_handling():
+                try:
+                    await self.handler.execute_task(created_task_id, self.agent_context)
+                except Exception as e:
+                    PrintStyle(background_color="red", font_color="white").print(
+                        f"Task execution failed: {str(e)}"
+                    )
+                    self.handler.update_task_state(
+                        created_task_id, 
+                        TaskState.FAILED, 
+                        error=f"Task execution failed: {str(e)}"
+                    )
+            
+            asyncio.create_task(execute_with_error_handling())
             
             return JSONResponse({
                 "taskId": created_task_id,
@@ -357,15 +372,16 @@ class A2AServer:
                 # Check if client is still connected
                 if await request.is_disconnected():
                     break
-                
-                # Send heartbeat every 30 seconds
+
+                # Check for task updates to broadcast (more frequently)
+                async for update in self._broadcast_task_updates(client_id):
+                    yield update
+
+                # Send heartbeat every 5 seconds (more frequent)
                 yield f"event: Heartbeat\n"
                 yield f"data: {json.dumps({'timestamp': datetime.now(timezone.utc).isoformat()})}\n\n"
-                
-                # Check for task updates to broadcast
-                await self._broadcast_task_updates(client_id)
-                
-                await asyncio.sleep(30)
+
+                await asyncio.sleep(5)  # Check more frequently
                 
         except asyncio.CancelledError:
             pass
@@ -376,33 +392,44 @@ class A2AServer:
         finally:
             # Clean up client
             self.sse_clients.pop(client_id, None)
+            self.sent_task_updates.pop(client_id, None)
     
     async def _broadcast_task_updates(self, client_id: str):
         """Broadcast task status updates to SSE clients"""
-        # In a production implementation, you'd want to track which tasks
-        # each client is interested in and only send relevant updates
-        # For now, we'll send updates for all active tasks
-        
+        # Initialize tracking for this client if not exists
+        if client_id not in self.sent_task_updates:
+            self.sent_task_updates[client_id] = set()
+
         for task_id, task in self.handler.tasks.items():
             if task.state in [TaskState.COMPLETED, TaskState.FAILED]:
-                event_data = {
-                    "taskId": task_id,
-                    "state": task.state.value,
-                    "timestamp": task.updated_at.isoformat()
-                }
-                
-                if task.artifacts:
-                    event_data["artifacts"] = [
-                        {
-                            "type": artifact.type,
-                            "content": artifact.content,
-                            "metadata": artifact.metadata or {}
-                        }
-                        for artifact in task.artifacts
-                    ]
-                
-                yield f"event: TaskStatusUpdateEvent\n"
-                yield f"data: {json.dumps(event_data)}\n\n"
+                # Only send if we haven't sent this task update to this client yet
+                if task_id not in self.sent_task_updates[client_id]:
+                    event_data = {
+                        "taskId": task_id,
+                        "state": task.state.value,
+                        "timestamp": task.updated_at.isoformat()
+                    }
+
+                    if task.artifacts:
+                        event_data["artifacts"] = [
+                            {
+                                "type": artifact.type,
+                                "content": artifact.content,
+                                "metadata": artifact.metadata or {}
+                            }
+                            for artifact in task.artifacts
+                        ]
+
+                    # Mark as sent
+                    self.sent_task_updates[client_id].add(task_id)
+
+                    # Debug logging
+                    PrintStyle(font_color="green").print(
+                        f"SSE: Sending task update for {task_id} (state: {task.state.value}) to client {client_id}"
+                    )
+
+                    yield f"event: TaskStatusUpdateEvent\n"
+                    yield f"data: {json.dumps(event_data)}\n\n"
     
     async def webhook_handler(self, request: Request) -> JSONResponse:
         """POST /push/{token} - Handle webhook notifications"""
@@ -436,13 +463,56 @@ class A2AServer:
     
     async def health_check(self, request: Request) -> JSONResponse:
         """GET /health - Health check endpoint"""
+        # Get agent info if available
+        agent_id = getattr(self.handler, 'agent_id', 'unknown')
+        role = getattr(self.handler, 'role', 'unknown')
+        
+        # Get current task info
+        current_task = None
+        active_tasks = [t for t in self.handler.tasks.values() if t.state == TaskState.WORKING]
+        if active_tasks:
+            task = active_tasks[0]  # Get the first active task
+            current_task = {
+                "task_id": task.task_id,
+                "description": task.description[:100] + "..." if len(task.description) > 100 else task.description,
+                "state": task.state.value,
+                "created_at": task.created_at.isoformat()
+            }
+        
         return JSONResponse({
             "status": "healthy",
+            "agent_id": agent_id,
+            "role": role,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "version": "1.0.0",
-            "tasks_active": len([t for t in self.handler.tasks.values() if t.state == TaskState.WORKING]),
-            "tasks_total": len(self.handler.tasks)
+            "tasks_active": len(active_tasks),
+            "tasks_total": len(self.handler.tasks),
+            "current_task": current_task
         })
+    
+    async def get_context_info(self, request: Request) -> JSONResponse:
+        """GET /context/info - Get context information for registration"""
+        try:
+            # Get context information from the agent context if available
+            context_info = {
+                "context_id": getattr(self.context, 'id', 'unknown') if hasattr(self, 'context') else 'unknown',
+                "context_name": getattr(self.context, 'name', 'unknown') if hasattr(self, 'context') else 'unknown',
+                "context_type": getattr(self.context, 'type', {}).value if hasattr(self, 'context') and hasattr(self.context, 'type') else 'unknown',
+                "agent_id": getattr(self.handler, 'agent_id', 'unknown'),
+                "role": getattr(self.handler, 'role', 'unknown'),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            
+            return JSONResponse({
+                "success": True,
+                "context_info": context_info
+            })
+            
+        except Exception as e:
+            return JSONResponse({
+                "success": False,
+                "error": str(e)
+            }, status_code=500)
     
     # Server Management
     

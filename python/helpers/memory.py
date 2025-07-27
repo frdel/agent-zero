@@ -145,14 +145,40 @@ class Memory:
 
         # if db folder exists and is not empty:
         if os.path.exists(db_dir) and files.exists(db_dir, "index.faiss"):
-            db = MyFaiss.load_local(
-                folder_path=db_dir,
-                embeddings=embedder,
-                allow_dangerous_deserialization=True,
-                distance_strategy=DistanceStrategy.COSINE,
-                # normalize_L2=True,
-                relevance_score_fn=Memory._cosine_normalizer,
-            )  # type: ignore
+            try:
+                db = MyFaiss.load_local(
+                    folder_path=db_dir,
+                    embeddings=embedder,
+                    allow_dangerous_deserialization=True,
+                    distance_strategy=DistanceStrategy.COSINE,
+                    # normalize_L2=True,
+                    relevance_score_fn=Memory._cosine_normalizer,
+                )  # type: ignore
+                
+                # Validate the database integrity
+                try:
+                    # Try a simple search to test if the index is working
+                    test_results = db.similarity_search("test", k=1)
+                    PrintStyle(font_color="green").print(f"Memory database loaded successfully with {db.index.ntotal} vectors")
+                except Exception as integrity_error:
+                    PrintStyle(font_color="red").print(f"Memory database integrity check failed: {str(integrity_error)}")
+                    PrintStyle(font_color="yellow").print("Attempting to recover documents before rebuilding index...")
+                    
+                    # Try to recover documents from the docstore
+                    try:
+                        docs = db.get_all_docs()
+                        PrintStyle(font_color="cyan").print(f"Recovered {len(docs)} documents from corrupted database")
+                    except Exception:
+                        docs = None
+                        PrintStyle(font_color="red").print("Could not recover documents from corrupted database")
+                    
+                    # Reset db to force recreation
+                    db = None
+                    
+            except Exception as load_error:
+                PrintStyle(font_color="red").print(f"Failed to load memory database: {str(load_error)}")
+                PrintStyle(font_color="yellow").print("Will create new memory database...")
+                db = None
 
             # if there is a mismatch in embeddings used, re-index the whole DB
             emb_ok = False
@@ -305,13 +331,33 @@ class Memory:
             model_config=self.agent.config.embeddings_model, input=query
         )
 
-        return await self.db.asearch(
-            query,
-            search_type="similarity_score_threshold",
-            k=limit,
-            score_threshold=threshold,
-            filter=comparator,
-        )
+        try:
+            return await self.db.asearch(
+                query,
+                search_type="similarity_score_threshold",
+                k=limit,
+                score_threshold=threshold,
+                filter=comparator,
+            )
+        except (KeyError, ValueError) as e:
+            error_msg = str(e)
+            if "np.int64" in error_msg or "KeyError" in error_msg:
+                PrintStyle(font_color="red").print(f"Memory database index corruption detected: {error_msg}")
+                PrintStyle(font_color="yellow").print("Rebuilding memory database to fix corruption...")
+                
+                # Force recreation of the database
+                await self._rebuild_database()
+                
+                # Retry the search with the rebuilt database
+                return await self.db.asearch(
+                    query,
+                    search_type="similarity_score_threshold",
+                    k=limit,
+                    score_threshold=threshold,
+                    filter=comparator,
+                )
+            else:
+                raise
 
     async def delete_documents_by_query(
         self, query: str, threshold: float, filter: str = ""
@@ -410,6 +456,52 @@ class Memory:
     def _score_normalizer(val: float) -> float:
         res = 1 - 1 / (1 + np.exp(val))
         return res
+
+    async def _rebuild_database(self):
+        """Rebuild the memory database from scratch to fix corruption"""
+        try:
+            # Create backup of corrupted database folder name
+            import time
+            backup_suffix = f"_corrupted_{int(time.time())}"
+            backup_dir = self.db_dir + backup_suffix
+            
+            # Try to recover documents first
+            recovered_docs = None
+            if self.db:
+                try:
+                    recovered_docs = self.db.get_all_docs()
+                    PrintStyle(font_color="cyan").print(f"Recovered {len(recovered_docs)} documents before rebuild")
+                except Exception:
+                    PrintStyle(font_color="yellow").print("Could not recover documents from corrupted database")
+            
+            # Backup the corrupted database directory
+            if os.path.exists(self.db_dir):
+                try:
+                    import shutil
+                    shutil.move(self.db_dir, backup_dir)
+                    PrintStyle(font_color="cyan").print(f"Corrupted database backed up to: {backup_suffix}")
+                except Exception:
+                    PrintStyle(font_color="yellow").print("Could not backup corrupted database")
+            
+            # Force recreation of the database
+            self.db = None
+            self.db = await Memory._get_db(self.agent.config.embeddings_model, self.memory_subdir)
+            
+            # Re-add recovered documents if any
+            if recovered_docs:
+                try:
+                    await self.add_documents(recovered_docs)
+                    PrintStyle(font_color="green").print(f"Restored {len(recovered_docs)} documents to rebuilt database")
+                except Exception as e:
+                    PrintStyle(font_color="red").print(f"Failed to restore documents: {str(e)}")
+            
+            PrintStyle(font_color="green").print("Memory database rebuilt successfully")
+            
+        except Exception as e:
+            PrintStyle(font_color="red").print(f"Failed to rebuild memory database: {str(e)}")
+            # Create a completely fresh database as last resort
+            self.db = None
+            self.db = await Memory._get_db(self.agent.config.embeddings_model, self.memory_subdir)
 
     @staticmethod
     def _cosine_normalizer(val: float) -> float:

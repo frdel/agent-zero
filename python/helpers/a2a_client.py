@@ -28,8 +28,8 @@ class A2AClient:
         auth_token: Optional[str] = None,
         auth_scheme: str = "bearer",
         timeout: float = 30.0,
-        max_retries: int = 3,
-        retry_delay: float = 1.0
+        max_retries: int = 5,  # Increased retries for subordinate startup
+        retry_delay: float = 0.5  # Reduced initial delay for faster retries
     ):
         self.auth_token = auth_token
         self.auth_scheme = auth_scheme.lower()
@@ -184,6 +184,16 @@ class A2AClient:
         agent_card_url = urljoin(base_url, "/.well-known/agent.json")
         
         try:
+            # Try health endpoint first as a quick connectivity check
+            health_url = urljoin(base_url, "/health")
+            try:
+                health_response = await self._make_request("GET", health_url, retries=2)
+                if health_response:
+                    PrintStyle(font_color="green").print(f"Agent health check passed: {base_url}")
+            except Exception:
+                # Health check failed, but still try agent card
+                PrintStyle(font_color="yellow").print(f"Health check failed, trying agent card: {base_url}")
+            
             return await self._make_request("GET", agent_card_url)
         except Exception as e:
             raise A2AError(
@@ -256,37 +266,64 @@ class A2AClient:
     # Server-Sent Events (SSE) Methods
     
     async def submit_task_with_sse(
-        self, 
-        peer_url: str, 
+        self,
+        peer_url: str,
         task_data: Dict[str, Any],
-        timeout: int = 60
+        timeout: int = 1800  # Increased to 30 minutes for complex tasks
     ) -> Dict[str, Any]:
         """Submit task and listen for updates via SSE"""
         # First submit the task
         task_id = await self.submit_task(peer_url, task_data)
-        
+        # Note: submit_task already prints success message, don't duplicate
+
         # Connect to SSE stream
         stream_url = urljoin(peer_url, "/message/stream")
+        PrintStyle(font_color="cyan").print(f"Connecting to SSE stream: {stream_url}")
         
         try:
             await self._ensure_client()
             
             async with aconnect_sse(
                 self._client, "GET", stream_url,
-                timeout=timeout,
+                timeout=httpx.Timeout(timeout, read=timeout, write=30.0, connect=30.0),
                 headers=self._get_auth_headers()
             ) as event_source:
                 
                 start_time = datetime.now()
-                
-                async for sse_event in event_source.aiter():
-                    # Check timeout
-                    if (datetime.now() - start_time).seconds > timeout:
+                last_meaningful_event = datetime.now()
+                heartbeat_count = 0
+                max_heartbeats_without_progress = 60  # Max 60 heartbeats (5 minutes) without task progress
+
+                async for sse_event in event_source.aiter_sse():
+                    current_time = datetime.now()
+                    elapsed_seconds = (current_time - start_time).seconds
+
+                    # Check overall timeout
+                    if elapsed_seconds > timeout:
                         raise A2AError(
                             A2AErrorType.INVALID_AGENT_RESPONSE,
                             f"SSE stream timed out after {timeout} seconds"
                         )
-                    
+
+                    # Check for too many heartbeats without progress
+                    if sse_event.event == "Heartbeat":
+                        heartbeat_count += 1
+                        if heartbeat_count > max_heartbeats_without_progress:
+                            time_since_meaningful = (current_time - last_meaningful_event).seconds
+                            raise A2AError(
+                                A2AErrorType.INVALID_AGENT_RESPONSE,
+                                f"Task appears stuck - received {heartbeat_count} heartbeats without progress for {time_since_meaningful} seconds"
+                            )
+                    else:
+                        # Reset heartbeat count on meaningful events
+                        heartbeat_count = 0
+                        last_meaningful_event = current_time
+
+                    # Debug: Log all SSE events
+                    PrintStyle(font_color="yellow").print(
+                        f"SSE Event received: {sse_event.event} - {sse_event.data[:100] if sse_event.data else 'No data'}..."
+                    )
+
                     if sse_event.event == "TaskStatusUpdateEvent":
                         try:
                             event_data = json.loads(sse_event.data)
@@ -294,9 +331,40 @@ class A2AClient:
                                 state = event_data.get("state")
                                 
                                 if state == TaskState.COMPLETED.value:
+                                    artifacts = event_data.get("artifacts", [])
+                                    # Extract the main response content from artifacts with improved logic
+                                    response_content = ""
+                                    if artifacts:
+                                        # First try to get text/plain artifact
+                                        for artifact in artifacts:
+                                            if artifact.get("type") == "text/plain" and artifact.get("content"):
+                                                response_content = artifact.get("content", "")
+                                                break
+                                        
+                                        # If no text/plain found, try other text types
+                                        if not response_content:
+                                            for artifact in artifacts:
+                                                artifact_type = artifact.get("type", "")
+                                                if artifact_type.startswith("text/") and artifact.get("content"):
+                                                    response_content = artifact.get("content", "")
+                                                    break
+                                        
+                                        # If still no content, take any artifact with content
+                                        if not response_content:
+                                            for artifact in artifacts:
+                                                if artifact.get("content"):
+                                                    response_content = artifact.get("content", "")
+                                                    break
+                                    
+                                    # Also check for direct response content in event data
+                                    if not response_content and event_data.get("result"):
+                                        response_content = event_data.get("result", "")
+                                    
                                     return {
                                         "status": event_data,
-                                        "artifacts": event_data.get("artifacts", [])
+                                        "artifacts": artifacts,
+                                        "response": response_content,
+                                        "content": response_content  # Backwards compatibility
                                     }
                                 elif state == TaskState.FAILED.value:
                                     error_msg = event_data.get("error", "Task failed")
@@ -315,11 +383,33 @@ class A2AClient:
                         # Task artifact was updated, continue listening
                         continue
                         
+        except (httpx.ReadError, httpx.ConnectError, httpx.RemoteProtocolError) as e:
+            # Handle specific connection errors with retry logic
+            error_msg = str(e)
+            if "peer closed connection" in error_msg or "incomplete chunked read" in error_msg:
+                PrintStyle(font_color="yellow").print(
+                    f"SSE connection lost, attempting to fall back to polling: {error_msg}"
+                )
+                # Fall back to polling for task completion
+                return await self._poll_for_completion(peer_url, task_id, timeout)
+            else:
+                raise A2AError(
+                    A2AErrorType.INVALID_AGENT_RESPONSE,
+                    f"SSE connection error: {error_msg}"
+                )
         except Exception as e:
-            raise A2AError(
-                A2AErrorType.INVALID_AGENT_RESPONSE,
-                f"SSE stream error: {str(e)}"
-            )
+            error_msg = str(e)
+            if "peer closed connection" in error_msg or "incomplete chunked read" in error_msg:
+                PrintStyle(font_color="yellow").print(
+                    f"SSE stream interrupted, falling back to polling: {error_msg}"
+                )
+                # Fall back to polling for task completion
+                return await self._poll_for_completion(peer_url, task_id, timeout)
+            else:
+                raise A2AError(
+                    A2AErrorType.INVALID_AGENT_RESPONSE,
+                    f"SSE stream error: {error_msg}"
+                )
         
         # If we get here, the stream ended without completion
         raise A2AError(

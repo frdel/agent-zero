@@ -7,7 +7,7 @@ from python.helpers import files, rfc_exchange
 from python.helpers.print_style import PrintStyle
 from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
-from python.helpers.docker import DockerContainerManager
+from python.helpers.docker_helper import DockerContainerManager
 from python.helpers.strings import truncate_text as truncate_text_string
 from python.helpers.messages import truncate_text as truncate_text_agent
 import re

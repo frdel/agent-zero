@@ -125,6 +125,10 @@ class A2AHandler:
         self.agent_card: Optional[AgentCard] = None
         self.server_config: Dict[str, Any] = {}
         self.webhook_handlers: Dict[str, callable] = {}
+        
+        # Agent identification for health endpoint
+        self.agent_id: str = "unknown"
+        self.role: str = "unknown"
         self._task_lock = threading.Lock()
         self._peer_lock = threading.Lock()
         
@@ -140,6 +144,10 @@ class A2AHandler:
     def initialize(self, config: Dict[str, Any]):
         """Initialize A2A handler with configuration"""
         self.server_config = config
+        
+        # Store agent identification for health endpoint
+        self.agent_id = config.get('agent_id', 'unknown')
+        self.role = config.get('role', 'unknown')
         
         # Create agent card from configuration
         self.agent_card = AgentCard(
@@ -253,17 +261,101 @@ class A2AHandler:
         try:
             # Update state to WORKING
             self.update_task_state(task_id, TaskState.WORKING)
-            
+            PrintStyle(font_color="cyan").print(f"A2A Task {task_id} started execution")
+
             # Extract message from input data
             message = task.input_data.get('message', task.description)
-            
+            PrintStyle(font_color="cyan").print(f"A2A Task {task_id} processing message: {message[:100]}...")
+
             # Execute task through agent
-            from agent import UserMessage
-            user_message = UserMessage(message=message, attachments=[])
-            agent_context.agent0.hist_add_user_message(user_message)
+            try:
+                from agent import UserMessage
+                user_message = UserMessage(message=message, attachments=[])
+                PrintStyle(font_color="cyan").print(f"A2A Task {task_id} adding user message to history")
+                agent_context.agent0.hist_add_user_message(user_message)
+                PrintStyle(font_color="cyan").print(f"A2A Task {task_id} user message added successfully")
+            except Exception as e:
+                PrintStyle(font_color="red").print(f"A2A Task {task_id} failed to add user message: {str(e)}")
+                import traceback
+                PrintStyle(font_color="red").print(f"A2A Task {task_id} traceback:\n{traceback.format_exc()}")
+                raise
+
+            # Run agent monologue with timeout
+            PrintStyle(font_color="cyan").print(f"A2A Task {task_id} starting agent monologue")
+            PrintStyle(font_color="cyan").print(f"A2A Task {task_id} agent history length: {len(agent_context.agent0.history.output())}")
             
-            # Run agent monologue
-            result = await agent_context.agent0.monologue()
+            try:
+                # Execute agent monologue with aggressive timeout and monitoring
+                PrintStyle(font_color="cyan").print(f"A2A Task {task_id} executing agent monologue with 120s timeout")
+                
+                # Monitor memory before starting
+                import psutil
+                import os
+                process = psutil.Process(os.getpid())
+                mem_before = process.memory_info().rss / 1024 / 1024  # MB
+                PrintStyle(font_color="cyan").print(f"A2A Task {task_id} memory before monologue: {mem_before:.1f} MB")
+                
+                # Create a task with timeout
+                monologue_task = asyncio.create_task(agent_context.agent0.monologue())
+                
+                # Wait with progressive timeout monitoring
+                timeout_duration = 300.0  # 5 minutes for complex tasks
+                check_interval = 30.0  # Check every 30 seconds
+                
+                start_time = asyncio.get_event_loop().time()
+                last_check = start_time
+                
+                while not monologue_task.done():
+                    try:
+                        # Wait for completion or timeout interval
+                        result = await asyncio.wait_for(
+                            asyncio.shield(monologue_task), 
+                            timeout=min(check_interval, timeout_duration - (asyncio.get_event_loop().time() - start_time))
+                        )
+                        # If we get here, task completed
+                        PrintStyle(font_color="green").print(f"A2A Task {task_id} monologue completed successfully")
+                        PrintStyle(font_color="cyan").print(f"A2A Task {task_id} result: {str(result)[:200]}...")
+                        break
+                        
+                    except asyncio.TimeoutError:
+                        elapsed = asyncio.get_event_loop().time() - start_time
+                        
+                        if elapsed >= timeout_duration:
+                            # Final timeout - cancel task
+                            PrintStyle(font_color="red").print(f"A2A Task {task_id} timed out after {elapsed:.1f} seconds - cancelling task")
+                            monologue_task.cancel()
+                            try:
+                                await monologue_task
+                            except asyncio.CancelledError:
+                                pass
+                            result = f"Task timed out after {elapsed:.1f} seconds. The subordinate agent was working on: {message[:100]}..."
+                            PrintStyle(font_color="yellow").print(f"A2A Task {task_id} using timeout response")
+                            break
+                        else:
+                            # Progress check
+                            PrintStyle(font_color="yellow").print(f"A2A Task {task_id} still running after {elapsed:.1f}s...")
+                            continue
+                    
+            except MemoryError as e:
+                PrintStyle(font_color="red").print(f"A2A Task {task_id} OUT OF MEMORY during monologue")
+                # Get current memory usage
+                try:
+                    import psutil
+                    import os
+                    process = psutil.Process(os.getpid())
+                    mem_current = process.memory_info().rss / 1024 / 1024  # MB
+                    PrintStyle(font_color="red").print(f"A2A Task {task_id} current memory: {mem_current:.1f} MB")
+                except:
+                    pass
+                result = f"Task failed: Out of memory. Consider increasing SUBORDINATE_RAM_GB or using smaller tasks."
+                PrintStyle(font_color="yellow").print(f"A2A Task {task_id} using OOM response")
+            except Exception as e:
+                PrintStyle(font_color="red").print(f"A2A Task {task_id} monologue failed: {str(e)}")
+                import traceback
+                PrintStyle(font_color="red").print(f"A2A Task {task_id} traceback:\n{traceback.format_exc()}")
+                # Provide error response instead of failing
+                result = f"Task execution failed: {str(e)}"
+                PrintStyle(font_color="yellow").print(f"A2A Task {task_id} using error response")
             
             # Add result as artifact
             artifact = TaskArtifact(
@@ -274,21 +366,53 @@ class A2AHandler:
             
             # Update task with results
             self.update_task_state(
-                task_id, 
-                TaskState.COMPLETED, 
+                task_id,
+                TaskState.COMPLETED,
                 artifacts=[artifact],
                 progress=1.0
             )
+
+            PrintStyle(font_color="green").print(f"A2A Task {task_id} completed successfully")
             
+            # Schedule subordinate cleanup after task completion (if this is a subordinate agent)
+            if hasattr(agent_context, 'type') and agent_context.type.value == 'a2a':
+                asyncio.create_task(self._schedule_subordinate_cleanup(agent_context))
+
             return True
             
         except Exception as e:
+            import traceback
             error_msg = f"Task execution failed: {str(e)}"
-            self.update_task_state(task_id, TaskState.FAILED, error=error_msg)
+            full_traceback = traceback.format_exc()
+
+            # Log detailed error information
             PrintStyle(background_color="red", font_color="white").print(
                 f"A2A Task {task_id} failed: {error_msg}"
             )
+            PrintStyle(background_color="red", font_color="white").print(
+                f"Full traceback:\n{full_traceback}"
+            )
+
+            self.update_task_state(task_id, TaskState.FAILED, error=error_msg)
             return False
+    
+    async def _schedule_subordinate_cleanup(self, agent_context: Any):
+        """Schedule cleanup of subordinate agent after task completion"""
+        try:
+            # Wait a bit to allow response to be sent
+            await asyncio.sleep(5)
+            
+            PrintStyle(font_color="yellow").print("Initiating subordinate self-cleanup after task completion")
+            
+            # Signal the subordinate to stop gracefully
+            if hasattr(agent_context, 'agent0') and hasattr(agent_context.agent0, 'context'):
+                # This will trigger the subordinate runner's cleanup
+                import os
+                import signal
+                os.kill(os.getpid(), signal.SIGTERM)
+                
+        except Exception as e:
+            PrintStyle(font_color="red").print(f"Error during subordinate cleanup: {str(e)}")
     
     # Peer Management Methods
     

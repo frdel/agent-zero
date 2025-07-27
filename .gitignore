@@ -57,5 +57,6 @@ instruments/**
 !**/.gitkeep
 agent_history.gif
 
-
+venv/
 tests/
+examples/
