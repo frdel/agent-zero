@@ -279,78 +279,201 @@
   opacity: 1;
 }
 
-/* Copy button styles */
-.copy-button {
+
+/* Hide browser speech synthesis dropdown/popup */
+body > select[aria-label*="voice"],
+body > div[aria-label*="voice"],
+body > div[role="listbox"],
+*[aria-label*="speech"],
+*[aria-label*="voice"] {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Enhanced Action Button System - Agent Zero Style */
+.message-actions {
   position: absolute;
-  right: 0;
-  top: var(--spacing-sm);
-  background: none;
-  border: none;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  padding-right: 0;
-  cursor: pointer;
-  text-decoration: underline;
-  text-wrap: nowrap;
+  right: 8px;
+  top: 8px;
+  display: flex;
+  gap: 4px;
+  background: var(--color-panel);
+  border-radius: 4px;
+  padding: 4px;
   opacity: 0;
-  -webkit-transition: opacity var(--transition-speed) ease-in-out;
-  transition: opacity var(--transition-speed) ease-in-out;
-  color: inherit;
-  font-size: 12px;
-  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  transform: scale(0.95);
+  transition: all var(--transition-speed) ease-in-out;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--color-border);
 }
 
-.copy-button:hover {
-  opacity: 0.8 !important;
+.message-action-button {
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: var(--color-primary);
+  min-width: 24px;
+  height: 24px;
+  max-width: 24px;
+  max-height: 24px;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
-.msg-content:hover .copy-button,
-.kvps-row:hover .copy-button,
-.message-text:hover .copy-button {
-  opacity: 0.6;
+.message-action-button:hover {
+  background: var(--color-accent);
+  color: var(--color-background);
+  border-color: var(--color-accent);
+  transform: scale(1.05);
 }
 
-.copy-button.copied {
-  font-family: "Rubik", Arial, Helvetica, sans-serif !important;
-  opacity: 1 !important;
+.message-action-button:active {
+  transform: scale(0.95);
 }
 
-.msg-thoughts .copy-button {
-  top: -12px !important;
+.message-action-button.success {
+  background: var(--color-accent);
+  color: var(--color-background);
+  border-color: var(--color-accent);
 }
 
-.message-user .copy-button {
-  top: -15px !important;
-  left: -13px !important;
-  right: 99% !important;
+.message-action-button.error {
+  background: var(--color-secondary);
+  color: var(--color-text);
+  border-color: var(--color-secondary);
 }
 
-.message-agent-response .copy-button {
-  top: -22px !important;
-  right: 0 !important;
-  padding-right: 0px !important;
+/* .message-action-button.loading {
+  background: var(--color-accent);
+  color: var(--color-background);
+  border-color: var(--color-accent);
+  animation: message-button-pulse 1.5s infinite;
+  transform: none !important;
+  scale: none !important;
+} */
+
+@keyframes message-button-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
-.message-info .copy-button {
-  top: -22px !important;
-  right: 0 !important;
-  padding-right: 0px !important;
+.message-action-button .material-symbols-outlined {
+  font-size: 14px;
+  line-height: 1;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
 }
 
-.message-tool .copy-button {
-  top: -12px !important;
-  right: 0 !important;
+/* Device-specific behavior */
+.device-pointer .msg-content:hover .message-actions,
+.device-pointer .kvps-row:hover .message-actions,
+.device-pointer .message-text:hover .message-actions {
+  opacity: 1;
+  transform: scale(1);
 }
 
-.msg-output .copy-button {
-  top: -6px !important;
-  right: 0 !important;
+.device-touch .message-actions.visible {
+  opacity: 1;
+  transform: scale(1);
 }
 
-/* Make message containers relative for absolute positioning of copy buttons */
+.device-touch .message-actions {
+  /* Touch device styling matching Agent Zero patterns */
+  background: var(--color-panel);
+  border: 2px solid var(--color-accent);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  padding: 6px;
+}
+
+.device-touch .message-action-button {
+  min-width: 36px;
+  height: 36px;
+  max-width: 36px;
+  max-height: 36px;
+}
+
+.device-touch .message-action-button .material-symbols-outlined {
+  font-size: 16px;
+}
+
+/* Message type specific positioning */
+.msg-thoughts .message-actions {
+  top: -4px;
+}
+
+.message-user .message-actions {
+  top: -8px;
+  left: 8px;
+  right: auto;
+}
+
+.message-agent-response .message-actions {
+  top: -12px;
+}
+
+.message-info .message-actions {
+  top: -12px;
+}
+
+.message-tool .message-actions {
+  top: -4px;
+}
+
+.msg-output .message-actions {
+  top: 2px;
+}
+
+/* Viewport-aware positioning */
+.message-actions.position-left {
+  right: auto;
+  left: 8px;
+}
+
+.message-actions.position-bottom {
+  top: auto;
+  bottom: 8px;
+}
+
+/* Accessibility improvements */
+.message-action-button:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.message-action-button[aria-pressed="true"] {
+  background: var(--color-accent);
+  color: var(--color-background);
+}
+
+/* Make message containers relative for absolute positioning of action buttons */
 .msg-content,
 .kvps-row,
 .message-text {
   position: relative;
+}
+
+/* Prevent action buttons from appearing in input section */
+#input-section .message-actions,
+#chat-buttons-wrapper .message-actions,
+#microphone-button .message-actions {
+  display: none !important;
+}
+
+/* Fix for loading state buttons appearing in wrong location */
+.message-action-button.loading {
+  position: relative !important;
+  transform: none !important;
+  scale: none !important;
+  background: var(--color-accent);
+  color: var(--color-background);
+  border-color: var(--color-accent);
+  animation: message-button-pulse 1.5s infinite;
 }
 
 .message-text pre {

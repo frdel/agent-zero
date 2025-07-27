@@ -1,9 +1,10 @@
-// copy button
+// enhanced action buttons with copy and speech functionality
 import { openImageModal } from "./image_modal.js";
 import { marked } from "../vendor/marked/marked.esm.js";
 import { getAutoScroll } from "/index.js";
 import { store as _messageResizeStore } from "/components/messages/resize/message-resize-store.js"; // keep here, required in html
 import { store as attachmentsStore } from "/components/chat/attachments/attachmentsStore.js";
+import { store as speechStore } from "/components/chat/speech/speech-store.js";
 
 const chatHistory = document.getElementById("chat-history");
 
@@ -74,44 +75,238 @@ export function setMessage(id, type, heading, content, temp, kvps = null) {
   }
 }
 
-function createCopyButton() {
-  const button = document.createElement("button");
-  button.className = "copy-button";
-  button.textContent = "Copy";
+function createActionButtonGroup() {
+  const container = document.createElement("div");
+  container.className = "message-actions";
+  container.setAttribute("role", "group");
+  container.setAttribute("aria-label", "Message actions");
 
-  button.addEventListener("click", async function (e) {
+  // Copy button
+  const copyButton = document.createElement("button");
+  copyButton.className = "message-action-button copy-action";
+  copyButton.innerHTML = '<span class="material-symbols-outlined">content_copy</span>';
+  copyButton.setAttribute("aria-label", "Copy message");
+  copyButton.setAttribute("title", "Copy to clipboard");
+  copyButton.setAttribute("tabindex", "0");
+
+  copyButton.addEventListener("click", async function (e) {
     e.stopPropagation();
-    const container = this.closest(".msg-content, .kvps-row, .message-text");
-    let textToCopy;
-
-    if (container.classList.contains("kvps-row")) {
-      textToCopy = container.querySelector(".kvps-val").innerText;
-    } else if (container.classList.contains("message-text")) {
-      textToCopy = container.querySelector("span").innerText;
-    } else {
-      textToCopy = container.querySelector("span").innerText;
-    }
+    const textToCopy = extractTextFromContainer(this);
 
     try {
       await navigator.clipboard.writeText(textToCopy);
-      const originalText = button.textContent;
-      button.classList.add("copied");
-      button.textContent = "Copied!";
+      const icon = copyButton.querySelector(".material-symbols-outlined");
+      const originalIcon = icon.textContent;
+      icon.textContent = "check";
+      copyButton.classList.add("success");
+      copyButton.setAttribute("aria-label", "Copied!");
+      
       setTimeout(() => {
-        button.classList.remove("copied");
-        button.textContent = originalText;
+        icon.textContent = originalIcon;
+        copyButton.classList.remove("success");
+        copyButton.setAttribute("aria-label", "Copy message");
       }, 2000);
     } catch (err) {
       console.error("Failed to copy text:", err);
+      copyButton.classList.add("error");
+      setTimeout(() => {
+        copyButton.classList.remove("error");
+      }, 2000);
     }
   });
 
-  return button;
+  // Speak button
+  const speakButton = document.createElement("button");
+  speakButton.className = "message-action-button speak-action";
+  speakButton.innerHTML = '<span class="material-symbols-outlined">volume_up</span>';
+  speakButton.setAttribute("aria-label", "Read message aloud");
+  speakButton.setAttribute("title", "Text to speech");
+  speakButton.setAttribute("tabindex", "0");
+
+  speakButton.addEventListener("click", async function (e) {
+    e.stopPropagation();
+    e.preventDefault();
+
+    // Blur the button to prevent browser focus-related dropdowns
+    this.blur();
+
+    const icon = speakButton.querySelector(".material-symbols-outlined");
+
+    // Check if currently speaking (pause icon is showing)
+    if (icon.textContent === "pause") {
+      // Stop the speech
+      speechStore.stop();
+      icon.textContent = "volume_up";
+      speakButton.setAttribute("aria-label", "Read message aloud");
+      return;
+    }
+
+    // Start speaking
+    const textToSpeak = extractTextFromContainer(this);
+
+    try {
+      // Don't add loading class to prevent positioning issues
+      // speakButton.classList.add("loading");
+      icon.textContent = "pause";
+      speakButton.setAttribute("aria-label", "Stop speaking");
+
+      // Delay slightly to ensure browser doesn't show dropdown
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await speechStore.speak(textToSpeak);
+
+      icon.textContent = "volume_up";
+      // speakButton.classList.remove("loading");
+      speakButton.setAttribute("aria-label", "Read message aloud");
+    } catch (err) {
+      console.error("Failed to speak text:", err);
+      icon.textContent = "volume_up";
+      // speakButton.classList.remove("loading");
+      speakButton.classList.add("error");
+      setTimeout(() => {
+        speakButton.classList.remove("error");
+      }, 2000);
+      speakButton.setAttribute("aria-label", "Read message aloud");
+    }
+  });
+
+  container.appendChild(copyButton);
+  container.appendChild(speakButton);
+  
+  return container;
 }
 
-function addCopyButtonToElement(element) {
-  if (!element.querySelector(".copy-button")) {
-    element.appendChild(createCopyButton());
+function extractTextFromContainer(button) {
+  const container = button.closest(".msg-content, .kvps-row, .message-text");
+  let textToExtract;
+
+  if (container.classList.contains("kvps-row")) {
+    textToExtract = container.querySelector(".kvps-val").innerText;
+  } else if (container.classList.contains("message-text")) {
+    textToExtract = container.querySelector("span").innerText;
+  } else {
+    const spanElement = container.querySelector("span");
+    textToExtract = spanElement ? spanElement.innerText : container.innerText;
+  }
+
+  return textToExtract || "";
+}
+
+function addActionButtonsToElement(element) {
+  if (!element.querySelector(".message-actions")) {
+    const actionGroup = createActionButtonGroup();
+    element.appendChild(actionGroup);
+    
+    // Add viewport-aware positioning
+    function updateButtonPosition() {
+      const rect = actionGroup.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      // Reset position classes
+      actionGroup.classList.remove('position-left', 'position-bottom');
+      
+      // Check if buttons would go off screen and adjust
+      if (rect.right > viewportWidth - 10) {
+        actionGroup.classList.add('position-left');
+      }
+      if (rect.bottom > viewportHeight - 10) {
+        actionGroup.classList.add('position-bottom');
+      }
+    }
+    
+    // Add device-specific behavior
+    if (document.body.classList.contains("device-touch")) {
+      let tapTimeout;
+      
+      // For touch devices, show buttons when element is tapped
+      element.addEventListener("touchstart", function(e) {
+        // Clear any existing timeout
+        if (tapTimeout) clearTimeout(tapTimeout);
+        
+        // Only show if not tapping on buttons
+        if (!e.target.closest(".message-actions")) {
+          // Hide all other visible action groups first
+          document.querySelectorAll(".message-actions.visible").forEach(group => {
+            if (group !== actionGroup) {
+              group.classList.remove("visible");
+            }
+          });
+          
+          // Show buttons after a short delay to distinguish from scrolling
+          tapTimeout = setTimeout(() => {
+            actionGroup.classList.add("visible");
+            updateButtonPosition();
+          }, 150);
+        }
+      });
+      
+      // Cancel showing buttons if user starts scrolling
+      element.addEventListener("touchmove", function(e) {
+        if (tapTimeout) {
+          clearTimeout(tapTimeout);
+          tapTimeout = null;
+        }
+      });
+      
+      // Fallback click handler for devices that don't support touchstart properly
+      element.addEventListener("click", function(e) {
+        if (!e.target.closest(".message-actions") && !actionGroup.classList.contains("visible")) {
+          document.querySelectorAll(".message-actions.visible").forEach(group => {
+            if (group !== actionGroup) {
+              group.classList.remove("visible");
+            }
+          });
+          actionGroup.classList.add("visible");
+          updateButtonPosition();
+        }
+      });
+      
+      // Hide when tapping outside
+      document.addEventListener("touchstart", function(e) {
+        if (!element.contains(e.target)) {
+          actionGroup.classList.remove("visible");
+        }
+      });
+      
+      document.addEventListener("click", function(e) {
+        if (!element.contains(e.target)) {
+          actionGroup.classList.remove("visible");
+        }
+      });
+    } else {
+      // For pointer devices, update position on hover
+      element.addEventListener("mouseenter", function() {
+        setTimeout(updateButtonPosition, 10);
+      });
+    }
+    
+    // Update position on window resize
+    window.addEventListener("resize", updateButtonPosition);
+    
+    // Add keyboard support for all devices
+    const buttons = actionGroup.querySelectorAll(".message-action-button");
+    buttons.forEach((button, index) => {
+      button.addEventListener("keydown", function(e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          button.click();
+        } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+          e.preventDefault();
+          const nextButton = buttons[index + 1] || buttons[0];
+          nextButton.focus();
+        } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+          e.preventDefault();
+          const prevButton = buttons[index - 1] || buttons[buttons.length - 1];
+          prevButton.focus();
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          button.blur();
+          if (document.body.classList.contains("device-touch")) {
+            actionGroup.classList.remove("visible");
+          }
+        }
+      });
+    });
   }
 }
 
@@ -214,7 +409,7 @@ export function _drawMessage(
       }
 
       contentDiv.appendChild(spanElement);
-      addCopyButtonToElement(contentDiv);
+      addActionButtonsToElement(contentDiv);
       adjustMarkdownRender(contentDiv);
       bodyDiv.appendChild(contentDiv);
     } else {
@@ -232,7 +427,7 @@ export function _drawMessage(
       });
 
       preElement.appendChild(spanElement);
-      addCopyButtonToElement(preElement);
+      addActionButtonsToElement(preElement);
       bodyDiv.appendChild(preElement);
     }
   }
@@ -405,7 +600,7 @@ export function drawMessageUser(
       copyText(content, textDiv);
     });
 
-    addCopyButtonToElement(textDiv);
+    addActionButtonsToElement(textDiv);
     messageDiv.appendChild(textDiv);
   }
 
@@ -704,7 +899,7 @@ function drawKvps(container, kvps, latex) {
           span.innerHTML = convertHTML(value);
           pre.appendChild(span);
           tdiv.appendChild(pre);
-          addCopyButtonToElement(row);
+          addActionButtonsToElement(row);
 
           // Add click handler
           span.addEventListener("click", () => {
