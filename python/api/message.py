@@ -26,6 +26,7 @@ class Message(ApiHandler):
             text = request.form.get("text", "")
             ctxid = request.form.get("context", "")
             message_id = request.form.get("message_id", None)
+            target_agent_id = request.form.get("target_agent_id", None)
             attachments = request.files.getlist("attachments")
             attachment_paths = []
 
@@ -47,6 +48,7 @@ class Message(ApiHandler):
             text = input_data.get("text", "")
             ctxid = input_data.get("context", "")
             message_id = input_data.get("message_id", None)
+            target_agent_id = input_data.get("target_agent_id", None)
             attachment_paths = []
 
         # Now process the message
@@ -80,8 +82,32 @@ class Message(ApiHandler):
             type="user",
             heading="User message",
             content=message,
-            kvps={"attachments": attachment_filenames},
+            kvps={"attachments": attachment_filenames, "target_agent": target_agent_id},
             id=message_id,
         )
+
+        # Route message to specific agent if target_agent_id is provided
+        if target_agent_id and target_agent_id != context.agent0.agent_name:
+            try:
+                # Route to subordinate or peer agent
+                response = await context.route_message_to_agent(target_agent_id, message, "user")
+                
+                # Log the subordinate response to the UI context with proper attribution
+                context.log.log(
+                    type="agent",
+                    heading=f"Agent Response: {target_agent_id}",
+                    content=response,
+                    kvps={"source_agent": target_agent_id, "target_agent": target_agent_id},
+                    id=None  # Generate new ID for response
+                )
+                
+                # Return the response as a deferred task
+                from python.helpers.defer import DeferredTask
+                task = DeferredTask()
+                task.set_result(response)
+                return task, context
+            except ValueError as e:
+                # Agent not found, fall back to main agent
+                PrintStyle(font_color="yellow").print(f"Agent routing failed: {str(e)}, routing to main agent")
 
         return context.communicate(UserMessage(message, attachment_paths)), context

@@ -2,8 +2,16 @@ import os
 import re
 from typing import Any
 
-from .files import get_abs_path
+try:
+    from .files import get_abs_path
+except ImportError:
+    # Fallback for when this module is imported from a standalone script
+    from python.helpers.files import get_abs_path
+
 from dotenv import load_dotenv as _load_dotenv
+import python.helpers.runtime as runtime
+import python.helpers.env_helper as dotenv
+
 
 KEY_AUTH_LOGIN = "AUTH_LOGIN"
 KEY_AUTH_PASSWORD = "AUTH_PASSWORD"

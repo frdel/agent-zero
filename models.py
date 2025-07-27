@@ -17,8 +17,7 @@ from typing import (
 from litellm import completion, acompletion, embedding
 import litellm
 
-from python.helpers import dotenv
-from python.helpers.dotenv import load_dotenv
+from python.helpers import env_helper as dotenv
 from python.helpers.providers import get_provider_config
 from python.helpers.rate_limiter import RateLimiter
 from python.helpers.tokens import approximate_tokens
@@ -48,9 +47,13 @@ def turn_off_logging():
         if name.lower().startswith("litellm"):
             logging.getLogger(name).setLevel(logging.ERROR)
 
+    # Suppress Pydantic deprecation warnings from litellm
+    import warnings
+    warnings.filterwarnings("ignore", category=DeprecationWarning, module="litellm.*")
+    warnings.filterwarnings("ignore", message=".*The `dict` method is deprecated.*", category=DeprecationWarning)
+
 
 # init
-load_dotenv()
 turn_off_logging()
 
 

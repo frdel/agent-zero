@@ -299,10 +299,10 @@ class DynamicMcpProxy:
                 server=mcp_server,
                 message_path=mcp_server.settings.message_path,
                 sse_path=mcp_server.settings.sse_path,
-                auth_server_provider=mcp_server._auth_server_provider,
-                auth_settings=mcp_server.settings.auth,
-                debug=mcp_server.settings.debug,
-                routes=mcp_server._additional_http_routes,
+                # auth_server_provider=mcp_server._auth_server_provider,
+                # auth_settings=mcp_server.settings.auth,
+                # debug=mcp_server.settings.debug,
+                # routes=mcp_server._additional_http_routes,
                 middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
             )
 

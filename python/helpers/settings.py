@@ -7,8 +7,8 @@ import subprocess
 from typing import Any, Literal, TypedDict, cast
 
 import models
-from python.helpers import runtime, whisper, defer, git
-from . import files, dotenv
+from python.helpers import runtime, whisper, defer, git_helper as git
+from . import files, env_helper as dotenv
 from python.helpers.print_style import PrintStyle
 from python.helpers.providers import get_providers
 
@@ -53,7 +53,6 @@ class Settings(TypedDict):
     agent_profile: str
     agent_memory_subdir: str
     agent_knowledge_subdir: str
-
     memory_recall_enabled: bool
     memory_recall_interval: int
     memory_recall_history_len: int
@@ -68,6 +67,12 @@ class Settings(TypedDict):
     memory_memorize_consolidation: bool
     memory_memorize_replace_threshold: float
     
+    # A2A (Agent-to-Agent) Protocol Configuration
+    a2a_enabled: bool
+    a2a_server_port: int
+    a2a_subordinate_base_port: int
+    a2a_subordinate_max_instances: int
+    a2a_subordinate_auto_cleanup: bool
 
     api_keys: dict[str, str]
 
@@ -563,6 +568,63 @@ def convert_out(settings: Settings) -> SettingsOutput:
                 {"value": subdir, "label": subdir}
                 for subdir in files.get_subdirectories("knowledge", exclude="default")
             ],
+        }
+    )
+
+    # A2A (Agent-to-Agent) Protocol Configuration
+    agent_fields.append(
+        {
+            "id": "a2a_enabled",
+            "title": "Enable A2A Multi-Agent System",
+            "description": "Enable Agent-to-Agent Protocol for multi-agent collaboration. This allows spawning subordinate agents and peer communication.",
+            "type": "switch",
+            "value": settings["a2a_enabled"],
+        }
+    )
+
+    agent_fields.append(
+        {
+            "id": "a2a_server_port",
+            "title": "A2A Server Port",
+            "description": "Port for the main A2A server. Used for agent-to-agent communication.",
+            "type": "number",
+            "value": settings["a2a_server_port"],
+            "min": 1024,
+            "max": 65535,
+        }
+    )
+
+    agent_fields.append(
+        {
+            "id": "a2a_subordinate_base_port",
+            "title": "Subordinate Base Port",
+            "description": "Starting port for subordinate agents. Each subordinate will use sequential ports from this base.",
+            "type": "number",
+            "value": settings["a2a_subordinate_base_port"],
+            "min": 1024,
+            "max": 65535,
+        }
+    )
+
+    agent_fields.append(
+        {
+            "id": "a2a_subordinate_max_instances",
+            "title": "Max Subordinate Instances",
+            "description": "Maximum number of subordinate agents that can be spawned simultaneously.",
+            "type": "number",
+            "value": settings["a2a_subordinate_max_instances"],
+            "min": 1,
+            "max": 20,
+        }
+    )
+
+    agent_fields.append(
+        {
+            "id": "a2a_subordinate_auto_cleanup",
+            "title": "Auto Cleanup Subordinates",
+            "description": "Automatically cleanup subordinate agents when they are no longer needed or when the main agent shuts down.",
+            "type": "switch",
+            "value": settings["a2a_subordinate_auto_cleanup"],
         }
     )
 
@@ -1220,6 +1282,14 @@ def get_default_settings() -> Settings:
         agent_profile="agent0",
         agent_memory_subdir="default",
         agent_knowledge_subdir="custom",
+        
+        # A2A (Agent-to-Agent) Protocol Configuration
+        a2a_enabled=False,
+        a2a_server_port=8008,
+        a2a_subordinate_base_port=8100,
+        a2a_subordinate_max_instances=10,
+        a2a_subordinate_auto_cleanup=True,
+        
         rfc_auto_docker=True,
         rfc_url="localhost",
         rfc_password="",

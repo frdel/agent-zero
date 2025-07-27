@@ -5,6 +5,57 @@ import { getAutoScroll } from "/index.js";
 import { store as _messageResizeStore } from "/components/messages/resize/message-resize-store.js"; // keep here, required in html
 import { store as attachmentsStore } from "/components/chat/attachments/attachmentsStore.js";
 
+// Agent badge utilities
+function createAgentBadge(agentId, messageType) {
+  const badge = document.createElement("div");
+  badge.classList.add("agent-badge", `agent-badge-${messageType}`);
+  badge.setAttribute("data-agent-id", agentId);
+  
+  const statusIndicator = document.createElement("div");
+  statusIndicator.classList.add("agent-badge-status");
+  
+  const agentName = document.createElement("span");
+  agentName.classList.add("agent-badge-name");
+  agentName.textContent = getAgentDisplayName(agentId);
+  
+  badge.appendChild(statusIndicator);
+  badge.appendChild(agentName);
+  
+  // Update badge with current agent info
+  updateAgentBadge(badge, agentId);
+  
+  return badge;
+}
+
+function getAgentDisplayName(agentId) {
+  // Try to get agent info from the agent selector store if available
+  if (window.Alpine && window.Alpine.store('agentSelector')) {
+    const store = window.Alpine.store('agentSelector');
+    const agent = store.agents.find(a => a.id === agentId);
+    if (agent) {
+      return store.getAgentDisplayName(agent);
+    }
+  }
+  
+  // Fallback to basic display
+  if (agentId === 'A0') return 'Agent Zero';
+  return agentId.length > 8 ? agentId.slice(0, 8) + '...' : agentId;
+}
+
+function updateAgentBadge(badge, agentId) {
+  // Try to get current agent status and update badge
+  if (window.Alpine && window.Alpine.store('agentSelector')) {
+    const store = window.Alpine.store('agentSelector');
+    const agent = store.agents.find(a => a.id === agentId);
+    if (agent) {
+      const statusIndicator = badge.querySelector('.agent-badge-status');
+      if (statusIndicator) {
+        statusIndicator.className = `agent-badge-status ${store.getAgentStatusClass(agent)}`;
+      }
+    }
+  }
+}
+
 const chatHistory = document.getElementById("chat-history");
 
 let messageGroup = null;
@@ -26,6 +77,12 @@ export function setMessage(id, type, heading, content, temp, kvps = null) {
     messageContainer = document.createElement("div");
     messageContainer.id = `message-${id}`;
     messageContainer.classList.add("message-container", `${sender}-container`);
+    
+    // Add agent attribution class if target_agent is specified
+    if (kvps && kvps.target_agent) {
+      messageContainer.classList.add("agent-attributed");
+      messageContainer.setAttribute("data-agent-id", kvps.target_agent);
+    }
     // if (temp) messageContainer.classList.add("message-temp");
   }
 
@@ -303,6 +360,12 @@ export function drawMessageAgent(
   temp,
   kvps = null
 ) {
+  // Add agent badge if this is from a non-main agent
+  if (kvps && kvps.agent_id && kvps.agent_id !== 'A0') {
+    const agentBadge = createAgentBadge(kvps.agent_id, 'ai');
+    messageContainer.appendChild(agentBadge);
+  }
+  
   let kvpsFlat = null;
   if (kvps) {
     kvpsFlat = { ...kvps, ...(kvps["tool_args"] || {}) };
@@ -319,8 +382,8 @@ export function drawMessageAgent(
     kvpsFlat,
     ["message-ai"],
     ["msg-json"],
-    false,
-    false
+    true,
+    true
   );
 }
 
@@ -382,6 +445,12 @@ export function drawMessageUser(
   kvps = null,
   latex = false
 ) {
+  // Add agent badge if target_agent is specified
+  if (kvps && kvps.target_agent && kvps.target_agent !== 'A0') {
+    const agentBadge = createAgentBadge(kvps.target_agent, 'user');
+    messageContainer.appendChild(agentBadge);
+  }
+  
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", "message-user");
 

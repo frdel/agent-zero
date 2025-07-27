@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Optional
 from pathspec import PathSpec
 from pathspec.patterns.gitwildmatch import GitWildMatchPattern
 
-from python.helpers import files, runtime, git
+from python.helpers import files, runtime, git_helper as git
 from python.helpers.print_style import PrintStyle
 
 
