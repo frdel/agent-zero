@@ -1,18 +1,15 @@
 from datetime import timedelta
 import os
 import secrets
-import sys
 import time
 import socket
 import struct
 from functools import wraps
 import threading
-import signal
-from typing import override
 from flask import Flask, request, Response, session
 from flask_basicauth import BasicAuth
 import initialize
-from python.helpers import errors, files, git, mcp_server
+from python.helpers import files, git, mcp_server
 from python.helpers.files import get_abs_path
 from python.helpers import runtime, dotenv, process
 from python.helpers.extract_tools import load_classes_from_folder
@@ -81,14 +78,17 @@ def is_loopback_address(address):
 def requires_api_key(f):
     @wraps(f)
     async def decorated(*args, **kwargs):
-        valid_api_key = dotenv.get_dotenv_value("API_KEY")
+        # Use the auth token from settings (same as MCP server)
+        from python.helpers.settings import get_settings
+        valid_api_key = get_settings()["mcp_server_token"]
+
         if api_key := request.headers.get("X-API-KEY"):
             if api_key != valid_api_key:
-                return Response("API key required", 401)
+                return Response("Invalid API key", 401)
         elif request.json and request.json.get("api_key"):
             api_key = request.json.get("api_key")
             if api_key != valid_api_key:
-                return Response("API key required", 401)
+                return Response("Invalid API key", 401)
         else:
             return Response("API key required", 401)
         return await f(*args, **kwargs)
@@ -171,7 +171,7 @@ def run():
     from werkzeug.serving import WSGIRequestHandler
     from werkzeug.serving import make_server
     from werkzeug.middleware.dispatcher import DispatcherMiddleware
-    from a2wsgi import ASGIMiddleware, WSGIMiddleware
+    from a2wsgi import ASGIMiddleware
 
     PrintStyle().print("Starting server...")
 

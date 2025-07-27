@@ -291,6 +291,8 @@ const settingsModalProxy = {
             openModal("settings/backup/backup.html");
         } else if (field.id === "backup_restore") {
             openModal("settings/backup/restore.html");
+        } else if (field.id === "external_api_examples") {
+            openModal("settings/external/api-examples.html");
         }
     }
 };
