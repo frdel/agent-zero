@@ -1,0 +1,678 @@
+<html>
+
+<head>
+    <title>Agent Zero External API Examples</title>
+</head>
+
+<body>
+    <div x-data>
+        <p>Agent Zero provides external API endpoints for integration with other applications.</p>
+        <p>These endpoints use API key authentication and support text messages and file attachments.</p>
+
+        <!-- API Token Information -->
+        <div style="background-color: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: 6px; padding: 12px; margin: 16px 0;">
+            <h4 style="margin: 0 0 8px 0; color: var(--color-text-primary);">API Token Information</h4>
+            <p style="margin: 0; color: var(--color-text-secondary); font-size: 14px;">
+                The API token is automatically generated from your username and password.
+                This same token is used for both MCP server connections and external API endpoints.
+                The token changes when you update your credentials.
+            </p>
+        </div>
+
+        <!-- Section 1: api_message Endpoint -->
+        <div class="api-section">
+            <h2>POST /api_message</h2>
+            <p style="margin: 0 0 16px 0; color: var(--color-text-secondary); font-size: 14px;">
+                Send messages to Agent Zero and receive responses. Supports text messages, file attachments, and conversation continuity.
+            </p>
+
+            <!-- API Reference -->
+            <h3 style="margin: 20px 0 12px 0; color: var(--color-text-primary);">API Reference</h3>
+            <div style="background-color: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: 6px; padding: 12px; margin: 0 0 20px 0;">
+                <p style="margin: 0 0 8px 0; color: var(--color-text-secondary); font-size: 14px;">
+                    <strong>Parameters:</strong><br>
+                    • <code>context_id</code> (string, optional): Existing chat context ID<br>
+                    • <code>message</code> (string, required): The message to send<br>
+                    • <code>attachments</code> (array, optional): Array of {filename, base64} objects<br>
+                    • <code>lifetime_hours</code> (number, optional): Chat lifetime in hours (default: 24)
+                </p>
+                <p style="margin: 0; color: var(--color-text-secondary); font-size: 14px;">
+                    <strong>Headers:</strong> <code>X-API-KEY</code> (required), <code>Content-Type: application/json</code>
+                </p>
+            </div>
+
+            <!-- JavaScript Examples -->
+            <h3 style="margin: 20px 0 12px 0; color: var(--color-text-primary);">JavaScript Examples</h3>
+
+            <h4>Basic Usage Example</h4>
+            <div id="api-basic-example"></div>
+
+            <h4>Conversation Continuation Example</h4>
+            <div id="api-continuation-example"></div>
+
+            <h4>File Attachment Example</h4>
+            <div id="api-attachment-example"></div>
+        </div>
+
+        <!-- Section 2: api_log_get Endpoint -->
+        <div class="api-section">
+            <h2>GET/POST /api_log_get</h2>
+            <p style="margin: 0 0 16px 0; color: var(--color-text-secondary); font-size: 14px;">
+                Retrieve log data by context ID, limited to a specified number of entries from the newest.
+            </p>
+
+            <!-- API Reference -->
+            <h3 style="margin: 20px 0 12px 0; color: var(--color-text-primary);">API Reference</h3>
+            <div style="background-color: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: 6px; padding: 12px; margin: 0 0 20px 0;">
+                <p style="margin: 0 0 8px 0; color: var(--color-text-secondary); font-size: 14px;">
+                    <strong>Parameters:</strong><br>
+                    • <code>context_id</code> (string, required): Context ID to get logs from<br>
+                    • <code>length</code> (integer, optional): Number of log items to return from newest (default: 100)
+                </p>
+                <p style="margin: 0; color: var(--color-text-secondary); font-size: 14px;">
+                    <strong>Headers:</strong> <code>X-API-KEY</code> (required), <code>Content-Type: application/json</code> (for POST)
+                </p>
+            </div>
+
+            <!-- JavaScript Examples -->
+            <h3 style="margin: 20px 0 12px 0; color: var(--color-text-primary);">JavaScript Examples</h3>
+
+            <h4>GET Request Example</h4>
+            <div id="api-log-get-example"></div>
+
+            <h4>POST Request Example</h4>
+            <div id="api-log-post-example"></div>
+        </div>
+
+        <!-- Section 3: api_terminate_chat Endpoint -->
+        <div class="api-section">
+            <h2>POST /api_terminate_chat</h2>
+            <p style="margin: 0 0 16px 0; color: var(--color-text-secondary); font-size: 14px;">
+                Terminate and remove a chat context to free up resources. Similar to the MCP finish_chat function.
+            </p>
+
+            <!-- API Reference -->
+            <h3 style="margin: 20px 0 12px 0; color: var(--color-text-primary);">API Reference</h3>
+            <div style="background-color: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: 6px; padding: 12px; margin: 0 0 20px 0;">
+                <p style="margin: 0 0 8px 0; color: var(--color-text-secondary); font-size: 14px;">
+                    <strong>Parameters:</strong><br>
+                    • <code>context_id</code> (string, required): Context ID of the chat to terminate
+                </p>
+                <p style="margin: 0; color: var(--color-text-secondary); font-size: 14px;">
+                    <strong>Headers:</strong> <code>X-API-KEY</code> (required), <code>Content-Type: application/json</code>
+                </p>
+            </div>
+
+            <!-- JavaScript Examples -->
+            <h3 style="margin: 20px 0 12px 0; color: var(--color-text-primary);">JavaScript Examples</h3>
+            <h4>Basic Termination Examples</h4>
+            <div id="api-terminate-example"></div>
+        </div>
+
+        <!-- Section 4: api_reset_chat Endpoint -->
+        <div class="api-section">
+            <h2>POST /api_reset_chat</h2>
+            <p style="margin: 0 0 16px 0; color: var(--color-text-secondary); font-size: 14px;">
+                Reset a chat context to clear conversation history while keeping the context_id alive for continued use.
+            </p>
+
+            <!-- API Reference -->
+            <h3 style="margin: 20px 0 12px 0; color: var(--color-text-primary);">API Reference</h3>
+            <div style="background-color: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: 6px; padding: 12px; margin: 0 0 20px 0;">
+                <p style="margin: 0 0 8px 0; color: var(--color-text-secondary); font-size: 14px;">
+                    <strong>Parameters:</strong><br>
+                    • <code>context_id</code> (string, required): Context ID of the chat to reset
+                </p>
+                <p style="margin: 0; color: var(--color-text-secondary); font-size: 14px;">
+                    <strong>Headers:</strong> <code>X-API-KEY</code> (required), <code>Content-Type: application/json</code>
+                </p>
+            </div>
+
+            <!-- JavaScript Examples -->
+            <h3 style="margin: 20px 0 12px 0; color: var(--color-text-primary);">JavaScript Examples</h3>
+            <h4>Basic Reset Examples</h4>
+            <div id="api-reset-example"></div>
+        </div>
+
+        <!-- Section 5: api_files_get Endpoint -->
+        <div class="api-section">
+            <h2>POST /api_files_get</h2>
+            <p style="margin: 0 0 16px 0; color: var(--color-text-secondary); font-size: 14px;">
+                Retrieve file contents by paths, returning files as base64 encoded data. Useful for retrieving uploaded attachments.
+            </p>
+
+            <!-- API Reference -->
+            <h3 style="margin: 20px 0 12px 0; color: var(--color-text-primary);">API Reference</h3>
+            <div style="background-color: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: 6px; padding: 12px; margin: 0 0 20px 0;">
+                <p style="margin: 0 0 8px 0; color: var(--color-text-secondary); font-size: 14px;">
+                    <strong>Parameters:</strong><br>
+                    • <code>paths</code> (array, required): Array of file paths to retrieve (e.g., ["/a0/tmp/uploads/file.txt"])
+                </p>
+                <p style="margin: 0; color: var(--color-text-secondary); font-size: 14px;">
+                    <strong>Headers:</strong> <code>X-API-KEY</code> (required), <code>Content-Type: application/json</code>
+                </p>
+            </div>
+
+            <!-- JavaScript Examples -->
+            <h3 style="margin: 20px 0 12px 0; color: var(--color-text-primary);">JavaScript Examples</h3>
+            <h4>File Retrieval Examples</h4>
+            <div id="api-files-get-example"></div>
+        </div>
+
+        <!-- Section 6: Additional Endpoints -->
+        <!--
+        Example template for new endpoint sections:
+
+        <div class="api-section">
+            <h2>POST /endpoint_name</h2>
+            <p style="margin: 0 0 16px 0; color: var(--color-text-secondary); font-size: 14px;">
+                Description of what this endpoint does...
+            </p>
+
+            <h3 style="margin: 20px 0 12px 0; color: var(--color-text-primary);">API Reference</h3>
+            <div style="background-color: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: 6px; padding: 12px; margin: 0 0 20px 0;">
+                <p style="margin: 0 0 8px 0; color: var(--color-text-secondary); font-size: 14px;">
+                    <strong>Parameters:</strong><br>
+                    • <code>param_name</code> (type, required/optional): Description
+                </p>
+                <p style="margin: 0; color: var(--color-text-secondary); font-size: 14px;">
+                    <strong>Headers:</strong> <code>X-API-KEY</code> (required), <code>Content-Type: application/json</code>
+                </p>
+            </div>
+
+            <h3 style="margin: 20px 0 12px 0; color: var(--color-text-primary);">JavaScript Examples</h3>
+            <h4>Example Title</h4>
+            <div id="example-id"></div>
+        </div>
+        -->
+
+        <script>
+            setTimeout(() => {
+                const url = window.location.origin;
+                const token = settingsModalProxy.settings.sections.filter(x => x.id == "mcp_server")[0].fields.filter(x => x.id == "mcp_server_token")[0].value;
+
+                // Basic usage example
+                const basicExample = `// Basic message example
+async function sendMessage() {
+    try {
+        const response = await fetch('${url}/api_message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': '${token}'
+            },
+            body: JSON.stringify({
+                message: "Hello, how can you help me?",
+                lifetime_hours: 24
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log('✅ Success!');
+            console.log('Response:', data.response);
+            console.log('Context ID:', data.context_id);
+            return data;
+        } else {
+            console.error('❌ Error:', data.error);
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Request failed:', error);
+        return null;
+    }
+}
+
+// Call the function
+sendMessage().then(result => {
+    if (result) {
+        console.log('Message sent successfully!');
+    }
+});`;
+
+                                // Continuation example
+                const continuationExample = `// Continue conversation example
+async function continueConversation(contextId) {
+    try {
+        const response = await fetch('${url}/api_message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': '${token}'
+            },
+            body: JSON.stringify({
+                context_id: contextId,
+                message: "Can you tell me more about that?",
+                lifetime_hours: 24
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log('✅ Continuation Success!');
+            console.log('Response:', data.response);
+            return data;
+        } else {
+            console.error('❌ Error:', data.error);
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Request failed:', error);
+        return null;
+    }
+}
+
+// Example: First send a message, then continue the conversation
+async function fullConversationExample() {
+    const firstResult = await sendMessage();
+    if (firstResult && firstResult.context_id) {
+        await continueConversation(firstResult.context_id);
+    }
+}
+
+fullConversationExample();`;
+
+                                // Attachment example
+                const attachmentExample = `// File attachment example
+async function sendWithAttachment() {
+    try {
+        // Example with text content (convert to base64)
+        const textContent = "Hello World from attachment!";
+        const base64Content = btoa(textContent);
+
+        const response = await fetch('${url}/api_message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': '${token}'
+            },
+            body: JSON.stringify({
+                message: "Please analyze this file:",
+                attachments: [
+                    {
+                        filename: "document.txt",
+                        base64: base64Content
+                    }
+                ],
+                lifetime_hours: 12
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log('✅ File sent successfully!');
+            console.log('Response:', data.response);
+            return data;
+        } else {
+            console.error('❌ Error:', data.error);
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Request failed:', error);
+        return null;
+    }
+}
+
+// Call the function
+sendWithAttachment();`;
+
+                // Log GET example
+                const logGetExample = `// Get logs using GET request
+async function getLogsGET(contextId, length = 50) {
+    try {
+        const params = new URLSearchParams({
+            context_id: contextId,
+            length: length.toString()
+        });
+
+        const response = await fetch('${url}/api_log_get?' + params, {
+            method: 'GET',
+            headers: {
+                'X-API-KEY': '${token}'
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log('✅ Logs retrieved successfully!');
+            console.log('Total items:', data.log.total_items);
+            console.log('Returned items:', data.log.returned_items);
+            console.log('Log items:', data.log.items);
+            return data;
+        } else {
+            console.error('❌ Error:', data.error);
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Request failed:', error);
+        return null;
+    }
+}
+
+// Example usage
+getLogsGET('ctx_abc123', 20);`;
+
+                // Log POST example
+                const logPostExample = `// Get logs using POST request
+async function getLogsPOST(contextId, length = 50) {
+    try {
+        const response = await fetch('${url}/api_log_get', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': '${token}'
+            },
+            body: JSON.stringify({
+                context_id: contextId,
+                length: length
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log('✅ Logs retrieved successfully!');
+            console.log('Context ID:', data.context_id);
+            console.log('Log GUID:', data.log.guid);
+            console.log('Total items:', data.log.total_items);
+            console.log('Returned items:', data.log.returned_items);
+            console.log('Start position:', data.log.start_position);
+            console.log('Progress:', data.log.progress);
+            console.log('Log items:', data.log.items);
+            return data;
+        } else {
+            console.error('❌ Error:', data.error);
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Request failed:', error);
+        return null;
+    }
+}
+
+// Example usage - get latest 10 log entries
+getLogsPOST('ctx_abc123', 10);`;
+
+                                                // Terminate chat example
+                const terminateExample = `// Basic terminate chat function
+async function terminateChat(contextId) {
+    try {
+        const response = await fetch('${url}/api_terminate_chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': '${token}'
+            },
+            body: JSON.stringify({
+                context_id: contextId
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log('✅ Chat deleted successfully!');
+            console.log('Message:', data.message);
+            return data;
+        } else {
+            console.error('❌ Error:', data.error);
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Request failed:', error);
+        return null;
+    }
+}
+
+// Example 1: Terminate a specific chat
+terminateChat('ctx_abc123');
+
+// Example 2: Complete workflow - send message, then terminate
+async function simpleWorkflow() {
+    // Send a message
+    const result = await sendMessage();
+
+    if (result && result.context_id) {
+        console.log('Chat created:', result.context_id);
+
+        // Do some work with the chat...
+        // await continueConversation(result.context_id);
+
+        // Clean up when done
+        await terminateChat(result.context_id);
+        console.log('Chat cleaned up');
+    }
+}
+
+// Run the workflow
+simpleWorkflow();`;
+
+                // Reset chat example
+                const resetExample = `// Basic reset chat function
+async function resetChat(contextId) {
+    try {
+        const response = await fetch('${url}/api_reset_chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': '${token}'
+            },
+            body: JSON.stringify({
+                context_id: contextId
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log('✅ Chat reset successfully!');
+            console.log('Message:', data.message);
+            console.log('Context ID:', data.context_id);
+            return data;
+        } else {
+            console.error('❌ Error:', data.error);
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Request failed:', error);
+        return null;
+    }
+}
+
+// Example 1: Reset a specific chat
+resetChat('ctx_abc123');
+
+// Example 2: Reset and continue conversation
+async function resetAndContinue() {
+    const contextId = 'ctx_abc123';
+
+    // Reset the chat to clear history
+    const resetResult = await resetChat(contextId);
+
+    if (resetResult) {
+        console.log('Chat reset, starting fresh conversation...');
+
+        // Continue with same context_id but fresh history
+        const response = await fetch('${url}/api_message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': '${token}'
+            },
+            body: JSON.stringify({
+                context_id: contextId,  // Same context ID
+                message: "Hello, this is a fresh start!",
+                lifetime_hours: 24
+            })
+        });
+
+        const data = await response.json();
+        console.log('New conversation started:', data.response);
+    }
+}
+
+// Run the example
+resetAndContinue();`;
+
+                // Files get example
+                const filesGetExample = `// Basic file retrieval
+async function getFiles(filePaths) {
+    try {
+        const response = await fetch('${url}/api_files_get', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': '${token}'
+            },
+            body: JSON.stringify({
+                paths: filePaths
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log('✅ Files retrieved successfully!');
+            console.log('Retrieved files:', Object.keys(data));
+
+            // Convert base64 back to text for display
+            for (const [filename, base64Content] of Object.entries(data)) {
+                try {
+                    const textContent = atob(base64Content);
+                    console.log(\`\${filename}: \${textContent.substring(0, 100)}...\`);
+                } catch (e) {
+                    console.log(\`\${filename}: Binary file (\${base64Content.length} chars)\`);
+                }
+            }
+
+            return data;
+        } else {
+            console.error('❌ Error:', data.error);
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Request failed:', error);
+        return null;
+    }
+}
+
+// Example 1: Get specific files
+const filePaths = [
+    "/a0/tmp/uploads/document.txt",
+    "/a0/tmp/uploads/data.json"
+];
+getFiles(filePaths);
+
+// Example 2: Complete attachment workflow
+async function attachmentWorkflow() {
+    // Step 1: Send message with attachments
+    const messageResponse = await fetch('${url}/api_message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-API-KEY': '${token}'
+        },
+        body: JSON.stringify({
+            message: "Please analyze this file",
+            attachments: [{
+                filename: "test.txt",
+                base64: btoa("Hello, this is test content!")
+            }],
+            lifetime_hours: 1
+        })
+    });
+
+    if (messageResponse.ok) {
+        console.log('Message sent with attachment');
+
+        // Step 2: Retrieve the uploaded file
+        const retrievedFiles = await getFiles(["/a0/tmp/uploads/test.txt"]);
+
+        if (retrievedFiles && retrievedFiles["test.txt"]) {
+            const originalContent = atob(retrievedFiles["test.txt"]);
+            console.log('Retrieved content:', originalContent);
+        }
+    }
+}
+
+// Run the complete workflow
+attachmentWorkflow();`;
+
+                // Initialize ACE editors
+                const editors = [
+                    { id: "api-basic-example", content: basicExample },
+                    { id: "api-continuation-example", content: continuationExample },
+                    { id: "api-attachment-example", content: attachmentExample },
+                    { id: "api-log-get-example", content: logGetExample },
+                    { id: "api-log-post-example", content: logPostExample },
+                    { id: "api-terminate-example", content: terminateExample },
+                    { id: "api-reset-example", content: resetExample },
+                    { id: "api-files-get-example", content: filesGetExample }
+                ];
+
+                editors.forEach(({ id, content }) => {
+                    const editor = ace.edit(id);
+                    const dark = localStorage.getItem("darkMode");
+                    if (dark != "false") {
+                        editor.setTheme("ace/theme/github_dark");
+                    } else {
+                        editor.setTheme("ace/theme/tomorrow");
+                    }
+                    editor.session.setMode("ace/mode/javascript");
+                    editor.setValue(content);
+                    editor.clearSelection();
+                    editor.setReadOnly(true);
+                });
+            }, 0);
+        </script>
+    </div>
+
+    <style>
+        #api-basic-example,
+        #api-continuation-example,
+        #api-attachment-example,
+        #api-log-get-example,
+        #api-log-post-example,
+        #api-terminate-example,
+        #api-reset-example,
+        #api-files-get-example {
+            width: 100%;
+            height: 20em;
+            margin: 8px 0 16px 0;
+            border-radius: 4px;
+        }
+
+        /* Section styling */
+        .api-section {
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            margin: 20px 0;
+            padding: 16px;
+        }
+
+        .api-section h2 {
+            margin: 0 0 16px 0;
+            color: var(--color-text-primary);
+            border-bottom: 1px solid var(--color-border);
+            padding-bottom: 8px;
+        }
+
+        .api-section h3 {
+            margin: 20px 0 12px 0;
+            color: var(--color-text-primary);
+            font-size: 1.2em;
+        }
+
+        .api-section h4 {
+            margin: 16px 0 8px 0;
+            color: var(--color-text-primary);
+        }
+    </style>
+
+</body>
+
+</html>
