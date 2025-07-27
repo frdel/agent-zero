@@ -576,6 +576,7 @@ class Agent:
         return models.get_chat_model(
             self.config.chat_model.provider,
             self.config.chat_model.name,
+            model_config=self.config.chat_model,
             **self.config.chat_model.build_kwargs(),
         )
 
@@ -583,6 +584,7 @@ class Agent:
         return models.get_chat_model(
             self.config.utility_model.provider,
             self.config.utility_model.name,
+            model_config=self.config.utility_model,
             **self.config.utility_model.build_kwargs(),
         )
 
@@ -590,6 +592,7 @@ class Agent:
         return models.get_browser_model(
             self.config.browser_model.provider,
             self.config.browser_model.name,
+            model_config=self.config.browser_model,
             **self.config.browser_model.build_kwargs(),
         )
 
@@ -597,6 +600,7 @@ class Agent:
         return models.get_embedding_model(
             self.config.embeddings_model.provider,
             self.config.embeddings_model.name,
+            model_config=self.config.embeddings_model,
             **self.config.embeddings_model.build_kwargs(),
         )
 
