@@ -6,7 +6,7 @@ nest_asyncio.apply()
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Awaitable, Coroutine, Dict
+from typing import Any, Awaitable, Coroutine, Dict, List, Optional
 from enum import Enum
 import uuid
 import models
@@ -30,6 +30,7 @@ class AgentContextType(Enum):
     USER = "user"
     TASK = "task"
     MCP = "mcp"
+    A2A = "a2a"
 
 
 class AgentContext:
@@ -65,6 +66,15 @@ class AgentContext:
         self.no = AgentContext._counter
         # set to start of unix epoch
         self.last_message = last_message or datetime.now(timezone.utc)
+        
+        # A2A Protocol support - peer tracking and context management
+        self.a2a_peers: Dict[str, Any] = {}  # Track connected A2A peers
+        self.context_id: str = str(uuid.uuid4())  # Unique context ID for cross-agent tasks
+        self.a2a_server: Any = None  # A2A server instance if running as server
+        self.a2a_enabled: bool = getattr(config, 'a2a_enabled', False)
+        
+        # A2A Subordinate management
+        self.subordinate_manager: Any = None  # A2A subordinate manager instance
 
         existing = self._contexts.get(self.id, None)
         if existing:
@@ -88,12 +98,32 @@ class AgentContext:
     @staticmethod
     def remove(id: str):
         context = AgentContext._contexts.pop(id, None)
-        if context and context.task:
-            context.task.kill()
+        if context:
+            # Cleanup tasks
+            if context.task:
+                context.task.kill()
+            
+            # Cleanup A2A subordinates
+            try:
+                import asyncio
+                if hasattr(context, 'subordinate_manager') and context.subordinate_manager:
+                    # Run cleanup in event loop if available
+                    try:
+                        loop = asyncio.get_event_loop()
+                        if loop.is_running():
+                            loop.create_task(context.cleanup_subordinates())
+                        else:
+                            loop.run_until_complete(context.cleanup_subordinates())
+                    except RuntimeError:
+                        # No event loop, run synchronous cleanup
+                        context.subordinate_manager.cleanup_all_subordinates()
+            except Exception as e:
+                PrintStyle(font_color="yellow").print(f"Warning: Error cleaning up subordinates: {str(e)}")
+        
         return context
 
     def serialize(self):
-        return {
+        data = {
             "id": self.id,
             "name": self.name,
             "created_at": (
@@ -113,6 +143,16 @@ class AgentContext:
             ),
             "type": self.type.value,
         }
+        
+        # Add A2A data if enabled (backward compatible)
+        if hasattr(self, 'a2a_enabled') and self.a2a_enabled:
+            data.update({
+                "context_id": self.context_id,
+                "a2a_peers_count": len(self.a2a_peers),
+                "a2a_server_running": self.a2a_server is not None
+            })
+        
+        return data
 
     @staticmethod
     def log_to_all(
@@ -201,6 +241,207 @@ class AgentContext:
         except Exception as e:
             agent.handle_critical_exception(e)
 
+    # A2A Protocol Methods
+    
+    def add_a2a_peer(self, peer_id: str, peer_info: Dict[str, Any]):
+        """Add an A2A peer to the context"""
+        if not hasattr(self, 'a2a_peers'):
+            self.a2a_peers = {}
+        
+        self.a2a_peers[peer_id] = {
+            **peer_info,
+            'added_at': datetime.now(timezone.utc).isoformat(),
+            'last_contact': datetime.now(timezone.utc).isoformat()
+        }
+        
+        PrintStyle(font_color="green").print(
+            f"A2A Peer added to context: {peer_id}"
+        )
+    
+    def remove_a2a_peer(self, peer_id: str) -> bool:
+        """Remove an A2A peer from the context"""
+        if not hasattr(self, 'a2a_peers'):
+            return False
+            
+        removed = self.a2a_peers.pop(peer_id, None)
+        if removed:
+            PrintStyle(font_color="yellow").print(
+                f"A2A Peer removed from context: {peer_id}"
+            )
+            return True
+        return False
+    
+    def get_all_a2a_agents(self) -> List[Dict[str, Any]]:
+        """Get all A2A agents (peers and subordinates) for UI display"""
+        agents = []
+        
+        # Add A2A peers
+        for peer_id, peer_info in self.a2a_peers.items():
+            agents.append({
+                "id": peer_id,
+                "type": peer_info.get("type", "peer"),
+                "role": peer_info.get("role", "peer"),
+                "url": peer_info.get("url", ""),
+                "status": peer_info.get("status", "unknown"),
+                "capabilities": peer_info.get("capabilities", []),
+                "last_contact": peer_info.get("last_contact", "")
+            })
+        
+        # Add subordinates if manager exists
+        if hasattr(self, 'subordinate_manager') and self.subordinate_manager:
+            subordinates = self.subordinate_manager.get_all_subordinates()
+            for sub in subordinates:
+                agents.append({
+                    "id": sub.agent_id,
+                    "type": "subordinate",
+                    "role": sub.role,
+                    "url": sub.url,
+                    "status": sub.status,
+                    "capabilities": sub.capabilities,
+                    "last_contact": sub.last_contact.isoformat()
+                })
+        
+        return agents
+    
+    def get_agent_roster(self) -> List[Dict[str, Any]]:
+        """Get complete agent roster including main agent and all A2A agents"""
+        agents = []
+        
+        # Add main agent (Agent Zero)
+        agents.append({
+            "id": self.agent0.agent_name,
+            "type": "main",
+            "role": "main",
+            "url": "",
+            "status": "paused" if self.paused else "active",
+            "capabilities": ["all_tools", "memory", "reasoning", "communication"],
+            "last_contact": ""
+        })
+        
+        # Add all A2A agents (peers and subordinates)
+        agents.extend(self.get_all_a2a_agents())
+        
+        return agents
+    
+    def get_agent_hierarchy(self) -> Dict[str, List[str]]:
+        """Get complete agent hierarchy including subordinates"""
+        hierarchy = {self.agent0.agent_name: []}
+        
+        # Add subordinates to hierarchy
+        if hasattr(self, 'subordinate_manager') and self.subordinate_manager:
+            subordinate_hierarchy = self.subordinate_manager.get_subordinate_hierarchy()
+            hierarchy.update(subordinate_hierarchy)
+        
+        return hierarchy
+    
+    async def route_message_to_agent(self, target_agent_id: str, message: str, sender: str = "user") -> str:
+        """Route a message to a specific agent (peer or subordinate)"""
+        # Check if it's a subordinate
+        if hasattr(self, 'subordinate_manager') and self.subordinate_manager:
+            # Try to find subordinate by agent_id
+            for role, agent_id in self.subordinate_manager.subordinate_registry.items():
+                if agent_id == target_agent_id:
+                    return await self.subordinate_manager.send_message_to_subordinate(
+                        role=role,
+                        message=message,
+                        context_data={"sender": sender}
+                    )
+        
+        # Check if it's an A2A peer
+        if target_agent_id in self.a2a_peers:
+            peer_info = self.a2a_peers[target_agent_id]
+            peer_url = peer_info.get("url")
+            if peer_url:
+                # Use A2A client to send message
+                from python.helpers.a2a_client import A2AClient
+                async with A2AClient() as client:
+                    task_data = {
+                        "description": message,
+                        "inputData": {"sender": sender},
+                        "metadata": {"message_type": "direct_user_message"}
+                    }
+                    response = await client.submit_task_with_sse(peer_url, task_data)
+                    if response.get("artifacts"):
+                        return response["artifacts"][0].get("content", "No response")
+                    return "Message sent successfully"
+        
+        raise ValueError(f"Agent not found: {target_agent_id}")
+    
+    async def cleanup_subordinates(self):
+        """Cleanup all subordinates when context is removed"""
+        if hasattr(self, 'subordinate_manager') and self.subordinate_manager:
+            PrintStyle(font_color="yellow").print("Cleaning up subordinates for context")
+            self.subordinate_manager.cleanup_all_subordinates()
+    
+    def get_a2a_peer(self, peer_id: str) -> Optional[Dict[str, Any]]:
+        """Get A2A peer information"""
+        if not hasattr(self, 'a2a_peers'):
+            return None
+        return self.a2a_peers.get(peer_id)
+    
+    def list_a2a_peers(self) -> List[str]:
+        """List all A2A peer IDs"""
+        if not hasattr(self, 'a2a_peers'):
+            return []
+        return list(self.a2a_peers.keys())
+    
+    def start_a2a_server(self, config: Dict[str, Any]) -> bool:
+        """Start the A2A server for this context"""
+        if not hasattr(self, 'a2a_enabled') or not self.a2a_enabled:
+            PrintStyle(font_color="yellow").print("A2A is not enabled for this context")
+            return False
+            
+        try:
+            from python.helpers.a2a_server import A2AServer
+            
+            # Merge context config with provided config
+            server_config = {
+                **config,
+                'agent_name': f"Agent Zero {self.id[:8]}",
+                'agent_description': f"Agent Zero instance - Context {self.name or self.id}",
+                'base_url': config.get('base_url', f'http://localhost:{config.get("port", 8008)}')
+            }
+            
+            self.a2a_server = A2AServer(server_config, self)
+            
+            # Start server in background task
+            import asyncio
+            self.task = self.run_task(
+                self.a2a_server.start_server,
+                host=config.get('host', '0.0.0.0'),
+                port=config.get('port', 8008),
+                ssl_keyfile=config.get('ssl_keyfile'),
+                ssl_certfile=config.get('ssl_certfile')
+            )
+            
+            PrintStyle(font_color="green", bold=True).print(
+                f"A2A Server started for context {self.id}"
+            )
+            return True
+            
+        except Exception as e:
+            PrintStyle(background_color="red", font_color="white").print(
+                f"Failed to start A2A server: {str(e)}"
+            )
+            return False
+    
+    def stop_a2a_server(self):
+        """Stop the A2A server"""
+        if hasattr(self, 'a2a_server') and self.a2a_server:
+            try:
+                # Stop the server
+                import asyncio
+                asyncio.create_task(self.a2a_server.stop_server())
+                self.a2a_server = None
+                
+                PrintStyle(font_color="yellow").print(
+                    f"A2A Server stopped for context {self.id}"
+                )
+            except Exception as e:
+                PrintStyle(background_color="red", font_color="white").print(
+                    f"Error stopping A2A server: {str(e)}"
+                )
+
 
 
 @dataclass
@@ -231,6 +472,31 @@ class AgentConfig:
     code_exec_ssh_user: str = "root"
     code_exec_ssh_pass: str = ""
     additional: Dict[str, Any] = field(default_factory=dict)
+    
+    # A2A Protocol Configuration
+    a2a_enabled: bool = field(default=False)
+    a2a_server_host: str = field(default="0.0.0.0")
+    a2a_server_port: int = field(default=8008)
+    a2a_server_base_url: str = field(default="")
+    a2a_auth_required: bool = field(default=True)
+    a2a_auth_schemes: List[str] = field(default_factory=lambda: ["bearer", "api_key"])
+    a2a_api_keys: Dict[str, str] = field(default_factory=dict)
+    a2a_peer_registry: List[str] = field(default_factory=list)
+    a2a_ssl_keyfile: Optional[str] = field(default=None)
+    a2a_ssl_certfile: Optional[str] = field(default=None)
+    a2a_capabilities: List[str] = field(default_factory=lambda: ["task_execution", "code_execution", "web_search"])
+    a2a_input_types: List[str] = field(default_factory=lambda: ["text/plain", "application/json"])
+    a2a_output_types: List[str] = field(default_factory=lambda: ["text/plain", "application/json"])
+    a2a_protocol_version: str = field(default="1.1.0")
+    a2a_cors_origins: List[str] = field(default_factory=lambda: ["*"])
+    a2a_max_task_age_hours: int = field(default=24)
+    
+    # A2A Subordinate Configuration
+    a2a_subordinate_base_port: int = field(default=8100)
+    a2a_subordinate_auto_cleanup: bool = field(default=True)
+    a2a_subordinate_max_instances: int = field(default=10)
+    a2a_subordinate_default_timeout: int = field(default=60)
+    a2a_subordinate_monitor_health: bool = field(default=True)
 
 
 @dataclass

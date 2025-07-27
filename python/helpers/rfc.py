@@ -5,7 +5,7 @@ from typing import Any, TypedDict
 import aiohttp
 from python.helpers import crypto
 
-from python.helpers import dotenv
+from python.helpers import env_helper as dotenv
 
 
 # Remote Function Call library

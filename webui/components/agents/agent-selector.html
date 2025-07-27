@@ -1,0 +1,99 @@
+<!-- Agent Selector Component -->
+<div x-data="$store.agentSelector" x-init="init()" class="agent-selector-container">
+    <!-- Agent Selector Dropdown -->
+    <div class="agent-selector" @click.away="closeDropdown()">
+        <!-- Selected Agent Display -->
+        <div class="agent-selector-trigger" @click="toggleDropdown()">
+            <template x-if="getSelectedAgent()">
+                <div class="selected-agent">
+                    <div class="agent-status-indicator" :class="getAgentStatusClass(getSelectedAgent())"></div>
+                    <span class="agent-name" x-text="getAgentDisplayName(getSelectedAgent())"></span>
+                    <svg class="dropdown-arrow" :class="{'rotated': showDropdown}" width="12" height="12" viewBox="0 0 12 12">
+                        <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    </svg>
+                </div>
+            </template>
+            <template x-if="!getSelectedAgent()">
+                <div class="selected-agent">
+                    <div class="agent-status-indicator status-unknown"></div>
+                    <span class="agent-name">No Agent Selected</span>
+                    <svg class="dropdown-arrow" :class="{'rotated': showDropdown}" width="12" height="12" viewBox="0 0 12 12">
+                        <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    </svg>
+                </div>
+            </template>
+        </div>
+        
+        <!-- Loading State -->
+        <template x-if="isLoading">
+            <div class="agent-loading">
+                <div class="loading-spinner"></div>
+                <span>Loading agents...</span>
+            </div>
+        </template>
+        
+        <!-- Error State -->
+        <template x-if="error">
+            <div class="agent-error">
+                <span x-text="error"></span>
+                <button @click="loadAgents()" class="retry-button">Retry</button>
+            </div>
+        </template>
+        
+        <!-- Dropdown Menu -->
+        <div x-show="showDropdown" x-transition class="agent-dropdown">
+            <div class="agent-dropdown-header">
+                <span>Available Agents</span>
+                <button @click="loadAgents()" class="refresh-button" title="Refresh agents">
+                    <svg width="14" height="14" viewBox="0 0 24 24">
+                        <path d="M4 12a8 8 0 018-8V2.5L14.5 5 12 7.5V6a6 6 0 100 12c1.633 0 3.146-.65 4.243-1.757" 
+                              stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="agent-list">
+                <template x-for="agent in agents" :key="agent.id">
+                    <div class="agent-item" 
+                         :class="{'selected': agent.id === selectedAgentId}"
+                         @click="selectAgent(agent.id)">
+                        <div class="agent-status-indicator" :class="getAgentStatusClass(agent)"></div>
+                        <div class="agent-info">
+                            <div class="agent-name" x-text="getAgentDisplayName(agent)"></div>
+                            <div class="agent-details">
+                                <span class="agent-type" x-text="agent.type"></span>
+                                <template x-if="agent.role">
+                                    <span class="agent-role">• <span x-text="agent.role"></span></span>
+                                </template>
+                                <template x-if="agent.capabilities && agent.capabilities.length > 0">
+                                    <span class="agent-capabilities">• <span x-text="agent.capabilities.slice(0, 2).join(', ')"></span></span>
+                                </template>
+                            </div>
+                        </div>
+                        <template x-if="agent.id === selectedAgentId">
+                            <div class="selected-indicator">✓</div>
+                        </template>
+                    </div>
+                </template>
+                
+                <template x-if="agents.length === 0 && !isLoading">
+                    <div class="no-agents">
+                        <span>No agents available</span>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Agent Status Bar (optional, for showing more details) -->
+    <template x-if="getSelectedAgent() && getSelectedAgent().type !== 'main'">
+        <div class="agent-status-bar">
+            <template x-if="getSelectedAgent().url">
+                <span class="agent-url" x-text="'Connected to: ' + getSelectedAgent().url"></span>
+            </template>
+            <template x-if="getSelectedAgent().last_contact">
+                <span class="agent-last-contact" x-text="'Last contact: ' + new Date(getSelectedAgent().last_contact).toLocaleTimeString()"></span>
+            </template>
+        </div>
+    </template>
+</div>

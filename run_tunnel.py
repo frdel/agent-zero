@@ -1,6 +1,6 @@
 import threading
 from flask import Flask, request
-from python.helpers import runtime, dotenv, process
+from python.helpers import runtime, env_helper as dotenv, process
 from python.helpers.print_style import PrintStyle
 
 from python.api.tunnel import Tunnel
