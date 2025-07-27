@@ -67,7 +67,7 @@ class Settings(TypedDict):
     memory_memorize_enabled: bool
     memory_memorize_consolidation: bool
     memory_memorize_replace_threshold: float
-    
+
 
     api_keys: dict[str, str]
 
@@ -880,7 +880,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     # TTS fields
     tts_fields: list[SettingsField] = []
-    
+
     tts_fields.append(
         {
             "id": "tts_kokoro",
@@ -1039,11 +1039,15 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
 def _get_api_key_field(settings: Settings, provider: str, title: str) -> SettingsField:
     key = settings["api_keys"].get(provider, models.get_api_key(provider))
+    # For API keys, use the actual value so password managers can save it
+    # The password field type will mask it visually
+    field_value = key if key and key != "None" else ""
+
     return {
         "id": f"api_key_{provider}",
         "title": title,
         "type": "password",
-        "value": (PASSWORD_PLACEHOLDER if key and key != "None" else ""),
+        "value": field_value,
     }
 
 
@@ -1052,6 +1056,8 @@ def convert_in(settings: dict) -> Settings:
     for section in settings["sections"]:
         if "fields" in section:
             for field in section["fields"]:
+                # Skip saving if value is the old password placeholder
+                # API keys now use real values for password manager compatibility
                 if field["value"] != PASSWORD_PLACEHOLDER:
                     if field["id"].endswith("_kwargs"):
                         current[field["id"]] = _env_to_dict(field["value"])

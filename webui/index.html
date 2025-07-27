@@ -120,7 +120,7 @@
 
     <!-- Google Icons -->
     <link rel="stylesheet" href="vendor/google/google-icons.css" />
-    
+
 
     <!-- Non-module scripts after Alpine.js -->
     <script type="text/javascript" src="js/settings.js"></script>
@@ -376,7 +376,7 @@
                 <div>
                     <x-component path="/chat/attachments/inputPreview.html" />
                 </div>
-               
+
                 <!-- Top row with input and buttons -->
                 <div class="input-row">
                     <!-- Attachment icon with tooltip -->
@@ -610,9 +610,22 @@
 
                                                 <!-- Password field -->
                                                 <template x-if="field.type === 'password'">
-                                                    <input type="password" :class="field.classes" :value="field.value"
-                                                        :readonly="field.readonly === true"
-                                                        @input="field.value = $event.target.value">
+                                                    <div>
+                                                        <!-- Hidden username field for API keys to help browsers save credentials properly -->
+                                                        <template x-if="field.id && field.id.startsWith('api_key_')">
+                                                            <input type="text"
+                                                                   :id="'username_' + field.id"
+                                                                   :value="field.id.replace('api_key_', '').toUpperCase() + '_API_KEY'"
+                                                                   autocomplete="username"
+                                                                   style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;"
+                                                                   tabindex="-1">
+                                                        </template>
+                                                        <input type="password" :class="field.classes" :value="field.value"
+                                                            :readonly="field.readonly === true"
+                                                            :id="field.id"
+                                                            :autocomplete="field.id && field.id.startsWith('api_key_') ? 'current-password' : 'off'"
+                                                            @input="field.value = $event.target.value">
+                                                    </div>
                                                 </template>
 
                                                 <!-- Textarea field -->
