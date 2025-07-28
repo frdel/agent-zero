@@ -9,19 +9,187 @@ const chatHistory = document.getElementById("chat-history");
 
 let messageGroup = null;
 
+// Scroll position manager for smooth autoscroll
+class ScrollPositionManager {
+  constructor() {
+    this.positions = new Map();
+    this.autoscrollDisabled = false;
+    this.scrollableSelectors = ['.msg-content', '.kvps-val'];
+  }
+
+  // Store scroll positions for all scrollable elements in a message
+  storeMessageScrollPositions(messageContainer) {
+    if (!messageContainer) return;
+
+    const messageId = messageContainer.id;
+    const positions = {};
+
+    // Store main message content scroll position
+    const msgContent = messageContainer.querySelector('.msg-content');
+    if (msgContent && msgContent.scrollHeight > msgContent.clientHeight) {
+      positions.msgContent = {
+        scrollTop: msgContent.scrollTop,
+        scrollHeight: msgContent.scrollHeight,
+        clientHeight: msgContent.clientHeight,
+        isAtBottom: this.isAtBottom(msgContent)
+      };
+    }
+
+    // Store KVP scroll positions
+    const kvpValues = messageContainer.querySelectorAll('.kvps-val');
+    kvpValues.forEach((kvp, index) => {
+      if (kvp.scrollHeight > kvp.clientHeight) {
+        positions[`kvp_${index}`] = {
+          scrollTop: kvp.scrollTop,
+          scrollHeight: kvp.scrollHeight,
+          clientHeight: kvp.clientHeight,
+          isAtBottom: this.isAtBottom(kvp)
+        };
+      }
+    });
+
+    this.positions.set(messageId, positions);
+  }
+
+  // Restore scroll positions for a message
+  restoreMessageScrollPositions(messageContainer) {
+    if (!messageContainer) return;
+
+    const messageId = messageContainer.id;
+    const positions = this.positions.get(messageId);
+    if (!positions) return;
+
+    // Restore main message content scroll
+    if (positions.msgContent) {
+      const msgContent = messageContainer.querySelector('.msg-content');
+      if (msgContent) {
+        if (this.autoscrollDisabled || !positions.msgContent.isAtBottom) {
+          // User had scrolled up, restore their position
+          msgContent.scrollTop = positions.msgContent.scrollTop;
+        } else {
+          // User was at bottom, keep at bottom (autoscroll)
+          msgContent.scrollTop = msgContent.scrollHeight;
+        }
+      }
+    }
+
+    // Restore KVP scroll positions
+    const kvpValues = messageContainer.querySelectorAll('.kvps-val');
+    kvpValues.forEach((kvp, index) => {
+      const posKey = `kvp_${index}`;
+      if (positions[posKey]) {
+        if (this.autoscrollDisabled || !positions[posKey].isAtBottom) {
+          // User had scrolled up, restore their position
+          kvp.scrollTop = positions[posKey].scrollTop;
+        } else {
+          // User was at bottom, keep at bottom (autoscroll)
+          kvp.scrollTop = kvp.scrollHeight;
+        }
+      }
+    });
+  }
+
+  // Check if element is scrolled to bottom
+  isAtBottom(element, tolerance = 10) {
+    return element.scrollHeight - element.scrollTop <= element.clientHeight + tolerance;
+  }
+
+  // Set up scroll event listeners for autoscroll detection
+  setupScrollListeners(messageContainer) {
+    if (!messageContainer) return;
+
+    // Add scroll listeners to detect user scrolling within messages
+    const msgContent = messageContainer.querySelector('.msg-content');
+    if (msgContent) {
+      msgContent.addEventListener('scroll', () => {
+        if (!this.isAtBottom(msgContent)) {
+          this.disableAutoscroll();
+        } else {
+          // Re-enable autoscroll if user scrolls back to bottom
+          this.checkGlobalScrollState();
+        }
+      });
+    }
+
+    const kvpValues = messageContainer.querySelectorAll('.kvps-val');
+    kvpValues.forEach(kvp => {
+      kvp.addEventListener('scroll', () => {
+        if (!this.isAtBottom(kvp)) {
+          this.disableAutoscroll();
+        } else {
+          // Re-enable autoscroll if user scrolls back to bottom
+          this.checkGlobalScrollState();
+        }
+      });
+    });
+  }
+
+  // Disable autoscroll globally
+  disableAutoscroll() {
+    this.autoscrollDisabled = true;
+    // Don't call window.toggleAutoScroll here to avoid circular dependency
+    // The main autoscroll state will be updated via scrollChanged function
+  }
+
+  // Enable autoscroll
+  enableAutoscroll() {
+    this.autoscrollDisabled = false;
+  }
+
+  // Check if autoscroll should be disabled based on any scrollable element
+  checkGlobalScrollState() {
+    // Check main chat history
+    const chatHistory = document.getElementById("chat-history");
+    if (chatHistory && !this.isAtBottom(chatHistory, 50)) {
+      this.autoscrollDisabled = true;
+      return;
+    }
+
+    // Check all message content areas
+    const allMsgContent = document.querySelectorAll('.msg-content');
+    for (let element of allMsgContent) {
+      if (element.scrollHeight > element.clientHeight && !this.isAtBottom(element)) {
+        this.autoscrollDisabled = true;
+        return;
+      }
+    }
+
+    // Check all KVP areas
+    const allKvpValues = document.querySelectorAll('.kvps-val');
+    for (let element of allKvpValues) {
+      if (element.scrollHeight > element.clientHeight && !this.isAtBottom(element)) {
+        this.autoscrollDisabled = true;
+        return;
+      }
+    }
+
+    // If we get here, everything is at bottom, enable autoscroll
+    this.autoscrollDisabled = false;
+  }
+}
+
+// Global scroll position manager instance
+const scrollManager = new ScrollPositionManager();
+
+// Export scroll manager for use in other modules
+export function getScrollManager() {
+  return scrollManager;
+}
+
 export function setMessage(id, type, heading, content, temp, kvps = null) {
   // Search for the existing message container by id
   let messageContainer = document.getElementById(`message-${id}`);
+  let isNewMessage = false;
 
   if (messageContainer) {
-    // Don't re-render user messages
-    // if (type === "user") {
-    //   return; // Skip re-rendering
-    // }
-    // For other types, update the message
-    messageContainer.innerHTML = "";
+    // Store current scroll positions before updating
+    scrollManager.storeMessageScrollPositions(messageContainer);
+
+    // Don't clear innerHTML - we'll do incremental updates
+    // messageContainer.innerHTML = "";
   } else {
     // Create a new container if not found
+    isNewMessage = true;
     const sender = type === "user" ? "user" : "ai";
     messageContainer = document.createElement("div");
     messageContainer.id = `message-${id}`;
@@ -32,8 +200,8 @@ export function setMessage(id, type, heading, content, temp, kvps = null) {
   const handler = getHandler(type);
   handler(messageContainer, id, type, heading, content, temp, kvps);
 
-  // If the container was found, it was already in the DOM, no need to append again
-  if (!document.getElementById(`message-${id}`)) {
+  // If this is a new message, handle DOM insertion
+  if (isNewMessage && !document.getElementById(`message-${id}`)) {
     // message type visual grouping
     const groupTypeMap = {
       user: "right",
@@ -71,6 +239,14 @@ export function setMessage(id, type, heading, content, temp, kvps = null) {
 
     messageGroup.appendChild(messageContainer);
     chatHistory.appendChild(messageGroup);
+
+    // Set up scroll listeners for new message
+    scrollManager.setupScrollListeners(messageContainer);
+  } else {
+    // For existing messages, restore scroll positions after DOM update
+    setTimeout(() => {
+      scrollManager.restoreMessageScrollPositions(messageContainer);
+    }, 0);
   }
 }
 
@@ -161,42 +337,94 @@ export function _drawMessage(
   markdown = false,
   resizeBtns = true
 ) {
-  const messageDiv = document.createElement("div");
-  messageDiv.classList.add("message", mainClass, ...messageClasses);
+  // Find existing message div or create new one
+  let messageDiv = messageContainer.querySelector(".message");
+  if (!messageDiv) {
+    messageDiv = document.createElement("div");
+    messageDiv.classList.add("message");
+    messageContainer.appendChild(messageDiv);
+  }
 
+  // Update message classes
+  messageDiv.className = `message ${mainClass} ${messageClasses.join(' ')}`;
+
+  // Handle heading
   if (heading) {
-    const headingElement = document.createElement("div");
-    headingElement.classList.add("msg-heading");
-    const headingH4 = document.createElement("h4");
+    let headingElement = messageDiv.querySelector(".msg-heading");
+    if (!headingElement) {
+      headingElement = document.createElement("div");
+      headingElement.classList.add("msg-heading");
+      messageDiv.insertBefore(headingElement, messageDiv.firstChild);
+    }
+
+    let headingH4 = headingElement.querySelector("h4");
+    if (!headingH4) {
+      headingH4 = document.createElement("h4");
+      headingElement.appendChild(headingH4);
+    }
     headingH4.innerHTML = convertIcons(escapeHTML(heading));
-    headingElement.appendChild(headingH4);
-    messageDiv.appendChild(headingElement);
 
     if (resizeBtns) {
-      const minMaxBtn = document.createElement("div");
-      minMaxBtn.classList.add("msg-min-max-btns");
-      minMaxBtn.innerHTML = `
-        <a href="#" class="msg-min-max-btn" @click.prevent="$store.messageResize.minimizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined" x-text="$store.messageResize.getSetting('${mainClass}').minimized ? 'expand_content' : 'minimize'"></span></a>
-        <a href="#" class="msg-min-max-btn" x-show="!$store.messageResize.getSetting('${mainClass}').minimized" @click.prevent="$store.messageResize.maximizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined" x-text="$store.messageResize.getSetting('${mainClass}').maximized ? 'expand' : 'expand_all'"></span></a>
-      `;
-      headingElement.appendChild(minMaxBtn);
+      let minMaxBtn = headingElement.querySelector(".msg-min-max-btns");
+      if (!minMaxBtn) {
+        minMaxBtn = document.createElement("div");
+        minMaxBtn.classList.add("msg-min-max-btns");
+        minMaxBtn.innerHTML = `
+          <a href="#" class="msg-min-max-btn" @click.prevent="$store.messageResize.minimizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined" x-text="$store.messageResize.getSetting('${mainClass}').minimized ? 'expand_content' : 'minimize'"></span></a>
+          <a href="#" class="msg-min-max-btn" x-show="!$store.messageResize.getSetting('${mainClass}').minimized" @click.prevent="$store.messageResize.maximizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined" x-text="$store.messageResize.getSetting('${mainClass}').maximized ? 'expand' : 'expand_all'"></span></a>
+        `;
+        headingElement.appendChild(minMaxBtn);
+      }
+    }
+  } else {
+    // Remove heading if it exists but heading is null
+    const existingHeading = messageDiv.querySelector(".msg-heading");
+    if (existingHeading) {
+      existingHeading.remove();
     }
   }
 
-  const bodyDiv = document.createElement("div");
-  bodyDiv.classList.add("message-body");
-  messageDiv.appendChild(bodyDiv);
+  // Find existing body div or create new one
+  let bodyDiv = messageDiv.querySelector(".message-body");
+  if (!bodyDiv) {
+    bodyDiv = document.createElement("div");
+    bodyDiv.classList.add("message-body");
+    messageDiv.appendChild(bodyDiv);
+  }
 
-  drawKvps(bodyDiv, kvps, false);
+  // Handle KVPs incrementally
+  drawKvpsIncremental(bodyDiv, kvps, false);
 
+  // Handle content
   if (content && content.trim().length > 0) {
     if (markdown) {
-      const contentDiv = document.createElement("div");
-      contentDiv.classList.add("msg-content", ...contentClasses);
+      let contentDiv = bodyDiv.querySelector(".msg-content");
+      if (!contentDiv) {
+        contentDiv = document.createElement("div");
+        contentDiv.classList.add("msg-content", ...contentClasses);
+        bodyDiv.appendChild(contentDiv);
 
-      const spanElement = document.createElement("span"); // Wrapper span
+        // Set up scroll listener for new content div
+        contentDiv.addEventListener('scroll', () => {
+          if (!scrollManager.isAtBottom(contentDiv)) {
+            scrollManager.disableAutoscroll();
+          } else {
+            // Re-enable autoscroll if user scrolls back to bottom
+            scrollManager.checkGlobalScrollState();
+          }
+        });
+      } else {
+        // Update classes
+        contentDiv.className = `msg-content ${contentClasses.join(' ')}`;
+      }
+
+      let spanElement = contentDiv.querySelector("span");
+      if (!spanElement) {
+        spanElement = document.createElement("span");
+        contentDiv.appendChild(spanElement);
+      }
+
       let processedContent = content;
-
       processedContent = convertImageTags(processedContent);
       processedContent = convertImgFilePaths(processedContent);
       processedContent = marked.parse(processedContent, { breaks: true });
@@ -213,41 +441,66 @@ export function _drawMessage(
         });
       }
 
-      contentDiv.appendChild(spanElement);
-      addCopyButtonToElement(contentDiv);
+      // Ensure copy button exists
+      if (!contentDiv.querySelector(".copy-button")) {
+        addCopyButtonToElement(contentDiv);
+      }
       adjustMarkdownRender(contentDiv);
-      bodyDiv.appendChild(contentDiv);
     } else {
-      const preElement = document.createElement("pre");
-      preElement.classList.add("msg-content", ...contentClasses);
-      preElement.style.whiteSpace = "pre-wrap";
-      preElement.style.wordBreak = "break-word";
+      let preElement = bodyDiv.querySelector(".msg-content");
+      if (!preElement) {
+        preElement = document.createElement("pre");
+        preElement.classList.add("msg-content", ...contentClasses);
+        preElement.style.whiteSpace = "pre-wrap";
+        preElement.style.wordBreak = "break-word";
+        bodyDiv.appendChild(preElement);
 
-      const spanElement = document.createElement("span");
+        // Set up scroll listener for new pre element
+        preElement.addEventListener('scroll', () => {
+          if (!scrollManager.isAtBottom(preElement)) {
+            scrollManager.disableAutoscroll();
+          } else {
+            // Re-enable autoscroll if user scrolls back to bottom
+            scrollManager.checkGlobalScrollState();
+          }
+        });
+      } else {
+        // Update classes
+        preElement.className = `msg-content ${contentClasses.join(' ')}`;
+      }
+
+      let spanElement = preElement.querySelector("span");
+      if (!spanElement) {
+        spanElement = document.createElement("span");
+        preElement.appendChild(spanElement);
+
+        // Add click handler for small screens (only once)
+        spanElement.addEventListener("click", () => {
+          copyText(spanElement.textContent, spanElement);
+        });
+      }
+
       spanElement.innerHTML = convertHTML(content);
 
-      // Add click handler for small screens
-      spanElement.addEventListener("click", () => {
-        copyText(spanElement.textContent, spanElement);
-      });
-
-      preElement.appendChild(spanElement);
-      addCopyButtonToElement(preElement);
-      bodyDiv.appendChild(preElement);
+      // Ensure copy button exists
+      if (!preElement.querySelector(".copy-button")) {
+        addCopyButtonToElement(preElement);
+      }
+    }
+  } else {
+    // Remove content if it exists but content is empty
+    const existingContent = bodyDiv.querySelector(".msg-content");
+    if (existingContent) {
+      existingContent.remove();
     }
   }
-
-  messageContainer.appendChild(messageDiv);
 
   if (followUp) {
     messageContainer.classList.add("message-followup");
   }
 
-  // autoscroll the body if needed
-  // if (getAutoScroll()) #TODO needs a better redraw system
-    setTimeout(() => {
-      bodyDiv.scrollTop = bodyDiv.scrollHeight;
-    }, 0);
+  // Don't force scroll here - let the scroll manager handle it
+  // The scroll manager will decide whether to autoscroll based on user's scroll state
 
   return messageDiv;
 }
@@ -434,7 +687,7 @@ export function drawMessageUser(
       } else {
         // Render as file tile with title and icon
         attachmentDiv.classList.add("file-type");
-        
+
         // File icon
         if (displayInfo.previewUrl && displayInfo.previewUrl !== displayInfo.filename) {
           const iconImg = document.createElement("img");
@@ -443,12 +696,12 @@ export function drawMessageUser(
           iconImg.classList.add("file-icon");
           attachmentDiv.appendChild(iconImg);
         }
-        
+
         // File title
         const fileTitle = document.createElement("div");
         fileTitle.classList.add("file-title");
         fileTitle.textContent = displayInfo.filename;
-                
+
         attachmentDiv.appendChild(fileTitle);
       }
 
@@ -724,6 +977,153 @@ function drawKvps(container, kvps, latex) {
 
     }
     container.appendChild(table);
+  }
+}
+
+function drawKvpsIncremental(container, kvps, latex) {
+  if (kvps) {
+    // Find existing table or create new one
+    let table = container.querySelector(".msg-kvps");
+    if (!table) {
+      table = document.createElement("table");
+      table.classList.add("msg-kvps");
+      container.appendChild(table);
+    }
+
+    // Get all current rows for comparison
+    let existingRows = table.querySelectorAll(".kvps-row");
+    const kvpEntries = Object.entries(kvps);
+
+    // Update or create rows as needed
+    kvpEntries.forEach(([key, value], index) => {
+      let row = existingRows[index];
+
+      if (!row) {
+        // Create new row if it doesn't exist
+        row = table.insertRow();
+        row.classList.add("kvps-row");
+      }
+
+      // Update row classes
+      row.className = "kvps-row";
+      if (key === "thoughts" || key === "reasoning") {
+        row.classList.add("msg-thoughts");
+      }
+
+      // Handle key cell
+      let th = row.querySelector(".kvps-key");
+      if (!th) {
+        th = row.insertCell(0);
+        th.classList.add("kvps-key");
+      }
+      th.textContent = convertToTitleCase(key);
+
+      // Handle value cell
+      let td = row.cells[1];
+      if (!td) {
+        td = row.insertCell(1);
+      }
+
+      let tdiv = td.querySelector(".kvps-val");
+      if (!tdiv) {
+        tdiv = document.createElement("div");
+        tdiv.classList.add("kvps-val");
+        td.appendChild(tdiv);
+
+        // Set up scroll listener for new kvp value div
+        tdiv.addEventListener('scroll', () => {
+          if (!scrollManager.isAtBottom(tdiv)) {
+            scrollManager.disableAutoscroll();
+          } else {
+            // Re-enable autoscroll if user scrolls back to bottom
+            scrollManager.checkGlobalScrollState();
+          }
+        });
+      }
+
+      // Store current scroll position
+      const currentScrollTop = tdiv.scrollTop;
+      const isAtBottom = tdiv.scrollHeight - tdiv.scrollTop <= tdiv.clientHeight + 10;
+
+      // Clear and rebuild content (for now - could be optimized further)
+      tdiv.innerHTML = "";
+
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          addValue(item, tdiv);
+        }
+      } else {
+        addValue(value, tdiv);
+      }
+
+      // Restore scroll position or autoscroll
+      setTimeout(() => {
+        if (!scrollManager.autoscrollDisabled && isAtBottom) {
+          // User was at bottom, keep at bottom
+          tdiv.scrollTop = tdiv.scrollHeight;
+        } else {
+          // Restore previous position
+          tdiv.scrollTop = currentScrollTop;
+        }
+      }, 0);
+    });
+
+    // Remove extra rows if we have fewer kvps now
+    while (existingRows.length > kvpEntries.length) {
+      const lastRow = existingRows[existingRows.length - 1];
+      lastRow.remove();
+      existingRows = table.querySelectorAll(".kvps-row");
+    }
+
+    function addValue(value, tdiv) {
+      if (typeof value === "object") value = JSON.stringify(value, null, 2);
+
+      if (typeof value === "string" && value.startsWith("img://")) {
+        const imgElement = document.createElement("img");
+        imgElement.classList.add("kvps-img");
+        imgElement.src = value.replace("img://", "/image_get?path=");
+        imgElement.alt = "Image Attachment";
+        tdiv.appendChild(imgElement);
+
+        // Add click handler and cursor change
+        imgElement.style.cursor = "pointer";
+        imgElement.addEventListener("click", () => {
+          openImageModal(imgElement.src, 1000);
+        });
+      } else {
+        const pre = document.createElement("pre");
+        const span = document.createElement("span");
+        span.innerHTML = convertHTML(value);
+        pre.appendChild(span);
+        tdiv.appendChild(pre);
+
+        // Only add copy button if it doesn't exist
+        const row = tdiv.closest(".kvps-row");
+        if (row && !row.querySelector(".copy-button")) {
+          addCopyButtonToElement(row);
+        }
+
+        // Add click handler
+        span.addEventListener("click", () => {
+          copyText(span.textContent, span);
+        });
+
+        // KaTeX rendering for markdown
+        if (latex) {
+          span.querySelectorAll("latex").forEach((element) => {
+            katex.render(element.innerHTML, element, {
+              throwOnError: false,
+            });
+          });
+        }
+      }
+    }
+  } else {
+    // Remove table if kvps is null/empty
+    const existingTable = container.querySelector(".msg-kvps");
+    if (existingTable) {
+      existingTable.remove();
+    }
   }
 }
 
