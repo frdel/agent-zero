@@ -592,8 +592,9 @@ class MemoryConsolidator:
             **result.metadata     # LLM metadata second (wins conflicts)
         }
 
-        if result.reasoning:
-            final_metadata['consolidation_reasoning'] = result.reasoning
+        # do not include reasoning in memory
+        # if result.reasoning:
+        #     final_metadata['consolidation_reasoning'] = result.reasoning
 
         new_id = await db.insert_text(result.new_memory_content, final_metadata)
         return [new_id]
@@ -624,8 +625,9 @@ class MemoryConsolidator:
                 **result.metadata     # LLM metadata second (wins conflicts)
             }
 
-            if result.reasoning:
-                final_metadata['consolidation_reasoning'] = result.reasoning
+            # do not include reasoning in memory
+            # if result.reasoning:
+            #     final_metadata['consolidation_reasoning'] = result.reasoning
 
             new_id = await db.insert_text(result.new_memory_content, final_metadata)
             return [new_id]
@@ -676,8 +678,9 @@ class MemoryConsolidator:
                         **result.metadata
                     }
 
-                    if result.reasoning:
-                        final_metadata['consolidation_reasoning'] = result.reasoning
+                    # do not include reasoning in memory
+                    # if result.reasoning:
+                    #     final_metadata['consolidation_reasoning'] = result.reasoning
 
                     new_id = await db.insert_text(result.new_memory_content, final_metadata)
                     return [new_id]
@@ -700,8 +703,9 @@ class MemoryConsolidator:
                 **result.metadata     # LLM metadata second (wins conflicts)
             }
 
-            if result.reasoning:
-                final_metadata['consolidation_reasoning'] = result.reasoning
+            # do not include reasoning in memory
+            # if result.reasoning:
+            #     final_metadata['consolidation_reasoning'] = result.reasoning
 
             new_id = await db.insert_text(result.new_memory_content, final_metadata)
             return [new_id]
@@ -762,8 +766,9 @@ class MemoryConsolidator:
                 **result.metadata     # LLM metadata second (wins conflicts)
             }
 
-            if result.reasoning:
-                final_metadata['consolidation_reasoning'] = result.reasoning
+            # do not include reasoning in memory
+            # if result.reasoning:
+            #     final_metadata['consolidation_reasoning'] = result.reasoning
 
             new_memory_id = await db.insert_text(result.new_memory_content, final_metadata)
             updated_ids.append(new_memory_id)
