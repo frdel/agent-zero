@@ -221,6 +221,9 @@ def process_includes(_content, _base_path, _backup_dirs, **kwargs):
 
     def replace_include(match):
         include_path = match.group(1)
+        # if the path is absolute, do not process it
+        if os.path.isabs(include_path):
+            return match.group(0)
         # First attempt to resolve the include relative to the base path
         full_include_path = find_file_in_dirs(
             os.path.join(_base_path, include_path), _backup_dirs
