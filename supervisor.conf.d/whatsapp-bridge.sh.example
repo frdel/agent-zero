@@ -1,0 +1,6 @@
+#!/bin/bash
+
+apt install -y golang > /dev/null 2>&1
+
+cd /a0/share/mcp/whatsapp-mcp/whatsapp-bridge
+exec go run main.go
