@@ -22,7 +22,7 @@ class CallSubordinate(VariablesPlugin):
         tools = []
         for prompt_file in prompt_files:
             try:
-                tool = files.read_file(prompt_file)
+                tool = files.read_prompt_file(prompt_file)
                 tools.append(tool)
             except Exception as e:
                 PrintStyle().error(f"Error loading tool '{prompt_file}': {e}")
