@@ -15,7 +15,8 @@ This guide will show you how to setup a local development environment for Agent 
 3. Docker (Docker Desktop, docker-ce...)
 4. (optional) Git/GitHub
 
-> [!NOTE] I will be using clean VS Code, Conda and Docker Desktop in this example on MacOS.
+> [!NOTE]
+> I will be using clean VS Code, Conda and Docker Desktop in this example on MacOS.
 
 
 ## Step 0: Install required software
@@ -27,7 +28,8 @@ This guide will show you how to setup a local development environment for Agent 
 - Agent Zero is available on GitHub [github.com/agent0ai/agent-zero](https://github.com/agent0ai/agent-zero).
 - You can download the files using a browser and extract or run `git clone https://github.com/agent0ai/agent-zero` in your desired directory.
 
-> [!NOTE] In my case, I used `cd ~/Desktop` and `git clone https://github.com/agent0ai/agent-zero`, so my project folder is `~/Desktop/agent-zero`.
+> [!NOTE]
+> In my case, I used `cd ~/Desktop` and `git clone https://github.com/agent0ai/agent-zero`, so my project folder is `~/Desktop/agent-zero`.
 
 ## Step 2: Open project folder in your IDE
 - I will be using plain and clean VS Code for this example to make sure I don't skip any setup part, you can use any of it's variants like Cursor, Windsurf etc.
