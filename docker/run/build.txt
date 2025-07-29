@@ -8,25 +8,34 @@ docker build -f DockerfileLocal -t agent-zero-local --build-arg CACHE_DATE=$(dat
 # local development image based on local files without cache
 docker build -f DockerfileLocal -t agent-zero-local --no-cache .
 
+
+# GIT BASED BUILDS
+# Run these commands from the /docker/run directory
+
 # local image based on development branch instead of local files
-docker build -f ./docker/run/Dockerfile -t agent-zero-development --build-arg BRANCH=development --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
+docker build -t agent-zero-development --build-arg BRANCH=development --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
+
+# local image based on testing branch instead of local files
+docker build -t agent-zero-testing --build-arg BRANCH=testing --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
+
+# local image based on main branch instead of local files
+docker build -t agent-zero-main --build-arg BRANCH=main --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
 
 
 
-# dockerhub push:
-# Run these commands from the project root folder
-
+# DOCKERHUB PUSH
+# Run these commands from the /docker/run directory
 
 docker login
 
 # development:
-docker buildx build -f ./docker/run/Dockerfile -t agent0ai/agent-zero:development --platform linux/amd64,linux/arm64 --push --build-arg BRANCH=development --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) ./docker/run
+docker buildx build -t agent0ai/agent-zero:development --platform linux/amd64,linux/arm64 --push --build-arg BRANCH=development --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
 
 # testing:
-docker buildx build -f ./docker/run/Dockerfile -t agent0ai/agent-zero:testing --platform linux/amd64,linux/arm64 --push --build-arg BRANCH=testing --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) ./docker/run
+docker buildx build -t agent0ai/agent-zero:testing --platform linux/amd64,linux/arm64 --push --build-arg BRANCH=testing --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
 
 # main
-docker buildx build -f ./docker/run/Dockerfile -t agent0ai/agent-zero:vx.x.x  -t agent0ai/agent-zero:latest --platform linux/amd64,linux/arm64 --push --build-arg BRANCH=main --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) ./docker/run
+docker buildx build -t agent0ai/agent-zero:vx.x.x -t agent0ai/agent-zero:latest --platform linux/amd64,linux/arm64 --push --build-arg BRANCH=main --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .
 
 
 # plain output
