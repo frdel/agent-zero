@@ -143,3 +143,9 @@ You're now ready to contribute to Agent Zero, create custom extensions, or modif
 ## Next steps
 - See [extensibility](extensibility.md) for instructions on how to create custom extensions.
 - See [contribution](contribution.md) for instructions on how to contribute to the framework.
+
+## Want to build your docker image?
+- You can use the `DockerfileLocal` to build your docker image.
+- Navigate to your project root in the terminal and run `docker build -f DockerfileLocal -t agent-zero-local --build-arg CACHE_DATE=$(date +%Y-%m-%d:%H:%M:%S) .`
+- The `CACHE_DATE` argument is optional, it is used to cache most of the build process and only rebuild the last steps when the files or dependencies change.
+- See `docker/run/build.txt` for more build command examples.
