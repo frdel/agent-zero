@@ -5,6 +5,7 @@ docker==7.1.0
 duckduckgo-search==6.1.12
 faiss-cpu==1.11.0
 fastmcp==2.3.4
+fasta2a==0.5.0
 flask[async]==3.0.3
 flask-basicauth==0.2.0
 flaredantic==0.1.4

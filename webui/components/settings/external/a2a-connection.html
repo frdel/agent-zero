@@ -1,0 +1,47 @@
+<html>
+
+<head>
+    <title>Connection to A0 A2A Server</title>
+</head>
+
+<body>
+    <div x-data>
+        <p>Agent Zero A2A Server enables FastA2A protocol communication with other agents.</p>
+        <p>Other agents can connect using the URL below (replace host if needed):</p>
+
+        <h3>A2A Connection URL</h3>
+        <div id="a2a-connection-example"></div>
+
+        <script>
+            setTimeout(() => {
+                const url = window.location.origin;
+                // Try to get a2a_token first, fallback to mcp_server_token
+                let tokenField = null;
+                try {
+                    const allFields = settingsModalProxy.settings.sections.flatMap(s => s.fields);
+                    tokenField = allFields.find(f => f.id === 'a2a_token') || allFields.find(f => f.id === 'mcp_server_token');
+                } catch (e) { }
+                const token = tokenField ? tokenField.value : '';
+                const connectionUrl = `${url}/a2a/t-${token}`;
+
+                const editor = ace.edit("a2a-connection-example");
+                const dark = localStorage.getItem("darkMode");
+                editor.setTheme(dark !== "false" ? "ace/theme/github_dark" : "ace/theme/tomorrow");
+                editor.session.setMode("ace/mode/text");
+                editor.setValue(connectionUrl);
+                editor.clearSelection();
+                editor.setReadOnly(true);
+            }, 0);
+        </script>
+    </div>
+
+    <style>
+        #a2a-connection-example {
+            width: 100%;
+            height: 3em;
+        }
+    </style>
+
+</body>
+
+</html>
