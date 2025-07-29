@@ -2,7 +2,7 @@ import argparse
 import inspect
 import secrets
 from typing import TypeVar, Callable, Awaitable, Union, overload, cast
-from python.helpers import dotenv, rfc, settings
+from python.helpers import dotenv, rfc, settings, files
 import asyncio
 import threading
 import queue
@@ -82,10 +82,11 @@ async def call_development_function(func: Union[Callable[..., T], Callable[..., 
     if is_development():
         url = _get_rfc_url()
         password = _get_rfc_password()
+        module = files.deabsolute_path(func.__code__.co_filename).replace("/", ".").removesuffix(".py") # __module__ is not reliable
         result = await rfc.call_rfc(
             url=url,
             password=password,
-            module=func.__module__,
+            module=module,
             function_name=func.__name__,
             args=list(args),
             kwargs=kwargs,

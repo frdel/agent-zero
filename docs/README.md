@@ -4,6 +4,8 @@ To begin with Agent Zero, follow the links below for detailed guides on various 
 
 - **[Installation](installation.md):** Set up (or [update](installation.md#how-to-update-agent-zero)) Agent Zero on your system.
 - **[Usage Guide](usage.md):** Explore GUI features and usage scenarios.
+- **[Development](development.md):** Set up a development environment for Agent Zero.
+- **[Extensibility](extensibility.md):** Learn how to create custom extensions for Agent Zero.
 - **[Architecture Overview](architecture.md):** Understand the internal workings of the framework.
 - **[Contributing](contribution.md):** Learn how to contribute to the Agent Zero project.
 - **[Troubleshooting and FAQ](troubleshooting.md):** Find answers to common issues and questions.
@@ -11,7 +13,7 @@ To begin with Agent Zero, follow the links below for detailed guides on various 
 ### Your experience with Agent Zero starts now!
 
 - **Download Agent Zero:** Follow the [installation guide](installation.md) to download and run Agent Zero.
-- **Join the Community:** Join the Agent Zero [Skool](https://www.skool.com/agent-zero) or [Discord](https://discord.gg/Z2tun2N3) community to discuss ideas, ask questions, and collaborate with other contributors.
+- **Join the Community:** Join the Agent Zero [Skool](https://www.skool.com/agent-zero) or [Discord](https://discord.gg/B8KZKNsPpj) community to discuss ideas, ask questions, and collaborate with other contributors.
 - **Share your Work:** Share your Agent Zero creations, workflows and discoverings on our [Show and Tell](https://github.com/agent0ai/agent-zero/discussions/categories/show-and-tell) area on GitHub.
 - **Report Issues:** Use the [GitHub issue tracker](https://github.com/agent0ai/agent-zero/issues) to report framework-relative bugs or suggest new features.
 
