@@ -2,13 +2,14 @@
 # FROM agent-zero-base:local
 FROM agent0ai/agent-zero-base:latest
 
-# Check if the argument is provided, else throw an error
-ARG BRANCH
-RUN if [ -z "$BRANCH" ]; then echo "ERROR: BRANCH is not set!" >&2; exit 1; fi
+# Set BRANCH to "local" if not provided
+ARG BRANCH=local
 ENV BRANCH=$BRANCH
 
 # Copy filesystem files to root
-COPY ./fs/ /
+COPY ./docker/run/fs/ /
+# Copy current development files to git, they will only be used in "local" branch
+COPY ./ /git/agent-zero
 
 # pre installation steps
 RUN bash /ins/pre_install.sh $BRANCH

@@ -1,0 +1,56 @@
+###############################################################################
+# Project‑specific exclusions / re‑includes
+###############################################################################
+
+# Large / generated data
+memory/**
+
+# Logs & tmp
+logs/*
+tmp/*
+
+# Knowledge directory – keep only default/
+knowledge/**
+!knowledge/default/
+!knowledge/default/**
+
+# Instruments directory – keep only default/
+instruments/**
+!instruments/default/
+!instruments/default/**
+
+# Keep .gitkeep markers anywhere
+!**/.gitkeep
+
+
+###############################################################################
+# Environment / tooling
+###############################################################################
+.conda/
+.cursor/
+.venv/
+.git/
+
+
+###############################################################################
+# Tests (root‑level only)
+###############################################################################
+/*.test.py
+
+
+###############################################################################
+# ─── LAST SECTION: universal junk / caches (MUST BE LAST) ───
+#   Put these at the *bottom* so they override any ! re‑includes above
+###############################################################################
+# OS / editor junk
+**/.DS_Store
+**/Thumbs.db
+
+# Python caches / compiled artefacts
+**/__pycache__/
+**/*.py[cod]
+**/*.pyo
+**/*.pyd
+
+# Environment files anywhere
+*.env

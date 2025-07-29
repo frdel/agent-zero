@@ -4,30 +4,14 @@
 **/__pycache__/
 **/.conda/
 
-# Ignore docker/run/agent-zero directory
-docker/run/agent-zero/
-
 #Ignore cursor rules
 .cursor/
 
 # ignore test files in root dir
 /*.test.py
 
-# Ignore git internal files (for bundler)
-.git/
-
 # Ignore all contents of the virtual environment directory
 .venv/
-
-# Handle bundle directory
-bundle/*/
-!bundle/mac_pkg_scripts
-
-# Handle work_dir directory
-work_dir/*
-
-# Handle specific docker directories
-docker/run/agent-zero/**
 
 # Handle memory directory
 memory/**
