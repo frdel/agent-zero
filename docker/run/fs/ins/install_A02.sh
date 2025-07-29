@@ -3,8 +3,10 @@ set -e
 
 # cachebuster script, this helps speed up docker builds
 
-# remove repo
-rm -rf /git/agent-zero
+# remove repo (if not local branch)
+if [ "$1" != "local" ]; then
+    rm -rf /git/agent-zero
+fi
 
 # run the original install script again
 bash /ins/install_A0.sh "$@"
