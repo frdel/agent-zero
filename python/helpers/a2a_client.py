@@ -27,12 +27,14 @@ class A2AClient:
         self, 
         auth_token: Optional[str] = None,
         auth_scheme: str = "bearer",
+        url_token: Optional[str] = None,  # New: URL-based token authentication
         timeout: float = 30.0,
         max_retries: int = 5,  # Increased retries for subordinate startup
         retry_delay: float = 0.5  # Reduced initial delay for faster retries
     ):
         self.auth_token = auth_token
         self.auth_scheme = auth_scheme.lower()
+        self.url_token = url_token  # Store URL token for path-based auth
         self.timeout = timeout
         self.max_retries = max_retries
         self.retry_delay = retry_delay
@@ -80,6 +82,15 @@ class A2AClient:
                 headers["Authorization"] = f"Basic {self.auth_token}"
     
         return headers
+    
+    def _build_token_url(self, base_url: str, endpoint: str) -> str:
+        """Build URL with token-based routing if url_token is provided"""
+        if self.url_token:
+            # Use token-based routing: /t-{token}/endpoint
+            return urljoin(base_url, f"/t-{self.url_token}{endpoint}")
+        else:
+            # Use standard routing
+            return urljoin(base_url, endpoint)
     
     async def _make_request(
         self, 
@@ -181,11 +192,11 @@ class A2AClient:
     
     async def discover_agent(self, base_url: str) -> Dict[str, Any]:
         """Discover agent capabilities by fetching AgentCard"""
-        agent_card_url = urljoin(base_url, "/.well-known/agent.json")
+        agent_card_url = self._build_token_url(base_url, "/.well-known/agent.json")
         
         try:
             # Try health endpoint first as a quick connectivity check
-            health_url = urljoin(base_url, "/health")
+            health_url = self._build_token_url(base_url, "/health")
             try:
                 health_response = await self._make_request("GET", health_url, retries=2)
                 if health_response:
@@ -207,7 +218,7 @@ class A2AClient:
         task_data: Dict[str, Any]
     ) -> str:
         """Submit a task to a peer agent and return task ID"""
-        submit_url = urljoin(peer_url, "/tasks/submit")
+        submit_url = self._build_token_url(peer_url, "/tasks/submit")
         
         # Prepare A2A protocol request
         request_data = {
@@ -236,7 +247,7 @@ class A2AClient:
     
     async def get_task_status(self, peer_url: str, task_id: str) -> Dict[str, Any]:
         """Get the status of a submitted task"""
-        status_url = urljoin(peer_url, f"/tasks/{task_id}")
+        status_url = self._build_token_url(peer_url, f"/tasks/{task_id}")
         
         response = await self._make_request("GET", status_url)
         
@@ -253,7 +264,7 @@ class A2AClient:
     
     async def cancel_task(self, peer_url: str, task_id: str) -> bool:
         """Cancel a submitted task"""
-        cancel_url = urljoin(peer_url, f"/tasks/{task_id}/cancel")
+        cancel_url = self._build_token_url(peer_url, f"/tasks/{task_id}/cancel")
         
         try:
             await self._make_request("POST", cancel_url)
@@ -277,7 +288,7 @@ class A2AClient:
         # Note: submit_task already prints success message, don't duplicate
 
         # Connect to SSE stream
-        stream_url = urljoin(peer_url, "/message/stream")
+        stream_url = self._build_token_url(peer_url, "/message/stream")
         PrintStyle(font_color="cyan").print(f"Connecting to SSE stream: {stream_url}")
         
         try:
@@ -431,7 +442,7 @@ class A2AClient:
         task_id = await self.submit_task(peer_url, task_data)
         
         # Configure push notification
-        push_config_url = urljoin(peer_url, f"/tasks/{task_id}/pushNotificationConfig/set")
+        push_config_url = self._build_token_url(peer_url, f"/tasks/{task_id}/pushNotificationConfig/set")
         
         push_config = {
             "url": webhook_url,

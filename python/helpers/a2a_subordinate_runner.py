@@ -181,6 +181,7 @@ class A2ASubordinate:
             # A2A specific settings
             a2a_enabled=True,
             a2a_server_port=self.config_data['port'],
+            a2a_server_token=self.config_data.get('a2a_server_token', ''),
             a2a_capabilities=self.config_data['capabilities'],
             a2a_auth_required=False,
             a2a_cors_origins=['*'],
@@ -234,15 +235,31 @@ class A2ASubordinate:
             'role': self.config_data['role']
         }
         
-        self.a2a_server = A2AServer(server_config, self.context)
-        
-        # Start server in background
-        server_task = asyncio.create_task(
-            self.a2a_server.start_server(
-                host=server_config['host'],
-                port=server_config['port']
+        # Use DynamicA2AProxy for token-based routing if token is available
+        a2a_token = self.config_data.get('a2a_server_token', '')
+        if a2a_token:
+            from python.helpers.a2a_server import DynamicA2AProxy
+            
+            # Initialize the proxy with server
+            proxy = DynamicA2AProxy.get_instance()
+            proxy.initialize_server(self.context, server_config)
+            proxy.reconfigure(a2a_token)
+            
+            # Start server using proxy
+            server_task = asyncio.create_task(
+                self._start_uvicorn_with_proxy(proxy, server_config['host'], server_config['port'])
             )
-        )
+        else:
+            # Fallback to direct A2A server
+            self.a2a_server = A2AServer(server_config, self.context)
+            
+            # Start server in background
+            server_task = asyncio.create_task(
+                self.a2a_server.start_server(
+                    host=server_config['host'],
+                    port=server_config['port']
+                )
+            )
         
         # Wait a moment for server to start
         await asyncio.sleep(1)
@@ -250,6 +267,20 @@ class A2ASubordinate:
         print(f"SUBORDINATE: A2A server started for {self.config_data['role']} on port {self.config_data['port']}", flush=True)
         
         return server_task
+    
+    async def _start_uvicorn_with_proxy(self, proxy, host: str, port: int):
+        """Start uvicorn server with DynamicA2AProxy"""
+        import uvicorn
+        
+        config = uvicorn.Config(
+            proxy,
+            host=host,
+            port=port,
+            log_level="info"
+        )
+        
+        server = uvicorn.Server(config)
+        await server.serve()
     
     async def run(self):
         """Run the subordinate agent"""

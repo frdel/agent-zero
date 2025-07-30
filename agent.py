@@ -477,6 +477,7 @@ class AgentConfig:
     a2a_enabled: bool = field(default=False)
     a2a_server_host: str = field(default="0.0.0.0")
     a2a_server_port: int = field(default=8008)
+    a2a_server_token: str = field(default="")
     a2a_server_base_url: str = field(default="")
     a2a_auth_required: bool = field(default=True)
     a2a_auth_schemes: List[str] = field(default_factory=lambda: ["bearer", "api_key"])

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import threading
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, AsyncGenerator
@@ -8,6 +9,7 @@ from urllib.parse import urljoin
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, StreamingResponse, Response
 from starlette.routing import Route, Mount
@@ -15,6 +17,7 @@ from starlette.staticfiles import StaticFiles
 from starlette.authentication import AuthenticationBackend, AuthCredentials, SimpleUser
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.exceptions import HTTPException
+from starlette.types import ASGIApp, Receive, Scope, Send
 import uvicorn
 
 from python.helpers.print_style import PrintStyle
@@ -566,3 +569,124 @@ class A2AServer:
             "peers_connected": len(self.handler.peers),
             "sse_clients": len(self.sse_clients)
         }
+
+
+class DynamicA2AProxy:
+    """A dynamic proxy that allows swapping the underlying A2A application on the fly with token-based routing."""
+    
+    _instance: Optional['DynamicA2AProxy'] = None
+    
+    def __init__(self):
+        from python.helpers import settings
+        cfg = settings.get_settings()
+        self.app: Optional[ASGIApp] = None
+        self._lock = threading.RLock()  # Use RLock to avoid deadlocks
+        self.token = cfg.get("a2a_server_token", "")
+        self.a2a_server: Optional[A2AServer] = None
+        self.agent_context = None
+    
+    @staticmethod
+    def get_instance():
+        if DynamicA2AProxy._instance is None:
+            DynamicA2AProxy._instance = DynamicA2AProxy()
+        return DynamicA2AProxy._instance
+    
+    def reconfigure(self, token: str):
+        """Reconfigure A2A server with new token-based routing"""
+        self.token = token
+        
+        with self._lock:
+            if self.agent_context and self.a2a_server:
+                # Update routes to include token-based paths
+                self.app = self._create_token_app(token)
+    
+    def initialize_server(self, agent_context: Any, config: Dict[str, Any]):
+        """Initialize the A2A server with agent context"""
+        with self._lock:
+            self.agent_context = agent_context
+            self.a2a_server = A2AServer(config, agent_context)
+            if self.token:
+                self.app = self._create_token_app(self.token)
+    
+    def _create_token_app(self, token: str) -> ASGIApp:
+        """Create Starlette app with token-based routing"""
+        if not self.a2a_server:
+            raise RuntimeError("A2A server not initialized")
+        
+        # Create base A2A app
+        base_app = self.a2a_server.create_app()
+        
+        # Token-based routes (similar to MCP)
+        token_routes = [
+            # Agent Card discovery with token
+            Route(f"/t-{token}/.well-known/agent.json", self.a2a_server.get_agent_card, methods=["GET"]),
+            
+            # Task management with token
+            Route(f"/t-{token}/tasks/submit", self.a2a_server.submit_task, methods=["POST"]),
+            Route(f"/t-{token}/tasks/{{task_id}}", self.a2a_server.get_task_status, methods=["GET"]),
+            Route(f"/t-{token}/tasks/{{task_id}}/cancel", self.a2a_server.cancel_task, methods=["POST"]),
+            Route(f"/t-{token}/tasks/{{task_id}}/pushNotificationConfig/set", self.a2a_server.set_push_config, methods=["POST"]),
+            
+            # SSE stream with token
+            Route(f"/t-{token}/message/stream", self.a2a_server.sse_stream, methods=["GET"]),
+            
+            # Webhook with token
+            Route(f"/t-{token}/push/{{webhook_token}}", self.a2a_server.webhook_handler, methods=["POST"]),
+            
+            # Health check with token
+            Route(f"/t-{token}/health", self.a2a_server.health_check, methods=["GET"]),
+            
+            # Context info with token
+            Route(f"/t-{token}/context/info", self.a2a_server.get_context_info, methods=["GET"]),
+        ]
+        
+        # Middleware
+        middleware = [
+            Middleware(
+                CORSMiddleware,
+                allow_origins=["*"],
+                allow_credentials=True,
+                allow_methods=["*"],
+                allow_headers=["*"],
+            ),
+            Middleware(BaseHTTPMiddleware, dispatch=a2a_token_middleware),
+        ]
+        
+        # Create new app with token routes
+        token_app = Starlette(
+            routes=token_routes,
+            middleware=middleware,
+            exception_handlers={
+                HTTPException: self.a2a_server.http_exception_handler
+            }
+        )
+        
+        return token_app
+    
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Forward the ASGI calls to the current app"""
+        with self._lock:
+            app = self.app
+        if app:
+            await app(scope, receive, send)
+        else:
+            # Return 404 if no app is configured
+            response = JSONResponse(
+                {"error": "A2A server not configured"},
+                status_code=404
+            )
+            await response(scope, receive, send)
+
+
+async def a2a_token_middleware(request: Request, call_next):
+    """A2A token validation middleware"""
+    # Check if A2A server is enabled
+    from python.helpers import settings
+    cfg = settings.get_settings()
+    if not cfg.get("a2a_enabled", False):
+        PrintStyle.error("[A2A] Access denied: A2A server is disabled in settings.")
+        raise HTTPException(
+            status_code=403, detail="A2A server is disabled in settings."
+        )
+    
+    return await call_next(request)

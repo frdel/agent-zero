@@ -88,6 +88,7 @@ def initialize_agent():
         # A2A (Agent-to-Agent) Protocol Configuration
         a2a_enabled=current_settings["a2a_enabled"],
         a2a_server_port=current_settings["a2a_server_port"],
+        a2a_server_token=current_settings["a2a_server_token"],
         a2a_subordinate_base_port=current_settings["a2a_subordinate_base_port"],
         a2a_subordinate_max_instances=current_settings["a2a_subordinate_max_instances"],
         a2a_subordinate_auto_cleanup=current_settings["a2a_subordinate_auto_cleanup"],

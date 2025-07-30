@@ -182,7 +182,9 @@ class A2ASubordinateManager:
         self._process_groups: Dict[str, int] = {}  # role -> pgid mapping
         self._subordinate_locks: Dict[str, asyncio.Lock] = {}
         self._spawn_lock = asyncio.Lock()  # Global spawn lock
-        self.a2a_client = A2AClient(timeout=30.0, max_retries=2)
+        # Get A2A token from configuration for URL-based auth
+        a2a_token = getattr(agent_context.config, 'a2a_server_token', None)
+        self.a2a_client = A2AClient(timeout=30.0, max_retries=2, url_token=a2a_token)
         self._shutdown_in_progress = False
 
         # Agent hierarchy tracking
@@ -459,8 +461,9 @@ class A2ASubordinateManager:
             "parent_agent": self.agent_context.agent0.agent_name,
             "parent_context_id": self.agent_context.context_id,
             "shared_context": subordinate.shared_context,
-            "a2a_enabled": True,
+            "a2a_enabled": True,      
             "a2a_server_port": subordinate.port,
+            "a2a_server_token": getattr(parent_config, 'a2a_server_token', ''),
             "a2a_auth_required": False,  # Simplified for subordinates
             "working_directory": os.getcwd(),
 

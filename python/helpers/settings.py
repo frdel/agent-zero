@@ -70,6 +70,7 @@ class Settings(TypedDict):
     # A2A (Agent-to-Agent) Protocol Configuration
     a2a_enabled: bool
     a2a_server_port: int
+    a2a_server_token: str
     a2a_subordinate_base_port: int
     a2a_subordinate_max_instances: int
     a2a_subordinate_auto_cleanup: bool
@@ -1044,6 +1045,78 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "tab": "mcp",
     }
 
+    # A2A (Agent-to-Agent) Protocol section
+    a2a_fields: list[SettingsField] = []
+
+    a2a_fields.append(
+        {
+            "id": "a2a_enabled",
+            "title": "Enable A2A Protocol",
+            "description": "Enable Agent-to-Agent communication protocol for subordinate agents and peer collaboration.",
+            "type": "switch",
+            "value": settings["a2a_enabled"],
+        }
+    )
+
+    a2a_fields.append(
+        {
+            "id": "a2a_server_port",
+            "title": "A2A Server Port",
+            "description": "Port for the A2A server to listen on.",
+            "type": "number",
+            "value": settings["a2a_server_port"],
+        }
+    )
+
+    a2a_fields.append(
+        {
+            "id": "a2a_server_token",
+            "title": "A2A Server Token",
+            "description": "Token for A2A server authentication.",
+            "type": "text",
+            "hidden": True,
+            "value": settings["a2a_server_token"],
+        }
+    )
+
+    a2a_fields.append(
+        {
+            "id": "a2a_subordinate_base_port",
+            "title": "Subordinate Base Port",
+            "description": "Base port for spawning subordinate agents (they will use consecutive ports from this base).",
+            "type": "number",
+            "value": settings["a2a_subordinate_base_port"],
+        }
+    )
+
+    a2a_fields.append(
+        {
+            "id": "a2a_subordinate_max_instances",
+            "title": "Max Subordinate Instances",
+            "description": "Maximum number of subordinate agents that can be spawned simultaneously.",
+            "type": "number",
+            "value": settings["a2a_subordinate_max_instances"],
+        }
+    )
+
+    a2a_fields.append(
+        {
+            "id": "a2a_subordinate_auto_cleanup",
+            "title": "Auto-Cleanup Subordinates",
+            "description": "Automatically clean up subordinate agents when they complete tasks or on shutdown.",
+            "type": "switch",
+            "value": settings["a2a_subordinate_auto_cleanup"],
+        }
+    )
+
+    a2a_section: SettingsSection = {
+        "id": "a2a",
+        "title": "A2A Protocol",
+        "description": "Agent-to-Agent communication protocol for subordinate agents and distributed AI workflows.",
+        "fields": a2a_fields,
+        "tab": "a2a",
+    }
+
     # Backup & Restore section
     backup_fields: list[SettingsField] = []
 
@@ -1092,6 +1165,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             auth_section,
             mcp_client_section,
             mcp_server_section,
+            a2a_section,
             backup_section,
             dev_section,
         ]
@@ -1177,6 +1251,9 @@ def normalize_settings(settings: Settings) -> Settings:
 
     # mcp server token is set automatically
     copy["mcp_server_token"] = create_auth_token()
+    
+    # a2a server token is set automatically  
+    copy["a2a_server_token"] = create_auth_token()
 
     return copy
 
@@ -1211,6 +1288,7 @@ def _remove_sensitive_settings(settings: Settings):
     settings["rfc_password"] = ""
     settings["root_password"] = ""
     settings["mcp_server_token"] = ""
+    settings["a2a_server_token"] = ""
 
 
 def _write_sensitive_settings(settings: Settings):
@@ -1286,6 +1364,7 @@ def get_default_settings() -> Settings:
         # A2A (Agent-to-Agent) Protocol Configuration
         a2a_enabled=False,
         a2a_server_port=8008,
+        a2a_server_token=create_auth_token(),
         a2a_subordinate_base_port=8100,
         a2a_subordinate_max_instances=10,
         a2a_subordinate_auto_cleanup=True,
@@ -1401,6 +1480,25 @@ def _apply_settings(previous: Settings | None):
 
             task3 = defer.DeferredTask().start_task(
                 update_mcp_token, current_token
+            )  # TODO overkill, replace with background task
+
+        # update token in a2a server
+        current_a2a_token = (
+            create_auth_token()
+        )  # TODO - ugly, token in settings is generated from dotenv and does not always correspond
+        if not previous or current_a2a_token != previous.get("a2a_server_token", ""):
+
+            async def update_a2a_token(token: str):
+                from python.helpers.a2a_server import DynamicA2AProxy
+                
+                # Only update if A2A server proxy exists and is configured
+                try:
+                    DynamicA2AProxy.get_instance().reconfigure(token=token)
+                except Exception:
+                    pass  # A2A server might not be initialized yet
+
+            task4 = defer.DeferredTask().start_task(
+                update_a2a_token, current_a2a_token
             )  # TODO overkill, replace with background task
 
 
