@@ -118,9 +118,12 @@
     <script defer src="vendor/katex/katex.auto-render.min.js"
         crossorigin="anonymous"></script>
 
+    <!-- QR Code Library -->
+    <script src="vendor/qrcode.min.js"></script>
+
     <!-- Google Icons -->
     <link rel="stylesheet" href="vendor/google/google-icons.css" />
-    
+
 
     <!-- Non-module scripts after Alpine.js -->
     <script type="text/javascript" src="js/settings.js"></script>
@@ -376,7 +379,7 @@
                 <div>
                     <x-component path="/chat/attachments/inputPreview.html" />
                 </div>
-               
+
                 <!-- Top row with input and buttons -->
                 <div class="input-row">
                     <!-- Attachment icon with tooltip -->
@@ -710,6 +713,12 @@
                                                         <span class="icon material-symbols-outlined">refresh</span> Refresh
                                                     </button>
                                                 </div>
+                                            </div>
+                                            <div class="tunnel-qr-container">
+                                                <div class="tunnel-qr-code" id="qrcode-tunnel">
+                                                    <!-- QR code will be generated here -->
+                                                </div>
+                                                <div class="tunnel-qr-label">Scan with mobile device</div>
                                             </div>
                                             <div class="tunnel-link-info">
                                                 Share this URL to allow others to access your Agent Zero instance.
