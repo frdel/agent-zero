@@ -1,6 +1,7 @@
 # Extensibility framework in Agent Zero
 
-> [!NOTE] Agent Zero is built with extensibility in mind. It provides a framework for creating custom extensions, agents, instruments, and tools that can be used to enhance the functionality of the framework.
+> [!NOTE]
+> Agent Zero is built with extensibility in mind. It provides a framework for creating custom extensions, agents, instruments, and tools that can be used to enhance the functionality of the framework.
 
 ## Extensible components
 - The Python framework controlling Agent Zero is built as simple as possible, relying on independent smaller and modular scripts for individual tools, API endpoints, system extensions and helper scripts.
