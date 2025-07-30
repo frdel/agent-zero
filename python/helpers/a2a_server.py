@@ -139,6 +139,9 @@ class A2AServer:
             
             # Context info for subordinate registration
             Route("/context/info", self.get_context_info, methods=["GET"]),
+            
+            # Subordinate registry for peer discovery
+            Route("/subordinates/registry", self.get_subordinate_registry, methods=["GET"]),
         ]
         
         app = Starlette(
@@ -517,6 +520,46 @@ class A2AServer:
                 "error": str(e)
             }, status_code=500)
     
+    async def get_subordinate_registry(self, request: Request) -> JSONResponse:
+        """GET /subordinates/registry - Get registry of all subordinate agents for peer discovery"""
+        try:
+            # Get the agent context to access subordinate manager
+            agent_context = getattr(self, 'agent_context', None)
+            
+            subordinates_registry = {}
+            
+            # Check if we have access to subordinate manager
+            if agent_context and hasattr(agent_context, 'subordinate_manager') and agent_context.subordinate_manager:
+                subordinate_manager = agent_context.subordinate_manager
+                
+                # Get all subordinates from the manager
+                for subordinate in subordinate_manager.get_all_subordinates():
+                    subordinates_registry[subordinate.agent_id] = {
+                        "agent_id": subordinate.agent_id,
+                        "role": subordinate.role,
+                        "url": subordinate.url,
+                        "port": subordinate.port,
+                        "status": subordinate.status,
+                        "capabilities": subordinate.capabilities,
+                        "spawned_at": subordinate.spawned_at.isoformat(),
+                        "last_contact": subordinate.last_contact.isoformat()
+                    }
+                    
+            return JSONResponse({
+                "success": True,
+                "subordinates": subordinates_registry,
+                "count": len(subordinates_registry),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            })
+            
+        except Exception as e:
+            return JSONResponse({
+                "success": False,
+                "error": str(e),
+                "subordinates": {},
+                "count": 0
+            }, status_code=500)
+    
     # Server Management
     
     async def start_server(
@@ -609,35 +652,37 @@ class DynamicA2AProxy:
                 self.app = self._create_token_app(self.token)
     
     def _create_token_app(self, token: str) -> ASGIApp:
-        """Create Starlette app with token-based routing"""
+        """Create Starlette app with both token-based and standard routing"""
         if not self.a2a_server:
             raise RuntimeError("A2A server not initialized")
         
-        # Create base A2A app
-        base_app = self.a2a_server.create_app()
-        
-        # Token-based routes (similar to MCP)
-        token_routes = [
-            # Agent Card discovery with token
-            Route(f"/t-{token}/.well-known/agent.json", self.a2a_server.get_agent_card, methods=["GET"]),
+        # Create routes with both token-based and standard endpoints
+        all_routes = [
+            # Standard A2A Protocol endpoints (for backward compatibility)
+            Route("/.well-known/agent.json", self.a2a_server.get_agent_card, methods=["GET"]),
+            Route("/tasks/submit", self.a2a_server.submit_task, methods=["POST"]),
+            Route("/tasks/{task_id}", self.a2a_server.get_task_status, methods=["GET"]),
+            Route("/tasks/{task_id}/cancel", self.a2a_server.cancel_task, methods=["POST"]),
+            Route("/tasks/{task_id}/pushNotificationConfig/set", self.a2a_server.set_push_config, methods=["POST"]),
+            Route("/message/stream", self.a2a_server.sse_stream, methods=["GET"]),
+            Route("/push/{token}", self.a2a_server.webhook_handler, methods=["POST"]),
+            Route("/health", self.a2a_server.health_check, methods=["GET"]),
+            Route("/context/info", self.a2a_server.get_context_info, methods=["GET"]),
+            Route("/subordinates/registry", self.a2a_server.get_subordinate_registry, methods=["GET"]),
             
-            # Task management with token
+            # Token-based routes (for enhanced security)
+            Route(f"/t-{token}/.well-known/agent.json", self.a2a_server.get_agent_card, methods=["GET"]),
             Route(f"/t-{token}/tasks/submit", self.a2a_server.submit_task, methods=["POST"]),
             Route(f"/t-{token}/tasks/{{task_id}}", self.a2a_server.get_task_status, methods=["GET"]),
             Route(f"/t-{token}/tasks/{{task_id}}/cancel", self.a2a_server.cancel_task, methods=["POST"]),
             Route(f"/t-{token}/tasks/{{task_id}}/pushNotificationConfig/set", self.a2a_server.set_push_config, methods=["POST"]),
-            
-            # SSE stream with token
             Route(f"/t-{token}/message/stream", self.a2a_server.sse_stream, methods=["GET"]),
-            
-            # Webhook with token
             Route(f"/t-{token}/push/{{webhook_token}}", self.a2a_server.webhook_handler, methods=["POST"]),
-            
-            # Health check with token
             Route(f"/t-{token}/health", self.a2a_server.health_check, methods=["GET"]),
-            
-            # Context info with token
             Route(f"/t-{token}/context/info", self.a2a_server.get_context_info, methods=["GET"]),
+            
+            # Subordinate registry with token
+            Route(f"/t-{token}/subordinates/registry", self.a2a_server.get_subordinate_registry, methods=["GET"]),
         ]
         
         # Middleware
@@ -652,16 +697,16 @@ class DynamicA2AProxy:
             Middleware(BaseHTTPMiddleware, dispatch=a2a_token_middleware),
         ]
         
-        # Create new app with token routes
-        token_app = Starlette(
-            routes=token_routes,
+        # Create new app with both standard and token routes
+        combined_app = Starlette(
+            routes=all_routes,
             middleware=middleware,
             exception_handlers={
                 HTTPException: self.a2a_server.http_exception_handler
             }
         )
         
-        return token_app
+        return combined_app
     
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """Forward the ASGI calls to the current app"""

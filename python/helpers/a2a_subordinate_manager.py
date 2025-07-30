@@ -466,6 +466,10 @@ class A2ASubordinateManager:
             "a2a_server_token": getattr(parent_config, 'a2a_server_token', ''),
             "a2a_auth_required": False,  # Simplified for subordinates
             "working_directory": os.getcwd(),
+            
+            # Parent agent info for peer discovery
+            "parent_agent_url": f"http://localhost:{getattr(parent_config, 'a2a_server_port', 8008)}",
+            "parent_agent_token": getattr(parent_config, 'a2a_server_token', ''),
 
             # Inherit model configurations from parent
             "chat_model": {

@@ -172,7 +172,7 @@ class A2ASubordinate:
             
             # Basic settings
             mcp_servers='',
-            prompts_subdir=self.config_data.get('prompt_profile', 'default'),
+            profile=self.config_data.get('prompt_profile', 'default'),
             memory_subdir=f"subordinate_{self.config_data['role']}",
             # Configure subordinate-specific settings  
             knowledge_subdirs=[],  # Disable large knowledge loading
@@ -195,7 +195,9 @@ class A2ASubordinate:
                 'parent_agent': self.config_data['parent_agent'],
                 'parent_context_id': self.config_data['parent_context_id'],
                 'subordinate_type': 'a2a_spawned',
-                'agent_id': self.config_data['agent_id']
+                'agent_id': self.config_data['agent_id'],
+                'parent_agent_url': self.config_data.get('parent_agent_url', ''),
+                'parent_agent_token': self.config_data.get('parent_agent_token', '')
             }
         )
         
