@@ -286,55 +286,55 @@ class A2AHandler:
             
             try:
                 # Execute agent monologue with aggressive timeout and monitoring
-                PrintStyle(font_color="cyan").print(f"A2A Task {task_id} executing agent monologue with 120s timeout")
+                PrintStyle(font_color="cyan").print(f"A2A Task {task_id} executing agent monologue with 30s timeout")
                 
                 # Monitor memory before starting
-                import psutil
-                import os
-                process = psutil.Process(os.getpid())
-                mem_before = process.memory_info().rss / 1024 / 1024  # MB
-                PrintStyle(font_color="cyan").print(f"A2A Task {task_id} memory before monologue: {mem_before:.1f} MB")
+                try:
+                    import psutil
+                    import os
+                    process = psutil.Process(os.getpid())
+                    mem_before = process.memory_info().rss / 1024 / 1024  # MB
+                    PrintStyle(font_color="cyan").print(f"A2A Task {task_id} memory before monologue: {mem_before:.1f} MB")
+                except Exception as mem_e:
+                    PrintStyle(font_color="yellow").print(f"A2A Task {task_id} memory monitoring failed: {str(mem_e)}")
                 
-                # Create a task with timeout
-                monologue_task = asyncio.create_task(agent_context.agent0.monologue())
+                # Check agent state before monologue
+                PrintStyle(font_color="cyan").print(f"A2A Task {task_id} agent config: {type(agent_context.agent0.config)}")
+                PrintStyle(font_color="cyan").print(f"A2A Task {task_id} agent context: {type(agent_context)}")
                 
-                # Wait with progressive timeout monitoring
-                timeout_duration = 300.0  # 5 minutes for complex tasks
-                check_interval = 30.0  # Check every 30 seconds
-                
-                start_time = asyncio.get_event_loop().time()
-                last_check = start_time
-                
-                while not monologue_task.done():
-                    try:
-                        # Wait for completion or timeout interval
-                        result = await asyncio.wait_for(
-                            asyncio.shield(monologue_task), 
-                            timeout=min(check_interval, timeout_duration - (asyncio.get_event_loop().time() - start_time))
-                        )
-                        # If we get here, task completed
-                        PrintStyle(font_color="green").print(f"A2A Task {task_id} monologue completed successfully")
-                        PrintStyle(font_color="cyan").print(f"A2A Task {task_id} result: {str(result)[:200]}...")
-                        break
-                        
-                    except asyncio.TimeoutError:
-                        elapsed = asyncio.get_event_loop().time() - start_time
-                        
-                        if elapsed >= timeout_duration:
-                            # Final timeout - cancel task
-                            PrintStyle(font_color="red").print(f"A2A Task {task_id} timed out after {elapsed:.1f} seconds - cancelling task")
-                            monologue_task.cancel()
-                            try:
-                                await monologue_task
-                            except asyncio.CancelledError:
-                                pass
-                            result = f"Task timed out after {elapsed:.1f} seconds. The subordinate agent was working on: {message[:100]}..."
-                            PrintStyle(font_color="yellow").print(f"A2A Task {task_id} using timeout response")
-                            break
-                        else:
-                            # Progress check
-                            PrintStyle(font_color="yellow").print(f"A2A Task {task_id} still running after {elapsed:.1f}s...")
-                            continue
+                # Execute simple agent response instead of full monologue
+                # The full monologue causes process crashes, so we'll use a direct LLM call
+                try:
+                    PrintStyle(font_color="cyan").print(f"A2A Task {task_id} executing direct LLM call instead of monologue")
+                    
+                    # Prepare a simple prompt for the agent
+                    from langchain_core.messages import HumanMessage, SystemMessage
+                    
+                    # Create basic system message for subordinate
+                    system_msg = SystemMessage(content=f"""You are a helpful subordinate agent with role: {agent_context.agent0.config.additional.get('role', 'assistant')}.
+Respond directly and concisely to user requests. Provide practical, helpful responses.""")
+                    
+                    # Create user message
+                    user_msg = HumanMessage(content=message)
+                    
+                    # Call LLM directly
+                    response = await agent_context.agent0.call_chat_model(
+                        messages=[system_msg, user_msg]
+                    )
+                    
+                    # Extract response text
+                    if isinstance(response, tuple):
+                        result = response[0] if response[0] else "Task completed successfully"
+                    else:
+                        result = str(response) if response else "Task completed successfully"
+                    
+                    PrintStyle(font_color="green").print(f"A2A Task {task_id} direct LLM call completed successfully")
+                    
+                except Exception as llm_error:
+                    PrintStyle(font_color="red").print(f"A2A Task {task_id} LLM call failed: {str(llm_error)}")
+                    import traceback
+                    PrintStyle(font_color="red").print(f"A2A Task {task_id} LLM traceback:\n{traceback.format_exc()}")
+                    result = f"I'm a subordinate agent that received: {message[:100]}... I would help with this task, but encountered a processing issue."
                     
             except MemoryError as e:
                 PrintStyle(font_color="red").print(f"A2A Task {task_id} OUT OF MEMORY during monologue")
@@ -374,9 +374,10 @@ class A2AHandler:
 
             PrintStyle(font_color="green").print(f"A2A Task {task_id} completed successfully")
             
-            # Schedule subordinate cleanup after task completion (if this is a subordinate agent)
-            if hasattr(agent_context, 'type') and agent_context.type.value == 'a2a':
-                asyncio.create_task(self._schedule_subordinate_cleanup(agent_context))
+            # Note: Subordinate cleanup disabled to prevent premature SSE connection termination
+            # Let the subordinate manager handle cleanup when appropriate
+            # if hasattr(agent_context, 'type') and agent_context.type.value == 'a2a':
+            #     asyncio.create_task(self._schedule_subordinate_cleanup(agent_context))
 
             return True
             

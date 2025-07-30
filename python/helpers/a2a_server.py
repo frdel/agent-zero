@@ -436,6 +436,10 @@ class A2AServer:
 
                     yield f"event: TaskStatusUpdateEvent\n"
                     yield f"data: {json.dumps(event_data)}\n\n"
+                    
+                    # Give client time to receive completion event
+                    if task.state == TaskState.COMPLETED:
+                        await asyncio.sleep(0.5)
     
     async def webhook_handler(self, request: Request) -> JSONResponse:
         """POST /push/{token} - Handle webhook notifications"""

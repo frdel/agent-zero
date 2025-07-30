@@ -1,7 +1,6 @@
 import importlib
 import inspect
 import json
-import sys
 from typing import Any, TypedDict
 import aiohttp
 from python.helpers import crypto
@@ -61,33 +60,11 @@ async def _call_function(module: str, function_name: str, *args, **kwargs):
 
 
 def _get_function(module: str, function_name: str):
-    # Ensure /a0 is in Python path for Agent Zero modules
-    if '/a0' not in sys.path:
-        sys.path.insert(0, '/a0')
-    
-    # Try to import the full module path first
-    try:
-        imp = importlib.import_module(module)
-        func = getattr(imp, function_name)
-        return func
-    except (ImportError, ModuleNotFoundError) as e:
-        # Fall back to simplified module names for development
-        module_map = {
-            'python.api.file_info': 'file_info',
-            'python.api.get_work_dir_files': 'get_work_dir_files'
-        }
-        
-        if module in module_map:
-            try:
-                simplified_module = module_map[module]
-                imp = importlib.import_module(simplified_module)
-                func = getattr(imp, function_name)
-                return func
-            except (ImportError, ModuleNotFoundError):
-                pass
-        
-        # If both attempts failed, re-raise the original error
-        raise e
+    # import module
+    imp = importlib.import_module(module)
+    # get function by the name
+    func = getattr(imp, function_name)
+    return func
 
 
 async def _send_json_data(url: str, data):

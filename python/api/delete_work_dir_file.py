@@ -14,12 +14,10 @@ class DeleteWorkDirFile(ApiHandler):
 
         current_path = input.get("currentPath", "")
 
-        # browser = FileBrowser()
         res = await runtime.call_development_function(delete_file, file_path)
 
         if res:
             # Get updated file list
-            # result = browser.get_files(current_path)
             result = await runtime.call_development_function(get_work_dir_files.get_files, current_path)
             return {"data": result}
         else:

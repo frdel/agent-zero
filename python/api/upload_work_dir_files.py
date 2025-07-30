@@ -23,7 +23,6 @@ class UploadWorkDirFiles(ApiHandler):
         if not successful and failed:
             raise Exception("All uploads failed")
 
-        # result = browser.get_files(current_path)
         result = await runtime.call_development_function(get_work_dir_files.get_files, current_path)
 
         return {
