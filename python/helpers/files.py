@@ -309,6 +309,10 @@ def get_abs_path(*relative_paths):
     "Convert relative paths to absolute paths based on the base directory."
     return os.path.join(get_base_dir(), *relative_paths)
 
+def deabsolute_path(path:str):
+    "Convert absolute paths to relative paths based on the base directory."
+    return os.path.relpath(path, get_base_dir())
+
 def fix_dev_path(path:str):
     "On dev environment, convert /a0/... paths to local absolute paths"
     from python.helpers.runtime import is_development
