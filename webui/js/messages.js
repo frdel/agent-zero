@@ -769,7 +769,7 @@ function convertHTML(str) {
 }
 
 function convertImgFilePaths(str) {
-  return str.replace("img://", "/image_get?path=");
+  return str.replace(/img:\/\//g, "/image_get?path=");
 }
 
 export function convertIcons(str) {
