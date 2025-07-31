@@ -11,7 +11,7 @@ from python.helpers.dotenv import get_dotenv_value
 class Poll(ApiHandler):
 
     async def process(self, input: dict, request: Request) -> dict | Response:
-        ctxid = input.get("context", None)
+        ctxid = input.get("context", "")
         from_no = input.get("log_from", 0)
 
         # Get timezone from input (default to dotenv default or UTC if not provided)

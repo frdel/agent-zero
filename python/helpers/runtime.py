@@ -49,7 +49,7 @@ def has_arg(name: str):
     return name in args
 
 def is_dockerized() -> bool:
-    return get_arg("dockerized")
+    return bool(get_arg("dockerized"))
 
 def is_development() -> bool:
     return not is_dockerized()
