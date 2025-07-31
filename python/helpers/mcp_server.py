@@ -330,6 +330,9 @@ class DynamicMcpProxy:
         server_routes = []
         server_middleware = []
 
+        self.http_session_task_group = None
+
+
         # Create session manager
         self.http_session_manager = StreamableHTTPSessionManager(
             app=mcp_server._mcp_server,
@@ -338,15 +341,18 @@ class DynamicMcpProxy:
             stateless=False,
         )
 
+
         # Custom ASGI handler that ensures task group is initialized
         async def handle_streamable_http(scope, receive, send):
             # Lazy initialization of task group
             if self.http_session_task_group is None:
                 self.http_session_task_group = anyio.create_task_group()
                 await self.http_session_task_group.__aenter__()
-                self.http_session_manager._task_group = self.http_session_task_group
+                if self.http_session_manager:
+                    self.http_session_manager._task_group = self.http_session_task_group
 
-            await self.http_session_manager.handle_request(scope, receive, send)
+            if self.http_session_manager:
+                await self.http_session_manager.handle_request(scope, receive, send)
 
         # Get auth middleware and routes
         auth_middleware, auth_routes, required_scopes = setup_auth_middleware_and_routes(
