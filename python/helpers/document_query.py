@@ -140,13 +140,7 @@ class DocumentQueryStore:
             PrintStyle.error(f"No chunks created for document: {document_uri}")
             return False, []
 
-        # Apply rate limiter
         try:
-            docs_text = "".join(chunk.page_content for chunk in docs)
-            await self.agent.rate_limiter(
-                model_config=self.agent.config.embeddings_model, input=docs_text
-            )
-
             # Initialize vector db if not already initialized
             if not self.vector_db:
                 self.vector_db = self.init_vector_db()

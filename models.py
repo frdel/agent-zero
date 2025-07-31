@@ -108,7 +108,7 @@ def get_rate_limiter(
     limiter.limits["output"] = output or 0
     return limiter
 
-async def apply_rate_limiter(model_config: ModelConfig|None, input_text: str):
+async def apply_rate_limiter(model_config: ModelConfig|None, input_text: str, rate_limiter_callback: Callable[[str, str, int, int], Awaitable[bool]] | None = None):
     if not model_config:
         return
     limiter = get_rate_limiter(
@@ -120,15 +120,15 @@ async def apply_rate_limiter(model_config: ModelConfig|None, input_text: str):
     )
     limiter.add(input=approximate_tokens(input_text))
     limiter.add(requests=1)
-    await limiter.wait()
+    await limiter.wait(rate_limiter_callback)
     return limiter
 
-def apply_rate_limiter_sync(model_config: ModelConfig|None, input_text: str):
+def apply_rate_limiter_sync(model_config: ModelConfig|None, input_text: str, rate_limiter_callback: Callable[[str, str, int, int], Awaitable[bool]] | None = None):
     if not model_config:
         return
     import asyncio, nest_asyncio
     nest_asyncio.apply()
-    return asyncio.run(apply_rate_limiter(model_config, input_text))
+    return asyncio.run(apply_rate_limiter(model_config, input_text, rate_limiter_callback))
 
 
 class LiteLLMChatWrapper(SimpleChatModel):
@@ -286,6 +286,7 @@ class LiteLLMChatWrapper(SimpleChatModel):
         response_callback: Callable[[str, str], Awaitable[None]] | None = None,
         reasoning_callback: Callable[[str, str], Awaitable[None]] | None = None,
         tokens_callback: Callable[[str, int], Awaitable[None]] | None = None,
+        rate_limiter_callback: Callable[[str, str, int, int], Awaitable[bool]] | None = None,
         **kwargs: Any,
     ) -> Tuple[str, str]:
 
@@ -303,7 +304,7 @@ class LiteLLMChatWrapper(SimpleChatModel):
         msgs_conv = self._convert_messages(messages)
 
         # Apply rate limiting if configured
-        limiter = await apply_rate_limiter(self.a0_model_conf, str(msgs_conv))
+        limiter = await apply_rate_limiter(self.a0_model_conf, str(msgs_conv), rate_limiter_callback)
 
         # call model
         _completion = await acompletion(

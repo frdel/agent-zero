@@ -613,15 +613,6 @@ class Agent:
     ):
         model = self.get_utility_model()
 
-        # rate limiter
-        limiter = await self.rate_limiter(
-            self.config.utility_model, f"SYSTEM: {system}\nUSER: {message}", background
-        )
-
-        # add output tokens to rate limiter in tokens callback
-        async def tokens_callback(delta: str, tokens: int):
-            await self.handle_intervention()
-            limiter.add(output=tokens)
 
         # propagate stream to callback if set
         async def stream_callback(chunk: str, total: str):
@@ -632,7 +623,7 @@ class Agent:
             system_message=system,
             user_message=message,
             response_callback=stream_callback,
-            tokens_callback=tokens_callback,
+            rate_limiter_callback=self.rate_limiter_callback if not background else None,
         )
 
         return response
@@ -642,63 +633,29 @@ class Agent:
         messages: list[BaseMessage],
         response_callback: Callable[[str, str], Awaitable[None]] | None = None,
         reasoning_callback: Callable[[str, str], Awaitable[None]] | None = None,
+        background: bool = False,
     ):
         response = ""
 
         # model class
         model = self.get_chat_model()
 
-        # rate limiter
-        limiter = await self.rate_limiter(
-            self.config.chat_model, ChatPromptTemplate.from_messages(messages).format()
-        )
-
-        # add output tokens to rate limiter in tokens callback
-        async def tokens_callback(delta: str, tokens: int):
-            await self.handle_intervention()
-            limiter.add(output=tokens)
-
         # call model
         response, reasoning = await model.unified_call(
             messages=messages,
             reasoning_callback=reasoning_callback,
             response_callback=response_callback,
-            tokens_callback=tokens_callback,
+            rate_limiter_callback=self.rate_limiter_callback if not background else None,
         )
 
         return response, reasoning
 
-    async def rate_limiter(
-        self, model_config: models.ModelConfig, input: str, background: bool = False
+    async def rate_limiter_callback(
+        self, message:str, key:str, total:int, limit:int
     ):
-        # rate limiter log
-        wait_log = None
-
-        async def wait_callback(msg: str, key: str, total: int, limit: int):
-            nonlocal wait_log
-            if not wait_log:
-                wait_log = self.context.log.log(
-                    type="util",
-                    update_progress="none",
-                    heading=msg,
-                    model=f"{model_config.provider}\\{model_config.name}",
-                )
-            wait_log.update(heading=msg, key=key, value=total, limit=limit)
-            if not background:
-                self.context.log.set_progress(msg, -1)
-
-        # rate limiter
-        limiter = models.get_rate_limiter(
-            model_config.provider,
-            model_config.name,
-            model_config.limit_requests,
-            model_config.limit_input,
-            model_config.limit_output,
-        )
-        limiter.add(input=tokens.approximate_tokens(input))
-        limiter.add(requests=1)
-        await limiter.wait(callback=wait_callback)
-        return limiter
+        # show the rate limit waiting in a progress bar, no need to spam the chat history
+        self.context.log.set_progress(message, True)
+        return False
 
     async def handle_intervention(self, progress: str = ""):
         while self.context.paused:

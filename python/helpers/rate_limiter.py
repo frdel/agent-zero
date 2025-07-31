@@ -32,7 +32,7 @@ class RateLimiter:
 
     async def wait(
         self,
-        callback: Callable[[str, str, int, int], Awaitable[None]] | None = None,
+        callback: Callable[[str, str, int, int], Awaitable[bool]] | None = None,
     ):
         while True:
             await self.cleanup()
@@ -46,8 +46,9 @@ class RateLimiter:
                 if total > limit:
                     if callback:
                         msg = f"Rate limit exceeded for {key} ({total}/{limit}), waiting..."
-                        await callback(msg, key, total, limit)
-                    should_wait = True
+                        should_wait = not await callback(msg, key, total, limit)
+                    else:
+                        should_wait = True
                     break
 
             if not should_wait:

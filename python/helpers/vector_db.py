@@ -77,11 +77,6 @@ class VectorDB:
     ):
         comparator = get_comparator(filter) if filter else None
 
-        # rate limiter
-        await self.agent.rate_limiter(
-            model_config=self.agent.config.embeddings_model, input=query
-        )
-
         return await self.db.asearch(
             query,
             search_type="similarity_score_threshold",
@@ -108,12 +103,6 @@ class VectorDB:
         if ids:
             for doc, id in zip(docs, ids):
                 doc.metadata["id"] = id  # add ids to documents metadata
-
-            # rate limiter
-            docs_txt = "".join(format_docs_plain(docs))
-            await self.agent.rate_limiter(
-                model_config=self.agent.config.embeddings_model, input=docs_txt
-            )
 
             self.db.add_documents(documents=docs, ids=ids)
         return ids

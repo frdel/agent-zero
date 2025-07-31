@@ -300,11 +300,6 @@ class Memory:
     ):
         comparator = Memory._get_comparator(filter) if filter else None
 
-        # rate limiter
-        await self.agent.rate_limiter(
-            model_config=self.agent.config.embeddings_model, input=query
-        )
-
         return await self.db.asearch(
             query,
             search_type="similarity_score_threshold",
@@ -375,12 +370,6 @@ class Memory:
                 doc.metadata["timestamp"] = timestamp  # add timestamp
                 if not doc.metadata.get("area", ""):
                     doc.metadata["area"] = Memory.Area.MAIN.value
-
-            # rate limiter
-            docs_txt = "".join(self.format_docs_plain(docs))
-            await self.agent.rate_limiter(
-                model_config=self.agent.config.embeddings_model, input=docs_txt
-            )
 
             await self.db.aadd_documents(documents=docs, ids=ids)
             self._save_db()  # persist
