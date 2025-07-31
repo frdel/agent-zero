@@ -9,20 +9,12 @@ import threading
 from flask import Flask, request, Response, session
 from flask_basicauth import BasicAuth
 import initialize
-from python.helpers import files, git, mcp_server
+from python.helpers import files, git, mcp_server, fasta2a_server
 from python.helpers.files import get_abs_path
 from python.helpers import runtime, dotenv, process
 from python.helpers.extract_tools import load_classes_from_folder
 from python.helpers.api import ApiHandler
 from python.helpers.print_style import PrintStyle
-
-# Try to import fasta2a_server, but handle gracefully if it fails
-try:
-    from python.helpers import fasta2a_server
-    FASTA2A_AVAILABLE = True
-except ImportError:
-    FASTA2A_AVAILABLE = False
-    fasta2a_server = None
 
 
 # Set the new timezone to 'UTC'
@@ -223,26 +215,13 @@ def run():
     # add the webapp, mcp, and a2a to the app
     middleware_routes = {
         "/mcp": ASGIMiddleware(app=mcp_server.DynamicMcpProxy.get_instance()),  # type: ignore
+        "/a2a": ASGIMiddleware(app=fasta2a_server.DynamicA2AProxy.get_instance()),  # type: ignore
     }
-
-    # Add A2A server if available
-    if FASTA2A_AVAILABLE and fasta2a_server and fasta2a_server.is_available():
-        a2a_proxy = fasta2a_server.get_proxy()
-        if a2a_proxy:
-            from python.helpers import settings as _s
-            cfg = _s.get_settings()
-            token = cfg.get("a2a_token") or cfg.get("mcp_server_token")
-            mount_path = f"/a2a/t-{token}"
-            middleware_routes[mount_path] = ASGIMiddleware(app=a2a_proxy)  # type: ignore
-            # Also mount at /a2a for agent card and convenience
-            middleware_routes["/a2a"] = ASGIMiddleware(app=a2a_proxy)  # type: ignore
-            PrintStyle().print(f"FastA2A server enabled at {mount_path} and /a2a")
-    else:
-        PrintStyle().debug("FastA2A server not available")
 
     app = DispatcherMiddleware(webapp, middleware_routes)  # type: ignore
 
     PrintStyle().debug(f"Starting server at http://{host}:{port} ...")
+    PrintStyle().debug("FastA2A mounted at: /a2a")
 
     server = make_server(
         host=host,

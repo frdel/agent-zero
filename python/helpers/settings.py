@@ -1353,6 +1353,18 @@ def _apply_settings(previous: Settings | None):
                 update_mcp_token, current_token
             )  # TODO overkill, replace with background task
 
+        # update token in a2a server
+        if not previous or current_token != previous["mcp_server_token"]:
+
+            async def update_a2a_token(token: str):
+                from python.helpers.fasta2a_server import DynamicA2AProxy
+
+                DynamicA2AProxy.get_instance().reconfigure(token=token)
+
+            task4 = defer.DeferredTask().start_task(
+                update_a2a_token, current_token
+            )  # TODO overkill, replace with background task
+
 
 def _env_to_dict(data: str):
     env_dict = {}
