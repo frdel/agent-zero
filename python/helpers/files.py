@@ -73,7 +73,17 @@ from python.helpers.strings import sanitize_string
 
 
 def parse_file(_relative_path, _backup_dirs=None, _encoding="utf-8", **kwargs):
-    content = read_file(_relative_path, _backup_dirs, _encoding)
+    if _backup_dirs is None:
+        _backup_dirs = []
+
+    # Try to get the absolute path for the file from the original directory or backup directories
+    absolute_path = find_file_in_dirs(_relative_path, _backup_dirs)
+
+    # Read the file content
+    with open(absolute_path, "r", encoding=_encoding) as f:
+        # content = remove_code_fences(f.read())
+        content = f.read()
+    
     is_json = is_full_json_template(content)
     content = remove_code_fences(content)
     variables = load_plugin_variables(_relative_path, _backup_dirs) or {}  # type: ignore
@@ -85,10 +95,15 @@ def parse_file(_relative_path, _backup_dirs=None, _encoding="utf-8", **kwargs):
         return obj
     else:
         content = replace_placeholders_text(content, **variables)
+        # Process include statements
+        content = process_includes(
+            # here we use kwargs, the plugin variables are not inherited
+            content, os.path.dirname(_relative_path), _backup_dirs, **kwargs
+        )
         return content
 
 
-def read_file(_relative_path, _backup_dirs=None, _encoding="utf-8", **kwargs):
+def read_prompt_file(_relative_path, _backup_dirs=None, _encoding="utf-8", **kwargs):
     if _backup_dirs is None:
         _backup_dirs = []
 
@@ -113,6 +128,18 @@ def read_file(_relative_path, _backup_dirs=None, _encoding="utf-8", **kwargs):
     )
 
     return content
+
+
+def read_file(_relative_path, _backup_dirs=None, _encoding="utf-8"):
+    if _backup_dirs is None:
+        _backup_dirs = []
+
+    # Try to get the absolute path for the file from the original directory or backup directories
+    absolute_path = find_file_in_dirs(_relative_path, _backup_dirs)
+
+    # Read the file content
+    with open(absolute_path, "r", encoding=_encoding) as f:
+        return f.read()
 
 
 def read_file_bin(_relative_path, _backup_dirs=None):
@@ -194,13 +221,16 @@ def process_includes(_content, _base_path, _backup_dirs, **kwargs):
 
     def replace_include(match):
         include_path = match.group(1)
+        # if the path is absolute, do not process it
+        if os.path.isabs(include_path):
+            return match.group(0)
         # First attempt to resolve the include relative to the base path
         full_include_path = find_file_in_dirs(
             os.path.join(_base_path, include_path), _backup_dirs
         )
 
         # Recursively read the included file content, keeping the original base path
-        included_content = read_file(full_include_path, _backup_dirs, **kwargs)
+        included_content = read_prompt_file(full_include_path, _backup_dirs, **kwargs)
         return included_content
 
     # Replace all includes with the file content
@@ -219,6 +249,9 @@ def find_file_in_dirs(file_path, backup_dirs):
 
     # Loop through the backup directories
     for backup_dir in backup_dirs:
+        # backup path should be os.path.join(backup_dir, file_path) but that can lead to problems
+        # with absolute paths in file_path. So we use basename.
+        # This means that we don't support include paths like "subdir/something.md" from backups
         backup_path = os.path.join(backup_dir, os.path.basename(file_path))
         if os.path.isfile(get_abs_path(backup_path)):
             return get_abs_path(backup_path)

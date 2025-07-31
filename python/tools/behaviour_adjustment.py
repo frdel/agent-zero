@@ -58,7 +58,7 @@ def get_custom_rules_file(agent: Agent):
 def read_rules(agent: Agent):
     rules_file = get_custom_rules_file(agent)
     if files.exists(rules_file):
-        rules = files.read_file(rules_file)
+        rules = files.read_prompt_file(rules_file)
         return agent.read_prompt("agent.system.behaviour.md", rules=rules)
     else:
         rules = agent.read_prompt("agent.system.behaviour_default.md")
