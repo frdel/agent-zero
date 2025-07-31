@@ -279,8 +279,20 @@ Once you've downloaded some models, you might want to check which ones you have 
   ollama rm <model-name>
   ```
 
-
 - Experiment with different model combinations to find the balance of performance and cost that best suits your needs. E.g., faster and lower latency LLMs will help, and you can also use `faiss_gpu` instead of `faiss_cpu` for the memory.
+  
+**WARNING!**
+When using Ollama on your local machine and using a Docker container, you must use this special URL so the Docker container can communicate outside to Ollama.
+```
+http://host.docker.internal:11434
+```
+
+#### Context length
+Ollama also will not run properly unless you increase the context length as the template of agent-zero is bigger than the default context length of a Ollama. 
+Add it to the box that says Chat model additional parameters.
+```
+num_ctx=100000
+```
 
 ## Using Agent Zero on your mobile device
 Agent Zero's Web UI is accessible from any device on your network through the Docker container:
