@@ -157,13 +157,13 @@ async def serve_index():
             "version": "unknown",
             "commit_time": "unknown",
         }
-    return files.read_prompt_file(
-        "./webui/index.html",
-        _backup_dirs=[],
-        _encoding="utf-8",
+    index = files.read_file("webui/index.html")
+    index = files.replace_placeholders_text(
+        _content=index,
         version_no=gitinfo["version"],
-        version_time=gitinfo["commit_time"],
+        version_time=gitinfo["commit_time"]
     )
+    return index
 
 
 def run():

@@ -130,38 +130,37 @@ def read_prompt_file(_relative_path, _backup_dirs=None, _encoding="utf-8", **kwa
     return content
 
 
-def read_file(_relative_path, _backup_dirs=None, _encoding="utf-8"):
-    if _backup_dirs is None:
-        _backup_dirs = []
+def read_file(relative_path:str, backup_dirs:list[str]|None=None, encoding="utf-8"):
+    if backup_dirs is None:
+        backup_dirs = []
 
     # Try to get the absolute path for the file from the original directory or backup directories
-    absolute_path = find_file_in_dirs(_relative_path, _backup_dirs)
+    absolute_path = find_file_in_dirs(relative_path, backup_dirs)
 
     # Read the file content
-    with open(absolute_path, "r", encoding=_encoding) as f:
+    with open(absolute_path, "r", encoding=encoding) as f:
         return f.read()
 
 
-def read_file_bin(_relative_path, _backup_dirs=None):
-    # init backup dirs
-    if _backup_dirs is None:
-        _backup_dirs = []
+def read_file_bin(relative_path:str, backup_dirs:list[str]|None=None):
+    if backup_dirs is None:
+        backup_dirs = []
 
-    # get absolute path
-    absolute_path = find_file_in_dirs(_relative_path, _backup_dirs)
+    # Try to get the absolute path for the file from the original directory or backup directories
+    absolute_path = find_file_in_dirs(relative_path, backup_dirs)
 
     # read binary content
     with open(absolute_path, "rb") as f:
         return f.read()
 
 
-def read_file_base64(_relative_path, _backup_dirs=None):
+def read_file_base64(relative_path, backup_dirs:list[str]|None=None):
     # init backup dirs
-    if _backup_dirs is None:
-        _backup_dirs = []
+    if backup_dirs is None:
+        backup_dirs = []
 
     # get absolute path
-    absolute_path = find_file_in_dirs(_relative_path, _backup_dirs)
+    absolute_path = find_file_in_dirs(relative_path, backup_dirs)
 
     # read binary content and encode to base64
     with open(absolute_path, "rb") as f:
