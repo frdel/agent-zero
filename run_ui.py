@@ -1,18 +1,15 @@
 from datetime import timedelta
 import os
 import secrets
-import sys
 import time
 import socket
 import struct
 from functools import wraps
 import threading
-import signal
-from typing import override
 from flask import Flask, request, Response, session
 from flask_basicauth import BasicAuth
 import initialize
-from python.helpers import errors, files, git, mcp_server
+from python.helpers import files, git, mcp_server, fasta2a_server
 from python.helpers.files import get_abs_path
 from python.helpers import runtime, dotenv, process
 from python.helpers.extract_tools import load_classes_from_folder
@@ -22,6 +19,7 @@ from python.helpers.print_style import PrintStyle
 
 # Set the new timezone to 'UTC'
 os.environ["TZ"] = "UTC"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 # Apply the timezone change
 if hasattr(time, 'tzset'):
     time.tzset()
@@ -173,7 +171,7 @@ def run():
     from werkzeug.serving import WSGIRequestHandler
     from werkzeug.serving import make_server
     from werkzeug.middleware.dispatcher import DispatcherMiddleware
-    from a2wsgi import ASGIMiddleware, WSGIMiddleware
+    from a2wsgi import ASGIMiddleware
 
     PrintStyle().print("Starting server...")
 
@@ -216,15 +214,16 @@ def run():
     for handler in handlers:
         register_api_handler(webapp, handler)
 
-    # add the webapp and mcp to the app
-    app = DispatcherMiddleware(
-        webapp,
-        {
-            "/mcp": ASGIMiddleware(app=mcp_server.DynamicMcpProxy.get_instance()),  # type: ignore
-        },
-    )
+    # add the webapp, mcp, and a2a to the app
+    middleware_routes = {
+        "/mcp": ASGIMiddleware(app=mcp_server.DynamicMcpProxy.get_instance()),  # type: ignore
+        "/a2a": ASGIMiddleware(app=fasta2a_server.DynamicA2AProxy.get_instance()),  # type: ignore
+    }
+
+    app = DispatcherMiddleware(webapp, middleware_routes)  # type: ignore
 
     PrintStyle().debug(f"Starting server at http://{host}:{port} ...")
+    PrintStyle().debug("FastA2A mounted at: /a2a")
 
     server = make_server(
         host=host,

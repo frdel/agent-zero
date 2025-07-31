@@ -1,4 +1,3 @@
-
 const settingsModalProxy = {
     isOpen: false,
     settings: {},
@@ -291,6 +290,9 @@ const settingsModalProxy = {
             openModal("settings/backup/backup.html");
         } else if (field.id === "backup_restore") {
             openModal("settings/backup/restore.html");
+        } else if (field.id === "show_a2a_connection") {
+            console.log('Opening A2A connection modal...');
+            openModal("settings/external/a2a-connection.html");
         }
     }
 };

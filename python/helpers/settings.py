@@ -70,7 +70,7 @@ class Settings(TypedDict):
     memory_memorize_enabled: bool
     memory_memorize_consolidation: bool
     memory_memorize_replace_threshold: float
-    
+
 
     api_keys: dict[str, str]
 
@@ -526,6 +526,25 @@ def convert_out(settings: Settings) -> SettingsOutput:
         }
     )
 
+    # -------- A2A Section --------
+    a2a_fields: list[SettingsField] = [
+        {
+            "id": "show_a2a_connection",
+            "title": "Show A2A connection info",
+            "description": "Display the URL (including token) other agents can use to connect via FastA2A.",
+            "type": "button",
+            "value": "Show",
+        }
+    ]
+
+    a2a_section: SettingsSection = {
+        "id": "a2a_server",
+        "title": "A2A Connection",
+        "description": "Share this connection string with other agents.",
+        "fields": a2a_fields,
+        "tab": "external",
+    }
+
     if runtime.is_dockerized():
         auth_fields.append(
             {
@@ -913,7 +932,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     # TTS fields
     tts_fields: list[SettingsField] = []
-    
+
     tts_fields.append(
         {
             "id": "tts_kokoro",
@@ -1061,6 +1080,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             speech_section,
             api_keys_section,
             auth_section,
+            a2a_section,
             mcp_client_section,
             mcp_server_section,
             backup_section,
@@ -1367,6 +1387,18 @@ def _apply_settings(previous: Settings | None):
 
             task3 = defer.DeferredTask().start_task(
                 update_mcp_token, current_token
+            )  # TODO overkill, replace with background task
+
+        # update token in a2a server
+        if not previous or current_token != previous["mcp_server_token"]:
+
+            async def update_a2a_token(token: str):
+                from python.helpers.fasta2a_server import DynamicA2AProxy
+
+                DynamicA2AProxy.get_instance().reconfigure(token=token)
+
+            task4 = defer.DeferredTask().start_task(
+                update_a2a_token, current_token
             )  # TODO overkill, replace with background task
 
 
