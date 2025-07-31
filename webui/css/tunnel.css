@@ -18,6 +18,9 @@
 
 .tunnel-link-container {
     margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .tunnel-link-field {
@@ -53,7 +56,7 @@
     background-color: var(--bg-color-tertiary);
 }
 
-.copy-link-button i, 
+.copy-link-button i,
 .refresh-link-button i,
 .btn i {
     margin-right: 6px;
@@ -175,4 +178,85 @@
 
 .stopping {
     background-color: rgba(220, 53, 69, 0.7) !important;
+}
+
+/* QR Code Styles */
+.tunnel-qr-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1rem;
+    margin: 0.5rem 0;
+    padding: 1rem;
+    background-color: var(--bg-color-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.tunnel-qr-code {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 128px;
+    min-height: 128px;
+    background-color: white;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+.tunnel-qr-code canvas,
+.tunnel-qr-code img {
+    border-radius: 4px;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.tunnel-qr-label {
+    font-size: 0.9rem;
+    color: var(--text-color-secondary);
+    text-align: center;
+    line-height: 1.4;
+    flex: 1;
+}
+
+.qr-error {
+    color: var(--error-color, #dc3545);
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 1rem;
+    background-color: rgba(220, 53, 69, 0.1);
+    border-radius: 4px;
+    border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+/* Responsive design for QR code container */
+@media (max-width: 640px) {
+    .tunnel-qr-container {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+    }
+
+    .tunnel-qr-code {
+        min-width: 100px;
+        min-height: 100px;
+        align-self: center;
+    }
+
+    .tunnel-qr-label {
+        text-align: center;
+    }
+}
+
+/* Light mode adjustments */
+.light-mode .tunnel-qr-code {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+}
+
+.light-mode .qr-error {
+    background-color: rgba(220, 53, 69, 0.05);
+    color: #dc3545;
 }
