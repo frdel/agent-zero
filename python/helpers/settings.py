@@ -95,6 +95,19 @@ class Settings(TypedDict):
     mcp_server_enabled: bool
     mcp_server_token: str
 
+    # HumanLayer settings
+    humanlayer_enabled: bool
+    humanlayer_api_key: str
+    humanlayer_default_contact_channel: str
+    humanlayer_approval_timeout: int
+    humanlayer_verbose: bool
+    humanlayer_slack_channel_id: str
+    humanlayer_slack_context: str
+    humanlayer_slack_use_blocks: bool
+    humanlayer_email_address: str
+    humanlayer_email_subject: str
+    humanlayer_email_context: str
+
 
 class PartialSettings(Settings, total=False):
     pass
@@ -1007,6 +1020,127 @@ def convert_out(settings: Settings) -> SettingsOutput:
         }
     )
 
+    # HumanLayer section
+    humanlayer_fields: list[SettingsField] = []
+    humanlayer_fields.append(
+        {
+            "id": "humanlayer_enabled",
+            "title": "Enable HumanLayer Integration",
+            "description": "Enable human-in-the-loop workflows for approvals and consultations",
+            "type": "switch",
+            "value": settings["humanlayer_enabled"],
+        }
+    )
+    humanlayer_fields.append(
+        {
+            "id": "humanlayer_api_key",
+            "title": "HumanLayer API Key",
+            "description": "API key for HumanLayer service",
+            "type": "password",
+            "value": (PASSWORD_PLACEHOLDER if settings["humanlayer_api_key"] else ""),
+        }
+    )
+    humanlayer_fields.append(
+        {
+            "id": "humanlayer_default_contact_channel",
+            "title": "Default Contact Channel",
+            "description": "Default channel for human communication",
+            "type": "select",
+            "value": settings["humanlayer_default_contact_channel"],
+            "options": [
+                {"value": "slack", "label": "Slack"},
+                {"value": "email", "label": "Email"},
+            ],
+        }
+    )
+    humanlayer_fields.append(
+        {
+            "id": "humanlayer_approval_timeout",
+            "title": "Approval Timeout (seconds)",
+            "description": "How long to wait for human approval before timing out",
+            "type": "number",
+            "value": settings["humanlayer_approval_timeout"],
+            "min": 30,
+            "max": 3600,
+            "step": 30,
+        }
+    )
+    humanlayer_fields.append(
+        {
+            "id": "humanlayer_verbose",
+            "title": "Verbose Logging",
+            "description": "Enable detailed logging for HumanLayer operations",
+            "type": "switch",
+            "value": settings["humanlayer_verbose"],
+        }
+    )
+    
+    # Slack settings
+    humanlayer_fields.append(
+        {
+            "id": "humanlayer_slack_channel_id",
+            "title": "Slack Channel ID",
+            "description": "Slack channel ID for notifications (e.g., C1234567890)",
+            "type": "text",
+            "value": settings["humanlayer_slack_channel_id"],
+        }
+    )
+    humanlayer_fields.append(
+        {
+            "id": "humanlayer_slack_context",
+            "title": "Slack Channel Context",
+            "description": "Description of the Slack channel or user",
+            "type": "text",
+            "value": settings["humanlayer_slack_context"],
+        }
+    )
+    humanlayer_fields.append(
+        {
+            "id": "humanlayer_slack_use_blocks",
+            "title": "Use Slack Blocks",
+            "description": "Use Slack Block Kit for rich message formatting",
+            "type": "switch",
+            "value": settings["humanlayer_slack_use_blocks"],
+        }
+    )
+    
+    # Email settings
+    humanlayer_fields.append(
+        {
+            "id": "humanlayer_email_address",
+            "title": "Email Address",
+            "description": "Email address for notifications",
+            "type": "text",
+            "value": settings["humanlayer_email_address"],
+        }
+    )
+    humanlayer_fields.append(
+        {
+            "id": "humanlayer_email_subject",
+            "title": "Email Subject",
+            "description": "Default subject line for email notifications",
+            "type": "text",
+            "value": settings["humanlayer_email_subject"],
+        }
+    )
+    humanlayer_fields.append(
+        {
+            "id": "humanlayer_email_context",
+            "title": "Email Context",
+            "description": "Context description for email notifications",
+            "type": "text",
+            "value": settings["humanlayer_email_context"],
+        }
+    )
+
+    humanlayer_section: SettingsSection = {
+        "id": "humanlayer",
+        "title": "HumanLayer Integration",
+        "description": "Configure human-in-the-loop workflows for approvals, consultations, and notifications",
+        "fields": humanlayer_fields,
+        "tab": "external",
+    }
+
     backup_section: SettingsSection = {
         "id": "backup_restore",
         "title": "Backup & Restore",
@@ -1028,6 +1162,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             speech_section,
             api_keys_section,
             auth_section,
+            humanlayer_section,
             mcp_client_section,
             mcp_server_section,
             backup_section,
@@ -1057,6 +1192,8 @@ def convert_in(settings: dict) -> Settings:
                         current[field["id"]] = _env_to_dict(field["value"])
                     elif field["id"].startswith("api_key_"):
                         current["api_keys"][field["id"]] = field["value"]
+                    elif field["id"] == "humanlayer_api_key":
+                        current["humanlayer_api_key"] = field["value"]
                     else:
                         current[field["id"]] = field["value"]
     return current
@@ -1236,6 +1373,18 @@ def get_default_settings() -> Settings:
         mcp_client_tool_timeout=120,
         mcp_server_enabled=False,
         mcp_server_token=create_auth_token(),
+        # HumanLayer defaults
+        humanlayer_enabled=False,
+        humanlayer_api_key="",
+        humanlayer_default_contact_channel="slack",
+        humanlayer_approval_timeout=300,
+        humanlayer_verbose=True,
+        humanlayer_slack_channel_id="",
+        humanlayer_slack_context="Agent Zero Integration",
+        humanlayer_slack_use_blocks=True,
+        humanlayer_email_address="",
+        humanlayer_email_subject="Agent Zero Approval Request",
+        humanlayer_email_context="Agent Zero User",
     )
 
 
