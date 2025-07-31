@@ -100,16 +100,16 @@ Agent Zero supports direct file attachments in the chat interface for seamless f
 ## Tool Usage
 Agent Zero's power comes from its ability to use [tools](architecture.md#tools). Here's how to leverage them effectively:
 
-- **Understand Tools:** Agent Zero includes default tools like knowledge (powered by SearXNG), webpage content, code execution, and communication. Understand the capabilities of these tools and how to invoke them.
+- **Understand Tools:** Agent Zero includes default tools like knowledge (powered by SearXNG), code execution, and communication. Understand the capabilities of these tools and how to invoke them.
 
 ## Example of Tools Usage: Web Search and Code Execution
 Let's say you want Agent Zero to perform some financial analysis tasks. Here's a possible prompt:
 
-> Please be a professional financial analyst. Find last month Bitcoin/ USD price trend and make a chart in your environment. The chart must  have highlighted key points corresponding with dates of major news  about cryptocurrency. Use the 'knowledge_tool' to find the price and  the news, and the 'code_execution_tool' to perform the rest of the job.
+> Please be a professional financial analyst. Find last month Bitcoin/ USD price trend and make a chart in your environment. The chart must  have highlighted key points corresponding with dates of major news  about cryptocurrency. Use the 'search_engine' and 'document_query_tool' to find the price and  the news, and the 'code_execution_tool' to perform the rest of the job.
 
 Agent Zero might then:
 
-1. Use the `knowledge_tool` to query a reliable source for the Bitcoin price and for the news about cryptocurrency as prompted.
+1. Use the `search_engine` and `document_query_tool` to query a reliable source for the Bitcoin price and for the news about cryptocurrency as prompted.
 2. Extract the price from the search results and save the news, extracting their dates and possible impact on the price.
 3. Use the `code_execution_tool` to execute a Python script that performs the graph creation and key points highlighting, using the extracted data and the news dates as inputs.
 4. Return the final chart that you'll find in `/work_dir`, responding to the user with the `response_tool`.

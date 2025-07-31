@@ -119,13 +119,8 @@ Agent Zero comes with a set of built-in tools designed to help agents perform ta
 | call_subordinate | Allows agents to delegate tasks to subordinate agents |
 | code_execution_tool | Allows agents to execute Python, Node.js, and Shell code in the terminal |
 | input | Allows agents to use the keyboard to interact with an active shell |
-| knowledge_tool | Enables agents to retrieve information from memory, knowledge base or online external sources |
 | response_tool | Allows agents to output a response |
 | memory_tool | Enables agents to save, load, delete and forget information from memory |
-| webpage_content_tool | Enables agents to fetch and analyze the text content of webpages |
-
-#### Knowledge Tool
-The `knowledge_tool` uses SearXNG to search the web and retrieve information. It can also search the local knowledge base and memory for relevant information. The tool returns a summary of the information, which can be used by the agent to make decisions or answer questions.
 
 #### SearXNG Integration
 Agent Zero has integrated SearXNG as its primary search tool, replacing the previous knowledge tools (Perplexity and DuckDuckGo). This integration enhances the agent's ability to retrieve information while ensuring user privacy and customization.

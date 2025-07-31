@@ -24,7 +24,11 @@ class ImageGet(ApiHandler):
             raise ValueError("No path provided")
 
         # check if path is within base directory
-        if not runtime.call_development_function(files.is_in_base_dir, path):
+        if runtime.is_development():
+            in_base = files.is_in_base_dir(files.fix_dev_path(path))
+        else:
+            in_base = files.is_in_base_dir(path)
+        if not in_base:
             raise ValueError("Path is outside of allowed directory")
 
         # get file extension and info
@@ -37,30 +41,34 @@ class ImageGet(ApiHandler):
         # # If metadata is requested, return file information
         # if metadata:
         #     return _get_file_metadata(path, filename, file_ext, image_extensions)
-
+       
         if file_ext in image_extensions:
-            # Handle image files
-            if not runtime.call_development_function(files.exists, path):
-                # If image doesn't exist, return default image icon
-                return _send_fallback_icon("image")
 
-            # send image file right away if dockerized, if development, read it from docker and send
-            if runtime.is_dockerized():
-                response = send_file(path)
+            # in development environment, try to serve the image from local file system if exists, otherwise from docker
+            if runtime.is_development():
+                if files.exists(path):
+                    response = send_file(path)
+                elif await runtime.call_development_function(files.exists, path):
+                    b64_content = await runtime.call_development_function(
+                        files.read_file_base64, path
+                    )
+                    file_content = base64.b64decode(b64_content)
+                    mime_type, _ = guess_type(filename)
+                    if not mime_type:
+                        mime_type = "application/octet-stream"
+                    response = send_file(
+                        io.BytesIO(file_content),
+                        mimetype=mime_type,
+                        as_attachment=False,
+                        download_name=filename,
+                    )
+                else:
+                    response = _send_fallback_icon("image")
             else:
-                b64_content = await runtime.call_development_function(
-                    files.read_file_base64, path
-                )
-                file_content = base64.b64decode(b64_content)
-                mime_type, _ = guess_type(filename)
-                if not mime_type:
-                    mime_type = "application/octet-stream"
-                response = send_file(
-                    io.BytesIO(file_content),
-                    mimetype=mime_type,
-                    as_attachment=False,
-                    download_name=filename,
-                )
+                if files.exists(path):
+                    response = send_file(path)
+                else:
+                    response = _send_fallback_icon("image")
 
             # Add cache headers for better device sync performance
             response.headers["Cache-Control"] = "public, max-age=3600"

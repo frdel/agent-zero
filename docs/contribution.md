@@ -4,6 +4,9 @@ Contributions to improve Agent Zero are very welcome!  This guide outlines how t
 
 ## Getting Started
 
+- See [development](development.md) for instructions on how to set up a development environment.
+- See [extensibility](extensibility.md) for instructions on how to create custom extensions.
+
 1. **Fork the Repository:** Fork the Agent Zero repository on GitHub.
 2. **Clone Your Fork:** Clone your forked repository to your local machine.
 3. **Create a Branch:** Create a new branch for your changes. Use a descriptive name that reflects the purpose of your contribution (e.g., `fix-memory-leak`, `add-search-tool`, `improve-docs`).

@@ -44,7 +44,7 @@ Within `tmp/settings.json`, the MCP servers are defined under the `"mcp_servers"
 ```json
 {
     // ... other settings ...
-    "mcp_servers": "[{\\\"name\\\": \\\"sequential-thinking\\\",\\\"command\\\": \\\"npx\\\",\\\"args\\\": [\\\"--yes\\\", \\\"--package\\\", \\\"@modelcontextprotocol/server-sequential-thinking\\\", \\\"mcp-server-sequential-thinking\\\"]}, {\\\"name\\\": \\\"brave-search\\\", \\\"command\\\": \\\"npx\\\", \\\"args\\\": [\\\"--yes\\\", \\\"--package\\\", \\\"@modelcontextprotocol/server-brave-search\\\", \\\"mcp-server-brave-search\\\"], \\\"env\\\": {\\\"BRAVE_API_KEY\\\": \\\"YOUR_BRAVE_KEY_HERE\\\"}}, {\\\"name\\\": \\\"fetch\\\", \\\"command\\\": \\\"npx\\\", \\\"args\\\": [\\\"--yes\\\", \\\"--package\\\", \\\"@tokenizin/mcp-npx-fetch\\\", \\\"mcp-npx-fetch\\\", \\\"--ignore-robots-txt\\\", \\\"--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36\\\"]}]",
+    "mcp_servers": "[{'name': 'sequential-thinking','command': 'npx','args': ['--yes', '--package', '@modelcontextprotocol/server-sequential-thinking', 'mcp-server-sequential-thinking']}, {'name': 'brave-search', 'command': 'npx', 'args': ['--yes', '--package', '@modelcontextprotocol/server-brave-search', 'mcp-server-brave-search'], 'env': {'BRAVE_API_KEY': 'YOUR_BRAVE_KEY_HERE'}}, {'name': 'fetch', 'command': 'npx', 'args': ['--yes', '--package', '@tokenizin/mcp-npx-fetch', 'mcp-npx-fetch', '--ignore-robots-txt', '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36']}]",
     // ... other settings ...
 }
 ```
@@ -120,7 +120,7 @@ Here are templates for configuring individual servers within the `mcp_servers` J
 ```json
 {
     // ... other settings ...
-    "mcp_servers": "[{\\\"name\\\": \\\"MyPythonTools\\\", \\\"command\\\": \\\"python3\\\", \\\"args\\\": [\\\"mcp_scripts/my_server.py\\\"], \\\"disabled\\\": false}, {\\\"name\\\": \\\"ExternalAPI\\\", \\\"url\\\": \\\"https://data.example.com/mcp\\\", \\\"headers\\\": {\\\"X-Auth-Token\\\": \\\"supersecret\\\"}, \\\"disabled\\\": false}]",
+    "mcp_servers": "[{'name': 'MyPythonTools', 'command': 'python3', 'args': ['mcp_scripts/my_server.py'], 'disabled': false}, {'name': 'ExternalAPI', 'url': 'https://data.example.com/mcp', 'headers': {'X-Auth-Token': 'supersecret'}, 'disabled': false}]",
     // ... other settings ...
 }
 ```
