@@ -176,6 +176,27 @@ def _set_runtime_config(config: AgentConfig, set: settings.Settings):
     for key, value in ssh_conf.items():
         if hasattr(config, key):
             setattr(config, key, value)
+    
+    # Add HumanLayer settings to additional config
+    config.additional.update({
+        "humanlayer_enabled": set["humanlayer_enabled"],
+        "humanlayer_api_key": set["humanlayer_api_key"],
+        "humanlayer_default_contact_channel": set["humanlayer_default_contact_channel"],
+        "humanlayer_approval_timeout": set["humanlayer_approval_timeout"],
+        "humanlayer_verbose": set["humanlayer_verbose"],
+        "humanlayer_contact_channels": {
+            "slack": {
+                "channel_id": set["humanlayer_slack_channel_id"],
+                "context": set["humanlayer_slack_context"],
+                "use_blocks": set["humanlayer_slack_use_blocks"]
+            },
+            "email": {
+                "address": set["humanlayer_email_address"],
+                "subject": set["humanlayer_email_subject"],
+                "context": set["humanlayer_email_context"]
+            }
+        }
+    })
 
     # if config.code_exec_docker_enabled:
     #     config.code_exec_docker_ports["22/tcp"] = ssh_conf["code_exec_ssh_port"]

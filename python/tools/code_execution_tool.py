@@ -25,6 +25,12 @@ class CodeExecution(Tool):
 
         await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
 
+        # HumanLayer integration: check for high-risk operations requiring approval
+        if self.agent.config.additional.get("humanlayer_enabled", False):
+            approval_result = await self._check_humanlayer_approval()
+            if approval_result and "denied" in approval_result.lower():
+                return Response(message=approval_result, break_loop=False)
+
         await self.prepare_state()
 
         # os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
@@ -393,3 +399,91 @@ class CodeExecution(Tool):
         output = "\n".join(line.strip() for line in output.splitlines())
         output = truncate_text_agent(agent=self.agent, output=output, threshold=10000)
         return output
+
+    async def _check_humanlayer_approval(self) -> str | None:
+        """
+        Check if code execution requires HumanLayer approval for high-risk operations.
+        Returns None if no approval needed, or approval result message if approval was requested.
+        """
+        try:
+            code = self.args.get("code", "")
+            runtime = self.args.get("runtime", "").lower().strip()
+            
+            # Define high-risk patterns that require approval
+            high_risk_patterns = [
+                # Destructive file operations
+                "rm -rf", "rmdir", "del /s", "shutil.rmtree", "os.remove", 
+                # System administration
+                "sudo", "chmod 777", "chown", "passwd", "useradd", "userdel",
+                # Service management
+                "systemctl", "service", "systemd", "init.d",
+                # Package management
+                "apt-get install", "yum install", "pip install", "npm install", "gem install",
+                # Network operations
+                "curl", "wget", "ssh", "scp", "rsync", "nc ", "netcat",
+                # Database operations
+                "DROP TABLE", "DROP DATABASE", "DELETE FROM", "TRUNCATE",
+                # Docker operations
+                "docker run", "docker exec", "docker rm", "docker rmi",
+                # Git operations that could be destructive
+                "git push", "git reset --hard", "git clean -fd", "git rm",
+                # Process management
+                "kill -9", "killall", "pkill",
+                # File permissions and ownership
+                "chmod +x", "chgrp", "umask"
+            ]
+            
+            # Check if code contains high-risk patterns
+            code_lower = code.lower()
+            found_patterns = []
+            for pattern in high_risk_patterns:
+                if pattern.lower() in code_lower:
+                    found_patterns.append(pattern)
+            
+            # If high-risk patterns found, request approval
+            if found_patterns:
+                try:
+                    # Import HumanLayer approval tool
+                    from python.tools.humanlayer_approval import HumanLayerApproval
+                    
+                    # Create approval request
+                    approval_tool = HumanLayerApproval(
+                        self.agent,
+                        "humanlayer_approval",
+                        None,
+                        {
+                            "operation": f"Execute {runtime} code with potentially risky operations",
+                            "context": f"Code contains high-risk patterns: {', '.join(found_patterns[:3])}{'...' if len(found_patterns) > 3 else ''}\n\nCode to execute:\n{code[:500]}{'...' if len(code) > 500 else ''}",
+                            "timeout": 300
+                        },
+                        "",
+                        self.loop_data
+                    )
+                    
+                    # Request approval
+                    approval_response = await approval_tool.execute()
+                    return approval_response.message
+                    
+                except Exception as e:
+                    # If approval system fails, allow execution but log warning
+                    if hasattr(self.agent, 'context') and hasattr(self.agent.context, 'log'):
+                        self.agent.context.log.log(
+                            type="warning",
+                            heading="HumanLayer Approval System Warning",
+                            content=f"Could not request approval for high-risk code execution: {str(e)}",
+                            kvps={"code_preview": code[:200]}
+                        )
+                    return None
+            
+            return None  # No high-risk patterns found
+            
+        except Exception as e:
+            # If approval check fails completely, log error but don't block execution
+            if hasattr(self.agent, 'context') and hasattr(self.agent.context, 'log'):
+                self.agent.context.log.log(
+                    type="error",
+                    heading="HumanLayer Approval Check Error",
+                    content=f"Error in approval check: {str(e)}",
+                    kvps={}
+                )
+            return None
