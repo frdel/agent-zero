@@ -54,8 +54,8 @@ class AgentConnection:
                 response.raise_for_status()
                 self._agent_card = response.json()
                 _PRINTER.print(f"Retrieved agent card from {self.agent_url}")
-                _PRINTER.print(f"Agent: {self._agent_card.get('name', 'Unknown')}")
-                _PRINTER.print(f"Description: {self._agent_card.get('description', 'No description')}")
+                _PRINTER.print(f"Agent: {self._agent_card.get('name', 'Unknown')}") # type: ignore
+                _PRINTER.print(f"Description: {self._agent_card.get('description', 'No description')}") # type: ignore
             except Exception as e:
                 # Fallback: if URL contains '/a2a', try root path without it
                 if "/a2a" in self.agent_url:

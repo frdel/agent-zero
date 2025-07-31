@@ -223,7 +223,6 @@ def run():
     app = DispatcherMiddleware(webapp, middleware_routes)  # type: ignore
 
     PrintStyle().debug(f"Starting server at http://{host}:{port} ...")
-    PrintStyle().debug("FastA2A mounted at: /a2a")
 
     server = make_server(
         host=host,
