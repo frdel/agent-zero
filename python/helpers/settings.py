@@ -48,6 +48,9 @@ class Settings(TypedDict):
     browser_model_name: str
     browser_model_api_base: str
     browser_model_vision: bool
+    browser_model_rl_requests: int
+    browser_model_rl_input: int
+    browser_model_rl_output: int
     browser_model_kwargs: dict[str, str]
 
     agent_profile: str
@@ -446,6 +449,36 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "value": settings["browser_model_vision"],
         }
     )
+
+    browser_model_fields.append(
+        {
+            "id": "browser_model_rl_requests",
+            "title": "Web Browser model rate limit requests",
+            "description": "Rate limit requests for web browser model.",
+            "type": "number",
+            "value": settings["browser_model_rl_requests"],
+        }
+    )
+
+    browser_model_fields.append(
+        {
+            "id": "browser_model_rl_input",
+            "title": "Web Browser model rate limit input",
+            "description": "Rate limit input for web browser model.",
+            "type": "number",
+            "value": settings["browser_model_rl_input"],
+        }
+    )
+
+    browser_model_fields.append(
+        {
+            "id": "browser_model_rl_output",
+            "title": "Web Browser model rate limit output",
+            "description": "Rate limit output for web browser model.",
+            "type": "number",
+            "value": settings["browser_model_rl_output"],
+        }
+    )   
 
     browser_model_fields.append(
         {
@@ -1199,6 +1232,9 @@ def get_default_settings() -> Settings:
         browser_model_name="openai/gpt-4.1",
         browser_model_api_base="",
         browser_model_vision=True,
+        browser_model_rl_requests=0,
+        browser_model_rl_input=0,
+        browser_model_rl_output=0,
         browser_model_kwargs={"temperature": "0"},
         memory_recall_enabled=True,
         memory_recall_interval=3,
