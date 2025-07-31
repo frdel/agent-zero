@@ -27,6 +27,15 @@ class SSHInteractiveSession:
         self.full_output = b""
         self.last_command = b""
         self.trimmed_command_length = 0  # Initialize trimmed_command_length
+        # Flag indicating whether trimming of the echoed command from the
+        # shell output should be skipped. Certain commands (e.g. `echo`) will
+        # legitimately repeat their arguments in the resulting output which
+        # makes it impossible to distinguish between the typed command and the
+        # command *result*. In such cases our trimming logic may remove valid
+        # output leading to the observed *missing characters* at the beginning
+        # of the stream. We therefore detect those cases and disable trimming
+        # for the current command.
+        self._skip_trim = False
 
     async def connect(self):
         # try 3 times with wait and then except
@@ -74,11 +83,16 @@ class SSHInteractiveSession:
             raise Exception("Shell not connected")
         self.full_output = b""
         # if len(command) > 10: # if command is long, add end_comment to split output
-        #     command = (command + " \\\n" +SSHInteractiveSession.end_comment + "\n")
+        #     command = (command + " \\n" +SSHInteractiveSession.end_comment + "\n")
         # else:
         command = command + "\n"
         self.last_command = command.encode()
         self.trimmed_command_length = 0
+        # Disable trimming for commands that intentionally echo their
+        # arguments (e.g. `echo`, `printf`). This prevents accidental removal
+        # of the first characters of the *real* output.
+        cmd_lower = command.strip().lower()
+        self._skip_trim = cmd_lower.startswith("echo ") or cmd_lower.startswith("printf ")
         self.shell.send(self.last_command)
 
     async def read_output(
@@ -100,9 +114,12 @@ class SSHInteractiveSession:
             # data = self.shell.recv(1024)
             data = self.receive_bytes()
 
-            # Trim own command from output
+            # Optionally trim our own command from the shell output. Skipped
+            # when `_skip_trim` is True to avoid removing valid command
+            # results (e.g. from `echo`).
             if (
-                self.last_command
+                not self._skip_trim
+                and self.last_command
                 and len(self.last_command) > self.trimmed_command_length
             ):
                 command_to_trim = self.last_command[self.trimmed_command_length :]
