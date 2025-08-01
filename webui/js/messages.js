@@ -35,6 +35,17 @@ class ScrollPositionManager {
       };
     }
 
+    // Store message body scroll position (for terminal messages)
+    const msgBody = messageContainer.querySelector('.message-body');
+    if (msgBody && msgBody.scrollHeight > msgBody.clientHeight) {
+      positions.msgBody = {
+        scrollTop: msgBody.scrollTop,
+        scrollHeight: msgBody.scrollHeight,
+        clientHeight: msgBody.clientHeight,
+        isAtBottom: this.isAtBottom(msgBody)
+      };
+    }
+
     // Store KVP scroll positions
     const kvpValues = messageContainer.querySelectorAll('.kvps-val');
     kvpValues.forEach((kvp, index) => {
@@ -73,6 +84,20 @@ class ScrollPositionManager {
       }
     }
 
+    // Restore message body scroll position (for terminal messages)
+    if (positions.msgBody) {
+      const msgBody = messageContainer.querySelector('.message-body');
+      if (msgBody) {
+        if (this.autoscrollDisabled || !positions.msgBody.isAtBottom) {
+          // User had scrolled up, restore their position
+          msgBody.scrollTop = positions.msgBody.scrollTop;
+        } else {
+          // User was at bottom, keep at bottom (autoscroll)
+          msgBody.scrollTop = msgBody.scrollHeight;
+        }
+      }
+    }
+
     // Restore KVP scroll positions
     const kvpValues = messageContainer.querySelectorAll('.kvps-val');
     kvpValues.forEach((kvp, index) => {
@@ -103,6 +128,19 @@ class ScrollPositionManager {
     if (msgContent) {
       msgContent.addEventListener('scroll', () => {
         if (!this.isAtBottom(msgContent)) {
+          this.disableAutoscroll();
+        } else {
+          // Re-enable autoscroll if user scrolls back to bottom
+          this.checkGlobalScrollState();
+        }
+      });
+    }
+
+    // Add scroll listeners for message-body elements (terminal messages)
+    const msgBody = messageContainer.querySelector('.message-body');
+    if (msgBody) {
+      msgBody.addEventListener('scroll', () => {
+        if (!this.isAtBottom(msgBody)) {
           this.disableAutoscroll();
         } else {
           // Re-enable autoscroll if user scrolls back to bottom
@@ -148,6 +186,15 @@ class ScrollPositionManager {
     // Check all message content areas
     const allMsgContent = document.querySelectorAll('.msg-content');
     for (let element of allMsgContent) {
+      if (element.scrollHeight > element.clientHeight && !this.isAtBottom(element)) {
+        this.autoscrollDisabled = true;
+        return;
+      }
+    }
+
+    // Check all message body areas (terminal messages)
+    const allMsgBody = document.querySelectorAll('.message-body');
+    for (let element of allMsgBody) {
       if (element.scrollHeight > element.clientHeight && !this.isAtBottom(element)) {
         this.autoscrollDisabled = true;
         return;
