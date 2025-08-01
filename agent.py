@@ -29,7 +29,7 @@ from python.helpers.extension import call_extensions
 class AgentContextType(Enum):
     USER = "user"
     TASK = "task"
-    MCP = "mcp"
+    BACKGROUND = "background"
 
 
 class AgentContext:

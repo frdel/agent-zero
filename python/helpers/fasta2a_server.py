@@ -11,7 +11,7 @@ from starlette.requests import Request
 
 # Local imports
 from python.helpers.print_style import PrintStyle
-from agent import AgentContext, UserMessage
+from agent import AgentContext, UserMessage, AgentContextType
 from initialize import initialize_agent
 
 # Import FastA2A
@@ -84,7 +84,7 @@ class AgentZeroWorker(Worker):  # type: ignore[misc]
             if not context:
                 # Create new context for this A2A conversation
                 cfg = initialize_agent()
-                context = AgentContext(cfg, id=context_id)
+                context = AgentContext(cfg, id=context_id, type=AgentContextType.BACKGROUND)
 
             # Log user message so it appears instantly in UI chat window
             context.log.log(
