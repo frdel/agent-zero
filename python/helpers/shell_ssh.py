@@ -5,7 +5,7 @@ import re
 from typing import Tuple
 from python.helpers.log import Log
 from python.helpers.print_style import PrintStyle
-from python.helpers.strings import calculate_valid_match_lengths
+
 
 
 class SSHInteractiveSession:
@@ -27,15 +27,6 @@ class SSHInteractiveSession:
         self.full_output = b""
         self.last_command = b""
         self.trimmed_command_length = 0  # Initialize trimmed_command_length
-        # Flag indicating whether trimming of the echoed command from the
-        # shell output should be skipped. Certain commands (e.g. `echo`) will
-        # legitimately repeat their arguments in the resulting output which
-        # makes it impossible to distinguish between the typed command and the
-        # command *result*. In such cases our trimming logic may remove valid
-        # output leading to the observed *missing characters* at the beginning
-        # of the stream. We therefore detect those cases and disable trimming
-        # for the current command.
-        self._skip_trim = False
 
     async def connect(self):
         # try 3 times with wait and then except
@@ -88,11 +79,6 @@ class SSHInteractiveSession:
         command = command + "\n"
         self.last_command = command.encode()
         self.trimmed_command_length = 0
-        # Disable trimming for commands that intentionally echo their
-        # arguments (e.g. `echo`, `printf`). This prevents accidental removal
-        # of the first characters of the *real* output.
-        cmd_lower = command.strip().lower()
-        self._skip_trim = cmd_lower.startswith("echo ") or cmd_lower.startswith("printf ")
         self.shell.send(self.last_command)
 
     async def read_output(
@@ -114,35 +100,37 @@ class SSHInteractiveSession:
             # data = self.shell.recv(1024)
             data = self.receive_bytes()
 
-            # Optionally trim our own command from the shell output. Skipped
-            # when `_skip_trim` is True to avoid removing valid command
-            # results (e.g. from `echo`).
+                        # Trim our own command from the shell output.
+            # The shell may echo back the command we sent, so we need to remove it
+            # while preserving the actual command output.
             if (
-                not self._skip_trim
-                and self.last_command
+                self.last_command
                 and len(self.last_command) > self.trimmed_command_length
             ):
                 command_to_trim = self.last_command[self.trimmed_command_length :]
                 data_to_trim = leftover + data
 
-                trim_com, trim_out = calculate_valid_match_lengths(
-                    command_to_trim,
-                    data_to_trim,
-                    deviation_threshold=8,
-                    deviation_reset=2,
-                    ignore_patterns=[
-                        rb"\x1b\[\?\d{4}[a-zA-Z](?:> )?",  # ANSI escape sequences
-                        rb"\r",  # Carriage return
-                        rb">\s",  # Greater-than symbol
-                    ],
-                    debug=False,
-                )
+                # Look for the command at the beginning of the data
+                # We need to handle the case where the shell echoes the command
+                # but the actual output might start with similar characters
+                command_str = command_to_trim.decode('utf-8', errors='replace')
 
-                leftover = b""
-                if trim_com > 0 and trim_out > 0:
-                    data = data_to_trim[trim_out:]
+                # Convert data to string for easier processing
+                data_str = data_to_trim.decode('utf-8', errors='replace')
+
+                # Look for the command as a complete line at the beginning
+                lines = data_str.splitlines()
+                if lines and lines[0].strip() == command_str.strip():
+                    # Found the echoed command as first line, remove it
+                    remaining_lines = lines[1:]
+                    # Join lines and remove any leading/trailing whitespace including newlines
+                    result = '\n'.join(remaining_lines).strip()
+                    data = result.encode('utf-8')
                     leftover = data
-                    self.trimmed_command_length += trim_com
+                    self.trimmed_command_length += len(command_to_trim)
+                else:
+                    # No exact line match, don't trim anything
+                    leftover = data_to_trim
 
             partial_output += data
             self.full_output += data
