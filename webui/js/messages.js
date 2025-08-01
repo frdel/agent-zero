@@ -1,9 +1,10 @@
 // copy button
 import { openImageModal } from "./image_modal.js";
 import { marked } from "../vendor/marked/marked.esm.js";
-import { getAutoScroll } from "/index.js";
+import { getAutoScroll, getContext } from "/index.js";
 import { store as _messageResizeStore } from "/components/messages/resize/message-resize-store.js"; // keep here, required in html
 import { store as attachmentsStore } from "/components/chat/attachments/attachmentsStore.js";
+import { store as terminalStore } from "/components/terminal/terminal-store.js"; // terminal store
 
 const chatHistory = document.getElementById("chat-history");
 
@@ -100,7 +101,7 @@ function createCopyButton() {
       setTimeout(() => {
         button.classList.remove("copied");
         button.textContent = originalText;
-      }, 2000);
+      }, 1000);
     } catch (err) {
       console.error("Failed to copy text:", err);
     }
@@ -109,9 +110,65 @@ function createCopyButton() {
   return button;
 }
 
+function createTerminalButton(heading, kvps) {
+  // Check if this is a terminal-related code execution message
+  if (!heading || !heading.includes("icon://terminal")) {
+    return null;
+  }
+
+  // Extract session number from heading or kvps
+  let sessionNumber = 0;
+
+  // Try to extract session number from heading like "[0]" or "[1]"
+  const sessionMatch = heading.match(/\[(\d+)\]/);
+  if (sessionMatch) {
+    sessionNumber = parseInt(sessionMatch[1], 10);
+  }
+
+  // Or try to get session from kvps
+  if (kvps && kvps.session !== undefined) {
+    sessionNumber = parseInt(kvps.session, 10);
+  }
+
+  // Create terminal button
+  const button = document.createElement("button");
+  button.className = "terminal-button";
+  button.innerHTML = `
+    <i class="material-symbols-outlined">terminal</i>
+    <span>Open Terminal</span>
+  `;
+
+  button.addEventListener("click", async function (e) {
+    e.stopPropagation();
+
+    // Get current context from imported function
+    const currentContext = getContext();
+    if (!currentContext) {
+      console.error("No context available for terminal connection");
+      return;
+    }
+
+    // Open terminal modal
+    terminalStore.openTerminal(currentContext, sessionNumber);
+  });
+
+  return button;
+}
+
 function addCopyButtonToElement(element) {
   if (!element.querySelector(".copy-button")) {
     element.appendChild(createCopyButton());
+  }
+}
+
+function addTerminalButtonToHeading(headingElement, heading, kvps) {
+  const terminalButton = createTerminalButton(heading, kvps);
+  if (terminalButton && !headingElement.querySelector(".terminal-button")) {
+    // Add terminal button to heading after the h4 element
+    const h4 = headingElement.querySelector("h4");
+    if (h4) {
+      h4.appendChild(terminalButton);
+    }
   }
 }
 
@@ -172,6 +229,9 @@ export function _drawMessage(
     headingElement.appendChild(headingH4);
     messageDiv.appendChild(headingElement);
 
+    // Add terminal button for terminal-related code execution messages
+    addTerminalButtonToHeading(headingElement, heading, kvps);
+
     if (resizeBtns) {
       const minMaxBtn = document.createElement("div");
       minMaxBtn.classList.add("msg-min-max-btns");
@@ -189,67 +249,45 @@ export function _drawMessage(
 
   drawKvps(bodyDiv, kvps, false);
 
-  if (content && content.trim().length > 0) {
+  // Content
+  if (content) {
+    const contentDiv = document.createElement("div");
+    contentDiv.classList.add("msg-content", ...contentClasses);
+
+    let processedContent = convertImageTags(content);
+
     if (markdown) {
-      const contentDiv = document.createElement("div");
-      contentDiv.classList.add("msg-content", ...contentClasses);
-
-      const spanElement = document.createElement("span"); // Wrapper span
-      let processedContent = content;
-
-      processedContent = convertImageTags(processedContent);
-      processedContent = convertImgFilePaths(processedContent);
-      processedContent = marked.parse(processedContent, { breaks: true });
-      processedContent = convertPathsToLinks(processedContent);
-      processedContent = addBlankTargetsToLinks(processedContent);
-      spanElement.innerHTML = processedContent;
-
-      // KaTeX rendering for markdown
-      if (latex) {
-        spanElement.querySelectorAll("latex").forEach((element) => {
-          katex.render(element.innerHTML, element, {
-            throwOnError: false,
-          });
-        });
-      }
-
-      contentDiv.appendChild(spanElement);
-      addCopyButtonToElement(contentDiv);
-      adjustMarkdownRender(contentDiv);
-      bodyDiv.appendChild(contentDiv);
+      processedContent = marked.parse(processedContent);
     } else {
-      const preElement = document.createElement("pre");
-      preElement.classList.add("msg-content", ...contentClasses);
-      preElement.style.whiteSpace = "pre-wrap";
-      preElement.style.wordBreak = "break-word";
+      processedContent = convertHTML(processedContent);
+    }
 
-      const spanElement = document.createElement("span");
-      spanElement.innerHTML = convertHTML(content);
+    if (followUp) {
+      processedContent = `${processedContent}<div class="msg-dots">${repeatString(".", 3)}</div>`;
+    }
 
-      // Add click handler for small screens
-      spanElement.addEventListener("click", () => {
-        copyText(spanElement.textContent, spanElement);
+    const span = document.createElement("span");
+    span.innerHTML = processedContent;
+    contentDiv.appendChild(span);
+    bodyDiv.appendChild(contentDiv);
+    addCopyButtonToElement(contentDiv);
+
+    // Add click handler
+    span.addEventListener("click", () => {
+      copyText(span.textContent, span);
+    });
+
+    // KaTeX rendering for markdown
+    if (latex) {
+      span.querySelectorAll("latex").forEach((element) => {
+        katex.render(element.innerHTML, element, {
+          throwOnError: false,
+        });
       });
-
-      preElement.appendChild(spanElement);
-      addCopyButtonToElement(preElement);
-      bodyDiv.appendChild(preElement);
     }
   }
 
   messageContainer.appendChild(messageDiv);
-
-  if (followUp) {
-    messageContainer.classList.add("message-followup");
-  }
-
-  // autoscroll the body if needed
-  // if (getAutoScroll()) #TODO needs a better redraw system
-    setTimeout(() => {
-      bodyDiv.scrollTop = bodyDiv.scrollHeight;
-    }, 0);
-
-  return messageDiv;
 }
 
 export function addBlankTargetsToLinks(str) {
@@ -434,7 +472,7 @@ export function drawMessageUser(
       } else {
         // Render as file tile with title and icon
         attachmentDiv.classList.add("file-type");
-        
+
         // File icon
         if (displayInfo.previewUrl && displayInfo.previewUrl !== displayInfo.filename) {
           const iconImg = document.createElement("img");
@@ -443,12 +481,12 @@ export function drawMessageUser(
           iconImg.classList.add("file-icon");
           attachmentDiv.appendChild(iconImg);
         }
-        
+
         // File title
         const fileTitle = document.createElement("div");
         fileTitle.classList.add("file-title");
         fileTitle.textContent = displayInfo.filename;
-                
+
         attachmentDiv.appendChild(fileTitle);
       }
 
@@ -770,6 +808,10 @@ function convertHTML(str) {
   result = convertImageTags(result);
   result = convertPathsToLinks(result);
   return result;
+}
+
+function repeatString(str, count) {
+  return str.repeat(count);
 }
 
 function convertImgFilePaths(str) {
