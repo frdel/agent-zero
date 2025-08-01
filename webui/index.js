@@ -4,6 +4,7 @@ import * as api from "./js/api.js";
 import * as css from "./js/css.js";
 import { sleep } from "./js/sleep.js";
 import { store as attachmentsStore } from "./components/chat/attachments/attachmentsStore.js";
+import { store as notificationStore } from "./components/notifications/notification-store.js";
 
 window.fetchApi = api.fetchApi; // TODO - backward compatibility for non-modular scripts, remove once refactored to alpine
 
@@ -172,14 +173,15 @@ function toastFetchError(text, error) {
 
   if (getConnectionStatus()) {
     // Backend is connected, just show the error
-    toastFrontendError(`${text}: ${errorMessage}`).catch(e =>
-      console.error('Failed to show error toast:', e)
+    toastFrontendError(`${text}: ${errorMessage}`).catch((e) =>
+      console.error("Failed to show error toast:", e)
     );
   } else {
     // Backend is disconnected, show connection error
-    toastFrontendError(`${text} (backend appears to be disconnected): ${errorMessage}`, "Connection Error").catch(e =>
-      console.error('Failed to show connection error toast:', e)
-    );
+    toastFrontendError(
+      `${text} (backend appears to be disconnected): ${errorMessage}`,
+      "Connection Error"
+    ).catch((e) => console.error("Failed to show connection error toast:", e));
   }
 }
 window.toastFetchError = toastFetchError;
@@ -337,7 +339,7 @@ async function poll() {
 
     const response = await sendJsonData("/poll", {
       log_from: lastLogVersion,
-      notifications_from: globalThis.Alpine?.store('notificationStore')?.lastNotificationVersion || 0,
+      notifications_from: notificationStore.lastNotificationVersion || 0,
       context: context || null,
       timezone: timezone,
     });
@@ -378,19 +380,7 @@ async function poll() {
     updateProgress(response.log_progress, response.log_progress_active);
 
     // Update notifications from response
-    if (globalThis.Alpine?.store('notificationStore')) {
-      const notificationStore = globalThis.Alpine.store('notificationStore');
-
-      // Ensure store is initialized
-      if (!notificationStore.lastNotificationGuid && response.notifications_guid) {
-        console.log('Initializing notification store on fresh load');
-        notificationStore.initialize();
-      }
-
-      notificationStore.updateFromPoll(response);
-    } else {
-      console.warn('Notification store not available during poll');
-    }
+    notificationStore.updateFromPoll(response);
 
     //set ui model vars from backend
     if (window.Alpine && inputSection) {
@@ -812,7 +802,10 @@ window.nudge = async function () {
 window.restart = async function () {
   try {
     if (!getConnectionStatus()) {
-      await toastFrontendError("Backend disconnected, cannot restart.", "Restart Error");
+      await toastFrontendError(
+        "Backend disconnected, cannot restart.",
+        "Restart Error"
+      );
       return;
     }
     // First try to initiate restart
@@ -839,7 +832,12 @@ window.restart = async function () {
     }
 
     // If we get here, restart failed or took too long
-    await toastFrontendError("Restart timed out or failed", "Restart Error", 8, "restart");
+    await toastFrontendError(
+      "Restart timed out or failed",
+      "Restart Error",
+      8,
+      "restart"
+    );
   }
 };
 
@@ -971,24 +969,18 @@ function toast(text, type = "info", timeout = 5000) {
   const display_time = Math.max(timeout / 1000, 3); // Minimum 3 seconds
 
   // Use new frontend notification system based on type
-  if (window.Alpine && window.Alpine.store && window.Alpine.store('notificationStore')) {
-    const store = window.Alpine.store('notificationStore');
     switch (type.toLowerCase()) {
-      case 'error':
-        return store.frontendError(text, "Error", display_time);
-      case 'success':
-        return store.frontendInfo(text, "Success", display_time);
-      case 'warning':
-        return store.frontendWarning(text, "Warning", display_time);
-      case 'info':
+      case "error":
+        return notificationStore.frontendError(text, "Error", display_time);
+      case "success":
+        return notificationStore.frontendInfo(text, "Success", display_time);
+      case "warning":
+        return notificationStore.frontendWarning(text, "Warning", display_time);
+      case "info":
       default:
-        return store.frontendInfo(text, "Info", display_time);
+        return notificationStore.frontendInfo(text, "Info", display_time);
     }
-  } else {
-    // Fallback if Alpine/store not ready
-    console.log(`${type.toUpperCase()}: ${text}`);
-    return null;
-  }
+
 }
 window.toast = toast;
 
@@ -1049,14 +1041,11 @@ async function startPolling() {
 
 document.addEventListener("DOMContentLoaded", startPolling);
 
-
 // Setup event handlers once the DOM is fully loaded
 document.addEventListener("DOMContentLoaded", function () {
   setupSidebarToggle();
   setupTabs();
   initializeActiveTab();
-
-
 });
 
 // Setup tabs functionality
