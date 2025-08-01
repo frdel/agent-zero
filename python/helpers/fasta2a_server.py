@@ -11,8 +11,9 @@ from starlette.requests import Request
 
 # Local imports
 from python.helpers.print_style import PrintStyle
-from agent import AgentContext, UserMessage
+from agent import AgentContext, UserMessage, AgentContextType
 from initialize import initialize_agent
+from python.helpers.persist_chat import remove_chat
 
 # Import FastA2A
 try:
@@ -69,22 +70,19 @@ class AgentZeroWorker(Worker):  # type: ignore[misc]
 
     async def run_task(self, params: Any) -> None:  # params: TaskSendParams
         """Execute a task by processing the message through Agent Zero."""
+        context = None
         try:
             task_id = params['id']
-            context_id = params['context_id']
             message = params['message']
 
-            _PRINTER.print(f"[A2A] Processing task {task_id} in context {context_id}")
+            _PRINTER.print(f"[A2A] Processing task {task_id} with new temporary context")
 
             # Convert A2A message to Agent Zero format
             agent_message = self._convert_message(message)
 
-            # Get or create Agent Zero context
-            context = AgentContext.get(context_id)
-            if not context:
-                # Create new context for this A2A conversation
-                cfg = initialize_agent()
-                context = AgentContext(cfg, id=context_id)
+            # Always create new temporary context for this A2A conversation
+            cfg = initialize_agent()
+            context = AgentContext(cfg, type=AgentContextType.BACKGROUND)
 
             # Log user message so it appears instantly in UI chat window
             context.log.log(
@@ -113,7 +111,12 @@ class AgentZeroWorker(Worker):  # type: ignore[misc]
                 new_messages=[response_message]
             )
 
-            _PRINTER.print(f"[A2A] Completed task {task_id}")
+            # Clean up context like non-persistent MCP chats
+            context.reset()
+            AgentContext.remove(context.id)
+            remove_chat(context.id)
+
+            _PRINTER.print(f"[A2A] Completed task {task_id} and cleaned up context")
 
         except Exception as e:
             _PRINTER.print(f"[A2A] Error processing task {params.get('id', 'unknown')}: {e}")
@@ -122,11 +125,20 @@ class AgentZeroWorker(Worker):  # type: ignore[misc]
                 state='failed'
             )
 
+            # Clean up context even on failure to prevent resource leaks
+            if context:
+                context.reset()
+                AgentContext.remove(context.id)
+                remove_chat(context.id)
+                _PRINTER.print(f"[A2A] Cleaned up failed context {context.id}")
+
     async def cancel_task(self, params: Any) -> None:  # params: TaskIdParams
         """Cancel a running task."""
         task_id = params['id']
         _PRINTER.print(f"[A2A] Cancelling task {task_id}")
         await self.storage.update_task(task_id=task_id, state='canceled')  # type: ignore[attr-defined]
+
+        # Note: No context cleanup needed since contexts are always temporary and cleaned up in run_task
 
     def build_message_history(self, history: List[Any]) -> List[Message]:  # type: ignore
         # Not used in this simplified implementation

@@ -139,7 +139,7 @@ async def send_message(
             persistent_chat = True
     else:
         config = initialize_agent()
-        context = AgentContext(config=config, type=AgentContextType.MCP)
+        context = AgentContext(config=config, type=AgentContextType.BACKGROUND)
 
     if not message:
         return ToolError(
