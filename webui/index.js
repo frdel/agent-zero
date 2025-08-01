@@ -233,7 +233,8 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
 
   // Use enhanced autoscroll logic that considers scrollable elements within messages
   if (autoScroll && !msgs.getScrollManager().autoscrollDisabled) {
-    chatHistory.scrollTop = chatHistory.scrollHeight;
+    // Scroll all scrollable elements to bottom when autoscroll is enabled
+    msgs.getScrollManager().scrollAllToBottom();
   }
 
   return result;
@@ -775,6 +776,8 @@ window.toggleAutoScroll = async function (_autoScroll) {
   if (msgs.getScrollManager) {
     if (_autoScroll) {
       msgs.getScrollManager().enableAutoscroll();
+      // Scroll to bottom when autoscroll is enabled
+      msgs.getScrollManager().scrollAllToBottom();
     } else {
       msgs.getScrollManager().disableAutoscroll();
     }
@@ -869,6 +872,11 @@ window.restart = async function () {
 document.addEventListener("DOMContentLoaded", () => {
   const isDarkMode = localStorage.getItem("darkMode") !== "false";
   toggleDarkMode(isDarkMode);
+
+  // Initialize scroll manager global listeners
+  if (msgs.getScrollManager) {
+    msgs.getScrollManager().setupGlobalScrollListeners();
+  }
 });
 
 window.loadChats = async function () {
