@@ -2,12 +2,7 @@
 <head>
     <title>Notifications</title>
     <script type="module">
-        import { store } from "/js/notificationStore.js";
-
-        // Ensure notification store is available globally for the modal
-        if (!window.notificationStore) {
-            window.notificationStore = store;
-        }
+        import { store } from "/components/notifications/notification-store.js";
     </script>
 </head>
 <body>
@@ -16,24 +11,24 @@
         <div class="modal-subheader">
             <div class="notification-header-actions">
                 <button class="notification-action"
-                        @click="$store.notificationStore.clearAll()"
-                        :disabled="$store.notificationStore.getDisplayNotifications().length === 0"
+                        @click="$store.notificationStore?.clearAll()"
+                        :disabled="!$store.notificationStore || $store.notificationStore.getDisplayNotifications().length === 0"
                         title="Clear All">
-                    🗑️ Clear All
+                    <span class="material-symbols-outlined">delete</span> Clear All
                 </button>
             </div>
         </div>
 
         <!-- Notifications List -->
-        <div class="notification-list" x-show="$store.notificationStore.getDisplayNotifications().length > 0">
-            <template x-for="notification in $store.notificationStore.getDisplayNotifications()" :key="notification.id">
+        <div class="notification-list" x-show="$store.notificationStore && $store.notificationStore.getDisplayNotifications().length > 0">
+            <template x-for="notification in ($store.notificationStore?.getDisplayNotifications() || [])" :key="notification.id">
                 <div class="notification-item"
                      x-data="{ expanded: false }"
-                     :class="$store.notificationStore.getNotificationItemClass(notification)"
-                     @click="$store.notificationStore.markAsRead(notification.id)">
+                     :class="$store.notificationStore?.getNotificationItemClass(notification) || 'notification-item'"
+                     @click="$store.notificationStore?.markAsRead(notification.id)">
 
                     <div class="notification-icon"
-                         x-html="$store.notificationStore.getNotificationIcon(notification.type)">
+                         x-html="$store.notificationStore?.getNotificationIcon(notification.type) || ''">
                     </div>
 
                     <div class="notification-content">
@@ -45,7 +40,7 @@
                              x-text="notification.message">
                         </div>
                         <div class="notification-timestamp"
-                             x-text="$store.notificationStore.formatTimestamp(notification.timestamp)">
+                             x-text="$store.notificationStore?.formatTimestamp(notification.timestamp) || notification.timestamp">
                         </div>
 
                         <!-- Expand Toggle Button (as last row element) -->
@@ -74,11 +69,13 @@
         </div>
 
         <!-- Empty State -->
-        <div class="notification-empty" x-show="$store.notificationStore.getDisplayNotifications().length === 0">
-            <div class="notification-empty-icon">🔔</div>
+        <div class="notification-empty" x-show="!$store.notificationStore || $store.notificationStore.getDisplayNotifications().length === 0">
+            <div class="notification-empty-icon">
+                <span class="material-symbols-outlined">notifications</span>
+            </div>
             <p>No notifications to display</p>
             <p style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem;"
-               x-show="$store.notificationStore.notifications.length > 0">
+               x-show="$store.notificationStore && $store.notificationStore.notifications.length > 0">
                 All notifications have been read and are older than 5 minutes
             </p>
         </div>

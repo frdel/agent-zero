@@ -306,16 +306,17 @@ const model = {
         return `notification-item ${typeClass} ${readClass}`;
     },
 
-    // Get icon for notification type
+    // Get icon for notification type (Google Material Icons)
     getNotificationIcon(type) {
         const icons = {
-            info: "ℹ️",
-            success: "✅",
-            warning: "⚠️",
-            error: "❌",
-            progress: "⏳"
+            info: "info",
+            success: "check_circle",
+            warning: "warning",
+            error: "error",
+            progress: "hourglass_empty"
         };
-        return icons[type] || "ℹ️";
+        const iconName = icons[type] || "info";
+        return `<span class="material-symbols-outlined">${iconName}</span>`;
     },
 
     // Create notification via backend (will appear via polling)
@@ -491,10 +492,10 @@ const model = {
 const store = createStore("notificationStore", model);
 
 // NEW: Global function for frontend error toasts (replaces toastFetchError)
-window.toastFrontendError = async function(message, title = "Connection Error") {
+window.toastFrontendError = async function(message, title = "Connection Error", display_time = 8, group = "") {
     if (window.Alpine && window.Alpine.store && window.Alpine.store('notificationStore')) {
         try {
-            return await window.Alpine.store('notificationStore').frontendError(message, title);
+            return await window.Alpine.store('notificationStore').addFrontendToast('error', message, title, display_time, group);
         } catch (error) {
             console.error('Failed to create frontend error notification:', error);
             // Fallback to console if something goes wrong
@@ -509,10 +510,10 @@ window.toastFrontendError = async function(message, title = "Connection Error") 
 };
 
 // NEW: Additional global convenience functions
-window.toastFrontendWarning = async function(message, title = "Warning") {
+window.toastFrontendWarning = async function(message, title = "Warning", display_time = 5, group = "") {
     if (window.Alpine && window.Alpine.store && window.Alpine.store('notificationStore')) {
         try {
-            return await window.Alpine.store('notificationStore').frontendWarning(message, title);
+            return await window.Alpine.store('notificationStore').addFrontendToast('warning', message, title, display_time, group);
         } catch (error) {
             console.error('Failed to create frontend warning notification:', error);
             console.warn('Frontend Warning:', title, '-', message);
@@ -524,10 +525,10 @@ window.toastFrontendWarning = async function(message, title = "Warning") {
     }
 };
 
-window.toastFrontendInfo = async function(message, title = "Info") {
+window.toastFrontendInfo = async function(message, title = "Info", display_time = 3, group = "") {
     if (window.Alpine && window.Alpine.store && window.Alpine.store('notificationStore')) {
         try {
-            return await window.Alpine.store('notificationStore').frontendInfo(message, title);
+            return await window.Alpine.store('notificationStore').addFrontendToast('info', message, title, display_time, group);
         } catch (error) {
             console.error('Failed to create frontend info notification:', error);
             console.log('Frontend Info:', title, '-', message);
@@ -535,6 +536,21 @@ window.toastFrontendInfo = async function(message, title = "Info") {
         }
     } else {
         console.log('Frontend Info:', title, '-', message);
+        return null;
+    }
+};
+
+window.toastFrontendSuccess = async function(message, title = "Success", display_time = 3, group = "") {
+    if (window.Alpine && window.Alpine.store && window.Alpine.store('notificationStore')) {
+        try {
+            return await window.Alpine.store('notificationStore').addFrontendToast('success', message, title, display_time, group);
+        } catch (error) {
+            console.error('Failed to create frontend success notification:', error);
+            console.log('Frontend Success:', title, '-', message);
+            return null;
+        }
+    } else {
+        console.log('Frontend Success:', title, '-', message);
         return null;
     }
 };

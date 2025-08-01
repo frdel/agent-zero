@@ -2,14 +2,15 @@
 <head>
     <title>Notification Toast Stack</title>
     <script type="module">
-        import { store } from "/js/notificationStore.js";
+        import { store } from "/components/notifications/notification-store.js";
     </script>
 </head>
 <body>
     <div x-data>
-        <!-- Toast Stack Container -->
-        <div class="toast-stack-container"
-             x-show="$store.notificationStore.toastStack.length > 0">
+        <template x-if="$store.notificationStore">
+            <!-- Toast Stack Container -->
+            <div class="toast-stack-container"
+                 x-show="$store.notificationStore.toastStack.length > 0">
 
             <template x-for="(toast, index) in $store.notificationStore.toastStack" :key="toast.toastId">
                 <div class="toast-item"
@@ -41,11 +42,12 @@
                     <button class="toast-dismiss"
                             @click.stop="$store.notificationStore.removeFromToastStack(toast.toastId)"
                             title="Dismiss">
-                        ✕
+                        <span class="material-symbols-outlined">close</span>
                     </button>
                 </div>
             </template>
-        </div>
+          </div>
+        </template>
     </div>
 
     <style>

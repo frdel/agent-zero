@@ -812,14 +812,14 @@ window.nudge = async function () {
 window.restart = async function () {
   try {
     if (!getConnectionStatus()) {
-      toast("Backend disconnected, cannot restart.", "error");
+      await toastFrontendError("Backend disconnected, cannot restart.", "Restart Error");
       return;
     }
     // First try to initiate restart
     const resp = await sendJsonData("/restart", {});
   } catch (e) {
-    // Show restarting message
-    toast("Restarting...", "info", 0);
+    // Show restarting message with no timeout and restart group
+    await toastFrontendInfo("Restarting...", "System Restart", 9999, "restart");
 
     let retries = 0;
     const maxRetries = 240; // Maximum number of retries (60 seconds with 250ms interval)
@@ -827,9 +827,9 @@ window.restart = async function () {
     while (retries < maxRetries) {
       try {
         const resp = await sendJsonData("/health", {});
-        // Server is back up, show success message
+        // Server is back up, show success message that replaces the restarting message
         await new Promise((resolve) => setTimeout(resolve, 250));
-        toast("Restarted", "success", 5000);
+        await toastFrontendSuccess("Restarted", "System Restart", 5, "restart");
         return;
       } catch (e) {
         // Server still down, keep waiting
@@ -839,7 +839,7 @@ window.restart = async function () {
     }
 
     // If we get here, restart failed or took too long
-    toast("Restart timed out or failed", "error", 5000);
+    await toastFrontendError("Restart timed out or failed", "Restart Error", 8, "restart");
   }
 };
 
@@ -1056,13 +1056,7 @@ document.addEventListener("DOMContentLoaded", function () {
   setupTabs();
   initializeActiveTab();
 
-  // Initialize notification store early to ensure it's ready for polling
-  setTimeout(() => {
-    if (globalThis.Alpine?.store('notificationStore')) {
-      globalThis.Alpine.store('notificationStore').initialize();
-      console.log('Notification store initialized on DOM ready');
-    }
-  }, 100); // Small delay to ensure Alpine is ready
+
 });
 
 // Setup tabs functionality
