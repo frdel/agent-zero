@@ -1,0 +1,353 @@
+<html>
+<head>
+    <title>Notifications</title>
+    <script type="module">
+        import { store } from "/components/notifications/notification-store.js";
+    </script>
+</head>
+<body>
+    <div x-data="notificationModalComponent()">
+        <!-- Modal Header Actions -->
+        <div class="modal-subheader">
+            <div class="notification-header-actions">
+                <button class="notification-action"
+                        @click="$store.notificationStore?.clearAll()"
+                        :disabled="!$store.notificationStore || $store.notificationStore.getDisplayNotifications().length === 0"
+                        title="Clear All">
+                    <span class="material-symbols-outlined">delete</span> Clear All
+                </button>
+            </div>
+        </div>
+
+        <!-- Notifications List -->
+        <div class="notification-list" x-show="$store.notificationStore && $store.notificationStore.getDisplayNotifications().length > 0">
+            <template x-for="notification in ($store.notificationStore?.getDisplayNotifications() || [])" :key="notification.id">
+                <div class="notification-item"
+                     x-data="{ expanded: false }"
+                     :class="$store.notificationStore?.getNotificationItemClass(notification) || 'notification-item'"
+                     @click="$store.notificationStore?.markAsRead(notification.id)">
+
+                    <div class="notification-icon"
+                         x-html="$store.notificationStore?.getNotificationIcon(notification.type) || ''">
+                    </div>
+
+                    <div class="notification-content">
+                        <div class="notification-title"
+                             x-show="notification.title"
+                             x-text="notification.title">
+                        </div>
+                        <div class="notification-message"
+                             x-text="notification.message">
+                        </div>
+                        <div class="notification-timestamp"
+                             x-text="$store.notificationStore?.formatTimestamp(notification.timestamp) || notification.timestamp">
+                        </div>
+
+                        <!-- Expand Toggle Button (as last row element) -->
+                        <button class="notification-expand-toggle"
+                                x-show="notification.detail"
+                                @click.stop="expanded = !expanded"
+                                :title="expanded ? 'Collapse Details' : 'Expand Details'">
+                            <span x-show="!expanded">▶ Show Details</span>
+                            <span x-show="expanded">▼ Hide Details</span>
+                        </button>
+
+                        <!-- Expandable Detail Content -->
+                        <div class="notification-detail"
+                             x-show="expanded && notification.detail"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 max-h-0"
+                             x-transition:enter-end="opacity-100 max-h-96"
+                             x-transition:leave="transition ease-in duration-200"
+                             x-transition:leave-start="opacity-100 max-h-96"
+                             x-transition:leave-end="opacity-0 max-h-0">
+                            <div class="notification-detail-content" x-html="notification.detail"></div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Empty State -->
+        <div class="notification-empty" x-show="!$store.notificationStore || $store.notificationStore.getDisplayNotifications().length === 0">
+            <div class="notification-empty-icon">
+                <span class="material-symbols-outlined">notifications</span>
+            </div>
+            <p>No notifications to display</p>
+            <p style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem;"
+               x-show="$store.notificationStore && $store.notificationStore.notifications.length > 0">
+                All notifications have been read and are older than 5 minutes
+            </p>
+        </div>
+    </div>
+
+    <style>
+        /* Modal-specific styles that override the standard modal */
+        .modal-container.notification-modal {
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+        }
+
+        .notification-header-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            justify-content: flex-end;
+            width: 100%;
+        }
+
+        .notification-action {
+            padding: 0.5rem 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: var(--color-text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .notification-action:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .notification-action:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .notification-action:disabled:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Notification List */
+        .notification-list {
+            max-height: 60vh;
+            overflow-y: auto;
+            padding: 0.5rem 0;
+        }
+
+        .notification-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .notification-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .notification-list::-webkit-scrollbar-thumb {
+            background-color: rgba(155, 155, 155, 0.3);
+            border-radius: 6px;
+        }
+
+        .notification-list::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(155, 155, 155, 0.5);
+        }
+
+        /* Include all the notification item styles from the CSS file */
+        .notification-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .notification-item:hover {
+            background: rgba(0, 0, 0, 0.15);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .notification-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .notification-item.unread {
+            border-left: 4px solid #2196F3;
+            background: rgba(33, 150, 243, 0.05);
+        }
+
+        .notification-item.read {
+            opacity: 0.7;
+        }
+
+        .notification-item.read .notification-title {
+            color: var(--color-text-muted);
+        }
+
+        .notification-item.read .notification-message {
+            color: var(--color-text-muted);
+        }
+
+        /* Notification Icon */
+        .notification-icon {
+            font-size: 1.1rem;
+            line-height: 1;
+            opacity: 0.8;
+            min-width: 20px;
+            text-align: center;
+            margin-top: 0.1rem;
+        }
+
+        .notification-info .notification-icon {
+            color: #2196F3;
+        }
+
+        .notification-success .notification-icon {
+            color: #4CAF50;
+        }
+
+        .notification-warning .notification-icon {
+            color: #FF9800;
+        }
+
+        .notification-error .notification-icon {
+            color: #F44336;
+        }
+
+        .notification-progress .notification-icon {
+            color: #9C27B0;
+            animation: spin 2s linear infinite;
+        }
+
+        /* Notification Content */
+        .notification-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--color-primary);
+            margin-bottom: 0.25rem;
+            line-height: 1.3;
+        }
+
+        .notification-message {
+            font-size: 0.85rem;
+            color: var(--color-text);
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
+        }
+
+        .notification-expand-toggle {
+            background: transparent;
+            border: none;
+            color: var(--color-text);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .notification-expand-toggle:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .notification-timestamp {
+            font-size: 0.75rem;
+            color: var(--color-text);
+            opacity: 0.6;
+            margin-top: 0.5rem;
+        }
+
+        /* Notification Detail */
+        .notification-detail {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 6px;
+            border-left: 3px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .notification-detail-content {
+            font-size: 0.85rem;
+            line-height: 1.4;
+            color: var(--color-text);
+        }
+
+        /* Empty State */
+        .notification-empty {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--color-text);
+            opacity: 0.6;
+        }
+
+        .notification-empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Animations */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Light Mode Styles */
+        .light-mode .notification-item {
+            background: rgba(0, 0, 0, 0.03);
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .light-mode .notification-item:hover {
+            background: rgba(0, 0, 0, 0.06);
+            border-color: rgba(0, 0, 0, 0.15);
+        }
+
+        .light-mode .notification-action {
+            border-color: rgba(0, 0, 0, 0.2);
+            color: var(--color-text);
+        }
+
+        .light-mode .notification-action:hover {
+            background: rgba(0, 0, 0, 0.05);
+            border-color: rgba(0, 0, 0, 0.3);
+        }
+
+        .light-mode .notification-detail {
+            background: rgba(0, 0, 0, 0.05);
+            border-left-color: rgba(0, 0, 0, 0.15);
+        }
+    </style>
+
+    <script>
+        function notificationModalComponent() {
+            return {
+                init() {
+                    // Mark all notifications as read when modal opens
+                    // This can be configured later if needed
+                    setTimeout(() => {
+                        if (this.$store.notificationStore) {
+                            this.$store.notificationStore.markAllAsRead();
+                        }
+                    }, 1000);
+                }
+            };
+        }
+    </script>
+</body>
+</html>

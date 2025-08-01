@@ -178,7 +178,7 @@ class MicrophoneInput {
         } catch (error) {
 
             console.error('Microphone initialization error:', error);
-            toast('Failed to access microphone. Please check permissions.', 'error');
+            window.toastFrontendError('Failed to access microphone. Please check permissions.', 'Microphone Error');
             return false;
         }
     }
@@ -193,7 +193,7 @@ class MicrophoneInput {
         this.analyserNode.smoothingTimeConstant = 0.85;
         this.mediaStreamSource.connect(this.analyserNode);
     }
-    
+
 
     startAudioAnalysis() {
         const analyzeFrame = () => {
@@ -251,7 +251,7 @@ class MicrophoneInput {
             return;
         }
 
-        const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });        
+        const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
         const audioUrl = URL.createObjectURL(audioBlob);
 
 
@@ -268,7 +268,7 @@ class MicrophoneInput {
             }
         } catch (error) {
             console.error('Transcription error:', error);
-            toast('Transcription failed.', 'error');
+            window.toastFrontendError('Transcription failed.', 'Speech Recognition Error');
         } finally {
             URL.revokeObjectURL(audioUrl);
             this.audioChunks = [];
@@ -347,7 +347,7 @@ async function requestMicrophonePermission() {
         return true;
     } catch (err) {
         console.error('Error accessing microphone:', err);
-        toast('Microphone access denied. Please enable microphone access in your browser settings.', 'error');
+        window.toastFrontendError('Microphone access denied. Please enable microphone access in your browser settings.', 'Microphone Error');
         return false;
     }
 }

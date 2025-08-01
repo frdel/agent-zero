@@ -132,7 +132,7 @@ document.addEventListener('alpine:init', () => {
                     await this.generateLink();
                 } catch (error) {
                     console.error("Error refreshing tunnel:", error);
-                    window.toast("Error refreshing tunnel", "error", 3000);
+                    window.toastFrontendError("Error refreshing tunnel", "Tunnel Error");
                     this.isLoading = false;
                     this.loadingText = '';
                 } finally {
@@ -231,7 +231,7 @@ document.addEventListener('alpine:init', () => {
                     this.$nextTick(() => this.generateQRCode());
 
                     // Show success message to confirm creation
-                    window.toast("Tunnel created successfully", "success", 3000);
+                    window.toastFrontendInfo("Tunnel created successfully", "Tunnel Status");
                 } else {
                     // The tunnel might still be starting up, check again after a delay
                     this.loadingText = 'Tunnel creation taking longer than expected...';
@@ -260,7 +260,7 @@ document.addEventListener('alpine:init', () => {
                             // Generate QR code for the tunnel URL
                             this.$nextTick(() => this.generateQRCode());
 
-                            window.toast("Tunnel created successfully", "success", 3000);
+                            window.toastFrontendInfo("Tunnel created successfully", "Tunnel Status");
                             return;
                         }
                     } catch (statusError) {
@@ -269,11 +269,11 @@ document.addEventListener('alpine:init', () => {
 
                     // If we get here, the tunnel really failed to start
                     const errorMessage = data.message || "Failed to create tunnel. Please try again.";
-                    window.toast(errorMessage, "error", 5000);
+                    window.toastFrontendError(errorMessage, "Tunnel Error");
                     console.error("Tunnel creation failed:", data);
                 }
             } catch (error) {
-                window.toast("Error creating tunnel", "error", 5000);
+                window.toastFrontendError("Error creating tunnel", "Tunnel Error");
                 console.error("Error creating tunnel:", error);
             } finally {
                 this.isLoading = false;
@@ -322,9 +322,9 @@ document.addEventListener('alpine:init', () => {
                         this.tunnelLink = '';
                         this.linkGenerated = false;
 
-                        window.toast("Tunnel stopped successfully", "success", 3000);
+                        window.toastFrontendInfo("Tunnel stopped successfully", "Tunnel Status");
                     } else {
-                        window.toast("Failed to stop tunnel", "error", 3000);
+                        window.toastFrontendError("Failed to stop tunnel", "Tunnel Error");
 
                         // Reset stop button
                         stopButton.innerHTML = originalStopContent;
@@ -332,7 +332,7 @@ document.addEventListener('alpine:init', () => {
                         stopButton.classList.remove('stopping');
                     }
                 } catch (error) {
-                    window.toast("Error stopping tunnel", "error", 3000);
+                    window.toastFrontendError("Error stopping tunnel", "Tunnel Error");
                     console.error("Error stopping tunnel:", error);
 
                     // Reset stop button
@@ -359,7 +359,7 @@ document.addEventListener('alpine:init', () => {
                     copyButton.classList.add('copy-success');
 
                     // Show toast notification
-                    window.toast("Tunnel URL copied to clipboard!", "success", 3000);
+                    window.toastFrontendInfo("Tunnel URL copied to clipboard!", "Clipboard");
 
                     // Reset button after 2 seconds
                     setTimeout(() => {
@@ -369,7 +369,7 @@ document.addEventListener('alpine:init', () => {
                 })
                 .catch(err => {
                     console.error('Failed to copy URL: ', err);
-                    window.toast("Failed to copy tunnel URL", "error", 3000);
+                    window.toastFrontendError("Failed to copy tunnel URL", "Clipboard Error");
 
                     // Show error state
                     copyButton.innerHTML = '<span class="icon material-symbols-outlined">close</span> Failed';
