@@ -136,6 +136,7 @@ class SettingsOutput(TypedDict):
 
 
 PASSWORD_PLACEHOLDER = "****PSWD****"
+API_KEY_PLACEHOLDER = "************"
 
 SETTINGS_FILE = files.get_abs_path("tmp/settings.json")
 _settings: Settings | None = None
@@ -1092,18 +1093,12 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
 def _get_api_key_field(settings: Settings, provider: str, title: str) -> SettingsField:
     key = settings["api_keys"].get(provider, models.get_api_key(provider))
-    # For API keys, use asterisks that match the actual key length when available
-    if key and key != "None":
-        # Use asterisks matching the key length, or minimum 10 characters
-        placeholder_value = "*" * max(len(key), 10)
-    else:
-        placeholder_value = ""
-
+    # For API keys, use simple asterisk placeholder for existing keys
     return {
         "id": f"api_key_{provider}",
         "title": title,
-        "type": "password",
-        "value": placeholder_value,
+        "type": "text",
+        "value": (API_KEY_PLACEHOLDER if key and key != "None" else ""),
     }
 
 
@@ -1112,12 +1107,10 @@ def convert_in(settings: dict) -> Settings:
     for section in settings["sections"]:
         if "fields" in section:
             for field in section["fields"]:
-                # Skip saving if value is the old password placeholder or asterisk-only values
+                # Skip saving if value is a placeholder
                 should_skip = (
                     field["value"] == PASSWORD_PLACEHOLDER or
-                    (field["id"].startswith("api_key_") and
-                     field["value"] and
-                     all(c == "*" for c in field["value"]))
+                    field["value"] == API_KEY_PLACEHOLDER
                 )
 
                 if not should_skip:

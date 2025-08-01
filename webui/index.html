@@ -621,24 +621,13 @@
                                                 </template>
 
 
-                                                <!-- Password field -->
+                                                                                                <!-- Password field -->
                                                 <template x-if="field.type === 'password'">
-                                                    <div>
-                                                        <!-- Hidden username field for API keys to help browsers save credentials properly -->
-                                                        <template x-if="field.id && field.id.startsWith('api_key_')">
-                                                            <input type="text"
-                                                                   :id="'username_' + field.id"
-                                                                   :value="field.id.replace('api_key_', '').toUpperCase() + '_API_KEY'"
-                                                                   autocomplete="username"
-                                                                   style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;"
-                                                                   tabindex="-1">
-                                                        </template>
-                                                        <input type="password" :class="field.classes" :value="field.value"
-                                                            :readonly="field.readonly === true"
-                                                            :id="field.id"
-                                                            :autocomplete="field.id && field.id.startsWith('api_key_') ? 'current-password' : 'off'"
-                                                            @input="field.value = $event.target.value">
-                                                    </div>
+                                                    <input type="password" :class="field.classes" :value="field.value"
+                                                        :readonly="field.readonly === true"
+                                                        :id="field.id"
+                                                        autocomplete="off"
+                                                        @input="field.value = $event.target.value">
                                                 </template>
 
                                                 <!-- Textarea field -->
