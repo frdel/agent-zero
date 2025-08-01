@@ -44,6 +44,8 @@ class SSHInteractiveSession:
                 self.shell = self.client.invoke_shell(width=100, height=50)
                 # self.shell.send(f'PS1="{SSHInteractiveSession.ps1_label}"'.encode())
                 # return
+                self.shell.send("stty -echo\n".encode()) # disable shell echo
+
                 while True:  # wait for end of initial output
                     full, part = await self.read_output()
                     if full and not part:
@@ -100,32 +102,32 @@ class SSHInteractiveSession:
             # data = self.shell.recv(1024)
             data = self.receive_bytes()
 
-            # Trim own command from output
-            if (
-                self.last_command
-                and len(self.last_command) > self.trimmed_command_length
-            ):
-                command_to_trim = self.last_command[self.trimmed_command_length :]
-                data_to_trim = leftover + data
+            # # Trim own command from output
+            # if (
+            #     self.last_command
+            #     and len(self.last_command) > self.trimmed_command_length
+            # ):
+            #     command_to_trim = self.last_command[self.trimmed_command_length :]
+            #     data_to_trim = leftover + data
 
-                trim_com, trim_out = calculate_valid_match_lengths(
-                    command_to_trim,
-                    data_to_trim,
-                    deviation_threshold=8,
-                    deviation_reset=2,
-                    ignore_patterns=[
-                        rb"\x1b\[\?\d{4}[a-zA-Z](?:> )?",  # ANSI escape sequences
-                        rb"\r",  # Carriage return
-                        rb">\s",  # Greater-than symbol
-                    ],
-                    debug=False,
-                )
+            #     trim_com, trim_out = calculate_valid_match_lengths(
+            #         command_to_trim,
+            #         data_to_trim,
+            #         deviation_threshold=8,
+            #         deviation_reset=2,
+            #         ignore_patterns=[
+            #             rb"\x1b\[\?\d{4}[a-zA-Z](?:> )?",  # ANSI escape sequences
+            #             rb"\r",  # Carriage return
+            #             rb">\s",  # Greater-than symbol
+            #         ],
+            #         debug=False,
+            #     )
 
-                leftover = b""
-                if trim_com > 0 and trim_out > 0:
-                    data = data_to_trim[trim_out:]
-                    leftover = data
-                    self.trimmed_command_length += trim_com
+            #     leftover = b""
+            #     if trim_com > 0 and trim_out > 0:
+            #         data = data_to_trim[trim_out:]
+            #         leftover = data
+            #         self.trimmed_command_length += trim_com
 
             partial_output += data
             self.full_output += data
@@ -196,11 +198,14 @@ class SSHInteractiveSession:
         # remove null bytes
         cleaned = cleaned.replace("\x00", "")
 
+        # remove ipython \r\r\n> sequences from the start
+        cleaned = re.sub(r'^[ \r]*(?:\r*\n>[ \r]*)*', '', cleaned)
+
         # Replace '\r\n' with '\n'
         cleaned = cleaned.replace("\r\n", "\n")
 
-        # remove leading \r
-        cleaned = cleaned.lstrip("\r")
+        # remove leading \r and spaces
+        cleaned = cleaned.lstrip("\r ")
 
         # Split the string by newline characters to process each segment separately
         lines = cleaned.split("\n")
