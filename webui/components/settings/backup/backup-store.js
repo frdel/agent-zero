@@ -1,9 +1,9 @@
 import { createStore } from "/js/AlpineStore.js";
 
 // Global function references
-const sendJsonData = window.sendJsonData;
-const toast = window.toast;
-const fetchApi = window.fetchApi;
+const sendJsonData = globalThis.sendJsonData;
+const toast = globalThis.toast;
+const fetchApi = globalThis.fetchApi;
 
 // ⚠️ CRITICAL: The .env file contains API keys and essential configuration.
 // This file is REQUIRED for Agent Zero to function and must be backed up.

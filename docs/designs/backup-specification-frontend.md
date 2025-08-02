@@ -820,12 +820,12 @@ const model = {
 
       if (response.ok) {
         const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+        const url = globalThis.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `${backupName}.zip`;
         a.click();
-        window.URL.revokeObjectURL(url);
+        globalThis.URL.revokeObjectURL(url);
       }
     } catch (error) {
       console.error('Download error:', error);
@@ -1298,9 +1298,9 @@ Use existing `openModal()` and `closeModal()` functions from the global modal sy
 Use existing Agent Zero toast system for consistent user feedback:
 ```javascript
 // Use established toast patterns
-window.toast("Backup created successfully", "success");
-window.toast("Restore completed", "success");
-window.toast("Error creating backup", "error");
+globalThis.toast("Backup created successfully", "success");
+globalThis.toast("Restore completed", "success");
+globalThis.toast("Error creating backup", "error");
 ```
 
 #### ACE Editor Integration
@@ -1417,10 +1417,10 @@ formatTimestamp(timestamp) {
 // Use existing error handling patterns
 try {
     const result = await backupOperation();
-    window.toast("Operation completed successfully", "success");
+    globalThis.toast("Operation completed successfully", "success");
 } catch (error) {
     console.error('Backup error:', error);
-    window.toast(`Error: ${error.message}`, "error");
+    globalThis.toast(`Error: ${error.message}`, "error");
 }
 ```
 

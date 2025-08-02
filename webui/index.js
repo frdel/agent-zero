@@ -4,8 +4,9 @@ import * as css from "/js/css.js";
 import { sleep } from "/js/sleep.js";
 import { store as attachmentsStore } from "/components/chat/attachments/attachmentsStore.js";
 import { store as speechStore } from "/components/chat/speech/speech-store.js";
+import { store as notificationStore } from "/components/notifications/notification-store.js";
 
-window.fetchApi = api.fetchApi; // TODO - backward compatibility for non-modular scripts, remove once refactored to alpine
+globalThis.fetchApi = api.fetchApi; // TODO - backward compatibility for non-modular scripts, remove once refactored to alpine
 
 const leftPanel = document.getElementById("left-panel");
 const rightPanel = document.getElementById("right-panel");
@@ -69,8 +70,8 @@ function handleResize() {
   }
 }
 
-window.addEventListener("load", handleResize);
-window.addEventListener("resize", handleResize);
+globalThis.addEventListener("load", handleResize);
+globalThis.addEventListener("resize", handleResize);
 
 document.addEventListener("DOMContentLoaded", () => {
   const overlay = document.getElementById("sidebar-overlay");
@@ -184,7 +185,7 @@ function toastFetchError(text, error) {
     ).catch((e) => console.error("Failed to show connection error toast:", e));
   }
 }
-window.toastFetchError = toastFetchError;
+globalThis.toastFetchError = toastFetchError;
 
 chatInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
@@ -241,7 +242,7 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
   return result;
 }
 
-window.loadKnowledge = async function () {
+globalThis.loadKnowledge = async function () {
   const input = document.createElement("input");
   input.type = "file";
   input.accept = ".txt,.pdf,.csv,.html,.json,.md";
@@ -300,7 +301,7 @@ export const sendJsonData = async function (url, data) {
   // const jsonResponse = await response.json();
   // return jsonResponse;
 };
-window.sendJsonData = sendJsonData;
+globalThis.sendJsonData = sendJsonData;
 
 function generateGUID() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
@@ -316,7 +317,7 @@ function getConnectionStatus() {
 
 function setConnectionStatus(connected) {
   connectionStatus = connected;
-  if (window.Alpine && timeDate) {
+  if (globalThis.Alpine && timeDate) {
     const statusIconEl = timeDate.querySelector(".status-icon");
     if (statusIconEl) {
       const statusIcon = Alpine.$data(statusIconEl);
@@ -388,7 +389,7 @@ async function poll() {
     notificationStore.updateFromPoll(response);
 
     //set ui model vars from backend
-    if (window.Alpine && inputSection) {
+    if (globalThis.Alpine && inputSection) {
       const inputAD = Alpine.$data(inputSection);
       if (inputAD) {
         inputAD.paused = response.paused;
@@ -401,7 +402,7 @@ async function poll() {
     // Update chats list and sort by created_at time (newer first)
     let chatsAD = null;
     let contexts = response.contexts || [];
-    if (window.Alpine && chatsSection) {
+    if (globalThis.Alpine && chatsSection) {
       chatsAD = Alpine.$data(chatsSection);
       if (chatsAD) {
         chatsAD.contexts = contexts.sort(
@@ -412,7 +413,7 @@ async function poll() {
 
     // Update tasks list and sort by creation time (newer first)
     const tasksSection = document.getElementById("tasks-section");
-    if (window.Alpine && tasksSection) {
+    if (globalThis.Alpine && tasksSection) {
       const tasksAD = Alpine.$data(tasksSection);
       if (tasksAD) {
         let tasks = response.tasks || [];
@@ -572,15 +573,15 @@ function updateProgress(progress, active) {
   }
 }
 
-window.pauseAgent = async function (paused) {
+globalThis.pauseAgent = async function (paused) {
   try {
     const resp = await sendJsonData("/pause", { paused: paused, context });
   } catch (e) {
-    window.toastFetchError("Error pausing agent", e);
+    globalThis.toastFetchError("Error pausing agent", e);
   }
 };
 
-window.resetChat = async function (ctxid = null) {
+globalThis.resetChat = async function (ctxid = null) {
   try {
     const resp = await sendJsonData("/chat_reset", {
       context: ctxid === null ? context : ctxid,
@@ -588,20 +589,20 @@ window.resetChat = async function (ctxid = null) {
     resetCounter++;
     if (ctxid === null) updateAfterScroll();
   } catch (e) {
-    window.toastFetchError("Error resetting chat", e);
+    globalThis.toastFetchError("Error resetting chat", e);
   }
 };
 
-window.newChat = async function () {
+globalThis.newChat = async function () {
   try {
     setContext(generateGUID());
     updateAfterScroll();
   } catch (e) {
-    window.toastFetchError("Error creating new chat", e);
+    globalThis.toastFetchError("Error creating new chat", e);
   }
 };
 
-window.killChat = async function (id) {
+globalThis.killChat = async function (id) {
   if (!id) {
     console.error("No chat ID provided for deletion");
     return;
@@ -638,7 +639,7 @@ window.killChat = async function (id) {
     toast("Chat deleted successfully", "success");
   } catch (e) {
     console.error("Error deleting chat:", e);
-    window.toastFetchError("Error deleting chat", e);
+    globalThis.toastFetchError("Error deleting chat", e);
   }
 };
 
@@ -700,7 +701,7 @@ function ensureProperTabSelection(contextId) {
   return false;
 }
 
-window.selectChat = async function (id) {
+globalThis.selectChat = async function (id) {
   if (id === context) return; //already selected
 
   // Check if we need to switch tabs based on the context type
@@ -751,7 +752,7 @@ export const setContext = function (id) {
   chatHistory.innerHTML = "";
 
   // Update both selected states
-  if (window.Alpine) {
+  if (globalThis.Alpine) {
     if (chatsSection) {
       const chatsAD = Alpine.$data(chatsSection);
       if (chatsAD) chatsAD.selected = id;
@@ -774,15 +775,15 @@ export const getChatBasedId = function (id) {
   return context + "-" + resetCounter + "-" + id;
 };
 
-window.toggleAutoScroll = async function (_autoScroll) {
+globalThis.toggleAutoScroll = async function (_autoScroll) {
   autoScroll = _autoScroll;
 };
 
-window.toggleJson = async function (showJson) {
+globalThis.toggleJson = async function (showJson) {
   css.toggleCssProperty(".msg-json", "display", showJson ? "block" : "none");
 };
 
-window.toggleThoughts = async function (showThoughts) {
+globalThis.toggleThoughts = async function (showThoughts) {
   css.toggleCssProperty(
     ".msg-thoughts",
     "display",
@@ -790,7 +791,7 @@ window.toggleThoughts = async function (showThoughts) {
   );
 };
 
-window.toggleUtils = async function (showUtils) {
+globalThis.toggleUtils = async function (showUtils) {
   css.toggleCssProperty(
     ".message-util",
     "display",
@@ -798,7 +799,7 @@ window.toggleUtils = async function (showUtils) {
   );
 };
 
-window.toggleDarkMode = function (isDark) {
+globalThis.toggleDarkMode = function (isDark) {
   if (isDark) {
     document.body.classList.remove("light-mode");
     document.body.classList.add("dark-mode");
@@ -810,13 +811,13 @@ window.toggleDarkMode = function (isDark) {
   localStorage.setItem("darkMode", isDark);
 };
 
-window.toggleSpeech = function (isOn) {
+globalThis.toggleSpeech = function (isOn) {
   console.log("Speech:", isOn);
   localStorage.setItem("speech", isOn);
   if (!isOn) speechStore.stopAudio();
 };
 
-window.nudge = async function () {
+globalThis.nudge = async function () {
   try {
     const resp = await sendJsonData("/nudge", { ctxid: getContext() });
   } catch (e) {
@@ -824,7 +825,7 @@ window.nudge = async function () {
   }
 };
 
-window.restart = async function () {
+globalThis.restart = async function () {
   try {
     if (!getConnectionStatus()) {
       await toastFrontendError(
@@ -872,7 +873,7 @@ document.addEventListener("DOMContentLoaded", () => {
   toggleDarkMode(isDarkMode);
 });
 
-window.loadChats = async function () {
+globalThis.loadChats = async function () {
   try {
     const fileContents = await readJsonFiles();
     const response = await sendJsonData("/chat_load", { chats: fileContents });
@@ -896,7 +897,7 @@ window.loadChats = async function () {
   }
 };
 
-window.saveChat = async function () {
+globalThis.saveChat = async function () {
   try {
     const response = await sendJsonData("/chat_export", { ctxid: context });
 
@@ -1007,12 +1008,12 @@ function toast(text, type = "info", timeout = 5000) {
     }
 
 }
-window.toast = toast;
+globalThis.toast = toast;
 
 // OLD: hideToast function removed - now using new notification system
 
 function scrollChanged(isAtBottom) {
-  if (window.Alpine && autoScrollSwitch) {
+  if (globalThis.Alpine && autoScrollSwitch) {
     const inputAS = Alpine.$data(autoScrollSwitch);
     if (inputAS) {
       inputAS.autoScroll = isAtBottom;
@@ -1124,7 +1125,7 @@ function activateTab(tabName) {
     chatsSection.style.display = "";
 
     // Get the available contexts from Alpine.js data
-    const chatsAD = window.Alpine ? Alpine.$data(chatsSection) : null;
+    const chatsAD = globalThis.Alpine ? Alpine.$data(chatsSection) : null;
     const availableContexts = chatsAD?.contexts || [];
 
     // Restore previous chat selection
@@ -1148,7 +1149,7 @@ function activateTab(tabName) {
     tasksSection.style.flexDirection = "column";
 
     // Get the available tasks from Alpine.js data
-    const tasksAD = window.Alpine ? Alpine.$data(tasksSection) : null;
+    const tasksAD = globalThis.Alpine ? Alpine.$data(tasksSection) : null;
     const availableTasks = tasksAD?.tasks || [];
 
     // Restore previous task selection
@@ -1200,7 +1201,7 @@ function initializeActiveTab() {
 // Open the scheduler detail view for a specific task
 function openTaskDetail(taskId) {
   // Wait for Alpine.js to be fully loaded
-  if (window.Alpine) {
+  if (globalThis.Alpine) {
     // Get the settings modal button and click it to ensure all init logic happens
     const settingsButton = document.getElementById("settings");
     if (settingsButton) {
@@ -1215,7 +1216,7 @@ function openTaskDetail(taskId) {
       }
 
       // Get the Alpine.js data for the modal
-      const modalData = window.Alpine ? Alpine.$data(modalEl) : null;
+      const modalData = globalThis.Alpine ? Alpine.$data(modalEl) : null;
 
       // Use a timeout to ensure the modal is fully rendered
       setTimeout(() => {
@@ -1234,7 +1235,7 @@ function openTaskDetail(taskId) {
           }
 
           // Get the Alpine.js data for the scheduler component
-          const schedulerData = window.Alpine
+          const schedulerData = globalThis.Alpine
             ? Alpine.$data(schedulerComponent)
             : null;
 
@@ -1253,4 +1254,4 @@ function openTaskDetail(taskId) {
 }
 
 // Make the function available globally
-window.openTaskDetail = openTaskDetail;
+globalThis.openTaskDetail = openTaskDetail;

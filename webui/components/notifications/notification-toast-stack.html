@@ -33,9 +33,9 @@
                         <div class="toast-message"
                              x-text="toast.message">
                         </div>
-                        <div class="toast-timestamp"
+                        <!-- <div class="toast-timestamp"
                              x-text="$store.notificationStore.formatTimestamp(toast.timestamp)">
-                        </div>
+                        </div> -->
                     </div>
 
                     <!-- Toast Dismiss -->
@@ -53,16 +53,17 @@
     <style>
         /* Toast Stack Container */
         .toast-stack-container {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
+            position: absolute;
+            bottom: 5px; /* Spacing from the bottom of the zero-height container */
+            padding-right: 5px;
             z-index: 1500;
             display: flex;
-            flex-direction: column;
+            flex-direction: column-reverse; /* Stack toasts upwards */
             gap: 8px;
             pointer-events: none;
             max-width: 400px;
-            width: 100%;
+            width: calc(100% - 10px);
+            align-items: flex-end;
         }
 
         /* Individual Toast Items */
@@ -72,20 +73,18 @@
             align-items: flex-start;
             gap: 12px;
             padding: 16px;
-            background: rgba(0, 0, 0, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: var(--color-panel);
+            border: 1px solid var(--color-border);
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
-            backdrop-filter: blur(10px);
+            /* backdrop-filter: blur(10px); */
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             position: relative;
             min-height: 60px;
         }
 
         .toast-item:hover {
-            background: rgba(0, 0, 0, 0.95);
-            border-color: rgba(255, 255, 255, 0.3);
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
         }
@@ -93,34 +92,33 @@
         /* Toast Type Styling */
         .toast-item.notification-info {
             border-left: 4px solid #2196F3;
-            background: rgba(33, 150, 243, 0.1);
+            /* background: rgba(33, 150, 243, 0.1); */
         }
 
         .toast-item.notification-success {
             border-left: 4px solid #4CAF50;
-            background: rgba(76, 175, 80, 0.1);
+            /* background: rgba(76, 175, 80, 0.1); */
         }
 
         .toast-item.notification-warning {
             border-left: 4px solid #FF9800;
-            background: rgba(255, 152, 0, 0.1);
+            /* background: rgba(255, 152, 0, 0.1); */
         }
 
         .toast-item.notification-error {
             border-left: 4px solid #F44336;
-            background: rgba(244, 67, 54, 0.1);
+            /* background: rgba(244, 67, 54, 0.1); */
         }
 
         .toast-item.notification-progress {
             border-left: 4px solid #9C27B0;
-            background: rgba(156, 39, 176, 0.1);
+            /* background: rgba(156, 39, 176, 0.1); */
         }
 
         /* Toast Icon */
         .toast-icon {
             font-size: 1.2rem;
             line-height: 1;
-            opacity: 0.9;
             min-width: 24px;
             text-align: center;
             margin-top: 2px;
@@ -155,7 +153,7 @@
 
         /* Toast Dismiss */
         .toast-dismiss {
-            background: rgba(255, 255, 255, 0.1);
+            background: transparent; /* No background by default */
             border: none;
             border-radius: 4px;
             color: var(--color-text);
@@ -163,16 +161,12 @@
             padding: 4px 6px;
             font-size: 0.8rem;
             transition: all 0.2s ease;
-            opacity: 0;
-        }
-
-        .toast-item:hover .toast-dismiss {
-            opacity: 1;
+            opacity: 1; /* Always visible */
         }
 
         .toast-dismiss:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: #fff;
+            background: var(--color-panel);
+            color: var(--color-primary);
         }
 
         /* Toast Animations */
@@ -188,25 +182,6 @@
             transform: translateX(100%) scale(0.8);
         }
 
-        /* Light Mode Styles */
-        .light-mode .toast-item {
-            background: rgba(255, 255, 255, 0.95);
-            border-color: rgba(0, 0, 0, 0.1);
-            color: var(--color-text);
-        }
-
-        .light-mode .toast-item:hover {
-            background: rgba(255, 255, 255, 0.98);
-            border-color: rgba(0, 0, 0, 0.2);
-        }
-
-        .light-mode .toast-dismiss {
-            background: rgba(0, 0, 0, 0.1);
-        }
-
-        .light-mode .toast-dismiss:hover {
-            background: rgba(0, 0, 0, 0.2);
-        }
 
         /* Mobile Responsive */
         @media (max-width: 768px) {

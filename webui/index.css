@@ -68,6 +68,21 @@
     hue-rotate(177deg) brightness(87%) contrast(85%);
 }
 
+/* Light mode class */
+.light-mode {
+  --color-background: var(--color-background-light);
+  --color-text: var(--color-text-light);
+  --color-primary: var(--color-primary-light);
+  --color-secondary: var(--color-secondary-light);
+  --color-accent: var(--color-accent-light);
+  --color-message-bg: var(--color-message-bg-light);
+  --color-message-text: var(--color-message-text-light);
+  --color-panel: var(--color-panel-light);
+  --color-border: var(--color-border-light);
+  --color-input: var(--color-input-light);
+  --color-input-focus: var(--color-input-focus-light);
+}
+
 /* Reset and Base Styles */
 body,
 html {
@@ -402,6 +417,7 @@ img {
 }
 
 #time-date-container {
+  z-index: 1000;
   position: fixed;
   right: var(--spacing-md);
   display: flex;
@@ -1686,22 +1702,6 @@ a:hover {
 a:active {
   color: inherit;
 }
-
-/* Light mode class */
-.light-mode {
-  --color-background: var(--color-background-light);
-  --color-text: var(--color-text-light);
-  --color-primary: var(--color-primary-light);
-  --color-secondary: var(--color-secondary-light);
-  --color-accent: var(--color-accent-light);
-  --color-message-bg: var(--color-message-bg-light);
-  --color-message-text: var(--color-message-text-light);
-  --color-panel: var(--color-panel-light);
-  --color-border: var(--color-border-light);
-  --color-input: var(--color-input-light);
-  --color-input-focus: var(--color-input-focus-light);
-}
-
 
 
 .light-mode .connected {
