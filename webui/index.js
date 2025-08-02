@@ -230,7 +230,13 @@ setInterval(updateUserTime, 1000);
 
 function setMessage(id, type, heading, content, temp, kvps = null) {
   const result = msgs.setMessage(id, type, heading, content, temp, kvps);
-  if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
+
+  // Use enhanced autoscroll logic that considers scrollable elements within messages
+  if (autoScroll && !msgs.getScrollManager().autoscrollDisabled) {
+    // Scroll all scrollable elements to bottom when autoscroll is enabled
+    msgs.getScrollManager().scrollAllToBottom();
+  }
+
   return result;
 }
 
@@ -765,6 +771,17 @@ export const getChatBasedId = function (id) {
 
 window.toggleAutoScroll = async function (_autoScroll) {
   autoScroll = _autoScroll;
+
+  // Sync with scroll manager
+  if (msgs.getScrollManager) {
+    if (_autoScroll) {
+      msgs.getScrollManager().enableAutoscroll();
+      // Scroll to bottom when autoscroll is enabled
+      msgs.getScrollManager().scrollAllToBottom();
+    } else {
+      msgs.getScrollManager().disableAutoscroll();
+    }
+  }
 };
 
 window.toggleJson = async function (showJson) {
@@ -855,6 +872,11 @@ window.restart = async function () {
 document.addEventListener("DOMContentLoaded", () => {
   const isDarkMode = localStorage.getItem("darkMode") !== "false";
   toggleDarkMode(isDarkMode);
+
+  // Initialize scroll manager global listeners
+  if (msgs.getScrollManager) {
+    msgs.getScrollManager().setupGlobalScrollListeners();
+  }
 });
 
 window.loadChats = async function () {
@@ -1066,13 +1088,20 @@ function hideToast() {
 }
 
 function scrollChanged(isAtBottom) {
+  // Check global scroll state including message-level scrollable elements
+  if (msgs.getScrollManager) {
+    msgs.getScrollManager().checkGlobalScrollState();
+    autoScroll = !msgs.getScrollManager().autoscrollDisabled && isAtBottom;
+  } else {
+    autoScroll = isAtBottom;
+  }
+
   if (window.Alpine && autoScrollSwitch) {
     const inputAS = Alpine.$data(autoScrollSwitch);
     if (inputAS) {
-      inputAS.autoScroll = isAtBottom;
+      inputAS.autoScroll = autoScroll;
     }
   }
-  // autoScrollSwitch.checked = isAtBottom
 }
 
 function updateAfterScroll() {
