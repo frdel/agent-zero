@@ -1595,16 +1595,14 @@ input:checked + .slider:before {
   }
 
   .msg-content span,
-  .kvps-val,
-  .message-text span {
+  .kvps-val {
     cursor: pointer;
     position: relative;
   }
 
   .msg-thoughts span::after,
   .msg-content span::after,
-  .kvps-val::after,
-  .message-text::after {
+  .kvps-val::after {
     content: "Copied!";
     position: absolute;
     opacity: 0;
@@ -1623,8 +1621,7 @@ input:checked + .slider:before {
 
   .msg-thoughts span.copied::after,
   .msg-content span.copied::after,
-  .kvps-val.copied::after,
-  .message-text.copied::after {
+  .kvps-val.copied::after {
     opacity: 1;
   }
 }

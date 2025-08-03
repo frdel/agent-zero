@@ -123,6 +123,9 @@ function createActionButtonGroup() {
   speakButton.setAttribute("title", "Text to speech");
   speakButton.setAttribute("tabindex", "0");
 
+  // Track if this button is actively speaking
+  let isThisButtonSpeaking = false;
+
   speakButton.addEventListener("click", async function (e) {
     e.stopPropagation();
     e.preventDefault();
@@ -133,34 +136,62 @@ function createActionButtonGroup() {
     const icon = speakButton.querySelector(".material-symbols-outlined");
 
     // Check if currently speaking (pause icon is showing)
-    if (icon.textContent === "pause") {
-      // Stop the speech
-      speechStore.stop();
+    if (icon.textContent === "pause" || isThisButtonSpeaking) {
+      // Stop speaking - this is a pause/stop action
+      isThisButtonSpeaking = false;
       icon.textContent = "volume_up";
       speakButton.setAttribute("aria-label", "Read message aloud");
+      
+      // Stop the speech completely
+      speechStore.stop();
+      
+      // Reset all other speak buttons
+      document.querySelectorAll('.speak-action .material-symbols-outlined').forEach(speakIcon => {
+        if (speakIcon !== icon) {
+          speakIcon.textContent = "volume_up";
+          speakIcon.closest('.speak-action').setAttribute("aria-label", "Read message aloud");
+        }
+      });
+      
+      return; // Exit - this was a stop action, not a restart
+    }
+
+    // This is a start speaking action
+    // First stop any other speaking and reset their buttons
+    speechStore.stop();
+    document.querySelectorAll('.speak-action .material-symbols-outlined').forEach(speakIcon => {
+      speakIcon.textContent = "volume_up";
+      speakIcon.closest('.speak-action').setAttribute("aria-label", "Read message aloud");
+    });
+
+    // Start speaking - pass the button element, not 'this' from the event handler
+    const textToSpeak = extractTextFromContainer(speakButton);
+    
+    if (!textToSpeak.trim()) {
+      console.warn("No text to speak");
       return;
     }
 
-    // Start speaking
-    const textToSpeak = extractTextFromContainer(this);
-
     try {
-      // Don't add loading class to prevent positioning issues
-      // speakButton.classList.add("loading");
+      isThisButtonSpeaking = true;
       icon.textContent = "pause";
       speakButton.setAttribute("aria-label", "Stop speaking");
 
-      // Delay slightly to ensure browser doesn't show dropdown
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Small delay to ensure UI updates
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
       await speechStore.speak(textToSpeak);
 
-      icon.textContent = "volume_up";
-      // speakButton.classList.remove("loading");
-      speakButton.setAttribute("aria-label", "Read message aloud");
+      // Speech completed naturally
+      if (isThisButtonSpeaking) {
+        isThisButtonSpeaking = false;
+        icon.textContent = "volume_up";
+        speakButton.setAttribute("aria-label", "Read message aloud");
+      }
     } catch (err) {
       console.error("Failed to speak text:", err);
+      isThisButtonSpeaking = false;
       icon.textContent = "volume_up";
-      // speakButton.classList.remove("loading");
       speakButton.classList.add("error");
       setTimeout(() => {
         speakButton.classList.remove("error");
@@ -176,14 +207,17 @@ function createActionButtonGroup() {
 }
 
 function extractTextFromContainer(button) {
-  const container = button.closest(".msg-content, .kvps-row, .message-text");
+  const container = button.closest(".msg-content, .kvps-row");
   let textToExtract;
 
   if (container.classList.contains("kvps-row")) {
     textToExtract = container.querySelector(".kvps-val").innerText;
-  } else if (container.classList.contains("message-text")) {
-    textToExtract = container.querySelector("span").innerText;
+  } else if (container.classList.contains("user-message-content")) {
+    // User messages use <pre> element
+    const preElement = container.querySelector("pre");
+    textToExtract = preElement ? preElement.innerText : container.innerText;
   } else {
+    // Other messages use <span> element
     const spanElement = container.querySelector("span");
     textToExtract = spanElement ? spanElement.innerText : container.innerText;
   }
@@ -196,21 +230,42 @@ function addActionButtonsToElement(element) {
     const actionGroup = createActionButtonGroup();
     element.appendChild(actionGroup);
     
-    // Add viewport-aware positioning
+    // Add viewport-aware positioning with sticky behavior
     function updateButtonPosition() {
       const rect = actionGroup.getBoundingClientRect();
+      const containerRect = element.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
-      
+      const chatHistory = document.getElementById('chat-history');
+      const chatHistoryRect = chatHistory ? chatHistory.getBoundingClientRect() : null;
+
       // Reset position classes
-      actionGroup.classList.remove('position-left', 'position-bottom');
-      
-      // Check if buttons would go off screen and adjust
-      if (rect.right > viewportWidth - 10) {
-        actionGroup.classList.add('position-left');
-      }
-      if (rect.bottom > viewportHeight - 10) {
-        actionGroup.classList.add('position-bottom');
+      actionGroup.classList.remove('position-left', 'position-bottom', 'position-sticky');
+
+      // Get the effective bottom boundary (chat container or viewport, whichever is smaller)
+      const effectiveBottom = chatHistoryRect ?
+        Math.min(viewportHeight, chatHistoryRect.bottom) : viewportHeight;
+
+      // Check if the container is partially out of viewport (for sticky behavior)
+      if (containerRect.top < 0 && containerRect.bottom > 100) {
+        // Container is scrolled partially out of view, make buttons sticky
+        actionGroup.classList.add('position-sticky');
+      } else {
+        // Normal positioning checks
+        if (rect.right > viewportWidth - 10) {
+          actionGroup.classList.add('position-left');
+        }
+
+        // Check if buttons would be cut off at the bottom of chat container or viewport
+        if (rect.bottom > effectiveBottom - 10) {
+          actionGroup.classList.add('position-bottom');
+        }
+
+        // Special case: if message is very close to bottom of chat container,
+        // ensure buttons stay within bounds
+        if (chatHistoryRect && containerRect.bottom > chatHistoryRect.bottom - 60) {
+          actionGroup.classList.add('position-bottom');
+        }
       }
     }
     
@@ -280,8 +335,17 @@ function addActionButtonsToElement(element) {
       });
     }
     
-    // Update position on window resize
+    // Update position on window resize and scroll
     window.addEventListener("resize", updateButtonPosition);
+    const chatHistory = document.getElementById("chat-history");
+    if (chatHistory) {
+      // Use throttled scroll handler for better performance
+      let scrollTimeout;
+      chatHistory.addEventListener("scroll", function() {
+        if (scrollTimeout) clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(updateButtonPosition, 16); // ~60fps
+      });
+    }
     
     // Add keyboard support for all devices
     const buttons = actionGroup.querySelectorAll(".message-action-button");
@@ -421,10 +485,12 @@ export function _drawMessage(
       const spanElement = document.createElement("span");
       spanElement.innerHTML = convertHTML(content);
 
-      // Add click handler for small screens
-      spanElement.addEventListener("click", () => {
-        copyText(spanElement.textContent, spanElement);
-      });
+      // Add click handler only for non-touch devices
+      if (!document.body.classList.contains("device-touch")) {
+        spanElement.addEventListener("click", () => {
+          copyText(spanElement.textContent, spanElement);
+        });
+      }
 
       preElement.appendChild(spanElement);
       addActionButtonsToElement(preElement);
@@ -588,17 +654,19 @@ export function drawMessageUser(
 
   if (content && content.trim().length > 0) {
     const textDiv = document.createElement("div");
-    textDiv.classList.add("message-text");
+    textDiv.classList.add("msg-content", "user-message-content");
 
     // Create a span for the content
     const spanElement = document.createElement("pre");
     spanElement.innerHTML = escapeHTML(content);
     textDiv.appendChild(spanElement);
 
-    // Add click handler
-    textDiv.addEventListener("click", () => {
-      copyText(content, textDiv);
-    });
+    // Add click handler only for non-touch devices
+    if (!document.body.classList.contains("device-touch")) {
+      textDiv.addEventListener("click", () => {
+        copyText(content, textDiv);
+      });
+    }
 
     addActionButtonsToElement(textDiv);
     messageDiv.appendChild(textDiv);
@@ -901,10 +969,12 @@ function drawKvps(container, kvps, latex) {
           tdiv.appendChild(pre);
           addActionButtonsToElement(row);
 
-          // Add click handler
-          span.addEventListener("click", () => {
-            copyText(span.textContent, span);
-          });
+          // Add click handler only for non-touch devices
+          if (!document.body.classList.contains("device-touch")) {
+            span.addEventListener("click", () => {
+              copyText(span.textContent, span);
+            });
+          }
 
           // KaTeX rendering for markdown
           if (latex) {
