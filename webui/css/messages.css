@@ -402,9 +402,11 @@
 }
 
 .msg-content {
-  margin-bottom: 0;
-  padding: 0;
-  overflow: hidden;
+  max-height: 30em;
+  overflow-y: auto;
+  overflow-x: hidden;
+  word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .message-temp {

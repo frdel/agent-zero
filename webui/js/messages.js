@@ -20,102 +20,14 @@ class ScrollPositionManager {
 
   // Store scroll positions for all scrollable elements in a message
   storeMessageScrollPositions(messageContainer) {
-    if (!messageContainer) return;
-
-    const messageId = messageContainer.id;
-    const positions = {};
-
-    // Store main message content scroll position
-    const msgContent = messageContainer.querySelector('.msg-content');
-    if (msgContent && msgContent.scrollHeight > msgContent.clientHeight) {
-      positions.msgContent = {
-        scrollTop: msgContent.scrollTop,
-        scrollHeight: msgContent.scrollHeight,
-        clientHeight: msgContent.clientHeight,
-        isAtBottom: this.isAtBottom(msgContent)
-      };
-    }
-
-    // Store message body scroll position (for terminal messages)
-    const msgBody = messageContainer.querySelector('.message-body');
-    if (msgBody && msgBody.scrollHeight > msgBody.clientHeight) {
-      positions.msgBody = {
-        scrollTop: msgBody.scrollTop,
-        scrollHeight: msgBody.scrollHeight,
-        clientHeight: msgBody.clientHeight,
-        isAtBottom: this.isAtBottom(msgBody)
-      };
-    }
-
-    // Store KVP scroll positions
-    const kvpValues = messageContainer.querySelectorAll('.kvps-val');
-    kvpValues.forEach((kvp, index) => {
-      if (kvp.scrollHeight > kvp.clientHeight) {
-        positions[`kvp_${index}`] = {
-          scrollTop: kvp.scrollTop,
-          scrollHeight: kvp.scrollHeight,
-          clientHeight: kvp.clientHeight,
-          isAtBottom: this.isAtBottom(kvp)
-        };
-      }
-    });
-
-    this.positions.set(messageId, positions);
+    // Disabled to prevent scroll position resets
+    return;
   }
 
   // Restore scroll positions for a message
   restoreMessageScrollPositions(messageContainer) {
-    if (!messageContainer) return;
-
-    const messageId = messageContainer.id;
-    const positions = this.positions.get(messageId);
-    if (!positions) return;
-
-    // Use a small delay to ensure DOM is fully updated
-    setTimeout(() => {
-      // Restore main message content scroll
-      if (positions.msgContent) {
-        const msgContent = messageContainer.querySelector('.msg-content');
-        if (msgContent) {
-          if (this.autoscrollDisabled || !positions.msgContent.isAtBottom) {
-            // User had scrolled up, restore their position
-            msgContent.scrollTop = positions.msgContent.scrollTop;
-          } else {
-            // User was at bottom, keep at bottom (autoscroll)
-            msgContent.scrollTop = msgContent.scrollHeight;
-          }
-        }
-      }
-
-      // Restore message body scroll position (for terminal messages)
-      if (positions.msgBody) {
-        const msgBody = messageContainer.querySelector('.message-body');
-        if (msgBody) {
-          if (this.autoscrollDisabled || !positions.msgBody.isAtBottom) {
-            // User had scrolled up, restore their position
-            msgBody.scrollTop = positions.msgBody.scrollTop;
-          } else {
-            // User was at bottom, keep at bottom (autoscroll)
-            msgBody.scrollTop = msgBody.scrollHeight;
-          }
-        }
-      }
-
-      // Restore KVP scroll positions
-      const kvpValues = messageContainer.querySelectorAll('.kvps-val');
-      kvpValues.forEach((kvp, index) => {
-        const posKey = `kvp_${index}`;
-        if (positions[posKey]) {
-          if (this.autoscrollDisabled || !positions[posKey].isAtBottom) {
-            // User had scrolled up, restore their position
-            kvp.scrollTop = positions[posKey].scrollTop;
-          } else {
-            // User was at bottom, keep at bottom (autoscroll)
-            kvp.scrollTop = kvp.scrollHeight;
-          }
-        }
-      });
-    }, 10); // Small delay to ensure DOM is ready
+    // Disabled to prevent scroll position resets
+    return;
   }
 
   // Check global scroll state and update autoscroll disabled flag
@@ -200,37 +112,26 @@ class ScrollPositionManager {
     return true;
   }
 
-  // Continuous monitoring method for re-enabling autoscroll during active content generation
-  startContinuousMonitoring() {
-    // Clear any existing monitoring
-    if (this.monitoringInterval) {
-      clearInterval(this.monitoringInterval);
-    }
+  // Enhanced method to re-enable autoscroll when user scrolls to bottom
+  reEnableAutoscrollIfAtBottom() {
+    // Check if main chat history is at bottom - this is the primary indicator
+    const chatHistory = document.getElementById("chat-history");
+    const isMainHistoryAtBottom = chatHistory && this.isAtBottom(chatHistory, 20);
 
-    // Start monitoring every 100ms to check if user has scrolled to bottom
-    this.monitoringInterval = setInterval(() => {
-      if (this.autoscrollDisabled) {
-        // Check if main chat history is at bottom - this is the primary indicator
-        const chatHistory = document.getElementById("chat-history");
-        const isMainHistoryAtBottom = chatHistory && this.isAtBottom(chatHistory, 20);
+    // Check if chat input is at bottom
+    const chatInput = document.getElementById("chat-input");
+    const isChatInputAtBottom = chatInput && this.isAtBottom(chatInput, 20);
 
-        // Check if chat input is at bottom
-        const chatInput = document.getElementById("chat-input");
-        const isChatInputAtBottom = chatInput && this.isAtBottom(chatInput, 20);
-
-        // If main chat history is at bottom, re-enable autoscroll regardless of individual message positions
-        if (isMainHistoryAtBottom && isChatInputAtBottom) {
-          this.reEnableAutoscrollIfAtBottom();
-        }
+    // If main chat history is at bottom, re-enable autoscroll regardless of individual message positions
+    // This allows users to scroll up in individual messages but still have autoscroll when they scroll down the main history
+    if (isMainHistoryAtBottom && isChatInputAtBottom) {
+      this.autoscrollDisabled = false;
+      // Scroll all elements to bottom when autoscroll is enabled
+      this.scrollAllToBottom();
+      // Update the main autoscroll state
+      if (window.updateAfterScroll) {
+        window.updateAfterScroll();
       }
-    }, 100);
-  }
-
-  // Stop continuous monitoring
-  stopContinuousMonitoring() {
-    if (this.monitoringInterval) {
-      clearInterval(this.monitoringInterval);
-      this.monitoringInterval = null;
     }
   }
 
@@ -286,8 +187,6 @@ class ScrollPositionManager {
       chatHistory.addEventListener('scroll', () => {
         if (!this.isAtBottom(chatHistory)) {
           this.disableAutoscroll();
-          // Start continuous monitoring when autoscroll is disabled
-          this.startContinuousMonitoring();
         } else {
           this.reEnableAutoscrollIfAtBottom();
         }
@@ -300,37 +199,10 @@ class ScrollPositionManager {
       chatInput.addEventListener('scroll', () => {
         if (!this.isAtBottom(chatInput)) {
           this.disableAutoscroll();
-          // Start continuous monitoring when autoscroll is disabled
-          this.startContinuousMonitoring();
         } else {
           this.reEnableAutoscrollIfAtBottom();
         }
       });
-    }
-  }
-
-  // Enhanced method to re-enable autoscroll when user scrolls to bottom
-  reEnableAutoscrollIfAtBottom() {
-    // Check if main chat history is at bottom - this is the primary indicator
-    const chatHistory = document.getElementById("chat-history");
-    const isMainHistoryAtBottom = chatHistory && this.isAtBottom(chatHistory, 20);
-
-    // Check if chat input is at bottom
-    const chatInput = document.getElementById("chat-input");
-    const isChatInputAtBottom = chatInput && this.isAtBottom(chatInput, 20);
-
-    // If main chat history is at bottom, re-enable autoscroll regardless of individual message positions
-    // This allows users to scroll up in individual messages but still have autoscroll when they scroll down the main history
-    if (isMainHistoryAtBottom && isChatInputAtBottom) {
-      this.autoscrollDisabled = false;
-      // Stop continuous monitoring when autoscroll is re-enabled
-      this.stopContinuousMonitoring();
-      // Scroll all elements to bottom when autoscroll is enabled
-      this.scrollAllToBottom();
-      // Update the main autoscroll state
-      if (window.updateAfterScroll) {
-        window.updateAfterScroll();
-      }
     }
   }
 
@@ -377,7 +249,7 @@ class ScrollPositionManager {
   disableAutoscroll() {
     this.autoscrollDisabled = true;
     // Start continuous monitoring when autoscroll is disabled
-    this.startContinuousMonitoring();
+    // this.startContinuousMonitoring(); // Removed continuous monitoring
     // Don't call window.toggleAutoScroll here to avoid circular dependency
     // The main autoscroll state will be updated via scrollChanged function
   }
@@ -386,7 +258,7 @@ class ScrollPositionManager {
   enableAutoscroll() {
     this.autoscrollDisabled = false;
     // Stop continuous monitoring when autoscroll is enabled
-    this.stopContinuousMonitoring();
+    // this.stopContinuousMonitoring(); // Removed continuous monitoring
     // Automatically scroll to bottom when autoscroll is enabled
     this.scrollAllToBottom();
   }
@@ -406,9 +278,6 @@ export function setMessage(id, type, heading, content, temp, kvps = null) {
   let isNewMessage = false;
 
   if (messageContainer) {
-    // Store current scroll positions before updating
-    scrollManager.storeMessageScrollPositions(messageContainer);
-
     // Don't clear innerHTML - we'll do incremental updates
     // messageContainer.innerHTML = "";
   } else {
@@ -418,7 +287,6 @@ export function setMessage(id, type, heading, content, temp, kvps = null) {
     messageContainer = document.createElement("div");
     messageContainer.id = `message-${id}`;
     messageContainer.classList.add("message-container", `${sender}-container`);
-    // if (temp) messageContainer.classList.add("message-temp");
   }
 
   const handler = getHandler(type);
@@ -428,50 +296,22 @@ export function setMessage(id, type, heading, content, temp, kvps = null) {
   if (isNewMessage && !document.getElementById(`message-${id}`)) {
     // message type visual grouping
     const groupTypeMap = {
-      user: "right",
-      info: "mid",
-      warning: "mid",
-      error: "mid",
-      rate_limit: "mid",
-      util: "mid",
-      hint: "mid",
-      // anything else is "left"
+      user: "message-group-right",
+      ai: "message-group-mid",
+      tool: "message-group-mid",
+      default: "message-group-mid",
     };
-
-    //force new group on these types
-    const groupStart = {
-      agent: true,
-      // anything else is false
-    };
-
-    const groupType = groupTypeMap[type] || "left";
-
-    // here check if messageGroup is still in DOM, if not, then set it to null (context switch)
-    if(messageGroup && !document.getElementById(messageGroup.id))
-      messageGroup = null;
-
-    if (
-      !messageGroup || // no group yet exists
-      groupStart[type] || // message type forces new group
-      groupType != messageGroup.getAttribute("data-group-type") // message type changes group
-    ) {
-      messageGroup = document.createElement("div");
-      messageGroup.id = `message-group-${id}`;
-      messageGroup.classList.add(`message-group`, `message-group-${groupType}`);
-      messageGroup.setAttribute("data-group-type", groupType);
-    }
-
+    const groupType = groupTypeMap[type] || "message-group-mid";
+    messageGroup = document.createElement("div");
+    messageGroup.classList.add("message-group", groupType);
     messageGroup.appendChild(messageContainer);
     chatHistory.appendChild(messageGroup);
 
     // Set up scroll listeners for new message
     scrollManager.setupScrollListeners(messageContainer);
-  } else {
-    // For existing messages, restore scroll positions after DOM update
-    setTimeout(() => {
-      scrollManager.restoreMessageScrollPositions(messageContainer);
-    }, 0);
   }
+
+  return messageContainer;
 }
 
 function createCopyButton() {
@@ -1280,21 +1120,8 @@ function drawKvpsIncremental(container, kvps, latex) {
         addValue(value, tdiv);
       }
 
-      // Restore scroll position or autoscroll
-      setTimeout(() => {
-        if (!scrollManager.autoscrollDisabled && isAtBottom) {
-          // User was at bottom, keep at bottom
-          tdiv.scrollTop = tdiv.scrollHeight;
-        } else if (!scrollManager.autoscrollDisabled) {
-          // User was at bottom, keep at bottom (autoscroll)
-          tdiv.scrollTop = tdiv.scrollHeight;
-        } else {
-          // Restore previous position only if user had scrolled up
-          if (currentScrollTop > 0) {
-            tdiv.scrollTop = currentScrollTop;
-          }
-        }
-      }, 10);
+      // Don't restore scroll position to prevent resets
+      // Let the natural scroll behavior work
     });
 
     // Remove extra rows if we have fewer kvps now

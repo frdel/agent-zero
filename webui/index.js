@@ -1113,10 +1113,111 @@ function updateAfterScroll() {
     chatHistory.scrollHeight - chatHistory.scrollTop <=
     chatHistory.clientHeight + tolerancePx;
 
-  scrollChanged(isAtBottom);
+  // Check if any scrollable message content areas are scrolled up
+  const allMsgContent = document.querySelectorAll('.msg-content');
+  let anyMsgContentScrolledUp = false;
+  for (const element of allMsgContent) {
+    if (element.scrollHeight > element.clientHeight) {
+      const elementIsAtBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + tolerancePx;
+      if (!elementIsAtBottom) {
+        anyMsgContentScrolledUp = true;
+        break;
+      }
+    }
+  }
+
+  // Check if any KVP value areas are scrolled up
+  const allKvpValues = document.querySelectorAll('.kvps-val');
+  let anyKvpScrolledUp = false;
+  for (const element of allKvpValues) {
+    if (element.scrollHeight > element.clientHeight) {
+      const elementIsAtBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + tolerancePx;
+      if (!elementIsAtBottom) {
+        anyKvpScrolledUp = true;
+        break;
+      }
+    }
+  }
+
+  // Check if any message body areas (terminal messages) are scrolled up
+  const allMsgBody = document.querySelectorAll('.message-body');
+  let anyMsgBodyScrolledUp = false;
+  for (const element of allMsgBody) {
+    if (element.scrollHeight > element.clientHeight) {
+      const elementIsAtBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + tolerancePx;
+      if (!elementIsAtBottom) {
+        anyMsgBodyScrolledUp = true;
+        break;
+      }
+    }
+  }
+
+  // Only consider at bottom if main history is at bottom AND no individual areas are scrolled up
+  const isReallyAtBottom = isAtBottom && !anyMsgContentScrolledUp && !anyKvpScrolledUp && !anyMsgBodyScrolledUp;
+
+  scrollChanged(isReallyAtBottom);
 }
 
 chatHistory.addEventListener("scroll", updateAfterScroll);
+
+// Set up scroll listeners for all scrollable message content areas
+function setupMessageScrollListeners() {
+  // Set up scroll listeners for msg-content elements
+  const allMsgContent = document.querySelectorAll('.msg-content');
+  allMsgContent.forEach(element => {
+    if (element.scrollHeight > element.clientHeight) {
+      element.addEventListener('scroll', updateAfterScroll);
+    }
+  });
+
+  // Set up scroll listeners for kvps-val elements
+  const allKvpValues = document.querySelectorAll('.kvps-val');
+  allKvpValues.forEach(element => {
+    if (element.scrollHeight > element.clientHeight) {
+      element.addEventListener('scroll', updateAfterScroll);
+    }
+  });
+
+  // Set up scroll listeners for message-body elements (terminal messages)
+  const allMsgBody = document.querySelectorAll('.message-body');
+  allMsgBody.forEach(element => {
+    if (element.scrollHeight > element.clientHeight) {
+      element.addEventListener('scroll', updateAfterScroll);
+    }
+  });
+}
+
+// Function to add scroll listeners to new message content
+function addScrollListenersToMessage(messageContainer) {
+  if (!messageContainer) return;
+
+  // Add scroll listeners to msg-content elements
+  const msgContentElements = messageContainer.querySelectorAll('.msg-content');
+  msgContentElements.forEach(element => {
+    if (element.scrollHeight > element.clientHeight) {
+      element.addEventListener('scroll', updateAfterScroll);
+    }
+  });
+
+  // Add scroll listeners to kvps-val elements
+  const kvpElements = messageContainer.querySelectorAll('.kvps-val');
+  kvpElements.forEach(element => {
+    if (element.scrollHeight > element.clientHeight) {
+      element.addEventListener('scroll', updateAfterScroll);
+    }
+  });
+
+  // Add scroll listeners to message-body elements
+  const msgBodyElements = messageContainer.querySelectorAll('.message-body');
+  msgBodyElements.forEach(element => {
+    if (element.scrollHeight > element.clientHeight) {
+      element.addEventListener('scroll', updateAfterScroll);
+    }
+  });
+}
+
+// Make function available globally
+window.addScrollListenersToMessage = addScrollListenersToMessage;
 
 chatInput.addEventListener("input", adjustTextareaHeight);
 
@@ -1154,6 +1255,9 @@ document.addEventListener("DOMContentLoaded", function () {
   setupSidebarToggle();
   setupTabs();
   initializeActiveTab();
+
+  // Set up scroll listeners for existing message content
+  setupMessageScrollListeners();
 });
 
 // Setup tabs functionality
