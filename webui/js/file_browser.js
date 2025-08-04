@@ -193,33 +193,15 @@ const fileBrowserModalProxy = {
     }
   },
 
-  async downloadFile(file) {
-    try {
-      const downloadUrl = `/download_work_dir_file?path=${encodeURIComponent(
-        file.path
-      )}`;
-
-      const response = await fetchApi(downloadUrl);
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const blob = await response.blob();
-
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
-      link.download = file.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(link.href);
-    } catch (error) {
-      window.toastFrontendError("Error downloading file: " + error.message, "File Download Error");
-      alert("Error downloading file");
-    }
+  downloadFile(file) {
+    const link = document.createElement("a");
+    link.href = `/download_work_dir_file?path=${encodeURIComponent(file.path)}`;
+    link.download = file.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   },
-
+  
   // Helper Functions
   formatFileSize(size) {
     if (size === 0) return "0 Bytes";
