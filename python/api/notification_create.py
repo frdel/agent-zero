@@ -1,6 +1,6 @@
 from python.helpers.api import ApiHandler
 from flask import Request, Response
-from python.helpers.notification import AgentNotification, NotificationType
+from python.helpers.notification import NotificationManager, NotificationPriority, NotificationType
 
 
 class NotificationCreate(ApiHandler):
@@ -10,7 +10,8 @@ class NotificationCreate(ApiHandler):
 
     async def process(self, input: dict, request: Request) -> dict | Response:
         # Extract notification data
-        notification_type = input.get("type", "info")
+        notification_type = input.get("type", NotificationType.INFO.value)
+        priority = input.get("priority", NotificationPriority.NORMAL.value)
         message = input.get("message", "")
         title = input.get("title", "")
         detail = input.get("detail", "")
@@ -34,31 +35,31 @@ class NotificationCreate(ApiHandler):
             if isinstance(notification_type, str):
                 notification_type = NotificationType(notification_type.lower())
         except ValueError:
-            return {"success": False, "error": f"Invalid notification type: {notification_type}"}
+            return {
+                "success": False,
+                "error": f"Invalid notification type: {notification_type}",
+            }
 
         # Create notification using the appropriate helper method
         try:
-            if notification_type == NotificationType.INFO:
-                notification = AgentNotification.info(message, title, detail, display_time, group)
-            elif notification_type == NotificationType.SUCCESS:
-                notification = AgentNotification.success(message, title, detail, display_time, group)
-            elif notification_type == NotificationType.WARNING:
-                notification = AgentNotification.warning(message, title, detail, display_time, group)
-            elif notification_type == NotificationType.ERROR:
-                notification = AgentNotification.error(message, title, detail, display_time, group)
-            elif notification_type == NotificationType.PROGRESS:
-                notification = AgentNotification.progress(message, title, detail, display_time, group)
-            else:
-                notification = AgentNotification.info(message, title, detail, display_time, group)
+            notification = NotificationManager.send_notification(
+                notification_type,
+                priority,
+                message,
+                title,
+                detail,
+                display_time,
+                group,
+            )
 
             return {
                 "success": True,
                 "notification_id": notification.id,
-                "message": "Notification created successfully"
+                "message": "Notification created successfully",
             }
 
         except Exception as e:
             return {
                 "success": False,
-                "error": f"Failed to create notification: {str(e)}"
+                "error": f"Failed to create notification: {str(e)}",
             }

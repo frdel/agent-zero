@@ -636,7 +636,7 @@ globalThis.killChat = async function (id) {
 
     updateAfterScroll();
 
-    toast("Chat deleted successfully", "success");
+    justToast("Chat deleted successfully", "success", 1000, "chat-removal");
   } catch (e) {
     console.error("Error deleting chat:", e);
     globalThis.toastFetchError("Error deleting chat", e);
@@ -990,9 +990,20 @@ function removeClassFromElement(element, className) {
   element.classList.remove(className);
 }
 
+function justToast(text, type = "info", timeout = 5000, group = "") {
+  notificationStore.addFrontendToastOnly(
+    type,
+    text,
+    "",
+    timeout / 1000,
+    group
+  )
+}
+  
+
 function toast(text, type = "info", timeout = 5000) {
   // Convert timeout from milliseconds to seconds for new notification system
-  const display_time = Math.max(timeout / 1000, 3); // Minimum 3 seconds
+  const display_time = Math.max(timeout / 1000, 1); // Minimum 1 second
 
   // Use new frontend notification system based on type
     switch (type.toLowerCase()) {

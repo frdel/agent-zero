@@ -10,7 +10,7 @@
             <!-- Notification Toggle Button -->
             <div class="notification-toggle"
                  :class="{
-                     'has-unread': $store.notificationStore.unreadCount > 0,
+                     'has-unread': $store.notificationStore.unreadPrioCount > 0,
                      'has-notifications': $store.notificationStore.notifications.length > 0
                  }"
                  @click="$store.notificationStore.openModal()"
@@ -18,9 +18,9 @@
                 <div class="notification-icon">
                     <span class="material-symbols-outlined">notifications</span>
                 </div>
-                <span x-show="$store.notificationStore.unreadCount > 0"
+                <span x-show="$store.notificationStore.unreadPrioCount > 0"
                       class="notification-badge"
-                      x-text="$store.notificationStore.unreadCount"></span>
+                      x-text="$store.notificationStore.unreadPrioCount"></span>
             </div>
         </template>
     </div>

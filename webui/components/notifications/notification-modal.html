@@ -1,84 +1,82 @@
 <html>
+
 <head>
     <title>Notifications</title>
     <script type="module">
         import { store } from "/components/notifications/notification-store.js";
     </script>
 </head>
+
 <body>
-    <div x-data="notificationModalComponent()">
-        <!-- Modal Header Actions -->
-        <div class="modal-subheader">
-            <div class="notification-header-actions">
-                <button class="notification-action"
-                        @click="$store.notificationStore?.clearAll()"
-                        :disabled="!$store.notificationStore || $store.notificationStore.getDisplayNotifications().length === 0"
-                        title="Clear All">
-                    <span class="material-symbols-outlined">delete</span> Clear All
-                </button>
-            </div>
-        </div>
-
-        <!-- Notifications List -->
-        <div class="notification-list" x-show="$store.notificationStore && $store.notificationStore.getDisplayNotifications().length > 0">
-            <template x-for="notification in ($store.notificationStore?.getDisplayNotifications() || [])" :key="notification.id">
-                <div class="notification-item"
-                     x-data="{ expanded: false }"
-                     :class="$store.notificationStore?.getNotificationItemClass(notification) || 'notification-item'"
-                     @click="$store.notificationStore?.markAsRead(notification.id)">
-
-                    <div class="notification-icon"
-                         x-html="$store.notificationStore?.getNotificationIcon(notification.type) || ''">
-                    </div>
-
-                    <div class="notification-content">
-                        <div class="notification-title"
-                             x-show="notification.title"
-                             x-text="notification.title">
-                        </div>
-                        <div class="notification-message"
-                             x-text="notification.message">
-                        </div>
-                        <div class="notification-timestamp"
-                             x-text="$store.notificationStore?.formatTimestamp(notification.timestamp) || notification.timestamp">
-                        </div>
-
-                        <!-- Expand Toggle Button (as last row element) -->
-                        <button class="notification-expand-toggle"
-                                x-show="notification.detail"
-                                @click.stop="expanded = !expanded"
-                                :title="expanded ? 'Collapse Details' : 'Expand Details'">
-                            <span x-show="!expanded">▶ Show Details</span>
-                            <span x-show="expanded">▼ Hide Details</span>
+    <div x-data>
+        <template x-if="$store.notificationStore">
+            <div>
+                <!-- Modal Header Actions -->
+                <div class="modal-subheader">
+                    <div class="notification-header-actions">
+                        <button class="notification-action" @click="$store.notificationStore?.clearAll()"
+                            :disabled="!$store.notificationStore || $store.notificationStore.getDisplayNotifications().length === 0"
+                            title="Clear All">
+                            <span class="material-symbols-outlined">delete</span> Clear All
                         </button>
-
-                        <!-- Expandable Detail Content -->
-                        <div class="notification-detail"
-                             x-show="expanded && notification.detail"
-                             x-transition:enter="transition ease-out duration-200"
-                             x-transition:enter-start="opacity-0 max-h-0"
-                             x-transition:enter-end="opacity-100 max-h-96"
-                             x-transition:leave="transition ease-in duration-200"
-                             x-transition:leave-start="opacity-100 max-h-96"
-                             x-transition:leave-end="opacity-0 max-h-0">
-                            <div class="notification-detail-content" x-html="notification.detail"></div>
-                        </div>
                     </div>
                 </div>
-            </template>
-        </div>
 
-        <!-- Empty State -->
-        <div class="notification-empty" x-show="!$store.notificationStore || $store.notificationStore.getDisplayNotifications().length === 0">
-            <div class="notification-empty-icon">
-                <span class="material-symbols-outlined">notifications</span>
+                <!-- Notifications List -->
+                <div class="notification-list"
+                    x-show="$store.notificationStore && $store.notificationStore.getDisplayNotifications().length > 0">
+                    <template x-for="notification in ($store.notificationStore?.getDisplayNotifications() || [])"
+                        :key="notification.id">
+                        <div class="notification-item" x-data="{ expanded: false }"
+                            :class="$store.notificationStore?.getNotificationItemClass(notification) || 'notification-item'"
+                            @click="$store.notificationStore?.markAsRead(notification.id)">
+
+                            <div class="notification-icon"
+                                x-html="$store.notificationStore?.getNotificationIcon(notification.type) || ''">
+                            </div>
+
+                            <div class="notification-content">
+                                <div class="notification-title" x-show="notification.title" x-text="notification.title">
+                                </div>
+                                <div class="notification-message" x-text="notification.message">
+                                </div>
+                                <div class="notification-timestamp"
+                                    x-text="$store.notificationStore?.formatTimestamp(notification.timestamp) || notification.timestamp">
+                                </div>
+
+                                <!-- Expand Toggle Button (as last row element) -->
+                                <button class="notification-expand-toggle" x-show="notification.detail"
+                                    @click.stop="expanded = !expanded"
+                                    :title="expanded ? 'Collapse Details' : 'Expand Details'">
+                                    <span x-show="!expanded">▶ Show Details</span>
+                                    <span x-show="expanded">▼ Hide Details</span>
+                                </button>
+
+                                <!-- Expandable Detail Content -->
+                                <div class="notification-detail" x-show="expanded && notification.detail"
+                                    x-transition:enter="transition ease-out duration-200"
+                                    x-transition:enter-start="opacity-0 max-h-0"
+                                    x-transition:enter-end="opacity-100 max-h-96"
+                                    x-transition:leave="transition ease-in duration-200"
+                                    x-transition:leave-start="opacity-100 max-h-96"
+                                    x-transition:leave-end="opacity-0 max-h-0">
+                                    <div class="notification-detail-content" x-html="notification.detail"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Empty State -->
+                <div class="notification-empty"
+                    x-show="!$store.notificationStore || $store.notificationStore.getDisplayNotifications().length === 0">
+                    <div class="notification-empty-icon">
+                        <span class="material-symbols-outlined">notifications</span>
+                    </div>
+                    <p>No notifications to display</p>
+                </div>
             </div>
-            <p>No notifications to display</p>
-            <p style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.5rem;"
-               x-show="$store.notificationStore && $store.notificationStore.notifications.length > 0">
-                All notifications have been read and are older than 5 minutes
-            </p>
-        </div>
+        </template>
     </div>
 
     <style>
@@ -175,12 +173,13 @@
         }
 
         .notification-item.unread {
-            border-left: 4px solid #2196F3;
-            background: rgba(33, 150, 243, 0.05);
+            border-left: 4px solid var(--color-primary);
+            background: var(--color-panel);
         }
 
         .notification-item.read {
-            opacity: 0.7;
+            opacity: 0.85;
+            background: var(--color-panel);
         }
 
         .notification-item.read .notification-title {
@@ -303,51 +302,16 @@
 
         /* Animations */
         @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
+            from {
+                transform: rotate(0deg);
+            }
 
-        /* Light Mode Styles */
-        .light-mode .notification-item {
-            background: rgba(0, 0, 0, 0.03);
-            border-color: rgba(0, 0, 0, 0.1);
-        }
-
-        .light-mode .notification-item:hover {
-            background: rgba(0, 0, 0, 0.06);
-            border-color: rgba(0, 0, 0, 0.15);
-        }
-
-        .light-mode .notification-action {
-            border-color: rgba(0, 0, 0, 0.2);
-            color: var(--color-text);
-        }
-
-        .light-mode .notification-action:hover {
-            background: rgba(0, 0, 0, 0.05);
-            border-color: rgba(0, 0, 0, 0.3);
-        }
-
-        .light-mode .notification-detail {
-            background: rgba(0, 0, 0, 0.05);
-            border-left-color: rgba(0, 0, 0, 0.15);
+            to {
+                transform: rotate(360deg);
+            }
         }
     </style>
 
-    <script>
-        function notificationModalComponent() {
-            return {
-                init() {
-                    // Mark all notifications as read when modal opens
-                    // This can be configured later if needed
-                    setTimeout(() => {
-                        if (this.$store.notificationStore) {
-                            this.$store.notificationStore.markAllAsRead();
-                        }
-                    }, 1000);
-                }
-            };
-        }
-    </script>
 </body>
+
 </html>

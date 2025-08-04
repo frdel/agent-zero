@@ -40,7 +40,7 @@
 
                     <!-- Toast Dismiss -->
                     <button class="toast-dismiss"
-                            @click.stop="$store.notificationStore.removeFromToastStack(toast.toastId)"
+                            @click.stop="$store.notificationStore.dismissToast(toast.toastId)"
                             title="Dismiss">
                         <span class="material-symbols-outlined">close</span>
                     </button>
@@ -62,7 +62,7 @@
             gap: 8px;
             pointer-events: none;
             max-width: 400px;
-            width: calc(100% - 10px);
+            right: 5px; /* Anchor to the right */
             align-items: flex-end;
         }
 

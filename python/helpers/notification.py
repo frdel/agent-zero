@@ -11,12 +11,17 @@ class NotificationType(Enum):
     ERROR = "error"
     PROGRESS = "progress"
 
+class NotificationPriority(Enum):
+    NORMAL = 10
+    HIGH = 20
+
 
 @dataclass
 class NotificationItem:
     manager: "NotificationManager"
     no: int
     type: NotificationType
+    priority: NotificationPriority
     title: str
     message: str
     detail: str  # HTML content for expandable details
@@ -41,7 +46,8 @@ class NotificationItem:
         return {
             "no": self.no,
             "id": self.id,
-            "type": self.type.value,
+            "type": self.type.value if isinstance(self.type, NotificationType) else self.type,
+            "priority": self.priority.value if isinstance(self.priority, NotificationPriority) else self.priority,
             "title": self.title,
             "message": self.message,
             "detail": self.detail,
@@ -59,9 +65,25 @@ class NotificationManager:
         self.notifications: list[NotificationItem] = []
         self.max_notifications = max_notifications
 
+    @staticmethod
+    def send_notification(
+        type: NotificationType,
+        priority: NotificationPriority,
+        message: str,
+        title: str = "",
+        detail: str = "",
+        display_time: int = 3,
+        group: str = "",
+    ) -> NotificationItem:
+        from agent import AgentContext
+        return AgentContext.get_notification_manager().add_notification(
+            type, priority, message, title, detail, display_time, group
+        )
+
     def add_notification(
         self,
         type: NotificationType,
+        priority: NotificationPriority,
         message: str,
         title: str = "",
         detail: str = "",
@@ -72,7 +94,8 @@ class NotificationManager:
         item = NotificationItem(
             manager=self,
             no=len(self.notifications),
-            type=type,
+            type=NotificationType(type),
+            priority=NotificationPriority(priority),
             title=title,
             message=message,
             detail=detail,
@@ -139,40 +162,3 @@ class NotificationManager:
 
     def get_notifications_by_type(self, type: NotificationType) -> list[NotificationItem]:
         return [n for n in self.notifications if n.type == type]
-
-
-class AgentNotification:
-    @staticmethod
-    def info(message: str, title: str = "", detail: str = "", display_time: int = 3, group: str = "") -> NotificationItem:
-        from agent import AgentContext
-        return AgentContext.get_notification_manager().add_notification(
-            NotificationType.INFO, message, title, detail, display_time, group
-        )
-
-    @staticmethod
-    def success(message: str, title: str = "", detail: str = "", display_time: int = 3, group: str = "") -> NotificationItem:
-        from agent import AgentContext
-        return AgentContext.get_notification_manager().add_notification(
-            NotificationType.SUCCESS, message, title, detail, display_time, group
-        )
-
-    @staticmethod
-    def warning(message: str, title: str = "", detail: str = "", display_time: int = 3, group: str = "") -> NotificationItem:
-        from agent import AgentContext
-        return AgentContext.get_notification_manager().add_notification(
-            NotificationType.WARNING, message, title, detail, display_time, group
-        )
-
-    @staticmethod
-    def error(message: str, title: str = "", detail: str = "", display_time: int = 3, group: str = "") -> NotificationItem:
-        from agent import AgentContext
-        return AgentContext.get_notification_manager().add_notification(
-            NotificationType.ERROR, message, title, detail, display_time, group
-        )
-
-    @staticmethod
-    def progress(message: str, title: str = "", detail: str = "", display_time: int = 3, group: str = "") -> NotificationItem:
-        from agent import AgentContext
-        return AgentContext.get_notification_manager().add_notification(
-            NotificationType.PROGRESS, message, title, detail, display_time, group
-        )
