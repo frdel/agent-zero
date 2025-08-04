@@ -23,7 +23,7 @@ class Delegation(Tool):
         subordinate.hist_add_user_message(UserMessage(message=message, attachments=[]))
 
         # set subordinate prompt profile if provided, if not, keep original
-        agent_profile = kwargs.get("agent_profile")
+        agent_profile = kwargs.get("profile")
         if agent_profile:
             subordinate.config.profile = agent_profile
 
