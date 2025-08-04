@@ -14,5 +14,40 @@ class MemorySave(Tool):
         db = await Memory.get(self.agent)
         id = await db.insert_text(text, metadata)
 
-        result = self.agent.read_prompt("fw.memory_saved.md", memory_id=id)
+        # Ingest into GraphRAG after successful memory save
+        graph_status = await self._ingest_to_graphrag(text, area)
+
+        # Prepare result message
+        base_result = self.agent.read_prompt("fw.memory_saved.md", memory_id=id)
+
+        if graph_status:
+            result = f"{base_result}\n\nAlso added to knowledge graph with structured entity and relationship extraction."
+        else:
+            result = base_result
+
         return Response(message=result, break_loop=False)
+
+    async def _ingest_to_graphrag(self, text: str, area: str) -> bool:
+        """Ingest memory text into GraphRAG knowledge graph."""
+        try:
+            from python.helpers.graphrag_helper import GraphRAGHelper
+
+            # Get area-specific instruction for better entity extraction
+            area_instructions = {
+                Memory.Area.FRAGMENTS.value: "Focus on extracting people, facts, events, and relationships from memory fragments",
+                Memory.Area.MAIN.value: "Focus on extracting key concepts, entities, and important information",
+                Memory.Area.SOLUTIONS.value: "Focus on extracting problem-solving approaches, methods, and technical solutions",
+                Memory.Area.INSTRUMENTS.value: "Focus on extracting tools, technologies, and instruments used"
+            }
+
+            instruction = area_instructions.get(area, "Focus on extracting entities and relationships")
+
+            # Get GraphRAG helper and ingest
+            helper = GraphRAGHelper.get_default()
+            helper.ingest_text(text, instruction)
+
+            return True
+
+        except Exception:
+            # Silently fail - GraphRAG integration shouldn't break memory saving
+            return False

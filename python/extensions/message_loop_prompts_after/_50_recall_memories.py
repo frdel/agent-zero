@@ -41,6 +41,8 @@ class RecallMemories(Extension):
             del extras["memories"]
         if "solutions" in extras:
             del extras["solutions"]
+        if "graph_knowledge" in extras:
+            del extras["graph_knowledge"]
 
 
         set = settings.get_settings()
@@ -95,7 +97,7 @@ class RecallMemories(Extension):
                     heading="Failed to generate memory query",
                 )
                 return
-        
+
         # otherwise use the message and history as query
         else:
             query = user_instruction + "\n\n" + history
@@ -192,6 +194,9 @@ class RecallMemories(Extension):
         if solutions_txt:
             log_item.update(solutions=solutions_txt)
 
+        # Query GraphRAG knowledge graph for additional insights
+        graph_knowledge_txt = await self._query_graphrag(query, log_item)
+
         # place to prompt
         if memories_txt:
             extras["memories"] = self.agent.parse_prompt(
@@ -201,3 +206,43 @@ class RecallMemories(Extension):
             extras["solutions"] = self.agent.parse_prompt(
                 "agent.system.solutions.md", solutions=solutions_txt
             )
+        if graph_knowledge_txt:
+            extras["graph_knowledge"] = self.agent.parse_prompt(
+                "agent.system.graph_knowledge.md", graph_knowledge=graph_knowledge_txt
+            )
+
+    async def _query_graphrag(self, query: str, log_item) -> str:
+        """Query GraphRAG knowledge graph for additional insights."""
+        try:
+            from python.helpers.graphrag_helper import GraphRAGHelper
+
+            # Get GraphRAG helper and query
+            helper = GraphRAGHelper.get_default()
+
+            # Try multiple query formulations for better coverage
+            queries_to_try = [
+                query,  # Original query
+                f"What do you know about {query}?",  # More direct
+                f"Tell me about entities related to: {query}",  # Entity-focused
+            ]
+
+            results = []
+            for q in queries_to_try[:2]:  # Limit to 2 queries to avoid too much processing
+                try:
+                    result = helper.query(q)
+                    if result and "No relevant information" not in result:
+                        results.append(result)
+                except Exception:
+                    continue
+
+            if results:
+                # Combine and deduplicate results
+                combined_result = "\n\n".join(results)
+                log_item.update(graph_knowledge=combined_result)
+                return combined_result
+            else:
+                return ""
+
+        except Exception as e:
+            # GraphRAG query failure shouldn't break memory recall
+            return ""

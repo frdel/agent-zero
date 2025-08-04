@@ -136,8 +136,14 @@ class GraphRAGHelper:
         self._ingest_sources([source])
 
     # ----------------------------------------------------------------- queries
-    def query(self, question: str) -> str:
+    def query(self, question: str, use_enhanced_correction: bool = False) -> str:
         """Ask *question* against the KnowledgeGraph and return the answer with enhanced error handling."""
+
+        # If enhanced correction is requested, use the advanced error handling
+        if use_enhanced_correction:
+            return self._query_with_enhanced_correction(question)
+
+        # Otherwise use the standard approach
         # Always try to ensure KG is initialized first
         if self._kg is None:
             # Check if graph data exists using direct query
@@ -583,6 +589,186 @@ class GraphRAGHelper:
                 return False
 
         return True
+
+    def query_with_enhanced_correction(self, question: str) -> str:
+        """Query with enhanced Cypher error correction capabilities."""
+        try:
+            # First try the standard approach
+            result = self.query(question, use_enhanced_correction=False)
+
+            # If we get a good result, return it
+            if result and "No relevant information" not in result and "Knowledge graph query failed" not in result:
+                return result
+
+            # If standard approach failed, check for common Cypher errors in the logs
+            # and try a more intelligent approach
+            return self._enhanced_query_attempt(question)
+
+        except Exception as e:
+            logger.error(f"Enhanced correction failed: {e}")
+            return self._direct_query_fallback(question)
+
+    def _enhanced_query_attempt(self, question: str) -> str:
+        """Make an enhanced query attempt with better error handling."""
+        try:
+            import redis
+
+            # Connect to database
+            r = redis.Redis(host=self._DB_HOST, port=self._DB_PORT, decode_responses=True)
+
+            # Get a simple, robust query based on the question
+            cypher_query = self._generate_robust_cypher(question)
+
+            if cypher_query:
+                try:
+                    logger.info(f"Trying enhanced Cypher: {cypher_query}")
+                    result = r.execute_command("GRAPH.QUERY", self._graph_name, cypher_query)
+
+                    if result and len(result) > 1 and result[1]:
+                        # Format the result similar to the fallback
+                        formatted = self._format_enhanced_result(result)
+                        if formatted:
+                            return formatted
+
+                except Exception as e:
+                    logger.warning(f"Enhanced Cypher failed: {e}")
+
+            # If enhanced approach fails, use standard fallback
+            return self._direct_query_fallback(question)
+
+        except Exception as e:
+            logger.error(f"Enhanced query attempt failed: {e}")
+            return self._direct_query_fallback(question)
+
+    def _generate_robust_cypher(self, question: str) -> str:
+        """Generate a robust Cypher query that's less likely to have errors."""
+
+        question_lower = question.lower()
+
+        # Pattern-based generation to avoid complex LLM-generated Cypher
+
+        # Who/person queries
+        if any(word in question_lower for word in ["who is", "who", "person"]):
+            # Extract potential name
+            import re
+            name_patterns = [
+                r"who is ([A-Z][a-z]+ [A-Z][a-z]+)",
+                r"who is ([A-Z][a-z]+)",
+                r"about ([A-Z][a-z]+ [A-Z][a-z]+)",
+                r"about ([A-Z][a-z]+)"
+            ]
+
+            for pattern in name_patterns:
+                match = re.search(pattern, question)
+                if match:
+                    name = match.group(1)
+                    return f"MATCH (p)-[r]-(connected) WHERE p.name CONTAINS '{name}' OR p.title CONTAINS '{name}' RETURN p, type(r), connected LIMIT 10"
+
+            # Generic person query
+            return "MATCH (p:Person)-[r]-(connected) RETURN p, type(r), connected LIMIT 5"
+
+        # What queries
+        elif "what" in question_lower:
+            if any(word in question_lower for word in ["entities", "available", "data"]):
+                return "MATCH (n) RETURN DISTINCT labels(n) as type, n.name as name LIMIT 10"
+            elif any(word in question_lower for word in ["relationships", "connections", "relations"]):
+                return "MATCH (a)-[r]->(b) RETURN a.name, type(r), b.name LIMIT 10"
+            else:
+                # Extract potential subject
+                import re
+                what_match = re.search(r"what.*?(?:is|are|about)\s+([^?]+)", question_lower)
+                if what_match:
+                    subject = what_match.group(1).strip()
+                    return f"MATCH (n)-[r]-(connected) WHERE n.name CONTAINS '{subject}' OR n.title CONTAINS '{subject}' RETURN n, type(r), connected LIMIT 10"
+
+        # Organization/company queries
+        elif any(word in question_lower for word in ["company", "organization", "org"]):
+            return "MATCH (o:Organization)-[r]-(connected) RETURN o, type(r), connected LIMIT 5"
+
+        # Field/domain queries
+        elif any(word in question_lower for word in ["field", "domain", "area", "science"]):
+            return "MATCH (f:Field)-[r]-(connected) RETURN f, type(r), connected LIMIT 5"
+
+        # Awards/prizes queries
+        elif any(word in question_lower for word in ["award", "prize", "won", "received"]):
+            return "MATCH (a)-[r]->(award) WHERE type(r) = 'RECEIVED' OR award.name CONTAINS 'Prize' OR award.name CONTAINS 'Award' RETURN a, type(r), award LIMIT 10"
+
+        # Default: simple node query
+        return "MATCH (n) RETURN n, labels(n) LIMIT 5"
+
+    def _format_enhanced_result(self, raw_result) -> str:
+        """Format results from enhanced Cypher queries."""
+
+        try:
+            if not raw_result or len(raw_result) < 2 or not raw_result[1]:
+                return "No data found"
+
+            rows = raw_result[1][:8]  # Limit to 8 results
+            formatted_items = []
+
+            for row in rows:
+                if isinstance(row, list) and len(row) >= 1:
+                    # Handle different result formats
+
+                    # Check if this is a relationship result (3 items: source, relation, target)
+                    if len(row) == 3:
+                        source_info = self._extract_node_info(row[0])
+                        relation_type = str(row[1]) if row[1] else "CONNECTED"
+                        target_info = self._extract_node_info(row[2])
+
+                        if source_info and target_info:
+                            formatted_items.append(f"{source_info}   {relation_type} → {target_info}")
+
+                    # Single node result
+                    elif len(row) >= 1:
+                        node_info = self._extract_node_info(row[0])
+                        if node_info:
+                            formatted_items.append(node_info)
+
+            if formatted_items:
+                unique_items = list(dict.fromkeys(formatted_items))  # Remove duplicates
+                return f"Found information: {', '.join(unique_items[:10])}"
+
+            return "Data found but could not format"
+
+        except Exception as e:
+            logger.error(f"Error formatting enhanced result: {e}")
+            return "Found data but formatting failed"
+
+    def _extract_node_info(self, node_data) -> str:
+        """Extract readable information from a node."""
+
+        try:
+            if isinstance(node_data, list) and len(node_data) >= 3:
+                # Node format: [id, labels, properties]
+                labels = node_data[1] if len(node_data) > 1 else []
+                properties = node_data[2] if len(node_data) > 2 else []
+
+                # Extract label
+                label_str = "Node"
+                if labels:
+                    label_raw = str(labels)
+                    label_str = label_raw.strip("[]'\"")
+
+                # Extract name/title
+                name = "Unknown"
+                if isinstance(properties, list) and len(properties) >= 2:
+                    if properties[0] == 'properties' and isinstance(properties[1], list):
+                        for prop in properties[1]:
+                            if isinstance(prop, list) and len(prop) >= 2:
+                                if prop[0] in ['name', 'title', 'type']:
+                                    name = prop[1]
+                                    break
+
+                return f"{label_str}: {name}"
+
+            elif isinstance(node_data, str):
+                return node_data
+
+            return str(node_data) if node_data else "Unknown"
+
+        except Exception:
+            return "Unknown"
 
     def _query_with_fallbacks(self, question: str) -> str:
         """Try alternative query strategies when the main GraphRAG SDK fails."""
