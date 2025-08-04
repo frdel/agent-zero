@@ -1612,11 +1612,13 @@ input:checked + .slider:before {
     -webkit-transition: opacity var(--transition-speed) ease-in-out;
     transition: opacity var(--transition-speed) ease-in-out;
     right: 0px;
-    top: 0px;
+    top: 100%;
+    margin-top: 4px;
     background-color: var(--color-background);
-    border: none;
+    border: 1px solid var(--color-border);
     border-radius: 5px;
     color: inherit;
+    z-index: 1000;
   }
 
   .msg-thoughts span.copied::after,

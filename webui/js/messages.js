@@ -33,6 +33,21 @@ export function setMessage(id, type, heading, content, temp, kvps = null) {
   const handler = getHandler(type);
   handler(messageContainer, id, type, heading, content, temp, kvps);
 
+  // Add action buttons to all message content after rendering
+  setTimeout(() => {
+    const contentElements = messageContainer.querySelectorAll(".msg-content, .kvps-row");
+    console.log(`[ActionButtons] Processing message ${id} type ${type}, found ${contentElements.length} content elements`);
+    contentElements.forEach((element, index) => {
+      console.log(`[ActionButtons] Element ${index}:`, element.className, element.textContent.slice(0, 50));
+      if (!element.querySelector(".message-actions")) {
+        console.log(`[ActionButtons] Adding action buttons to element ${index}`);
+        addActionButtonsToElement(element);
+      } else {
+        console.log(`[ActionButtons] Action buttons already exist on element ${index}`);
+      }
+    });
+  }, 50);
+
   // If the container was found, it was already in the DOM, no need to append again
   if (!document.getElementById(`message-${id}`)) {
     // message type visual grouping
@@ -207,19 +222,58 @@ function createActionButtonGroup() {
 }
 
 function extractTextFromContainer(button) {
-  const container = button.closest(".msg-content, .kvps-row");
+  // Get the action button container first
+  const actionContainer = button.closest(".message-actions");
+  if (!actionContainer) {
+    console.error("Could not find message-actions container");
+    return "";
+  }
+  
+  // Get the parent element that contains both the content and the action buttons
+  const parentElement = actionContainer.parentElement;
+  if (!parentElement) {
+    console.error("Could not find parent element");
+    return "";
+  }
+  
   let textToExtract;
 
-  if (container.classList.contains("kvps-row")) {
-    textToExtract = container.querySelector(".kvps-val").innerText;
-  } else if (container.classList.contains("user-message-content")) {
-    // User messages use <pre> element
-    const preElement = container.querySelector("pre");
-    textToExtract = preElement ? preElement.innerText : container.innerText;
+  // Check if this is a kvps row
+  if (parentElement.classList.contains("kvps-row")) {
+    // For kvps rows, we need to get the value from the second cell
+    const kvpsVal = parentElement.querySelector(".kvps-val");
+    if (kvpsVal) {
+      // Get the actual value text, which might be in a pre/span element
+      const preElement = kvpsVal.querySelector("pre");
+      if (preElement) {
+        textToExtract = preElement.innerText;
+      } else {
+        textToExtract = kvpsVal.innerText;
+      }
+    } else {
+      textToExtract = "";
+    }
+  } else if (parentElement.classList.contains("msg-content") || parentElement.classList.contains("user-message-content")) {
+    // Try to get text from pre element first (for user messages), then span, then the container itself
+    const preElement = parentElement.querySelector("pre");
+    const spanElement = parentElement.querySelector("span");
+    
+    if (preElement) {
+      textToExtract = preElement.innerText;
+    } else if (spanElement) {
+      textToExtract = spanElement.innerText;
+    } else {
+      // Get text content but exclude the action buttons
+      const clone = parentElement.cloneNode(true);
+      const actionsInClone = clone.querySelector(".message-actions");
+      if (actionsInClone) {
+        actionsInClone.remove();
+      }
+      textToExtract = clone.innerText;
+    }
   } else {
-    // Other messages use <span> element
-    const spanElement = container.querySelector("span");
-    textToExtract = spanElement ? spanElement.innerText : container.innerText;
+    console.warn("Unknown container type:", parentElement.className);
+    textToExtract = parentElement.innerText;
   }
 
   return textToExtract || "";
@@ -271,14 +325,14 @@ function addActionButtonsToElement(element) {
     
     // Add device-specific behavior
     if (document.body.classList.contains("device-touch")) {
-      let tapTimeout;
-      
-      // For touch devices, show buttons when element is tapped
+      // For touch devices, buttons are always visible (handled by CSS)
+      // Just ensure proper positioning
+      actionGroup.classList.add("visible");
+      updateButtonPosition();
+
+      // Add touch-friendly interaction
       element.addEventListener("touchstart", function(e) {
-        // Clear any existing timeout
-        if (tapTimeout) clearTimeout(tapTimeout);
-        
-        // Only show if not tapping on buttons
+        // Only handle if not touching the buttons themselves
         if (!e.target.closest(".message-actions")) {
           // Hide all other visible action groups first
           document.querySelectorAll(".message-actions.visible").forEach(group => {
@@ -286,48 +340,49 @@ function addActionButtonsToElement(element) {
               group.classList.remove("visible");
             }
           });
-          
-          // Show buttons after a short delay to distinguish from scrolling
-          tapTimeout = setTimeout(() => {
-            actionGroup.classList.add("visible");
-            updateButtonPosition();
-          }, 150);
-        }
-      });
-      
-      // Cancel showing buttons if user starts scrolling
-      element.addEventListener("touchmove", function(e) {
-        if (tapTimeout) {
-          clearTimeout(tapTimeout);
-          tapTimeout = null;
-        }
-      });
-      
-      // Fallback click handler for devices that don't support touchstart properly
-      element.addEventListener("click", function(e) {
-        if (!e.target.closest(".message-actions") && !actionGroup.classList.contains("visible")) {
-          document.querySelectorAll(".message-actions.visible").forEach(group => {
-            if (group !== actionGroup) {
-              group.classList.remove("visible");
-            }
-          });
+
+          // Ensure this group is visible
           actionGroup.classList.add("visible");
           updateButtonPosition();
         }
+      }, { passive: true });
+
+      // Improve button responsiveness
+      const buttons = actionGroup.querySelectorAll(".message-action-button");
+      buttons.forEach(button => {
+        // Add visual feedback for touch
+        button.addEventListener("touchstart", function(e) {
+          e.stopPropagation();
+          this.style.transform = "scale(0.9)";
+          this.style.background = "var(--color-accent)";
+          this.style.color = "var(--color-background)";
+          this.style.borderColor = "var(--color-accent)";
+        }, { passive: true });
+
+        button.addEventListener("touchend", function(e) {
+          e.stopPropagation();
+          // Reset visual state after a short delay
+          setTimeout(() => {
+            this.style.transform = "";
+            this.style.background = "";
+            this.style.color = "";
+            this.style.borderColor = "";
+          }, 150);
+        }, { passive: true });
+
+        button.addEventListener("touchcancel", function(e) {
+          // Reset visual state if touch is cancelled
+          this.style.transform = "";
+          this.style.background = "";
+          this.style.color = "";
+          this.style.borderColor = "";
+        }, { passive: true });
+
+        // Ensure buttons are always clickable
+        button.style.pointerEvents = "auto";
+        button.style.touchAction = "manipulation";
       });
-      
-      // Hide when tapping outside
-      document.addEventListener("touchstart", function(e) {
-        if (!element.contains(e.target)) {
-          actionGroup.classList.remove("visible");
-        }
-      });
-      
-      document.addEventListener("click", function(e) {
-        if (!element.contains(e.target)) {
-          actionGroup.classList.remove("visible");
-        }
-      });
+
     } else {
       // For pointer devices, update position on hover
       element.addEventListener("mouseenter", function() {
@@ -485,12 +540,7 @@ export function _drawMessage(
       const spanElement = document.createElement("span");
       spanElement.innerHTML = convertHTML(content);
 
-      // Add click handler only for non-touch devices
-      if (!document.body.classList.contains("device-touch")) {
-        spanElement.addEventListener("click", () => {
-          copyText(spanElement.textContent, spanElement);
-        });
-      }
+      // Click-to-copy removed - action buttons handle copying now
 
       preElement.appendChild(spanElement);
       addActionButtonsToElement(preElement);
@@ -661,12 +711,7 @@ export function drawMessageUser(
     spanElement.innerHTML = escapeHTML(content);
     textDiv.appendChild(spanElement);
 
-    // Add click handler only for non-touch devices
-    if (!document.body.classList.contains("device-touch")) {
-      textDiv.addEventListener("click", () => {
-        copyText(content, textDiv);
-      });
-    }
+    // Click-to-copy removed - action buttons handle copying now
 
     addActionButtonsToElement(textDiv);
     messageDiv.appendChild(textDiv);
@@ -969,12 +1014,7 @@ function drawKvps(container, kvps, latex) {
           tdiv.appendChild(pre);
           addActionButtonsToElement(row);
 
-          // Add click handler only for non-touch devices
-          if (!document.body.classList.contains("device-touch")) {
-            span.addEventListener("click", () => {
-              copyText(span.textContent, span);
-            });
-          }
+          // Click-to-copy removed - action buttons handle copying now
 
           // KaTeX rendering for markdown
           if (latex) {
@@ -1107,3 +1147,41 @@ function adjustMarkdownRender(element) {
     wrapper.appendChild(el);
   });
 }
+
+// Initialize action buttons for existing messages when the page loads
+document.addEventListener("DOMContentLoaded", function() {
+  initializeActionButtons();
+});
+
+// Also initialize when the page is fully loaded (as a fallback)
+window.addEventListener("load", function() {
+  setTimeout(initializeActionButtons, 100);
+});
+
+// Function to initialize action buttons for all existing messages
+function initializeActionButtons() {
+  // Add action buttons to existing messages (including welcome message)
+  const existingMessages = document.querySelectorAll(".msg-content, .kvps-row");
+  existingMessages.forEach(element => {
+    // Only add if not already present
+    if (!element.querySelector(".message-actions")) {
+      addActionButtonsToElement(element);
+    }
+  });
+
+  // Force update button positions after a short delay to ensure proper layout
+  setTimeout(() => {
+    document.querySelectorAll(".message-actions").forEach(actionGroup => {
+      const element = actionGroup.parentElement;
+      if (element) {
+        // Trigger position update for touch devices
+        if (document.body.classList.contains("device-touch")) {
+          actionGroup.classList.add("visible");
+        }
+      }
+    });
+  }, 200);
+}
+
+// Export the initialization function so it can be called manually if needed
+export { initializeActionButtons };

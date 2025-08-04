@@ -19,6 +19,8 @@
 
 #chat-history > *:first-child {
   margin-top: 4.4em;
+  /* Ensure action buttons have enough space at the top */
+  padding-top: 8px;
 }
 
 #chat-history > *:last-child {
@@ -86,7 +88,8 @@
 .message-user {
   background-color: #4a4a4a;
   /* border-bottom-right-radius: var(--spacing-xxs); */
-  min-width: 195px;
+  min-width: 200px; /* Increased minimum width */
+  min-height: 80px; /* Added minimum height */
   text-align: end;
 }
 
@@ -103,7 +106,23 @@
   background: transparent;
   border: none;
   box-shadow: none;
-  padding: var(--spacing-xs) 0 var(--spacing-xs) 6.0em; /* Add left padding for action buttons on left */
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) 7.0em; /* Increased padding for larger size */
+  position: relative; /* Ensure proper positioning context for action buttons */
+  min-height: 60px; /* Increased minimum height for larger appearance */
+  min-width: 200px; /* Minimum width for larger appearance */
+  display: flex;
+  align-items: center;
+}
+
+.message-user .msg-content.user-message-content pre {
+  margin: 0;
+  background: transparent;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--font-size-base); /* Larger font size for better readability */
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5; /* Better line spacing */
 }
 
 .message-ai {
@@ -304,12 +323,12 @@ body > div[role="listbox"],
 /* Enhanced Action Button System - Agent Zero Style */
 .message-actions {
   position: absolute;
-  right: 20px; /* Increased from 8px to avoid scrollbar */
-  top: 8px;
+  right: 8px;
+  bottom: -40px; /* Position below content */
   display: flex;
   gap: 4px;
   background: var(--color-panel);
-  border-radius: 4px;
+  border-radius: 6px;
   padding: 4px;
   opacity: 0;
   transform: scale(0.95);
@@ -319,12 +338,14 @@ body > div[role="listbox"],
   border: 1px solid var(--color-border);
   width: fit-content;
   height: fit-content;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .message-action-button {
   background: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 3px;
+  border-radius: 4px;
   padding: 4px;
   cursor: pointer;
   display: flex;
@@ -338,6 +359,9 @@ body > div[role="listbox"],
   max-height: 24px;
   overflow: hidden;
   box-sizing: border-box;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .message-action-button:hover {
@@ -388,6 +412,7 @@ body > div[role="listbox"],
 .device-pointer .kvps-row:hover .message-actions {
   opacity: 1;
   transform: scale(1);
+  transition: all 0.2s ease-in-out;
 }
 
 .device-touch .message-actions.visible {
@@ -395,36 +420,56 @@ body > div[role="listbox"],
   transform: scale(1);
 }
 
+/* Improved hover effects for desktop */
+.device-pointer .message-action-button:hover {
+  background: var(--color-accent);
+  color: var(--color-background);
+  border-color: var(--color-accent);
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
 
 .device-touch .message-action-button .material-symbols-outlined {
   font-size: 14px;
 }
 
-/* Message type specific positioning */
+/* Message type specific positioning - all positioned below content */
 .msg-thoughts .message-actions {
-  top: 4px;
+  bottom: -1px;
+  right: 8px;
+}
+
+.kvps-row .message-actions {
+  top: 1px;
+  right: 30px;
+  bottom: auto;
+  transform: none;
 }
 
 .message-user .message-actions {
-  top: 4px;
-  left: 8px;
+  bottom: -1px;
+  left: 8px; /* Keep on left side for user messages */
   right: auto;
 }
 
 .message-agent-response .message-actions {
-  top: 4px;
+  bottom: -1px;
+  right: 8px;
 }
 
 .message-info .message-actions {
-  top: 4px;
+  bottom: -1px;
+  right: 8px;
 }
 
 .message-tool .message-actions {
-  top: 4px;
+  bottom: -1px;
+  right: 8px;
 }
 
 .msg-output .message-actions {
-  top: 4px;
+  bottom: -1px;
+  right: 8px;
 }
 
 /* Viewport-aware positioning */
@@ -434,24 +479,21 @@ body > div[role="listbox"],
 }
 
 .message-actions.position-bottom {
-  top: auto;
-  bottom: 8px;
-  /* Ensure buttons stay within container bounds */
-  transform: translateY(-100%);
+  bottom: -1px; /* Keep consistent bottom positioning */
 }
 
 /* Sticky positioning when container is partially scrolled out */
 .message-actions.position-sticky {
-  position: fixed;
-  top: 50%;
-  transform: translateY(-50%);
+  position: sticky;
+  bottom: 8px;
+  transform: none;
   z-index: 1001; /* Higher than normal to stay above other elements */
 }
 
-/* Ensure buttons don't overflow chat container */
-#chat-history .message-actions {
-  /* Clip buttons to stay within chat history bounds */
-  clip-path: inset(0);
+/* Ensure buttons don't overflow chat container and add bottom margin for buttons */
+.msg-content,
+.kvps-row {
+  margin-bottom: 45px; /* Add space for action buttons */
 }
 
 
@@ -468,7 +510,8 @@ body > div[role="listbox"],
 
 /* Make message containers relative for absolute positioning of action buttons */
 .msg-content,
-.kvps-row {
+.kvps-row,
+.user-message-content {
   position: relative;
 }
 
@@ -550,29 +593,104 @@ body > div[role="listbox"],
 }
 
 /* Media Queries */
-@media (max-width: 640px) {
-  /* New styles for mobile messages */
-  
-  /* Consistent positioning for ALL message types on mobile */
-  .message-actions {
-    top: 8px !important;
-    right: 20px !important; /* Match desktop to avoid scrollbar */
-    bottom: auto !important;
-    left: auto !important;
+@media (max-width: 480px) {
+  /* Mobile-specific action button styles */
+
+  /* Make buttons always visible on mobile for better UX */
+  .device-touch .message-actions {
+    opacity: 1 !important;
+    transform: scale(1) !important;
+    position: absolute;
+    z-index: 1000;
+    background: var(--color-panel);
+    border-radius: 6px;
+    padding: 6px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--color-border);
   }
-  
+
+  /* Consistent positioning for ALL message types on mobile - below content */
+  .message-actions {
+    bottom: 1px !important;
+    right: 12px !important;
+    top: auto !important;
+    left: auto !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
   /* For user messages, keep on left side */
   .message-user .message-actions {
-    left: 20px !important; /* Match right side distance */
+    left: 125px !important; /* Match desktop spacing */
     right: auto !important;
+    top: -1px !important; /* Use top positioning like other messages */
+    bottom: auto !important;
   }
-  
-  /* Ensure user message content has reasonable padding on mobile */
+
+  /* User message content with normal padding on mobile */
   .message-user .msg-content.user-message-content {
-    padding-left: 4em !important; /* Reduce padding - action buttons are smaller */
+    padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) 4em !important; /* Maintain larger padding on mobile */
+    min-height: 30px !important; /* Smaller but still larger than before on mobile */
+    min-width: 200px !important; /* Smaller minimum width for mobile */
   }
-  
-  /* Keep desktop button sizes on mobile */
+
+  /* Larger, more touch-friendly buttons on mobile */
+  .message-action-button {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    max-width: 24px !important;
+    max-height: 24px !important;
+    padding: 6px !important;
+    border-radius: 4px !important;
+    margin: 0 0px !important; /* Add margin for spacing */  
+  }
+
+  /* Larger icons for better touch targets */
+  .device-touch .message-action-button .material-symbols-outlined {
+    font-size: 14px !important;
+  }
+
+  /* Enhanced touch feedback */
+  .device-touch .message-action-button:active {
+    transform: scale(0.9) !important;
+    background: var(--color-accent) !important;
+    color: var(--color-background) !important;
+  }
+
+  /* Ensure action buttons are always touchable */
+  .message-actions,
+  .message-action-button {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent text selection interference on mobile */
+  .msg-content,
+  .msg-content span,
+  .kvps-val,
+  .message-text {
+    pointer-events: auto;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Better spacing for mobile message containers - no need for extra padding since buttons are below */
+  .msg-content {
+    padding-right: var(--spacing-sm); /* Normal right padding */
+  }
+
+  .message-user .msg-content {
+    padding-left: var(--spacing-sm); /* Normal left padding */
+    padding-right: var(--spacing-sm);
+  }
+}
+
+/* Additional responsive breakpoint for tablets */
+@media (max-width: 768px) and (min-width: 641px) {
   .message-action-button {
     width: 24px !important;
     height: 24px !important;
@@ -581,14 +699,18 @@ body > div[role="listbox"],
     max-width: 24px !important;
     max-height: 24px !important;
   }
-  
-  /* Consistent container sizing */
-  .message-actions {
-    width: fit-content !important;
-    height: fit-content !important;
-    max-height: 36px !important;
+
+  .message-action-button .material-symbols-outlined {
+    font-size: 16px !important;
   }
 
+  .device-touch .message-actions {
+    padding: 5px;
+  }
+}
+
+/* Additional mobile styles */
+@media (max-width: 480px) {
   .message-followup {
     /* margin-left: var(--spacing-md); */
     margin-bottom: var(--spacing-md);
@@ -805,6 +927,8 @@ body > div[role="listbox"],
   max-width: 100%;
   width: fit-content;
   gap: var(--spacing-xs);
+  /* Add padding to accommodate action buttons */
+  padding: 8px 0;
 }
 
 .message-group > * {
@@ -843,6 +967,9 @@ body > div[role="listbox"],
   /* margin-bottom: var(--spacing-sm); */
   width: 100%;
   max-width: 100%;
+  /* Ensure action buttons have sufficient space */
+  position: relative;
+  min-height: 44px; /* Minimum height to accommodate action buttons */
 }
 
 .message {
