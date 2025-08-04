@@ -136,118 +136,6 @@ class GraphRAGHelper:
         self._ingest_sources([source])
 
     # ----------------------------------------------------------------- queries
-    def query(self, question: str, use_enhanced_correction: bool = False) -> str:
-        """Ask *question* against the KnowledgeGraph and return the answer with enhanced error handling."""
-
-        # If enhanced correction is requested, use the advanced error handling
-        if use_enhanced_correction:
-            return self._query_with_enhanced_correction(question)
-
-        # Otherwise use the standard approach
-        # Always try to ensure KG is initialized first
-        if self._kg is None:
-            # Check if graph data exists using direct query
-            if not self._check_graph_has_data():
-                raise RuntimeError("Knowledge graph is not initialised – ingest data first.")
-
-            # Try to initialize KG connection to existing graph
-            try:
-                from graphrag_sdk import KnowledgeGraph
-                self._kg = KnowledgeGraph(
-                    name=self._graph_name,
-                    model_config=self._model_config,
-                    host=self._DB_HOST,
-                    port=self._DB_PORT,
-                )
-                logger.info("✅ GraphRAG SDK connection established")
-            except Exception as e:
-                error_message = str(e)
-                logger.debug(f"GraphRAG SDK connection failed: {error_message}")
-
-                # Check if it's a schema compatibility issue
-                if "Invalid attribute type" in error_message or "AttributeType" in error_message:
-                    # Try clearing just the schema metadata first
-                    self._clear_schema_metadata()
-
-                    # Try to connect again
-                    try:
-                        self._kg = KnowledgeGraph(
-                            name=self._graph_name,
-                            model_config=self._model_config,
-                            host=self._DB_HOST,
-                            port=self._DB_PORT,
-                        )
-                        logger.info("✅ GraphRAG SDK connection established after schema cleanup")
-
-                    except Exception as e2:
-                        logger.debug(f"GraphRAG SDK still failed after cleanup: {e2}")
-                        # If schema metadata clearing didn't work, fall back to direct query
-                        return self._direct_query_fallback(question)
-
-                else:
-                    # If SDK connection fails, use direct database fallback
-                    return self._direct_query_fallback(question)
-
-        try:
-            # Add a simple timeout to prevent hanging on retry loops
-            import signal
-            import time
-
-            def timeout_handler(signum, frame):
-                raise TimeoutError("GraphRAG SDK query timed out")
-
-            # Set a 30-second timeout for GraphRAG SDK queries
-            signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(30)
-
-            try:
-                session = self._kg.chat_session()
-                result = session.send_message(question)
-            finally:
-                signal.alarm(0)  # Cancel the timeout
-
-            # Check if the result is valid
-            if isinstance(result, dict):
-                # GraphRAG SDK returns response in "response" key, not "answer"
-                answer = result.get("response") or result.get("answer")
-                if answer and self._is_valid_result(str(answer)):
-                    return str(answer)
-                elif answer:  # If we have an answer but validation failed, still return it
-                    return str(answer)
-                else:
-                    # If no response/answer key, fall back to the old logic
-                    answer = str(result)
-                    if self._is_valid_result(answer):
-                        return answer
-
-            # If result is not a dict, validate it directly
-            elif result and self._is_valid_result(str(result)):
-                return str(result)
-
-            # If invalid or problematic result, try fallback
-            return self._query_with_fallbacks(question)
-
-        except TimeoutError:
-            logger.warning("GraphRAG SDK query timed out, using fallback")
-            return self._query_with_fallbacks(question)
-
-        except Exception as e:
-            error_message = str(e)
-
-            # Handle specific GraphRAG SDK errors
-            if any(error_phrase in error_message for error_phrase in [
-                "does not connect",
-                "Make sure the relation direction is correct",
-                "Failed to generate Cypher query",
-                "Invalid attribute type",
-                "AttributeType"
-            ]):
-                # Reset KG instance and try fallback
-                self._kg = None
-                return self._query_with_fallbacks(question)
-
-            # For other errors, also try fallback
-            return self._query_with_fallbacks(question)
 
     # ----------------------------------------------------------- helper intern
     def _ingest_sources(self, sources: List[AbstractSource]) -> None:
@@ -373,12 +261,20 @@ class GraphRAGHelper:
                                 labels = row[1]
 
                                 if isinstance(node_data, list) and len(node_data) >= 3:
-                                    properties = node_data[2] if len(node_data) > 2 else []
+                                    properties_section = node_data[2] if len(node_data) > 2 else []
                                     node_info = {}
-                                    if isinstance(properties, list):
-                                        for prop in properties:
-                                            if isinstance(prop, list) and len(prop) >= 2:
-                                                node_info[prop[0]] = prop[1]
+
+                                    # Handle the nested properties structure: ['properties', [['name', 'value'], ...]]
+                                    if isinstance(properties_section, list) and len(properties_section) >= 2:
+                                        if properties_section[0] == 'properties' and isinstance(properties_section[1], list):
+                                            for prop in properties_section[1]:
+                                                if isinstance(prop, list) and len(prop) >= 2:
+                                                    node_info[prop[0]] = prop[1]
+                                        else:
+                                            # Fallback: treat as direct property list
+                                            for prop in properties_section:
+                                                if isinstance(prop, list) and len(prop) >= 2:
+                                                    node_info[prop[0]] = prop[1]
 
                                     deletion_targets.append({
                                         'type': 'node',
@@ -453,6 +349,7 @@ class GraphRAGHelper:
                     result = r.execute_command("GRAPH.QUERY", self._graph_name, delete_rel_cypher)
                     deleted_count += 1
                 except Exception as e:
+                    logger.warning(f"Failed to delete relationship {target['source']}-[{target['relationship']}]->{target['target']}: {e}")
                     continue
 
             # Delete nodes
@@ -460,11 +357,27 @@ class GraphRAGHelper:
                 try:
                     name = target['properties'].get('name')
                     if name:
-                        labels_str = ':'.join(target['labels']) if target['labels'] else ''
-                        delete_node_cypher = f"MATCH (n{':' + labels_str if labels_str else ''} {{name: '{name}'}}) DELETE n"
+                        # Fix labels parsing - target['labels'] is a string like '[Person]', not a list
+                        labels_raw = target['labels']
+                        if isinstance(labels_raw, str):
+                            # Remove brackets and quotes: '[Person]' -> 'Person'
+                            labels_str = labels_raw.strip("[]'\"")
+                        elif isinstance(labels_raw, list):
+                            labels_str = ':'.join(labels_raw)
+                        else:
+                            labels_str = ''
+
+                        # Construct the deletion query
+                        if labels_str:
+                            delete_node_cypher = f"MATCH (n:{labels_str} {{name: '{name}'}}) DELETE n"
+                        else:
+                            delete_node_cypher = f"MATCH (n {{name: '{name}'}}) DELETE n"
+
+                        logger.info(f"Executing deletion: {delete_node_cypher}")
                         result = r.execute_command("GRAPH.QUERY", self._graph_name, delete_node_cypher)
                         deleted_count += 1
                 except Exception as e:
+                    logger.warning(f"Failed to delete node {target['properties'].get('name', 'Unknown')}: {e}")
                     continue
 
             return f"DELETION COMPLETED:\nSuccessfully deleted {deleted_count} items from the knowledge graph.\nDeleted: {summary}"
@@ -640,61 +553,134 @@ class GraphRAGHelper:
             logger.error(f"Enhanced query attempt failed: {e}")
             return self._direct_query_fallback(question)
 
-    def _generate_robust_cypher(self, question: str) -> str:
-        """Generate a robust Cypher query that's less likely to have errors."""
+    def _get_graph_context(self) -> str:
+        """Get context information about the current graph structure and data."""
+        try:
+            r = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
-        question_lower = question.lower()
+            context_parts = []
 
-        # Pattern-based generation to avoid complex LLM-generated Cypher
+            # Get node labels and sample data
+            try:
+                labels_result = r.execute_command("GRAPH.QUERY", self._graph_name, "MATCH (n) RETURN DISTINCT labels(n) as labels, n.name as sample_name LIMIT 20")
+                if labels_result and len(labels_result) > 1 and labels_result[1]:
+                    context_parts.append("Available entity types and examples:")
+                    for row in labels_result[1]:
+                        if isinstance(row, list) and len(row) >= 2:
+                            label = str(row[0]).strip("[]'\"")
+                            sample_name = row[1] if row[1] else "Unknown"
+                            context_parts.append(f"- {label}: {sample_name}")
+            except Exception as e:
+                logger.debug(f"Failed to get node labels: {e}")
 
-        # Who/person queries
-        if any(word in question_lower for word in ["who is", "who", "person"]):
-            # Extract potential name
-            import re
-            name_patterns = [
-                r"who is ([A-Z][a-z]+ [A-Z][a-z]+)",
-                r"who is ([A-Z][a-z]+)",
-                r"about ([A-Z][a-z]+ [A-Z][a-z]+)",
-                r"about ([A-Z][a-z]+)"
-            ]
+            # Get relationship types
+            try:
+                rels_result = r.execute_command("GRAPH.QUERY", self._graph_name, "MATCH ()-[r]->() RETURN DISTINCT type(r) as rel_type LIMIT 10")
+                if rels_result and len(rels_result) > 1 and rels_result[1]:
+                    context_parts.append("\nAvailable relationship types:")
+                    for row in rels_result[1]:
+                        if isinstance(row, list) and len(row) >= 1:
+                            rel_type = row[0]
+                            context_parts.append(f"- {rel_type}")
+            except Exception as e:
+                logger.debug(f"Failed to get relationship types: {e}")
 
-            for pattern in name_patterns:
-                match = re.search(pattern, question)
-                if match:
-                    name = match.group(1)
-                    return f"MATCH (p)-[r]-(connected) WHERE p.name CONTAINS '{name}' OR p.title CONTAINS '{name}' RETURN p, type(r), connected LIMIT 10"
+            # If no specific context, provide a generic helpful note
+            if not context_parts:
+                context_parts.append("Graph contains Products, Organizations, and Features.")
+                context_parts.append("Products are linked to Organizations via RELEASED_BY relationships.")
+                context_parts.append("Products may use Features via USES relationships.")
 
-            # Generic person query
-            return "MATCH (p:Person)-[r]-(connected) RETURN p, type(r), connected LIMIT 5"
+            return "\n".join(context_parts)
 
-        # What queries
-        elif "what" in question_lower:
-            if any(word in question_lower for word in ["entities", "available", "data"]):
-                return "MATCH (n) RETURN DISTINCT labels(n) as type, n.name as name LIMIT 10"
-            elif any(word in question_lower for word in ["relationships", "connections", "relations"]):
-                return "MATCH (a)-[r]->(b) RETURN a.name, type(r), b.name LIMIT 10"
+        except Exception as e:
+            logger.debug(f"Failed to get graph context: {e}")
+            # Provide basic context even if Redis fails
+            return "Graph contains Products, Organizations, and Features. Products are linked to Organizations and Features."
+
+    def query(self, question: str, use_enhanced_correction: bool = True) -> str:
+        """Query the knowledge graph with enhanced context and error correction."""
+        try:
+            if not self._kg:
+                self._initialize_kg()
+                if not self._kg:
+                    return "Knowledge graph not available"
+
+            # Get graph context for better query generation
+            graph_context = self._get_graph_context()
+
+            # Enhanced question with context
+            enhanced_question = f"""Context about available data in the graph:
+{graph_context}
+
+Based on this context, answer the following question:
+{question}
+
+Note: When looking for items like "phones", consider that they might be stored as specific product names like "iPhone 15", "Samsung Galaxy S24", etc. Use appropriate CONTAINS or pattern matching in your queries."""
+
+            # Try the enhanced query first
+            session = self._kg.chat_session()
+            result = session.send_message(enhanced_question)
+
+            if result and "No relevant information" not in str(result):
+                return str(result)
+
+            # If enhanced query fails and correction is enabled, try fallback
+            if use_enhanced_correction:
+                return self._direct_query_fallback(question)
             else:
-                # Extract potential subject
-                import re
-                what_match = re.search(r"what.*?(?:is|are|about)\s+([^?]+)", question_lower)
-                if what_match:
-                    subject = what_match.group(1).strip()
-                    return f"MATCH (n)-[r]-(connected) WHERE n.name CONTAINS '{subject}' OR n.title CONTAINS '{subject}' RETURN n, type(r), connected LIMIT 10"
+                return "No relevant information found in the knowledge graph."
 
-        # Organization/company queries
-        elif any(word in question_lower for word in ["company", "organization", "org"]):
-            return "MATCH (o:Organization)-[r]-(connected) RETURN o, type(r), connected LIMIT 5"
+        except Exception as e:
+            logger.error(f"GraphRAG query failed: {e}")
+            if use_enhanced_correction:
+                return self._direct_query_fallback(question)
+            return f"Knowledge graph query failed: {str(e)}"
 
-        # Field/domain queries
-        elif any(word in question_lower for word in ["field", "domain", "area", "science"]):
-            return "MATCH (f:Field)-[r]-(connected) RETURN f, type(r), connected LIMIT 5"
+    def query_with_memory_context(self, question: str, memory_context: dict = None) -> str:
+        """Query with additional memory context for more relevant results."""
+        try:
+            if not self._kg:
+                self._initialize_kg()
+                if not self._kg:
+                    return "Knowledge graph not available"
 
-        # Awards/prizes queries
-        elif any(word in question_lower for word in ["award", "prize", "won", "received"]):
-            return "MATCH (a)-[r]->(award) WHERE type(r) = 'RECEIVED' OR award.name CONTAINS 'Prize' OR award.name CONTAINS 'Award' RETURN a, type(r), award LIMIT 10"
+            # Get graph context
+            graph_context = self._get_graph_context()
 
-        # Default: simple node query
-        return "MATCH (n) RETURN n, labels(n) LIMIT 5"
+            # Build enhanced context that includes both graph and memory information
+            context_parts = [f"Graph structure: {graph_context}"]
+
+            if memory_context:
+                if memory_context.get('memories'):
+                    context_parts.append(f"Related memories: {memory_context['memories'][:300]}...")
+                if memory_context.get('solutions'):
+                    context_parts.append(f"Related solutions: {memory_context['solutions'][:300]}...")
+
+            enhanced_context = "\n\n".join(context_parts)
+
+            # Create enhanced question with both graph and memory context
+            enhanced_question = f"""Context information:
+{enhanced_context}
+
+Based on this context, answer the following question by finding complementary or related information in the knowledge graph:
+{question}
+
+Focus on entities, relationships, or facts that add value to the existing context. Look for connections, additional details, or related information that isn't already covered in the memories/solutions above."""
+
+            # Query the knowledge graph
+            session = self._kg.chat_session()
+            result = session.send_message(enhanced_question)
+
+            if result and "No relevant information" not in str(result):
+                return str(result)
+            else:
+                # Fall back to direct query if needed
+                return self._direct_query_fallback(question)
+
+        except Exception as e:
+            logger.error(f"GraphRAG memory context query failed: {e}")
+            return self._direct_query_fallback(question)
 
     def _format_enhanced_result(self, raw_result) -> str:
         """Format results from enhanced Cypher queries."""

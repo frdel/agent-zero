@@ -195,7 +195,13 @@ class RecallMemories(Extension):
             log_item.update(solutions=solutions_txt)
 
         # Query GraphRAG knowledge graph for additional insights
-        graph_knowledge_txt = await self._query_graphrag(query, log_item)
+        # Pass both the original query and the memory context for enhanced relevance
+        memory_context = {
+            'memories': memories_txt if memories_txt else None,
+            'solutions': solutions_txt if solutions_txt else None,
+            'original_query': query
+        }
+        graph_knowledge_txt = await self._query_graphrag(query, log_item, memory_context)
 
         # place to prompt
         if memories_txt:
@@ -211,15 +217,43 @@ class RecallMemories(Extension):
                 "agent.system.graph_knowledge.md", graph_knowledge=graph_knowledge_txt
             )
 
-    async def _query_graphrag(self, query: str, log_item) -> str:
-        """Query GraphRAG knowledge graph for additional insights."""
+    async def _query_graphrag(self, query: str, log_item, memory_context: dict = None) -> str:
+        """Query GraphRAG knowledge graph for additional insights with memory context."""
         try:
             from python.helpers.graphrag_helper import GraphRAGHelper
 
             # Get GraphRAG helper and query
             helper = GraphRAGHelper.get_default()
 
-            # Try multiple query formulations for better coverage
+            # Enhanced query with memory context if available
+            if memory_context and (memory_context.get('memories') or memory_context.get('solutions')):
+                context_info = []
+
+                if memory_context.get('memories'):
+                    context_info.append(f"Related memories found:\n{memory_context['memories'][:500]}...")
+
+                if memory_context.get('solutions'):
+                    context_info.append(f"Related solutions found:\n{memory_context['solutions'][:500]}...")
+
+                # Create context-enhanced query
+                enhanced_query = f"""Based on the following memory context, provide additional insights from the knowledge graph:
+
+{chr(10).join(context_info)}
+
+Original question: {query}
+
+Focus on entities, relationships, or knowledge that complements the above memories and solutions."""
+
+                # Try the context-enhanced query first
+                try:
+                    result = helper.query_with_memory_context(enhanced_query, memory_context)
+                    if result and "No relevant information" not in result:
+                        log_item.update(graph_knowledge=result)
+                        return result
+                except Exception:
+                    pass  # Fall back to standard queries
+
+            # Fallback to multiple query formulations for better coverage
             queries_to_try = [
                 query,  # Original query
                 f"What do you know about {query}?",  # More direct

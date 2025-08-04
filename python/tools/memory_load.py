@@ -11,17 +11,18 @@ class MemoryLoad(Tool):
         db = await Memory.get(self.agent)
         docs = await db.search_similarity_threshold(query=query, limit=limit, threshold=threshold, filter=filter)
 
-        # Query GraphRAG for additional insights
-        graph_knowledge = await self._query_graphrag(query)
+        # Format memory results for context
+        memory_text = ""
+        if docs:
+            memory_text = "\n\n".join(Memory.format_docs_plain(docs))
+
+        # Query GraphRAG with memory context for enhanced relevance
+        memory_context = {'memories': memory_text} if memory_text else None
+        graph_knowledge = await self._query_graphrag(query, memory_context)
 
         if len(docs) == 0 and not graph_knowledge:
             result = self.agent.read_prompt("fw.memories_not_found.md", query=query)
         else:
-            # Format memory results
-            memory_text = ""
-            if docs:
-                memory_text = "\n\n".join(Memory.format_docs_plain(docs))
-
             # Format graph knowledge
             graph_text = ""
             if graph_knowledge:
@@ -32,15 +33,24 @@ class MemoryLoad(Tool):
 
         return Response(message=result, break_loop=False)
 
-    async def _query_graphrag(self, query: str) -> str:
-        """Query GraphRAG knowledge graph for additional insights."""
+    async def _query_graphrag(self, query: str, memory_context: dict = None) -> str:
+        """Query GraphRAG knowledge graph for additional insights with memory context."""
         try:
             from python.helpers.graphrag_helper import GraphRAGHelper
 
             # Get GraphRAG helper and query
             helper = GraphRAGHelper.get_default()
 
-            # Try enhanced correction first, then fallback to standard queries
+            # Try memory context query first if context is available
+            if memory_context and hasattr(helper, 'query_with_memory_context'):
+                try:
+                    result = helper.query_with_memory_context(query, memory_context)
+                    if result and "No relevant information" not in result and result.strip():
+                        return result
+                except Exception:
+                    pass
+
+            # Try enhanced correction fallback
             try:
                 # Try enhanced correction if available
                 if hasattr(helper, 'query_with_enhanced_correction'):
@@ -50,7 +60,7 @@ class MemoryLoad(Tool):
             except Exception:
                 pass
 
-            # Fallback to multiple query formulations
+            # Final fallback to multiple query formulations
             queries_to_try = [
                 query,  # Original query
                 f"What do you know about {query}?",  # More direct
