@@ -1,7 +1,6 @@
 // copy button
 import { openImageModal } from "./image_modal.js";
 import { marked } from "../vendor/marked/marked.esm.js";
-import { getAutoScroll } from "/index.js";
 import { store as _messageResizeStore } from "/components/messages/resize/message-resize-store.js"; // keep here, required in html
 import { store as attachmentsStore } from "/components/chat/attachments/attachmentsStore.js";
 
@@ -9,280 +8,15 @@ const chatHistory = document.getElementById("chat-history");
 
 let messageGroup = null;
 
-// Scroll position manager for smooth autoscroll
-class ScrollPositionManager {
-  constructor() {
-    this.positions = new Map();
-    this.autoscrollDisabled = false;
-    this.scrollableSelectors = ['.msg-content', '.kvps-val'];
-    this.monitoringInterval = null; // Added for continuous monitoring
-  }
-
-  // Store scroll positions for all scrollable elements in a message
-  storeMessageScrollPositions(messageContainer) {
-    // Disabled to prevent scroll position resets
-    return;
-  }
-
-  // Restore scroll positions for a message
-  restoreMessageScrollPositions(messageContainer) {
-    // Disabled to prevent scroll position resets
-    return;
-  }
-
-  // Check global scroll state and update autoscroll disabled flag
-  checkGlobalScrollState() {
-    // Check main chat history - this is the primary indicator for disabling autoscroll
-    const chatHistory = document.getElementById("chat-history");
-    if (chatHistory && !this.isAtBottom(chatHistory, 20)) {
-      this.autoscrollDisabled = true;
-      return;
-    }
-
-    // Check chat input area - also important for disabling autoscroll
-    const chatInput = document.getElementById("chat-input");
-    if (chatInput && !this.isAtBottom(chatInput, 20)) {
-      this.autoscrollDisabled = true;
-      return;
-    }
-
-    // Individual message scroll positions don't disable autoscroll globally
-    // They only affect their own scrolling behavior
-    // This allows users to scroll up in individual messages while keeping autoscroll enabled
-
-    // If we get here, main areas are at bottom, enable autoscroll
-    this.autoscrollDisabled = false;
-  }
-
-  // Improved method to check if element is scrolled to bottom with better tolerance
-  isAtBottom(element, tolerance = 10) {
-    if (!element) return true;
-
-    // Get current scroll position and dimensions
-    const scrollTop = element.scrollTop;
-    const scrollHeight = element.scrollHeight;
-    const clientHeight = element.clientHeight;
-
-    // Calculate how far from bottom we are
-    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-
-    // Return true if we're within tolerance of the bottom
-    return distanceFromBottom <= tolerance;
-  }
-
-  // Enhanced method to check if user is at bottom of all scrollable areas
-  // This method is more robust during active content generation
-  isUserAtBottomOfAllScrollableAreas() {
-    // Check main chat history
-    const chatHistory = document.getElementById("chat-history");
-    if (chatHistory && !this.isAtBottom(chatHistory, 20)) {
-      return false;
-    }
-
-    // Check chat input area
-    const chatInput = document.getElementById("chat-input");
-    if (chatInput && !this.isAtBottom(chatInput, 20)) {
-      return false;
-    }
-
-    // Check all message content areas
-    const allMsgContent = document.querySelectorAll('.msg-content');
-    for (const element of allMsgContent) {
-      if (!this.isAtBottom(element, 20)) {
-        return false;
-      }
-    }
-
-    // Check all message body areas (terminal messages)
-    const allMsgBody = document.querySelectorAll('.message-body');
-    for (const element of allMsgBody) {
-      if (!this.isAtBottom(element, 20)) {
-        return false;
-      }
-    }
-
-    // Check all KVP areas
-    const allKvpValues = document.querySelectorAll('.kvps-val');
-    for (const element of allKvpValues) {
-      if (!this.isAtBottom(element, 20)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  // Enhanced method to re-enable autoscroll when user scrolls to bottom
-  reEnableAutoscrollIfAtBottom() {
-    // Check if main chat history is at bottom - this is the primary indicator
-    const chatHistory = document.getElementById("chat-history");
-    const isMainHistoryAtBottom = chatHistory && this.isAtBottom(chatHistory, 20);
-
-    // Check if chat input is at bottom
-    const chatInput = document.getElementById("chat-input");
-    const isChatInputAtBottom = chatInput && this.isAtBottom(chatInput, 20);
-
-    // If main chat history is at bottom, re-enable autoscroll regardless of individual message positions
-    // This allows users to scroll up in individual messages but still have autoscroll when they scroll down the main history
-    if (isMainHistoryAtBottom && isChatInputAtBottom) {
-      this.autoscrollDisabled = false;
-      // Scroll all elements to bottom when autoscroll is enabled
-      this.scrollAllToBottom();
-      // Update the main autoscroll state
-      if (window.updateAfterScroll) {
-        window.updateAfterScroll();
-      }
-    }
-  }
-
-  // Set up scroll listeners for a message container
-  setupScrollListeners(messageContainer) {
-    if (!messageContainer) return;
-
-    // Add scroll listeners to detect user scrolling within messages
-    // These don't disable autoscroll globally, they just manage their own scroll behavior
-    const msgContent = messageContainer.querySelector('.msg-content');
-    if (msgContent) {
-      msgContent.addEventListener('scroll', () => {
-        // Individual message scroll doesn't disable global autoscroll
-        // It only affects the scroll behavior of this specific element
-        if (this.isAtBottom(msgContent, 20)) {
-          // If user scrolls back to bottom of this message, they might want autoscroll
-          this.reEnableAutoscrollIfAtBottom();
-        }
-      });
-    }
-
-    // Add scroll listeners for message-body elements (terminal messages)
-    const msgBody = messageContainer.querySelector('.message-body');
-    if (msgBody) {
-      msgBody.addEventListener('scroll', () => {
-        // Individual message scroll doesn't disable global autoscroll
-        // It only affects the scroll behavior of this specific element
-        if (this.isAtBottom(msgBody, 20)) {
-          // If user scrolls back to bottom of this message, they might want autoscroll
-          this.reEnableAutoscrollIfAtBottom();
-        }
-      });
-    }
-
-    const kvpValues = messageContainer.querySelectorAll('.kvps-val');
-    kvpValues.forEach(kvp => {
-      kvp.addEventListener('scroll', () => {
-        // Individual KVP scroll doesn't disable global autoscroll
-        // It only affects the scroll behavior of this specific element
-        if (this.isAtBottom(kvp, 20)) {
-          // If user scrolls back to bottom of this KVP, they might want autoscroll
-          this.reEnableAutoscrollIfAtBottom();
-        }
-      });
-    });
-  }
-
-  // Set up scroll listeners for global elements (chat history, chat input)
-  setupGlobalScrollListeners() {
-    // Set up scroll listener for main chat history
-    const chatHistory = document.getElementById("chat-history");
-    if (chatHistory) {
-      chatHistory.addEventListener('scroll', () => {
-        if (!this.isAtBottom(chatHistory)) {
-          this.disableAutoscroll();
-        } else {
-          this.reEnableAutoscrollIfAtBottom();
-        }
-      });
-    }
-
-    // Set up scroll listener for chat input
-    const chatInput = document.getElementById("chat-input");
-    if (chatInput) {
-      chatInput.addEventListener('scroll', () => {
-        if (!this.isAtBottom(chatInput)) {
-          this.disableAutoscroll();
-        } else {
-          this.reEnableAutoscrollIfAtBottom();
-        }
-      });
-    }
-  }
-
-  // Method to scroll all scrollable elements to the bottom
-  scrollAllToBottom() {
-    // Scroll main chat history to bottom
-    const chatHistory = document.getElementById("chat-history");
-    if (chatHistory) {
-      chatHistory.scrollTop = chatHistory.scrollHeight;
-    }
-
-    // Scroll chat input to bottom
-    const chatInput = document.getElementById("chat-input");
-    if (chatInput) {
-      chatInput.scrollTop = chatInput.scrollHeight;
-    }
-
-    // Scroll all message content areas to bottom
-    const allMsgContent = document.querySelectorAll('.msg-content');
-    allMsgContent.forEach(element => {
-      if (element.scrollHeight > element.clientHeight) {
-        element.scrollTop = element.scrollHeight;
-      }
-    });
-
-    // Scroll all message body areas (terminal messages) to bottom
-    const allMsgBody = document.querySelectorAll('.message-body');
-    allMsgBody.forEach(element => {
-      if (element.scrollHeight > element.clientHeight) {
-        element.scrollTop = element.scrollHeight;
-      }
-    });
-
-    // Scroll all KVP areas to bottom
-    const allKvpValues = document.querySelectorAll('.kvps-val');
-    allKvpValues.forEach(element => {
-      if (element.scrollHeight > element.clientHeight) {
-        element.scrollTop = element.scrollHeight;
-      }
-    });
-  }
-
-  // Disable autoscroll globally
-  disableAutoscroll() {
-    this.autoscrollDisabled = true;
-    // Start continuous monitoring when autoscroll is disabled
-    // this.startContinuousMonitoring(); // Removed continuous monitoring
-    // Don't call window.toggleAutoScroll here to avoid circular dependency
-    // The main autoscroll state will be updated via scrollChanged function
-  }
-
-  // Enable autoscroll
-  enableAutoscroll() {
-    this.autoscrollDisabled = false;
-    // Stop continuous monitoring when autoscroll is enabled
-    // this.stopContinuousMonitoring(); // Removed continuous monitoring
-    // Automatically scroll to bottom when autoscroll is enabled
-    this.scrollAllToBottom();
-  }
-}
-
-// Global scroll position manager instance
-const scrollManager = new ScrollPositionManager();
-
-// Export scroll manager for use in other modules
-export function getScrollManager() {
-  return scrollManager;
-}
-
 export function setMessage(id, type, heading, content, temp, kvps = null) {
   // Search for the existing message container by id
   let messageContainer = document.getElementById(`message-${id}`);
-  let isNewMessage = false;
 
   if (messageContainer) {
     // Don't clear innerHTML - we'll do incremental updates
     // messageContainer.innerHTML = "";
   } else {
     // Create a new container if not found
-    isNewMessage = true;
     const sender = type === "user" ? "user" : "ai";
     messageContainer = document.createElement("div");
     messageContainer.id = `message-${id}`;
@@ -293,24 +27,43 @@ export function setMessage(id, type, heading, content, temp, kvps = null) {
   handler(messageContainer, id, type, heading, content, temp, kvps);
 
   // If this is a new message, handle DOM insertion
-  if (isNewMessage && !document.getElementById(`message-${id}`)) {
+  if (!document.getElementById(`message-${id}`)) {
     // message type visual grouping
     const groupTypeMap = {
-      user: "message-group-right",
-      ai: "message-group-mid",
-      tool: "message-group-mid",
-      default: "message-group-mid",
+      user: "right",
+      info: "mid",
+      warning: "mid",
+      error: "mid",
+      rate_limit: "mid",
+      util: "mid",
+      hint: "mid",
+      // anything else is "left"
     };
-    const groupType = groupTypeMap[type] || "message-group-mid";
-    messageGroup = document.createElement("div");
-    messageGroup.classList.add("message-group", groupType);
+    //force new group on these types
+    const groupStart = {
+      agent: true,
+      // anything else is false
+    };
+
+    const groupType = groupTypeMap[type] || "left";
+
+    // here check if messageGroup is still in DOM, if not, then set it to null (context switch)
+    if (messageGroup && !document.getElementById(messageGroup.id))
+      messageGroup = null;
+
+    if (
+      !messageGroup || // no group yet exists
+      groupStart[type] || // message type forces new group
+      groupType != messageGroup.getAttribute("data-group-type") // message type changes group
+    ) {
+      messageGroup = document.createElement("div");
+      messageGroup.id = `message-group-${id}`;
+      messageGroup.classList.add(`message-group`, `message-group-${groupType}`);
+      messageGroup.setAttribute("data-group-type", groupType);
+    }
     messageGroup.appendChild(messageContainer);
     chatHistory.appendChild(messageGroup);
-
-    // Set up scroll listeners for new message
-    scrollManager.setupScrollListeners(messageContainer);
   }
-
   return messageContainer;
 }
 
@@ -410,7 +163,7 @@ export function _drawMessage(
   }
 
   // Update message classes
-  messageDiv.className = `message ${mainClass} ${messageClasses.join(' ')}`;
+  messageDiv.className = `message ${mainClass} ${messageClasses.join(" ")}`;
 
   // Handle heading
   if (heading) {
@@ -465,22 +218,9 @@ export function _drawMessage(
       let contentDiv = bodyDiv.querySelector(".msg-content");
       if (!contentDiv) {
         contentDiv = document.createElement("div");
-        contentDiv.classList.add("msg-content", ...contentClasses);
         bodyDiv.appendChild(contentDiv);
-
-        // Set up scroll listener for new content div
-        contentDiv.addEventListener('scroll', () => {
-          // Individual message scroll doesn't disable global autoscroll
-          // It only affects the scroll behavior of this specific element
-          if (scrollManager.isAtBottom(contentDiv, 20)) {
-            // If user scrolls back to bottom of this message, they might want autoscroll
-            scrollManager.reEnableAutoscrollIfAtBottom();
-          }
-        });
-      } else {
-        // Update classes
-        contentDiv.className = `msg-content ${contentClasses.join(' ')}`;
       }
+      contentDiv.className = `msg-content ${contentClasses.join(" ")}`;
 
       let spanElement = contentDiv.querySelector("span");
       if (!spanElement) {
@@ -494,6 +234,10 @@ export function _drawMessage(
       processedContent = marked.parse(processedContent, { breaks: true });
       processedContent = convertPathsToLinks(processedContent);
       processedContent = addBlankTargetsToLinks(processedContent);
+
+      // reapply scroll position or autoscroll
+      const scroller = new Scroller(contentDiv);
+
       spanElement.innerHTML = processedContent;
 
       // KaTeX rendering for markdown
@@ -510,6 +254,9 @@ export function _drawMessage(
         addCopyButtonToElement(contentDiv);
       }
       adjustMarkdownRender(contentDiv);
+
+      // reapply scroll position or autoscroll
+      scroller.reApplyScroll();
     } else {
       let preElement = bodyDiv.querySelector(".msg-content");
       if (!preElement) {
@@ -518,19 +265,9 @@ export function _drawMessage(
         preElement.style.whiteSpace = "pre-wrap";
         preElement.style.wordBreak = "break-word";
         bodyDiv.appendChild(preElement);
-
-        // Set up scroll listener for new pre element
-        preElement.addEventListener('scroll', () => {
-          // Individual message scroll doesn't disable global autoscroll
-          // It only affects the scroll behavior of this specific element
-          if (scrollManager.isAtBottom(preElement, 20)) {
-            // If user scrolls back to bottom of this message, they might want autoscroll
-            scrollManager.reEnableAutoscrollIfAtBottom();
-          }
-        });
       } else {
         // Update classes
-        preElement.className = `msg-content ${contentClasses.join(' ')}`;
+        preElement.className = `msg-content ${contentClasses.join(" ")}`;
       }
 
       let spanElement = preElement.querySelector("span");
@@ -544,12 +281,18 @@ export function _drawMessage(
         });
       }
 
+      // reapply scroll position or autoscroll
+      const scroller = new Scroller(preElement);
+
       spanElement.innerHTML = convertHTML(content);
 
       // Ensure copy button exists
       if (!preElement.querySelector(".copy-button")) {
         addCopyButtonToElement(preElement);
       }
+
+      // reapply scroll position or autoscroll
+      scroller.reApplyScroll();
     }
   } else {
     // Remove content if it exists but content is empty
@@ -563,26 +306,30 @@ export function _drawMessage(
     messageContainer.classList.add("message-followup");
   }
 
-  // Don't force scroll here - let the scroll manager handle it
-  // The scroll manager will decide whether to autoscroll based on user's scroll state
-
   return messageDiv;
 }
 
 export function addBlankTargetsToLinks(str) {
-  const doc = new DOMParser().parseFromString(str, 'text/html');
+  const doc = new DOMParser().parseFromString(str, "text/html");
 
-  doc.querySelectorAll('a').forEach(anchor => {
-    const href = anchor.getAttribute('href') || '';
-    if (href.startsWith('#') || href.trim().toLowerCase().startsWith('javascript')) return;
-    if (!anchor.hasAttribute('target') || anchor.getAttribute('target') === '') {
-      anchor.setAttribute('target', '_blank');
+  doc.querySelectorAll("a").forEach((anchor) => {
+    const href = anchor.getAttribute("href") || "";
+    if (
+      href.startsWith("#") ||
+      href.trim().toLowerCase().startsWith("javascript")
+    )
+      return;
+    if (
+      !anchor.hasAttribute("target") ||
+      anchor.getAttribute("target") === ""
+    ) {
+      anchor.setAttribute("target", "_blank");
     }
 
-    const rel = (anchor.getAttribute('rel') || '').split(/\s+/).filter(Boolean);
-    if (!rel.includes('noopener')) rel.push('noopener');
-    if (!rel.includes('noreferrer')) rel.push('noreferrer');
-    anchor.setAttribute('rel', rel.join(' '));
+    const rel = (anchor.getAttribute("rel") || "").split(/\s+/).filter(Boolean);
+    if (!rel.includes("noopener")) rel.push("noopener");
+    if (!rel.includes("noreferrer")) rel.push("noreferrer");
+    anchor.setAttribute("rel", rel.join(" "));
   });
   return doc.body.innerHTML;
 }
@@ -704,8 +451,7 @@ export function drawMessageUser(
 
   const headingElement = document.createElement("h4");
   headingElement.classList.add("msg-heading");
-  headingElement.innerHTML =
-    `${heading} <span class='icon material-symbols-outlined'>person</span>`;
+  headingElement.innerHTML = `${heading} <span class='icon material-symbols-outlined'>person</span>`;
   messageDiv.appendChild(headingElement);
 
   if (content && content.trim().length > 0) {
@@ -746,14 +492,16 @@ export function drawMessageUser(
         img.classList.add("attachment-preview");
         img.style.cursor = "pointer";
 
-
         attachmentDiv.appendChild(img);
       } else {
         // Render as file tile with title and icon
         attachmentDiv.classList.add("file-type");
 
         // File icon
-        if (displayInfo.previewUrl && displayInfo.previewUrl !== displayInfo.filename) {
+        if (
+          displayInfo.previewUrl &&
+          displayInfo.previewUrl !== displayInfo.filename
+        ) {
           const iconImg = document.createElement("img");
           iconImg.src = displayInfo.previewUrl;
           iconImg.alt = `${displayInfo.extension} file`;
@@ -769,7 +517,7 @@ export function drawMessageUser(
         attachmentDiv.appendChild(fileTitle);
       }
 
-      attachmentDiv.addEventListener('click', displayInfo.clickHandler);
+      attachmentDiv.addEventListener("click", displayInfo.clickHandler);
 
       attachmentsContainer.appendChild(attachmentDiv);
     });
@@ -1038,7 +786,6 @@ function drawKvps(container, kvps, latex) {
           }
         }
       }
-
     }
     container.appendChild(table);
   }
@@ -1093,21 +840,10 @@ function drawKvpsIncremental(container, kvps, latex) {
         tdiv = document.createElement("div");
         tdiv.classList.add("kvps-val");
         td.appendChild(tdiv);
-
-        // Set up scroll listener for new kvp value div
-        tdiv.addEventListener('scroll', () => {
-          // Individual KVP scroll doesn't disable global autoscroll
-          // It only affects the scroll behavior of this specific element
-          if (scrollManager.isAtBottom(tdiv, 20)) {
-            // If user scrolls back to bottom of this KVP, they might want autoscroll
-            scrollManager.reEnableAutoscrollIfAtBottom();
-          }
-        });
       }
 
-      // Store current scroll position
-      const currentScrollTop = tdiv.scrollTop;
-      const isAtBottom = tdiv.scrollHeight - tdiv.scrollTop <= tdiv.clientHeight + 10;
+      // reapply scroll position or autoscroll
+      const scroller = new Scroller(tdiv);
 
       // Clear and rebuild content (for now - could be optimized further)
       tdiv.innerHTML = "";
@@ -1120,8 +856,8 @@ function drawKvpsIncremental(container, kvps, latex) {
         addValue(value, tdiv);
       }
 
-      // Don't restore scroll position to prevent resets
-      // Let the natural scroll behavior work
+      // reapply scroll position or autoscroll
+      scroller.reApplyScroll();
     });
 
     // Remove extra rows if we have fewer kvps now
@@ -1297,4 +1033,23 @@ function adjustMarkdownRender(element) {
     el.parentNode.insertBefore(wrapper, el);
     wrapper.appendChild(el);
   });
+}
+
+class Scroller {
+  constructor(element) {
+    this.element = element;
+    this.wasAtBottom = this.isAtBottom();
+  }
+
+  isAtBottom(tolerance = 10) {
+    const scrollHeight = this.element.scrollHeight;
+    const clientHeight = this.element.clientHeight;
+    const distanceFromBottom =
+      scrollHeight - this.element.scrollTop - clientHeight;
+    return distanceFromBottom <= tolerance;
+  }
+
+  reApplyScroll() {
+    if (this.wasAtBottom) this.element.scrollTop = this.element.scrollHeight;
+  }
 }

@@ -1036,7 +1036,7 @@ function scrollChanged(isAtBottom) {
 function updateAfterScroll() {
   // const toleranceEm = 1; // Tolerance in em units
   // const tolerancePx = toleranceEm * parseFloat(getComputedStyle(document.documentElement).fontSize); // Convert em to pixels
-  const tolerancePx = 50;
+  const tolerancePx = 10;
   const chatHistory = document.getElementById("chat-history");
   const isAtBottom =
     chatHistory.scrollHeight - chatHistory.scrollTop <=
