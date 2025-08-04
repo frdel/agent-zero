@@ -44,17 +44,22 @@ from python.helpers.settings import get_settings  # Agent Zero settings helper
 
 
 class GraphRAGHelper:
-    """Singleton helper around a GraphRAG `KnowledgeGraph`."""
+    """Multi-database GraphRAG helper supporting area-specific knowledge graphs."""
 
-    _default_instance: "GraphRAGHelper | None" = None
+    _instances: dict[str, "GraphRAGHelper"] = {}
     _lock = threading.Lock()
 
     # Connection defaults
     _DB_HOST = "127.0.0.1"
     _DB_PORT = 6379
 
-    def __init__(self, graph_name: str = "agent_zero_kg") -> None:
+    def __init__(self, graph_name: str = "agent_zero_kg", area: str = "main") -> None:
         settings = get_settings()
+
+        # Store area and create area-specific graph name
+        self._area = area
+        self._base_graph_name = graph_name
+        self._graph_name = f"{graph_name}_{area}"  # e.g., "agent_zero_kg_main", "agent_zero_kg_fragments"
 
         # Build litellm model identifier
         provider = settings["chat_model_provider"].strip()
@@ -66,8 +71,6 @@ class GraphRAGHelper:
             self._full_model_name = f"openrouter/{model_name}"
         else:
             self._full_model_name = f"{provider}/{model_name}"
-
-
 
         # Additional LiteLLM keyword arguments (api_base etc.)
         additional_params: dict = {}
@@ -102,7 +105,6 @@ class GraphRAGHelper:
         # Re-use the same model for all GraphRAG tasks (extract, cypher, QA)
         self._model_config = KnowledgeGraphModelConfig.with_model(self._llm_model)
 
-        self._graph_name = graph_name
         self._kg: Optional[KnowledgeGraph] = None
 
         # Try to connect to an existing graph (and its ontology).  If that
@@ -120,8 +122,8 @@ class GraphRAGHelper:
             self._kg = None
 
     # ------------------------------------------------------------------ public
-    def ingest_text(self, text: str, instruction: str | None = None) -> None:
-        """Add *text* as a document source into the KG.
+    def ingest_text(self, text: str, instruction: str | None = None, metadata: dict | None = None) -> None:
+        """Add *text* as a document source into the KG with optional metadata.
 
         Parameters
         ----------
@@ -131,14 +133,16 @@ class GraphRAGHelper:
         instruction : str | None
             Optional high-level extraction instructions ("focus on people and
             organisations" etc.)
+        metadata : dict | None
+            Optional metadata about the source (e.g., memory_id, filename, area, etc.)
         """
         source = Source_FromRawText(text, instruction)
-        self._ingest_sources([source])
+        self._ingest_sources([source], metadata)
 
     # ----------------------------------------------------------------- queries
 
     # ----------------------------------------------------------- helper intern
-    def _ingest_sources(self, sources: List[AbstractSource]) -> None:
+    def _ingest_sources(self, sources: List[AbstractSource], metadata: dict | None = None) -> None:
         """Internal method that makes sure the KG exists and processes sources."""
         if self._kg is None:
             # Build ontology dynamically from the *first* batch of sources
@@ -153,7 +157,84 @@ class GraphRAGHelper:
         # Add knowledge from sources into graph
         self._kg.process_sources(sources)
 
+        # Store metadata if provided
+        if metadata:
+            self._store_source_metadata(metadata)
+
     # --------------------------------------------------------- helper methods
+    def _store_source_metadata(self, metadata: dict) -> None:
+        """Store metadata about the ingested source in the graph database."""
+        try:
+            import redis
+            r = redis.Redis(host=self._DB_HOST, port=self._DB_PORT, decode_responses=True)
+
+            # Create a unique metadata node with timestamp
+            import time
+            import json
+
+            timestamp = int(time.time())
+            metadata_id = f"source_metadata_{timestamp}"
+
+            # Add core metadata fields
+            metadata_with_defaults = {
+                "source_type": "unknown",
+                "source_id": "unknown",
+                "area": "main",
+                "timestamp": timestamp,
+                **metadata
+            }
+
+            # Create metadata node in the graph
+            metadata_json = json.dumps(metadata_with_defaults).replace('"', '\\"')
+            cypher = f'MERGE (m:SourceMetadata {{id: "{metadata_id}", data: "{metadata_json}", timestamp: {timestamp}}})'
+
+            try:
+                r.execute_command("GRAPH.QUERY", self._graph_name, cypher)
+                logger.debug(f"Stored source metadata: {metadata_with_defaults}")
+            except Exception as e:
+                logger.debug(f"Failed to store source metadata: {e}")
+
+        except Exception as e:
+            # Metadata storage failure shouldn't break ingestion
+            logger.debug(f"Error storing source metadata: {e}")
+
+    def get_source_metadata(self, limit: int = 10) -> list[dict]:
+        """Retrieve stored source metadata from the graph."""
+        try:
+            import redis
+            import json
+
+            r = redis.Redis(host=self._DB_HOST, port=self._DB_PORT, decode_responses=True)
+
+            # Query for metadata nodes
+            cypher = f"MATCH (m:SourceMetadata) RETURN m.id, m.data, m.timestamp ORDER BY m.timestamp DESC LIMIT {limit}"
+            result = r.execute_command("GRAPH.QUERY", self._graph_name, cypher)
+
+            metadata_list = []
+            if result and len(result) > 1 and result[1]:
+                for row in result[1]:
+                    try:
+                        if len(row) >= 3:
+                            metadata_id = row[0]
+                            data_json = row[1]
+                            timestamp = row[2]
+
+                            # Parse the JSON data
+                            data = json.loads(data_json) if data_json else {}
+                            metadata_list.append({
+                                "id": metadata_id,
+                                "timestamp": timestamp,
+                                **data
+                            })
+                    except Exception:
+                        continue
+
+            return metadata_list
+
+        except Exception as e:
+            logger.debug(f"Error retrieving source metadata: {e}")
+            return []
+
     def _setup_api_keys(self, provider: str) -> None:
         """Ensure the correct API keys are available for the specified provider.
 
@@ -290,7 +371,8 @@ class GraphRAGHelper:
             relationship_targets = []
             for keyword in keywords:
                 try:
-                    rel_cypher = f"MATCH (a)-[r]->(b) WHERE toLower(a.name) CONTAINS toLower('{keyword}') OR toLower(b.name) CONTAINS toLower('{keyword}') RETURN a.name, type(r), b.name"
+                    rel_cypher = (f"MATCH (a)-[r]->(b) WHERE toLower(a.name) CONTAINS toLower('{keyword}') "
+                                  f"OR toLower(b.name) CONTAINS toLower('{keyword}') RETURN a.name, type(r), b.name")
                     result = r.execute_command("GRAPH.QUERY", self._graph_name, rel_cypher)
 
                     if result and result[1]:
@@ -529,24 +611,7 @@ class GraphRAGHelper:
             # Connect to database
             r = redis.Redis(host=self._DB_HOST, port=self._DB_PORT, decode_responses=True)
 
-            # Get a simple, robust query based on the question
-            cypher_query = self._generate_robust_cypher(question)
-
-            if cypher_query:
-                try:
-                    logger.info(f"Trying enhanced Cypher: {cypher_query}")
-                    result = r.execute_command("GRAPH.QUERY", self._graph_name, cypher_query)
-
-                    if result and len(result) > 1 and result[1]:
-                        # Format the result similar to the fallback
-                        formatted = self._format_enhanced_result(result)
-                        if formatted:
-                            return formatted
-
-                except Exception as e:
-                    logger.warning(f"Enhanced Cypher failed: {e}")
-
-            # If enhanced approach fails, use standard fallback
+            # Use direct fallback for generic robustness (no hardcoded queries)
             return self._direct_query_fallback(question)
 
         except Exception as e:
@@ -556,13 +621,15 @@ class GraphRAGHelper:
     def _get_graph_context(self) -> str:
         """Get context information about the current graph structure and data."""
         try:
+            import redis
             r = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
             context_parts = []
 
             # Get node labels and sample data
             try:
-                labels_result = r.execute_command("GRAPH.QUERY", self._graph_name, "MATCH (n) RETURN DISTINCT labels(n) as labels, n.name as sample_name LIMIT 20")
+                labels_result = r.execute_command("GRAPH.QUERY", self._graph_name,
+                                                  "MATCH (n) RETURN DISTINCT labels(n) as labels, n.name as sample_name LIMIT 20")
                 if labels_result and len(labels_result) > 1 and labels_result[1]:
                     context_parts.append("Available entity types and examples:")
                     for row in labels_result[1]:
@@ -602,8 +669,15 @@ class GraphRAGHelper:
         """Query the knowledge graph with enhanced context and error correction."""
         try:
             if not self._kg:
-                self._initialize_kg()
-                if not self._kg:
+                # Graph not initialized - attempt to reconnect
+                try:
+                    self._kg = KnowledgeGraph(
+                        name=self._graph_name,
+                        model_config=self._model_config,
+                        host=self._DB_HOST,
+                        port=self._DB_PORT,
+                    )
+                except Exception:
                     return "Knowledge graph not available"
 
             # Get graph context for better query generation
@@ -616,7 +690,8 @@ class GraphRAGHelper:
 Based on this context, answer the following question:
 {question}
 
-Note: When looking for items like "phones", consider that they might be stored as specific product names like "iPhone 15", "Samsung Galaxy S24", etc. Use appropriate CONTAINS or pattern matching in your queries."""
+Note: When looking for items like "phones", consider that they might be stored as specific product names like
+"iPhone 15", "Samsung Galaxy S24", etc. Use appropriate CONTAINS or pattern matching in your queries."""
 
             # Try the enhanced query first
             session = self._kg.chat_session()
@@ -637,12 +712,19 @@ Note: When looking for items like "phones", consider that they might be stored a
                 return self._direct_query_fallback(question)
             return f"Knowledge graph query failed: {str(e)}"
 
-    def query_with_memory_context(self, question: str, memory_context: dict = None) -> str:
+    def query_with_memory_context(self, question: str, memory_context: dict | None = None) -> str:
         """Query with additional memory context for more relevant results."""
         try:
             if not self._kg:
-                self._initialize_kg()
-                if not self._kg:
+                # Graph not initialized - attempt to reconnect
+                try:
+                    self._kg = KnowledgeGraph(
+                        name=self._graph_name,
+                        model_config=self._model_config,
+                        host=self._DB_HOST,
+                        port=self._DB_PORT,
+                    )
+                except Exception:
                     return "Knowledge graph not available"
 
             # Get graph context
@@ -666,7 +748,8 @@ Note: When looking for items like "phones", consider that they might be stored a
 Based on this context, answer the following question by finding complementary or related information in the knowledge graph:
 {question}
 
-Focus on entities, relationships, or facts that add value to the existing context. Look for connections, additional details, or related information that isn't already covered in the memories/solutions above."""
+Focus on entities, relationships, or facts that add value to the existing context. Look for connections,
+additional details, or related information that isn't already covered in the memories/solutions above."""
 
             # Query the knowledge graph
             session = self._kg.chat_session()
@@ -903,12 +986,69 @@ Focus on entities, relationships, or facts that add value to the existing contex
         except Exception as e:
             return f"Knowledge graph query failed: {e}"
 
+    @classmethod
+    def query_multi_area(cls, question: str, areas: list[str], memory_context: dict | None = None) -> dict[str, str]:
+        """Query multiple knowledge graph areas and return combined results."""
+        results = {}
+
+        for area in areas:
+            try:
+                helper = cls.get_for_area(area)
+                if memory_context:
+                    result = helper.query_with_memory_context(question, memory_context)
+                else:
+                    result = helper.query(question)
+
+                if result and "No relevant information" not in result:
+                    results[area] = result
+
+            except Exception as e:
+                logger.debug(f"Query failed for area {area}: {e}")
+                continue
+
+        return results
+
+    @classmethod
+    def format_multi_area_results(cls, results: dict[str, str]) -> str:
+        """Format results from multiple areas into a single response."""
+        if not results:
+            return "No relevant information found in any knowledge graph area."
+
+        formatted_parts = []
+
+        # Order areas by relevance: main first, then others
+        area_order = ["main", "fragments", "solutions", "instruments"]
+        ordered_areas = [area for area in area_order if area in results]
+        ordered_areas.extend([area for area in results.keys() if area not in area_order])
+
+        for area in ordered_areas:
+            result = results[area]
+            area_title = area.title().replace('_', ' ')
+            formatted_parts.append(f"## {area_title} Knowledge:\n{result}")
+
+        return "\n\n".join(formatted_parts)
+
     # -------------------------------------------------------------- singleton
     @classmethod
-    def get_default(cls) -> "GraphRAGHelper":
-        """Return a singleton helper instance shared across the application."""
-        if cls._default_instance is None:
+    def get_default(cls, area: str = "main") -> "GraphRAGHelper":
+        """Return a singleton helper instance for the specified area."""
+        instance_key = f"agent_zero_kg_{area}"
+
+        if instance_key not in cls._instances:
             with cls._lock:
-                if cls._default_instance is None:
-                    cls._default_instance = GraphRAGHelper()
-        return cls._default_instance
+                if instance_key not in cls._instances:
+                    cls._instances[instance_key] = GraphRAGHelper(area=area)
+        return cls._instances[instance_key]
+
+    @classmethod
+    def get_for_area(cls, area: str) -> "GraphRAGHelper":
+        """Return a helper instance for a specific memory area."""
+        return cls.get_default(area)
+
+    @classmethod
+    def get_multi_area(cls, areas: list[str]) -> dict[str, "GraphRAGHelper"]:
+        """Return helper instances for multiple areas."""
+        helpers = {}
+        for area in areas:
+            helpers[area] = cls.get_for_area(area)
+        return helpers

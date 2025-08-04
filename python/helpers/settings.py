@@ -70,6 +70,7 @@ class Settings(TypedDict):
     memory_memorize_enabled: bool
     memory_memorize_consolidation: bool
     memory_memorize_replace_threshold: float
+    use_graphrag: bool
 
 
     api_keys: dict[str, str]
@@ -478,7 +479,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "type": "number",
             "value": settings["browser_model_rl_output"],
         }
-    )   
+    )
 
     browser_model_fields.append(
         {
@@ -779,6 +780,16 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "max": 1,
             "step": 0.01,
             "value": settings["memory_memorize_replace_threshold"],
+        }
+    )
+
+    memory_fields.append(
+        {
+            "id": "use_graphrag",
+            "title": "Use GraphRAG",
+            "description": "Enable GraphRAG knowledge graph integration for enhanced memory recall and knowledge management. When enabled, memories and knowledge are stored in a structured graph database for better relationship discovery and contextual retrieval.",
+            "type": "switch",
+            "value": settings["use_graphrag"],
         }
     )
 
@@ -1269,6 +1280,7 @@ def get_default_settings() -> Settings:
         memory_memorize_enabled=True,
         memory_memorize_consolidation=True,
         memory_memorize_replace_threshold=0.9,
+        use_graphrag=True,
         api_keys={},
         auth_login="",
         auth_password="",

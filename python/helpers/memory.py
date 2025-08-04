@@ -251,10 +251,15 @@ class Memory:
                 await self.delete_documents_by_ids(
                     index[file]["ids"]
                 )  # remove original version
+                # Also remove from GraphRAG if it exists
+                await self._remove_from_graphrag(index[file]["documents"])
+
             if index[file]["state"] == "changed":
                 index[file]["ids"] = await self.insert_documents(
                     index[file]["documents"]
                 )  # insert new version
+                # Also ingest into GraphRAG
+                await self._ingest_to_graphrag(index[file]["documents"], log_item)
 
         # remove index where state="removed"
         index = {k: v for k, v in index.items() if v["state"] != "removed"}
@@ -426,6 +431,121 @@ class Memory:
     @staticmethod
     def get_timestamp():
         return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    async def _ingest_to_graphrag(self, documents: list, log_item=None):
+        """Ingest knowledge documents into GraphRAG knowledge graph."""
+        try:
+            # Check if GraphRAG knowledge ingestion is enabled
+            from python.helpers import settings
+            set = settings.get_settings()
+
+            # Check if GraphRAG is enabled (defaults to True for enabled)
+            if not set.get("use_graphrag", True):
+                return
+
+            from python.helpers.graphrag_helper import GraphRAGHelper
+
+            if not documents:
+                return
+
+            # Track ingestion for logging
+            ingested_count = 0
+
+            for doc in documents:
+                # Get metadata for context
+                metadata = doc.metadata
+                area = metadata.get('area', 'main')
+                source_file = metadata.get('source_file', 'unknown')
+
+                # Create area-specific extraction instructions
+                area_instructions = {
+                    'main': "Extract key concepts, entities, facts, and relationships from this knowledge document",
+                    'solutions': "Extract problem-solving approaches, methods, solutions, and their relationships",
+                    'instruments': "Extract tools, technologies, capabilities, and their usage patterns",
+                    'fragments': "Extract entities, facts, and relationships from this document fragment"
+                }
+
+                instruction = area_instructions.get(area, "Extract entities, relationships, and key information")
+                instruction += f" from {source_file}"
+
+                                # Ingest the document content with metadata
+                if doc.page_content and doc.page_content.strip():
+                    # Get area-specific GraphRAG helper
+                    helper = GraphRAGHelper.get_for_area(area)
+
+                    # Create metadata for knowledge source tracking
+                    source_metadata = {
+                        "source_type": "knowledge_file",
+                        "source_id": source_file,
+                        "filename": source_file,
+                        "area": area,
+                        "file_path": metadata.get('source_path', ''),
+                        "file_type": metadata.get('file_type', ''),
+                        "knowledge_source": True
+                    }
+
+                    helper.ingest_text(doc.page_content, instruction, source_metadata)
+                    ingested_count += 1
+
+                    if log_item:
+                        log_item.stream(progress=f"\n  GraphRAG: Ingested {source_file} ({area}) with metadata")
+
+            if ingested_count > 0 and log_item:
+                log_item.stream(progress=f"\n  GraphRAG: Successfully ingested {ingested_count} knowledge documents")
+
+        except Exception as e:
+            # Knowledge ingestion failure shouldn't break the startup process
+            if log_item:
+                log_item.stream(progress=f"\n  GraphRAG ingestion warning: {e}")
+            pass
+
+    async def _remove_from_graphrag(self, documents: list):
+        """Remove knowledge from GraphRAG knowledge graph."""
+        try:
+            from python.helpers.graphrag_helper import GraphRAGHelper
+
+            if not documents:
+                return
+
+            # Extract potential entity names from documents for deletion
+            import re
+            entities_by_area = {}
+
+            for doc in documents:
+                content = doc.page_content
+                source_file = doc.metadata.get('source_file', '')
+                area = doc.metadata.get('area', 'main')
+
+                # Extract capitalized terms, quoted terms, and file-based entities
+                capitalized_words = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', content)
+                quoted_terms = re.findall(r'"([^"]+)"', content)
+
+                if area not in entities_by_area:
+                    entities_by_area[area] = []
+
+                entities_by_area[area].extend(capitalized_words)
+                entities_by_area[area].extend(quoted_terms)
+
+                # Also try to delete based on source file name
+                if source_file:
+                    file_stem = source_file.split('.')[0]
+                    entities_by_area[area].append(file_stem)
+
+            # Remove duplicates and attempt deletion for each area
+            for area, entities_list in entities_by_area.items():
+                entities_to_delete = list(set([entity.strip() for entity in entities_list if entity.strip()]))
+
+                if entities_to_delete:
+                    # Get area-specific helper
+                    helper = GraphRAGHelper.get_for_area(area)
+
+                    # Create query string for deletion
+                    entities_query = " OR ".join(entities_to_delete[:10])  # Limit to avoid very long queries
+                    helper.delete_knowledge(entities_query)
+
+        except Exception:
+            # GraphRAG deletion failure shouldn't break the process
+            pass
 
 
 def get_memory_subdir_abs(agent: Agent) -> str:

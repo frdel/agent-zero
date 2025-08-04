@@ -35,7 +35,8 @@ class GraphRAGDelete(Tool):
             )
 
         try:
-            helper = GraphRAGHelper.get_default()
+            # Try to delete from main area by default, could be enhanced to specify area
+        helper = GraphRAGHelper.get_for_area("main")
 
             # Use thread executor to avoid blocking
             import asyncio

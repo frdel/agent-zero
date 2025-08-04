@@ -1,5 +1,6 @@
 from python.helpers.memory import Memory
 from python.helpers.tool import Tool, Response
+from python.helpers import settings
 
 DEFAULT_THRESHOLD = 0.7
 DEFAULT_LIMIT = 10
@@ -16,9 +17,16 @@ class MemoryLoad(Tool):
         if docs:
             memory_text = "\n\n".join(Memory.format_docs_plain(docs))
 
-        # Query GraphRAG with memory context for enhanced relevance
+        # Query GraphRAG with memory context for enhanced relevance (if enabled)
         memory_context = {'memories': memory_text} if memory_text else None
-        graph_knowledge = await self._query_graphrag(query, memory_context)
+        graph_knowledge = ""
+        try:
+            set = settings.get_settings()
+            if set.get("use_graphrag", True):
+                graph_knowledge = await self._query_graphrag(query, memory_context)
+        except Exception:
+            # GraphRAG failure shouldn't break memory loading
+            pass
 
         if len(docs) == 0 and not graph_knowledge:
             result = self.agent.read_prompt("fw.memories_not_found.md", query=query)
@@ -38,29 +46,35 @@ class MemoryLoad(Tool):
         try:
             from python.helpers.graphrag_helper import GraphRAGHelper
 
-            # Get GraphRAG helper and query
-            helper = GraphRAGHelper.get_default()
+            # Enhanced query with memory context if available
+            if memory_context and (memory_context.get('memories') or memory_context.get('solutions')):
+                context_info = []
 
-            # Try memory context query first if context is available
-            if memory_context and hasattr(helper, 'query_with_memory_context'):
+                if memory_context.get('memories'):
+                    context_info.append(f"Related memories found:\n{memory_context['memories'][:500]}...")
+
+                if memory_context.get('solutions'):
+                    context_info.append(f"Related solutions found:\n{memory_context['solutions'][:500]}...")
+
+                # Create context-enhanced query
+                enhanced_query = f"""Based on the following memory context, provide additional insights from the knowledge graph:
+
+{chr(10).join(context_info)}
+
+Original question: {query}
+
+Focus on entities, relationships, or knowledge that complements the above memories and solutions."""
+
+                # Try the context-enhanced query first
                 try:
-                    result = helper.query_with_memory_context(query, memory_context)
-                    if result and "No relevant information" not in result and result.strip():
+                    helper = GraphRAGHelper.get_default()
+                    result = helper.query_with_memory_context(enhanced_query, memory_context)
+                    if result and "No relevant information" not in result:
                         return result
                 except Exception:
-                    pass
+                    pass  # Fall back to standard queries
 
-            # Try enhanced correction fallback
-            try:
-                # Try enhanced correction if available
-                if hasattr(helper, 'query_with_enhanced_correction'):
-                    result = helper.query_with_enhanced_correction(query)
-                    if result and "No relevant information" not in result and result.strip():
-                        return result
-            except Exception:
-                pass
-
-            # Final fallback to multiple query formulations
+            # Fallback to multiple query formulations for better coverage
             queries_to_try = [
                 query,  # Original query
                 f"What do you know about {query}?",  # More direct
@@ -70,18 +84,32 @@ class MemoryLoad(Tool):
             results = []
             for q in queries_to_try[:2]:  # Limit to 2 queries to avoid too much processing
                 try:
+                    helper = GraphRAGHelper.get_default()
                     result = helper.query(q)
-                    if result and "No relevant information" not in result and result.strip():
+                    if result and "No relevant information" not in result:
                         results.append(result)
                 except Exception:
                     continue
 
             if results:
-                # Combine and deduplicate results
-                combined_result = "\n\n".join(results)
-                return combined_result
+                return "\n\n".join(results)
             else:
-                return ""
+                # Final fallback to multi-area query
+                areas_to_query = ["main"]
+                if memory_context and memory_context.get('memories'):
+                    areas_to_query.extend(["fragments", "solutions"])  # Add memory areas
+
+                # Remove duplicates while preserving order
+                areas_to_query = list(dict.fromkeys(areas_to_query))
+
+                # Query multiple areas and combine results
+                results = GraphRAGHelper.query_multi_area(query, areas_to_query, memory_context)
+
+                if results:
+                    # Format results from multiple areas
+                    return GraphRAGHelper.format_multi_area_results(results)
+                else:
+                    return ""
 
         except Exception:
             # GraphRAG query failure shouldn't break memory recall

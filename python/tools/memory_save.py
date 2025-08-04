@@ -1,5 +1,6 @@
 from python.helpers.memory import Memory
 from python.helpers.tool import Tool, Response
+from python.helpers import settings
 
 
 class MemorySave(Tool):
@@ -14,8 +15,15 @@ class MemorySave(Tool):
         db = await Memory.get(self.agent)
         id = await db.insert_text(text, metadata)
 
-        # Ingest into GraphRAG after successful memory save
-        graph_status = await self._ingest_to_graphrag(text, area)
+        # Ingest into GraphRAG after successful memory save (if enabled)
+        graph_status = False
+        try:
+            set = settings.get_settings()
+            if set.get("use_graphrag", True):
+                graph_status = await self._ingest_to_graphrag(text, area, None)
+        except Exception:
+            # GraphRAG failure shouldn't break memory saving
+            pass
 
         # Prepare result message
         base_result = self.agent.read_prompt("fw.memory_saved.md", memory_id=id)
@@ -27,8 +35,8 @@ class MemorySave(Tool):
 
         return Response(message=result, break_loop=False)
 
-    async def _ingest_to_graphrag(self, text: str, area: str) -> bool:
-        """Ingest memory text into GraphRAG knowledge graph."""
+    async def _ingest_to_graphrag(self, text: str, area: str, memory_id: str | None = None) -> bool:
+        """Ingest memory text into GraphRAG knowledge graph with metadata."""
         try:
             from python.helpers.graphrag_helper import GraphRAGHelper
 
@@ -42,9 +50,20 @@ class MemorySave(Tool):
 
             instruction = area_instructions.get(area, "Focus on extracting entities and relationships")
 
-            # Get GraphRAG helper and ingest
-            helper = GraphRAGHelper.get_default()
-            helper.ingest_text(text, instruction)
+            # Create metadata for memory source tracking
+            import time
+            metadata = {
+                "source_type": "memory_manual",
+                "source_id": memory_id or f"manual_{int(time.time())}",
+                "memory_id": memory_id,
+                "area": area,
+                "tool": "memory_save",
+                "agent_id": self.agent.config.agent_name if hasattr(self.agent.config, 'agent_name') else "unknown"
+            }
+
+            # Get GraphRAG helper for the specified area and ingest
+            helper = GraphRAGHelper.get_for_area(area)
+            helper.ingest_text(text, instruction, metadata)
 
             return True
 

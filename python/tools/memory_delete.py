@@ -1,5 +1,6 @@
 from python.helpers.memory import Memory
 from python.helpers.tool import Tool, Response
+from python.helpers import settings
 
 
 class MemoryDelete(Tool):
@@ -45,10 +46,12 @@ class MemoryDelete(Tool):
             entities_to_delete = list(set([entity.strip() for entity in entities_to_delete if entity.strip()]))
 
             if entities_to_delete:
-                # Use GraphRAG helper to delete entities
-                helper = GraphRAGHelper.get_default()
-                entities_query = " OR ".join(entities_to_delete)
-                helper.delete_knowledge(entities_query)
+                # Use GraphRAG helper to delete entities (if enabled)
+                set = settings.get_settings()
+                if set.get("use_graphrag", True):
+                    helper = GraphRAGHelper.get_default()
+                    entities_query = " OR ".join(entities_to_delete)
+                    helper.delete_knowledge(entities_query)
 
         except Exception:
             # GraphRAG deletion failure shouldn't break memory deletion

@@ -27,17 +27,24 @@ class GraphRAGReset(Tool):
             )
 
         try:
-            helper = GraphRAGHelper.get_default()
+            # Reset all knowledge graph areas
+            from python.helpers.memory import Memory
 
             # Use thread executor to avoid blocking
             import asyncio
             import concurrent.futures
 
+            areas = [area.value for area in Memory.Area] + ["main"]  # Include all memory areas plus main
+            reset_results = []
+
             loop = asyncio.get_event_loop()
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                result = await loop.run_in_executor(executor, helper.reset_graph_schema)
+                for area in areas:
+                    helper = GraphRAGHelper.get_for_area(area)
+                    result = await loop.run_in_executor(executor, helper.reset_graph_schema)
+                    reset_results.append(f"{area}: {result}")
 
-            msg = str(result)
+            msg = "Reset completed for all areas:\n" + "\n".join(reset_results)
 
         except RuntimeError:
             msg = "Knowledge graph reset failed. The graph may not exist or may already be empty."

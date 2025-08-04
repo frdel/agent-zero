@@ -182,9 +182,11 @@ class MemorizeSolutions(Extension):
                 # insert new solution
                 await db.insert_text(text=txt, metadata={"area": Memory.Area.SOLUTIONS.value})
 
-                # Ingest into GraphRAG after successful memory save
+                # Ingest into GraphRAG after successful memory save (if enabled)
                 try:
-                    await self._ingest_to_graphrag(txt, Memory.Area.SOLUTIONS.value)
+                    set = settings.get_settings()
+                    if set.get("use_graphrag", True):
+                        await self._ingest_to_graphrag(txt, Memory.Area.SOLUTIONS.value, None)
                 except Exception as e:
                     # GraphRAG ingestion failure shouldn't break memory saving
                     pass
@@ -196,8 +198,8 @@ class MemorizeSolutions(Extension):
                 if rem:
                     log_item.stream(result=f"\nReplaced {len(rem)} previous solutions.")
 
-    async def _ingest_to_graphrag(self, text: str, area: str):
-        """Ingest memory text into GraphRAG knowledge graph."""
+    async def _ingest_to_graphrag(self, text: str, area: str, memory_id: str | None = None):
+        """Ingest memory text into GraphRAG knowledge graph with metadata."""
         try:
             from python.helpers.graphrag_helper import GraphRAGHelper
 
@@ -211,9 +213,19 @@ class MemorizeSolutions(Extension):
 
             instruction = area_instructions.get(area, "Focus on extracting entities and relationships")
 
-            # Get GraphRAG helper and ingest
-            helper = GraphRAGHelper.get_default()
-            helper.ingest_text(text, instruction)
+            # Create metadata for memory source tracking
+            import time
+            metadata = {
+                "source_type": "memory_solution",
+                "source_id": memory_id or f"solution_{int(time.time())}",
+                "memory_id": memory_id,
+                "area": area,
+                "agent_id": self.agent.config.agent_name if hasattr(self.agent.config, 'agent_name') else "unknown"
+            }
+
+            # Get GraphRAG helper for solutions area and ingest
+            helper = GraphRAGHelper.get_for_area(area)
+            helper.ingest_text(text, instruction, metadata)
 
         except Exception as e:
             # Silently fail - GraphRAG integration shouldn't break memory system
