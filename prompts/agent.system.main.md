@@ -8,4 +8,6 @@
 
 {{ include "./agent.system.main.solving.md" }}
 
+{{ include "./agent.system.parallel_tools_workflow.md" }}
+
 {{ include "./agent.system.main.tips.md" }}
