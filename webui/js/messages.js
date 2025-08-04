@@ -9,69 +9,309 @@ const chatHistory = document.getElementById("chat-history");
 
 let messageGroup = null;
 
+// Scroll position manager for smooth autoscroll
+class ScrollPositionManager {
+  constructor() {
+    this.positions = new Map();
+    this.autoscrollDisabled = false;
+    this.scrollableSelectors = ['.msg-content', '.kvps-val'];
+    this.monitoringInterval = null; // Added for continuous monitoring
+  }
+
+  // Store scroll positions for all scrollable elements in a message
+  storeMessageScrollPositions(messageContainer) {
+    // Disabled to prevent scroll position resets
+    return;
+  }
+
+  // Restore scroll positions for a message
+  restoreMessageScrollPositions(messageContainer) {
+    // Disabled to prevent scroll position resets
+    return;
+  }
+
+  // Check global scroll state and update autoscroll disabled flag
+  checkGlobalScrollState() {
+    // Check main chat history - this is the primary indicator for disabling autoscroll
+    const chatHistory = document.getElementById("chat-history");
+    if (chatHistory && !this.isAtBottom(chatHistory, 20)) {
+      this.autoscrollDisabled = true;
+      return;
+    }
+
+    // Check chat input area - also important for disabling autoscroll
+    const chatInput = document.getElementById("chat-input");
+    if (chatInput && !this.isAtBottom(chatInput, 20)) {
+      this.autoscrollDisabled = true;
+      return;
+    }
+
+    // Individual message scroll positions don't disable autoscroll globally
+    // They only affect their own scrolling behavior
+    // This allows users to scroll up in individual messages while keeping autoscroll enabled
+
+    // If we get here, main areas are at bottom, enable autoscroll
+    this.autoscrollDisabled = false;
+  }
+
+  // Improved method to check if element is scrolled to bottom with better tolerance
+  isAtBottom(element, tolerance = 10) {
+    if (!element) return true;
+
+    // Get current scroll position and dimensions
+    const scrollTop = element.scrollTop;
+    const scrollHeight = element.scrollHeight;
+    const clientHeight = element.clientHeight;
+
+    // Calculate how far from bottom we are
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+
+    // Return true if we're within tolerance of the bottom
+    return distanceFromBottom <= tolerance;
+  }
+
+  // Enhanced method to check if user is at bottom of all scrollable areas
+  // This method is more robust during active content generation
+  isUserAtBottomOfAllScrollableAreas() {
+    // Check main chat history
+    const chatHistory = document.getElementById("chat-history");
+    if (chatHistory && !this.isAtBottom(chatHistory, 20)) {
+      return false;
+    }
+
+    // Check chat input area
+    const chatInput = document.getElementById("chat-input");
+    if (chatInput && !this.isAtBottom(chatInput, 20)) {
+      return false;
+    }
+
+    // Check all message content areas
+    const allMsgContent = document.querySelectorAll('.msg-content');
+    for (const element of allMsgContent) {
+      if (!this.isAtBottom(element, 20)) {
+        return false;
+      }
+    }
+
+    // Check all message body areas (terminal messages)
+    const allMsgBody = document.querySelectorAll('.message-body');
+    for (const element of allMsgBody) {
+      if (!this.isAtBottom(element, 20)) {
+        return false;
+      }
+    }
+
+    // Check all KVP areas
+    const allKvpValues = document.querySelectorAll('.kvps-val');
+    for (const element of allKvpValues) {
+      if (!this.isAtBottom(element, 20)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // Enhanced method to re-enable autoscroll when user scrolls to bottom
+  reEnableAutoscrollIfAtBottom() {
+    // Check if main chat history is at bottom - this is the primary indicator
+    const chatHistory = document.getElementById("chat-history");
+    const isMainHistoryAtBottom = chatHistory && this.isAtBottom(chatHistory, 20);
+
+    // Check if chat input is at bottom
+    const chatInput = document.getElementById("chat-input");
+    const isChatInputAtBottom = chatInput && this.isAtBottom(chatInput, 20);
+
+    // If main chat history is at bottom, re-enable autoscroll regardless of individual message positions
+    // This allows users to scroll up in individual messages but still have autoscroll when they scroll down the main history
+    if (isMainHistoryAtBottom && isChatInputAtBottom) {
+      this.autoscrollDisabled = false;
+      // Scroll all elements to bottom when autoscroll is enabled
+      this.scrollAllToBottom();
+      // Update the main autoscroll state
+      if (window.updateAfterScroll) {
+        window.updateAfterScroll();
+      }
+    }
+  }
+
+  // Set up scroll listeners for a message container
+  setupScrollListeners(messageContainer) {
+    if (!messageContainer) return;
+
+    // Add scroll listeners to detect user scrolling within messages
+    // These don't disable autoscroll globally, they just manage their own scroll behavior
+    const msgContent = messageContainer.querySelector('.msg-content');
+    if (msgContent) {
+      msgContent.addEventListener('scroll', () => {
+        // Individual message scroll doesn't disable global autoscroll
+        // It only affects the scroll behavior of this specific element
+        if (this.isAtBottom(msgContent, 20)) {
+          // If user scrolls back to bottom of this message, they might want autoscroll
+          this.reEnableAutoscrollIfAtBottom();
+        }
+      });
+    }
+
+    // Add scroll listeners for message-body elements (terminal messages)
+    const msgBody = messageContainer.querySelector('.message-body');
+    if (msgBody) {
+      msgBody.addEventListener('scroll', () => {
+        // Individual message scroll doesn't disable global autoscroll
+        // It only affects the scroll behavior of this specific element
+        if (this.isAtBottom(msgBody, 20)) {
+          // If user scrolls back to bottom of this message, they might want autoscroll
+          this.reEnableAutoscrollIfAtBottom();
+        }
+      });
+    }
+
+    const kvpValues = messageContainer.querySelectorAll('.kvps-val');
+    kvpValues.forEach(kvp => {
+      kvp.addEventListener('scroll', () => {
+        // Individual KVP scroll doesn't disable global autoscroll
+        // It only affects the scroll behavior of this specific element
+        if (this.isAtBottom(kvp, 20)) {
+          // If user scrolls back to bottom of this KVP, they might want autoscroll
+          this.reEnableAutoscrollIfAtBottom();
+        }
+      });
+    });
+  }
+
+  // Set up scroll listeners for global elements (chat history, chat input)
+  setupGlobalScrollListeners() {
+    // Set up scroll listener for main chat history
+    const chatHistory = document.getElementById("chat-history");
+    if (chatHistory) {
+      chatHistory.addEventListener('scroll', () => {
+        if (!this.isAtBottom(chatHistory)) {
+          this.disableAutoscroll();
+        } else {
+          this.reEnableAutoscrollIfAtBottom();
+        }
+      });
+    }
+
+    // Set up scroll listener for chat input
+    const chatInput = document.getElementById("chat-input");
+    if (chatInput) {
+      chatInput.addEventListener('scroll', () => {
+        if (!this.isAtBottom(chatInput)) {
+          this.disableAutoscroll();
+        } else {
+          this.reEnableAutoscrollIfAtBottom();
+        }
+      });
+    }
+  }
+
+  // Method to scroll all scrollable elements to the bottom
+  scrollAllToBottom() {
+    // Scroll main chat history to bottom
+    const chatHistory = document.getElementById("chat-history");
+    if (chatHistory) {
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    // Scroll chat input to bottom
+    const chatInput = document.getElementById("chat-input");
+    if (chatInput) {
+      chatInput.scrollTop = chatInput.scrollHeight;
+    }
+
+    // Scroll all message content areas to bottom
+    const allMsgContent = document.querySelectorAll('.msg-content');
+    allMsgContent.forEach(element => {
+      if (element.scrollHeight > element.clientHeight) {
+        element.scrollTop = element.scrollHeight;
+      }
+    });
+
+    // Scroll all message body areas (terminal messages) to bottom
+    const allMsgBody = document.querySelectorAll('.message-body');
+    allMsgBody.forEach(element => {
+      if (element.scrollHeight > element.clientHeight) {
+        element.scrollTop = element.scrollHeight;
+      }
+    });
+
+    // Scroll all KVP areas to bottom
+    const allKvpValues = document.querySelectorAll('.kvps-val');
+    allKvpValues.forEach(element => {
+      if (element.scrollHeight > element.clientHeight) {
+        element.scrollTop = element.scrollHeight;
+      }
+    });
+  }
+
+  // Disable autoscroll globally
+  disableAutoscroll() {
+    this.autoscrollDisabled = true;
+    // Start continuous monitoring when autoscroll is disabled
+    // this.startContinuousMonitoring(); // Removed continuous monitoring
+    // Don't call window.toggleAutoScroll here to avoid circular dependency
+    // The main autoscroll state will be updated via scrollChanged function
+  }
+
+  // Enable autoscroll
+  enableAutoscroll() {
+    this.autoscrollDisabled = false;
+    // Stop continuous monitoring when autoscroll is enabled
+    // this.stopContinuousMonitoring(); // Removed continuous monitoring
+    // Automatically scroll to bottom when autoscroll is enabled
+    this.scrollAllToBottom();
+  }
+}
+
+// Global scroll position manager instance
+const scrollManager = new ScrollPositionManager();
+
+// Export scroll manager for use in other modules
+export function getScrollManager() {
+  return scrollManager;
+}
+
 export function setMessage(id, type, heading, content, temp, kvps = null) {
   // Search for the existing message container by id
   let messageContainer = document.getElementById(`message-${id}`);
+  let isNewMessage = false;
 
   if (messageContainer) {
-    // Don't re-render user messages
-    // if (type === "user") {
-    //   return; // Skip re-rendering
-    // }
-    // For other types, update the message
-    messageContainer.innerHTML = "";
+    // Don't clear innerHTML - we'll do incremental updates
+    // messageContainer.innerHTML = "";
   } else {
     // Create a new container if not found
+    isNewMessage = true;
     const sender = type === "user" ? "user" : "ai";
     messageContainer = document.createElement("div");
     messageContainer.id = `message-${id}`;
     messageContainer.classList.add("message-container", `${sender}-container`);
-    // if (temp) messageContainer.classList.add("message-temp");
   }
 
   const handler = getHandler(type);
   handler(messageContainer, id, type, heading, content, temp, kvps);
 
-  // If the container was found, it was already in the DOM, no need to append again
-  if (!document.getElementById(`message-${id}`)) {
+  // If this is a new message, handle DOM insertion
+  if (isNewMessage && !document.getElementById(`message-${id}`)) {
     // message type visual grouping
     const groupTypeMap = {
-      user: "right",
-      info: "mid",
-      warning: "mid",
-      error: "mid",
-      rate_limit: "mid",
-      util: "mid",
-      hint: "mid",
-      // anything else is "left"
+      user: "message-group-right",
+      ai: "message-group-mid",
+      tool: "message-group-mid",
+      default: "message-group-mid",
     };
-
-    //force new group on these types
-    const groupStart = {
-      agent: true,
-      // anything else is false
-    };
-
-    const groupType = groupTypeMap[type] || "left";
-
-    // here check if messageGroup is still in DOM, if not, then set it to null (context switch)
-    if(messageGroup && !document.getElementById(messageGroup.id))
-      messageGroup = null;
-
-    if (
-      !messageGroup || // no group yet exists
-      groupStart[type] || // message type forces new group
-      groupType != messageGroup.getAttribute("data-group-type") // message type changes group
-    ) {
-      messageGroup = document.createElement("div");
-      messageGroup.id = `message-group-${id}`;
-      messageGroup.classList.add(`message-group`, `message-group-${groupType}`);
-      messageGroup.setAttribute("data-group-type", groupType);
-    }
-
+    const groupType = groupTypeMap[type] || "message-group-mid";
+    messageGroup = document.createElement("div");
+    messageGroup.classList.add("message-group", groupType);
     messageGroup.appendChild(messageContainer);
     chatHistory.appendChild(messageGroup);
+
+    // Set up scroll listeners for new message
+    scrollManager.setupScrollListeners(messageContainer);
   }
+
+  return messageContainer;
 }
 
 function createCopyButton() {
@@ -161,42 +401,94 @@ export function _drawMessage(
   markdown = false,
   resizeBtns = true
 ) {
-  const messageDiv = document.createElement("div");
-  messageDiv.classList.add("message", mainClass, ...messageClasses);
+  // Find existing message div or create new one
+  let messageDiv = messageContainer.querySelector(".message");
+  if (!messageDiv) {
+    messageDiv = document.createElement("div");
+    messageDiv.classList.add("message");
+    messageContainer.appendChild(messageDiv);
+  }
 
+  // Update message classes
+  messageDiv.className = `message ${mainClass} ${messageClasses.join(' ')}`;
+
+  // Handle heading
   if (heading) {
-    const headingElement = document.createElement("div");
-    headingElement.classList.add("msg-heading");
-    const headingH4 = document.createElement("h4");
+    let headingElement = messageDiv.querySelector(".msg-heading");
+    if (!headingElement) {
+      headingElement = document.createElement("div");
+      headingElement.classList.add("msg-heading");
+      messageDiv.insertBefore(headingElement, messageDiv.firstChild);
+    }
+
+    let headingH4 = headingElement.querySelector("h4");
+    if (!headingH4) {
+      headingH4 = document.createElement("h4");
+      headingElement.appendChild(headingH4);
+    }
     headingH4.innerHTML = convertIcons(escapeHTML(heading));
-    headingElement.appendChild(headingH4);
-    messageDiv.appendChild(headingElement);
 
     if (resizeBtns) {
-      const minMaxBtn = document.createElement("div");
-      minMaxBtn.classList.add("msg-min-max-btns");
-      minMaxBtn.innerHTML = `
-        <a href="#" class="msg-min-max-btn" @click.prevent="$store.messageResize.minimizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined" x-text="$store.messageResize.getSetting('${mainClass}').minimized ? 'expand_content' : 'minimize'"></span></a>
-        <a href="#" class="msg-min-max-btn" x-show="!$store.messageResize.getSetting('${mainClass}').minimized" @click.prevent="$store.messageResize.maximizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined" x-text="$store.messageResize.getSetting('${mainClass}').maximized ? 'expand' : 'expand_all'"></span></a>
-      `;
-      headingElement.appendChild(minMaxBtn);
+      let minMaxBtn = headingElement.querySelector(".msg-min-max-btns");
+      if (!minMaxBtn) {
+        minMaxBtn = document.createElement("div");
+        minMaxBtn.classList.add("msg-min-max-btns");
+        minMaxBtn.innerHTML = `
+          <a href="#" class="msg-min-max-btn" @click.prevent="$store.messageResize.minimizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined" x-text="$store.messageResize.getSetting('${mainClass}').minimized ? 'expand_content' : 'minimize'"></span></a>
+          <a href="#" class="msg-min-max-btn" x-show="!$store.messageResize.getSetting('${mainClass}').minimized" @click.prevent="$store.messageResize.maximizeMessageClass('${mainClass}', $event)"><span class="material-symbols-outlined" x-text="$store.messageResize.getSetting('${mainClass}').maximized ? 'expand' : 'expand_all'"></span></a>
+        `;
+        headingElement.appendChild(minMaxBtn);
+      }
+    }
+  } else {
+    // Remove heading if it exists but heading is null
+    const existingHeading = messageDiv.querySelector(".msg-heading");
+    if (existingHeading) {
+      existingHeading.remove();
     }
   }
 
-  const bodyDiv = document.createElement("div");
-  bodyDiv.classList.add("message-body");
-  messageDiv.appendChild(bodyDiv);
+  // Find existing body div or create new one
+  let bodyDiv = messageDiv.querySelector(".message-body");
+  if (!bodyDiv) {
+    bodyDiv = document.createElement("div");
+    bodyDiv.classList.add("message-body");
+    messageDiv.appendChild(bodyDiv);
+  }
 
-  drawKvps(bodyDiv, kvps, false);
+  // Handle KVPs incrementally
+  drawKvpsIncremental(bodyDiv, kvps, false);
 
+  // Handle content
   if (content && content.trim().length > 0) {
     if (markdown) {
-      const contentDiv = document.createElement("div");
-      contentDiv.classList.add("msg-content", ...contentClasses);
+      let contentDiv = bodyDiv.querySelector(".msg-content");
+      if (!contentDiv) {
+        contentDiv = document.createElement("div");
+        contentDiv.classList.add("msg-content", ...contentClasses);
+        bodyDiv.appendChild(contentDiv);
 
-      const spanElement = document.createElement("span"); // Wrapper span
+        // Set up scroll listener for new content div
+        contentDiv.addEventListener('scroll', () => {
+          // Individual message scroll doesn't disable global autoscroll
+          // It only affects the scroll behavior of this specific element
+          if (scrollManager.isAtBottom(contentDiv, 20)) {
+            // If user scrolls back to bottom of this message, they might want autoscroll
+            scrollManager.reEnableAutoscrollIfAtBottom();
+          }
+        });
+      } else {
+        // Update classes
+        contentDiv.className = `msg-content ${contentClasses.join(' ')}`;
+      }
+
+      let spanElement = contentDiv.querySelector("span");
+      if (!spanElement) {
+        spanElement = document.createElement("span");
+        contentDiv.appendChild(spanElement);
+      }
+
       let processedContent = content;
-
       processedContent = convertImageTags(processedContent);
       processedContent = convertImgFilePaths(processedContent);
       processedContent = marked.parse(processedContent, { breaks: true });
@@ -213,41 +505,66 @@ export function _drawMessage(
         });
       }
 
-      contentDiv.appendChild(spanElement);
-      addCopyButtonToElement(contentDiv);
+      // Ensure copy button exists
+      if (!contentDiv.querySelector(".copy-button")) {
+        addCopyButtonToElement(contentDiv);
+      }
       adjustMarkdownRender(contentDiv);
-      bodyDiv.appendChild(contentDiv);
     } else {
-      const preElement = document.createElement("pre");
-      preElement.classList.add("msg-content", ...contentClasses);
-      preElement.style.whiteSpace = "pre-wrap";
-      preElement.style.wordBreak = "break-word";
+      let preElement = bodyDiv.querySelector(".msg-content");
+      if (!preElement) {
+        preElement = document.createElement("pre");
+        preElement.classList.add("msg-content", ...contentClasses);
+        preElement.style.whiteSpace = "pre-wrap";
+        preElement.style.wordBreak = "break-word";
+        bodyDiv.appendChild(preElement);
 
-      const spanElement = document.createElement("span");
+        // Set up scroll listener for new pre element
+        preElement.addEventListener('scroll', () => {
+          // Individual message scroll doesn't disable global autoscroll
+          // It only affects the scroll behavior of this specific element
+          if (scrollManager.isAtBottom(preElement, 20)) {
+            // If user scrolls back to bottom of this message, they might want autoscroll
+            scrollManager.reEnableAutoscrollIfAtBottom();
+          }
+        });
+      } else {
+        // Update classes
+        preElement.className = `msg-content ${contentClasses.join(' ')}`;
+      }
+
+      let spanElement = preElement.querySelector("span");
+      if (!spanElement) {
+        spanElement = document.createElement("span");
+        preElement.appendChild(spanElement);
+
+        // Add click handler for small screens (only once)
+        spanElement.addEventListener("click", () => {
+          copyText(spanElement.textContent, spanElement);
+        });
+      }
+
       spanElement.innerHTML = convertHTML(content);
 
-      // Add click handler for small screens
-      spanElement.addEventListener("click", () => {
-        copyText(spanElement.textContent, spanElement);
-      });
-
-      preElement.appendChild(spanElement);
-      addCopyButtonToElement(preElement);
-      bodyDiv.appendChild(preElement);
+      // Ensure copy button exists
+      if (!preElement.querySelector(".copy-button")) {
+        addCopyButtonToElement(preElement);
+      }
+    }
+  } else {
+    // Remove content if it exists but content is empty
+    const existingContent = bodyDiv.querySelector(".msg-content");
+    if (existingContent) {
+      existingContent.remove();
     }
   }
-
-  messageContainer.appendChild(messageDiv);
 
   if (followUp) {
     messageContainer.classList.add("message-followup");
   }
 
-  // autoscroll the body if needed
-  // if (getAutoScroll()) #TODO needs a better redraw system
-    setTimeout(() => {
-      bodyDiv.scrollTop = bodyDiv.scrollHeight;
-    }, 0);
+  // Don't force scroll here - let the scroll manager handle it
+  // The scroll manager will decide whether to autoscroll based on user's scroll state
 
   return messageDiv;
 }
@@ -434,7 +751,7 @@ export function drawMessageUser(
       } else {
         // Render as file tile with title and icon
         attachmentDiv.classList.add("file-type");
-        
+
         // File icon
         if (displayInfo.previewUrl && displayInfo.previewUrl !== displayInfo.filename) {
           const iconImg = document.createElement("img");
@@ -443,12 +760,12 @@ export function drawMessageUser(
           iconImg.classList.add("file-icon");
           attachmentDiv.appendChild(iconImg);
         }
-        
+
         // File title
         const fileTitle = document.createElement("div");
         fileTitle.classList.add("file-title");
         fileTitle.textContent = displayInfo.filename;
-                
+
         attachmentDiv.appendChild(fileTitle);
       }
 
@@ -724,6 +1041,145 @@ function drawKvps(container, kvps, latex) {
 
     }
     container.appendChild(table);
+  }
+}
+
+function drawKvpsIncremental(container, kvps, latex) {
+  if (kvps) {
+    // Find existing table or create new one
+    let table = container.querySelector(".msg-kvps");
+    if (!table) {
+      table = document.createElement("table");
+      table.classList.add("msg-kvps");
+      container.appendChild(table);
+    }
+
+    // Get all current rows for comparison
+    let existingRows = table.querySelectorAll(".kvps-row");
+    const kvpEntries = Object.entries(kvps);
+
+    // Update or create rows as needed
+    kvpEntries.forEach(([key, value], index) => {
+      let row = existingRows[index];
+
+      if (!row) {
+        // Create new row if it doesn't exist
+        row = table.insertRow();
+        row.classList.add("kvps-row");
+      }
+
+      // Update row classes
+      row.className = "kvps-row";
+      if (key === "thoughts" || key === "reasoning") {
+        row.classList.add("msg-thoughts");
+      }
+
+      // Handle key cell
+      let th = row.querySelector(".kvps-key");
+      if (!th) {
+        th = row.insertCell(0);
+        th.classList.add("kvps-key");
+      }
+      th.textContent = convertToTitleCase(key);
+
+      // Handle value cell
+      let td = row.cells[1];
+      if (!td) {
+        td = row.insertCell(1);
+      }
+
+      let tdiv = td.querySelector(".kvps-val");
+      if (!tdiv) {
+        tdiv = document.createElement("div");
+        tdiv.classList.add("kvps-val");
+        td.appendChild(tdiv);
+
+        // Set up scroll listener for new kvp value div
+        tdiv.addEventListener('scroll', () => {
+          // Individual KVP scroll doesn't disable global autoscroll
+          // It only affects the scroll behavior of this specific element
+          if (scrollManager.isAtBottom(tdiv, 20)) {
+            // If user scrolls back to bottom of this KVP, they might want autoscroll
+            scrollManager.reEnableAutoscrollIfAtBottom();
+          }
+        });
+      }
+
+      // Store current scroll position
+      const currentScrollTop = tdiv.scrollTop;
+      const isAtBottom = tdiv.scrollHeight - tdiv.scrollTop <= tdiv.clientHeight + 10;
+
+      // Clear and rebuild content (for now - could be optimized further)
+      tdiv.innerHTML = "";
+
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          addValue(item, tdiv);
+        }
+      } else {
+        addValue(value, tdiv);
+      }
+
+      // Don't restore scroll position to prevent resets
+      // Let the natural scroll behavior work
+    });
+
+    // Remove extra rows if we have fewer kvps now
+    while (existingRows.length > kvpEntries.length) {
+      const lastRow = existingRows[existingRows.length - 1];
+      lastRow.remove();
+      existingRows = table.querySelectorAll(".kvps-row");
+    }
+
+    function addValue(value, tdiv) {
+      if (typeof value === "object") value = JSON.stringify(value, null, 2);
+
+      if (typeof value === "string" && value.startsWith("img://")) {
+        const imgElement = document.createElement("img");
+        imgElement.classList.add("kvps-img");
+        imgElement.src = value.replace("img://", "/image_get?path=");
+        imgElement.alt = "Image Attachment";
+        tdiv.appendChild(imgElement);
+
+        // Add click handler and cursor change
+        imgElement.style.cursor = "pointer";
+        imgElement.addEventListener("click", () => {
+          openImageModal(imgElement.src, 1000);
+        });
+      } else {
+        const pre = document.createElement("pre");
+        const span = document.createElement("span");
+        span.innerHTML = convertHTML(value);
+        pre.appendChild(span);
+        tdiv.appendChild(pre);
+
+        // Only add copy button if it doesn't exist
+        const row = tdiv.closest(".kvps-row");
+        if (row && !row.querySelector(".copy-button")) {
+          addCopyButtonToElement(row);
+        }
+
+        // Add click handler
+        span.addEventListener("click", () => {
+          copyText(span.textContent, span);
+        });
+
+        // KaTeX rendering for markdown
+        if (latex) {
+          span.querySelectorAll("latex").forEach((element) => {
+            katex.render(element.innerHTML, element, {
+              throwOnError: false,
+            });
+          });
+        }
+      }
+    }
+  } else {
+    // Remove table if kvps is null/empty
+    const existingTable = container.querySelector(".msg-kvps");
+    if (existingTable) {
+      existingTable.remove();
+    }
   }
 }
 

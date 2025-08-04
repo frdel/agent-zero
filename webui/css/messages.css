@@ -202,11 +202,14 @@
 
 .message-code-exe .message-body {
   min-height: 5em;
+  max-height: 30em; /* Limit height to make it scrollable */
   width: 100%;
   background-color: var(--color-panel);
   border-radius: 0.5em;
   margin-top: 0.5em;
   padding: 0.3em;
+  overflow-y: auto; /* Make it scrollable */
+  overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 /* Agent and AI Info */
@@ -399,9 +402,11 @@
 }
 
 .msg-content {
-  margin-bottom: 0;
-  padding: 0;
-  overflow: hidden;
+  max-height: 30em;
+  overflow-y: auto;
+  overflow-x: hidden;
+  word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .message-temp {
