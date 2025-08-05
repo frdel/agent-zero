@@ -1,22 +1,39 @@
-// copy button
+// message actions and components
 import { openImageModal } from "./image_modal.js";
 import { marked } from "../vendor/marked/marked.esm.js";
 import { store as _messageResizeStore } from "/components/messages/resize/message-resize-store.js"; // keep here, required in html
 import { store as attachmentsStore } from "/components/chat/attachments/attachmentsStore.js";
+import { addActionButtonsToElement, cleanupActionButtons } from "/components/messages/action-buttons/message-action-buttons.js";
+import { setupMessageInteraction, initializeMessageInteractions, initializeScrollHandler } from "./message-interactions.js";
 
 const chatHistory = document.getElementById("chat-history");
 
 let messageGroup = null;
 
+// Initialize message interactions when DOM is ready
+let interactionsInitialized = false;
+function ensureInteractionsInitialized() {
+  if (!interactionsInitialized && chatHistory) {
+    initializeMessageInteractions();
+    initializeScrollHandler();
+    interactionsInitialized = true;
+  }
+}
+
 export function setMessage(id, type, heading, content, temp, kvps = null) {
+  // Ensure interactions are initialized
+  ensureInteractionsInitialized();
+  
   // Search for the existing message container by id
   let messageContainer = document.getElementById(`message-${id}`);
+  let isNewMessage = false;
 
   if (messageContainer) {
     // Don't clear innerHTML - we'll do incremental updates
     // messageContainer.innerHTML = "";
   } else {
     // Create a new container if not found
+    isNewMessage = true;
     const sender = type === "user" ? "user" : "ai";
     messageContainer = document.createElement("div");
     messageContainer.id = `message-${id}`;
@@ -64,49 +81,16 @@ export function setMessage(id, type, heading, content, temp, kvps = null) {
     messageGroup.appendChild(messageContainer);
     chatHistory.appendChild(messageGroup);
   }
+  
+  // Set up interactions for new messages
+  if (isNewMessage) {
+    setupMessageInteraction(messageContainer);
+  }
+  
   return messageContainer;
 }
 
-function createCopyButton() {
-  const button = document.createElement("button");
-  button.className = "copy-button";
-  button.textContent = "Copy";
-
-  button.addEventListener("click", async function (e) {
-    e.stopPropagation();
-    const container = this.closest(".msg-content, .kvps-row, .message-text");
-    let textToCopy;
-
-    if (container.classList.contains("kvps-row")) {
-      textToCopy = container.querySelector(".kvps-val").innerText;
-    } else if (container.classList.contains("message-text")) {
-      textToCopy = container.querySelector("span").innerText;
-    } else {
-      textToCopy = container.querySelector("span").innerText;
-    }
-
-    try {
-      await navigator.clipboard.writeText(textToCopy);
-      const originalText = button.textContent;
-      button.classList.add("copied");
-      button.textContent = "Copied!";
-      setTimeout(() => {
-        button.classList.remove("copied");
-        button.textContent = originalText;
-      }, 2000);
-    } catch (err) {
-      console.error("Failed to copy text:", err);
-    }
-  });
-
-  return button;
-}
-
-function addCopyButtonToElement(element) {
-  if (!element.querySelector(".copy-button")) {
-    element.appendChild(createCopyButton());
-  }
-}
+// Legacy copy button functions removed - now using action buttons component
 
 export function getHandler(type) {
   switch (type) {
@@ -249,10 +233,8 @@ export function _drawMessage(
         });
       }
 
-      // Ensure copy button exists
-      if (!contentDiv.querySelector(".copy-button")) {
-        addCopyButtonToElement(contentDiv);
-      }
+      // Ensure action buttons exist
+      addActionButtonsToElement(contentDiv);
       adjustMarkdownRender(contentDiv);
 
       // reapply scroll position or autoscroll
@@ -286,10 +268,8 @@ export function _drawMessage(
 
       spanElement.innerHTML = convertHTML(content);
 
-      // Ensure copy button exists
-      if (!preElement.querySelector(".copy-button")) {
-        addCopyButtonToElement(preElement);
-      }
+      // Ensure action buttons exist
+      addActionButtonsToElement(preElement);
 
       // reapply scroll position or autoscroll
       scroller.reApplyScroll();
@@ -468,7 +448,7 @@ export function drawMessageUser(
       copyText(content, textDiv);
     });
 
-    addCopyButtonToElement(textDiv);
+    addActionButtonsToElement(textDiv);
     messageDiv.appendChild(textDiv);
   }
 
@@ -889,10 +869,10 @@ function drawKvpsIncremental(container, kvps, latex) {
         pre.appendChild(span);
         tdiv.appendChild(pre);
 
-        // Only add copy button if it doesn't exist
+        // Add action buttons to the row
         const row = tdiv.closest(".kvps-row");
-        if (row && !row.querySelector(".copy-button")) {
-          addCopyButtonToElement(row);
+        if (row) {
+          addActionButtonsToElement(row);
         }
 
         // Add click handler

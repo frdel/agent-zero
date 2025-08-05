@@ -279,72 +279,11 @@
   opacity: 1;
 }
 
-/* Copy button styles */
-.copy-button {
-  position: absolute;
-  right: 0;
-  top: var(--spacing-sm);
-  background: none;
-  border: none;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  padding-right: 0;
-  cursor: pointer;
-  text-decoration: underline;
-  text-wrap: nowrap;
-  opacity: 0;
-  -webkit-transition: opacity var(--transition-speed) ease-in-out;
-  transition: opacity var(--transition-speed) ease-in-out;
-  color: inherit;
-  font-size: 12px;
-  font-family: "Rubik", Arial, Helvetica, sans-serif;
-}
-
-.copy-button:hover {
-  opacity: 0.8 !important;
-}
-
-.msg-content:hover .copy-button,
-.kvps-row:hover .copy-button,
-.message-text:hover .copy-button {
-  opacity: 0.6;
-}
-
-.copy-button.copied {
-  font-family: "Rubik", Arial, Helvetica, sans-serif !important;
-  opacity: 1 !important;
-}
-
-.msg-thoughts .copy-button {
-  top: -12px !important;
-}
-
-.message-user .copy-button {
-  top: -15px !important;
-  left: -13px !important;
-  right: 99% !important;
-}
-
-.message-agent-response .copy-button {
-  top: -22px !important;
-  right: 0 !important;
-  padding-right: 0px !important;
-}
-
-.message-info .copy-button {
-  top: -22px !important;
-  right: 0 !important;
-  padding-right: 0px !important;
-}
-
-.message-tool .copy-button {
-  top: -12px !important;
-  right: 0 !important;
-}
-
-.msg-output .copy-button {
-  top: -6px !important;
-  right: 0 !important;
-}
+/* Legacy copy button styles - DEPRECATED
+ * These styles have been replaced by the new action buttons component
+ * located at /components/messages/action-buttons/message-action-buttons.css
+ * Remove this section after confirming all functionality works with action buttons
+ */
 
 /* Make message containers relative for absolute positioning of copy buttons */
 .msg-content,

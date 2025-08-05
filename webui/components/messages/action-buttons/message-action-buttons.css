@@ -1,0 +1,245 @@
+/* Message Action Buttons Styles */
+
+/* Main action buttons container */
+.action-buttons {
+  position: sticky;
+  top: var(--spacing-sm);
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  opacity: 0;
+  transition: opacity var(--transition-speed) ease-in-out;
+  z-index: 10;
+  align-self: flex-start;
+  margin-left: auto;
+  margin-top: var(--spacing-sm);
+  margin-right: var(--spacing-xs);
+}
+
+/* Individual action button */
+.action-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-speed) ease-in-out;
+  color: var(--color-text);
+  padding: 0;
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+.action-button:hover {
+  opacity: 1;
+  background: var(--color-background);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.action-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Material icons in buttons */
+.action-button .material-symbols-outlined {
+  font-size: 16px;
+  line-height: 1;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+}
+
+/* Success state */
+.action-button.success {
+  background: #4CAF50;
+  border-color: #4CAF50;
+  color: white;
+}
+
+.action-button.success .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+}
+
+/* Error state */
+.action-button.error {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: white;
+}
+
+.action-button.error .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+}
+
+/* Speaking state */
+.action-button.speaking {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Tooltips for desktop */
+.action-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 4px;
+  font-size: var(--font-size-small);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-speed) ease-in-out;
+  pointer-events: none;
+  z-index: 20;
+  font-family: "Rubik", Arial, Helvetica, sans-serif;
+}
+
+.action-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.9);
+}
+
+/* Show action buttons on hover for desktop */
+.device-pointer .msg-content:hover .action-buttons,
+.device-pointer .kvps-row:hover .action-buttons,
+.device-pointer .message-text:hover .action-buttons {
+  opacity: 1;
+}
+
+/* Show tooltips on button hover for desktop only */
+.device-pointer .action-button:hover .action-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Touch device behavior - buttons shown when parent has active class */
+.device-touch .msg-content.show-actions .action-buttons,
+.device-touch .kvps-row.show-actions .action-buttons,
+.device-touch .message-text.show-actions .action-buttons {
+  opacity: 1;
+}
+
+/* Hide tooltips on touch devices */
+.device-touch .action-tooltip {
+  display: none;
+}
+
+/* Viewport sticky positioning for long messages */
+.action-buttons.viewport-sticky {
+  position: fixed;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: var(--spacing-xs);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  opacity: 1;
+  z-index: 100;
+}
+
+.action-buttons.viewport-sticky .action-button {
+  opacity: 1;
+}
+
+/* Extra bottom padding for mobile browser bars */
+.device-touch .action-buttons {
+  margin-bottom: 70px;
+}
+
+/* Specific positioning adjustments for different message types */
+.message-user .action-buttons {
+  margin-right: 0;
+  align-self: flex-end;
+}
+
+.message-agent .action-buttons,
+.message-agent-response .action-buttons {
+  margin-right: 0;
+}
+
+.message-tool .action-buttons,
+.message-info .action-buttons {
+  margin-top: 0;
+}
+
+.msg-thoughts .action-buttons {
+  margin-top: 0;
+}
+
+/* Ensure message containers are positioned for sticky children */
+.msg-content,
+.kvps-row,
+.message-text {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .action-button {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .action-button .material-symbols-outlined {
+    font-size: 18px;
+  }
+  
+  .action-buttons.viewport-sticky {
+    right: var(--spacing-sm);
+    top: var(--spacing-sm);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .action-button {
+    border-width: 2px;
+  }
+  
+  .action-button:hover {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .action-button,
+  .action-buttons,
+  .action-tooltip {
+    transition: none;
+  }
+  
+  .action-button.speaking {
+    animation: none;
+  }
+  
+  .action-button:hover {
+    transform: none;
+  }
+}
