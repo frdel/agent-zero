@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import shlex
 import time
 from python.helpers.tool import Tool, Response
-from python.helpers import files, rfc_exchange
+from python.helpers import rfc_exchange
 from python.helpers.print_style import PrintStyle
 from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
@@ -11,11 +11,12 @@ from python.helpers.docker import DockerContainerManager
 from python.helpers.strings import truncate_text as truncate_text_string
 from python.helpers.messages import truncate_text as truncate_text_agent
 import re
+from typing import Union
 
 
 @dataclass
 class State:
-    shells: dict[int, LocalInteractiveSession | SSHInteractiveSession]
+    shells: dict[int, Union[LocalInteractiveSession, SSHInteractiveSession]]
     docker: DockerContainerManager | None
 
 
@@ -124,6 +125,7 @@ class CodeExecution(Tool):
                         self.agent.config.code_exec_ssh_port,
                         self.agent.config.code_exec_ssh_user,
                         pswd,
+                        session_id=0  # Pass session ID for tmux session management
                     )
                 else:
                     shell = LocalInteractiveSession()
@@ -177,9 +179,11 @@ class CodeExecution(Tool):
                             self.agent.config.code_exec_ssh_port,
                             self.agent.config.code_exec_ssh_user,
                             pswd,
+                            session_id=session  # Pass session ID for tmux session management
                         )
                     else:
                         shell = LocalInteractiveSession()
+
                     self.state.shells[session] = shell
                     await shell.connect()
 

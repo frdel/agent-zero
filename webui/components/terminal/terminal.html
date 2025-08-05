@@ -1,0 +1,84 @@
+<div x-data="$store.terminal"
+     x-show="show"
+     class="terminal-modal-overlay"
+     @keydown.escape="closeTerminal()"
+     x-cloak>
+
+    <!-- Modal Background -->
+    <div class="terminal-modal-backdrop" @click="closeTerminal()"></div>
+
+    <!-- Terminal Modal -->
+    <div class="terminal-modal" @click.stop>
+
+        <!-- Modal Header -->
+        <div class="terminal-modal-header">
+            <div class="terminal-modal-title">
+                <i class="material-symbols-outlined">terminal</i>
+                <span>Terminal Session [<span x-text="sessionNumber"></span>]</span>
+            </div>
+
+            <div class="terminal-modal-actions">
+                <button class="terminal-btn terminal-btn-secondary"
+                        @click="refreshTerminal()"
+                        :disabled="!terminalUrl">
+                    <i class="material-symbols-outlined">refresh</i>
+                    <span>Refresh</span>
+                </button>
+
+                <button class="terminal-btn terminal-btn-primary"
+                        @click="closeTerminal()">
+                    <i class="material-symbols-outlined">close</i>
+                    <span>Close</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="terminal-modal-content">
+
+            <!-- Loading State -->
+            <div x-show="isLoading" class="terminal-loading">
+                <div class="terminal-loading-spinner">
+                    <i class="material-symbols-outlined">progress_activity</i>
+                </div>
+                <p>Connecting to terminal...</p>
+            </div>
+
+            <!-- Error State -->
+            <div x-show="error && !isLoading" class="terminal-error">
+                <div class="terminal-error-icon">
+                    <i class="material-symbols-outlined">error</i>
+                </div>
+                <p x-text="error"></p>
+                <button class="terminal-btn terminal-btn-primary" @click="closeTerminal()">
+                    Close
+                </button>
+            </div>
+
+            <!-- Terminal iframe -->
+            <iframe x-show="terminalUrl && !isLoading && !error"
+                    :src="terminalUrl"
+                    class="terminal-iframe"
+                    frameborder="0"
+                    @load="onTerminalLoad()"
+                    sandbox="allow-same-origin allow-scripts allow-forms"
+                    allow="clipboard-read; clipboard-write"
+                    referrerpolicy="no-referrer"
+                    loading="lazy"
+                    name="webssh-terminal">
+            </iframe>
+
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="terminal-modal-footer">
+            <div class="terminal-connection-info">
+                <span x-show="connectionInfo">
+                    <strong>SSH:</strong>
+                    <span x-text="connectionInfo"></span>
+                </span>
+            </div>
+        </div>
+
+    </div>
+</div>

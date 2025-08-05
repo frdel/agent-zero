@@ -31,6 +31,7 @@ tiktoken==0.8.0
 unstructured[all-docs]==0.16.23
 unstructured-client==0.31.0
 webcolors==24.6.0
+webssh==1.6.3
 nest-asyncio==1.6.0
 crontab==1.0.1
 litellm==1.74

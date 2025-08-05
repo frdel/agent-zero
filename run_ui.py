@@ -254,6 +254,17 @@ def init_a0():
     # preload
     initialize.initialize_preload()
 
+    # start WebSSH server
+    try:
+        from python.helpers.webssh_manager import webssh_manager
+        webssh_manager.start_server()
+    except ImportError:
+        PrintStyle().warning("WebSSH not available. Install with: pip install webssh")
+    except Exception as e:
+        PrintStyle().error(f"Failed to start WebSSH server: {e}")
+
+    # only wait for init chats, otherwise they would seem to dissapear for a while on restart
+    init_chats.result_sync()
 
 
 # run the internal server

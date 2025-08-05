@@ -1,0 +1,291 @@
+/* Terminal Modal Styles */
+
+.terminal-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.terminal-modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+}
+
+.terminal-modal {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 1400px;
+    max-height: 900px;
+    background-color: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3),
+                0 10px 10px -5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.terminal-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+    background-color: var(--color-panel);
+    flex-shrink: 0;
+}
+
+.terminal-modal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--color-text);
+}
+
+.terminal-modal-title i {
+    font-size: 1.3rem;
+    color: var(--color-accent);
+}
+
+.terminal-modal-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.terminal-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 2.5rem;
+}
+
+.terminal-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.terminal-btn i {
+    font-size: 1.1rem;
+}
+
+.terminal-btn-primary {
+    background-color: var(--color-accent);
+    color: white;
+}
+
+.terminal-btn-primary:hover:not(:disabled) {
+    background-color: var(--color-accent);
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.terminal-btn-secondary {
+    background-color: var(--color-message-bg);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+}
+
+.terminal-btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-background);
+    border-color: var(--color-accent);
+    transform: translateY(-1px);
+}
+
+.terminal-modal-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.terminal-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background-color: #000;
+    flex: 1;
+}
+
+.terminal-loading {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: var(--color-primary);
+}
+
+.terminal-loading-spinner i {
+    font-size: 2.5rem;
+    animation: spin 1s linear infinite;
+    color: var(--color-accent);
+}
+
+.terminal-loading p {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.terminal-error {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+.terminal-error-icon i {
+    font-size: 3rem;
+    color: #ef4444;
+}
+
+.terminal-error p {
+    font-size: 1.1rem;
+    color: var(--color-text);
+    margin: 0;
+    max-width: 500px;
+}
+
+.terminal-modal-footer {
+    padding: 0.75rem 1.5rem;
+    border-top: 1px solid var(--color-border);
+    background-color: var(--color-panel);
+    flex-shrink: 0;
+}
+
+.terminal-connection-info {
+    font-size: 0.9rem;
+    color: var(--color-primary);
+}
+
+.terminal-connection-info strong {
+    color: var(--color-text);
+}
+
+/* Terminal Button in Messages */
+.terminal-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    background-color: var(--color-message-bg);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+}
+
+.terminal-button:hover {
+    background-color: var(--color-background);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    transform: translateY(-1px);
+}
+
+.terminal-button i {
+    font-size: 1rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .terminal-modal {
+        width: 100vw;
+        height: 100vh;
+        max-width: none;
+        max-height: none;
+        border-radius: 0;
+        margin: 0;
+    }
+
+    .terminal-modal-overlay {
+        padding: 0;
+    }
+
+    .terminal-modal-header {
+        padding: 1rem;
+    }
+
+    .terminal-modal-actions {
+        gap: 0.5rem;
+    }
+
+    .terminal-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .terminal-btn span {
+        display: none;
+    }
+
+    .terminal-modal-footer {
+        padding: 0.75rem 1rem;
+    }
+
+    .terminal-connection-info {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .terminal-modal-title span {
+        font-size: 1rem;
+    }
+
+    .terminal-btn {
+        padding: 0.4rem 0.6rem;
+    }
+}
+
+/* Animation */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Light mode adjustments */
+.light-mode .terminal-iframe {
+    background-color: #f8f9fa;
+}
+
+.light-mode .terminal-modal-backdrop {
+    background-color: rgba(255, 255, 255, 0.8);
+}

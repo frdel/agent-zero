@@ -3,6 +3,7 @@ import { openImageModal } from "./image_modal.js";
 import { marked } from "../vendor/marked/marked.esm.js";
 import { store as _messageResizeStore } from "/components/messages/resize/message-resize-store.js"; // keep here, required in html
 import { store as attachmentsStore } from "/components/chat/attachments/attachmentsStore.js";
+import { store as terminalStore } from "/components/terminal/terminal-store.js"; // terminal store
 
 const chatHistory = document.getElementById("chat-history");
 
@@ -93,7 +94,7 @@ function createCopyButton() {
       setTimeout(() => {
         button.classList.remove("copied");
         button.textContent = originalText;
-      }, 2000);
+      }, 1000);
     } catch (err) {
       console.error("Failed to copy text:", err);
     }
@@ -102,9 +103,65 @@ function createCopyButton() {
   return button;
 }
 
+function createTerminalButton(heading, kvps) {
+  // Check if this is a terminal-related code execution message
+  if (!heading || !heading.includes("icon://terminal")) {
+    return null;
+  }
+
+  // Extract session number from heading or kvps
+  let sessionNumber = 0;
+
+  // Try to extract session number from heading like "[0]" or "[1]"
+  const sessionMatch = heading.match(/\[(\d+)\]/);
+  if (sessionMatch) {
+    sessionNumber = parseInt(sessionMatch[1], 10);
+  }
+
+  // Or try to get session from kvps
+  if (kvps && kvps.session !== undefined) {
+    sessionNumber = parseInt(kvps.session, 10);
+  }
+
+  // Create terminal button
+  const button = document.createElement("button");
+  button.className = "terminal-button";
+  button.innerHTML = `
+    <i class="material-symbols-outlined">terminal</i>
+    <span>Open Terminal</span>
+  `;
+
+  button.addEventListener("click", async function (e) {
+    e.stopPropagation();
+
+    // Get current context from imported function
+    const currentContext = getContext();
+    if (!currentContext) {
+      console.error("No context available for terminal connection");
+      return;
+    }
+
+    // Open terminal modal
+    terminalStore.openTerminal(currentContext, sessionNumber);
+  });
+
+  return button;
+}
+
 function addCopyButtonToElement(element) {
   if (!element.querySelector(".copy-button")) {
     element.appendChild(createCopyButton());
+  }
+}
+
+function addTerminalButtonToHeading(headingElement, heading, kvps) {
+  const terminalButton = createTerminalButton(heading, kvps);
+  if (terminalButton && !headingElement.querySelector(".terminal-button")) {
+    // Add terminal button to heading after the h4 element
+    const h4 = headingElement.querySelector("h4");
+    if (h4) {
+      h4.appendChild(terminalButton);
+    }
   }
 }
 
@@ -180,6 +237,9 @@ export function _drawMessage(
       headingElement.appendChild(headingH4);
     }
     headingH4.innerHTML = convertIcons(escapeHTML(heading));
+
+    // Add terminal button for terminal-related code execution messages
+    addTerminalButtonToHeading(headingElement, heading, kvps);
 
     if (resizeBtns) {
       let minMaxBtn = headingElement.querySelector(".msg-min-max-btns");
@@ -962,6 +1022,10 @@ function convertHTML(str) {
   result = convertImageTags(result);
   result = convertPathsToLinks(result);
   return result;
+}
+
+function repeatString(str, count) {
+  return str.repeat(count);
 }
 
 function convertImgFilePaths(str) {

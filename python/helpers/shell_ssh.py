@@ -1,6 +1,6 @@
-import asyncio
 import paramiko
 import time
+import asyncio
 import re
 from typing import Tuple
 from python.helpers.log import Log
@@ -14,13 +14,15 @@ class SSHInteractiveSession:
     # ps1_label = "SSHInteractiveSession CLI>"
 
     def __init__(
-        self, logger: Log, hostname: str, port: int, username: str, password: str
+        self, logger: Log, hostname: str, port: int, username: str, password: str, session_id: int = 0
     ):
         self.logger = logger
         self.hostname = hostname
         self.port = port
         self.username = username
         self.password = password
+        self.session_id = session_id
+        self.tmux_session_name = f"a0-session-{session_id}"
         self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.shell = None
@@ -46,11 +48,17 @@ class SSHInteractiveSession:
                 # return
                 self.shell.send("stty -echo\n".encode()) # disable shell echo
 
+                # Wait for initial shell output
                 while True:  # wait for end of initial output
                     full, part = await self.read_output()
                     if full and not part:
-                        return
+                        break
                     time.sleep(0.1)
+
+                # Create or attach to tmux session
+                await self._setup_tmux_session()
+                return
+
             except Exception as e:
                 errors += 1
                 if errors < 3:
@@ -65,8 +73,48 @@ class SSHInteractiveSession:
                 else:
                     raise e
 
+    async def _setup_tmux_session(self):
+        """Create or attach to a tmux session for this session ID"""
+        if not self.shell:
+            raise Exception("Shell not connected")
+
+        # Check if tmux session already exists
+        check_command = f"tmux has-session -t {self.tmux_session_name} 2>/dev/null\n"
+        self.shell.send(check_command.encode())
+
+        # Wait for command to complete
+        await asyncio.sleep(1)
+
+        # Check exit code by running echo $?
+        self.shell.send(b"echo $?\n")
+        await asyncio.sleep(0.5)
+
+        # Read the output to check if session exists
+        output, _ = await self.read_output()
+
+        # If session doesn't exist (exit code != 0), create it
+        if "0" not in output.split("\n")[-3:-1]:  # Check last non-empty line
+            # Create new tmux session
+            create_command = f"tmux new-session -d -s {self.tmux_session_name}\n"
+            self.shell.send(create_command.encode())
+            await asyncio.sleep(1)
+
+        # Attach to the tmux session
+        attach_command = f"tmux attach-session -t {self.tmux_session_name}\n"
+        self.shell.send(attach_command.encode())
+        await asyncio.sleep(1)
+
+        # Clear any remaining output
+        await self.read_output()
+
     def close(self):
         if self.shell:
+            # Detach from tmux session before closing
+            try:
+                self.shell.send(b"\x01d")  # Ctrl+A, d to detach from tmux
+                time.sleep(0.1)
+            except Exception:
+                pass
             self.shell.close()
         if self.client:
             self.client.close()
