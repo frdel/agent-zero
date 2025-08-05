@@ -242,11 +242,6 @@ export function _drawMessage(
       if (!spanElement) {
         spanElement = document.createElement("span");
         preElement.appendChild(spanElement);
-
-        // Add click handler for small screens (only once)
-        spanElement.addEventListener("click", () => {
-          copyText(spanElement.textContent, spanElement);
-        });
       }
 
       // reapply scroll position or autoscroll
@@ -428,11 +423,6 @@ export function drawMessageUser(
     const spanElement = document.createElement("pre");
     spanElement.innerHTML = escapeHTML(content);
     textDiv.appendChild(spanElement);
-
-    // Add click handler
-    textDiv.addEventListener("click", () => {
-      copyText(content, textDiv);
-    });
 
     addActionButtonsToElement(textDiv);
     messageDiv.appendChild(textDiv);
@@ -735,12 +725,7 @@ function drawKvps(container, kvps, latex) {
           span.innerHTML = convertHTML(value);
           pre.appendChild(span);
           tdiv.appendChild(pre);
-          addCopyButtonToElement(row);
-
-          // Add click handler
-          span.addEventListener("click", () => {
-            copyText(span.textContent, span);
-          });
+          addActionButtonsToElement(row);
 
           // KaTeX rendering for markdown
           if (latex) {
@@ -861,11 +846,6 @@ function drawKvpsIncremental(container, kvps, latex) {
           addActionButtonsToElement(row);
         }
 
-        // Add click handler
-        span.addEventListener("click", () => {
-          copyText(span.textContent, span);
-        });
-
         // KaTeX rendering for markdown
         if (latex) {
           span.querySelectorAll("latex").forEach((element) => {
@@ -907,18 +887,6 @@ function convertImageTags(content) {
   );
 
   return updatedContent;
-}
-
-async function copyText(text, element) {
-  try {
-    await navigator.clipboard.writeText(text);
-    element.classList.add("copied");
-    setTimeout(() => {
-      element.classList.remove("copied");
-    }, 2000);
-  } catch (err) {
-    console.error("Failed to copy text:", err);
-  }
 }
 
 function convertHTML(str) {

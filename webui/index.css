@@ -60,6 +60,10 @@
   --font-size-normal: 1rem;
   --font-size-large: 1.2rem;
 
+  /* Font families */
+  --font-family-main: "Rubik", Arial, Helvetica, sans-serif;
+  --font-family-code: "Roboto Mono", monospace;
+
   /* Other variables */
   --border-radius: 1.125rem;
   --transition-speed: 0.3s;
@@ -88,7 +92,7 @@ body,
 html {
   background-color: var(--color-background);
   color: var(--color-text);
-  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  font-family: var(--font-family-main);
   width: 100%;
   height: 100%;
   min-width: 320px !important;
@@ -462,13 +466,6 @@ h4 {
   opacity: 0.7;
   font-size: 0.7rem;
   user-select: all;
-}
-
-pre {
-  font-family: "Roboto Mono", monospace;
-  font-optical-sizing: auto;
-  -webkit-font-optical-sizing: auto;
-  font-size: 0.75rem;
 }
 
 
@@ -1605,18 +1602,18 @@ input:checked + .slider:before {
     flex-shrink: 0; /* prevents SVG from shrinking */
   }
 
-  .copy-button {
+  /* .copy-button {
     display: none !important;
-  }
+  } */
 
-  .msg-content span,
+  /* .msg-content span,
   .kvps-val,
   .message-text span {
     cursor: pointer;
     position: relative;
-  }
+  } */
 
-  .msg-thoughts span::after,
+  /* .msg-thoughts span::after,
   .msg-content span::after,
   .kvps-val::after,
   .message-text::after {
@@ -1634,14 +1631,14 @@ input:checked + .slider:before {
     border: none;
     border-radius: 5px;
     color: inherit;
-  }
+  } */
 
-  .msg-thoughts span.copied::after,
+  /* .msg-thoughts span.copied::after,
   .msg-content span.copied::after,
   .kvps-val.copied::after,
   .message-text.copied::after {
     opacity: 1;
-  }
+  } */
 }
 
 @media (min-width: 768px) {

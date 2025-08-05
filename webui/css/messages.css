@@ -1,5 +1,6 @@
 /* Chat History */
 #chat-history {
+  position: relative;
   display: -webkit-flex;
   display: flex;
   flex-direction: column;
@@ -79,20 +80,25 @@
 .message-user {
   background-color: #4a4a4a;
   /* border-bottom-right-radius: var(--spacing-xxs); */
-  min-width: 195px;
+  /* min-width: 195px; */
   text-align: end;
 }
 
 .message-user > div {
   padding-top: var(--spacing-xs);
-  font-family: "Roboto Mono", monospace;
+  /* font-family: "Roboto Mono", monospace; */
   font-optical-sizing: auto;
   -webkit-font-optical-sizing: auto;
-  font-size: var(--font-size-small);
+  font-size: var(--font-size-smaller);
 }
 
-.message-user .message-text{
+.message-user .message-text {
   text-align: start;
+  font-family: var(--font-family-main);
+}
+
+.message-user .message-text pre {
+  font-family: var(--font-family-main);
 }
 
 .message-ai {
@@ -207,6 +213,7 @@
   border-radius: 0.5em;
   margin-top: 0.5em;
   padding: 0.3em;
+  font-family: var(--font-family-code);
 }
 
 /* Agent and AI Info */
@@ -227,6 +234,10 @@
 .kvps-val pre {
   white-space: pre-wrap; /* keep \n, collapse no spaces, allow wrapping */
   word-break: break-word; /* optional – forces really long “words” to break */
+  font-family: var(--font-family-code);
+  font-optical-sizing: auto;
+  -webkit-font-optical-sizing: auto;
+  font-size: 0.75rem;
 }
 
 .msg-kvps th,
