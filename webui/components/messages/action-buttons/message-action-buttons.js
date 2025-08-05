@@ -6,8 +6,10 @@ function extractTextContent(container) {
     if (container.classList.contains("kvps-row")) {
         return container.querySelector(".kvps-val")?.innerText || "";
     } else if (container.classList.contains("message-text")) {
-        return container.querySelector("span")?.innerText || "";
+        // User messages use <pre> elements, not <span>
+        return container.querySelector("pre")?.innerText || container.querySelector("span")?.innerText || "";
     } else {
+        // Other message types use <span> elements
         return container.querySelector("span")?.innerText || "";
     }
 }
@@ -63,36 +65,84 @@ function showCopyFeedback(button, success) {
 // Speak text using speech store
 async function speakContent(text, button) {
     try {
+        // Validate input text
+        if (!text || typeof text !== 'string' || text.trim().length === 0) {
+            console.warn("TTS: No valid text to speak");
+            return;
+        }
+        
         // Update button state
         button.classList.add("speaking");
         const icon = button.querySelector(".material-symbols-outlined");
         const originalIcon = icon.textContent;
         
         // Check if already speaking
-        if (speechStore.isSpeaking && speechStore.speakingText === text) {
-            // Stop speaking
-            speechStore.stopSpeaking();
+        if (speechStore.isSpeaking) {
+            // Stop speaking using the correct speech store method
+            if (speechStore.stop) {
+                speechStore.stop();
+            } else {
+                // Fallback if stop doesn't exist
+                speechSynthesis.cancel();
+            }
             icon.textContent = originalIcon;
             button.classList.remove("speaking");
             return;
         }
         
         // Clean and speak text
-        const cleanedText = speechStore.cleanText ? speechStore.cleanText(text) : text;
+        const cleanedText = speechStore.cleanText ? speechStore.cleanText(text.trim()) : text.trim();
+        
+        // Validate cleaned text
+        if (!cleanedText || cleanedText.length === 0) {
+            console.warn("TTS: Text was empty after cleaning");
+            button.classList.remove("speaking");
+            return;
+        }
         
         // Update icon to show speaking state
         icon.textContent = "stop_circle";
         
-        // Start speaking
-        await speechStore.speak(cleanedText);
+        // Start speaking - use the speak function from speech store
+        if (speechStore.speak) {
+            await speechStore.speak(cleanedText);
+        } else {
+            // Fallback to browser TTS if speech store doesn't have speak function
+            const utterance = new SpeechSynthesisUtterance(cleanedText);
+            utterance.lang = 'en-US'; // Ensure English language
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            // Handle utterance events
+            utterance.onend = () => {
+                icon.textContent = originalIcon;
+                button.classList.remove("speaking");
+            };
+            
+            utterance.onerror = (event) => {
+                console.error("TTS utterance error:", event.error);
+                icon.textContent = originalIcon;
+                button.classList.remove("speaking");
+            };
+            
+            speechSynthesis.speak(utterance);
+            return; // Don't reset button state immediately for browser TTS
+        }
         
-        // Reset button state when done
-        icon.textContent = "volume_up";
+        // Reset button state when done (for speech store)
+        icon.textContent = originalIcon;
         button.classList.remove("speaking");
         
     } catch (err) {
         console.error("Speech failed:", err);
         button.classList.remove("speaking");
+        
+        // Reset icon
+        const icon = button.querySelector(".material-symbols-outlined");
+        if (icon) {
+            icon.textContent = "volume_up";
+        }
         
         // Show error feedback
         button.classList.add("error");
