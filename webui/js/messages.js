@@ -3,26 +3,15 @@ import { openImageModal } from "./image_modal.js";
 import { marked } from "../vendor/marked/marked.esm.js";
 import { store as _messageResizeStore } from "/components/messages/resize/message-resize-store.js"; // keep here, required in html
 import { store as attachmentsStore } from "/components/chat/attachments/attachmentsStore.js";
-import { addActionButtonsToElement, cleanupActionButtons } from "/components/messages/action-buttons/message-action-buttons.js";
-import { setupMessageInteraction, initializeMessageInteractions, initializeScrollHandler } from "./message-interactions.js";
+import { addActionButtonsToElement } from "/components/messages/action-buttons/simple-action-buttons.js";
 
 const chatHistory = document.getElementById("chat-history");
 
 let messageGroup = null;
 
-// Initialize message interactions when DOM is ready
-let interactionsInitialized = false;
-function ensureInteractionsInitialized() {
-  if (!interactionsInitialized && chatHistory) {
-    initializeMessageInteractions();
-    initializeScrollHandler();
-    interactionsInitialized = true;
-  }
-}
+// Simplified implementation - no complex interactions needed
 
 export function setMessage(id, type, heading, content, temp, kvps = null) {
-  // Ensure interactions are initialized
-  ensureInteractionsInitialized();
   
   // Search for the existing message container by id
   let messageContainer = document.getElementById(`message-${id}`);
@@ -82,10 +71,7 @@ export function setMessage(id, type, heading, content, temp, kvps = null) {
     chatHistory.appendChild(messageGroup);
   }
   
-  // Set up interactions for new messages
-  if (isNewMessage) {
-    setupMessageInteraction(messageContainer);
-  }
+  // Simplified implementation - no setup needed
   
   return messageContainer;
 }

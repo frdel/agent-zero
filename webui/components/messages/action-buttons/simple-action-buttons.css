@@ -1,0 +1,109 @@
+/* Simplified Action Buttons - Keeping the Great Look & Feel */
+
+/* Main action buttons container - matches original positioning */
+.action-buttons {
+  position: sticky;
+  top: var(--spacing-sm);
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  opacity: 0;
+  transition: opacity var(--transition-speed) ease-in-out;
+  z-index: 10;
+  align-self: flex-start;
+  margin-left: auto;
+  margin-top: var(--spacing-sm);
+  margin-right: var(--spacing-xs);
+}
+
+/* Individual action button - exact same styling as original */
+.action-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-speed) ease-in-out;
+  color: var(--color-text);
+  padding: 0;
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+.action-button:hover {
+  opacity: 1;
+  background: var(--color-background);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.action-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Material icons - same as original */
+.action-button .material-symbols-outlined {
+  font-size: 16px;
+  line-height: 1;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+}
+
+/* Success state - same as original */
+.action-button.success {
+  background: #4CAF50;
+  border-color: #4CAF50;
+  color: white;
+}
+
+.action-button.success .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+}
+
+/* Error state - same as original */
+.action-button.error {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: white;
+}
+
+.action-button.error .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+}
+
+/* Speaking state - same as original */
+.action-button.speaking {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Show action buttons on hover - simplified, no device detection needed */
+.msg-content:hover .action-buttons,
+.kvps-row:hover .action-buttons,
+.message-text:hover .action-buttons {
+  opacity: 1;
+}
+
+/* Ensure message containers are positioned for sticky children */
+.msg-content,
+.kvps-row,
+.message-text {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
