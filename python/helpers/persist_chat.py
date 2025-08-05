@@ -29,6 +29,10 @@ def get_chat_folder_path(ctxid: str):
 
 def save_tmp_chat(context: AgentContext):
     """Save context to the chats folder"""
+    # Skip saving BACKGROUND contexts as they should be ephemeral
+    if context.type == AgentContextType.BACKGROUND:
+        return
+
     path = _get_chat_file_path(context.id)
     files.make_dirs(path)
     data = _serialize_context(context)
@@ -39,6 +43,9 @@ def save_tmp_chat(context: AgentContext):
 def save_tmp_chats():
     """Save all contexts to the chats folder"""
     for _, context in AgentContext._contexts.items():
+        # Skip BACKGROUND contexts as they should be ephemeral
+        if context.type == AgentContextType.BACKGROUND:
+            continue
         save_tmp_chat(context)
 
 
@@ -180,7 +187,7 @@ def _deserialize_context(data):
     agents = data.get("agents", [])
     agent0 = _deserialize_agents(agents, config, context)
     streaming_agent = agent0
-    while streaming_agent.number != data.get("streaming_agent", 0):
+    while streaming_agent and streaming_agent.number != data.get("streaming_agent", 0):
         streaming_agent = streaming_agent.data.get(Agent.DATA_NAME_SUBORDINATE, None)
 
     context.agent0 = agent0
