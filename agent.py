@@ -17,7 +17,7 @@ from python.helpers.print_style import PrintStyle
 from langchain_core.prompts import (
     ChatPromptTemplate,
 )
-from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
+from langchain_core.messages import SystemMessage, BaseMessage
 
 import python.helpers.log as Log
 from python.helpers.dirty_json import DirtyJson
@@ -684,6 +684,7 @@ class Agent:
             await asyncio.sleep(0.1)
 
     async def process_tools(self, msg: str):
+
         # search for tool usage requests in agent message
         tool_request = extract_tools.json_parse_dirty(msg)
 
@@ -720,11 +721,16 @@ class Agent:
 
             # Fallback to local get_tool if MCP tool was not found or MCP lookup failed
             if not tool:
+                # Ensure loop_data exists for tool creation
+                if not hasattr(self, 'loop_data') or self.loop_data is None:
+                    self.loop_data = LoopData()
+
                 tool = self.get_tool(
                     name=tool_name, method=tool_method, args=tool_args, message=msg, loop_data=self.loop_data
                 )
 
             if tool:
+                # Execute all tools synchronously - background execution is now handled by run_task wrapper
                 await self.handle_intervention()
                 await tool.before_execution(**tool_args)
                 await self.handle_intervention()
@@ -732,8 +738,16 @@ class Agent:
                 await self.handle_intervention()
                 await tool.after_execution(response)
                 await self.handle_intervention()
+
+                # Process the result
                 if response.break_loop:
+                    # Tool wants to end the monologue (e.g., response tool)
                     return response.message
+                else:
+                    # Tool wants to continue monologue 
+                    # The result was already added to history in after_execution, so just continue
+                    return None
+
             else:
                 error_detail = (
                     f"Tool '{raw_tool_name}' not found or could not be initialized."
