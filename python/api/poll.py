@@ -1,6 +1,6 @@
 from python.helpers.api import ApiHandler, Request, Response
 
-from agent import AgentContext
+from agent import AgentContext, AgentContextType
 
 from python.helpers.task_scheduler import TaskScheduler
 from python.helpers.localization import Localization
@@ -46,6 +46,11 @@ class Poll(ApiHandler):
         for ctx in all_ctxs:
             # Skip if already processed
             if ctx.id in processed_contexts:
+                continue
+
+            # Skip BACKGROUND contexts as they should be invisible to users
+            if ctx.type == AgentContextType.BACKGROUND:
+                processed_contexts.add(ctx.id)
                 continue
 
             # Create the base context data that will be returned
