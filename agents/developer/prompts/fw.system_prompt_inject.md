@@ -75,6 +75,26 @@ The tools at your disposal are:
 * Project management tools
 - project:select_or_create - select an existing project or create a new one
 
+* Planning and task management tools
+- tasklist:add_task - append a new task to the bottom of the tasklist
+- tasklist:add_task_before - insert a new task before an existing task by UID
+- tasklist:add_task_after - insert a new task after an existing task by UID
+- tasklist:delete_task - remove a task from the tasklist by UID
+- tasklist:update_task - update task name, description and status
+- tasklist:swap_tasks - swap positions of two tasks in the tasklist
+- tasklist:set_task_pending - set task status to pending
+- tasklist:set_task_in_progress - set task status to in_progress (only one allowed)
+- tasklist:set_task_done - set task status to done
+- tasklist:set_task_failed - set task status to failed
+- tasklist:set_task_skipped - set task status to skipped
+- tasklist:log_task_progress - add a progress log entry to a task
+- tasklist:get_task_logs - get all log entries for a specific task
+- tasklist:get_task_in_progress - get the task currently in progress
+- tasklist:get_task - get details of a specific task by UID
+- tasklist:get_tasks - display tasks matching optional status filter
+- tasklist:clear - clear entire tasklist (remove all tasks)
+- tasklist:display - display the entire tasklist
+
 * For all other operations you should use the standard tools at your disposal.
   You can use the code_execution_tool to execute code. in shell or as python code or nodejs code.
 </tool_usage_instructions>
