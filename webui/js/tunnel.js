@@ -10,6 +10,16 @@ document.addEventListener('alpine:init', () => {
 
         init() {
             this.checkTunnelStatus();
+
+            // Listen for authentication success to refresh tunnel status
+            window.addEventListener('authenticationSuccess', () => {
+                // Wait a bit for API calls to be properly resumed
+                setTimeout(() => {
+                    if (!window.isApiCallsPaused || !window.isApiCallsPaused()) {
+                        this.checkTunnelStatus();
+                    }
+                }, 100);
+            });
         },
 
         generateQRCode() {
@@ -38,6 +48,13 @@ document.addEventListener('alpine:init', () => {
         },
 
         async checkTunnelStatus() {
+            // Don't check tunnel status if API calls are paused
+            if ((window.isApiCallsPaused && window.isApiCallsPaused()) ||
+                (window.authFailureTriggered)) {
+                // Silently skip tunnel status check
+                return;
+            }
+
             try {
                 const response = await fetchApi('/tunnel_proxy', {
                     method: 'POST',
@@ -145,6 +162,12 @@ document.addEventListener('alpine:init', () => {
         },
 
         async generateLink() {
+            // Don't generate link if API calls are paused
+            if (window.isApiCallsPaused && window.isApiCallsPaused()) {
+                console.log('Cannot generate tunnel link - API calls are paused');
+                return;
+            }
+
             // First check if authentication is enabled
             try {
                 const authCheckResponse = await fetchApi('/settings_get');
@@ -290,6 +313,12 @@ document.addEventListener('alpine:init', () => {
         },
 
         async stopTunnel() {
+            // Don't stop tunnel if API calls are paused
+            if (window.isApiCallsPaused && window.isApiCallsPaused()) {
+                console.log('Cannot stop tunnel - API calls are paused');
+                return;
+            }
+
             if (confirm("Are you sure you want to stop the tunnel? The URL will no longer be accessible.")) {
                 this.isLoading = true;
                 this.loadingText = 'Stopping tunnel...';

@@ -9,7 +9,9 @@ from initialize import initialize_agent
 
 from python.helpers.log import Log, LogItem
 
-CHATS_FOLDER = "tmp/chats"
+# Chat storage directories (use separate components for user isolation)
+CHATS_BASE_DIR = "tmp"
+CHATS_SUBDIR = "chats"
 LOG_SIZE = 1000
 CHAT_FILE_NAME = "chat.json"
 
@@ -24,7 +26,7 @@ def get_chat_folder_path(ctxid: str):
     Returns:
         The absolute path to the context folder
     """
-    return files.get_abs_path(CHATS_FOLDER, ctxid)
+    return files.get_abs_path(CHATS_BASE_DIR, CHATS_SUBDIR, ctxid)
 
 
 def save_tmp_chat(context: AgentContext):
@@ -38,14 +40,15 @@ def save_tmp_chat(context: AgentContext):
 
 def save_tmp_chats():
     """Save all contexts to the chats folder"""
-    for _, context in AgentContext._contexts.items():
+    for context in AgentContext.all():
         save_tmp_chat(context)
 
 
 def load_tmp_chats():
     """Load all contexts from the chats folder"""
     _convert_v080_chats()
-    folders = files.list_files(CHATS_FOLDER, "*")
+    chat_folder = files.get_abs_path(CHATS_BASE_DIR, CHATS_SUBDIR)
+    folders = files.list_files(files.deabsolute_path(chat_folder), "*")
     json_files = []
     for folder_name in folders:
         json_files.append(_get_chat_file_path(folder_name))
@@ -63,13 +66,14 @@ def load_tmp_chats():
 
 
 def _get_chat_file_path(ctxid: str):
-    return files.get_abs_path(CHATS_FOLDER, ctxid, CHAT_FILE_NAME)
+    return files.get_abs_path(CHATS_BASE_DIR, CHATS_SUBDIR, ctxid, CHAT_FILE_NAME)
 
 
 def _convert_v080_chats():
-    json_files = files.list_files(CHATS_FOLDER, "*.json")
+    chat_folder = files.get_abs_path(CHATS_BASE_DIR, CHATS_SUBDIR)
+    json_files = files.list_files(files.deabsolute_path(chat_folder), "*.json")
     for file in json_files:
-        path = files.get_abs_path(CHATS_FOLDER, file)
+        path = files.get_abs_path(CHATS_BASE_DIR, CHATS_SUBDIR, file)
         name = file.rstrip(".json")
         new = _get_chat_file_path(name)
         files.move_file(path, new)

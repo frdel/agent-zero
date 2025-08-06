@@ -1,0 +1,247 @@
+/* Login Overlay Styles */
+.login-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #0e0463 100%);
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+/* Hide notification bell when login overlay is visible */
+body.login-overlay-visible .notification-toggle {
+    display: none !important;
+}
+
+.login-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    padding: 3rem;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.login-logo {
+    margin-bottom: 2rem;
+}
+
+.agent-logo {
+    width: 80px;
+    height: 80px;
+    color: #667eea;
+    filter: drop-shadow(0 4px 8px rgba(102, 126, 234, 0.3));
+}
+
+.login-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.login-subtitle {
+    color: #718096;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+}
+
+.login-form form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.login-field {
+    text-align: left;
+}
+
+.login-field label {
+    display: block;
+    font-weight: 500;
+    color: #4a5568;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.login-field input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.8);
+    box-sizing: border-box;
+}
+
+.login-field input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    background: rgba(255, 255, 255, 1);
+}
+
+.login-field input::placeholder {
+    color: #a0aec0;
+}
+
+.login-button {
+    background: linear-gradient(135deg, #667eea 0%, #140263 100%);
+    color: white;
+    border: none;
+    padding: 0.875rem 2rem;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 0.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.login-button:active {
+    transform: translateY(0);
+}
+
+.login-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.login-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.login-button:hover::before {
+    left: 100%;
+}
+
+.login-message {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.login-error {
+    background: rgba(254, 178, 178, 0.2);
+    border: 1px solid #feb2b2;
+    color: #c53030;
+}
+
+.login-success {
+    background: rgba(187, 247, 208, 0.2);
+    border: 1px solid #bbf7d0;
+    color: #2f855a;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .login-container {
+        background: rgba(45, 55, 72, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .login-title {
+        color: #e2e8f0;
+    }
+
+    .login-subtitle {
+        color: #a0aec0;
+    }
+
+    .login-field label {
+        color: #cbd5e0;
+    }
+
+    .login-field input {
+        background: rgba(26, 32, 44, 0.8);
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+
+    .login-field input:focus {
+        background: rgba(26, 32, 44, 1);
+        border-color: #667eea;
+    }
+
+    .login-field input::placeholder {
+        color: #718096;
+    }
+
+    .agent-logo {
+        color: #a78bfa;
+    }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 480px) {
+    .login-container {
+        margin: 1rem;
+        padding: 2rem;
+        max-width: none;
+    }
+
+    .login-title {
+        font-size: 1.5rem;
+    }
+
+    .agent-logo {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+/* Animation for overlay entrance */
+.login-overlay {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Form field animations */
+.login-field input {
+    transform: translateY(0);
+    transition: all 0.3s ease;
+}
+
+.login-field input:focus {
+    transform: translateY(-2px);
+}

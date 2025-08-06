@@ -1,3 +1,4 @@
+# flake8: noqa
 import base64
 import hashlib
 import json
@@ -137,8 +138,12 @@ class SettingsOutput(TypedDict):
 
 PASSWORD_PLACEHOLDER = "****PSWD****"
 
-SETTINGS_FILE = files.get_abs_path("tmp/settings.json")
-_settings: Settings | None = None
+def _get_settings_file() -> str:
+    """Get user-specific settings file path"""
+    return files.get_abs_path("tmp/settings.json")
+
+
+_settings_cache: dict[str, Settings] = {}
 
 
 
@@ -478,7 +483,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "type": "number",
             "value": settings["browser_model_rl_output"],
         }
-    )   
+    )
 
     browser_model_fields.append(
         {
@@ -499,30 +504,17 @@ def convert_out(settings: Settings) -> SettingsOutput:
     }
 
 
-    # basic auth section
+    # basic auth section - now using multitenancy system
     auth_fields: list[SettingsField] = []
 
+    # Add user management button for admin users
     auth_fields.append(
         {
-            "id": "auth_login",
-            "title": "UI Login",
-            "description": "Set user name for web UI",
-            "type": "text",
-            "value": dotenv.get_dotenv_value(dotenv.KEY_AUTH_LOGIN) or "",
-        }
-    )
-
-    auth_fields.append(
-        {
-            "id": "auth_password",
-            "title": "UI Password",
-            "description": "Set user password for web UI",
-            "type": "password",
-            "value": (
-                PASSWORD_PLACEHOLDER
-                if dotenv.get_dotenv_value(dotenv.KEY_AUTH_PASSWORD)
-                else ""
-            ),
+            "id": "user_management",
+            "title": "Manage Users",
+            "description": "Create, edit, and delete user accounts (admin only)",
+            "type": "button",
+            "value": "Manage Users",
         }
     )
 
@@ -604,6 +596,15 @@ def convert_out(settings: Settings) -> SettingsOutput:
         }
     )
 
+    # Get knowledge subdirectories - look at base knowledge folder, not user-specific
+    knowledge_base_path = os.path.join(files.get_base_dir(), "knowledge")
+    knowledge_subdirs = []
+    if os.path.exists(knowledge_base_path):
+        knowledge_subdirs = [
+            subdir for subdir in os.listdir(knowledge_base_path)
+            if os.path.isdir(os.path.join(knowledge_base_path, subdir)) and subdir != "default"
+        ]
+
     agent_fields.append(
         {
             "id": "agent_knowledge_subdir",
@@ -613,7 +614,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "value": settings["agent_knowledge_subdir"],
             "options": [
                 {"value": subdir, "label": subdir}
-                for subdir in files.get_subdirectories("knowledge", exclude="default")
+                for subdir in knowledge_subdirs
             ],
         }
     )
@@ -1116,20 +1117,41 @@ def convert_in(settings: dict) -> Settings:
 
 
 def get_settings() -> Settings:
-    global _settings
-    if not _settings:
-        _settings = _read_settings_file()
-    if not _settings:
-        _settings = get_default_settings()
-    norm = normalize_settings(_settings)
+    global _settings_cache
+
+    # Get current user for cache key
+    try:
+        from python.helpers.user_management import get_current_username
+        cache_key = get_current_username()
+    except (ImportError, RuntimeError):
+        # Fallback for no user context
+        cache_key = "default"
+
+    if cache_key not in _settings_cache:
+        settings = _read_settings_file()
+        if not settings:
+            settings = get_default_settings()
+        _settings_cache[cache_key] = settings
+
+    norm = normalize_settings(_settings_cache[cache_key])
     return norm
 
 
 def set_settings(settings: Settings, apply: bool = True):
-    global _settings
-    previous = _settings
-    _settings = normalize_settings(settings)
-    _write_settings_file(_settings)
+    global _settings_cache
+
+    # Get current user for cache key
+    try:
+        from python.helpers.user_management import get_current_username
+        cache_key = get_current_username()
+    except (ImportError, RuntimeError):
+        # Fallback for no user context
+        cache_key = "default"
+
+    previous = _settings_cache.get(cache_key)
+    normalized_settings = normalize_settings(settings)
+    _settings_cache[cache_key] = normalized_settings
+    _write_settings_file(normalized_settings)
     if apply:
         _apply_settings(previous)
 
@@ -1180,8 +1202,9 @@ def _adjust_to_version(settings: Settings, default: Settings):
             settings["agent_profile"] = "agent0"
 
 def _read_settings_file() -> Settings | None:
-    if os.path.exists(SETTINGS_FILE):
-        content = files.read_file(SETTINGS_FILE)
+    settings_file = _get_settings_file()
+    if os.path.exists(settings_file):
+        content = files.read_file(settings_file)
         parsed = json.loads(content)
         return normalize_settings(parsed)
 
@@ -1192,7 +1215,8 @@ def _write_settings_file(settings: Settings):
 
     # write settings
     content = json.dumps(settings, indent=4)
-    files.write_file(SETTINGS_FILE, content)
+    settings_file = _get_settings_file()
+    files.write_file(settings_file, content)
 
 
 def _remove_sensitive_settings(settings: Settings):
@@ -1296,110 +1320,107 @@ def get_default_settings() -> Settings:
 
 
 def _apply_settings(previous: Settings | None):
-    global _settings
-    if _settings:
-        from agent import AgentContext
-        from initialize import initialize_agent
+    """Apply runtime effects of settings changes.
 
-        config = initialize_agent()
-        for ctx in AgentContext._contexts.values():
-            ctx.config = config  # reinitialize context config with new settings
-            # apply config to agents
-            agent = ctx.agent0
-            while agent:
-                agent.config = ctx.config
-                agent = agent.get_data(agent.DATA_NAME_SUBORDINATE)
+    This function no longer relies on the previously global ``_settings`` variable.
+    Instead we always fetch the *current* effective settings via ``get_settings()``.
+    """
 
-        # reload whisper model if necessary
-        if not previous or _settings["stt_model_size"] != previous["stt_model_size"]:
-            task = defer.DeferredTask().start_task(
-                whisper.preload, _settings["stt_model_size"]
-            )  # TODO overkill, replace with background task
+    current_settings = get_settings()
 
-        # force memory reload on embedding model change
-        if not previous or (
-            _settings["embed_model_name"] != previous["embed_model_name"]
-            or _settings["embed_model_provider"] != previous["embed_model_provider"]
-            or _settings["embed_model_kwargs"] != previous["embed_model_kwargs"]
-        ):
-            from python.helpers.memory import reload as memory_reload
+    from agent import AgentContext
+    from initialize import initialize_agent
 
-            memory_reload()
+    # Re-initialise agent config for all active contexts
+    config = initialize_agent()
+    for ctx in AgentContext.all():
+        ctx.config = config
+        # apply config to all subordinate agents
+        agent = ctx.agent0
+        while agent:
+            agent.config = ctx.config
+            agent = agent.get_data(agent.DATA_NAME_SUBORDINATE)
 
-        # update mcp settings if necessary
-        if not previous or _settings["mcp_servers"] != previous["mcp_servers"]:
-            from python.helpers.mcp_handler import MCPConfig
+    # Reload whisper model if the size changed
+    if not previous or current_settings["stt_model_size"] != previous["stt_model_size"]:
+        defer.DeferredTask().start_task(whisper.preload, current_settings["stt_model_size"])
 
-            async def update_mcp_settings(mcp_servers: str):
-                PrintStyle(
-                    background_color="black", font_color="white", padding=True
-                ).print("Updating MCP config...")
+    # Force memory reload on embedding model change
+    if not previous or (
+        current_settings["embed_model_name"] != previous["embed_model_name"]
+        or current_settings["embed_model_provider"] != previous["embed_model_provider"]
+        or current_settings["embed_model_kwargs"] != previous["embed_model_kwargs"]
+    ):
+        from python.helpers.memory import reload as memory_reload
+
+        memory_reload()
+
+    # update mcp settings if necessary
+    if not previous or current_settings["mcp_servers"] != previous["mcp_servers"]:
+        from python.helpers.mcp_handler import MCPConfig
+
+        async def update_mcp_settings(mcp_servers: str):
+            PrintStyle(
+                background_color="black", font_color="white", padding=True
+            ).print("Updating MCP config...")
+            AgentContext.log_to_all(
+                type="info", content="Updating MCP settings...", temp=True
+            )
+
+            mcp_config = MCPConfig.get_instance()
+            try:
+                MCPConfig.update(mcp_servers)
+            except Exception as e:
                 AgentContext.log_to_all(
-                    type="info", content="Updating MCP settings...", temp=True
+                    type="error",
+                    content=f"Failed to update MCP settings: {e}",
+                    temp=False,
                 )
-
-                mcp_config = MCPConfig.get_instance()
-                try:
-                    MCPConfig.update(mcp_servers)
-                except Exception as e:
-                    AgentContext.log_to_all(
-                        type="error",
-                        content=f"Failed to update MCP settings: {e}",
-                        temp=False,
-                    )
-                    (
-                        PrintStyle(
-                            background_color="red", font_color="black", padding=True
-                        ).print("Failed to update MCP settings")
-                    )
-                    (
-                        PrintStyle(
-                            background_color="black", font_color="red", padding=True
-                        ).print(f"{e}")
-                    )
-
-                PrintStyle(
-                    background_color="#6734C3", font_color="white", padding=True
-                ).print("Parsed MCP config:")
                 (
                     PrintStyle(
-                        background_color="#334455", font_color="white", padding=False
-                    ).print(mcp_config.model_dump_json())
+                        background_color="red", font_color="black", padding=True
+                    ).print("Failed to update MCP settings")
                 )
-                AgentContext.log_to_all(
-                    type="info", content="Finished updating MCP settings.", temp=True
+                (
+                    PrintStyle(
+                        background_color="black", font_color="red", padding=True
+                    ).print(f"{e}")
                 )
 
-            task2 = defer.DeferredTask().start_task(
-                update_mcp_settings, config.mcp_servers
-            )  # TODO overkill, replace with background task
+            PrintStyle(
+                background_color="#6734C3", font_color="white", padding=True
+            ).print("Parsed MCP config:")
+            (
+                PrintStyle(
+                    background_color="#334455", font_color="white", padding=False
+                ).print(mcp_config.model_dump_json())
+            )
+            AgentContext.log_to_all(
+                type="info", content="Finished updating MCP settings.", temp=True
+            )
 
-        # update token in mcp server
-        current_token = (
-            create_auth_token()
-        )  # TODO - ugly, token in settings is generated from dotenv and does not always correspond
-        if not previous or current_token != previous["mcp_server_token"]:
+        defer.DeferredTask().start_task(update_mcp_settings, config.mcp_servers)
 
-            async def update_mcp_token(token: str):
-                from python.helpers.mcp_server import DynamicMcpProxy
+    # update token in mcp server
+    current_token = create_auth_token()
+    if not previous or current_token != previous["mcp_server_token"]:
 
-                DynamicMcpProxy.get_instance().reconfigure(token=token)
+        async def update_mcp_token(token: str):
+            from python.helpers.mcp_server import DynamicMcpProxy
 
-            task3 = defer.DeferredTask().start_task(
-                update_mcp_token, current_token
-            )  # TODO overkill, replace with background task
+            DynamicMcpProxy.get_instance().reconfigure(token=token)
 
-        # update token in a2a server
-        if not previous or current_token != previous["mcp_server_token"]:
+        defer.DeferredTask().start_task(update_mcp_token, current_token)
 
-            async def update_a2a_token(token: str):
-                from python.helpers.fasta2a_server import DynamicA2AProxy
+    # update token in a2a server
+    if not previous or current_token != previous["mcp_server_token"]:
 
-                DynamicA2AProxy.get_instance().reconfigure(token=token)
+        async def update_a2a_token(token: str):
+            from python.helpers.fasta2a_server import DynamicA2AProxy
 
-            task4 = defer.DeferredTask().start_task(
-                update_a2a_token, current_token
-            )  # TODO overkill, replace with background task
+            DynamicA2AProxy.get_instance().reconfigure(token=token)
+
+        defer.DeferredTask().start_task(update_a2a_token, current_token)
 
 
 def _env_to_dict(data: str):

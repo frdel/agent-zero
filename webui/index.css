@@ -421,7 +421,7 @@ img {
 }
 
 #time-date-container {
-  z-index: 1000;
+  z-index: 9001;
   position: fixed;
   right: var(--spacing-md);
   display: flex;
@@ -872,9 +872,11 @@ h4 {
   opacity: 0.5;
 }
 
-#settings {
+#settings,
+#logout {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
 }
 
 .edit-button {
@@ -1448,7 +1450,7 @@ input:checked + .slider:before {
     display: none;
   }
 
-  
+
   /* Responsive tiles for mobile */
   .preview-section {
     grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));

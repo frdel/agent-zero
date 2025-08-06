@@ -7,7 +7,7 @@ import struct
 from functools import wraps
 import threading
 from flask import Flask, request, Response, session
-from flask_basicauth import BasicAuth
+# from flask_basicauth import BasicAuth  # Disabled - using login overlay instead
 import initialize
 from python.helpers import files, git, mcp_server, fasta2a_server
 from python.helpers.files import get_abs_path
@@ -39,7 +39,7 @@ webapp.config.update(
 lock = threading.Lock()
 
 # Set up basic authentication for UI and API but not MCP
-basic_auth = BasicAuth(webapp)
+# basic_auth = BasicAuth(webapp)  # Disabled - using login overlay instead
 
 
 def is_loopback_address(address):
@@ -113,18 +113,54 @@ def requires_loopback(f):
 def requires_auth(f):
     @wraps(f)
     async def decorated(*args, **kwargs):
-        user = dotenv.get_dotenv_value("AUTH_LOGIN")
-        password = dotenv.get_dotenv_value("AUTH_PASSWORD")
-        if user and password:
-            auth = request.authorization
-            if not auth or not (auth.username == user and auth.password == password):
+        from python.helpers.user_management import get_user_manager, set_current_user
+
+        # Check if user is logged in via session
+        username = session.get('username')
+        if username:
+            # Get user from user manager and set as current user
+            user_manager = get_user_manager()
+            user = user_manager.get_user(username)
+            if user:
+                set_current_user(user)
+                return await f(*args, **kwargs)
+
+        # Fall back to basic auth for initial login
+        auth = request.authorization
+        if auth:
+            user_manager = get_user_manager()
+            if user_manager.authenticate(auth.username, auth.password):
+                user = user_manager.get_user(auth.username)
+                if user:
+                    # Store user info in session
+                    session['username'] = user.username
+                    session['is_admin'] = user.is_admin
+                    session.permanent = True
+
+                    # Set current user context
+                    set_current_user(user)
+                    return await f(*args, **kwargs)
+
+                # Check if this is an API request and return JSON instead of HTML
+        # API endpoints are dynamically discovered from python/api/ directory
+        import os
+        api_dir = os.path.join(os.path.dirname(__file__), 'python', 'api')
+        if os.path.exists(api_dir):
+            api_files = [f[:-3] for f in os.listdir(api_dir) if f.endswith('.py') and not f.startswith('__')]
+            api_endpoints = [f'/{name}' for name in api_files]
+            if any(request.path.startswith(endpoint) for endpoint in api_endpoints):
                 return Response(
-                    "Could not verify your access level for that URL.\n"
-                    "You have to login with proper credentials",
+                    '{"error": "Authentication required"}',
                     401,
-                    {"WWW-Authenticate": 'Basic realm="Login Required"'},
+                    {"Content-Type": "application/json"}
                 )
-        return await f(*args, **kwargs)
+
+        return Response(
+            "Could not verify your access level for that URL.\n"
+            "You have to login with proper credentials",
+            401,
+            {"WWW-Authenticate": 'Basic realm="Login Required"'},
+        )
 
     return decorated
 
@@ -137,6 +173,18 @@ def csrf_protect(f):
         cookie = request.cookies.get("csrf_token_" + runtime.get_runtime_id())
         sent = header or cookie
         if not token or not sent or token != sent:
+            # Return JSON for API endpoints, HTML for others
+            import os
+            api_dir = os.path.join(os.path.dirname(__file__), 'python', 'api')
+            if os.path.exists(api_dir):
+                api_files = [f[:-3] for f in os.listdir(api_dir) if f.endswith('.py') and not f.startswith('__')]
+                api_endpoints = [f'/{name}' for name in api_files]
+                if any(request.path.startswith(endpoint) for endpoint in api_endpoints):
+                    return Response(
+                        '{"error": "CSRF token missing or invalid"}',
+                        403,
+                        {"Content-Type": "application/json"}
+                    )
             return Response("CSRF token missing or invalid", 403)
         return await f(*args, **kwargs)
 
@@ -145,8 +193,7 @@ def csrf_protect(f):
 
 # handle default address, load index
 @webapp.route("/", methods=["GET"])
-@requires_auth
-async def serve_index():
+def serve_index():
     gitinfo = None
     try:
         gitinfo = git.get_git_info()
@@ -243,6 +290,11 @@ def run():
 
 
 def init_a0():
+    # initialize user management system
+    from python.helpers.user_management import get_user_manager
+    user_manager = get_user_manager()
+    user_manager.ensure_default_admin()
+
     # initialize contexts and MCP
     init_chats = initialize.initialize_chats()
     # only wait for init chats, otherwise they would seem to disappear for a while on restart
