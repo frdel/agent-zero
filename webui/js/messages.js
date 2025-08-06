@@ -12,7 +12,6 @@ let messageGroup = null;
 // Simplified implementation - no complex interactions needed
 
 export function setMessage(id, type, heading, content, temp, kvps = null) {
-  
   // Search for the existing message container by id
   let messageContainer = document.getElementById(`message-${id}`);
   let isNewMessage = false;
@@ -70,9 +69,9 @@ export function setMessage(id, type, heading, content, temp, kvps = null) {
     messageGroup.appendChild(messageContainer);
     chatHistory.appendChild(messageGroup);
   }
-  
+
   // Simplified implementation - no setup needed
-  
+
   return messageContainer;
 }
 
@@ -179,6 +178,9 @@ export function _drawMessage(
     messageDiv.appendChild(bodyDiv);
   }
 
+  // reapply scroll position or autoscroll
+  const scroller = new Scroller(bodyDiv);
+
   // Handle KVPs incrementally
   drawKvpsIncremental(bodyDiv, kvps, false);
 
@@ -205,9 +207,6 @@ export function _drawMessage(
       processedContent = convertPathsToLinks(processedContent);
       processedContent = addBlankTargetsToLinks(processedContent);
 
-      // reapply scroll position or autoscroll
-      const scroller = new Scroller(contentDiv);
-
       spanElement.innerHTML = processedContent;
 
       // KaTeX rendering for markdown
@@ -223,8 +222,6 @@ export function _drawMessage(
       addActionButtonsToElement(contentDiv);
       adjustMarkdownRender(contentDiv);
 
-      // reapply scroll position or autoscroll
-      scroller.reApplyScroll();
     } else {
       let preElement = bodyDiv.querySelector(".msg-content");
       if (!preElement) {
@@ -244,16 +241,11 @@ export function _drawMessage(
         preElement.appendChild(spanElement);
       }
 
-      // reapply scroll position or autoscroll
-      const scroller = new Scroller(preElement);
-
       spanElement.innerHTML = convertHTML(content);
 
       // Ensure action buttons exist
       addActionButtonsToElement(preElement);
 
-      // reapply scroll position or autoscroll
-      scroller.reApplyScroll();
     }
   } else {
     // Remove content if it exists but content is empty
@@ -262,6 +254,9 @@ export function _drawMessage(
       existingContent.remove();
     }
   }
+
+  // reapply scroll position or autoscroll
+  scroller.reApplyScroll();
 
   if (followUp) {
     messageContainer.classList.add("message-followup");
