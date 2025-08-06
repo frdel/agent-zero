@@ -582,7 +582,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     api_keys_section: SettingsSection = {
         "id": "api_keys",
         "title": "API Keys",
-        "description": "API keys for model providers and services used by Agent Zero.",
+        "description": "API keys for model providers and services used by Agent Zero. You can set multiple API keys separated by a comma (,). They will be used in round-robin fashion.",
         "fields": api_keys_fields,
         "tab": "external",
     }
