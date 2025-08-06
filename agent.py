@@ -17,7 +17,7 @@ from python.helpers.print_style import PrintStyle
 from langchain_core.prompts import (
     ChatPromptTemplate,
 )
-from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
+from langchain_core.messages import SystemMessage, BaseMessage
 
 import python.helpers.log as Log
 from python.helpers.dirty_json import DirtyJson
@@ -684,9 +684,6 @@ class Agent:
             await asyncio.sleep(0.1)
 
     async def process_tools(self, msg: str):
-        import asyncio
-        import uuid
-        from datetime import datetime
 
         # search for tool usage requests in agent message
         tool_request = extract_tools.json_parse_dirty(msg)
@@ -733,130 +730,22 @@ class Agent:
                 )
 
             if tool:
-                # Check if this is a synchronous tool (wait_for_tasks or response) - execute immediately
-                if tool_name in ["wait_for_tasks", "response"]:
-                    await self.handle_intervention()
-                    await tool.before_execution(**tool_args)
-                    await self.handle_intervention()
-                    response = await tool.execute(**tool_args)
-                    await self.handle_intervention()
-                    await tool.after_execution(response)
-                    await self.handle_intervention()
+                # Execute all tools synchronously - background execution is now handled by run_task wrapper
+                await self.handle_intervention()
+                await tool.before_execution(**tool_args)
+                await self.handle_intervention()
+                response = await tool.execute(**tool_args)
+                await self.handle_intervention()
+                await tool.after_execution(response)
+                await self.handle_intervention()
 
-                    # For synchronous tools, always process the result
-                    if response.break_loop:
-                        # Tool wants to end the monologue (e.g., response tool)
-                        return response.message
-                    else:
-                        # Tool wants to continue monologue (e.g., wait_for_tasks providing intermediate results)
-                        # The result was already added to history in after_execution, so just continue
-                        return None
+                # Process the result
+                if response.break_loop:
+                    # Tool wants to end the monologue (e.g., response tool)
+                    return response.message
                 else:
-                    # Execute other tools in parallel with temporary context
-                    task_id = str(uuid.uuid4())
-
-                    # Create async task for tool execution in temporary context
-                    async def execute_tool_async():
-                        # Create temporary context for isolated execution
-                        temp_context = AgentContext(
-                            config=self.config,
-                            type=AgentContextType.BACKGROUND
-                        )
-
-                        # Create temporary agent in the isolated context
-                        temp_agent = Agent(self.number + 1000, self.config, temp_context)
-                        temp_agent.config.profile = self.config.profile  # Keep same profile
-
-                        try:
-                            # Create tool instance in temporary context
-                            # Ensure temp agent has loop_data
-                            if not hasattr(temp_agent, 'loop_data') or temp_agent.loop_data is None:
-                                temp_agent.loop_data = LoopData()
-
-                            temp_tool = self.get_tool(
-                                name=tool_name,
-                                method=tool_method,
-                                args=tool_args,
-                                message=msg,
-                                loop_data=temp_agent.loop_data
-                            )
-                            # Update tool to use temporary agent
-                            temp_tool.agent = temp_agent
-
-                            # Execute tool in isolated context
-                            await temp_agent.handle_intervention()
-                            await temp_tool.before_execution(**tool_args)
-                            await temp_agent.handle_intervention()
-                            response = await temp_tool.execute(**tool_args)
-                            await temp_agent.handle_intervention()
-                            await temp_tool.after_execution(response)
-                            await temp_agent.handle_intervention()
-
-                            # Store result persistently in main agent's storage
-                            completed_tasks = self.get_data("completed_tool_tasks") or {}
-                            completed_tasks[task_id] = {
-                                "tool_name": raw_tool_name,
-                                "result": response.message if response else "No result",
-                                "success": True,
-                                "started_at": datetime.now().isoformat(),
-                                "context_id": temp_context.id
-                            }
-                            self.set_data("completed_tool_tasks", completed_tasks)
-
-                            return response
-
-                        except Exception as e:
-                            # Store error result persistently
-                            completed_tasks = self.get_data("completed_tool_tasks") or {}
-                            completed_tasks[task_id] = {
-                                "tool_name": raw_tool_name,
-                                "result": f"Tool execution failed: {str(e)}",
-                                "success": False,
-                                "started_at": datetime.now().isoformat(),
-                                "context_id": temp_context.id
-                            }
-                            self.set_data("completed_tool_tasks", completed_tasks)
-
-                            # Log error but don't re-raise to prevent unhandled background exceptions
-                            PrintStyle(font_color="red", padding=True).print(
-                                f"Tool execution failed in task {task_id}: {str(e)}"
-                            )
-
-                        finally:
-                            # Always clean up temporary context
-                            try:
-                                temp_context.reset()
-                                AgentContext.remove(temp_context.id)
-                            except Exception as cleanup_error:
-                                PrintStyle(font_color="red", padding=True).print(
-                                    f"Warning: Failed to clean up temporary context {temp_context.id}: {cleanup_error}"
-                                )
-
-                    # Create the asyncio task
-                    asyncio_task = asyncio.create_task(execute_tool_async())
-
-                    # Store task information in agent data
-                    active_tasks = self.get_data("active_tool_tasks") or {}
-                    active_tasks[task_id] = {
-                        "tool_name": raw_tool_name,
-                        "task": asyncio_task,
-                        "started_at": datetime.now().isoformat(),
-                        "args": tool_args
-                    }
-                    self.set_data("active_tool_tasks", active_tasks)
-
-                    # Add task start info to history but don't break the monologue
-                    task_message = f"Started tool '{raw_tool_name}' with task ID: {task_id} (isolated context)"
-                    PrintStyle(font_color="green", padding=True).print(task_message)
-                    self.context.log.log(
-                        type="tool", content=f"{self.agent_name}: {task_message}"
-                    )
-
-                    # Add task info to chat history so agent knows about it
-                    task_info_message = f"Tool '{raw_tool_name}' is now running in background with task ID: {task_id}. You can continue with other actions or use wait_for_tasks to retrieve the result when needed."
-                    self.hist_add_tool_result(raw_tool_name, task_info_message)
-
-                    # Return None to continue the monologue instead of breaking it
+                    # Tool wants to continue monologue 
+                    # The result was already added to history in after_execution, so just continue
                     return None
 
             else:
