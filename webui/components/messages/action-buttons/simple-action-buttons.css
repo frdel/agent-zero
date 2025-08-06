@@ -2,87 +2,88 @@
 
 /* Main action buttons container - precise positioning */
 .action-buttons {
-  position: absolute;
+  position: sticky;
+  height:0;
+  width:fit-content;
+  overflow: visible;
   top: 0.3em;
-  right: 0;
+  margin-right:0.1em;
+  margin-left: auto;
   display: none;
   flex-direction: row;
   gap: 0;
-  background: var(--color-panel);
-  border: 1px solid var(--color-border);
   border-radius: 6px;
   transition: opacity var(--transition-speed) ease-in-out;
   z-index: 10;
-  overflow: hidden;
 }
 
 /* Individual action button - precise hit area */
-.action-button {
+.action-buttons .action-button {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 26px;
   height: 26px;
-  background: transparent;
-  border: none;
   cursor: pointer;
-  transition: background-color var(--transition-speed) ease-in-out;
+  background-color: var(--color-background);
+  /* border: 1px solid var(--color-border); */
+  /* transition: background-color var(--transition-speed) ease-in-out; */
   color: var(--color-text);
   padding: 0;
   font-size: 14px;
-  opacity: 0.7;
+  /* opacity: 0.7; */
   margin: 0;
 }
 
-.action-button:first-child {
+.action-buttons .action-button:first-child {
   border-radius: 5px 0 0 5px;
 }
 
-.action-button:last-child {
+.action-buttons .action-button:last-child {
   border-radius: 0 5px 5px 0;
 }
 
-.action-button:hover {
+.action-buttons .action-button:hover {
   opacity: 1;
-  background: var(--color-background);
+  background: var(--color-panel);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
-.action-button:active {
+.action-buttons .action-button:active {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* Material icons - same as original */
-.action-button .material-symbols-outlined {
+.action-buttons .action-button .material-symbols-outlined {
   font-size: 16px;
   line-height: 1;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
 }
 
 /* Success state - same as original */
-.action-button.success {
+.action-buttons .action-button.success {
   background: #4CAF50;
   border-color: #4CAF50;
   color: white;
 }
 
-.action-button.success .material-symbols-outlined {
+.action-buttons .action-button.success .material-symbols-outlined {
   font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
 }
 
 /* Error state - same as original */
-.action-button.error {
+.action-buttons .action-button.error {
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: white;
 }
 
-.action-button.error .material-symbols-outlined {
+.action-buttons .action-button.error .material-symbols-outlined {
   font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
 }
 
 /* Speaking state - same as original */
-.action-button.speaking {
+.action-buttons .action-button.speaking {
   background: var(--color-primary);
   border-color: var(--color-primary);
   color: white;
@@ -97,8 +98,10 @@
 
 /* Show action buttons on hover - simplified, no device detection needed */
 .msg-content:hover .action-buttons,
-.kvps-row:hover .action-buttons,
-.message-text:hover .action-buttons {
+/* .kvps-row:hover .action-buttons, */
+.message-text:hover .action-buttons,
+.kvps-val:hover .action-buttons,
+.message-body:hover > .action-buttons {
   display: flex;
   animation: fadeInAfterDelay 0.3s ease-in-out;
   animation-delay: 0.3s;

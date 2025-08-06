@@ -219,7 +219,7 @@ export function _drawMessage(
       }
 
       // Ensure action buttons exist
-      addActionButtonsToElement(contentDiv);
+      addActionButtonsToElement(bodyDiv);
       adjustMarkdownRender(contentDiv);
 
     } else {
@@ -244,7 +244,7 @@ export function _drawMessage(
       spanElement.innerHTML = convertHTML(content);
 
       // Ensure action buttons exist
-      addActionButtonsToElement(preElement);
+      addActionButtonsToElement(bodyDiv);
 
     }
   } else {
@@ -693,6 +693,8 @@ function drawKvps(container, kvps, latex) {
         addValue(value);
       }
 
+      addActionButtonsToElement(tdiv);
+
       // autoscroll the KVP value if needed
       // if (getAutoScroll()) #TODO needs a better redraw system
       setTimeout(() => {
@@ -720,7 +722,6 @@ function drawKvps(container, kvps, latex) {
           span.innerHTML = convertHTML(value);
           pre.appendChild(span);
           tdiv.appendChild(pre);
-          addActionButtonsToElement(row);
 
           // KaTeX rendering for markdown
           if (latex) {
@@ -794,6 +795,8 @@ function drawKvpsIncremental(container, kvps, latex) {
       // Clear and rebuild content (for now - could be optimized further)
       tdiv.innerHTML = "";
 
+      addActionButtonsToElement(tdiv);
+
       if (Array.isArray(value)) {
         for (const item of value) {
           addValue(item, tdiv);
@@ -836,10 +839,10 @@ function drawKvpsIncremental(container, kvps, latex) {
         tdiv.appendChild(pre);
 
         // Add action buttons to the row
-        const row = tdiv.closest(".kvps-row");
-        if (row) {
-          addActionButtonsToElement(row);
-        }
+        // const row = tdiv.closest(".kvps-row");
+        // if (row) {
+          // addActionButtonsToElement(pre);
+        // }
 
         // KaTeX rendering for markdown
         if (latex) {
