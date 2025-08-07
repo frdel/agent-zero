@@ -81,10 +81,13 @@ class BackupService:
 
 {agent_root}/tmp/*/**
 
+# User-specific Python virtual environments
+{agent_root}/venvs/*/**
+
 # User management and global configurations (CRITICAL)
 {agent_root}/.env
-{agent_root}/users.json
-{agent_root}/.multitenancy_migrated
+{agent_root}/tmp/users.json
+{agent_root}/tmp/.multitenancy_migrated
 
 # Exclude system/cache files that shouldn't be backed up
 !{agent_root}/**/__pycache__/**
