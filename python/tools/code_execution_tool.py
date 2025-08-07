@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import shlex
 import time
 from python.helpers.tool import Tool, Response
-from python.helpers import files, rfc_exchange
+from python.helpers import rfc_exchange
 from python.helpers.print_style import PrintStyle
 from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
@@ -80,6 +80,26 @@ class CodeExecution(Tool):
     async def after_execution(self, response, **kwargs):
         self.agent.hist_add_tool_result(self.name, response.message)
 
+    async def get_user_execution_context(self):
+        """Get execution context for current user"""
+        try:
+            from python.helpers.user_management import get_current_user
+            current_user = get_current_user()
+            return {
+                "system_username": current_user.system_username,
+                "sudo_commands": current_user.sudo_commands,
+                "is_admin": current_user.is_admin,
+                "venv_path": current_user.venv_path if current_user.venv_created else None
+            }
+        except Exception:
+            # Fallback if no user context available
+            return {
+                "system_username": None,
+                "sudo_commands": [],
+                "is_admin": False,
+                "venv_path": None
+            }
+
     async def prepare_state(self, reset=False, session=None):
         self.state = self.agent.get_data("_cet_state")
         if not self.state or reset:
@@ -112,6 +132,9 @@ class CodeExecution(Tool):
 
             # initialize local or remote interactive shell interface for session 0 if needed
             if 0 not in shells:
+                # Get user execution context for privilege separation
+                user_context = await self.get_user_execution_context()
+
                 if self.agent.config.code_exec_ssh_enabled:
                     pswd = (
                         self.agent.config.code_exec_ssh_pass
@@ -126,10 +149,18 @@ class CodeExecution(Tool):
                         pswd,
                     )
                 else:
+                    # Create local shell with user context
                     shell = LocalInteractiveSession()
+                    # Store user context for later use
+                    shell.user_context = user_context
 
                 shells[0] = shell
                 await shell.connect()
+
+                # Activate user's virtual environment after connection
+                if user_context.get("venv_path") and not user_context.get("is_admin"):
+                    venv_activate_cmd = f"source {user_context['venv_path']}/bin/activate"
+                    shell.send_command(venv_activate_cmd)
 
             self.state = State(shells=shells, docker=docker)
         self.agent.set_data("_cet_state", self.state)
