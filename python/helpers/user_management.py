@@ -39,9 +39,13 @@ class DefaultSudoCommands:
     @staticmethod
     def get_default_commands() -> List[str]:
         """Get current default commands (from admin settings or fallback)"""
-        # For now, return hardcoded defaults
-        # Later will be enhanced to read from admin settings
-        return DefaultSudoCommands.DEFAULT_COMMANDS.copy()
+        try:
+            # Try to get from admin settings via AdminSudoManager
+            manager = get_admin_sudo_manager()
+            return manager.get_global_default_commands()
+        except Exception:
+            # Fallback to hardcoded defaults if admin settings not available
+            return DefaultSudoCommands.DEFAULT_COMMANDS.copy()
 
     @staticmethod
     def validate_sudo_command(command: str) -> bool:
@@ -552,34 +556,59 @@ class UserManager:
         try:
             # Create sudoers entry file
             sudoers_file = f"/etc/sudoers.d/a0-{username}"
+            temp_file = f"/tmp/sudoers-{username}"
+
+                        # Generate proper sudoers content - each command on separate line
             sudoers_content = f"# Agent Zero sudo commands for user {username}\n"
-            sudoers_content += f"{system_username} ALL=(ALL) NOPASSWD: "
 
-            # Add each whitelisted command
-            escaped_commands = []
             for cmd in user.sudo_commands:
-                # Escape command for sudoers format
-                escaped_cmd = cmd.replace('"', '\\"')
-                escaped_commands.append(f'"{escaped_cmd}"')
+                # Convert command to proper sudoers format
+                if " " in cmd:
+                    # Commands with arguments: find full path dynamically
+                    parts = cmd.split(" ", 1)
+                    base_cmd = parts[0]
+                    args = parts[1] if len(parts) > 1 else ""
 
-            sudoers_content += ", ".join(escaped_commands)
-            sudoers_content += "\n"
+                    # Use 'which' to find the actual full path
+                    full_cmd = self._find_command_path(base_cmd)
+                    if full_cmd:
+                        if args:
+                            sudoers_content += f"{system_username} ALL=(ALL) NOPASSWD: {full_cmd} {args}\n"
+                        else:
+                            sudoers_content += f"{system_username} ALL=(ALL) NOPASSWD: {full_cmd}\n"
+                    else:
+                        print(f"⚠️ Warning: Command '{base_cmd}' not found, skipping")
+                else:
+                    # Single command without arguments
+                    full_cmd = self._find_command_path(cmd)
+                    if full_cmd:
+                        sudoers_content += f"{system_username} ALL=(ALL) NOPASSWD: {full_cmd}\n"
+                    else:
+                        print(f"⚠️ Warning: Command '{cmd}' not found, skipping")
 
-            # Write sudoers file
+            # Write sudoers file to temp location first
             print(f"Setting up sudoers entry for system user: {system_username}")
-            with open(f"/tmp/sudoers-{username}", 'w') as f:
+            with open(temp_file, 'w') as f:
                 f.write(sudoers_content)
 
-            # Move to sudoers directory with proper permissions
-            subprocess.run(['sudo', 'mv', f"/tmp/sudoers-{username}", sudoers_file], check=True)
-            subprocess.run(['sudo', 'chmod', '440', sudoers_file], check=True)
-            subprocess.run(['sudo', 'chown', 'root:root', sudoers_file], check=True)
-
-            # Validate sudoers syntax
-            result = subprocess.run(['sudo', 'visudo', '-c'], capture_output=True, text=True)
+            # Validate syntax BEFORE installing
+            result = subprocess.run(['visudo', '-c', '-f', temp_file], capture_output=True, text=True)
             if result.returncode != 0:
-                print(f"❌ Invalid sudoers syntax, removing file: {sudoers_file}")
-                subprocess.run(['sudo', 'rm', '-f', sudoers_file], check=True)
+                print(f"❌ Invalid sudoers syntax in generated file:")
+                print(f"   Error: {result.stderr}")
+                print(f"   Content: {sudoers_content}")
+                os.remove(temp_file)
+                return False
+
+            # Only install if syntax is valid - use direct file operations if sudo is broken
+            try:
+                subprocess.run(['sudo', 'mv', temp_file, sudoers_file], check=True)
+                subprocess.run(['sudo', 'chmod', '440', sudoers_file], check=True)
+                subprocess.run(['sudo', 'chown', 'root:root', sudoers_file], check=True)
+            except subprocess.CalledProcessError:
+                # If sudo is broken, we can't install the file safely
+                print(f"❌ Cannot install sudoers file - sudo is not working")
+                os.remove(temp_file)
                 return False
 
             print(f"✅ Sudoers entry created for '{system_username}' with {len(user.sudo_commands)} whitelisted commands")
@@ -588,6 +617,23 @@ class UserManager:
         except Exception as e:
             print(f"❌ Error setting up sudoers entry for '{username}': {e}")
             return False
+
+    def _find_command_path(self, command: str) -> str | None:
+        """Find the full path of a command using 'which'"""
+        try:
+            result = subprocess.run(['which', command], capture_output=True, text=True, check=False)
+            if result.returncode == 0:
+                return result.stdout.strip()
+            else:
+                # Fallback to common locations
+                common_paths = ['/usr/bin/', '/bin/', '/usr/local/bin/']
+                for path in common_paths:
+                    full_path = f"{path}{command}"
+                    if os.path.exists(full_path):
+                        return full_path
+                return None
+        except Exception:
+            return None
 
     def remove_sudoers_entry(self, username: str) -> bool:
         """Remove sudoers entry for a user"""
@@ -691,6 +737,211 @@ class UserManager:
         else:
             print("ℹ️  All existing users already have system usernames configured")
 
+    def migrate_users_to_system_users(self) -> None:
+        """One-time migration to create Linux system users for existing Agent Zero users"""
+        from python.helpers import files
+
+        migration_marker = os.path.join(files.get_base_dir(), "tmp", ".system_users_migrated")
+
+        # Skip if already migrated
+        if os.path.exists(migration_marker):
+            print("ℹ️  System users migration already completed")
+            return
+
+        print("🔄 Migrating existing users to system users...")
+
+        # Ensure system infrastructure is set up first
+        self.setup_system_user_infrastructure()
+
+        migrated_count = 0
+        failed_count = 0
+
+        for username, user in self.users.items():
+            if not user.system_user_created:
+                print(f"Creating system user for: {username}")
+                success = self.ensure_system_user(username)
+                if success:
+                    migrated_count += 1
+                else:
+                    failed_count += 1
+                    print(f"⚠️ Failed to create system user for: {username}")
+
+        # Create migration marker
+        os.makedirs(os.path.dirname(migration_marker), exist_ok=True)
+        with open(migration_marker, 'w') as f:
+            f.write(f"System users migration completed at: {datetime.now(timezone.utc).isoformat()}\n")
+            f.write(f"Successfully migrated: {migrated_count} users\n")
+            f.write(f"Failed migrations: {failed_count} users\n")
+
+        if migrated_count > 0:
+            print(f"✅ Successfully created system users for {migrated_count} existing users")
+        if failed_count > 0:
+            print(f"⚠️ Failed to create system users for {failed_count} users (this is normal in development environments)")
+
+        print("ℹ️  System users migration completed")
+
+    def setup_default_sudo_commands(self) -> None:
+        """Add current global default sudo commands to existing users"""
+        from python.helpers import files
+
+        migration_marker = os.path.join(files.get_base_dir(), "tmp", ".sudo_defaults_migrated")
+
+        # Skip if already migrated
+        if os.path.exists(migration_marker):
+            print("ℹ️  Sudo defaults migration already completed")
+            return
+
+        print("🔄 Migrating sudo defaults for existing users...")
+
+        try:
+            # Get admin sudo manager
+            admin_manager = get_admin_sudo_manager()
+            current_defaults = admin_manager.get_global_default_commands()
+
+            migrated_count = 0
+            for username, user in self.users.items():
+                if not user.is_admin:  # Only apply to regular users
+                    if not user.sudo_commands:  # Only if they don't have any commands yet
+                        user.sudo_commands = current_defaults.copy()
+                        migrated_count += 1
+                        print(f"   Applied {len(current_defaults)} default commands to user: {username}")
+
+            if migrated_count > 0:
+                self._save_users()
+                print(f"✅ Applied default sudo commands to {migrated_count} existing users")
+            else:
+                print("ℹ️  All existing users already have sudo commands configured")
+
+            # Create migration marker
+            os.makedirs(os.path.dirname(migration_marker), exist_ok=True)
+            with open(migration_marker, 'w') as f:
+                f.write(f"Sudo defaults migration completed at: {datetime.now(timezone.utc).isoformat()}\n")
+                f.write(f"Applied defaults to: {migrated_count} users\n")
+                f.write(f"Default commands count: {len(current_defaults)}\n")
+
+        except Exception as e:
+            print(f"⚠️ Error during sudo defaults migration: {e}")
+            print("ℹ️  This is normal if admin settings are not yet available")
+
+    def migrate_global_defaults(self) -> None:
+        """Migrate from hardcoded defaults to admin-editable defaults"""
+        from python.helpers import files
+
+        migration_marker = os.path.join(files.get_base_dir(), "tmp", ".global_defaults_migrated")
+
+        # Skip if already migrated
+        if os.path.exists(migration_marker):
+            print("ℹ️  Global defaults migration already completed")
+            return
+
+        print("🔄 Migrating to admin-editable global defaults...")
+
+        try:
+            # Initialize admin sudo manager and ensure defaults are stored
+            admin_manager = get_admin_sudo_manager()
+
+            # This will automatically store factory defaults in admin settings if not present
+            current_defaults = admin_manager.get_global_default_commands()
+
+            print(f"✅ Initialized admin-editable defaults with {len(current_defaults)} commands")
+
+            # Create migration marker
+            os.makedirs(os.path.dirname(migration_marker), exist_ok=True)
+            with open(migration_marker, 'w') as f:
+                f.write(f"Global defaults migration completed at: {datetime.now(timezone.utc).isoformat()}\n")
+                f.write(f"Initialized with {len(current_defaults)} default commands\n")
+
+        except Exception as e:
+            print(f"⚠️ Error during global defaults migration: {e}")
+            print("ℹ️  This is normal if admin settings are not yet available")
+
+        def migrate_file_permissions(self) -> None:
+        """Migrate existing file permissions to support both web app and system users"""
+        from python.helpers import files
+
+        migration_marker = os.path.join(files.get_base_dir(), "tmp", ".file_permissions_migrated")
+
+        # Skip if already migrated
+        if os.path.exists(migration_marker):
+            print("ℹ️  File permissions migration already completed")
+            return
+
+        print("🔄 Migrating file permissions for system user support...")
+
+        try:
+            base_dir = files.get_base_dir()
+            user_dirs = ['memory', 'knowledge', 'logs', 'tmp', 'venvs']
+
+            migrated_dirs = 0
+            failed_dirs = 0
+
+            for data_type in user_dirs:
+                data_dir = os.path.join(base_dir, data_type)
+                if os.path.exists(data_dir):
+                    try:
+                        # Ensure all user subdirectories have proper group permissions
+                        for item in os.listdir(data_dir):
+                            user_data_path = os.path.join(data_dir, item)
+                            if os.path.isdir(user_data_path):
+                                # Get the user for this directory
+                                user = self.get_user(item)
+                                if user and user.system_user_created:
+                                    system_username = user.system_username
+                                    if system_username and system_username != "root":
+                                        # Set ownership and permissions for system user
+                                        try:
+                                            subprocess.run([
+                                                'sudo', 'chown', '-R',
+                                                f'{system_username}:a0-users', user_data_path
+                                            ], check=False, capture_output=True)
+                                            subprocess.run([
+                                                'sudo', 'chmod', '-R', '750', user_data_path
+                                            ], check=False, capture_output=True)
+                                            migrated_dirs += 1
+                                        except Exception as e:
+                                            print(f"⚠️ Could not update permissions for {user_data_path}: {e}")
+                                            failed_dirs += 1
+
+                    except Exception as e:
+                        print(f"⚠️ Error processing directory {data_dir}: {e}")
+                        failed_dirs += 1
+
+            # Create migration marker
+            os.makedirs(os.path.dirname(migration_marker), exist_ok=True)
+            with open(migration_marker, 'w') as f:
+                f.write(f"File permissions migration completed at: {datetime.now(timezone.utc).isoformat()}\n")
+                f.write(f"Successfully updated: {migrated_dirs} directories\n")
+                f.write(f"Failed updates: {failed_dirs} directories\n")
+
+            if migrated_dirs > 0:
+                print(f"✅ Updated permissions for {migrated_dirs} user directories")
+            if failed_dirs > 0:
+                print(f"⚠️ Failed to update {failed_dirs} directories (this is normal in development environments)")
+
+            print("ℹ️  File permissions migration completed")
+
+        except Exception as e:
+            print(f"⚠️ Error during file permissions migration: {e}")
+            print("ℹ️  This is normal in environments without sudo privileges")
+
+    def run_stage6_migrations(self) -> None:
+        """Run all Stage 6 migrations for backwards compatibility"""
+        print("🔄 Running Stage 6: Migration & Backwards Compatibility...")
+
+        # Migration 1: Migrate users to system users
+        self.migrate_users_to_system_users()
+
+        # Migration 2: Set up default sudo commands for existing users
+        self.setup_default_sudo_commands()
+
+        # Migration 3: Migrate to admin-editable global defaults
+        self.migrate_global_defaults()
+
+        # Migration 4: Migrate file permissions for system user support
+        self.migrate_file_permissions()
+
+        print("✅ Stage 6 migrations completed!")
+
     def migrate_venvs_for_existing_users(self) -> None:
         """Create virtual environments for existing users who don't have them"""
         print("🔄 Migrating virtual environments for existing users...")
@@ -730,6 +981,9 @@ class UserManager:
 
         # Set up system user infrastructure
         self.setup_system_user_infrastructure()
+
+        # Run Stage 6 migrations for backwards compatibility
+        self.run_stage6_migrations()
 
         return admin_user
 
@@ -968,3 +1222,203 @@ def require_admin() -> None:
     """Raise an exception if the current user is not an admin"""
     if not is_current_user_admin():
         raise PermissionError("Admin privileges required")
+
+
+class AdminSudoManager:
+    """Manages global default sudo commands for new regular users"""
+
+    GLOBAL_SUDO_DEFAULTS_KEY = "system_sudo_default_commands"
+
+    def __init__(self):
+        self.user_manager = None  # Will be set when needed to avoid circular imports
+
+    def _get_user_manager(self):
+        """Get user manager instance, avoiding circular imports"""
+        if self.user_manager is None:
+            self.user_manager = get_user_manager()
+        return self.user_manager
+
+    def _get_admin_settings(self) -> dict:
+        """Get admin user settings where global defaults are stored"""
+        try:
+            from python.helpers.settings import get_settings
+
+            # Use admin settings directly (since global defaults are stored in admin settings)
+            # We temporarily set admin as current user to access their settings
+            current_user_backup = getattr(_thread_local, 'current_user', None)
+
+            try:
+                admin_user = self._get_user_manager().get_user("admin")
+                if admin_user:
+                    _thread_local.current_user = admin_user
+                    settings = get_settings()
+                    # Convert Settings object to plain dict for easier access
+                    settings_dict = {}
+                    for key in settings:
+                        settings_dict[key] = settings[key]
+                    return settings_dict
+                else:
+                    raise RuntimeError("Admin user not found")
+            finally:
+                # Restore original user context
+                _thread_local.current_user = current_user_backup
+
+        except Exception as e:
+            print(f"Warning: Could not get admin settings: {e}")
+            return {}
+
+    def _update_admin_settings(self, key: str, value: Any) -> bool:
+        """Update admin user settings"""
+        try:
+            from python.helpers.settings import set_settings_delta
+
+            # Temporarily set admin as current user to update their settings
+            current_user_backup = getattr(_thread_local, 'current_user', None)
+
+            try:
+                admin_user = self._get_user_manager().get_user("admin")
+                if admin_user:
+                    _thread_local.current_user = admin_user
+                    set_settings_delta({key: value})
+                    return True
+                else:
+                    raise RuntimeError("Admin user not found")
+            finally:
+                # Restore original user context
+                _thread_local.current_user = current_user_backup
+
+        except Exception as e:
+            print(f"Error updating admin settings: {e}")
+            return False
+
+    def get_global_default_commands(self) -> List[str]:
+        """Get current global default sudo commands"""
+        try:
+            admin_settings = self._get_admin_settings()
+            commands = admin_settings.get(self.GLOBAL_SUDO_DEFAULTS_KEY, [])
+
+            # If no commands in settings, use factory defaults
+            if not commands:
+                commands = DefaultSudoCommands.DEFAULT_COMMANDS.copy()
+                # Store them in admin settings for future use
+                self._update_admin_settings(self.GLOBAL_SUDO_DEFAULTS_KEY, commands)
+
+            return commands
+        except Exception as e:
+            print(f"Warning: Could not get global default commands: {e}")
+            return DefaultSudoCommands.DEFAULT_COMMANDS.copy()
+
+    def update_global_default_commands(self, commands: List[str]) -> bool:
+        """Update global default commands (admin only)"""
+        try:
+            # Validate and sanitize commands
+            sanitized_commands = DefaultSudoCommands.sanitize_command_list(commands)
+
+            if not sanitized_commands:
+                print("Error: No valid commands provided")
+                return False
+
+            # Update admin settings
+            success = self._update_admin_settings(self.GLOBAL_SUDO_DEFAULTS_KEY, sanitized_commands)
+
+            if success:
+                print(f"✅ Updated global default sudo commands ({len(sanitized_commands)} commands)")
+
+            return success
+        except Exception as e:
+            print(f"Error updating global default commands: {e}")
+            return False
+
+    def reset_to_factory_defaults(self) -> bool:
+        """Reset to hardcoded factory defaults"""
+        try:
+            factory_defaults = DefaultSudoCommands.DEFAULT_COMMANDS.copy()
+            success = self._update_admin_settings(self.GLOBAL_SUDO_DEFAULTS_KEY, factory_defaults)
+
+            if success:
+                print(f"✅ Reset to factory defaults ({len(factory_defaults)} commands)")
+
+            return success
+        except Exception as e:
+            print(f"Error resetting to factory defaults: {e}")
+            return False
+
+    def apply_defaults_to_user(self, username: str, merge: bool = True) -> bool:
+        """Apply current defaults to specific user"""
+        try:
+            user_manager = self._get_user_manager()
+            user = user_manager.get_user(username)
+
+            if not user:
+                print(f"Error: User '{username}' not found")
+                return False
+
+            if user.is_admin:
+                print(f"Info: Skipping admin user '{username}' (admins don't use sudo commands)")
+                return True
+
+            current_defaults = self.get_global_default_commands()
+
+            if merge:
+                # Merge with existing commands (union)
+                existing_commands = set(user.sudo_commands)
+                new_commands = set(current_defaults)
+                merged_commands = list(existing_commands.union(new_commands))
+            else:
+                # Replace existing commands
+                merged_commands = current_defaults.copy()
+
+            # Update user's sudo commands
+            success = user_manager.update_user_sudo_commands(username, merged_commands)
+
+            if success:
+                action = "merged with" if merge else "replaced"
+                print(f"✅ Applied default commands to user '{username}' ({action} existing)")
+
+            return success
+        except Exception as e:
+            print(f"Error applying defaults to user '{username}': {e}")
+            return False
+
+    def apply_defaults_to_all_users(self, merge: bool = True) -> bool:
+        """Apply current defaults to all users (admin operation)"""
+        try:
+            user_manager = self._get_user_manager()
+            users = user_manager.list_users()
+
+            success_count = 0
+            total_users = 0
+
+            for user in users:
+                if not user.is_admin:  # Skip admin users
+                    total_users += 1
+                    if self.apply_defaults_to_user(user.username, merge):
+                        success_count += 1
+
+            if success_count == total_users:
+                action = "merged with" if merge else "replaced"
+                print(f"✅ Applied default commands to all {total_users} regular users ({action} existing)")
+                return True
+            else:
+                print(f"⚠️ Applied defaults to {success_count}/{total_users} users (some failures)")
+                return False
+
+        except Exception as e:
+            print(f"Error applying defaults to all users: {e}")
+            return False
+
+    def get_factory_defaults(self) -> List[str]:
+        """Get the hardcoded factory default commands"""
+        return DefaultSudoCommands.DEFAULT_COMMANDS.copy()
+
+
+# Global admin sudo manager instance
+_admin_sudo_manager: Optional[AdminSudoManager] = None
+
+
+def get_admin_sudo_manager() -> AdminSudoManager:
+    """Get the global admin sudo manager instance"""
+    global _admin_sudo_manager
+    if _admin_sudo_manager is None:
+        _admin_sudo_manager = AdminSudoManager()
+    return _admin_sudo_manager
