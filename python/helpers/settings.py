@@ -97,6 +97,9 @@ class Settings(TypedDict):
     mcp_server_enabled: bool
     mcp_server_token: str
 
+    a2a_server_enabled: bool
+    
+
 
 class PartialSettings(Settings, total=False):
     pass
@@ -531,25 +534,6 @@ def convert_out(settings: Settings) -> SettingsOutput:
             ),
         }
     )
-
-    # -------- A2A Section --------
-    a2a_fields: list[SettingsField] = [
-        {
-            "id": "show_a2a_connection",
-            "title": "Show A2A connection info",
-            "description": "Display the URL (including token) other agents can use to connect via FastA2A.",
-            "type": "button",
-            "value": "Show",
-        }
-    ]
-
-    a2a_section: SettingsSection = {
-        "id": "a2a_server",
-        "title": "A2A Connection",
-        "description": "Share this connection string with other agents.",
-        "fields": a2a_fields,
-        "tab": "external",
-    }
 
     if runtime.is_dockerized():
         auth_fields.append(
@@ -1055,7 +1039,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "mcp_server_enabled",
             "title": "Enable A0 MCP Server",
-            "description": "Expose Agent Zero as an SSE MCP server. This will make this A0 instance available to MCP clients.",
+            "description": "Expose Agent Zero as an SSE/HTTP MCP server. This will make this A0 instance available to MCP clients.",
             "type": "switch",
             "value": settings["mcp_server_enabled"],
         }
@@ -1079,6 +1063,28 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "fields": mcp_server_fields,
         "tab": "mcp",
     }
+
+    # -------- A2A Section --------
+    a2a_fields: list[SettingsField] = []
+
+    a2a_fields.append(
+        {
+            "id": "a2a_server_enabled",
+            "title": "Enable A2A server",
+            "description": "Expose Agent Zero as A2A server. This allows other agents to connect to A0 via A2A protocol.",
+            "type": "switch",
+            "value": settings["a2a_server_enabled"],
+        }
+    )
+
+    a2a_section: SettingsSection = {
+        "id": "a2a_server",
+        "title": "A0 A2A Server",
+        "description": "Agent Zero can be exposed as an A2A server. See <a href=\"javascript:openModal('settings/a2a/a2a-connection.html')\">connection example</a>.",
+        "fields": a2a_fields,
+        "tab": "mcp",
+    }
+
 
     # External API section
     external_api_fields: list[SettingsField] = []
@@ -1148,9 +1154,9 @@ def convert_out(settings: Settings) -> SettingsOutput:
             speech_section,
             api_keys_section,
             auth_section,
-            a2a_section,
             mcp_client_section,
             mcp_server_section,
+            a2a_section,
             external_api_section,
             backup_section,
             dev_section,
@@ -1302,7 +1308,7 @@ def get_default_settings() -> Settings:
     return Settings(
         version=_get_version(),
         chat_model_provider="openrouter",
-        chat_model_name="openai/gpt-4.1",
+        chat_model_name="openai/gpt-5",
         chat_model_api_base="",
         chat_model_kwargs={"temperature": "0"},
         chat_model_ctx_length=100000,
@@ -1312,7 +1318,7 @@ def get_default_settings() -> Settings:
         chat_model_rl_input=0,
         chat_model_rl_output=0,
         util_model_provider="openrouter",
-        util_model_name="openai/gpt-4.1-mini",
+        util_model_name="openai/gpt-5-mini",
         util_model_api_base="",
         util_model_ctx_length=100000,
         util_model_ctx_input=0.7,
@@ -1327,7 +1333,7 @@ def get_default_settings() -> Settings:
         embed_model_rl_requests=0,
         embed_model_rl_input=0,
         browser_model_provider="openrouter",
-        browser_model_name="openai/gpt-4.1",
+        browser_model_name="openai/gpt-5",
         browser_model_api_base="",
         browser_model_vision=True,
         browser_model_rl_requests=0,
@@ -1370,6 +1376,7 @@ def get_default_settings() -> Settings:
         mcp_client_tool_timeout=120,
         mcp_server_enabled=False,
         mcp_server_token=create_auth_token(),
+        a2a_server_enabled=False,
     )
 
 

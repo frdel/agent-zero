@@ -351,6 +351,21 @@ class DynamicA2AProxy:
             })
             return
 
+        from python.helpers import settings
+        cfg = settings.get_settings()
+        if not cfg["a2a_server_enabled"]:
+            response = b'HTTP/1.1 403 Forbidden\r\n\r\nA2A server is disabled'
+            await send({
+                'type': 'http.response.start',
+                'status': 403,
+                'headers': [[b'content-type', b'text/plain']],
+            })
+            await send({
+                'type': 'http.response.body',
+                'body': response,
+            })
+            return
+
         # Check if reconfiguration is needed
         if self._reconfigure_needed:
             try:
@@ -410,11 +425,15 @@ class DynamicA2AProxy:
             path = path[4:]  # Remove '/a2a' prefix
 
         # Check if path matches token pattern /t-{token}/
-        if path.startswith('/t-') and '/' in path[3:]:
+        if path.startswith('/t-'):
             # Extract token from path
-            path_parts = path[3:].split('/', 1)  # Remove '/t-' prefix
-            request_token = path_parts[0]
-            remaining_path = '/' + path_parts[1] if len(path_parts) > 1 else '/'
+            if '/' in path[3:]:
+                path_parts = path[3:].split('/', 1)  # Remove '/t-' prefix
+                request_token = path_parts[0]
+                remaining_path = '/' + path_parts[1] if len(path_parts) > 1 else '/'
+            else:
+                request_token = path[3:]
+                remaining_path = '/'
 
             # Validate token
             cfg = settings.get_settings()
