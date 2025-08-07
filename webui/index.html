@@ -622,10 +622,12 @@
                                                 </template>
 
 
-                                                <!-- Password field -->
+                                                                                                <!-- Password field -->
                                                 <template x-if="field.type === 'password'">
                                                     <input type="password" :class="field.classes" :value="field.value"
                                                         :readonly="field.readonly === true"
+                                                        :id="field.id"
+                                                        autocomplete="off"
                                                         @input="field.value = $event.target.value">
                                                 </template>
 
