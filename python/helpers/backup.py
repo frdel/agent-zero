@@ -84,6 +84,7 @@ class BackupService:
 # User management and global configurations (CRITICAL)
 {agent_root}/.env
 {agent_root}/users.json
+{agent_root}/.multitenancy_migrated
 
 # Exclude system/cache files that shouldn't be backed up
 !{agent_root}/**/__pycache__/**

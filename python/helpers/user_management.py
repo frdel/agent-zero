@@ -49,6 +49,9 @@ class User:
 class UserManager:
     """Manages user authentication and user data persistence"""
 
+    # Class-level flag to ensure migration only runs once across all instances
+    _global_migration_checked = False
+
     def __init__(self, user_file: Optional[str] = None):
         self.user_file = user_file or files.get_abs_path("users.json")
         self.users: Dict[str, User] = {}
@@ -244,6 +247,12 @@ class UserManager:
 
     def migrate_global_to_admin_if_needed(self) -> None:
         """One-time migration of global data to admin user directories"""
+        # Skip if already checked globally (prevent multiple calls during startup)
+        if UserManager._global_migration_checked:
+            return
+
+        UserManager._global_migration_checked = True
+
         from python.helpers import files
 
         base_dir = files.get_base_dir()
