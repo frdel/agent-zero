@@ -27,6 +27,7 @@ class SSHInteractiveSession:
         self.full_output = b""
         self.last_command = b""
         self.trimmed_command_length = 0  # Initialize trimmed_command_length
+        self.is_running = False
 
     async def connect(self):
         # try 3 times with wait and then except
@@ -82,6 +83,8 @@ class SSHInteractiveSession:
         self.last_command = command.encode()
         self.trimmed_command_length = 0
         self.shell.send(self.last_command)
+        
+        self.is_running = True
 
     async def read_output(
         self, timeout: float = 0, reset_full_output: bool = False

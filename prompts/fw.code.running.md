@@ -1,0 +1,1 @@
+Terminal session {{session}} is still running. Decide wait for more 'output' or 'reset' base on context.

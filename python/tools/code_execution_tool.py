@@ -21,6 +21,20 @@ class State:
 
 class CodeExecution(Tool):
 
+    # Common shell prompt regex patterns (add more as needed)
+    prompt_patterns = [
+        re.compile(r"\\(venv\\).+[$#] ?$"),  # (venv) ...$ or (venv) ...#
+        re.compile(r"root@[^:]+:[^#]+# ?$"),  # root@container:~#
+        re.compile(r"[a-zA-Z0-9_.-]+@[^:]+:[^$#]+[$#] ?$"),  # user@host:~$
+    ]
+    # potential dialog detection
+    dialog_patterns = [
+        re.compile(r"Y/N", re.IGNORECASE),  # Y/N anywhere in line
+        re.compile(r"yes/no", re.IGNORECASE),  # yes/no anywhere in line
+        re.compile(r":\s*$"),  # line ending with colon
+        re.compile(r"\?\s*$"),  # line ending with question mark
+    ]
+
     async def execute(self, **kwargs):
 
         await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
@@ -31,6 +45,7 @@ class CodeExecution(Tool):
 
         runtime = self.args.get("runtime", "").lower().strip()
         session = int(self.args.get("session", 0))
+        self.allow_running = bool(self.args.get("allow_running", False))
 
         if runtime == "python":
             response = await self.execute_python_code(
@@ -157,6 +172,12 @@ class CodeExecution(Tool):
     ):
 
         await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
+
+        # Check if session is running and handle it
+        if not self.allow_running:
+            if response := await self.handle_running_session(session):
+                return response
+        
         # try again on lost connection
         for i in range(2):
             try:
@@ -221,20 +242,6 @@ class CodeExecution(Tool):
         sleep_time=0.1,
         prefix="",
     ):
-        # Common shell prompt regex patterns (add more as needed)
-        prompt_patterns = [
-            re.compile(r"\\(venv\\).+[$#] ?$"),  # (venv) ...$ or (venv) ...#
-            re.compile(r"root@[^:]+:[^#]+# ?$"),  # root@container:~#
-            re.compile(r"[a-zA-Z0-9_.-]+@[^:]+:[^$#]+[$#] ?$"),  # user@host:~$
-        ]
-
-        # potential dialog detection
-        dialog_patterns = [
-            re.compile(r"Y/N", re.IGNORECASE),  # Y/N anywhere in line
-            re.compile(r"yes/no", re.IGNORECASE),  # yes/no anywhere in line
-            re.compile(r":\s*$"),  # line ending with colon
-            re.compile(r"\?\s*$"),  # line ending with question mark
-        ]
 
         start_time = time.time()
         last_output_time = start_time
@@ -271,7 +278,7 @@ class CodeExecution(Tool):
                 )
                 last_lines.reverse()
                 for idx, line in enumerate(last_lines):
-                    for pat in prompt_patterns:
+                    for pat in self.prompt_patterns:
                         if pat.search(line.strip()):
                             PrintStyle.info(
                                 "Detected shell prompt, returning output early."
@@ -281,6 +288,7 @@ class CodeExecution(Tool):
                                 "\n".join(last_lines), idx + 1, True
                             )
                             self.log.update(heading=heading)
+                            self.mark_session_idle(session)
                             return truncated_output
 
             # Check for max execution time
@@ -327,7 +335,7 @@ class CodeExecution(Tool):
                         truncated_output.splitlines()[-2:] if truncated_output else []
                     )
                     for line in last_lines:
-                        for pat in dialog_patterns:
+                        for pat in self.dialog_patterns:
                             if pat.search(line.strip()):
                                 PrintStyle.info(
                                     "Detected dialog prompt, returning output early."
@@ -349,6 +357,63 @@ class CodeExecution(Tool):
                                     content=prefix + response, heading=heading
                                 )
                                 return response
+
+    async def handle_running_session(
+        self,
+        session=0,
+        reset_full_output=False, 
+        prefix=""
+    ):
+        if not (
+            session in self.state.shells
+            and getattr(self.state.shells[session], "is_running", False)
+        ):
+            return None
+        
+        full_output, _ = await self.state.shells[session].read_output(
+            timeout=1, reset_full_output=reset_full_output
+        )
+        truncated_output = self.fix_full_output(full_output)
+        heading = self.get_heading_from_output(truncated_output, 0)
+
+        last_lines = (
+            truncated_output.splitlines()[-3:] if truncated_output else []
+        )
+        last_lines.reverse()
+        for idx, line in enumerate(last_lines):
+            for pat in self.prompt_patterns:
+                if pat.search(line.strip()):
+                    PrintStyle.info(
+                        "Detected shell prompt, returning output early."
+                    )
+                    self.mark_session_idle(session)
+                    return None
+
+        has_dialog = False 
+        for line in last_lines:
+            for pat in self.dialog_patterns:
+                if pat.search(line.strip()):
+                    has_dialog = True
+                    break
+            if has_dialog:
+                break
+
+        if has_dialog:
+            sys_info = self.agent.read_prompt("fw.code.pause_dialog.md", timeout=1)       
+        else:
+            sys_info = self.agent.read_prompt("fw.code.running.md", session=session)
+
+        response = self.agent.read_prompt("fw.code.info.md", info=sys_info)
+        if truncated_output:
+            response = truncated_output + "\n\n" + response
+        PrintStyle(font_color="#FFA500", bold=True).print(response)
+        self.log.update(content=prefix + response, heading=heading)
+        return response
+    
+    def mark_session_idle(self, session: int = 0):
+        # Mark session as idle - command finished
+        if session in self.state.shells:
+            self.state.shells[session].is_running = False
 
     async def reset_terminal(self, session=0, reason: str | None = None):
         # Print the reason for the reset to the console if provided
