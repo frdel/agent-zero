@@ -11,9 +11,28 @@ class McpServersApply(ApiHandler):
     async def process(self, input: dict[Any, Any], request: Request) -> dict[Any, Any] | Response:
         mcp_servers = input["mcp_servers"]
         try:
-            # MCPConfig.update(mcp_servers) # done in settings automatically
-            set_settings_delta({"mcp_servers": "[]"}) # to force reinitialization
-            set_settings_delta({"mcp_servers": mcp_servers})
+            # Ensure MCP config is updated in admin settings (global config)
+            from python.helpers.user_management import get_user_manager, set_current_user, get_current_user
+
+            user_manager = get_user_manager()
+            admin_user = user_manager.get_user("admin")
+            original_user = None
+
+            try:
+                original_user = get_current_user()
+            except RuntimeError:
+                pass
+
+            try:
+                if admin_user:
+                    set_current_user(admin_user)
+
+                # MCPConfig.update(mcp_servers)  # done in settings automatically
+                set_settings_delta({"mcp_servers": "[]"})  # to force reinitialization
+                set_settings_delta({"mcp_servers": mcp_servers})
+            finally:
+                # Restore original user context
+                set_current_user(original_user)
 
             time.sleep(1) # wait at least a second
             # MCPConfig.wait_for_lock() # wait until config lock is released

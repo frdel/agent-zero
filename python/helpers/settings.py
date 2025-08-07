@@ -1328,6 +1328,29 @@ def get_default_settings() -> Settings:
     )
 
 
+def _get_admin_settings() -> Settings:
+    """Get settings from admin user context (for global configuration)"""
+    from python.helpers.user_management import get_user_manager, set_current_user, get_current_user
+
+    user_manager = get_user_manager()
+    admin_user = user_manager.get_user("admin")
+    original_user = None
+
+    try:
+        original_user = get_current_user()
+    except RuntimeError:
+        # No current user, that's fine
+        pass
+
+    try:
+        if admin_user:
+            set_current_user(admin_user)
+        return get_settings()
+    finally:
+        # Restore original user context
+        set_current_user(original_user)
+
+
 def _apply_settings(previous: Settings | None):
     """Apply runtime effects of settings changes.
 
@@ -1364,8 +1387,12 @@ def _apply_settings(previous: Settings | None):
 
         memory_reload()
 
-    # update mcp settings if necessary
-    if not previous or current_settings["mcp_servers"] != previous["mcp_servers"]:
+    # update mcp settings if necessary (MCP config should be global, use admin settings)
+    # Get admin settings for MCP configuration since MCP servers are global infrastructure
+    admin_mcp_settings = _get_admin_settings()
+    admin_previous_mcp = previous.get("mcp_servers") if previous else None
+
+    if not previous or admin_mcp_settings["mcp_servers"] != admin_previous_mcp:
         from python.helpers.mcp_handler import MCPConfig
 
         async def update_mcp_settings(mcp_servers: str):
@@ -1408,7 +1435,7 @@ def _apply_settings(previous: Settings | None):
                 type="info", content="Finished updating MCP settings.", temp=True
             )
 
-        defer.DeferredTask().start_task(update_mcp_settings, config.mcp_servers)
+        defer.DeferredTask().start_task(update_mcp_settings, admin_mcp_settings["mcp_servers"])
 
     # update token in mcp server
     current_token = create_auth_token()
