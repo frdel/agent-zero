@@ -20,15 +20,24 @@ class AuthCheck(ApiHandler):
         """Simple endpoint to check if user is authenticated"""
         try:
             # If we get here, the user is authenticated (requires_auth passed)
-            from python.helpers.user_management import get_current_user
-            user = get_current_user()
+            from flask import session
+            from python.helpers.user_management import get_user_manager
 
-            return {
-                "authenticated": True,
-                "user": {
-                    "username": user.username,
-                    "is_admin": user.is_admin
-                }
-            }
+            username = session.get('username')
+            # Removed debug output and unused is_admin
+
+            if username:
+                user_manager = get_user_manager()
+                user = user_manager.users.get(username)
+                if user:
+                    return {
+                        "authenticated": True,
+                        "user": {
+                            "username": user.username,
+                            "is_admin": user.is_admin
+                        }
+                    }
+
+            return {"authenticated": False, "error": "No valid session"}
         except Exception as e:
             return {"authenticated": False, "error": str(e)}

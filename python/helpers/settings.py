@@ -1123,8 +1123,16 @@ def get_settings() -> Settings:
 
     # Get current user for cache key
     try:
-        from python.helpers.user_management import get_current_username
-        cache_key = get_current_username()
+        # Try Flask session first (works across threads)
+        try:
+            from flask import session
+            cache_key = session.get('username')
+            if not cache_key:
+                raise RuntimeError("No session username")
+        except (RuntimeError, ImportError):
+            # Fallback to thread-local storage
+            from python.helpers.user_management import get_current_username
+            cache_key = get_current_username()
     except (ImportError, RuntimeError):
         # Fallback for no user context
         cache_key = "default"
@@ -1144,8 +1152,16 @@ def set_settings(settings: Settings, apply: bool = True):
 
     # Get current user for cache key
     try:
-        from python.helpers.user_management import get_current_username
-        cache_key = get_current_username()
+        # Try Flask session first (works across threads)
+        try:
+            from flask import session
+            cache_key = session.get('username')
+            if not cache_key:
+                raise RuntimeError("No session username")
+        except (RuntimeError, ImportError):
+            # Fallback to thread-local storage
+            from python.helpers.user_management import get_current_username
+            cache_key = get_current_username()
     except (ImportError, RuntimeError):
         # Fallback for no user context
         cache_key = "default"
@@ -1337,7 +1353,19 @@ def _get_admin_settings() -> Settings:
     original_user = None
 
     try:
-        original_user = get_current_user()
+        # Try Flask session first (works across threads)
+        try:
+            from flask import session
+            from python.helpers.user_management import get_user_manager
+            username = session.get('username')
+            if username:
+                user_manager_temp = get_user_manager()
+                original_user = user_manager_temp.get_user(username)
+            else:
+                raise RuntimeError("No session username")
+        except (RuntimeError, ImportError):
+            # Fallback to thread-local storage
+            original_user = get_current_user()
     except RuntimeError:
         # No current user, that's fine
         pass

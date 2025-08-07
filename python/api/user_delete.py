@@ -1,6 +1,7 @@
 from python.helpers.api import ApiHandler, Request, Response
 from python.helpers.user_management import get_user_manager
-from flask import session
+from python.helpers.authz import is_request_admin
+import json
 
 
 class UserDelete(ApiHandler):
@@ -19,35 +20,16 @@ class UserDelete(ApiHandler):
 
     async def process(self, input: dict, request: Request) -> dict | Response:
         try:
-            # Check if current user is admin
-            if not session.get('is_admin', False):
-                return Response("Admin privileges required", status=403)
+            if not is_request_admin():
+                return Response(json.dumps({"error": "Admin privileges required"}), status=403, mimetype="application/json")
 
-            # Validate input
             username = input.get('username')
-
             if not username:
                 return {"error": "Username is required"}
 
-            # Cannot delete yourself
-            if username == session.get('username'):
-                return {"error": "Cannot delete your own account"}
-
-            # Delete user
             user_manager = get_user_manager()
-            try:
-                success = user_manager.delete_user(username)
-
-                if success:
-                    return {
-                        'success': True,
-                        'message': f'User "{username}" deleted successfully'
-                    }
-                else:
-                    return {"error": f'User "{username}" not found'}
-
-            except ValueError as e:
-                return {"error": str(e)}
-
+            if user_manager.delete_user(username):
+                return {"success": True, "message": f"User '{username}' deleted successfully"}
+            return {"error": f"Failed to delete user '{username}'"}
         except Exception as e:
             return {"error": f"Failed to delete user: {str(e)}"}

@@ -1043,7 +1043,17 @@ class MCPClientRemote(MCPClientBase):
         original_user = None
 
         try:
-            original_user = get_current_user()
+            # Try Flask session first (works across threads)
+            try:
+                from flask import session
+                username = session.get('username')
+                if username:
+                    original_user = user_manager.get_user(username)
+                else:
+                    raise RuntimeError("No session username")
+            except (RuntimeError, ImportError):
+                # Fallback to thread-local storage
+                original_user = get_current_user()
         except RuntimeError:
             # No current user, that's fine
             pass

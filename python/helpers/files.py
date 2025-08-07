@@ -361,9 +361,18 @@ def make_dirs(relative_path: str):
 
 def get_abs_path(*relative_paths):
     "Convert relative paths to absolute paths based on the base directory."
-    # Check if this is a user-specific data directory
-    if relative_paths and _is_user_data_directory(relative_paths[0]):
-        return _get_user_specific_path(*relative_paths)
+    # Normalize first path segment to support inputs like "tmp/settings.json"
+    if relative_paths:
+        first = relative_paths[0]
+        # If first is a composite path, split it and check the first component
+        if isinstance(first, str) and ("/" in first or os.sep in first):
+            parts = first.split(os.sep)
+            if parts and _is_user_data_directory(parts[0]):
+                combined = tuple([parts[0]] + parts[1:] + list(relative_paths[1:]))
+                return _get_user_specific_path(*combined)
+        # Regular check for user-specific directories
+        if _is_user_data_directory(first):
+            return _get_user_specific_path(*relative_paths)
     return os.path.join(get_base_dir(), *relative_paths)
 
 
@@ -376,8 +385,9 @@ def _is_user_data_directory(path: str) -> bool:
 def _get_user_specific_path(*relative_paths) -> str:
     """Get user-specific path for data directories"""
     try:
-        from python.helpers.user_management import get_current_username
-        username = get_current_username()
+        from python.helpers.user_management import get_user_manager
+        user_manager = get_user_manager()
+        username = user_manager.get_current_username_safe()
         # Insert username after the first directory component
         if len(relative_paths) == 1:
             user_path = os.path.join(get_base_dir(), relative_paths[0], username)

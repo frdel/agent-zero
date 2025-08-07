@@ -15,7 +15,7 @@
     <div x-show="!isAuthenticated" x-cloak class="auth-section">
         <h3>Admin Authentication Required</h3>
         <p>Please enter your admin credentials to manage users.</p>
-        <form @submit.prevent="authenticate()">
+        <form @submit.prevent="authenticateAdmin()">
             <div class="form-row">
                 <div class="form-group">
                     <label for="adminUsername">Username</label>
@@ -254,6 +254,9 @@ function userManagementData() {
             password: ''
         },
 
+        // Track if current modal session is using temporary admin elevation
+        usingTemporaryAdmin: false,
+
         // Password change form state
         passwordForm: {
             username: '',
@@ -295,48 +298,62 @@ function userManagementData() {
                 if (response.ok) {
                     const data = await response.json();
                     if (data.authenticated === true && data.user && data.user.is_admin) {
-                        // User is authenticated and is admin - skip modal auth
                         this.isAuthenticated = true;
-                        this.loadUsers();
-                    } else {
-                        // Not authenticated or not admin - require modal auth
+                        this.authForm.username = data.user.username;
+                        this.showAuthForm = false;
+                        await this.loadUsers();
+                        return;
+                    } else if (data.authenticated === true && data.user && !data.user.is_admin) {
                         this.isAuthenticated = false;
+                        this.showAuthForm = true;
+                        return;
+                    } else {
                     }
+                } else if (response.status === 401) {
                 } else {
-                    // Auth check failed - require modal auth
-                    this.isAuthenticated = false;
                 }
             } catch (error) {
-                // Network error - require modal auth
-                this.isAuthenticated = false;
             }
+
+            // If not authenticated as admin, show auth form
+            this.isAuthenticated = false;
+            this.showAuthForm = true;
         },
 
-        async authenticate() {
+        async authenticateAdmin() {
+            // If already authenticated, don't re-authenticate
+            if (this.isAuthenticated) {
+                return;
+            }
+
             this.loading = true;
             this.clearMessages();
 
             try {
-                                const response = await fetch('/user_authenticate', {
+                const response = await fetch('/user_authenticate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
                         username: this.authForm.username,
-                        password: this.authForm.password
+                        password: this.authForm.password,
+                        temporary: true  // CRITICAL: Prevents session corruption!
                     })
                 });
 
                 const data = await response.json();
 
                 if (response.ok && data.success) {
+                    if (data.temporary) {
+                        this.usingTemporaryAdmin = true;
+                    }
                     this.isAuthenticated = true;
                     this.success = data.message;
                     this.authForm.username = '';
                     this.authForm.password = '';
                     // Load users after successful authentication
-                    this.loadUsers();
+                    await this.loadUsers();
                 } else {
                     this.error = data.error || 'Authentication failed';
                 }
@@ -347,7 +364,7 @@ function userManagementData() {
             }
         },
 
-                async loadUsers() {
+        async loadUsers() {
             this.loading = true;
             this.clearMessages();
 
@@ -356,13 +373,14 @@ function userManagementData() {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        ...(this.usingTemporaryAdmin ? { 'X-Temporary-Admin': '1' } : {}),
                     },
                     body: JSON.stringify({})
                 });
 
                 const data = await response.json();
 
-                if (response.ok && data.users) {
+                if (response.ok && data.success) {
                     this.users = data.users;
                 } else {
                     this.error = data.error || 'Failed to load users';

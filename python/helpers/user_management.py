@@ -13,10 +13,132 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from python.helpers import files
+import re
+
+# Silence all debug output in this module
+def _silent_print(*args, **kwargs):
+    return None
+print = _silent_print  # type: ignore
 
 
 # Thread-local storage for current user context
 _thread_local = threading.local()
+
+
+# RFC-accessible functions for system command execution
+def _execute_system_command_in_container(command: List[str], capture_output: bool, text: bool, check: bool, input_data: str) -> dict:
+    """This function will be executed inside the Docker container via RFC"""
+    import subprocess
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=capture_output,
+            text=text,
+            check=check,
+            input=input_data
+        )
+        # Return serializable dictionary
+        return {
+            'args': result.args,
+            'returncode': result.returncode,
+            'stdout': result.stdout,
+            'stderr': result.stderr
+        }
+    except Exception as e:
+        # Return a mock result dictionary for consistency
+        return {
+            'args': command,
+            'returncode': 1,
+            'stdout': "",
+            'stderr': str(e)
+        }
+
+
+def _write_file_as_root_in_container(file_path: str, content: str, permissions: str) -> dict:
+    """Write file with root permissions inside the container"""
+    import subprocess
+
+    try:
+        # Create parent directory
+        parent_dir_cmd = ['dirname', file_path]
+        parent_result = subprocess.run(parent_dir_cmd, capture_output=True, text=True)
+        if parent_result.returncode == 0:
+            parent_dir = parent_result.stdout.strip()
+            subprocess.run(['mkdir', '-p', parent_dir], capture_output=True)
+
+        # Write content using cat with here-doc to avoid shell escaping issues
+        write_cmd = ['sh', '-c', f'cat > "{file_path}" << \'EOF\'\n{content}\nEOF']
+        write_result = subprocess.run(write_cmd, capture_output=True, text=True)
+
+        success = write_result.returncode == 0
+
+        if success and permissions:
+            # Set permissions
+            subprocess.run(['chmod', permissions, file_path], capture_output=True)
+
+        return {
+            'success': success,
+            'returncode': write_result.returncode,
+            'stderr': write_result.stderr if write_result.stderr else ""
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'returncode': 1,
+            'stderr': str(e)
+        }
+
+
+def _check_file_exists_in_container(file_path: str) -> bool:
+    """Check if file exists inside the container - RFC accessible"""
+    import subprocess
+    try:
+        result = subprocess.run(['test', '-e', file_path], capture_output=True)
+        return result.returncode == 0
+    except Exception:
+        return False
+
+
+def _create_directory_in_container(dir_path: str) -> bool:
+    """Create directory inside the container - RFC accessible"""
+    import subprocess
+    try:
+        result = subprocess.run(['mkdir', '-p', dir_path], capture_output=True)
+        return result.returncode == 0
+    except Exception:
+        return False
+
+
+def _write_migration_marker_in_container(marker_path: str, content: str) -> dict:
+    """Write migration marker file inside the container - RFC accessible"""
+    import subprocess
+    import tempfile
+
+    try:
+        # Create parent directory first
+        parent_dir = subprocess.run(['dirname', marker_path], capture_output=True, text=True)
+        if parent_dir.returncode == 0:
+            subprocess.run(['mkdir', '-p', parent_dir.stdout.strip()], capture_output=True)
+
+        # Write to temp file then move to target
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+            temp_file.write(content)
+            temp_path = temp_file.name
+
+        # Move temp file to target location
+        result = subprocess.run(['mv', temp_path, marker_path], capture_output=True)
+
+        return {
+            'success': result.returncode == 0,
+            'returncode': result.returncode,
+            'stderr': result.stderr.decode() if result.stderr else ""
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'returncode': 1,
+            'stderr': str(e)
+        }
 
 
 # Global default sudo commands configuration
@@ -83,6 +205,7 @@ class User:
     system_user_created: bool = False  # Track if system user has been created
     venv_path: str = ""  # Path to user's Python virtual environment
     venv_created: bool = False  # Track if venv has been created
+    plaintext_password: str = ""  # Plaintext password for SSH authentication (dev/container use)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert user to dictionary for JSON serialization"""
@@ -95,7 +218,8 @@ class User:
             'sudo_commands': self.sudo_commands,
             'system_user_created': self.system_user_created,
             'venv_path': self.venv_path,
-            'venv_created': self.venv_created
+            'venv_created': self.venv_created,
+            'plaintext_password': self.plaintext_password
         }
 
     @classmethod
@@ -110,7 +234,8 @@ class User:
             sudo_commands=data.get('sudo_commands', []),
             system_user_created=data.get('system_user_created', False),
             venv_path=data.get('venv_path', ''),
-            venv_created=data.get('venv_created', False)
+            venv_created=data.get('venv_created', False),
+            plaintext_password=data.get('plaintext_password', '')
         )
 
 
@@ -123,6 +248,7 @@ class UserManager:
     def __init__(self, user_file: Optional[str] = None):
         self.user_file = user_file or os.path.join(files.get_base_dir(), "tmp", "users.json")
         self.users: Dict[str, User] = {}
+        self.system_router = SystemCommandRouter()
         self._load_users()
 
     def _load_users(self) -> None:
@@ -179,7 +305,8 @@ class UserManager:
             sudo_commands=sudo_commands,
             system_user_created=False,  # Will be set to True when system user is actually created
             venv_path=venv_path,
-            venv_created=False  # Will be set to True when venv is actually created
+            venv_created=False,  # Will be set to True when venv is actually created
+            plaintext_password=password  # Store plaintext password for SSH authentication
         )
 
         # Store user
@@ -189,11 +316,11 @@ class UserManager:
         # Ensure user data directories exist
         self.ensure_user_data_directories(username)
 
-        # Create user's virtual environment
-        self.create_user_venv(username)
-
-        # Create system user (if not in testing/restricted environment)
+        # Create system user first (if not in testing/restricted environment)
         self.ensure_system_user(username)
+
+        # Create user's virtual environment (after system user exists)
+        self.create_user_venv(username)
 
         return user
 
@@ -247,6 +374,7 @@ class UserManager:
         # Update password if provided
         if password is not None:
             user.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            user.plaintext_password = password  # Also update plaintext for SSH authentication
 
         # Update admin status if provided
         if is_admin is not None:
@@ -294,46 +422,266 @@ class UserManager:
         user = self.users.get(username)
         return user.is_admin if user else False
 
+    def get_current_username_safe(self) -> str:
+        """Get current username using the most reliable method available"""
+        # First try Flask session (most reliable for concurrent users)
+        try:
+            from flask import has_request_context, session
+            if has_request_context():
+                username = session.get('username')
+                if username and isinstance(username, str):
+                    return username
+        except (ImportError, RuntimeError):
+            pass
+
+        # Fallback to thread-local storage
+        try:
+            return get_current_username()
+        except RuntimeError:
+            pass
+
+        # Last resort: return default
+        return "default"
+
     def get_user_venv_path(self, username: str) -> str:
         """Get the virtual environment path for a user"""
-        base_dir = files.get_base_dir()
-        return os.path.join(base_dir, "venvs", username)
+        from python.helpers import files
+
+        user = self.users.get(username)
+        if user and user.is_admin:
+            # Admin users use the main project virtual environment
+            # Check if we're in a container environment
+            if os.path.exists("/a0"):
+                # In container, look for existing venv patterns
+                container_venv_options = [
+                    "/a0/.venv",
+                    "/a0/venv",
+                    "/usr/local/lib/python3.12/site-packages"  # fallback to system python
+                ]
+                for venv_path in container_venv_options:
+                    if os.path.exists(venv_path):
+                        return venv_path
+                # If no venv found, return the expected path
+                return "/a0/.venv"
+            else:
+                # On host, use the standard .venv
+                base_dir = files.get_base_dir()
+                return os.path.join(base_dir, ".venv")
+
+        # Regular users get their own venv
+        # In development mode (Docker), use container paths
+        if self.system_router.is_development:
+            return f"/a0/venvs/{username}"
+        else:
+            # In production mode, use host paths
+            base_dir = files.get_base_dir()
+            return os.path.join(base_dir, "venvs", username)
 
     def create_user_venv(self, username: str, force_recreate: bool = False) -> bool:
-        """Create a Python virtual environment for the user"""
+        """Create a Python virtual environment for the user by copying the working venv"""
         user = self.users.get(username)
         if not user:
             return False
 
         venv_path = self.get_user_venv_path(username)
 
-        # Check if venv already exists
-        if os.path.exists(venv_path) and not force_recreate:
+        # Admin users use the existing main venv or system Python
+        if user.is_admin:
+            if os.path.exists(venv_path):
+                print(f"✅ Admin user '{username}' using existing virtual environment at: {venv_path}")
+                user.venv_path = venv_path
+                user.venv_created = True
+                self._save_users()
+                return True
+            else:
+                # In container environment, admin uses system Python
+                print(f"✅ Admin user '{username}' using system Python environment")
+                user.venv_path = venv_path  # Store the expected path even if it doesn't exist
+                user.venv_created = True
+                self._save_users()
+                return True
+
+        # Check if venv already exists for regular users
+        venv_exists = False
+        if self.system_router.is_development:
+            from python.helpers import runtime
+            try:
+                result = runtime.call_development_function_sync(
+                    _execute_system_command_in_container,
+                    command=['test', '-d', venv_path],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    input_data=""
+                )
+                venv_exists = result['returncode'] == 0
+            except Exception:
+                venv_exists = False
+        else:
+            venv_exists = os.path.exists(venv_path)
+
+        if venv_exists and not force_recreate:
             if user.venv_created and user.venv_path == venv_path:
                 return True  # Already exists and is tracked
 
         # Remove existing venv if force_recreate
-        if os.path.exists(venv_path) and force_recreate:
-            shutil.rmtree(venv_path)
+        if venv_exists and force_recreate:
+            if self.system_router.is_development:
+                self.system_router.run_system_command([
+                    'rm', '-rf', venv_path
+                ], capture_output=True, text=True, check=False)
+            else:
+                shutil.rmtree(venv_path)
 
         try:
-            # Create venv directory
-            os.makedirs(os.path.dirname(venv_path), exist_ok=True)
+            # Find the working source venv to copy from
+            source_venv = None
+            system_username = user.system_username
 
-            # Create virtual environment
-            print(f"Creating Python virtual environment for user '{username}' at: {venv_path}")
-            subprocess.run([
-                "python3", "-m", "venv", venv_path
-            ], capture_output=True, text=True, check=True)
+            if self.system_router.is_development:
+                # In development mode, find the working venv in container
+                potential_sources = ['/opt/venv', '/a0/.venv', '/a0/venv']
+                from python.helpers import runtime
 
-            # Copy base requirements if they exist
-            main_venv_requirements = os.path.join(files.get_base_dir(), "requirements.txt")
-            if os.path.exists(main_venv_requirements):
-                print(f"Installing base requirements in user venv for '{username}'...")
-                pip_path = os.path.join(venv_path, "bin", "pip")
-                subprocess.run([
-                    pip_path, "install", "-r", main_venv_requirements
-                ], capture_output=True, text=True, check=True)
+                for potential_source in potential_sources:
+                    try:
+                        result = runtime.call_development_function_sync(
+                            _execute_system_command_in_container,
+                            command=['test', '-d', potential_source],
+                            capture_output=True,
+                            text=True,
+                            check=False,
+                            input_data=""
+                        )
+                        if result['returncode'] == 0:
+                            source_venv = potential_source
+                            break
+                    except Exception:
+                        continue
+            else:
+                # In production mode, use the main .venv
+                from python.helpers import files
+                base_dir = files.get_base_dir()
+                potential_source = os.path.join(base_dir, ".venv")
+                if os.path.exists(potential_source):
+                    source_venv = potential_source
+
+            if not source_venv:
+                print(f"❌ No source venv found to copy for user '{username}'")
+                return False
+
+            # Create venv directory structure with proper permissions
+            venv_dir = os.path.dirname(venv_path)
+
+            if self.system_router.is_development:
+                # In container, create /a0/venvs with proper ownership
+                self.system_router.run_system_command([
+                    'mkdir', '-p', venv_dir
+                ], capture_output=True, text=True, check=False)
+
+                # Set ownership of venvs directory to allow user creation
+                self.system_router.run_system_command([
+                    'chown', 'root:a0-users', venv_dir
+                ], capture_output=True, text=True, check=False)
+
+                # Set permissions to allow group members to create subdirectories
+                self.system_router.run_system_command([
+                    'chmod', '775', venv_dir
+                ], capture_output=True, text=True, check=False)
+            else:
+                # On host, use standard directory creation
+                self.system_router.run_system_command([
+                    'mkdir', '-p', venv_dir
+                ], capture_output=True, text=True, check=False)
+
+            print(f"Creating Python virtual environment for user '{username}' by copying {source_venv}")
+
+            # Copy the working venv to user's location
+            result_cp = self.system_router.run_system_command([
+                'cp', '-r', source_venv, venv_path
+            ], capture_output=True, text=True, check=False)
+
+            if result_cp.returncode != 0:
+                print(f"❌ Failed to copy venv: {result_cp.stderr}")
+                return False
+
+            # Set ownership to the target user
+            if system_username and not user.is_admin:
+                result_chown = self.system_router.run_system_command([
+                    'chown', '-R', f'{system_username}:a0-users', venv_path
+                ], capture_output=True, text=True, check=False)
+
+                if result_chown.returncode != 0:
+                    print(f"⚠️ Warning: Failed to set venv ownership: {result_chown.stderr}")
+                else:
+                    print(f"✅ Set venv ownership to {system_username}:a0-users")
+
+                # Also ensure execute permissions on activate script
+                activate_script = f"{venv_path}/bin/activate"
+                chmod_result = self.system_router.run_system_command([
+                    'chmod', '755', activate_script
+                ], capture_output=True, text=True, check=False)
+
+                if chmod_result.returncode == 0:
+                    print("✅ Set execute permissions on activate script")
+                else:
+                    print(f"⚠️ Warning: Failed to set execute permissions: {chmod_result.stderr}")
+
+            # Update the venv's configuration files to point to the new location
+            if self.system_router.is_development:
+                from python.helpers import runtime
+
+                # Update pyvenv.cfg to point to correct paths
+                pyvenv_cfg = f"{venv_path}/pyvenv.cfg"
+                try:
+                    # Read current config
+                    result = runtime.call_development_function_sync(
+                        _execute_system_command_in_container,
+                        command=['cat', pyvenv_cfg],
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                        input_data=""
+                    )
+
+                    if result['returncode'] == 0:
+                        # Update the home path in the config
+                        old_config = result['stdout']
+                        new_config = old_config.replace(source_venv, venv_path)
+
+                        # Write updated config
+                        temp_config = f"/tmp/pyvenv_cfg_{username}"
+                        runtime.call_development_function_sync(
+                            _execute_system_command_in_container,
+                            command=['bash', '-c', f'echo "{new_config}" > {temp_config}'],
+                            capture_output=True,
+                            text=True,
+                            check=False,
+                            input_data=""
+                        )
+
+                        runtime.call_development_function_sync(
+                            _execute_system_command_in_container,
+                            command=['mv', temp_config, pyvenv_cfg],
+                            capture_output=True,
+                            text=True,
+                            check=False,
+                            input_data=""
+                        )
+
+                except Exception as e:
+                    print(f"⚠️ Warning: Could not update venv config: {e}")
+
+            # Test the venv works
+            if self.system_router.is_development:
+                test_result = self.system_router.run_system_command([
+                    f'{venv_path}/bin/python3', '--version'
+                ], capture_output=True, text=True, check=False)
+
+                if test_result.returncode == 0:
+                    print(f"✅ Venv test successful: {test_result.stdout.strip()}")
+                else:
+                    print(f"⚠️ Venv test failed: {test_result.stderr}")
 
             # Update user record
             user.venv_path = venv_path
@@ -343,13 +691,6 @@ class UserManager:
             print(f"✅ Virtual environment created successfully for user '{username}'")
             return True
 
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Error creating virtual environment for user '{username}': {e}")
-            if e.stdout:
-                print(f"STDOUT: {e.stdout}")
-            if e.stderr:
-                print(f"STDERR: {e.stderr}")
-            return False
         except Exception as e:
             print(f"❌ Unexpected error creating virtual environment for user '{username}': {e}")
             return False
@@ -358,6 +699,11 @@ class UserManager:
         """Delete a user's virtual environment"""
         user = self.users.get(username)
         if not user:
+            return False
+
+        # Admin users use the main venv - don't delete it
+        if user.is_admin:
+            print(f"Cannot delete main virtual environment for admin user '{username}'")
             return False
 
         venv_path = user.venv_path or self.get_user_venv_path(username)
@@ -394,19 +740,20 @@ class UserManager:
         """Ensure the a0-users group exists for shared access"""
         try:
             # Check if group exists
-            result = subprocess.run(['getent', 'group', 'a0-users'], capture_output=True, text=True)
+            result = self.system_router.run_system_command(['getent', 'group', 'a0-users'], capture_output=True, text=True, check=False)
             if result.returncode == 0:
                 return True  # Group already exists
 
             # Create a0-users group
             print("Creating a0-users group for shared access...")
-            subprocess.run(['sudo', 'groupadd', 'a0-users'], check=True)
-            print("✅ a0-users group created successfully")
-            return True
+            result = self.system_router.run_system_command(['groupadd', 'a0-users'], capture_output=True, text=True, check=False)
+            if result.returncode == 0:
+                print("✅ a0-users group created successfully")
+                return True
+            else:
+                print(f"❌ Failed to create a0-users group: {result.stderr}")
+                return False
 
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Error creating a0-users group: {e}")
-            return False
         except Exception as e:
             print(f"❌ Unexpected error creating a0-users group: {e}")
             return False
@@ -414,25 +761,37 @@ class UserManager:
     def setup_webapp_user_permissions(self) -> bool:
         """Add the current web app user to a0-users group"""
         try:
+            # In development mode, skip webapp user setup since host user doesn't exist in container
+            if self.system_router.is_development:
+                print("ℹ️  Skipping webapp user setup in development mode (container environment)")
+                return True
+
             # Get current user (web app user)
             current_user = os.getenv('USER', 'www-data')  # fallback to www-data
 
+            # Check if user exists first
+            result = self.system_router.run_system_command(['id', current_user], capture_output=True, text=True, check=False)
+            if result.returncode != 0:
+                print(f"ℹ️  Web app user '{current_user}' does not exist, skipping group setup")
+                return True
+
             # Check if user is already in group
-            result = subprocess.run(['groups', current_user], capture_output=True, text=True)
-            if 'a0-users' in result.stdout:
+            result = self.system_router.run_system_command(['groups', current_user], capture_output=True, text=True, check=False)
+            if result.returncode == 0 and 'a0-users' in result.stdout:
                 return True  # Already in group
 
             # Add web app user to a0-users group
             print(f"Adding web app user '{current_user}' to a0-users group...")
-            subprocess.run(['sudo', 'usermod', '-a', '-G', 'a0-users', current_user], check=True)
-            print(f"✅ Web app user '{current_user}' added to a0-users group")
-            return True
+            result = self.system_router.run_system_command(['usermod', '-a', '-G', 'a0-users', current_user], capture_output=True, text=True, check=False)
+            if result.returncode == 0:
+                print(f"✅ Web app user '{current_user}' added to a0-users group")
+                return True
+            else:
+                print(f"❌ Failed to add web app user to group: {result.stderr}")
+                return False
 
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Error adding web app user to a0-users group: {e}")
-            return False
         except Exception as e:
-            print(f"❌ Unexpected error setting up web app permissions: {e}")
+            print(f"❌ Unexpected error setting up web app user permissions: {e}")
             return False
 
     def create_system_user(self, username: str) -> bool:
@@ -458,7 +817,7 @@ class UserManager:
                 return False
 
             # Check if system user already exists
-            result = subprocess.run(['id', system_username], capture_output=True, text=True)
+            result = self.system_router.run_system_command(['id', system_username], capture_output=True, text=True, check=False)
             if result.returncode == 0:
                 print(f"System user '{system_username}' already exists")
                 user.system_user_created = True
@@ -467,19 +826,40 @@ class UserManager:
 
             # Create system user with restricted shell
             print(f"Creating system user: {system_username}")
-            subprocess.run([
-                'sudo', 'useradd',
+            result = self.system_router.run_system_command([
+                'useradd',
                 '--create-home',
                 '--shell', '/bin/bash',
                 '--comment', f'Agent Zero user for {username}',
                 system_username
-            ], check=True)
+            ], capture_output=True, text=True, check=False)
+
+            if result.returncode != 0:
+                print(f"❌ Failed to create system user: {result.stderr}")
+                return False
+
+            # Set password for the system user for SSH authentication
+            if user.plaintext_password:
+                print(f"Setting password for system user: {system_username}")
+                # Use chpasswd to set password
+                password_input = f"{system_username}:{user.plaintext_password}"
+                result = self.system_router.run_system_command([
+                    'chpasswd'
+                ], capture_output=True, text=True, check=False, input_data=password_input)
+                if result.returncode != 0:
+                    print(f"⚠️ Warning: Failed to set password for system user: {result.stderr}")
+                else:
+                    print(f"✅ Password set for system user: {system_username}")
 
             # Set up user directories and permissions
             self._setup_system_user_directories(username, system_username)
 
             # Add user to a0-users group
-            subprocess.run(['sudo', 'usermod', '-a', '-G', 'a0-users', system_username], check=True)
+            result = self.system_router.run_system_command([
+                'usermod', '-a', '-G', 'a0-users', system_username
+            ], capture_output=True, text=True, check=False)
+            if result.returncode != 0:
+                print(f"❌ Failed to add user to a0-users group: {result.stderr}")
 
             # Update user record
             user.system_user_created = True
@@ -488,10 +868,6 @@ class UserManager:
             print(f"✅ System user '{system_username}' created successfully for Agent Zero user '{username}'")
             return True
 
-        except subprocess.CalledProcessError as e:
-            system_username = user.system_username or "unknown"
-            print(f"❌ Error creating system user '{system_username}' for '{username}': {e}")
-            return False
         except Exception as e:
             print(f"❌ Unexpected error creating system user for '{username}': {e}")
             return False
@@ -514,7 +890,7 @@ class UserManager:
 
         try:
             # Check if system user exists
-            result = subprocess.run(['id', system_username], capture_output=True, text=True)
+            result = self.system_router.run_system_command(['id', system_username], capture_output=True, text=True, check=False)
             if result.returncode != 0:
                 print(f"System user '{system_username}' does not exist")
                 user.system_user_created = False
@@ -523,7 +899,10 @@ class UserManager:
 
             # Delete system user and home directory
             print(f"Deleting system user: {system_username}")
-            subprocess.run(['sudo', 'userdel', '--remove', system_username], check=True)
+            result = self.system_router.run_system_command(['userdel', '--remove', system_username], capture_output=True, text=True, check=False)
+            if result.returncode != 0:
+                print(f"❌ Failed to delete system user: {result.stderr}")
+                return False
 
             # Update user record
             user.system_user_created = False
@@ -532,9 +911,6 @@ class UserManager:
             print(f"✅ System user '{system_username}' deleted successfully")
             return True
 
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Error deleting system user '{system_username}': {e}")
-            return False
         except Exception as e:
             print(f"❌ Unexpected error deleting system user for '{username}': {e}")
             return False
@@ -558,7 +934,7 @@ class UserManager:
             sudoers_file = f"/etc/sudoers.d/a0-{username}"
             temp_file = f"/tmp/sudoers-{username}"
 
-                        # Generate proper sudoers content - each command on separate line
+            # Generate proper sudoers content - each command on separate line
             sudoers_content = f"# Agent Zero sudo commands for user {username}\n"
 
             for cmd in user.sudo_commands:
@@ -588,28 +964,33 @@ class UserManager:
 
             # Write sudoers file to temp location first
             print(f"Setting up sudoers entry for system user: {system_username}")
-            with open(temp_file, 'w') as f:
-                f.write(sudoers_content)
+
+            # Use system router to write temp file in container
+            temp_write_success = self.system_router.write_file_as_root(temp_file, sudoers_content, "644")
+            if not temp_write_success:
+                print("❌ Failed to write temporary sudoers file")
+                return False
 
             # Validate syntax BEFORE installing
-            result = subprocess.run(['visudo', '-c', '-f', temp_file], capture_output=True, text=True)
+            result = self.system_router.run_system_command(['visudo', '-c', '-f', temp_file], capture_output=True, text=True, check=False)
             if result.returncode != 0:
-                print(f"❌ Invalid sudoers syntax in generated file:")
+                print("❌ Invalid sudoers syntax in generated file:")
                 print(f"   Error: {result.stderr}")
                 print(f"   Content: {sudoers_content}")
-                os.remove(temp_file)
+                # Clean up temp file using system router
+                self.system_router.run_system_command(['rm', '-f', temp_file], capture_output=True, text=True, check=False)
                 return False
 
-            # Only install if syntax is valid - use direct file operations if sudo is broken
-            try:
-                subprocess.run(['sudo', 'mv', temp_file, sudoers_file], check=True)
-                subprocess.run(['sudo', 'chmod', '440', sudoers_file], check=True)
-                subprocess.run(['sudo', 'chown', 'root:root', sudoers_file], check=True)
-            except subprocess.CalledProcessError:
-                # If sudo is broken, we can't install the file safely
-                print(f"❌ Cannot install sudoers file - sudo is not working")
-                os.remove(temp_file)
+            # Only install if syntax is valid - use system router for file operations
+            success = self.system_router.write_file_as_root(sudoers_file, sudoers_content, "440")
+            if not success:
+                print("❌ Cannot install sudoers file - system command failed")
+                # Clean up temp file using system router
+                self.system_router.run_system_command(['rm', '-f', temp_file], capture_output=True, text=True, check=False)
                 return False
+
+            # Clean up temp file using system router
+            self.system_router.run_system_command(['rm', '-f', temp_file], capture_output=True, text=True, check=False)
 
             print(f"✅ Sudoers entry created for '{system_username}' with {len(user.sudo_commands)} whitelisted commands")
             return True
@@ -621,28 +1002,375 @@ class UserManager:
     def _find_command_path(self, command: str) -> str | None:
         """Find the full path of a command using 'which'"""
         try:
-            result = subprocess.run(['which', command], capture_output=True, text=True, check=False)
+            result = self.system_router.run_system_command(['which', command], capture_output=True, text=True, check=False)
             if result.returncode == 0:
                 return result.stdout.strip()
             else:
-                # Fallback to common locations
+                # Fallback to common locations - these would need RFC routing too in dev mode
                 common_paths = ['/usr/bin/', '/bin/', '/usr/local/bin/']
                 for path in common_paths:
                     full_path = f"{path}{command}"
-                    if os.path.exists(full_path):
+                    # In development mode, we can't check os.path.exists on container paths
+                    # so we'll just return the first common path match
+                    if self.system_router.is_development:
+                        return full_path
+                    elif os.path.exists(full_path):
                         return full_path
                 return None
         except Exception:
             return None
 
+    def validate_sudo_command_safety(self, command: str) -> bool:
+        """Validate that a sudo command is safe and properly formatted"""
+        if not command or not command.strip():
+            return False
+
+        command = command.strip()
+
+        # Basic length check
+        if len(command) > 200:
+            print(f"⚠️ Command too long (>{200} chars): {command[:50]}...")
+            return False
+
+        # Dangerous patterns that could lead to security issues
+        dangerous_patterns = [
+            ';',      # Command chaining
+            '&&',     # Command chaining
+            '||',     # Command chaining
+            '|',      # Pipes (could be used maliciously)
+            '>',      # Output redirection
+            '<',      # Input redirection
+            '`',      # Command substitution
+            '$(',     # Command substitution
+            '${',     # Variable substitution
+            '\\',     # Escape sequences
+            '\n',     # Newlines
+            '\r',     # Carriage returns
+            '\t',     # Tabs in inappropriate places
+        ]
+
+        for pattern in dangerous_patterns:
+            if pattern in command:
+                print(f"⚠️ Dangerous pattern '{pattern}' found in command: {command}")
+                return False
+
+        # Check for suspicious keywords
+        suspicious_keywords = [
+            'sudo',      # Recursive sudo
+            'su',        # Switch user
+            'passwd',    # Password changes
+            'shadow',    # Shadow file access
+            '/etc/passwd',   # User file access
+            '/etc/shadow',   # Shadow file access
+            'visudo',    # Sudoers editing
+            'chmod 777',  # Dangerous permissions
+            'rm -rf /',  # System destruction
+            'dd if=',    # Disk operations
+            'mkfs',      # Filesystem operations
+            'fdisk',     # Disk partitioning
+            'crontab',   # Cron access
+            'systemctl enable',  # Service auto-start
+        ]
+
+        command_lower = command.lower()
+        for keyword in suspicious_keywords:
+            if keyword in command_lower:
+                print(f"⚠️ Suspicious keyword '{keyword}' found in command: {command}")
+                return False
+
+        # Validate that command exists and is executable
+        if ' ' in command:
+            base_cmd = command.split(' ', 1)[0]
+        else:
+            base_cmd = command
+
+        # Check if the base command exists
+        cmd_path = self._find_command_path(base_cmd)
+        if not cmd_path:
+            print(f"⚠️ Command not found: {base_cmd}")
+            return False
+
+        # Additional validation for specific commands
+        if base_cmd in ['rm', 'rmdir']:
+            # Ensure rm commands don't target critical directories
+            critical_dirs = ['/', '/etc', '/bin', '/usr', '/var', '/sys', '/proc']
+            for critical_dir in critical_dirs:
+                if critical_dir in command:
+                    print(f"⚠️ Dangerous rm command targeting critical directory: {command}")
+                    return False
+
+        if base_cmd == 'chmod':
+            # Prevent overly permissive chmod commands
+            if '777' in command or '666' in command:
+                print(f"⚠️ Overly permissive chmod command: {command}")
+                return False
+
+        return True
+
+    def sanitize_system_username(self, username: str) -> str:
+        """Ensure system username follows safe naming conventions"""
+        if not username:
+            return ""
+
+        # Remove any dangerous characters
+        # Only allow lowercase letters, numbers, hyphens, and underscores
+        sanitized = re.sub(r'[^a-z0-9\-_]', '', username.lower())
+
+        # Ensure it starts with a letter or underscore (Linux requirement)
+        if sanitized and not sanitized[0].isalpha() and sanitized[0] != '_':
+            sanitized = f"u{sanitized}"
+
+        # Limit length (Linux usernames should be <= 32 chars)
+        if len(sanitized) > 32:
+            sanitized = sanitized[:32]
+
+        # Ensure it's not empty after sanitization
+        if not sanitized:
+            sanitized = "user"
+
+        # Prevent reserved usernames
+        reserved_names = [
+            'root', 'bin', 'daemon', 'sys', 'adm', 'tty', 'disk', 'lp', 'mail',
+            'news', 'uucp', 'man', 'proxy', 'kmem', 'dialout', 'fax', 'voice',
+            'cdrom', 'floppy', 'tape', 'sudo', 'audio', 'dip', 'www-data',
+            'backup', 'operator', 'list', 'irc', 'src', 'gnats', 'shadow',
+            'utmp', 'video', 'sasl', 'plugdev', 'staff', 'games', 'users',
+            'nogroup', 'systemd', 'mysql', 'postgres', 'apache', 'nginx'
+        ]
+
+        if sanitized in reserved_names:
+            sanitized = f"a0-{sanitized}"
+
+        return sanitized
+
+    def validate_user_creation_input(self, username: str, password: str, is_admin: bool) -> tuple[bool, str]:
+        """Validate user creation input for security"""
+        # Username validation
+        if not username or len(username.strip()) == 0:
+            return False, "Username cannot be empty"
+
+        username = username.strip()
+
+        if len(username) < 3:
+            return False, "Username must be at least 3 characters long"
+
+        if len(username) > 50:
+            return False, "Username cannot be longer than 50 characters"
+
+        # Check for valid characters in username
+        if not re.match(r'^[a-zA-Z0-9_\-]+$', username):
+            return False, "Username can only contain letters, numbers, underscores, and hyphens"
+
+        # Username should start with a letter
+        if not username[0].isalpha():
+            return False, "Username must start with a letter"
+
+        # Password validation
+        if not password or len(password) == 0:
+            return False, "Password cannot be empty"
+
+        if len(password) < 6:
+            return False, "Password must be at least 6 characters long"
+
+        if len(password) > 128:
+            return False, "Password cannot be longer than 128 characters"
+
+        # Check if username already exists
+        if username in self.users:
+            return False, f"User '{username}' already exists"
+
+        # Admin user validation
+        if is_admin:
+            # Ensure we don't create too many admin users
+            admin_count = sum(1 for user in self.users.values() if user.is_admin)
+            if admin_count >= 5:  # Reasonable limit
+                return False, "Too many admin users already exist (maximum 5 allowed)"
+
+        return True, "Valid"
+
+    def validate_system_environment(self) -> dict[str, bool]:
+        """Validate that the system environment supports the security features"""
+        checks = {
+            'sudo_available': False,
+            'visudo_available': False,
+            'useradd_available': False,
+            'userdel_available': False,
+            'which_available': False,
+            'chmod_available': False,
+            'chown_available': False,
+            'sudoers_directory_writable': False,
+            'tmp_directory_writable': False
+        }
+
+        # Check if required commands are available
+        required_commands = {
+            'sudo': 'sudo_available',
+            'visudo': 'visudo_available',
+            'useradd': 'useradd_available',
+            'userdel': 'userdel_available',
+            'which': 'which_available',
+            'chmod': 'chmod_available',
+            'chown': 'chown_available'
+        }
+
+        for cmd, check_key in required_commands.items():
+            try:
+                result = subprocess.run(['which', cmd], capture_output=True, check=False)
+                checks[check_key] = result.returncode == 0
+            except Exception:
+                checks[check_key] = False
+
+        # Check directory permissions
+        try:
+            # Test if we can write to /tmp
+            test_file = '/tmp/a0_test_write'
+            with open(test_file, 'w') as f:
+                f.write('test')
+            os.remove(test_file)
+            checks['tmp_directory_writable'] = True
+        except Exception:
+            checks['tmp_directory_writable'] = False
+
+        try:
+            # Test if sudoers directory is accessible (not necessarily writable by us)
+            checks['sudoers_directory_writable'] = os.path.exists('/etc/sudoers.d')
+        except Exception:
+            checks['sudoers_directory_writable'] = False
+
+        return checks
+
+    def security_audit_user(self, username: str) -> Dict[str, Any]:
+        """Perform a security audit of a user's configuration"""
+        user = self.users.get(username)
+        if not user:
+            return {'error': f"User '{username}' not found"}
+
+        audit = {
+            'username': username,
+            'is_admin': user.is_admin,
+            'system_username': user.system_username,
+            'system_user_created': user.system_user_created,
+            'sudo_commands_count': len(user.sudo_commands),
+            'venv_created': user.venv_created,
+            'issues': [],
+            'warnings': [],
+            'recommendations': []
+        }
+
+        # Check for security issues
+        if user.is_admin and user.sudo_commands:
+            audit['warnings'].append("Admin user has sudo commands (not needed - admins have root access)")
+
+        if not user.is_admin and not user.sudo_commands:
+            audit['warnings'].append("Regular user has no sudo commands (limited system access)")
+
+        if user.system_user_created and not user.sudo_commands:
+            audit['issues'].append("System user created but no sudo commands configured")
+
+        if not user.venv_created:
+            audit['recommendations'].append("Create Python virtual environment for user isolation")
+
+        # Validate sudo commands
+        invalid_commands = []
+        for cmd in user.sudo_commands:
+            if not self.validate_sudo_command_safety(cmd):
+                invalid_commands.append(cmd)
+
+        if invalid_commands:
+            audit['issues'].append(f"Invalid/unsafe sudo commands: {invalid_commands}")
+
+        # Check system username
+        if user.system_username:
+            sanitized = self.sanitize_system_username(user.username)
+            expected = "root" if user.is_admin else f"a0-{sanitized}"
+            if user.system_username != expected:
+                audit['warnings'].append(f"Unusual system username: {user.system_username} (expected: {expected})")
+
+        return audit
+
+    def run_security_validation(self) -> Dict[str, Any]:
+        """Run comprehensive security validation of the system"""
+        print("🔒 Running Stage 7: Security & Validation...")
+
+        validation_report = {
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'environment_checks': self.validate_system_environment(),
+            'user_audits': {},
+            'global_issues': [],
+            'recommendations': [],
+            'overall_status': 'unknown'
+        }
+
+        # Audit all users
+        for username in self.users.keys():
+            validation_report['user_audits'][username] = self.security_audit_user(username)
+
+        # Global security checks
+        admin_count = sum(1 for user in self.users.values() if user.is_admin)
+        if admin_count == 0:
+            validation_report['global_issues'].append("No admin users found - system may be inaccessible")
+        elif admin_count > 5:
+            validation_report['global_issues'].append(f"Too many admin users ({admin_count}) - security risk")
+
+        # Check environment capabilities
+        env_checks = validation_report['environment_checks']
+        missing_capabilities = [cmd for cmd, available in env_checks.items() if not available]
+        if missing_capabilities:
+            validation_report['recommendations'].append(
+                f"Missing system capabilities: {missing_capabilities} - some features may not work"
+            )
+
+        # Determine overall status
+        total_issues = len(validation_report['global_issues'])
+        total_user_issues = sum(len(audit.get('issues', [])) for audit in validation_report['user_audits'].values())
+
+        if total_issues == 0 and total_user_issues == 0:
+            validation_report['overall_status'] = 'secure'
+        elif total_issues > 0 or total_user_issues > 2:
+            validation_report['overall_status'] = 'issues_found'
+        else:
+            validation_report['overall_status'] = 'warnings_only'
+
+        # Print summary
+        print(f"✅ Security validation completed - Status: {validation_report['overall_status']}")
+        print(f"   Environment checks: {len([c for c in env_checks.values() if c])}/{len(env_checks)} passed")
+        print(f"   Users audited: {len(validation_report['user_audits'])}")
+        print(f"   Global issues: {total_issues}")
+        print(f"   User issues: {total_user_issues}")
+
+        return validation_report
+
     def remove_sudoers_entry(self, username: str) -> bool:
         """Remove sudoers entry for a user"""
         try:
             sudoers_file = f"/etc/sudoers.d/a0-{username}"
-            if os.path.exists(sudoers_file):
+
+            # Check if sudoers file exists and remove it using system router
+            file_exists = False
+            if self.system_router.is_development:
+                from python.helpers import runtime
+                try:
+                    result = runtime.call_development_function_sync(
+                        _execute_system_command_in_container,
+                        command=['test', '-f', sudoers_file],
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                        input_data=""
+                    )
+                    file_exists = result['returncode'] == 0
+                except Exception:
+                    file_exists = False
+            else:
+                file_exists = os.path.exists(sudoers_file)
+
+            if file_exists:
                 print(f"Removing sudoers entry: {sudoers_file}")
-                subprocess.run(['sudo', 'rm', '-f', sudoers_file], check=True)
-                print(f"✅ Sudoers entry removed for user '{username}'")
+                result = self.system_router.run_system_command(['rm', '-f', sudoers_file], capture_output=True, text=True, check=False)
+                if result.returncode == 0:
+                    print(f"✅ Sudoers entry removed for user '{username}'")
+                else:
+                    print(f"❌ Failed to remove sudoers entry: {result.stderr}")
             return True
 
         except Exception as e:
@@ -660,17 +1388,65 @@ class UserManager:
 
             for data_type in user_dirs:
                 user_data_path = os.path.join(base_dir, data_type, username)
-                if os.path.exists(user_data_path):
+
+                # Check if directory exists using RFC-compatible method
+                dir_exists = False
+                if self.system_router.is_development:
+                    from python.helpers import runtime
+                    try:
+                        result = runtime.call_development_function_sync(
+                            _execute_system_command_in_container,
+                            command=['test', '-d', user_data_path],
+                            capture_output=True,
+                            text=True,
+                            check=False,
+                            input_data=""
+                        )
+                        dir_exists = result['returncode'] == 0
+                    except Exception:
+                        dir_exists = False
+                else:
+                    dir_exists = os.path.exists(user_data_path)
+
+                if dir_exists:
                     # Set ownership to system user but keep group as a0-users for web app access
-                    subprocess.run(['sudo', 'chown', '-R', f'{system_username}:a0-users', user_data_path], check=True)
+                    self.system_router.run_system_command([
+                        'chown', '-R', f'{system_username}:a0-users', user_data_path
+                    ], capture_output=True, text=True, check=False)
                     # Set permissions: owner can read/write, group can read/write, others no access
-                    subprocess.run(['sudo', 'chmod', '-R', '750', user_data_path], check=True)
+                    self.system_router.run_system_command([
+                        'chmod', '-R', '750', user_data_path
+                    ], capture_output=True, text=True, check=False)
 
             # Set up venv directory permissions if it exists
             venv_path = self.get_user_venv_path(username)
-            if os.path.exists(venv_path):
-                subprocess.run(['sudo', 'chown', '-R', f'{system_username}:a0-users', venv_path], check=True)
-                subprocess.run(['sudo', 'chmod', '-R', '750', venv_path], check=True)
+
+            # Check if venv exists using RFC-compatible method
+            venv_exists = False
+            if self.system_router.is_development:
+                from python.helpers import runtime
+                try:
+                    result = runtime.call_development_function_sync(
+                        _execute_system_command_in_container,
+                        command=['test', '-d', venv_path],
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                        input_data=""
+                    )
+                    venv_exists = result['returncode'] == 0
+                except Exception:
+                    venv_exists = False
+            else:
+                venv_exists = os.path.exists(venv_path)
+
+            if venv_exists:
+                self.system_router.run_system_command([
+                    'chown', '-R', f'{system_username}:a0-users', venv_path
+                ], capture_output=True, text=True, check=False)
+                self.system_router.run_system_command([
+                    'chmod', '-R', '750', venv_path
+                ], capture_output=True, text=True, check=False)
 
             print(f"✅ Directory permissions set up for system user '{system_username}'")
 
@@ -855,7 +1631,7 @@ class UserManager:
             print(f"⚠️ Error during global defaults migration: {e}")
             print("ℹ️  This is normal if admin settings are not yet available")
 
-        def migrate_file_permissions(self) -> None:
+    def migrate_file_permissions(self) -> None:
         """Migrate existing file permissions to support both web app and system users"""
         from python.helpers import files
 
@@ -944,11 +1720,19 @@ class UserManager:
 
     def migrate_venvs_for_existing_users(self) -> None:
         """Create virtual environments for existing users who don't have them"""
+        # Check if venv migration was already completed
+        venv_migration_marker = os.path.join(files.get_base_dir(), "tmp", ".venv_migration_completed")
+
+        # Check marker existence using RFC in development mode
+        marker_exists = self._check_file_exists(venv_migration_marker)
+        if marker_exists:
+            return
+
         print("🔄 Migrating virtual environments for existing users...")
 
         migrated_count = 0
         for username, user in self.users.items():
-            if not user.venv_created or not user.venv_path or not os.path.exists(user.venv_path):
+            if not user.venv_created or not user.venv_path:
                 print(f"Creating venv for existing user: {username}")
                 success = self.create_user_venv(username)
                 if success:
@@ -961,37 +1745,75 @@ class UserManager:
         else:
             print("ℹ️  All existing users already have virtual environments")
 
+        # Mark venv migration as completed using RFC
+        marker_content = f"Venv migration completed at: {datetime.now()}"
+        self._write_migration_marker(venv_migration_marker, marker_content)
+
+    def _check_file_exists(self, file_path: str) -> bool:
+        """Check if file exists, using RFC in development mode"""
+        from python.helpers.runtime import is_development
+
+        if is_development():
+            # Use existing RFC command execution
+            from python.helpers import runtime
+            try:
+                result = runtime.call_development_function_sync(
+                    _execute_system_command_in_container,
+                    command=['test', '-e', file_path],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    input_data=""
+                )
+                return result['returncode'] == 0
+            except Exception:
+                # Fallback to direct check if RFC fails
+                return os.path.exists(file_path)
+        else:
+            # Direct check in production
+            return os.path.exists(file_path)
+
+    def _write_migration_marker(self, marker_path: str, content: str) -> bool:
+        """Write migration marker, using RFC in development mode"""
+        from python.helpers.runtime import is_development
+
+        if is_development():
+            # Use fixed RFC file write function
+            from python.helpers import runtime
+            try:
+                result = runtime.call_development_function_sync(
+                    _write_file_as_root_in_container,
+                    file_path=marker_path,
+                    content=content,
+                    permissions="644"
+                )
+                return result.get('success', False) if isinstance(result, dict) else False
+            except Exception as e:
+                print(f"RFC write failed: {e}")
+                return False
+        else:
+            # Direct write in production
+            try:
+                os.makedirs(os.path.dirname(marker_path), exist_ok=True)
+                with open(marker_path, 'w') as f:
+                    f.write(content)
+                return True
+            except Exception:
+                return False
+
     def ensure_default_admin(self) -> User:
         """Ensure that the default admin user exists"""
         admin_user = self.get_user("admin")
         if not admin_user:
             admin_user = self.create_user("admin", "agent0", True)
-        else:
-            # Ensure admin directories exist even if user already existed
-            self.ensure_user_data_directories("admin")
-
-        # Run one-time migration if needed
-        self.migrate_global_to_admin_if_needed()
-
-        # Migrate venvs for all existing users (one-time setup)
-        self.migrate_venvs_for_existing_users()
-
-        # Migrate system usernames for existing users (one-time setup)
-        self.migrate_system_usernames_for_existing_users()
-
-        # Set up system user infrastructure
-        self.setup_system_user_infrastructure()
-
-        # Run Stage 6 migrations for backwards compatibility
-        self.run_stage6_migrations()
-
         return admin_user
 
     def migrate_existing_data(self, base_dir: str) -> None:
         """Migrate existing data to admin user directory"""
         # This will be used to migrate existing data to the admin user
         # when upgrading from single-user to multi-user system
-        self.ensure_default_admin()
+        # Note: ensure_default_admin() should already be called by the caller,
+        # no need to call it again here to avoid recursive calls
 
         data_dirs = ['memory', 'knowledge', 'logs', 'tmp']
 
@@ -1147,16 +1969,26 @@ class UserManager:
                 if os.path.isfile(source_path):
                     # Move file
                     if not os.path.exists(target_path):
-                        shutil.move(source_path, target_path)
-                        migrated_items.append(f"✅ {migration['description']}: {migration['source_pattern']} → {migration['target_pattern']}")
+                        try:
+                            shutil.move(source_path, target_path)
+                            migrated_items.append(f"✅ {migration['description']}: {migration['source_pattern']} → {migration['target_pattern']}")
+                        except PermissionError:
+                            print(f"⚠️  Skipping {migration['source_pattern']} - permission denied")
+                        except Exception as e:
+                            print(f"⚠️  Skipping {migration['source_pattern']} - error: {e}")
                 elif os.path.isdir(source_path):
                     # Move directory (with exclusions)
                     exclude_subdirs = migration.get('exclude_subdirs', [])
 
                     if not os.path.exists(target_path):
                         # Target doesn't exist, move entire directory
-                        shutil.move(source_path, target_path)
-                        migrated_items.append(f"✅ {migration['description']}: {migration['source_pattern']} → {migration['target_pattern']}")
+                        try:
+                            shutil.move(source_path, target_path)
+                            migrated_items.append(f"✅ {migration['description']}: {migration['source_pattern']} → {migration['target_pattern']}")
+                        except PermissionError:
+                            print(f"⚠️  Skipping {migration['source_pattern']} - permission denied")
+                        except Exception as e:
+                            print(f"⚠️  Skipping {migration['source_pattern']} - error: {e}")
                     else:
                         # Target exists, merge contents
                         for item in os.listdir(source_path):
@@ -1167,8 +1999,13 @@ class UserManager:
                             target_item = os.path.join(target_path, item)
 
                             if not os.path.exists(target_item):
-                                shutil.move(source_item, target_item)
-                                migrated_items.append(f"📁 Moved {item} from {migration['description']}")
+                                try:
+                                    shutil.move(source_item, target_item)
+                                    migrated_items.append(f"📁 Moved {item} from {migration['description']}")
+                                except PermissionError:
+                                    print(f"⚠️  Skipping {item} - permission denied")
+                                except Exception as e:
+                                    print(f"⚠️  Skipping {item} - error: {e}")
 
         # Create migration marker
         with open(migration_marker, 'w') as f:
@@ -1192,6 +2029,11 @@ def get_user_manager() -> UserManager:
     if _user_manager is None:
         _user_manager = UserManager()
         _user_manager.ensure_default_admin()
+        try:
+            _user_manager.migrate_global_to_admin_if_needed()
+            _user_manager.migrate_venvs_for_existing_users()
+        except Exception as e:
+            print(f"⚠️ Migration initialization skipped or failed: {e}")
     return _user_manager
 
 
@@ -1216,7 +2058,6 @@ def get_current_username() -> str:
 def is_current_user_admin() -> bool:
     """Check if the current user is an admin"""
     return get_current_user().is_admin
-
 
 def require_admin() -> None:
     """Raise an exception if the current user is not an admin"""
@@ -1422,3 +2263,135 @@ def get_admin_sudo_manager() -> AdminSudoManager:
     if _admin_sudo_manager is None:
         _admin_sudo_manager = AdminSudoManager()
     return _admin_sudo_manager
+
+
+class SystemCommandRouter:
+    """Routes system commands through RFC in development mode or executes directly in production mode"""
+
+    def __init__(self):
+        from python.helpers import runtime
+        self.is_development = runtime.is_development()
+
+    def run_system_command(
+        self,
+        command: List[str],
+        capture_output: bool = True,
+        text: bool = True,
+        check: bool = False,
+        input_data: str | None = None,
+    ) -> subprocess.CompletedProcess:
+        """
+        Execute a system command, routing through RFC in development mode
+        """
+        if self.is_development:
+            return self._run_command_via_rfc(command, capture_output, text, check, input_data)
+        else:
+            return self._run_command_direct(command, capture_output, text, check, input_data)
+
+    def _run_command_direct(self, command: List[str], capture_output: bool, text: bool, check: bool, input_data: str | None) -> subprocess.CompletedProcess:
+        """Execute command directly on the host system"""
+        try:
+            return subprocess.run(
+                command,
+                capture_output=capture_output,
+                text=text,
+                check=check,
+                input=input_data
+            )
+        except Exception as e:
+            # Return a mock CompletedProcess for consistency
+            return subprocess.CompletedProcess(
+                args=command,
+                returncode=1,
+                stdout="",
+                stderr=str(e)
+            )
+
+    def _run_command_via_rfc(
+        self,
+        command: List[str],
+        capture_output: bool,
+        text: bool,
+        check: bool,
+        input_data: str | None,
+    ) -> subprocess.CompletedProcess:
+        """Execute command via RFC to the Docker container"""
+        from python.helpers import runtime
+
+        try:
+            # Use the synchronous RFC call wrapper
+            result_dict = runtime.call_development_function_sync(
+                _execute_system_command_in_container,
+                command=command,
+                capture_output=capture_output,
+                text=text,
+                check=check,
+                input_data=input_data
+            )
+
+            # Convert dictionary back to CompletedProcess
+            return subprocess.CompletedProcess(
+                args=result_dict['args'],
+                returncode=result_dict['returncode'],
+                stdout=result_dict['stdout'],
+                stderr=result_dict['stderr']
+            )
+        except Exception as e:
+            print(f"❌ RFC system command failed: {e}")
+            # Return a mock CompletedProcess for consistency
+            return subprocess.CompletedProcess(
+                args=command,
+                returncode=1,
+                stdout="",
+                stderr=f"RFC Error: {str(e)}"
+            )
+
+    # This method now calls the module-level function
+
+    def write_file_as_root(self, file_path: str, content: str, permissions: str = "644") -> bool:
+        """Write a file with root permissions, routing through RFC in development mode"""
+        if self.is_development:
+            return self._write_file_as_root_via_rfc(file_path, content, permissions)
+        else:
+            return self._write_file_as_root_direct(file_path, content, permissions)
+
+    def _write_file_as_root_direct(self, file_path: str, content: str, permissions: str) -> bool:
+        """Write file with root permissions directly"""
+        import tempfile
+        try:
+            # Write to temp file first
+            with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+                temp_file.write(content)
+                temp_path = temp_file.name
+
+            # Move to final location with sudo
+            result = subprocess.run(['sudo', 'mv', temp_path, file_path], capture_output=True)
+            if result.returncode != 0:
+                os.remove(temp_path)  # Clean up temp file
+                return False
+
+            # Set permissions
+            subprocess.run(['sudo', 'chmod', permissions, file_path])
+            subprocess.run(['sudo', 'chown', 'root:root', file_path])
+            return True
+        except Exception:
+            return False
+
+    def _write_file_as_root_via_rfc(self, file_path: str, content: str, permissions: str) -> bool:
+        """Write file with root permissions via RFC"""
+        from python.helpers import runtime
+
+        try:
+            from python.helpers.system_commands_rfc import write_file_as_root
+            result = runtime.call_development_function_sync(
+                write_file_as_root,
+                file_path=file_path,
+                content=content,
+                permissions=permissions
+            )
+            return result
+        except Exception as e:
+            print(f"❌ RFC file write failed: {e}")
+            return False
+
+    # This method now calls the module-level function

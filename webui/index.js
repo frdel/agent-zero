@@ -1160,6 +1160,11 @@ globalThis.startPolling = startPolling;
 globalThis.logout = async function() {
   if (confirm('Are you sure you want to log out?')) {
     try {
+      // First pause API calls to prevent any interference
+      if (window.pauseApiCalls) {
+        window.pauseApiCalls();
+      }
+
       // Call logout API
       const response = await sendJsonData('/user_logout', {});
 
@@ -1169,28 +1174,57 @@ globalThis.logout = async function() {
           window.clearCsrfToken();
         }
 
-        // Pause API calls
-        if (window.pauseApiCalls) {
-          window.pauseApiCalls();
+        // Reset authentication failure flag to ensure login overlay can show
+        window.authFailureTriggered = false;
+
+        // Clear any cached authentication state
+        try {
+          sessionStorage.clear();
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('isAuthenticated');
+        } catch (e) {
+          console.warn('Failed to clear cached auth state:', e);
         }
 
-        // Show login overlay
+        // Force trigger the login overlay by manually calling the overlay's showOverlay method
+        const loginOverlay = document.querySelector('[x-data*="loginOverlay"]');
+        if (loginOverlay && window.Alpine) {
+          const overlayData = Alpine.$data(loginOverlay);
+          if (overlayData && overlayData.showOverlay) {
+            overlayData.showOverlay();
+          }
+        }
+
+        // Also dispatch the authentication required event as a backup
         window.dispatchEvent(new CustomEvent('authenticationRequired'));
 
+        // Dispatch specific logout event
+        window.dispatchEvent(new CustomEvent('userLogout'));
+
         // Optional: Show success message
-        if (window.toastFrontendSuccess) {
-          window.toastFrontendSuccess('Logged out successfully');
+        if (window.toast) {
+          window.toast('Logged out successfully', 'success');
         }
       } else {
         console.error('Logout failed:', response.error);
-        if (window.toastFrontendError) {
-          window.toastFrontendError('Logout failed: ' + response.error);
+        if (window.toast) {
+          window.toast('Logout failed: ' + (response.error || 'Unknown error'), 'error');
+        }
+
+        // Re-enable API calls if logout failed
+        if (window.resumeApiCalls) {
+          window.resumeApiCalls();
         }
       }
     } catch (error) {
       console.error('Logout error:', error);
-      if (window.toastFrontendError) {
-        window.toastFrontendError('Logout failed: ' + error.message);
+      if (window.toast) {
+        window.toast('Logout failed: ' + error.message, 'error');
+      }
+
+      // Re-enable API calls if logout failed
+      if (window.resumeApiCalls) {
+        window.resumeApiCalls();
       }
     }
   }

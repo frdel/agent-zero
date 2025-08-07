@@ -37,8 +37,9 @@ from simpleeval import simple_eval
 def get_database_name(base_name: str = "agent_zero") -> str:
     """Get user-specific database name"""
     try:
-        from python.helpers.user_management import get_current_username
-        username = get_current_username()
+        from python.helpers.user_management import get_user_manager
+        user_manager = get_user_manager()
+        username = user_manager.get_current_username_safe()
         return f"{base_name}_{username}"
     except (ImportError, RuntimeError):
         # If no user context, fall back to original name
@@ -76,19 +77,20 @@ class Memory:
     @staticmethod
     async def get(agent: Agent):
         memory_subdir = agent.config.memory_subdir or "default"
-        
+
         # Get user-specific cache
         try:
-            from python.helpers.user_management import get_current_username
-            username = get_current_username()
+            from python.helpers.user_management import get_user_manager
+            user_manager = get_user_manager()
+            username = user_manager.get_current_username_safe()
         except (ImportError, RuntimeError):
             username = "default"
-            
+
         if username not in Memory._user_indices:
             Memory._user_indices[username] = {}
-            
+
         user_index = Memory._user_indices[username]
-        
+
         if user_index.get(memory_subdir) is None:
             log_item = agent.context.log.log(
                 type="util",
@@ -117,14 +119,22 @@ class Memory:
     @staticmethod
     async def reload(agent: Agent):
         memory_subdir = agent.config.memory_subdir or "default"
-        
+
         # Get user-specific cache
         try:
-            from python.helpers.user_management import get_current_username
-            username = get_current_username()
+            # Try Flask session first (works across threads)
+            try:
+                from flask import session
+                username = session.get('username')
+                if not username:
+                    raise RuntimeError("No session username")
+            except (RuntimeError, ImportError):
+                # Fallback to thread-local storage
+                from python.helpers.user_management import get_current_username
+                username = get_current_username()
         except (ImportError, RuntimeError):
             username = "default"
-            
+
         if username in Memory._user_indices and Memory._user_indices[username].get(memory_subdir):
             del Memory._user_indices[username][memory_subdir]
         return await Memory.get(agent)

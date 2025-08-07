@@ -81,6 +81,20 @@ let csrfToken = null;
 // Global function to clear CSRF token (called after authentication)
 globalThis.clearCsrfToken = function() {
   csrfToken = null;
+  // Also clear any CSRF cookies that might be cached
+  try {
+    // Clear all cookies that start with csrf_token_
+    document.cookie.split(";").forEach(function(c) {
+      const cookie = c.trim();
+      if (cookie.startsWith('csrf_token_')) {
+        const eqPos = cookie.indexOf("=");
+        const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+      }
+    });
+  } catch (e) {
+    console.warn('Failed to clear CSRF cookies:', e);
+  }
 };
 
 /**

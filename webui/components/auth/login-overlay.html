@@ -80,7 +80,7 @@ function loginOverlayData() {
             password: ''
         },
 
-                        init() {
+        init() {
             // Add class initially since overlay starts visible
             document.body.classList.add('login-overlay-visible');
 
@@ -105,6 +105,11 @@ function loginOverlayData() {
                 this.showOverlay();
             });
 
+            // Listen for logout events specifically
+            window.addEventListener('userLogout', () => {
+                this.showOverlay();
+            });
+
             // Check authentication when page becomes visible (user switches back to tab)
             document.addEventListener('visibilitychange', () => {
                 if (!document.hidden) {
@@ -115,13 +120,23 @@ function loginOverlayData() {
 
         async checkAuthStatus() {
             try {
+                // Clear any potentially cached authentication state before checking
+                try {
+                    // Remove any stale authentication indicators
+                    localStorage.removeItem('isAuthenticated');
+                } catch (e) {
+                    // Ignore localStorage errors
+                }
+
                 // Use raw fetch for auth check (bypass API pause system)
                 const response = await fetch('/auth_check', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({})
+                    body: JSON.stringify({}),
+                    credentials: 'same-origin', // Ensure cookies are sent
+                    cache: 'no-cache' // Prevent cached responses
                 });
 
                 if (response.ok) {
@@ -147,7 +162,7 @@ function loginOverlayData() {
             }
         },
 
-                showOverlay() {
+        showOverlay() {
             this.isVisible = true;
             this.error = '';
             this.success = '';
@@ -182,7 +197,7 @@ function loginOverlayData() {
             // Remove class to show notification bell again
             document.body.classList.remove('login-overlay-visible');
 
-                        // Reset auth failure flag to allow future authentication checks
+            // Reset auth failure flag to allow future authentication checks
             window.authFailureTriggered = false;
 
             // Resume API calls and polling when overlay is hidden
@@ -217,10 +232,10 @@ function loginOverlayData() {
 
                 const data = await response.json();
 
-                                if (response.ok && data.success) {
+                if (response.ok && data.success) {
                     this.success = 'Authentication successful';
 
-                                        // Clear any cached CSRF token to force refresh
+                    // Clear any cached CSRF token to force refresh
                     if (window.clearCsrfToken) {
                         window.clearCsrfToken();
                     }

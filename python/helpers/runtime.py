@@ -2,7 +2,7 @@ import argparse
 import inspect
 import secrets
 from typing import TypeVar, Callable, Awaitable, Union, overload, cast
-from python.helpers import dotenv, rfc, settings, files
+from python.helpers import dotenv, rfc, files
 import asyncio
 import threading
 import queue
@@ -49,9 +49,19 @@ def has_arg(name: str):
     return name in args
 
 def is_dockerized() -> bool:
-    return bool(get_arg("dockerized"))
+    # First check command line arguments
+    if get_arg("dockerized"):
+        return True
+
+    # If no args, check if we're in container by looking for /a0 directory
+    # This ensures manual scripts inside container don't use RFC
+    import os
+    return os.path.exists("/a0")
 
 def is_development() -> bool:
+    # Ensure runtime is initialized before checking
+    if not args:
+        initialize()
     return not is_dockerized()
 
 def get_local_url():
@@ -104,45 +114,37 @@ async def handle_rfc(rfc_call: rfc.RFCCall):
 
 
 def _get_rfc_password() -> str:
-    password = dotenv.get_dotenv_value(dotenv.KEY_RFC_PASSWORD)
+    """Get RFC password from environment or fallback to default"""
+    import os
+
+    # First try environment variable
+    password = os.getenv("RFC_PASSWORD")
     if not password:
-        raise Exception("No RFC password, cannot handle RFC calls.")
+        # Try dotenv
+        password = dotenv.get_dotenv_value(dotenv.KEY_RFC_PASSWORD)
+    if not password:
+        # Fallback to runtime ID as password
+        password = get_runtime_id()
+    if not password:
+        # Last resort: use a default for development
+        password = "default_rfc_password"
+
     return password
 
 
 def _get_rfc_url() -> str:
-    # RFC settings should be global, not user-specific
-    # Use admin settings as the global default
-    from python.helpers.user_management import get_user_manager, set_current_user
+    # RFC settings should be global and independent of user management
+    # to avoid circular dependencies during initialization
+    import os
 
-    # Temporarily set admin context to get RFC settings
-    user_manager = get_user_manager()
-    admin_user = user_manager.get_user("admin")
-    original_user = None
+    # Use environment variables or sensible defaults for RFC settings
+    # This avoids the circular dependency with user management
+    rfc_host = os.getenv("RFC_HOST", "localhost")
+    rfc_port = int(os.getenv("RFC_PORT", "8880"))
 
-    try:
-        from python.helpers.user_management import get_current_user
-        original_user = get_current_user()
-    except RuntimeError:
-        # No current user, that's fine
-        pass
-
-    try:
-        if admin_user:
-            set_current_user(admin_user)
-
-        set = settings.get_settings()
-        url = set["rfc_url"]
-        if not "://" in url:
-            url = "http://"+url
-        if url.endswith("/"):
-            url = url[:-1]
-        url = url+":"+str(set["rfc_port_http"])
-        url += "/rfc"
-        return url
-    finally:
-        # Restore original user context
-        set_current_user(original_user)
+    # Build URL
+    url = f"http://{rfc_host}:{rfc_port}/rfc"
+    return url
 
 
 def call_development_function_sync(func: Union[Callable[..., T], Callable[..., Awaitable[T]]], *args, **kwargs) -> T:

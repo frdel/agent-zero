@@ -87,7 +87,14 @@ class BackupService:
 # User management and global configurations (CRITICAL)
 {agent_root}/.env
 {agent_root}/tmp/users.json
+
+# Migration markers (CRITICAL - ensure migrations are not re-run after restore)
 {agent_root}/tmp/.multitenancy_migrated
+{agent_root}/tmp/.system_users_migrated
+{agent_root}/tmp/.sudo_defaults_migrated
+{agent_root}/tmp/.global_defaults_migrated
+{agent_root}/tmp/.file_permissions_migrated
+{agent_root}/tmp/.venv_migration_completed
 
 # Exclude system/cache files that shouldn't be backed up
 !{agent_root}/**/__pycache__/**

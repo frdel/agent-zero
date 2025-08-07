@@ -113,21 +113,61 @@ def requires_loopback(f):
 def requires_auth(f):
     @wraps(f)
     async def decorated(*args, **kwargs):
-        from python.helpers.user_management import get_user_manager, set_current_user
+        from python.helpers.user_management import get_user_manager, set_current_user, get_current_user
 
         # Check if user is logged in via session
         username = session.get('username')
         if username:
-            # Get user from user manager and set as current user
+            # Get user from user manager
             user_manager = get_user_manager()
             user = user_manager.get_user(username)
+
+            # Handle temporary admin elevation persisted in session
+            try:
+                import time
+                temp_admin = session.get('temp_admin')
+                temp_admin_username = session.get('temp_admin_username')
+                temp_admin_expires = session.get('temp_admin_expires')
+                if temp_admin and temp_admin_username and temp_admin_expires:
+                    if int(time.time()) < int(temp_admin_expires):
+                        temp_user = user_manager.get_user(temp_admin_username)
+                        if temp_user and temp_user.is_admin:
+                            # Ensure thread-local reflects temp admin for this request
+                            PrintStyle().print(
+                                f"⚑ Applying temporary admin for request: {temp_admin_username} (owner: {username})"
+                            )
+                            try:
+                                set_current_user(temp_user)
+                            except Exception:
+                                pass
+                            # Continue to handler with temp admin in thread-local
+                            return await f(*args, **kwargs)
+                    else:
+                        # Expired temp admin; clear flags
+                        session.pop('temp_admin', None)
+                        session.pop('temp_admin_username', None)
+                        session.pop('temp_admin_expires', None)
+                        session.modified = True
+            except Exception:
+                pass
+
             if user:
-                set_current_user(user)
+                # Always ensure thread-local matches Flask session (this handles temporary auth restoration)
+                try:
+                    current_user = get_current_user()
+                    if not current_user or current_user.username != user.username:
+                        set_current_user(user)
+                except (RuntimeError, AttributeError, Exception):
+                    try:
+                        set_current_user(user)
+                    except Exception:
+                        pass  # Don't fail auth if thread-local fails
+
                 return await f(*args, **kwargs)
 
         # Fall back to basic auth for initial login
         auth = request.authorization
-        if auth:
+        if auth and auth.username and auth.password:
             user_manager = get_user_manager()
             if user_manager.authenticate(auth.username, auth.password):
                 user = user_manager.get_user(auth.username)
@@ -136,6 +176,7 @@ def requires_auth(f):
                     session['username'] = user.username
                     session['is_admin'] = user.is_admin
                     session.permanent = True
+                    session.modified = True  # Ensure session is saved
 
                     # Set current user context
                     set_current_user(user)
@@ -305,7 +346,6 @@ def init_a0():
     initialize.initialize_job_loop()
     # preload
     initialize.initialize_preload()
-
 
 
 # run the internal server

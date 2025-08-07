@@ -82,22 +82,19 @@ class CodeExecution(Tool):
 
     async def get_user_execution_context(self):
         """Get execution context for current user"""
-        try:
-            from python.helpers.user_management import get_current_user
-            current_user = get_current_user()
-            return {
-                "system_username": current_user.system_username,
-                "sudo_commands": current_user.sudo_commands,
-                "is_admin": current_user.is_admin,
-                "venv_path": current_user.venv_path if current_user.venv_created else None
-            }
-        except Exception:
+        # Get user context from agent data (stored by message API)
+        user_context = self.agent.get_data("user_context")
+
+        if user_context:
+            return user_context
+        else:
             # Fallback if no user context available
             return {
                 "system_username": None,
                 "sudo_commands": [],
                 "is_admin": False,
-                "venv_path": None
+                "venv_path": None,
+                "plaintext_password": ""
             }
 
     async def prepare_state(self, reset=False, session=None):
@@ -136,17 +133,19 @@ class CodeExecution(Tool):
                 user_context = await self.get_user_execution_context()
 
                 if self.agent.config.code_exec_ssh_enabled:
-                    pswd = (
+                    # Always connect as root (more reliable), user switching happens after
+                    ssh_password = (
                         self.agent.config.code_exec_ssh_pass
                         if self.agent.config.code_exec_ssh_pass
                         else await rfc_exchange.get_root_password()
                     )
+
                     shell = SSHInteractiveSession(
                         self.agent.context.log,
                         self.agent.config.code_exec_ssh_addr,
                         self.agent.config.code_exec_ssh_port,
-                        self.agent.config.code_exec_ssh_user,
-                        pswd,
+                        self.agent.config.code_exec_ssh_user,  # "root"
+                        ssh_password,
                     )
                 else:
                     # Create local shell with user context
@@ -157,10 +156,24 @@ class CodeExecution(Tool):
                 shells[0] = shell
                 await shell.connect()
 
-                # Activate user's virtual environment after connection
-                if user_context.get("venv_path") and not user_context.get("is_admin"):
-                    venv_activate_cmd = f"source {user_context['venv_path']}/bin/activate"
-                    shell.send_command(venv_activate_cmd)
+                # Apply user context after connection (for both SSH and local sessions)
+                if user_context.get("system_username") and not user_context.get("is_admin"):
+                    system_username = user_context["system_username"]
+
+                    # Switch to target user (works for both SSH and local since we connect as root)
+                    switch_cmd = f"exec sudo -i -u {system_username} bash"
+                    shell.send_command(switch_cmd)
+
+                    # Activate user's virtual environment
+                    if user_context.get("venv_path"):
+                        venv_activate_cmd = f"source {user_context['venv_path']}/bin/activate"
+                        # Check if venv exists and is accessible before activating
+                        check_cmd = f"test -r {user_context['venv_path']}/bin/activate && echo 'VENV_OK' || echo 'VENV_FAIL'"
+                        shell.send_command(check_cmd)
+                        shell.send_command(venv_activate_cmd)
+
+                    # Verify current user
+                    shell.send_command("whoami && pwd")
 
             self.state = State(shells=shells, docker=docker)
         self.agent.set_data("_cet_state", self.state)

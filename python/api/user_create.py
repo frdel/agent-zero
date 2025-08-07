@@ -1,6 +1,7 @@
 from python.helpers.api import ApiHandler, Request, Response
 from python.helpers.user_management import get_user_manager
-from flask import session
+import json
+from python.helpers.authz import is_request_admin
 
 
 class UserCreate(ApiHandler):
@@ -19,9 +20,8 @@ class UserCreate(ApiHandler):
 
     async def process(self, input: dict, request: Request) -> dict | Response:
         try:
-            # Check if current user is admin
-            if not session.get('is_admin', False):
-                return Response("Admin privileges required", status=403)
+            if not is_request_admin():
+                return Response(json.dumps({"error": "Admin privileges required"}), status=403, mimetype="application/json")
 
             # Validate input
             username = input.get('username')

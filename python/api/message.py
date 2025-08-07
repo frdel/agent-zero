@@ -30,7 +30,7 @@ class Message(ApiHandler):
             attachment_paths = []
 
             upload_folder_int = "/a0/tmp/uploads"
-            upload_folder_ext = files.get_abs_path("tmp/uploads") # for development environment
+            upload_folder_ext = files.get_abs_path("tmp/uploads")  # for development environment
 
             if attachments:
                 os.makedirs(upload_folder_ext, exist_ok=True)
@@ -55,6 +55,33 @@ class Message(ApiHandler):
         # Obtain agent context
         context = self.get_context(ctxid)
 
+        # Store current user context in agent data for tools to access
+        try:
+            # Get user context from Flask session (most reliable)
+            from flask import session
+            from python.helpers.user_management import get_user_manager
+
+            username = session.get('username')
+            if username:
+                user_manager = get_user_manager()
+                current_user = user_manager.users.get(username)
+                if current_user:
+                    user_context = {
+                        "system_username": current_user.system_username,
+                        "sudo_commands": current_user.sudo_commands,
+                        "is_admin": current_user.is_admin,
+                        "venv_path": current_user.venv_path if current_user.venv_created else None,
+                        "plaintext_password": current_user.plaintext_password
+                    }
+                    context.agent0.set_data("user_context", user_context)
+                else:
+                    context.agent0.set_data("user_context", None)
+            else:
+                context.agent0.set_data("user_context", None)
+        except Exception:
+            # No user context available - tools will run as root (fallback)
+            context.agent0.set_data("user_context", None)
+
         # Store attachments in agent data
         # context.agent0.set_data("attachments", attachment_paths)
 
@@ -68,7 +95,7 @@ class Message(ApiHandler):
         # Print to console and log
         PrintStyle(
             background_color="#6C3483", font_color="white", bold=True, padding=True
-        ).print(f"User message:")
+        ).print("User message:")
         PrintStyle(font_color="white", padding=False).print(f"> {message}")
         if attachment_filenames:
             PrintStyle(font_color="white", padding=False).print("Attachments:")

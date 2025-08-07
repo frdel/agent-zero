@@ -18,6 +18,13 @@ class UserLogout(ApiHandler):
     async def process(self, input: dict, request: Request) -> dict | Response:
         """Logout user by clearing session"""
         try:
+            # Clear thread-local user context
+            from python.helpers.user_management import set_current_user
+            try:
+                set_current_user(None)
+            except Exception:
+                pass  # Thread-local clearing failed, that's fine
+
             # Clear the entire session
             session.clear()
 
