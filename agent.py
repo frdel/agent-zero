@@ -239,6 +239,15 @@ class AgentConfig:
     code_exec_ssh_user: str = "root"
     code_exec_ssh_pass: str = ""
     additional: Dict[str, Any] = field(default_factory=dict)
+    
+    # Biomni-specific configuration
+    biomni_data_lake_path: str = "/biomni/datalake"
+    biomni_cache_size_gb: int = 2
+    biomni_regulatory_mode: str = "FDA_ICH"
+    biomni_max_concurrent_analyses: int = 4
+    biomni_session_timeout_seconds: int = 7200
+    biomni_clinical_data_encryption: str = "AES256"
+    biomni_audit_logging: bool = True
 
 
 @dataclass
