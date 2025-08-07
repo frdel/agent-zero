@@ -62,7 +62,7 @@ def get_local_url():
 def get_runtime_id() -> str:
     global runtime_id
     if not runtime_id:
-        runtime_id = secrets.token_hex(8)   
+        runtime_id = secrets.token_hex(8)
     return runtime_id
 
 def get_persistent_id() -> str:
@@ -111,32 +111,55 @@ def _get_rfc_password() -> str:
 
 
 def _get_rfc_url() -> str:
-    set = settings.get_settings()
-    url = set["rfc_url"]
-    if not "://" in url:
-        url = "http://"+url
-    if url.endswith("/"):
-        url = url[:-1]
-    url = url+":"+str(set["rfc_port_http"])
-    url += "/rfc"
-    return url
+    # RFC settings should be global, not user-specific
+    # Use admin settings as the global default
+    from python.helpers.user_management import get_user_manager, set_current_user
+
+    # Temporarily set admin context to get RFC settings
+    user_manager = get_user_manager()
+    admin_user = user_manager.get_user("admin")
+    original_user = None
+
+    try:
+        from python.helpers.user_management import get_current_user
+        original_user = get_current_user()
+    except RuntimeError:
+        # No current user, that's fine
+        pass
+
+    try:
+        if admin_user:
+            set_current_user(admin_user)
+
+        set = settings.get_settings()
+        url = set["rfc_url"]
+        if not "://" in url:
+            url = "http://"+url
+        if url.endswith("/"):
+            url = url[:-1]
+        url = url+":"+str(set["rfc_port_http"])
+        url += "/rfc"
+        return url
+    finally:
+        # Restore original user context
+        set_current_user(original_user)
 
 
 def call_development_function_sync(func: Union[Callable[..., T], Callable[..., Awaitable[T]]], *args, **kwargs) -> T:
     # run async function in sync manner
     result_queue = queue.Queue()
-    
+
     def run_in_thread():
         result = asyncio.run(call_development_function(func, *args, **kwargs))
         result_queue.put(result)
-    
+
     thread = threading.Thread(target=run_in_thread)
     thread.start()
     thread.join(timeout=30)  # wait for thread with timeout
-    
+
     if thread.is_alive():
         raise TimeoutError("Function call timed out after 30 seconds")
-    
+
     result = result_queue.get_nowait()
     return cast(T, result)
 

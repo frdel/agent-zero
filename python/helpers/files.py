@@ -7,7 +7,7 @@ import re
 import base64
 import shutil
 import tempfile
-from typing import Any
+from typing import Any, Dict, List
 import zipfile
 import importlib
 import importlib.util
@@ -17,11 +17,11 @@ import glob
 
 class VariablesPlugin(ABC):
     @abstractmethod
-    def get_variables(self, file: str, backup_dirs: list[str] | None = None) -> dict[str, Any]:  # type: ignore
+    def get_variables(self, file: str, backup_dirs: List[str] = None) -> Dict[str, Any]:  # type: ignore
         pass
 
 
-def load_plugin_variables(file: str, backup_dirs: list[str] | None = None) -> dict[str, Any]:
+def load_plugin_variables(file: str, backup_dirs: List[str] = None) -> Dict[str, Any]:
     if not file.endswith(".md"):
         return {}
 

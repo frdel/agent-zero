@@ -6,6 +6,7 @@ Handles user authentication, user context, and user data isolation.
 import json
 import os
 import bcrypt
+import shutil
 import threading
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -97,6 +98,9 @@ class UserManager:
         self.users[username] = user
         self._save_users()
 
+        # Ensure user data directories exist
+        self.ensure_user_data_directories(username)
+
         return user
 
     def authenticate(self, username: str, password: str) -> bool:
@@ -160,6 +164,13 @@ class UserManager:
         admin_user = self.get_user("admin")
         if not admin_user:
             admin_user = self.create_user("admin", "agent0", True)
+        else:
+            # Ensure admin directories exist even if user already existed
+            self.ensure_user_data_directories("admin")
+
+        # Run one-time migration if needed
+        self.migrate_global_to_admin_if_needed()
+
         return admin_user
 
     def migrate_existing_data(self, base_dir: str) -> None:
@@ -184,14 +195,169 @@ class UserManager:
                         old_item_path = os.path.join(old_path, item)
                         new_item_path = os.path.join(new_path, item)
 
-                        try:
-                            if os.path.isfile(old_item_path):
-                                os.rename(old_item_path, new_item_path)
-                            elif os.path.isdir(old_item_path):
-                                import shutil
+                        if os.path.isfile(old_item_path):
+                            shutil.move(old_item_path, new_item_path)
+                        elif os.path.isdir(old_item_path):
+                            if not os.path.exists(new_item_path):
                                 shutil.move(old_item_path, new_item_path)
-                        except OSError as e:
-                            print(f"Warning: Could not migrate {old_item_path}: {e}")
+                            else:
+                                # If target exists, merge contents
+                                for subitem in os.listdir(old_item_path):
+                                    shutil.move(
+                                        os.path.join(old_item_path, subitem),
+                                        os.path.join(new_item_path, subitem)
+                                    )
+                                os.rmdir(old_item_path)
+
+    def ensure_user_data_directories(self, username: str) -> None:
+        """Ensure all user-specific data directories exist"""
+        from python.helpers import files
+
+        # Define all user data directory structures
+        user_dirs = {
+            'memory': ['default', 'embeddings'],
+            'knowledge': {
+                'default': ['main', 'fragments', 'solutions', 'instruments'],
+                'custom': ['main', 'fragments', 'solutions', 'instruments']
+            },
+            'logs': [],
+            'tmp': ['chats', 'scheduler', 'uploads', 'exports']
+        }
+
+        base_dir = files.get_base_dir()
+
+        for data_type, subdirs in user_dirs.items():
+            if isinstance(subdirs, dict):
+                # Knowledge has nested structure
+                for subdir, areas in subdirs.items():
+                    for area in areas:
+                        dir_path = os.path.join(base_dir, data_type, username, subdir, area)
+                        os.makedirs(dir_path, exist_ok=True)
+            else:
+                # Simple list of subdirectories
+                user_base = os.path.join(base_dir, data_type, username)
+                os.makedirs(user_base, exist_ok=True)
+
+                for subdir in subdirs:
+                    dir_path = os.path.join(user_base, subdir)
+                    os.makedirs(dir_path, exist_ok=True)
+
+    def migrate_global_to_admin_if_needed(self) -> None:
+        """One-time migration of global data to admin user directories"""
+        from python.helpers import files
+
+        base_dir = files.get_base_dir()
+        migration_marker = os.path.join(base_dir, '.multitenancy_migrated')
+
+        # Skip if already migrated
+        if os.path.exists(migration_marker):
+            return
+
+        print("🔄 Migrating existing data to admin user...")
+
+        # Ensure admin user data directories exist (but don't call ensure_default_admin to avoid recursion)
+        self.ensure_user_data_directories("admin")
+
+        # Migration patterns for each data type
+        migrations = [
+            # Memory: /memory/default → /memory/admin/default
+            {
+                'source_pattern': 'memory/default',
+                'target_pattern': 'memory/admin/default',
+                'description': 'Memory database'
+            },
+            {
+                'source_pattern': 'memory/embeddings',
+                'target_pattern': 'memory/admin/embeddings',
+                'description': 'Memory embeddings cache'
+            },
+            # Knowledge: /knowledge/custom → /knowledge/admin/custom
+            {
+                'source_pattern': 'knowledge/custom',
+                'target_pattern': 'knowledge/admin/custom',
+                'description': 'Custom knowledge'
+            },
+            {
+                'source_pattern': 'knowledge/default',
+                'target_pattern': 'knowledge/admin/default',
+                'description': 'Default knowledge (shared)'
+            },
+            # Logs: /logs/* → /logs/admin/*
+            {
+                'source_pattern': 'logs',
+                'target_pattern': 'logs/admin',
+                'description': 'Log files',
+                'exclude_subdirs': ['admin']  # Don't move admin subdir
+            },
+            # Tmp data: /tmp/* → /tmp/admin/*
+            {
+                'source_pattern': 'tmp/chats',
+                'target_pattern': 'tmp/admin/chats',
+                'description': 'Chat history'
+            },
+            {
+                'source_pattern': 'tmp/scheduler',
+                'target_pattern': 'tmp/admin/scheduler',
+                'description': 'Scheduled tasks'
+            },
+            {
+                'source_pattern': 'tmp/uploads',
+                'target_pattern': 'tmp/admin/uploads',
+                'description': 'Uploaded files'
+            },
+            {
+                'source_pattern': 'tmp/settings.json',
+                'target_pattern': 'tmp/admin/settings.json',
+                'description': 'Settings file'
+            }
+        ]
+
+        migrated_items = []
+
+        for migration in migrations:
+            source_path = os.path.join(base_dir, migration['source_pattern'])
+            target_path = os.path.join(base_dir, migration['target_pattern'])
+
+            if os.path.exists(source_path):
+                # Create target directory
+                os.makedirs(os.path.dirname(target_path), exist_ok=True)
+
+                if os.path.isfile(source_path):
+                    # Move file
+                    if not os.path.exists(target_path):
+                        shutil.move(source_path, target_path)
+                        migrated_items.append(f"✅ {migration['description']}: {migration['source_pattern']} → {migration['target_pattern']}")
+                elif os.path.isdir(source_path):
+                    # Move directory (with exclusions)
+                    exclude_subdirs = migration.get('exclude_subdirs', [])
+
+                    if not os.path.exists(target_path):
+                        # Target doesn't exist, move entire directory
+                        shutil.move(source_path, target_path)
+                        migrated_items.append(f"✅ {migration['description']}: {migration['source_pattern']} → {migration['target_pattern']}")
+                    else:
+                        # Target exists, merge contents
+                        for item in os.listdir(source_path):
+                            if item in exclude_subdirs:
+                                continue
+
+                            source_item = os.path.join(source_path, item)
+                            target_item = os.path.join(target_path, item)
+
+                            if not os.path.exists(target_item):
+                                shutil.move(source_item, target_item)
+                                migrated_items.append(f"📁 Moved {item} from {migration['description']}")
+
+        # Create migration marker
+        with open(migration_marker, 'w') as f:
+            f.write(f"Migration completed at: {os.popen('date').read().strip()}\n")
+            f.write("Migrated items:\n")
+            f.write("\n".join(migrated_items))
+
+        if migrated_items:
+            print(f"✅ Migration completed! Moved {len(migrated_items)} items to admin user.")
+        else:
+            print("ℹ️  No data to migrate (fresh installation).")
 
 
 # Global user manager instance

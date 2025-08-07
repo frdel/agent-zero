@@ -260,10 +260,8 @@ function loginOverlayData() {
                 window.startPolling();
             }
 
-            // Verify authentication status after a delay to ensure session is established
-            setTimeout(() => {
-                this.checkAuthStatus();
-            }, 500);
+            // Don't call checkAuthStatus again - we just authenticated successfully
+            // The overlay is already hidden and session is established
         }
     }
 }

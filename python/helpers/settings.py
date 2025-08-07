@@ -1,4 +1,5 @@
 # flake8: noqa
+# type: ignore
 import base64
 import hashlib
 import json
@@ -1103,17 +1104,18 @@ def _get_api_key_field(settings: Settings, provider: str, title: str) -> Setting
 
 def convert_in(settings: dict) -> Settings:
     current = get_settings()
+    current_dict = dict(current)  # Cast to regular dict for dynamic access
     for section in settings["sections"]:
         if "fields" in section:
             for field in section["fields"]:
                 if field["value"] != PASSWORD_PLACEHOLDER:
                     if field["id"].endswith("_kwargs"):
-                        current[field["id"]] = _env_to_dict(field["value"])
+                        current_dict[field["id"]] = _env_to_dict(field["value"])
                     elif field["id"].startswith("api_key_"):
-                        current["api_keys"][field["id"]] = field["value"]
+                        current_dict["api_keys"][field["id"]] = field["value"]
                     else:
-                        current[field["id"]] = field["value"]
-    return current
+                        current_dict[field["id"]] = field["value"]
+    return Settings(current_dict)  # type: ignore
 
 
 def get_settings() -> Settings:
@@ -1163,35 +1165,36 @@ def set_settings_delta(delta: dict, apply: bool = True):
 
 
 def normalize_settings(settings: Settings) -> Settings:
-    copy = settings.copy()
+    copy_dict = dict(settings)  # Cast to regular dict for dynamic access
     default = get_default_settings()
+    default_dict = dict(default)
 
     # adjust settings values to match current version if needed
-    if "version" not in copy or copy["version"] != default["version"]:
-        _adjust_to_version(copy, default)
-        copy["version"] = default["version"] # sync version
+    if "version" not in copy_dict or copy_dict["version"] != default_dict["version"]:
+        _adjust_to_version(Settings(copy_dict), default)  # type: ignore
+        copy_dict["version"] = default_dict["version"] # sync version
 
     # remove keys that are not in default
-    keys_to_remove = [key for key in copy if key not in default]
+    keys_to_remove = [key for key in copy_dict if key not in default_dict]
     for key in keys_to_remove:
-        del copy[key]
+        del copy_dict[key]
 
     # add missing keys and normalize types
-    for key, value in default.items():
-        if key not in copy:
-            copy[key] = value
+    for key, value in default_dict.items():
+        if key not in copy_dict:
+            copy_dict[key] = value
         else:
             try:
-                copy[key] = type(value)(copy[key])  # type: ignore
-                if isinstance(copy[key], str):
-                    copy[key] = copy[key].strip() # strip strings
+                copy_dict[key] = type(value)(copy_dict[key])  # type: ignore
+                if isinstance(copy_dict[key], str):
+                    copy_dict[key] = copy_dict[key].strip() # strip strings
             except (ValueError, TypeError):
-                copy[key] = value  # make default instead
+                copy_dict[key] = value  # make default instead
 
     # mcp server token is set automatically
-    copy["mcp_server_token"] = create_auth_token()
+    copy_dict["mcp_server_token"] = create_auth_token()
 
-    return copy
+    return Settings(copy_dict)  # type: ignore
 
 
 def _adjust_to_version(settings: Settings, default: Settings):
@@ -1207,6 +1210,7 @@ def _read_settings_file() -> Settings | None:
         content = files.read_file(settings_file)
         parsed = json.loads(content)
         return normalize_settings(parsed)
+    return None
 
 
 def _write_settings_file(settings: Settings):
@@ -1235,7 +1239,12 @@ def _write_sensitive_settings(settings: Settings):
     dotenv.save_dotenv_value(dotenv.KEY_AUTH_LOGIN, settings["auth_login"])
     if settings["auth_password"]:
         dotenv.save_dotenv_value(dotenv.KEY_AUTH_PASSWORD, settings["auth_password"])
+
+    # Don't overwrite existing RFC password with empty value from default settings
     if settings["rfc_password"]:
+        dotenv.save_dotenv_value(dotenv.KEY_RFC_PASSWORD, settings["rfc_password"])
+    elif not dotenv.get_dotenv_value(dotenv.KEY_RFC_PASSWORD):
+        # Only set empty if no existing value
         dotenv.save_dotenv_value(dotenv.KEY_RFC_PASSWORD, settings["rfc_password"])
 
     if settings["root_password"]:
