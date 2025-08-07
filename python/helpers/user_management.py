@@ -14,15 +14,25 @@ from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from python.helpers import files
 import re
+from python.helpers.print_style import PrintStyle
 
 # Silence all debug output in this module
 def _silent_print(*args, **kwargs):
     return None
 print = _silent_print  # type: ignore
 
+def _log_migration(message: str) -> None:
+    try:
+        PrintStyle.info(message)
+    except Exception:
+        pass
 
 # Thread-local storage for current user context
 _thread_local = threading.local()
+
+# One-time guard for Stage 6 migrations
+_migrations_lock = threading.Lock()
+_stage6_migrations_done: bool = False
 
 
 # RFC-accessible functions for system command execution
@@ -1454,15 +1464,41 @@ class UserManager:
             print(f"❌ Error setting up directories for system user '{system_username}': {e}")
 
     def ensure_system_user(self, username: str) -> bool:
-        """Ensure system user exists for Agent Zero user"""
+        """Ensure system user exists for Agent Zero user (verify flag against actual system)."""
         user = self.users.get(username)
         if not user:
             return False
 
-        if user.system_user_created:
-            return True  # Already created
+        # Admin users map to root; nothing to create
+        if user.is_admin:
+            user.system_user_created = True
+            return True
 
-        # Create system user
+        # Ensure system_username is set
+        if not user.system_username:
+            user.system_username = f"a0-{username}"
+
+        # Verify actual presence regardless of stored flag
+        try:
+            result = self.system_router.run_system_command(['id', user.system_username], capture_output=True, text=True, check=False)
+            exists = result.returncode == 0
+        except Exception:
+            exists = False
+
+        if exists:
+            # Keep flag in sync and ensure sudoers entry exists
+            if not user.system_user_created:
+                user.system_user_created = True
+                self._save_users()
+            self.setup_sudoers_entry(username)
+            return True
+        else:
+            # If flag claimed created but not present, correct it
+            if user.system_user_created:
+                user.system_user_created = False
+                self._save_users()
+
+        # Create system user now
         if not self.create_system_user(username):
             return False
 
@@ -1515,15 +1551,6 @@ class UserManager:
 
     def migrate_users_to_system_users(self) -> None:
         """One-time migration to create Linux system users for existing Agent Zero users"""
-        from python.helpers import files
-
-        migration_marker = os.path.join(files.get_base_dir(), "tmp", ".system_users_migrated")
-
-        # Skip if already migrated
-        if os.path.exists(migration_marker):
-            print("ℹ️  System users migration already completed")
-            return
-
         print("🔄 Migrating existing users to system users...")
 
         # Ensure system infrastructure is set up first
@@ -1542,13 +1569,7 @@ class UserManager:
                     failed_count += 1
                     print(f"⚠️ Failed to create system user for: {username}")
 
-        # Create migration marker
-        os.makedirs(os.path.dirname(migration_marker), exist_ok=True)
-        with open(migration_marker, 'w') as f:
-            f.write(f"System users migration completed at: {datetime.now(timezone.utc).isoformat()}\n")
-            f.write(f"Successfully migrated: {migrated_count} users\n")
-            f.write(f"Failed migrations: {failed_count} users\n")
-
+        # Summary (global stage6 marker is written elsewhere)
         if migrated_count > 0:
             print(f"✅ Successfully created system users for {migrated_count} existing users")
         if failed_count > 0:
@@ -1701,22 +1722,93 @@ class UserManager:
             print("ℹ️  This is normal in environments without sudo privileges")
 
     def run_stage6_migrations(self) -> None:
-        """Run all Stage 6 migrations for backwards compatibility"""
-        print("🔄 Running Stage 6: Migration & Backwards Compatibility...")
+        """Run all Stage 6 migrations for backwards compatibility (once per process + marker)."""
+        global _stage6_migrations_done
+        if _stage6_migrations_done:
+            return
+        from python.helpers import files
+        done_marker = os.path.join(files.get_base_dir(), "tmp", ".stage6_migrations_done")
+        running_marker = os.path.join(files.get_base_dir(), "tmp", ".stage6_migrations_running")
 
-        # Migration 1: Migrate users to system users
-        self.migrate_users_to_system_users()
+        # If a completed marker exists, skip entirely
+        try:
+            if self._check_file_exists(done_marker):
+                _stage6_migrations_done = True
+                return
+        except Exception:
+            pass
 
-        # Migration 2: Set up default sudo commands for existing users
-        self.setup_default_sudo_commands()
+        # If a running marker exists, skip (another process/thread is handling it)
+        try:
+            if self._check_file_exists(running_marker):
+                return
+        except Exception:
+            pass
 
-        # Migration 3: Migrate to admin-editable global defaults
-        self.migrate_global_defaults()
+        with _migrations_lock:
+            if _stage6_migrations_done:
+                return
+            try:
+                if self._check_file_exists(done_marker):
+                    _stage6_migrations_done = True
+                    return
+                if self._check_file_exists(running_marker):
+                    return
+            except Exception:
+                pass
 
-        # Migration 4: Migrate file permissions for system user support
-        self.migrate_file_permissions()
+            # Try to atomically create the running marker
+            created_running = False
+            try:
+                os.makedirs(os.path.dirname(running_marker), exist_ok=True)
+                fd = os.open(running_marker, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                with os.fdopen(fd, 'w') as f:
+                    f.write(f"Stage 6 running at: {datetime.now(timezone.utc).isoformat()}\n")
+                created_running = True
+            except FileExistsError:
+                # Another process beat us
+                return
+            except Exception:
+                # Best effort: proceed without atomic marker
+                pass
 
-        print("✅ Stage 6 migrations completed!")
+            _log_migration("Running Stage 6 migrations...")
+
+            # Ensure existing users have proper system_username first
+            _log_migration("[1/5] Initializing system usernames for existing users...")
+            try:
+                self.migrate_system_usernames_for_existing_users()
+            except Exception as e:
+                _log_migration(f"System username initialization skipped/failed: {e}")
+
+            _log_migration("[2/5] Migrating Agent Zero users to system users...")
+            self.migrate_users_to_system_users()
+
+            _log_migration("[3/5] Ensuring default sudo commands for existing users...")
+            self.setup_default_sudo_commands()
+
+            _log_migration("[4/5] Migrating to admin-editable global defaults...")
+            self.migrate_global_defaults()
+
+            _log_migration("[5/5] Updating file permissions for system user support...")
+            self.migrate_file_permissions()
+
+            _stage6_migrations_done = True
+            try:
+                # Write done marker
+                with open(done_marker, 'w') as f:
+                    f.write(f"Stage 6 completed at: {datetime.now(timezone.utc).isoformat()}\n")
+            except Exception:
+                pass
+            finally:
+                if created_running:
+                    try:
+                        if os.path.exists(running_marker):
+                            os.remove(running_marker)
+                    except Exception:
+                        pass
+
+            _log_migration("Stage 6 migrations completed.")
 
     def migrate_venvs_for_existing_users(self) -> None:
         """Create virtual environments for existing users who don't have them"""
@@ -2018,6 +2110,58 @@ class UserManager:
         else:
             print("ℹ️  No data to migrate (fresh installation).")
 
+    def ensure_system_users_integrity(self) -> dict:
+        """Idempotently ensure all users have corresponding Linux accounts and sudoers as needed."""
+        created = 0
+        updated_sudoers = 0
+        for username, user in self.users.items():
+            # Admin maps to root; skip sudoers
+            if self.ensure_system_user(username):
+                if not user.is_admin:
+                    # setup_sudoers_entry is also called inside ensure_system_user when creating
+                    # but we call again to ensure it's present and updated
+                    if self.setup_sudoers_entry(username):
+                        updated_sudoers += 1
+                    # Ensure the user's shell loads their venv on login
+                    try:
+                        self.setup_user_shell_init(username)
+                    except Exception:
+                        pass
+                # Count as created if flag is now true and previously was false
+                # (we cannot detect prior value reliably here, so approximate by checking presence)
+                try:
+                    res = self.system_router.run_system_command(['id', user.system_username], capture_output=True, text=True, check=False)
+                    if res.returncode == 0:
+                        created += 1
+                except Exception:
+                    pass
+        return {"ensured_users": created, "sudoers_updated": updated_sudoers}
+
+    def setup_user_shell_init(self, username: str) -> bool:
+        """Ensure the user's shell profile sources their virtual environment on login."""
+        user = self.users.get(username)
+        if not user:
+            return False
+        if user.is_admin:
+            return True
+        system_username = user.system_username or f"a0-{username}"
+        venv_path = user.venv_path or self.get_user_venv_path(username)
+        if not venv_path:
+            return False
+
+        home_dir = f"/home/{system_username}"
+        activate_line = f"source {venv_path}/bin/activate"
+        profile_files = [".bashrc", ".profile"]
+
+        for pf in profile_files:
+            file_path = f"{home_dir}/{pf}"
+            # Touch file, append line if missing, and fix ownership
+            self.system_router.run_system_command(["bash", "-lc", f"touch {file_path}"] , capture_output=True, text=True, check=False)
+            self.system_router.run_system_command(["bash", "-lc", f"grep -qxF '{activate_line}' {file_path} || echo '{activate_line}' >> {file_path}"] , capture_output=True, text=True, check=False)
+            self.system_router.run_system_command(["chown", f"{system_username}:a0-users", file_path], capture_output=True, text=True, check=False)
+
+        return True
+
 
 # Global user manager instance
 _user_manager: Optional[UserManager] = None
@@ -2030,10 +2174,15 @@ def get_user_manager() -> UserManager:
         _user_manager = UserManager()
         _user_manager.ensure_default_admin()
         try:
-            _user_manager.migrate_global_to_admin_if_needed()
-            _user_manager.migrate_venvs_for_existing_users()
+            _user_manager.run_stage6_migrations()
+            # Always perform an integrity pass to create missing system users/sudoers
+            try:
+                info = _user_manager.ensure_system_users_integrity()
+                _log_migration(f"Integrity ensured: users={info.get('ensured_users', 0)}, sudoers={info.get('sudoers_updated', 0)}")
+            except Exception as e:
+                _log_migration(f"Integrity pass skipped/failed: {e}")
         except Exception as e:
-            print(f"⚠️ Migration initialization skipped or failed: {e}")
+            _log_migration(f"Migration initialization error: {e}")
     return _user_manager
 
 

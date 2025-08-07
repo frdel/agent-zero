@@ -159,21 +159,60 @@ class CodeExecution(Tool):
                 # Apply user context after connection (for both SSH and local sessions)
                 if user_context.get("system_username") and not user_context.get("is_admin"):
                     system_username = user_context["system_username"]
+                    # Ensure remote system user exists via manager (no shell output)
+                    try:
+                        from python.helpers.user_management import get_user_manager
+                        um = get_user_manager()
+                        um.setup_system_user_infrastructure()
+                        a0_username = user_context.get("username") or system_username.removeprefix("a0-")
+                        um.ensure_system_user(a0_username)
+                    except Exception:
+                        pass
 
-                    # Switch to target user (works for both SSH and local since we connect as root)
-                    switch_cmd = f"exec sudo -i -u {system_username} bash"
+                    # Unconditionally attempt switch: prefer su -l (login shell), fallback to sudo; avoid 'exec' so we keep the channel
+                    if isinstance(shell, SSHInteractiveSession):
+                        switch_cmd = (
+                            f"USER_TO_SWITCH={shlex.quote(system_username)}; "
+                            f"su -l -s /bin/bash \"$USER_TO_SWITCH\" || sudo -n -iu \"$USER_TO_SWITCH\""
+                        )
+                    else:
+                        switch_cmd = (
+                            f"USER_TO_SWITCH={shlex.quote(system_username)}; "
+                            f"sudo -n -iu \"$USER_TO_SWITCH\" || su -l -s /bin/bash \"$USER_TO_SWITCH\""
+                        )
                     shell.send_command(switch_cmd)
+                    # Give the session a brief moment without printing anything
+                    await shell.read_output(timeout=1)
 
-                    # Activate user's virtual environment
+                    # Activate user's virtual environment only after switch
                     if user_context.get("venv_path"):
                         venv_activate_cmd = f"source {user_context['venv_path']}/bin/activate"
-                        # Check if venv exists and is accessible before activating
-                        check_cmd = f"test -r {user_context['venv_path']}/bin/activate && echo 'VENV_OK' || echo 'VENV_FAIL'"
+                        # Silent check; no echoing markers
+                        check_cmd = f"test -r {user_context['venv_path']}/bin/activate >/dev/null 2>&1"
+                        # Repair permissions silently to avoid 'Permission denied'
+                        try:
+                            if isinstance(shell, SSHInteractiveSession):
+                                fix_owner = (
+                                    f"sudo -n chown -R {shlex.quote(system_username)}:a0-users "
+                                    f"{shlex.quote(user_context['venv_path'])} >/dev/null 2>&1 || true"
+                                )
+                                fix_dirs = (
+                                    f"sudo -n find {shlex.quote(user_context['venv_path'])} -type d -exec chmod 755 {{}} + "
+                                    f">/dev/null 2>&1 || true"
+                                )
+                                fix_activate = (
+                                    f"sudo -n chmod 755 {shlex.quote(user_context['venv_path'])}/bin/activate "
+                                    f">/dev/null 2>&1 || true"
+                                )
+                                shell.send_command(fix_owner)
+                                shell.send_command(fix_dirs)
+                                shell.send_command(fix_activate)
+                        except Exception:
+                            pass
                         shell.send_command(check_cmd)
                         shell.send_command(venv_activate_cmd)
 
-                    # Verify current user
-                    shell.send_command("whoami && pwd")
+                    # Do not emit verification output here
 
             self.state = State(shells=shells, docker=docker)
         self.agent.set_data("_cet_state", self.state)
@@ -226,6 +265,58 @@ class CodeExecution(Tool):
                         shell = LocalInteractiveSession()
                     self.state.shells[session] = shell
                     await shell.connect()
+
+                    # Apply user context for this new session as well
+                    user_context = await self.get_user_execution_context()
+                    if user_context.get("system_username") and not user_context.get("is_admin"):
+                        system_username = user_context["system_username"]
+                        # Ensure remote system user exists via manager (no shell output)
+                        try:
+                            from python.helpers.user_management import get_user_manager
+                            um = get_user_manager()
+                            um.setup_system_user_infrastructure()
+                            a0_username = user_context.get("username") or system_username.removeprefix("a0-")
+                            um.ensure_system_user(a0_username)
+                        except Exception:
+                            pass
+
+                        if isinstance(shell, SSHInteractiveSession):
+                            switch_cmd = (
+                                f"USER_TO_SWITCH={shlex.quote(system_username)}; "
+                                f"su -l -s /bin/bash \"$USER_TO_SWITCH\" || sudo -n -iu \"$USER_TO_SWITCH\""
+                            )
+                        else:
+                            switch_cmd = (
+                                f"USER_TO_SWITCH={shlex.quote(system_username)}; "
+                                f"sudo -n -iu \"$USER_TO_SWITCH\" || su -l -s /bin/bash \"$USER_TO_SWITCH\""
+                            )
+                        shell.send_command(switch_cmd)
+                        await shell.read_output(timeout=1)
+                        # Activate user's virtual environment only after switch
+                        if user_context.get("venv_path"):
+                            venv_activate_cmd = f"source {user_context['venv_path']}/bin/activate"
+                            check_cmd = f"test -r {user_context['venv_path']}/bin/activate >/dev/null 2>&1"
+                            try:
+                                if isinstance(shell, SSHInteractiveSession):
+                                    fix_owner = (
+                                        f"sudo -n chown -R {shlex.quote(system_username)}:a0-users "
+                                        f"{shlex.quote(user_context['venv_path'])} >/dev/null 2>&1 || true"
+                                    )
+                                    fix_dirs = (
+                                        f"sudo -n find {shlex.quote(user_context['venv_path'])} -type d -exec chmod 755 {{}} + "
+                                        f">/dev/null 2>&1 || true"
+                                    )
+                                    fix_activate = (
+                                        f"sudo -n chmod 755 {shlex.quote(user_context['venv_path'])}/bin/activate "
+                                        f">/dev/null 2>&1 || true"
+                                    )
+                                    shell.send_command(fix_owner)
+                                    shell.send_command(fix_dirs)
+                                    shell.send_command(fix_activate)
+                            except Exception:
+                                pass
+                            shell.send_command(check_cmd)
+                            shell.send_command(venv_activate_cmd)
 
                 self.state.shells[session].send_command(command)
 
