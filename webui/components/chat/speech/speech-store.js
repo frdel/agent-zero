@@ -303,8 +303,8 @@ const model = {
     for (const line of lines) {
       if (!line.trim()) continue;
       // Process each line into sentence tokens and add to chunks
-      const sentenceStr = sentenceTokens(line.trim()).join(" ");
-      initialChunks.push(sentenceStr);
+      const sentences = sentenceTokens(line.trim());
+      initialChunks.push(...sentences);
     }
 
     // Step 2: Merge short chunks until they meet minimum length criteria
