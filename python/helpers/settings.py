@@ -71,7 +71,6 @@ class Settings(TypedDict):
     memory_memorize_consolidation: bool
     memory_memorize_replace_threshold: float
 
-
     api_keys: dict[str, str]
 
     auth_login: str
@@ -113,7 +112,15 @@ class SettingsField(TypedDict, total=False):
     title: str
     description: str
     type: Literal[
-        "text", "number", "select", "range", "textarea", "password", "switch", "button", "html"
+        "text",
+        "number",
+        "select",
+        "range",
+        "textarea",
+        "password",
+        "switch",
+        "button",
+        "html",
     ]
     value: Any
     min: float
@@ -139,7 +146,6 @@ PASSWORD_PLACEHOLDER = "****PSWD****"
 
 SETTINGS_FILE = files.get_abs_path("tmp/settings.json")
 _settings: Settings | None = None
-
 
 
 def convert_out(settings: Settings) -> SettingsOutput:
@@ -478,7 +484,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "type": "number",
             "value": settings["browser_model_rl_output"],
         }
-    )   
+    )
 
     browser_model_fields.append(
         {
@@ -497,7 +503,6 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "fields": browser_model_fields,
         "tab": "agent",
     }
-
 
     # basic auth section
     auth_fields: list[SettingsField] = []
@@ -599,7 +604,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "value": settings["agent_profile"],
             "options": [
                 {"value": subdir, "label": subdir}
-                for subdir in files.get_subdirectories("agents") if subdir != "_example"
+                for subdir in files.get_subdirectories("agents")
+                if subdir != "_example"
             ],
         }
     )
@@ -625,7 +631,6 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "fields": agent_fields,
         "tab": "agent",
     }
-
 
     memory_fields: list[SettingsField] = []
 
@@ -856,6 +861,46 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "tab": "developer",
     }
 
+    # code_exec_fields: list[SettingsField] = []
+
+    # code_exec_fields.append(
+    #     {
+    #         "id": "code_exec_ssh_enabled",
+    #         "title": "Use SSH for code execution",
+    #         "description": "Code execution will use SSH to connect to the terminal. When disabled, a local python terminal interface is used instead. SSH should only be used in development environment or when encountering issues with the local python terminal interface.",
+    #         "type": "switch",
+    #         "value": settings["code_exec_ssh_enabled"],
+    #     }
+    # )
+
+    # code_exec_fields.append(
+    #     {
+    #         "id": "code_exec_ssh_addr",
+    #         "title": "Code execution SSH address",
+    #         "description": "Address of the SSH server for code execution. Only applies when SSH is enabled.",
+    #         "type": "text",
+    #         "value": settings["code_exec_ssh_addr"],
+    #     }
+    # )
+
+    # code_exec_fields.append(
+    #     {
+    #         "id": "code_exec_ssh_port",
+    #         "title": "Code execution SSH port",
+    #         "description": "Port of the SSH server for code execution. Only applies when SSH is enabled.",
+    #         "type": "text",
+    #         "value": settings["code_exec_ssh_port"],
+    #     }
+    # )
+
+    # code_exec_section: SettingsSection = {
+    #     "id": "code_exec",
+    #     "title": "Code execution",
+    #     "description": "Configuration of code execution by the agent.",
+    #     "fields": code_exec_fields,
+    #     "tab": "developer",
+    # }
+
     # Speech to text section
     stt_fields: list[SettingsField] = []
 
@@ -1085,6 +1130,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             mcp_server_section,
             backup_section,
             dev_section,
+            # code_exec_section,
         ]
     }
     return result
@@ -1147,7 +1193,7 @@ def normalize_settings(settings: Settings) -> Settings:
     # adjust settings values to match current version if needed
     if "version" not in copy or copy["version"] != default["version"]:
         _adjust_to_version(copy, default)
-        copy["version"] = default["version"] # sync version
+        copy["version"] = default["version"]  # sync version
 
     # remove keys that are not in default
     keys_to_remove = [key for key in copy if key not in default]
@@ -1162,7 +1208,7 @@ def normalize_settings(settings: Settings) -> Settings:
             try:
                 copy[key] = type(value)(copy[key])  # type: ignore
                 if isinstance(copy[key], str):
-                    copy[key] = copy[key].strip() # strip strings
+                    copy[key] = copy[key].strip()  # strip strings
             except (ValueError, TypeError):
                 copy[key] = value  # make default instead
 
@@ -1178,6 +1224,7 @@ def _adjust_to_version(settings: Settings, default: Settings):
     if "version" not in settings or settings["version"].startswith("v0.8"):
         if "agent_profile" not in settings or settings["agent_profile"] == "default":
             settings["agent_profile"] = "agent0"
+
 
 def _read_settings_file() -> Settings | None:
     if os.path.exists(SETTINGS_FILE):
@@ -1441,9 +1488,9 @@ def set_root_password(password: str):
 def get_runtime_config(set: Settings):
     if runtime.is_dockerized():
         return {
+            "code_exec_ssh_enabled": False,
             "code_exec_ssh_addr": "localhost",
             "code_exec_ssh_port": 22,
-            "code_exec_http_port": 80,
             "code_exec_ssh_user": "root",
         }
     else:
@@ -1455,9 +1502,9 @@ def get_runtime_config(set: Settings):
         if host.endswith("/"):
             host = host[:-1]
         return {
+            "code_exec_ssh_enabled": True,
             "code_exec_ssh_addr": host,
             "code_exec_ssh_port": set["rfc_port_ssh"],
-            "code_exec_http_port": set["rfc_port_http"],
             "code_exec_ssh_user": "root",
         }
 

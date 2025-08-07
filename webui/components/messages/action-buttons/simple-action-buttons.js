@@ -9,6 +9,11 @@ function getTextContent(element) {
   for (const child of element.children) {
     // Skip action buttons
     if (child.classList.contains("action-buttons")) continue;
+    // If the child is an image, copy its src URL
+    if (child.tagName && child.tagName.toLowerCase() === "img") {
+      if (child.src) textParts.push(child.src);
+      continue;
+    }
     // Get text content from the child
     const text = child.innerText || "";
     if (text.trim()) {

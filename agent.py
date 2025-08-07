@@ -221,18 +221,6 @@ class AgentConfig:
     profile: str = ""
     memory_subdir: str = ""
     knowledge_subdirs: list[str] = field(default_factory=lambda: ["default", "custom"])
-    code_exec_docker_enabled: bool = False
-    code_exec_docker_name: str = "A0-dev"
-    code_exec_docker_image: str = "agent0ai/agent-zero-run:development"
-    code_exec_docker_ports: dict[str, int] = field(
-        default_factory=lambda: {"22/tcp": 55022, "80/tcp": 55080}
-    )
-    code_exec_docker_volumes: dict[str, dict[str, str]] = field(
-        default_factory=lambda: {
-            files.get_base_dir(): {"bind": "/a0", "mode": "rw"},
-            files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"},
-        }
-    )
     code_exec_ssh_enabled: bool = True
     code_exec_ssh_addr: str = "localhost"
     code_exec_ssh_port: int = 55022

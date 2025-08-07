@@ -16,7 +16,6 @@ import re
 @dataclass
 class State:
     shells: dict[int, LocalInteractiveSession | SSHInteractiveSession]
-    docker: DockerContainerManager | None
 
 
 class CodeExecution(Tool):
@@ -24,10 +23,6 @@ class CodeExecution(Tool):
     async def execute(self, **kwargs):
 
         await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
-
-        await self.prepare_state()
-
-        # os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
 
         runtime = self.args.get("runtime", "").lower().strip()
         session = int(self.args.get("session", 0))
@@ -80,59 +75,48 @@ class CodeExecution(Tool):
     async def after_execution(self, response, **kwargs):
         self.agent.hist_add_tool_result(self.name, response.message)
 
-    async def prepare_state(self, reset=False, session=None):
-        self.state = self.agent.get_data("_cet_state")
-        if not self.state or reset:
-
-            # initialize docker container if execution in docker is configured
-            if not self.state and self.agent.config.code_exec_docker_enabled:
-                docker = DockerContainerManager(
-                    logger=self.agent.context.log,
-                    name=self.agent.config.code_exec_docker_name,
-                    image=self.agent.config.code_exec_docker_image,
-                    ports=self.agent.config.code_exec_docker_ports,
-                    volumes=self.agent.config.code_exec_docker_volumes,
-                )
-                docker.start_container()
-            else:
-                docker = self.state.docker if self.state else None
-
+    async def prepare_state(self, reset=False, session: int | None = None):
+        self.state: State | None = self.agent.get_data("_cet_state")
+        if not self.state:
             # initialize shells dictionary if not exists
-            shells = {} if not self.state else self.state.shells.copy()
+            shells: dict[int, LocalInteractiveSession | SSHInteractiveSession] = {}
+        else:
+            shells = self.state.shells.copy()
 
-            # Only reset the specified session if provided
-            if session is not None and session in shells:
-                shells[session].close()
-                del shells[session]
-            elif reset and not session:
-                # Close all sessions if full reset requested
-                for s in list(shells.keys()):
-                    shells[s].close()
-                shells = {}
+        # Only reset the specified session if provided
+        if reset and session is not None and session in shells:
+            await shells[session].close()
+            del shells[session]
+        elif reset and not session:
+            # Close all sessions if full reset requested
+            for s in list(shells.keys()):
+                await shells[s].close()
+            shells = {}
 
-            # initialize local or remote interactive shell interface for session 0 if needed
-            if 0 not in shells:
-                if self.agent.config.code_exec_ssh_enabled:
-                    pswd = (
-                        self.agent.config.code_exec_ssh_pass
-                        if self.agent.config.code_exec_ssh_pass
-                        else await rfc_exchange.get_root_password()
-                    )
-                    shell = SSHInteractiveSession(
-                        self.agent.context.log,
-                        self.agent.config.code_exec_ssh_addr,
-                        self.agent.config.code_exec_ssh_port,
-                        self.agent.config.code_exec_ssh_user,
-                        pswd,
-                    )
-                else:
-                    shell = LocalInteractiveSession()
+        # initialize local or remote interactive shell interface for session 0 if needed
+        if session is not None and session not in shells:
+            if self.agent.config.code_exec_ssh_enabled:
+                pswd = (
+                    self.agent.config.code_exec_ssh_pass
+                    if self.agent.config.code_exec_ssh_pass
+                    else await rfc_exchange.get_root_password()
+                )
+                shell = SSHInteractiveSession(
+                    self.agent.context.log,
+                    self.agent.config.code_exec_ssh_addr,
+                    self.agent.config.code_exec_ssh_port,
+                    self.agent.config.code_exec_ssh_user,
+                    pswd,
+                )
+            else:
+                shell = LocalInteractiveSession()
 
-                shells[0] = shell
-                await shell.connect()
+            shells[session] = shell
+            await shell.connect()
 
-            self.state = State(shells=shells, docker=docker)
+        self.state = State(shells=shells)
         self.agent.set_data("_cet_state", self.state)
+        return self.state
 
     async def execute_python_code(self, session: int, code: str, reset: bool = False):
         escaped_code = shlex.quote(code)
@@ -156,45 +140,35 @@ class CodeExecution(Tool):
         self, session: int, command: str, reset: bool = False, prefix: str = ""
     ):
 
+        self.state = await self.prepare_state(reset=reset, session=session)
+
         await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
         # try again on lost connection
         for i in range(2):
             try:
 
-                if reset:
-                    await self.reset_terminal()
+                await self.state.shells[session].send_command(command)
 
-                if session not in self.state.shells:
-                    if self.agent.config.code_exec_ssh_enabled:
-                        pswd = (
-                            self.agent.config.code_exec_ssh_pass
-                            if self.agent.config.code_exec_ssh_pass
-                            else await rfc_exchange.get_root_password()
-                        )
-                        shell = SSHInteractiveSession(
-                            self.agent.context.log,
-                            self.agent.config.code_exec_ssh_addr,
-                            self.agent.config.code_exec_ssh_port,
-                            self.agent.config.code_exec_ssh_user,
-                            pswd,
-                        )
-                    else:
-                        shell = LocalInteractiveSession()
-                    self.state.shells[session] = shell
-                    await shell.connect()
-
-                self.state.shells[session].send_command(command)
+                locl = (
+                    " (local)"
+                    if isinstance(self.state.shells[session], LocalInteractiveSession)
+                    else (
+                        " (remote)"
+                        if isinstance(self.state.shells[session], SSHInteractiveSession)
+                        else " (unknown)"
+                    )
+                )
 
                 PrintStyle(
                     background_color="white", font_color="#1B4F72", bold=True
-                ).print(f"{self.agent.agent_name} code execution output")
+                ).print(f"{self.agent.agent_name} code execution output{locl}")
                 return await self.get_terminal_output(session=session, prefix=prefix)
 
             except Exception as e:
                 if i == 1:
                     # try again on lost connection
                     PrintStyle.error(str(e))
-                    await self.prepare_state(reset=True)
+                    await self.prepare_state(reset=True, session=session)
                     continue
                 else:
                     raise e
@@ -221,6 +195,10 @@ class CodeExecution(Tool):
         sleep_time=0.1,
         prefix="",
     ):
+
+        # if not self.state:
+        self.state = await self.prepare_state(session=session)
+
         # Common shell prompt regex patterns (add more as needed)
         prompt_patterns = [
             re.compile(r"\\(venv\\).+[$#] ?$"),  # (venv) ...$ or (venv) ...#

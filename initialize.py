@@ -79,19 +79,7 @@ def initialize_agent():
         memory_subdir=current_settings["agent_memory_subdir"],
         knowledge_subdirs=[current_settings["agent_knowledge_subdir"], "default"],
         mcp_servers=current_settings["mcp_servers"],
-        code_exec_docker_enabled=False,
-        # code_exec_docker_name = "A0-dev",
-        # code_exec_docker_image = "agent0ai/agent-zero:development",
-        # code_exec_docker_ports = { "22/tcp": 55022, "80/tcp": 55080 }
-        # code_exec_docker_volumes = {
-        # files.get_base_dir(): {"bind": "/a0", "mode": "rw"},
-        # files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"},
-        # },
-        # code_exec_ssh_enabled = True,
-        # code_exec_ssh_addr = "localhost",
-        # code_exec_ssh_port = 55022,
-        # code_exec_ssh_user = "root",
-        # code_exec_ssh_pass = "",
+        # code_exec params get initialized in _set_runtime_config
         # additional = {},
     )
 
@@ -176,19 +164,3 @@ def _set_runtime_config(config: AgentConfig, set: settings.Settings):
     for key, value in ssh_conf.items():
         if hasattr(config, key):
             setattr(config, key, value)
-
-    # if config.code_exec_docker_enabled:
-    #     config.code_exec_docker_ports["22/tcp"] = ssh_conf["code_exec_ssh_port"]
-    #     config.code_exec_docker_ports["80/tcp"] = ssh_conf["code_exec_http_port"]
-    #     config.code_exec_docker_name = f"{config.code_exec_docker_name}-{ssh_conf['code_exec_ssh_port']}-{ssh_conf['code_exec_http_port']}"
-
-    #     dman = docker.DockerContainerManager(
-    #         logger=log.Log(),
-    #         name=config.code_exec_docker_name,
-    #         image=config.code_exec_docker_image,
-    #         ports=config.code_exec_docker_ports,
-    #         volumes=config.code_exec_docker_volumes,
-    #     )
-    #     dman.start_container()
-
-    # config.code_exec_ssh_pass = asyncio.run(rfc_exchange.get_root_password())
