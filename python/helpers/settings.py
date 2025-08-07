@@ -1080,6 +1080,28 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "tab": "mcp",
     }
 
+    # External API section
+    external_api_fields: list[SettingsField] = []
+
+    external_api_fields.append(
+        {
+            "id": "external_api_examples",
+            "title": "API Examples",
+            "description": "View examples for using Agent Zero's external API endpoints with API key authentication.",
+            "type": "button",
+            "value": "Show API Examples",
+        }
+    )
+
+    external_api_section: SettingsSection = {
+        "id": "external_api",
+        "title": "External API",
+        "description": "Agent Zero provides external API endpoints for integration with other applications. "
+                       "These endpoints use API key authentication and support text messages and file attachments.",
+        "fields": external_api_fields,
+        "tab": "external",
+    }
+
     # Backup & Restore section
     backup_fields: list[SettingsField] = []
 
@@ -1129,6 +1151,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             a2a_section,
             mcp_client_section,
             mcp_server_section,
+            external_api_section,
             backup_section,
             dev_section,
             # code_exec_section,
