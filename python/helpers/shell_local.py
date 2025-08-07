@@ -42,9 +42,6 @@ class LocalInteractiveSession:
         partial_output = clean_string(partial_output)
         clean_full_output = clean_string(self.full_output)
 
-        print("\n\n"+self.full_output.encode("unicode_escape").decode("ascii")+"\n\n")
-
-
         if not partial_output:
             return clean_full_output, None
         return clean_full_output, partial_output
