@@ -18,7 +18,7 @@ from python.helpers.secrets import SecretsManager
 from langchain_core.prompts import (
     ChatPromptTemplate,
 )
-from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
+from langchain_core.messages import SystemMessage, BaseMessage
 
 import python.helpers.log as Log
 from python.helpers.dirty_json import DirtyJson
@@ -26,6 +26,8 @@ from python.helpers.defer import DeferredTask
 from typing import Callable
 from python.helpers.localization import Localization
 from python.helpers.extension import call_extensions
+from python.helpers.errors import RepairableException
+
 
 class AgentContextType(Enum):
     USER = "user"
@@ -90,7 +92,7 @@ class AgentContext:
     @classmethod
     def get_notification_manager(cls):
         if cls._notification_manager is None:
-            from python.helpers.notification import NotificationManager
+            from python.helpers.notification import NotificationManager  # type: ignore
             cls._notification_manager = NotificationManager()
         return cls._notification_manager
 
@@ -195,13 +197,12 @@ class AgentContext:
     # this wrapper ensures that superior agents are called back if the chat was loaded from file and original callstack is gone
     async def _process_chain(self, agent: "Agent", msg: "UserMessage|str", user=True):
         try:
-            msg_template = (
+            if user:
                 agent.hist_add_user_message(msg)  # type: ignore
-                if user
-                else agent.hist_add_tool_result(
+            else:
+                agent.hist_add_tool_result(
                     tool_name="call_subordinate", tool_result=msg  # type: ignore
                 )
-            )
             response = await agent.monologue()  # type: ignore
             superior = agent.data.get(Agent.DATA_NAME_SUPERIOR, None)
             if superior:
@@ -209,7 +210,6 @@ class AgentContext:
             return response
         except Exception as e:
             agent.handle_critical_exception(e)
-
 
 
 @dataclass
@@ -260,8 +260,6 @@ class InterventionException(Exception):
 
 
 # killer exception class - not forwarded to LLM, cannot be fixed on its own, ends message loop
-class RepairableException(Exception):
-    pass
 
 
 class HandledException(Exception):
@@ -288,16 +286,12 @@ class Agent:
         self.number = number
         self.agent_name = f"A{self.number}"
 
-        self.history = history.History(self)
+        self.history = history.History(self)  # type: ignore[abstract]
         self.last_user_message: history.Message | None = None
         self.intervention: UserMessage | None = None
-        self.data = {}  # free data object all the tools can use
-
+        self.data: dict[str, Any] = {}  # free data object all the tools can use
 
         asyncio.run(self.call_extensions("agent_init"))
-
-
-
 
     async def monologue(self):
         while True:
@@ -328,18 +322,30 @@ class Agent:
                         # call before_main_llm_call extensions
                         await self.call_extensions("before_main_llm_call", loop_data=self.loop_data)
 
+                        secrets_mgr = SecretsManager.get_instance()
+
                         async def reasoning_callback(chunk: str, full: str):
                             if chunk == full:
                                 printer.print("Reasoning: ")  # start of reasoning
-                            printer.stream(chunk)
-                            await self.handle_reasoning_stream(full)
+                            # Delegate chunk handling to extensions (they handle streaming-aware masking)
+                            await self.call_extensions(
+                                "reasoning_stream_chunk", loop_data=self.loop_data, text=chunk
+                            )
+                            # Also call the existing handler with masked full text for downstream processing
+                            masked_full = secrets_mgr.mask_values(full)
+                            await self.handle_reasoning_stream(masked_full)
 
                         async def stream_callback(chunk: str, full: str):
                             # output the agent response stream
                             if chunk == full:
                                 printer.print("Response: ")  # start of response
-                            printer.stream(chunk)
-                            await self.handle_response_stream(full)
+                            # Delegate chunk handling to extensions (they handle streaming-aware masking)
+                            await self.call_extensions(
+                                "response_stream_chunk", loop_data=self.loop_data, text=chunk
+                            )
+                            # Also call the existing handler with masked full text for downstream processing
+                            masked_full = secrets_mgr.mask_values(full)
+                            await self.handle_response_stream(masked_full)
 
                         # call main LLM
                         agent_response, _reasoning = await self.call_chat_model(
@@ -348,13 +354,21 @@ class Agent:
                             reasoning_callback=reasoning_callback,
                         )
 
+                        # Notify extensions to finalize their stream filters
+                        await self.call_extensions(
+                            "reasoning_stream_end", loop_data=self.loop_data, text=""
+                        )
+                        await self.call_extensions(
+                            "response_stream_end", loop_data=self.loop_data, text=""
+                        )
+
                         await self.handle_intervention(agent_response)
 
                         if (
                             self.loop_data.last_response == agent_response
                         ):  # if assistant_response is the same as last message in history, let him know
                             # Append the assistant's response to the history
-                            self.hist_add_ai_response(agent_response)
+                            self.hist_add_ai_response(secrets_mgr.mask_values(agent_response))
                             # Append warning message to the history
                             warning_msg = self.read_prompt("fw.msg_repeat.md")
                             self.hist_add_warning(message=warning_msg)
@@ -365,21 +379,22 @@ class Agent:
 
                         else:  # otherwise proceed with tool
                             # Append the assistant's response to the history
-                            self.hist_add_ai_response(agent_response)
+                            self.hist_add_ai_response(secrets_mgr.mask_values(agent_response))
                             # process tools requested in agent message
                             tools_result = await self.process_tools(agent_response)
                             if tools_result:  # final response of message loop available
                                 return tools_result  # break the execution if the task is done
 
                     # exceptions inside message loop:
-                    except InterventionException as e:
+                    except InterventionException:
                         pass  # intervention message has been handled in handle_intervention(), proceed with conversation loop
                     except RepairableException as e:
                         # Forward repairable errors to the LLM, maybe it can fix them
                         error_message = errors.format_error(e)
-                        self.hist_add_warning(error_message)
-                        PrintStyle(font_color="red", padding=True).print(error_message)
-                        self.context.log.log(type="error", content=error_message)
+                        masked_error_message = SecretsManager.get_instance().mask_values(error_message)
+                        self.hist_add_warning(masked_error_message)
+                        PrintStyle(font_color="red", padding=True).print(masked_error_message)
+                        self.context.log.log(type="error", content=masked_error_message)
                     except Exception as e:
                         # Other exception kill the loop
                         self.handle_critical_exception(e)
@@ -391,7 +406,7 @@ class Agent:
                         )
 
             # exceptions outside message loop:
-            except InterventionException as e:
+            except InterventionException:
                 pass  # just start over
             except Exception as e:
                 self.handle_critical_exception(e)
@@ -417,7 +432,7 @@ class Agent:
         system_text = "\n\n".join(loop_data.system)
 
         # join extras
-        extras = history.Message(
+        extras = history.Message(  # type: ignore[abstract]
             False,
             content=self.read_prompt(
                 "agent.context.extras.md",
@@ -466,7 +481,7 @@ class Agent:
             # Handling for general exceptions
             error_text = errors.error_text(exception)
             error_message = errors.format_error(exception)
-                       
+
             # Mask secrets in error messages
             masked_error_message = SecretsManager.get_instance().mask_values(error_message)
             masked_error_text = SecretsManager.get_instance().mask_values(error_text)
@@ -481,7 +496,7 @@ class Agent:
             raise HandledException(exception)  # Re-raise the exception to kill the loop
 
     async def get_system_prompt(self, loop_data: LoopData) -> list[str]:
-        system_prompt = []
+        system_prompt: list[str] = []
         await self.call_extensions(
             "system_prompt", system_prompt=system_prompt, loop_data=loop_data
         )
@@ -615,7 +630,6 @@ class Agent:
     ):
         model = self.get_utility_model()
 
-
         # propagate stream to callback if set
         async def stream_callback(chunk: str, total: str):
             if callback:
@@ -653,7 +667,7 @@ class Agent:
         return response, reasoning
 
     async def rate_limiter_callback(
-        self, message:str, key:str, total:int, limit:int
+        self, message: str, key: str, total: int, limit: int
     ):
         # show the rate limit waiting in a progress bar, no need to spam the chat history
         self.context.log.set_progress(message, True)
@@ -707,10 +721,10 @@ class Agent:
                 PrintStyle(
                     background_color="black", font_color="yellow", padding=True
                 ).print("MCP helper module not found. Skipping MCP tool lookup.")
-            except Exception as e:
+            except Exception:
                 PrintStyle(
                     background_color="black", font_color="red", padding=True
-                ).print(f"Failed to get MCP tool '{tool_name}': {e}")
+                ).print(f"Failed to get MCP tool '{tool_name}': error")
 
             # Fallback to local get_tool if MCP tool was not found or MCP lookup failed
             if not tool:
@@ -720,11 +734,39 @@ class Agent:
 
             if tool:
                 await self.handle_intervention()
-                await tool.before_execution(**tool_args)
+                # Enforce secret-safe tool call at agent level
+                secrets_mgr = SecretsManager.get_instance()
+
+                # 1) Unmask placeholders in args for the actual tool execution
+                processed_args: dict = {}
+                for k, v in (tool_args or {}).items():
+                    if isinstance(v, str):
+                        processed_args[k] = secrets_mgr.replace_placeholders(v)
+                    else:
+                        processed_args[k] = v
+
+                # 2) Prepare masked args for potential use (no verbose logging)
+                # (kept here in case minimal future use is needed)
+                # masked_args: dict = {k: (secrets_mgr.mask_values(str(v)) if isinstance(v, str) else v) for k, v in processed_args.items()}
+
+                # 3) Call tool hooks (for compatibility), then execute with processed args
+                try:
+                    await tool.before_execution(**processed_args)
+                except Exception:
+                    pass
                 await self.handle_intervention()
-                response = await tool.execute(**tool_args)
+
+                response = await tool.execute(**processed_args)
                 await self.handle_intervention()
-                await tool.after_execution(response)
+
+                # 4) Mask response text and store to history (no extra tool logs/prints)
+                masked_text = secrets_mgr.mask_values(getattr(response, "message", ""))
+                self.hist_add_tool_result(tool_name, masked_text)
+
+                try:
+                    await tool.after_execution(response)
+                except Exception:
+                    pass
                 await self.handle_intervention()
                 if response.break_loop:
                     return response.message
@@ -766,7 +808,7 @@ class Agent:
                     parsed=response,
                 )
 
-        except Exception as e:
+        except Exception:
             pass
 
     def get_tool(
@@ -781,23 +823,28 @@ class Agent:
         if self.config.profile:
             try:
                 classes = extract_tools.load_classes_from_file(
-                    "agents/" + self.config.profile + "/tools/" + name + ".py", Tool
+                    "agents/" + self.config.profile + "/tools/" + name + ".py", Tool  # type: ignore[arg-type]
                 )
-            except Exception as e:
+            except Exception:
                 pass
 
         # try default tools
         if not classes:
             try:
                 classes = extract_tools.load_classes_from_file(
-                    "python/tools/" + name + ".py", Tool
+                    "python/tools/" + name + ".py", Tool  # type: ignore[arg-type]
                 )
-            except Exception as e:
+            except Exception:
                 pass
         tool_class = classes[0] if classes else Unknown
         return tool_class(
             agent=self, name=name, method=method, args=args, message=message, loop_data=loop_data, **kwargs
         )
+
+    def _nice_key(self, key: str) -> str:
+        words = key.split('_')
+        words = [words[0].capitalize()] + [word.lower() for word in words[1:]]
+        return ' '.join(words)
 
     async def call_extensions(self, extension_point: str, **kwargs) -> Any:
         return await call_extensions(extension_point=extension_point, agent=self, **kwargs)

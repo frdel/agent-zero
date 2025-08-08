@@ -99,7 +99,7 @@ class Settings(TypedDict):
     mcp_server_token: str
 
     a2a_server_enabled: bool
-    
+
     secrets: str
 
 class PartialSettings(Settings, total=False):
@@ -132,7 +132,7 @@ class SettingsField(TypedDict, total=False):
     step: float
     hidden: bool
     options: list[FieldOption]
-    has_expired_button: bool
+    has_expand_button: bool
 
 
 class SettingsSection(TypedDict, total=False):
@@ -1041,9 +1041,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
     secrets_manager = SecretsManager.get_instance()
     current_secrets = ""
     try:
-        with open(secrets_manager.secrets_file_path, 'r') as f:
-            current_secrets = f.read()
-    except FileNotFoundError:
+        current_secrets = secrets_manager.read_secrets_raw()
+    except Exception:
         current_secrets = ""
 
     masked_secrets = secrets_manager.get_masked_content(current_secrets) if current_secrets else ""
@@ -1227,37 +1226,10 @@ def convert_in(settings: dict) -> Settings:
                     elif field["id"].startswith("api_key_"):
                         current["api_keys"][field["id"]] = field["value"]
                     elif field["id"] == "secrets":
-                        # Handle secrets separately - save to secrets file
+                        # Handle secrets separately - merge with existing preserving comments/order and support deletions
                         secrets_manager = SecretsManager.get_instance()
-
-                        # Check if the submitted content contains masked values (***) 
-                        # If so, preserve existing secrets instead of overwriting with ***
                         submitted_content = field["value"]
-                        if "=***" in submitted_content:
-                            # User submitted masked content, preserve existing real values
-                            try:
-                                with open(secrets_manager.secrets_file_path, 'r') as f:
-                                    existing_content = f.read()
-                                # Parse both contents to merge them intelligently
-                                existing_secrets = secrets_manager._parse_env_content(existing_content)
-                                submitted_secrets = secrets_manager._parse_env_content(submitted_content)
-
-                                # Merge: keep existing real values, add new real values
-                                merged_secrets = existing_secrets.copy()
-                                for key, value in submitted_secrets.items():
-                                    if value != "***":  # Only update if not masked
-                                        merged_secrets[key] = value
-
-                                # Convert back to .env format
-                                merged_content = "\n".join([f"{k}={v}" for k, v in merged_secrets.items()])
-                                secrets_manager.save_secrets(merged_content)
-                            except FileNotFoundError:
-                                # No existing file, save as-is but warn about masked values
-                                secrets_manager.save_secrets(submitted_content)
-                        else:
-                            # Normal save - no masked values detected
-                            secrets_manager.save_secrets(submitted_content)
-
+                        secrets_manager.save_secrets_with_merge(submitted_content)
                         secrets_manager.clear_cache()  # Clear cache to reload secrets
                         current[field["id"]] = field["value"]
                     else:

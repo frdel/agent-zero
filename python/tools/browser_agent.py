@@ -4,11 +4,9 @@ from typing import Optional, cast
 from agent import Agent, InterventionException
 from pathlib import Path
 
-
-import models
 from python.helpers.tool import Tool, Response
 from python.helpers import files, defer, persist_chat, strings
-from python.helpers.browser_use import browser_use # type: ignore[attr-defined]
+from python.helpers.browser_use import browser_use  # type: ignore[attr-defined]
 from python.helpers.print_style import PrintStyle
 from python.helpers.playwright import ensure_playwright_binary
 from python.helpers.secrets import SecretsManager
@@ -16,7 +14,6 @@ from python.extensions.message_loop_start._10_iteration_no import get_iter_no
 from pydantic import BaseModel
 import uuid
 from python.helpers.dirty_json import DirtyJson
-import browser_use # type: ignore[attr-defined]
 
 
 class State:
@@ -145,8 +142,7 @@ class State:
                 ),
                 controller=controller,
                 enable_memory=False,  # Disable memory to avoid state conflicts
-                # available_file_paths=[],
-                sensitive_data=cast(dict[str, str | dict[str, str]] | None, secrets_dict or {}), # Pass secrets
+                sensitive_data=cast(dict[str, str | dict[str, str]] | None, secrets_dict or {}),  # Pass secrets
             )
         except Exception as e:
             raise Exception(
@@ -161,35 +157,12 @@ class State:
                 raise InterventionException("Task cancelled")
 
         # try:
+        result = None
         if self.use_agent:
             result = await self.use_agent.run(
                 max_steps=50, on_step_start=hook, on_step_end=hook
             )
         return result
-        # finally:
-        #     # if self.browser_session:
-        #     #     try:
-        #     #         await self.browser_session.close()
-        #     #     except Exception as e:
-        #     #         PrintStyle().error(f"Error closing browser session in task cleanup: {e}")
-        #     #     finally:
-        #     #         self.browser_session = None
-        #     pass
-
-    # def override_hooks(self):
-    #     def override_hook(func):
-    #         async def wrapper(*args, **kwargs):
-    #             await self.agent.wait_if_paused()
-    #             if self.iter_no != get_iter_no(self.agent):
-    #                 raise InterventionException("Task cancelled")
-    #             return await func(*args, **kwargs)
-
-    #         return wrapper
-
-    #     if self.browser_session and hasattr(self.browser_session, "remove_highlights"):
-    #         self.browser_session.remove_highlights = override_hook(
-    #             self.browser_session.remove_highlights
-    #         )
 
     async def get_page(self):
         if self.use_agent and self.browser_session:
@@ -225,11 +198,11 @@ class BrowserAgent(Tool):
         start_time = time.time()
 
         fail_counter = 0
-        while not task.is_ready() if task else False: 
+        while not task.is_ready() if task else False:
             # Check for timeout to prevent infinite waiting
             if time.time() - start_time > timeout_seconds:
                 PrintStyle().warning(
-                    f"Browser agent task timeout after {timeout_seconds} seconds, forcing completion"
+                    self._mask(f"Browser agent task timeout after {timeout_seconds} seconds, forcing completion")
                 )
                 break
 
@@ -244,42 +217,42 @@ class BrowserAgent(Tool):
                 except asyncio.TimeoutError:
                     fail_counter += 1
                     PrintStyle().warning(
-                        f"browser_agent.get_update timed out ({fail_counter}/3)"
+                        self._mask(f"browser_agent.get_update timed out ({fail_counter}/3)")
                     )
                     if fail_counter >= 3:
                         PrintStyle().warning(
-                            "3 consecutive browser_agent.get_update timeouts, breaking loop"
+                            self._mask("3 consecutive browser_agent.get_update timeouts, breaking loop")
                         )
                         break
                     continue
-                log = update.get("log", get_use_agent_log(None))
-                self.update_progress("\n".join(log))
+                update_log = update.get("log", get_use_agent_log(None))
+                self.update_progress("\n".join(update_log))
                 screenshot = update.get("screenshot", None)
                 if screenshot:
                     self.log.update(screenshot=screenshot)
             except Exception as e:
-                PrintStyle().error(f"Error getting update: {str(e)}")
+                PrintStyle().error(self._mask(f"Error getting update: {str(e)}"))
 
         if task and not task.is_ready():
-            PrintStyle().warning("browser_agent.get_update timed out, killing the task")
+            PrintStyle().warning(self._mask("browser_agent.get_update timed out, killing the task"))
             self.state.kill_task() if self.state else None
             return Response(
-                message="Browser agent task timed out, not output provided.",
+                message=self._mask("Browser agent task timed out, not output provided."),
                 break_loop=False,
             )
 
         # final progress update
         if self.state and self.state.use_agent:
-            log = get_use_agent_log(self.state.use_agent)
-            self.update_progress("\n".join(log))
+            log_final = get_use_agent_log(self.state.use_agent)
+            self.update_progress("\n".join(log_final))
 
         # collect result with error handling
         try:
             result = await task.result() if task else None
         except Exception as e:
-            PrintStyle().error(f"Error getting browser agent task result: {str(e)}")
+            PrintStyle().error(self._mask(f"Error getting browser agent task result: {str(e)}"))
             # Return a timeout response if task.result() fails
-            answer_text = f"Browser agent task failed to return result: {str(e)}"
+            answer_text = self._mask(f"Browser agent task failed to return result: {str(e)}")
             self.log.update(answer=answer_text)
             return Response(message=answer_text, break_loop=False)
         # finally:
@@ -312,6 +285,9 @@ class BrowserAgent(Tool):
                 f"Task reached step limit without completion. Last page: {current_url}. "
                 f"The browser agent may need clearer instructions on when to finish."
             )
+
+        # Mask answer for logs and response
+        answer_text = self._mask(answer_text)
 
         # update the log (without screenshot path here, user can click)
         self.log.update(answer=answer_text)
@@ -351,36 +327,7 @@ class BrowserAgent(Tool):
 
                     # await agent.wait_if_paused() # no need here
 
-                    log = []
-
-                    # for message in ua.message_manager.get_messages():
-                    #     if message.type == "system":
-                    #         continue
-                    #     if message.type == "ai":
-                    #         try:
-                    #             data = json.loads(message.content)  # type: ignore
-                    #             cs = data.get("current_state")
-                    #             if cs:
-                    #                 log.append("AI:" + cs["memory"])
-                    #                 log.append("AI:" + cs["next_goal"])
-                    #         except Exception:
-                    #             pass
-                    #     if message.type == "human":
-                    #         content = str(message.content).strip()
-                    #         part = content.split("\n", 1)[0].split(",", 1)[0]
-                    #         if part:
-                    #             if len(part) > 150:
-                    #                 part = part[:150] + "..."
-                    #             log.append("FW:" + part)
-
-                    # for hist in ua.state.history.history:
-                    #     for res in hist.result:
-                    #         log.append(res.extracted_content)
-                    # log = ua.state.history.extracted_content()
-                    # short_log = []
-                    # for item in log:
-                    #     first_line = str(item).split("\n", 1)[0][:200]
-                    #     short_log.append(first_line)
+                    # Build short activity log
                     result["log"] = get_use_agent_log(ua)
 
                     path = files.get_abs_path(
@@ -410,6 +357,7 @@ class BrowserAgent(Tool):
         self.agent.set_data("_browser_agent_state", self.state)
 
     def update_progress(self, text):
+        text = self._mask(text)
         short = text.split("\n")[-1]
         if len(short) > 50:
             short = short[:50] + "..."
@@ -417,6 +365,12 @@ class BrowserAgent(Tool):
 
         self.log.update(progress=text)
         self.agent.context.log.set_progress(progress)
+
+    def _mask(self, text: str) -> str:
+        try:
+            return SecretsManager.get_instance().mask_values(text or "")
+        except Exception:
+            return text or ""
 
     # def __del__(self):
     #     if self.state:
@@ -432,7 +386,7 @@ def get_use_agent_log(use_agent: browser_use.Agent | None):
             # final results
             if item.is_done:
                 if item.success:
-                    short_log.append(f"✅ Done")
+                    short_log.append("✅ Done")
                 else:
                     short_log.append(
                         f"❌ Error: {item.error or item.extracted_content or 'Unknown error'}"
