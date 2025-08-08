@@ -7,10 +7,17 @@
 - The response format is a plain text string containing the query
 - No other text, no formatting
 
+# No query
+- If the conversation is not relevant for memory search, return a single dash (-)
+
 # Rules
 - Only focus on facts and events, ignore common conversation patterns, greeting etc.
 - Ignore AI thoughts and behavior
 - Focus on USER MESSAGE if provided, use HISTORY for context
+
+# Ignored:
+For the following topics, no query is needed and return a single dash (-):
+- Greeting
 
 # Example
 ```json

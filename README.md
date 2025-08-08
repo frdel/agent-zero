@@ -176,6 +176,7 @@ docker run -p 50001:80 agent0ai/agent-zero
 - New notifications system
 - New local terminal interface for stability
 - Rate limiter integration to models
+- Delayed memory recall
 - Smarter autoscrolling in UI
 - Action buttons in messages
 - Multiple API keys support

@@ -58,6 +58,7 @@ class Settings(TypedDict):
     agent_knowledge_subdir: str
 
     memory_recall_enabled: bool
+    memory_recall_delayed: bool
     memory_recall_interval: int
     memory_recall_history_len: int
     memory_recall_memories_max_search: int
@@ -640,6 +641,16 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "description": "Agent Zero will automatically recall memories based on convesation context.",
             "type": "switch",
             "value": settings["memory_recall_enabled"],
+        }
+    )
+
+    memory_fields.append(
+        {
+            "id": "memory_recall_delayed",
+            "title": "Memory auto-recall delayed",
+            "description": "The agent will not wait for auto memory recall. Memories will be delivered one message later. This speeds up agent's response time but may result in less relevant first step.",
+            "type": "switch",
+            "value": settings["memory_recall_delayed"],
         }
     )
 
@@ -1319,7 +1330,7 @@ def get_default_settings() -> Settings:
         chat_model_rl_input=0,
         chat_model_rl_output=0,
         util_model_provider="openrouter",
-        util_model_name="openai/gpt-5-mini",
+        util_model_name="google/gemini-2.5-flash-lite",
         util_model_api_base="",
         util_model_ctx_length=100000,
         util_model_ctx_input=0.7,
@@ -1342,6 +1353,7 @@ def get_default_settings() -> Settings:
         browser_model_rl_output=0,
         browser_model_kwargs={"temperature": "0"},
         memory_recall_enabled=True,
+        memory_recall_delayed=False,
         memory_recall_interval=3,
         memory_recall_history_len=10000,
         memory_recall_memories_max_search=12,

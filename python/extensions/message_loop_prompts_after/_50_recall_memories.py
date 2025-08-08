@@ -3,9 +3,11 @@ from python.helpers.extension import Extension
 from python.helpers.memory import Memory
 from agent import LoopData
 from python.tools.memory_load import DEFAULT_THRESHOLD as DEFAULT_MEMORY_THRESHOLD
-from python.helpers import dirty_json, errors, settings
+from python.helpers import dirty_json, errors, settings, log 
+
 
 DATA_NAME_TASK = "_recall_memories_task"
+DATA_NAME_ITER = "_recall_memories_iter"
 
 
 class RecallMemories(Extension):
@@ -22,18 +24,30 @@ class RecallMemories(Extension):
 
         set = settings.get_settings()
 
-        # every 3 iterations (or the first one) recall memories
+        # turned off in settings?
+        if not set["memory_recall_enabled"]:
+            return
+
+        # every X iterations (or the first one) recall memories
         if loop_data.iteration % set["memory_recall_interval"] == 0:
+
+            # show util message right away
+            log_item = self.agent.context.log.log(
+                type="util",
+                heading="Searching memories...",
+            )
+
             task = asyncio.create_task(
-                self.search_memories(loop_data=loop_data, **kwargs)
+                self.search_memories(loop_data=loop_data, log_item=log_item, **kwargs)
             )
         else:
             task = None
 
         # set to agent to be able to wait for it
         self.agent.set_data(DATA_NAME_TASK, task)
+        self.agent.set_data(DATA_NAME_ITER, loop_data.iteration)
 
-    async def search_memories(self, loop_data: LoopData, **kwargs):
+    async def search_memories(self, log_item: log.LogItem, loop_data: LoopData, **kwargs):
 
         # cleanup
         extras = loop_data.extras_persistent
@@ -45,16 +59,6 @@ class RecallMemories(Extension):
 
         set = settings.get_settings()
         # try:
-
-        # if recall is disabled, return
-        if not set["memory_recall_enabled"]:
-            return
-
-        # show full util message
-        log_item = self.agent.context.log.log(
-            type="util",
-            heading="Searching memories...",
-        )
 
         # get system message and chat history for util llm
         system = self.agent.read_prompt("memory.memories_query.sys.md")
@@ -99,6 +103,13 @@ class RecallMemories(Extension):
         # otherwise use the message and history as query
         else:
             query = user_instruction + "\n\n" + history
+
+        # if there is no query (or just dash by the LLM), do not continue
+        if not query or len(query) <= 3:
+            log_item.update(
+                query="No relevant memory query generated, skipping search",
+            )
+            return
 
         # get memory database
         db = await Memory.get(self.agent)
