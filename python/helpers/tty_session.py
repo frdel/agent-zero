@@ -15,9 +15,7 @@ sys.stdout.reconfigure(errors="replace")  # type: ignore
 
 
 class TTYSession:
-    def __init__(
-        self, cmd, *, cwd=None, env=None, encoding="utf-8", echo=False
-    ):  # ← NEW kw-arg `echo`
+    def __init__(self, cmd, *, cwd=None, env=None, encoding="utf-8", echo=False):
         self.cmd = cmd if isinstance(cmd, str) else " ".join(cmd)
         self.cwd = cwd
         self.env = env or os.environ.copy()
@@ -25,6 +23,17 @@ class TTYSession:
         self.echo = echo  # ← store preference
         self._proc = None
         self._buf = asyncio.Queue()
+
+    def __del__(self):
+        # Simple cleanup on object destruction
+        import nest_asyncio
+
+        nest_asyncio.apply()
+        if hasattr(self, "close"):
+            try:
+                asyncio.run(self.close())
+            except Exception:
+                pass
 
     # ── user-facing coroutines ────────────────────────────────────────
     async def start(self):
@@ -36,7 +45,22 @@ class TTYSession:
             self._proc = await _spawn_posix_pty(
                 self.cmd, self.cwd, self.env, self.echo
             )  # ← pass echo
-        asyncio.create_task(self._pump_stdout())
+        self._pump_task = asyncio.create_task(self._pump_stdout())
+
+    async def close(self):
+        # Cancel the pump task if it exists
+        if hasattr(self, "_pump_task") and self._pump_task:
+            self._pump_task.cancel()
+            try:
+                await self._pump_task
+            except asyncio.CancelledError:
+                pass
+        # Terminate the process if it exists
+        if self._proc:
+            self._proc.terminate()
+            await self._proc.wait()
+        self._proc = None
+        self._pump_task = None
 
     async def send(self, data: str | bytes):
         if self._proc is None:

@@ -1,6 +1,11 @@
 # Development manual for Agent Zero
 This guide will show you how to setup a local development environment for Agent Zero in a VS Code compatible IDE, including proper debugger.
 
+
+[![Tutorial video](./res/devguide_vid.png)](https://www.youtube.com/watch?v=KE39P4qBjDk)
+
+
+
 > [!WARNING]
 > This guide is for developers and contributors. It assumes you have a basic understanding of how to use Git/GitHub, Docker, IDEs and Python.
 

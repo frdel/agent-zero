@@ -73,7 +73,6 @@ class Settings(TypedDict):
     memory_memorize_consolidation: bool
     memory_memorize_replace_threshold: float
 
-
     api_keys: dict[str, str]
 
     auth_login: str
@@ -100,6 +99,9 @@ class Settings(TypedDict):
     mcp_server_enabled: bool
     mcp_server_token: str
 
+    a2a_server_enabled: bool
+    
+
 
 class PartialSettings(Settings, total=False):
     pass
@@ -115,7 +117,15 @@ class SettingsField(TypedDict, total=False):
     title: str
     description: str
     type: Literal[
-        "text", "number", "select", "range", "textarea", "password", "switch", "button", "html"
+        "text",
+        "number",
+        "select",
+        "range",
+        "textarea",
+        "password",
+        "switch",
+        "button",
+        "html",
     ]
     value: Any
     min: float
@@ -138,6 +148,7 @@ class SettingsOutput(TypedDict):
 
 
 PASSWORD_PLACEHOLDER = "****PSWD****"
+API_KEY_PLACEHOLDER = "************"
 
 def _get_settings_file() -> str:
     """Get user-specific settings file path"""
@@ -145,7 +156,6 @@ def _get_settings_file() -> str:
 
 
 _settings_cache: dict[str, Settings] = {}
-
 
 
 def convert_out(settings: Settings) -> SettingsOutput:
@@ -506,6 +516,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
 
     # basic auth section - now using multitenancy system
+    # basic auth section
     auth_fields: list[SettingsField] = []
 
     # Add user management button for admin users
@@ -518,25 +529,6 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "value": "Manage Users",
         }
     )
-
-    # -------- A2A Section --------
-    a2a_fields: list[SettingsField] = [
-        {
-            "id": "show_a2a_connection",
-            "title": "Show A2A connection info",
-            "description": "Display the URL (including token) other agents can use to connect via FastA2A.",
-            "type": "button",
-            "value": "Show",
-        }
-    ]
-
-    a2a_section: SettingsSection = {
-        "id": "a2a_server",
-        "title": "A2A Connection",
-        "description": "Share this connection string with other agents.",
-        "fields": a2a_fields,
-        "tab": "external",
-    }
 
     if runtime.is_dockerized():
         auth_fields.append(
@@ -575,7 +567,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     api_keys_section: SettingsSection = {
         "id": "api_keys",
         "title": "API Keys",
-        "description": "API keys for model providers and services used by Agent Zero.",
+        "description": "API keys for model providers and services used by Agent Zero. You can set multiple API keys separated by a comma (,). They will be used in round-robin fashion.",
         "fields": api_keys_fields,
         "tab": "external",
     }
@@ -592,7 +584,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "value": settings["agent_profile"],
             "options": [
                 {"value": subdir, "label": subdir}
-                for subdir in files.get_subdirectories("agents") if subdir != "_example"
+                for subdir in files.get_subdirectories("agents")
+                if subdir != "_example"
             ],
         }
     )
@@ -627,7 +620,6 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "fields": agent_fields,
         "tab": "agent",
     }
-
 
     memory_fields: list[SettingsField] = []
 
@@ -858,6 +850,46 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "tab": "developer",
     }
 
+    # code_exec_fields: list[SettingsField] = []
+
+    # code_exec_fields.append(
+    #     {
+    #         "id": "code_exec_ssh_enabled",
+    #         "title": "Use SSH for code execution",
+    #         "description": "Code execution will use SSH to connect to the terminal. When disabled, a local python terminal interface is used instead. SSH should only be used in development environment or when encountering issues with the local python terminal interface.",
+    #         "type": "switch",
+    #         "value": settings["code_exec_ssh_enabled"],
+    #     }
+    # )
+
+    # code_exec_fields.append(
+    #     {
+    #         "id": "code_exec_ssh_addr",
+    #         "title": "Code execution SSH address",
+    #         "description": "Address of the SSH server for code execution. Only applies when SSH is enabled.",
+    #         "type": "text",
+    #         "value": settings["code_exec_ssh_addr"],
+    #     }
+    # )
+
+    # code_exec_fields.append(
+    #     {
+    #         "id": "code_exec_ssh_port",
+    #         "title": "Code execution SSH port",
+    #         "description": "Port of the SSH server for code execution. Only applies when SSH is enabled.",
+    #         "type": "text",
+    #         "value": settings["code_exec_ssh_port"],
+    #     }
+    # )
+
+    # code_exec_section: SettingsSection = {
+    #     "id": "code_exec",
+    #     "title": "Code execution",
+    #     "description": "Configuration of code execution by the agent.",
+    #     "fields": code_exec_fields,
+    #     "tab": "developer",
+    # }
+
     # Speech to text section
     stt_fields: list[SettingsField] = []
 
@@ -1011,7 +1043,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "mcp_server_enabled",
             "title": "Enable A0 MCP Server",
-            "description": "Expose Agent Zero as an SSE MCP server. This will make this A0 instance available to MCP clients.",
+            "description": "Expose Agent Zero as an SSE/HTTP MCP server. This will make this A0 instance available to MCP clients.",
             "type": "switch",
             "value": settings["mcp_server_enabled"],
         }
@@ -1034,6 +1066,50 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "description": "Agent Zero can be exposed as an SSE MCP server. See <a href=\"javascript:openModal('settings/mcp/server/example.html')\">connection example</a>.",
         "fields": mcp_server_fields,
         "tab": "mcp",
+    }
+
+    # -------- A2A Section --------
+    a2a_fields: list[SettingsField] = []
+
+    a2a_fields.append(
+        {
+            "id": "a2a_server_enabled",
+            "title": "Enable A2A server",
+            "description": "Expose Agent Zero as A2A server. This allows other agents to connect to A0 via A2A protocol.",
+            "type": "switch",
+            "value": settings["a2a_server_enabled"],
+        }
+    )
+
+    a2a_section: SettingsSection = {
+        "id": "a2a_server",
+        "title": "A0 A2A Server",
+        "description": "Agent Zero can be exposed as an A2A server. See <a href=\"javascript:openModal('settings/a2a/a2a-connection.html')\">connection example</a>.",
+        "fields": a2a_fields,
+        "tab": "mcp",
+    }
+
+
+    # External API section
+    external_api_fields: list[SettingsField] = []
+
+    external_api_fields.append(
+        {
+            "id": "external_api_examples",
+            "title": "API Examples",
+            "description": "View examples for using Agent Zero's external API endpoints with API key authentication.",
+            "type": "button",
+            "value": "Show API Examples",
+        }
+    )
+
+    external_api_section: SettingsSection = {
+        "id": "external_api",
+        "title": "External API",
+        "description": "Agent Zero provides external API endpoints for integration with other applications. "
+                       "These endpoints use API key authentication and support text messages and file attachments.",
+        "fields": external_api_fields,
+        "tab": "external",
     }
 
     # Backup & Restore section
@@ -1082,11 +1158,13 @@ def convert_out(settings: Settings) -> SettingsOutput:
             speech_section,
             api_keys_section,
             auth_section,
-            a2a_section,
             mcp_client_section,
             mcp_server_section,
+            a2a_section,
+            external_api_section,
             backup_section,
             dev_section,
+            # code_exec_section,
         ]
     }
     return result
@@ -1094,11 +1172,12 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
 def _get_api_key_field(settings: Settings, provider: str, title: str) -> SettingsField:
     key = settings["api_keys"].get(provider, models.get_api_key(provider))
+    # For API keys, use simple asterisk placeholder for existing keys
     return {
         "id": f"api_key_{provider}",
         "title": title,
-        "type": "password",
-        "value": (PASSWORD_PLACEHOLDER if key and key != "None" else ""),
+        "type": "text",
+        "value": (API_KEY_PLACEHOLDER if key and key != "None" else ""),
     }
 
 
@@ -1108,7 +1187,13 @@ def convert_in(settings: dict) -> Settings:
     for section in settings["sections"]:
         if "fields" in section:
             for field in section["fields"]:
-                if field["value"] != PASSWORD_PLACEHOLDER:
+                # Skip saving if value is a placeholder
+                should_skip = (
+                    field["value"] == PASSWORD_PLACEHOLDER or
+                    field["value"] == API_KEY_PLACEHOLDER
+                )
+
+                if not should_skip:
                     if field["id"].endswith("_kwargs"):
                         current_dict[field["id"]] = _env_to_dict(field["value"])
                     elif field["id"].startswith("api_key_"):
@@ -1204,6 +1289,9 @@ def normalize_settings(settings: Settings) -> Settings:
                 copy_dict[key] = type(value)(copy_dict[key])  # type: ignore
                 if isinstance(copy_dict[key], str):
                     copy_dict[key] = copy_dict[key].strip() # strip strings
+                copy[key] = type(value)(copy[key])  # type: ignore
+                if isinstance(copy[key], str):
+                    copy[key] = copy[key].strip()  # strip strings
             except (ValueError, TypeError):
                 copy_dict[key] = value  # make default instead
 
@@ -1219,6 +1307,7 @@ def _adjust_to_version(settings: Settings, default: Settings):
     if "version" not in settings or settings["version"].startswith("v0.8"):
         if "agent_profile" not in settings or settings["agent_profile"] == "default":
             settings["agent_profile"] = "agent0"
+
 
 def _read_settings_file() -> Settings | None:
     settings_file = _get_settings_file()
@@ -1273,7 +1362,7 @@ def get_default_settings() -> Settings:
     return Settings(
         version=_get_version(),
         chat_model_provider="openrouter",
-        chat_model_name="openai/gpt-4.1",
+        chat_model_name="openai/gpt-5",
         chat_model_api_base="",
         chat_model_kwargs={"temperature": "0"},
         chat_model_ctx_length=100000,
@@ -1283,7 +1372,7 @@ def get_default_settings() -> Settings:
         chat_model_rl_input=0,
         chat_model_rl_output=0,
         util_model_provider="openrouter",
-        util_model_name="openai/gpt-4.1-mini",
+        util_model_name="openai/gpt-5-mini",
         util_model_api_base="",
         util_model_ctx_length=100000,
         util_model_ctx_input=0.7,
@@ -1298,7 +1387,7 @@ def get_default_settings() -> Settings:
         embed_model_rl_requests=0,
         embed_model_rl_input=0,
         browser_model_provider="openrouter",
-        browser_model_name="openai/gpt-4.1",
+        browser_model_name="openai/gpt-5",
         browser_model_api_base="",
         browser_model_vision=True,
         browser_model_rl_requests=0,
@@ -1341,6 +1430,7 @@ def get_default_settings() -> Settings:
         mcp_client_tool_timeout=120,
         mcp_server_enabled=False,
         mcp_server_token=create_auth_token(),
+        a2a_server_enabled=False,
     )
 
 
@@ -1526,9 +1616,9 @@ def set_root_password(password: str):
 def get_runtime_config(set: Settings):
     if runtime.is_dockerized():
         return {
+            "code_exec_ssh_enabled": False,
             "code_exec_ssh_addr": "localhost",
             "code_exec_ssh_port": 22,
-            "code_exec_http_port": 80,
             "code_exec_ssh_user": "root",
         }
     else:
@@ -1540,9 +1630,9 @@ def get_runtime_config(set: Settings):
         if host.endswith("/"):
             host = host[:-1]
         return {
+            "code_exec_ssh_enabled": True,
             "code_exec_ssh_addr": host,
             "code_exec_ssh_port": set["rfc_port_ssh"],
-            "code_exec_http_port": set["rfc_port_http"],
             "code_exec_ssh_user": "root",
         }
 

@@ -12,6 +12,7 @@
 [Installation](./docs/installation.md) •
 [Development](./docs/development.md) •
 [Extensibility](./docs/extensibility.md) •
+[Connectivity](./docs/connectivity.md) •
 [How to update](./docs/installation.md#how-to-update-agent-zero) •
 [Documentation](./docs/README.md) •
 [Usage](./docs/usage.md)
@@ -158,12 +159,43 @@ docker run -p 50001:80 agent0ai/agent-zero
 |-------|-------------|
 | [Installation](./docs/installation.md) | Installation, setup and configuration |
 | [Usage](./docs/usage.md) | Basic and advanced usage |
+| [Development](./docs/development.md) | Development and customization |
+| [Extensibility](./docs/extensibility.md) | Extending Agent Zero |
+| [Connectivity](./docs/connectivity.md) | External API endpoints, MCP server connections, A2A protocol |
 | [Architecture](./docs/architecture.md) | System design and components |
 | [Contributing](./docs/contribution.md) | How to contribute |
 | [Troubleshooting](./docs/troubleshooting.md) | Common issues and their solutions |
 
 
 ## 🎯 Changelog
+
+### v0.9.4 - Connectivity, UI
+- External API endpoints
+- Streamable HTTP MCP A0 server
+- A2A (Agent to Agent) protocol - server+client
+- New notifications system
+- New local terminal interface for stability
+- Rate limiter integration to models
+- Smarter autoscrolling in UI
+- Action buttons in messages
+- Multiple API keys support
+- Download streaming
+- Tunnel URL QR code
+- Internal fixes and optimizations
+
+### v0.9.3 - Subordinates, memory, providers Latest
+[Release video](https://www.youtube.com/watch?v=-LfejFWL34k)
+- Faster startup/restart
+- Subordinate agents can have dedicated prompts, tools and system extensions
+- Streamable HTTP MCP server support
+- Memory loading enhanced by AI filter
+- Memory AI consolidation when saving memories
+- Auto memory system configuration in settings
+- LLM providers available are set by providers.yaml configuration file
+- Venice.ai LLM provider supported
+- Initial agent message for user + as example for LLM
+- Docker build support for local images
+- File browser fix
 
 
 ### v0.9.2 - Kokoro TTS, Attachments
@@ -172,7 +204,6 @@ docker run -p 50001:80 agent0ai/agent-zero
 - Kokoro text-to-speech integration
 - New message attachments system
 - Minor updates: log truncation, hyperlink targets, component examples, api cleanup
-
 
 
 ### v0.9.1 - LiteLLM, UI improvements

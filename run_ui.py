@@ -79,14 +79,17 @@ def is_loopback_address(address):
 def requires_api_key(f):
     @wraps(f)
     async def decorated(*args, **kwargs):
-        valid_api_key = dotenv.get_dotenv_value("API_KEY")
+        # Use the auth token from settings (same as MCP server)
+        from python.helpers.settings import get_settings
+        valid_api_key = get_settings()["mcp_server_token"]
+
         if api_key := request.headers.get("X-API-KEY"):
             if api_key != valid_api_key:
-                return Response("API key required", 401)
+                return Response("Invalid API key", 401)
         elif request.json and request.json.get("api_key"):
             api_key = request.json.get("api_key")
             if api_key != valid_api_key:
-                return Response("API key required", 401)
+                return Response("Invalid API key", 401)
         else:
             return Response("API key required", 401)
         return await f(*args, **kwargs)

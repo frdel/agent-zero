@@ -291,11 +291,12 @@ const settingsModalProxy = {
         } else if (field.id === "backup_restore") {
             openModal("settings/backup/restore.html");
         } else if (field.id === "show_a2a_connection") {
-            console.log('Opening A2A connection modal...');
             openModal("settings/external/a2a-connection.html");
         } else if (field.id === "user_management") {
             console.log('Opening User Management modal...');
             openModal("user-management/user-management-modal.html");
+        } else if (field.id === "external_api_examples") {
+            openModal("settings/external/api-examples.html");
         }
     }
 };

@@ -3,18 +3,27 @@ import { store as speechStore } from "/components/chat/speech/speech-store.js";
 
 // Extract text content from different message types
 function getTextContent(element) {
-  if (element.classList.contains("kvps-row")) {
-    return element.querySelector(".kvps-val")?.innerText || "";
-  } else if (element.classList.contains("message-text")) {
-    return (
-      element.querySelector("pre")?.innerText ||
-      element.querySelector("span")?.innerText ||
-      ""
-    );
-  } else {
-    return element.querySelector("span")?.innerText || "";
+  // Get all children except action buttons
+  const textParts = [];
+  // Loop through all child elements
+  for (const child of element.children) {
+    // Skip action buttons
+    if (child.classList.contains("action-buttons")) continue;
+    // If the child is an image, copy its src URL
+    if (child.tagName && child.tagName.toLowerCase() === "img") {
+      if (child.src) textParts.push(child.src);
+      continue;
+    }
+    // Get text content from the child
+    const text = child.innerText || "";
+    if (text.trim()) {
+      textParts.push(text.trim());
+    }
   }
+  // Join all text parts with double newlines
+  return textParts.join("\n\n");
 }
+
 
 // Create and add action buttons to element
 export function addActionButtonsToElement(element) {
@@ -116,5 +125,10 @@ export function addActionButtonsToElement(element) {
   };
 
   container.append(copyBtn, speakBtn);
-  element.appendChild(container);
+  // Add container as the first child instead of appending it
+  if (element.firstChild) {
+    element.insertBefore(container, element.firstChild);
+  } else {
+    element.appendChild(container);
+  }
 }
