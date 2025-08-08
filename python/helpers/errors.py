@@ -46,7 +46,7 @@ def format_error(e: Exception, start_entries=6, end_entries=4):
     error_message = ""
     for line in reversed(lines):
         # match both simple errors and module.path.Error patterns
-        if re.match(r"[\w\.]+Error:", line):
+        if re.match(r"[\w\.]+Error:\s*", line):
             error_message = line
             break
 
@@ -63,3 +63,8 @@ def format_error(e: Exception, start_entries=6, end_entries=4):
         result = str(e)
 
     return result
+
+
+class RepairableException(Exception):
+    """An exception type indicating errors that can be surfaced to the LLM for potential self-repair."""
+    pass

@@ -5,14 +5,20 @@ import base64
 import tempfile
 import zipfile
 from python.helpers import runtime
+from python.helpers.files import deabsolute_path
 
 
 def get_abs_path(*relative_paths):
-    """Convert relative paths to absolute paths based on the base directory."""
-    if not relative_paths:
-        return os.path.abspath(os.path.dirname(__file__) + "/../..")
+    """Resolve absolute path inside the container via RFC."""
+    # Call into the container to resolve
+    return runtime.call_development_function_sync(_get_abs_path_impl, *relative_paths)
 
+
+def _get_abs_path_impl(*relative_paths):
+    """Container-side absolute path resolver."""
     base_dir = os.path.abspath(os.path.dirname(__file__) + "/../..")
+    if not relative_paths:
+        return base_dir
     return os.path.join(base_dir, *relative_paths)
 
 
@@ -39,7 +45,7 @@ def read_file_bin(relative_path: str, backup_dirs=None) -> bytes:
 
     # Use RFC routing for development mode
     b64_content = runtime.call_development_function_sync(
-        _read_file_binary_impl, absolute_path
+        _read_file_binary_impl, deabsolute_path(absolute_path)
     )
     return base64.b64decode(b64_content)
 
@@ -63,7 +69,7 @@ def read_file_base64(relative_path: str, backup_dirs=None) -> str:
 
     # Use RFC routing for development mode
     return runtime.call_development_function_sync(
-        _read_file_as_base64_impl, absolute_path
+        _read_file_as_base64_impl, deabsolute_path(absolute_path)
     )
 
 
@@ -78,12 +84,10 @@ def write_file_binary(relative_path: str, content: bytes) -> bool:
     Returns:
         True if successful
     """
-    abs_path = get_abs_path(relative_path)
-
-    # Use RFC routing for development mode
+    # Use RFC routing for development mode; resolve on container side
     b64_content = base64.b64encode(content).decode('utf-8')
     return runtime.call_development_function_sync(
-        _write_file_binary_impl, abs_path, b64_content
+        _write_file_binary_impl, relative_path, b64_content
     )
 
 
@@ -98,11 +102,9 @@ def write_file_base64(relative_path: str, content: str) -> bool:
     Returns:
         True if successful
     """
-    abs_path = get_abs_path(relative_path)
-
-    # Use RFC routing for development mode
+    # Use RFC routing for development mode; resolve on container side
     return runtime.call_development_function_sync(
-        _write_file_from_base64_impl, abs_path, content
+        _write_file_from_base64_impl, relative_path, content
     )
 
 
@@ -120,7 +122,7 @@ def delete_file(relative_path: str) -> bool:
 
     # Use RFC routing for development mode
     return runtime.call_development_function_sync(
-        _delete_file_impl, abs_path
+        _delete_file_impl, deabsolute_path(abs_path)
     )
 
 
@@ -138,7 +140,7 @@ def delete_directory(relative_path: str) -> bool:
 
     # Use RFC routing for development mode
     return runtime.call_development_function_sync(
-        _delete_folder_impl, abs_path
+        _delete_folder_impl, deabsolute_path(abs_path)
     )
 
 
@@ -157,7 +159,7 @@ def list_directory(relative_path: str, include_hidden: bool = False) -> list:
 
     # Use RFC routing for development mode
     return runtime.call_development_function_sync(
-        _list_folder_impl, abs_path, include_hidden
+        _list_folder_impl, deabsolute_path(abs_path), include_hidden
     )
 
 
@@ -175,7 +177,7 @@ def make_directories(relative_path: str) -> bool:
 
     # Use RFC routing for development mode
     return runtime.call_development_function_sync(
-        _make_dirs_impl, abs_path
+        _make_dirs_impl, deabsolute_path(abs_path)
     )
 
 
@@ -193,7 +195,7 @@ def path_exists(relative_path: str) -> bool:
 
     # Use RFC routing for development mode
     return runtime.call_development_function_sync(
-        _path_exists_impl, abs_path
+        _path_exists_impl, deabsolute_path(abs_path)
     )
 
 
@@ -211,7 +213,7 @@ def file_exists(relative_path: str) -> bool:
 
     # Use RFC routing for development mode
     return runtime.call_development_function_sync(
-        _file_exists_impl, abs_path
+        _file_exists_impl, deabsolute_path(abs_path)
     )
 
 
@@ -229,7 +231,7 @@ def folder_exists(relative_path: str) -> bool:
 
     # Use RFC routing for development mode
     return runtime.call_development_function_sync(
-        _folder_exists_impl, abs_path
+        _folder_exists_impl, deabsolute_path(abs_path)
     )
 
 
@@ -249,7 +251,7 @@ def get_subdirectories(relative_path: str, include: str | list[str] = "*", exclu
 
     # Use RFC routing for development mode
     return runtime.call_development_function_sync(
-        _get_subdirectories_impl, abs_path, include, exclude
+        _get_subdirectories_impl, deabsolute_path(abs_path), include, exclude
     )
 
 
@@ -267,7 +269,7 @@ def zip_directory(relative_path: str) -> str:
 
     # Use RFC routing for development mode
     return runtime.call_development_function_sync(
-        _zip_dir_impl, abs_path
+        _zip_dir_impl, deabsolute_path(abs_path)
     )
 
 
@@ -287,7 +289,7 @@ def move_file(source_path: str, destination_path: str) -> bool:
 
     # Use RFC routing for development mode
     return runtime.call_development_function_sync(
-        _move_file_impl, source_abs, dest_abs
+        _move_file_impl, deabsolute_path(source_abs), deabsolute_path(dest_abs)
     )
 
 
@@ -305,7 +307,7 @@ def read_directory_as_zip(relative_path: str) -> bytes:
 
     # Use RFC routing for development mode
     b64_zip = runtime.call_development_function_sync(
-        _read_directory_impl, abs_path
+        _read_directory_impl, deabsolute_path(abs_path)
     )
     return base64.b64decode(b64_zip)
 
@@ -326,13 +328,13 @@ def find_file_in_dirs(file_path: str, backup_dirs: list[str]) -> str:
     """
     # Try the main path first
     main_path = get_abs_path(file_path)
-    if runtime.call_development_function_sync(_file_exists_impl, main_path):
+    if runtime.call_development_function_sync(_file_exists_impl, deabsolute_path(main_path)):
         return main_path
 
     # Try backup directories
     for backup_dir in backup_dirs:
         backup_path = os.path.join(backup_dir, file_path)
-        if runtime.call_development_function_sync(_file_exists_impl, backup_path):
+        if runtime.call_development_function_sync(_file_exists_impl, deabsolute_path(backup_path)):
             return backup_path
 
     # File not found anywhere
@@ -348,6 +350,8 @@ def _read_file_binary_impl(file_path: str) -> str:
     Implementation function to read a file in binary mode.
     Returns base64 encoded content for RFC transport.
     """
+    # Resolve to absolute path within the container
+    file_path = _get_abs_path_impl(file_path)
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
 
@@ -376,6 +380,9 @@ def _write_file_binary_impl(file_path: str, b64_content: str) -> bool:
 
         # Decode base64 content
         content = base64.b64decode(b64_content_bytes)
+
+        # Resolve to absolute path within the container
+        file_path = _get_abs_path_impl(file_path)
 
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -582,6 +589,8 @@ def _read_file_as_base64_impl(file_path: str) -> str:
     """
     Implementation function to read a file and return its content as base64.
     """
+    # Resolve to absolute path within the container
+    file_path = _get_abs_path_impl(file_path)
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
 
@@ -609,6 +618,9 @@ def _write_file_from_base64_impl(file_path: str, content: str) -> bool:
 
         # Decode base64 content
         decoded_content = base64.b64decode(content_bytes)
+
+        # Resolve to absolute path within the container
+        file_path = _get_abs_path_impl(file_path)
 
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
