@@ -34,6 +34,18 @@ import logging
 from simpleeval import simple_eval
 
 
+def get_database_name(base_name: str = "agent_zero") -> str:
+    """Get user-specific database name"""
+    try:
+        from python.helpers.user_management import get_user_manager
+        user_manager = get_user_manager()
+        username = user_manager.get_current_username_safe()
+        return f"{base_name}_{username}"
+    except (ImportError, RuntimeError):
+        # If no user context, fall back to original name
+        return base_name
+
+
 # Raise the log level so WARNING messages aren't shown
 logging.getLogger("langchain_core.vectorstores.base").setLevel(logging.ERROR)
 
@@ -59,15 +71,30 @@ class Memory:
         SOLUTIONS = "solutions"
         INSTRUMENTS = "instruments"
 
-    index: dict[str, "MyFaiss"] = {}
+    # User-specific memory cache: {username: {memory_subdir: MyFaiss}}
+    _user_indices: dict[str, dict[str, "MyFaiss"]] = {}
 
     @staticmethod
     async def get(agent: Agent):
         memory_subdir = agent.config.memory_subdir or "default"
-        if Memory.index.get(memory_subdir) is None:
+
+        # Get user-specific cache
+        try:
+            from python.helpers.user_management import get_user_manager
+            user_manager = get_user_manager()
+            username = user_manager.get_current_username_safe()
+        except (ImportError, RuntimeError):
+            username = "default"
+
+        if username not in Memory._user_indices:
+            Memory._user_indices[username] = {}
+
+        user_index = Memory._user_indices[username]
+
+        if user_index.get(memory_subdir) is None:
             log_item = agent.context.log.log(
                 type="util",
-                heading=f"Initializing VectorDB in '/{memory_subdir}'",
+                heading=f"Initializing VectorDB in '/{memory_subdir}' for user '{username}'",
             )
             db, created = Memory.initialize(
                 log_item,
@@ -75,7 +102,7 @@ class Memory:
                 memory_subdir,
                 False,
             )
-            Memory.index[memory_subdir] = db
+            user_index[memory_subdir] = db
             wrap = Memory(agent, db, memory_subdir=memory_subdir)
             if agent.config.knowledge_subdirs:
                 await wrap.preload_knowledge(
@@ -85,15 +112,31 @@ class Memory:
         else:
             return Memory(
                 agent=agent,
-                db=Memory.index[memory_subdir],
+                db=user_index[memory_subdir],
                 memory_subdir=memory_subdir,
             )
 
     @staticmethod
     async def reload(agent: Agent):
         memory_subdir = agent.config.memory_subdir or "default"
-        if Memory.index.get(memory_subdir):
-            del Memory.index[memory_subdir]
+
+        # Get user-specific cache
+        try:
+            # Try Flask session first (works across threads)
+            try:
+                from flask import session
+                username = session.get('username')
+                if not username:
+                    raise RuntimeError("No session username")
+            except (RuntimeError, ImportError):
+                # Fallback to thread-local storage
+                from python.helpers.user_management import get_current_username
+                username = get_current_username()
+        except (ImportError, RuntimeError):
+            username = "default"
+
+        if username in Memory._user_indices and Memory._user_indices[username].get(memory_subdir):
+            del Memory._user_indices[username][memory_subdir]
         return await Memory.get(agent)
 
     @staticmethod
@@ -440,5 +483,5 @@ def get_custom_knowledge_subdir_abs(agent: Agent) -> str:
 
 
 def reload():
-    # clear the memory index, this will force all DBs to reload
-    Memory.index = {}
+    # clear all user memory indices, this will force all DBs to reload
+    Memory._user_indices = {}

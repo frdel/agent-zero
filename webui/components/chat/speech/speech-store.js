@@ -92,6 +92,16 @@ const model = {
     await this.loadSettings();
     this.setupBrowserTTS();
     this.setupUserInteractionHandling();
+
+    // Listen for authentication success to reload settings
+    window.addEventListener('authenticationSuccess', () => {
+      // Wait a bit for API calls to be properly resumed
+      setTimeout(() => {
+        if (!window.isApiCallsPaused || !window.isApiCallsPaused()) {
+          this.loadSettings();
+        }
+      }, 100);
+    });
   },
 
   // Load settings from server
@@ -111,8 +121,11 @@ const model = {
         });
       }
     } catch (error) {
-      window.toastFetchError("Failed to load speech settings", error);
-      console.error("Failed to load speech settings:", error);
+      // Don't log AUTH_PAUSED errors (expected during login)
+      if (error.message !== 'AUTH_PAUSED') {
+        window.toastFetchError("Failed to load speech settings", error);
+        console.error("Failed to load speech settings:", error);
+      }
     }
   },
 

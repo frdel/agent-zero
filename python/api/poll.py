@@ -41,9 +41,15 @@ class Poll(ApiHandler):
         tasks = []
         processed_contexts = set()  # Track processed context IDs
 
-        all_ctxs = list(AgentContext._contexts.values())
+        from python.helpers.user_management import get_user_manager
+        um = get_user_manager()
+        current_user = um.get_current_username_safe()
+        all_ctxs = AgentContext._contexts_for_owner(owner=current_user)
+        # all_ctxs = AgentContext.all()
         # First, identify all tasks
-        for ctx in all_ctxs:
+        for ctx_id in all_ctxs:
+            ctx = AgentContext.get(ctx_id)
+
             # Skip if already processed
             if ctx.id in processed_contexts:
                 continue

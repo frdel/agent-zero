@@ -7,7 +7,7 @@ import re
 import base64
 import shutil
 import tempfile
-from typing import Any
+from typing import Any, Dict, List
 import zipfile
 import importlib
 import importlib.util
@@ -17,11 +17,11 @@ import glob
 
 class VariablesPlugin(ABC):
     @abstractmethod
-    def get_variables(self, file: str, backup_dirs: list[str] | None = None) -> dict[str, Any]:  # type: ignore
+    def get_variables(self, file: str, backup_dirs: List[str] = None) -> Dict[str, Any]:  # type: ignore
         pass
 
 
-def load_plugin_variables(file: str, backup_dirs: list[str] | None = None) -> dict[str, Any]:
+def load_plugin_variables(file: str, backup_dirs: List[str] = None) -> Dict[str, Any]:
     if not file.endswith(".md"):
         return {}
 
@@ -37,7 +37,7 @@ def load_plugin_variables(file: str, backup_dirs: list[str] | None = None) -> di
         plugin_file = None
 
     if plugin_file and exists(plugin_file):
-        
+
         from python.helpers import extract_tools
         classes = extract_tools.load_classes_from_file(plugin_file, VariablesPlugin, one_per_file=False)
         for cls in classes:
@@ -83,7 +83,7 @@ def parse_file(_relative_path, _backup_dirs=None, _encoding="utf-8", **kwargs):
     with open(absolute_path, "r", encoding=_encoding) as f:
         # content = remove_code_fences(f.read())
         content = f.read()
-    
+
     is_json = is_full_json_template(content)
     content = remove_code_fences(content)
     variables = load_plugin_variables(_relative_path, _backup_dirs) or {}  # type: ignore
@@ -361,7 +361,54 @@ def make_dirs(relative_path: str):
 
 def get_abs_path(*relative_paths):
     "Convert relative paths to absolute paths based on the base directory."
+    # Normalize first path segment to support inputs like "tmp/settings.json"
+    if relative_paths:
+        first = relative_paths[0]
+        # If first is a composite path, split it and check the first component
+        if isinstance(first, str) and ("/" in first or os.sep in first):
+            parts = first.split(os.sep)
+            if parts and _is_user_data_directory(parts[0]):
+                combined = tuple([parts[0]] + parts[1:] + list(relative_paths[1:]))
+                return _get_user_specific_path(*combined)
+        # Regular check for user-specific directories
+        if _is_user_data_directory(first):
+            return _get_user_specific_path(*relative_paths)
     return os.path.join(get_base_dir(), *relative_paths)
+
+
+def _is_user_data_directory(path: str) -> bool:
+    """Check if the path is a user-specific data directory"""
+    user_data_dirs = {'memory', 'knowledge', 'logs', 'tmp'}
+    return path in user_data_dirs
+
+
+def _get_user_specific_path(*relative_paths) -> str:
+    """Get user-specific path for data directories"""
+    try:
+        from python.helpers.user_management import get_user_manager
+        user_manager = get_user_manager()
+        username = user_manager.get_current_username_safe()
+
+        # If the username is already present as the second path segment, don't insert it again
+        if len(relative_paths) >= 2 and relative_paths[1] == username:
+            user_path = os.path.join(get_base_dir(), *relative_paths)
+        else:
+            # Insert username after the first directory component
+            if len(relative_paths) == 1:
+                user_path = os.path.join(get_base_dir(), relative_paths[0], username)
+            else:
+                user_path = os.path.join(get_base_dir(), relative_paths[0], username, *relative_paths[1:])
+
+        # Ensure the user data directory exists
+        os.makedirs(os.path.dirname(user_path), exist_ok=True)
+        if len(relative_paths) == 1:
+            # If requesting just the base directory (e.g., "tmp"), create it too
+            os.makedirs(user_path, exist_ok=True)
+
+        return user_path
+    except (ImportError, RuntimeError):
+        # If no user context or user management not available, fall back to original behavior
+        return os.path.join(get_base_dir(), *relative_paths)
 
 def deabsolute_path(path:str):
     "Convert absolute paths to relative paths based on the base directory."

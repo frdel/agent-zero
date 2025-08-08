@@ -1,11 +1,36 @@
 from agent import AgentConfig
 import models
 from python.helpers import runtime, settings, defer
-from python.helpers.print_style import PrintStyle
+
+
+def _get_admin_settings():
+    """Get admin settings for global configuration like MCP servers"""
+    from python.helpers.user_management import get_user_manager, set_current_user, get_current_user
+
+    user_manager = get_user_manager()
+    admin_user = user_manager.get_user("admin")
+    original_user = None
+
+    try:
+        original_user = get_current_user()
+    except RuntimeError:
+        # No current user, that's fine
+        pass
+
+    try:
+        if admin_user:
+            set_current_user(admin_user)
+        return settings.get_settings()
+    finally:
+        # Restore original user context
+        set_current_user(original_user)
 
 
 def initialize_agent():
     current_settings = settings.get_settings()
+
+    # Get admin settings for global configuration (MCP servers, etc.)
+    admin_settings = _get_admin_settings()
 
     def _normalize_model_kwargs(kwargs: dict) -> dict:
         # convert string values that represent valid Python numbers to numeric types
@@ -78,8 +103,19 @@ def initialize_agent():
         profile=current_settings["agent_profile"],
         memory_subdir=current_settings["agent_memory_subdir"],
         knowledge_subdirs=[current_settings["agent_knowledge_subdir"], "default"],
-        mcp_servers=current_settings["mcp_servers"],
-        # code_exec params get initialized in _set_runtime_config
+        mcp_servers=admin_settings["mcp_servers"],  # MCP servers are global config
+        # code_exec_docker_name = "A0-dev",
+        # code_exec_docker_image = "agent0ai/agent-zero:development",
+        # code_exec_docker_ports = { "22/tcp": 55022, "80/tcp": 55080 }
+        # code_exec_docker_volumes = {
+        # files.get_base_dir(): {"bind": "/a0", "mode": "rw"},
+        # files.get_abs_path("work_dir"): {"bind": "/root", "mode": "rw"},
+        # },
+        # code_exec_ssh_enabled = True,
+        # code_exec_ssh_addr = "localhost",
+        # code_exec_ssh_port = 55022,
+        # code_exec_ssh_user = "root",
+        # code_exec_ssh_pass = "",
         # additional = {},
     )
 

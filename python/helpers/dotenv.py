@@ -18,7 +18,7 @@ def get_dotenv_file_path():
     return get_abs_path(".env")
 
 def get_dotenv_value(key: str, default: Any = None):
-    # load_dotenv()       
+    load_dotenv()
     return os.getenv(key, default)
 
 def save_dotenv_value(key: str, value: str):

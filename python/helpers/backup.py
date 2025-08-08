@@ -56,11 +56,12 @@ class BackupService:
         """Get default backup patterns with resolved absolute paths.
 
         Only includes Agent Zero project directory patterns.
+        Includes all user-specific subdirectories for multitenancy.
         """
         # Ensure paths don't have double slashes
         agent_root = self.agent_zero_root.rstrip('/')
 
-        return f"""# Agent Zero Knowledge (excluding defaults)
+        return f"""# Agent Zero Knowledge (excluding defaults, including all user subdirs)
 {agent_root}/knowledge/**
 !{agent_root}/knowledge/default/**
 
@@ -68,16 +69,39 @@ class BackupService:
 {agent_root}/instruments/**
 !{agent_root}/instruments/default/**
 
-# Memory (excluding embeddings cache)
-{agent_root}/memory/**
+# All user-specific data directories (memory, knowledge, logs, tmp with all subdirs)
+{agent_root}/memory/*/**
+!{agent_root}/memory/embeddings/**
 !{agent_root}/memory/**/embeddings/**
 
-# Configuration and Settings (CRITICAL)
+{agent_root}/knowledge/*/**
+!{agent_root}/knowledge/default/**
+
+{agent_root}/logs/*/**
+
+{agent_root}/tmp/*/**
+
+# User-specific Python virtual environments
+{agent_root}/venvs/*/**
+
+# User management and global configurations (CRITICAL)
 {agent_root}/.env
-{agent_root}/tmp/settings.json
-{agent_root}/tmp/chats/**
-{agent_root}/tmp/scheduler/**
-{agent_root}/tmp/uploads/**"""
+{agent_root}/tmp/users.json
+
+# Migration markers (CRITICAL - ensure migrations are not re-run after restore)
+{agent_root}/tmp/.multitenancy_migrated
+{agent_root}/tmp/.system_users_migrated
+{agent_root}/tmp/.sudo_defaults_migrated
+{agent_root}/tmp/.global_defaults_migrated
+{agent_root}/tmp/.file_permissions_migrated
+{agent_root}/tmp/.venv_migration_completed
+
+# Exclude system/cache files that shouldn't be backed up
+!{agent_root}/**/__pycache__/**
+!{agent_root}/**/.git/**
+!{agent_root}/**/node_modules/**
+!{agent_root}/**/*.tmp
+!{agent_root}/**/*.log"""
 
     def _get_agent_zero_version(self) -> str:
         """Get current Agent Zero version"""

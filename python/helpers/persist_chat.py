@@ -9,7 +9,9 @@ from initialize import initialize_agent
 
 from python.helpers.log import Log, LogItem
 
-CHATS_FOLDER = "tmp/chats"
+# Chat storage directories (use separate components for user isolation)
+CHATS_BASE_DIR = "tmp"
+CHATS_SUBDIR = "chats"
 LOG_SIZE = 1000
 CHAT_FILE_NAME = "chat.json"
 
@@ -22,9 +24,9 @@ def get_chat_folder_path(ctxid: str):
         ctxid: The context ID
 
     Returns:
-        The absolute path to the context folder
+        The absolute, user-mapped path to the context folder
     """
-    return files.get_abs_path(CHATS_FOLDER, ctxid)
+    return files.get_abs_path(CHATS_BASE_DIR, CHATS_SUBDIR, ctxid)
 
 
 def save_tmp_chat(context: AgentContext):
@@ -32,12 +34,11 @@ def save_tmp_chat(context: AgentContext):
     # Skip saving BACKGROUND contexts as they should be ephemeral
     if context.type == AgentContextType.BACKGROUND:
         return
-
-    path = _get_chat_file_path(context.id)
+    rel_path = _get_chat_file_path(context.id)
     files.make_dirs(path)
     data = _serialize_context(context)
     js = _safe_json_serialize(data, ensure_ascii=False)
-    files.write_file(path, js)
+    files.write_file(rel_path, js)
 
 
 def save_tmp_chats():
@@ -52,17 +53,35 @@ def save_tmp_chats():
 def load_tmp_chats():
     """Load all contexts from the chats folder"""
     _convert_v080_chats()
-    folders = files.list_files(CHATS_FOLDER, "*")
+    # load chats for all users
+    from python.helpers.user_management import get_user_manager
+    um = get_user_manager()
     json_files = []
-    for folder_name in folders:
-        json_files.append(_get_chat_file_path(folder_name))
+    for user in um.users.values():
+        current_user = um.get_current_username_safe()
+        um.set_central_current_username(user.username)
+        chat_folder_abs = files.get_abs_path(CHATS_BASE_DIR, CHATS_SUBDIR)
+        chat_folder_rel = files.deabsolute_path(chat_folder_abs)
+        folders = files.list_files(chat_folder_rel, "*")
+        for folder_name in folders:
+            json_files.append({
+                "path": _get_chat_file_path(folder_name),
+                "owner_username": user.username
+            })
+        um.set_central_current_username(current_user)
+    # chat_folder_abs = files.get_abs_path(CHATS_BASE_DIR, CHATS_SUBDIR)
+    # chat_folder_rel = files.deabsolute_path(chat_folder_abs)
+    # folders = files.list_files(chat_folder_rel, "*")
+    # json_files = []
+    # for folder_name in folders:
+    #     json_files.append(_get_chat_file_path(folder_name))
 
     ctxids = []
     for file in json_files:
         try:
-            js = files.read_file(file)
+            js = files.read_file(file["path"])
             data = json.loads(js)
-            ctx = _deserialize_context(data)
+            ctx = _deserialize_context(data, owner_username=file["owner_username"])
             ctxids.append(ctx.id)
         except Exception as e:
             print(f"Error loading chat {file}: {e}")
@@ -70,26 +89,49 @@ def load_tmp_chats():
 
 
 def _get_chat_file_path(ctxid: str):
-    return files.get_abs_path(CHATS_FOLDER, ctxid, CHAT_FILE_NAME)
+    return files.get_abs_path(CHATS_BASE_DIR, CHATS_SUBDIR, ctxid, CHAT_FILE_NAME)
 
 
 def _convert_v080_chats():
-    json_files = files.list_files(CHATS_FOLDER, "*.json")
-    for file in json_files:
-        path = files.get_abs_path(CHATS_FOLDER, file)
-        name = file.rstrip(".json")
-        new = _get_chat_file_path(name)
-        files.move_file(path, new)
+    from python.helpers.user_management import get_user_manager
+    um = get_user_manager()
+    try:
+        original_user = um.get_current_username_safe()
+    except Exception:
+        original_user = None
+
+    # Convert old flat chat files for each user separately
+    for user in um.users.values():
+        try:
+            um.set_central_current_username(user.username)
+        except Exception:
+            continue
+
+        chat_folder_abs = files.get_abs_path(CHATS_BASE_DIR, CHATS_SUBDIR)
+        chat_folder_rel = files.deabsolute_path(chat_folder_abs)
+        json_files = files.list_files(chat_folder_rel, "*.json")
+        for file in json_files:
+            # file is relative filename under this user's chat folder
+            old_rel = f"{CHATS_BASE_DIR}/{CHATS_SUBDIR}/{file}"
+            name = file[:-5] if file.endswith(".json") else file
+            new_abs = _get_chat_file_path(name)
+            files.move_file(old_rel, new_abs)
+
+    # Restore original user context
+    try:
+        um.set_central_current_username(original_user)
+    except Exception:
+        pass
 
 
-def load_json_chats(jsons: list[str]):
+def load_json_chats(jsons: list[str], owner_username: str):
     """Load contexts from JSON strings"""
     ctxids = []
     for js in jsons:
         data = json.loads(js)
         if "id" in data:
             del data["id"]  # remove id to get new
-        ctx = _deserialize_context(data)
+        ctx = _deserialize_context(data, owner_username=owner_username)
         ctxids.append(ctx.id)
     return ctxids
 
@@ -158,7 +200,7 @@ def _serialize_log(log: Log):
     }
 
 
-def _deserialize_context(data):
+def _deserialize_context(data, owner_username: str):
     config = initialize_agent()
     log = _deserialize_log(data.get("log", None))
 
@@ -180,6 +222,7 @@ def _deserialize_context(data):
         ),
         log=log,
         paused=False,
+        owner_username=owner_username,
         # agent0=agent0,
         # streaming_agent=straming_agent,
     )

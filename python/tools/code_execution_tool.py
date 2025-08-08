@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import shlex
 import time
 from python.helpers.tool import Tool, Response
-from python.helpers import files, rfc_exchange
+from python.helpers import rfc_exchange
 from python.helpers.print_style import PrintStyle
 from python.helpers.shell_local import LocalInteractiveSession
 from python.helpers.shell_ssh import SSHInteractiveSession
@@ -16,6 +16,7 @@ import re
 @dataclass
 class State:
     shells: dict[int, LocalInteractiveSession | SSHInteractiveSession]
+    docker: DockerContainerManager | None
 
 
 class CodeExecution(Tool):
@@ -23,6 +24,10 @@ class CodeExecution(Tool):
     async def execute(self, **kwargs):
 
         await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
+
+        await self.prepare_state()
+
+        # os.chdir(files.get_abs_path("./work_dir")) #change CWD to work_dir
 
         runtime = self.args.get("runtime", "").lower().strip()
         session = int(self.args.get("session", 0))
@@ -75,48 +80,142 @@ class CodeExecution(Tool):
     async def after_execution(self, response, **kwargs):
         self.agent.hist_add_tool_result(self.name, response.message)
 
-    async def prepare_state(self, reset=False, session: int | None = None):
-        self.state: State | None = self.agent.get_data("_cet_state")
-        if not self.state:
-            # initialize shells dictionary if not exists
-            shells: dict[int, LocalInteractiveSession | SSHInteractiveSession] = {}
+    async def get_user_execution_context(self):
+        """Get execution context for current user"""
+        # Get user context from agent data (stored by message API)
+        user_context = self.agent.get_data("user_context")
+
+        if user_context:
+            return user_context
         else:
-            shells = self.state.shells.copy()
+            # Fallback if no user context available
+            return {
+                "system_username": None,
+                "sudo_commands": [],
+                "is_admin": False,
+                "venv_path": None,
+                "plaintext_password": ""
+            }
 
-        # Only reset the specified session if provided
-        if reset and session is not None and session in shells:
-            await shells[session].close()
-            del shells[session]
-        elif reset and not session:
-            # Close all sessions if full reset requested
-            for s in list(shells.keys()):
-                await shells[s].close()
-            shells = {}
+    async def prepare_state(self, reset=False, session=None):
+        self.state = self.agent.get_data("_cet_state")
+        if not self.state or reset:
 
-        # initialize local or remote interactive shell interface for session 0 if needed
-        if session is not None and session not in shells:
-            if self.agent.config.code_exec_ssh_enabled:
-                pswd = (
-                    self.agent.config.code_exec_ssh_pass
-                    if self.agent.config.code_exec_ssh_pass
-                    else await rfc_exchange.get_root_password()
+            # initialize docker container if execution in docker is configured
+            if not self.state and self.agent.config.code_exec_docker_enabled:
+                docker = DockerContainerManager(
+                    logger=self.agent.context.log,
+                    name=self.agent.config.code_exec_docker_name,
+                    image=self.agent.config.code_exec_docker_image,
+                    ports=self.agent.config.code_exec_docker_ports,
+                    volumes=self.agent.config.code_exec_docker_volumes,
                 )
-                shell = SSHInteractiveSession(
-                    self.agent.context.log,
-                    self.agent.config.code_exec_ssh_addr,
-                    self.agent.config.code_exec_ssh_port,
-                    self.agent.config.code_exec_ssh_user,
-                    pswd,
-                )
+                docker.start_container()
             else:
-                shell = LocalInteractiveSession()
+                docker = self.state.docker if self.state else None
 
-            shells[session] = shell
-            await shell.connect()
+            # initialize shells dictionary if not exists
+            shells = {} if not self.state else self.state.shells.copy()
 
-        self.state = State(shells=shells)
+            # Only reset the specified session if provided
+            if session is not None and session in shells:
+                shells[session].close()
+                del shells[session]
+            elif reset and not session:
+                # Close all sessions if full reset requested
+                for s in list(shells.keys()):
+                    shells[s].close()
+                shells = {}
+
+            # initialize local or remote interactive shell interface for session 0 if needed
+            if 0 not in shells:
+                # Get user execution context for privilege separation
+                user_context = await self.get_user_execution_context()
+
+                if self.agent.config.code_exec_ssh_enabled:
+                    # Always connect as root (more reliable), user switching happens after
+                    ssh_password = (
+                        self.agent.config.code_exec_ssh_pass
+                        if self.agent.config.code_exec_ssh_pass
+                        else await rfc_exchange.get_root_password()
+                    )
+
+                    shell = SSHInteractiveSession(
+                        self.agent.context.log,
+                        self.agent.config.code_exec_ssh_addr,
+                        self.agent.config.code_exec_ssh_port,
+                        self.agent.config.code_exec_ssh_user,  # "root"
+                        ssh_password,
+                    )
+                else:
+                    # Create local shell with user context
+                    shell = LocalInteractiveSession()
+                    # Store user context for later use
+                    shell.user_context = user_context
+
+                shells[0] = shell
+                await shell.connect()
+
+                # Apply user context after connection (for both SSH and local sessions)
+                if user_context.get("system_username") and not user_context.get("is_admin"):
+                    system_username = user_context["system_username"]
+                    # Ensure remote system user exists via manager (no shell output)
+                    try:
+                        from python.helpers.user_management import get_user_manager
+                        um = get_user_manager()
+                        um.setup_system_user_infrastructure()
+                        a0_username = user_context.get("username") or system_username.removeprefix("a0-")
+                        um.ensure_system_user(a0_username)
+                    except Exception:
+                        pass
+
+                    # Unconditionally attempt switch: prefer su -l (login shell), fallback to sudo; avoid 'exec' so we keep the channel
+                    if isinstance(shell, SSHInteractiveSession):
+                        switch_cmd = (
+                            f"USER_TO_SWITCH={shlex.quote(system_username)}; "
+                            f"su -l -s /bin/bash \"$USER_TO_SWITCH\" || sudo -n -iu \"$USER_TO_SWITCH\""
+                        )
+                    else:
+                        switch_cmd = (
+                            f"USER_TO_SWITCH={shlex.quote(system_username)}; "
+                            f"sudo -n -iu \"$USER_TO_SWITCH\" || su -l -s /bin/bash \"$USER_TO_SWITCH\""
+                        )
+                    shell.send_command(switch_cmd)
+                    # Give the session a brief moment without printing anything
+                    await shell.read_output(timeout=1)
+
+                    # Activate user's virtual environment only after switch
+                    if user_context.get("venv_path"):
+                        venv_activate_cmd = f"source {user_context['venv_path']}/bin/activate"
+                        # Silent check; no echoing markers
+                        check_cmd = f"test -r {user_context['venv_path']}/bin/activate >/dev/null 2>&1"
+                        # Repair permissions silently to avoid 'Permission denied'
+                        try:
+                            if isinstance(shell, SSHInteractiveSession):
+                                fix_owner = (
+                                    f"sudo -n chown -R {shlex.quote(system_username)}:a0-users "
+                                    f"{shlex.quote(user_context['venv_path'])} >/dev/null 2>&1 || true"
+                                )
+                                fix_dirs = (
+                                    f"sudo -n find {shlex.quote(user_context['venv_path'])} -type d -exec chmod 755 {{}} + "
+                                    f">/dev/null 2>&1 || true"
+                                )
+                                fix_activate = (
+                                    f"sudo -n chmod 755 {shlex.quote(user_context['venv_path'])}/bin/activate "
+                                    f">/dev/null 2>&1 || true"
+                                )
+                                shell.send_command(fix_owner)
+                                shell.send_command(fix_dirs)
+                                shell.send_command(fix_activate)
+                        except Exception:
+                            pass
+                        shell.send_command(check_cmd)
+                        shell.send_command(venv_activate_cmd)
+
+                    # Do not emit verification output here
+
+            self.state = State(shells=shells, docker=docker)
         self.agent.set_data("_cet_state", self.state)
-        return self.state
 
     async def execute_python_code(self, session: int, code: str, reset: bool = False):
         escaped_code = shlex.quote(code)
@@ -140,35 +239,97 @@ class CodeExecution(Tool):
         self, session: int, command: str, reset: bool = False, prefix: str = ""
     ):
 
-        self.state = await self.prepare_state(reset=reset, session=session)
-
         await self.agent.handle_intervention()  # wait for intervention and handle it, if paused
         # try again on lost connection
         for i in range(2):
             try:
 
-                await self.state.shells[session].send_command(command)
+                if reset:
+                    await self.reset_terminal()
 
-                locl = (
-                    " (local)"
-                    if isinstance(self.state.shells[session], LocalInteractiveSession)
-                    else (
-                        " (remote)"
-                        if isinstance(self.state.shells[session], SSHInteractiveSession)
-                        else " (unknown)"
-                    )
-                )
+                if session not in self.state.shells:
+                    if self.agent.config.code_exec_ssh_enabled:
+                        pswd = (
+                            self.agent.config.code_exec_ssh_pass
+                            if self.agent.config.code_exec_ssh_pass
+                            else await rfc_exchange.get_root_password()
+                        )
+                        shell = SSHInteractiveSession(
+                            self.agent.context.log,
+                            self.agent.config.code_exec_ssh_addr,
+                            self.agent.config.code_exec_ssh_port,
+                            self.agent.config.code_exec_ssh_user,
+                            pswd,
+                        )
+                    else:
+                        shell = LocalInteractiveSession()
+                    self.state.shells[session] = shell
+                    await shell.connect()
+
+                    # Apply user context for this new session as well
+                    user_context = await self.get_user_execution_context()
+                    if user_context.get("system_username") and not user_context.get("is_admin"):
+                        system_username = user_context["system_username"]
+                        # Ensure remote system user exists via manager (no shell output)
+                        try:
+                            from python.helpers.user_management import get_user_manager
+                            um = get_user_manager()
+                            um.setup_system_user_infrastructure()
+                            a0_username = user_context.get("username") or system_username.removeprefix("a0-")
+                            um.ensure_system_user(a0_username)
+                        except Exception:
+                            pass
+
+                        if isinstance(shell, SSHInteractiveSession):
+                            switch_cmd = (
+                                f"USER_TO_SWITCH={shlex.quote(system_username)}; "
+                                f"su -l -s /bin/bash \"$USER_TO_SWITCH\" || sudo -n -iu \"$USER_TO_SWITCH\""
+                            )
+                        else:
+                            switch_cmd = (
+                                f"USER_TO_SWITCH={shlex.quote(system_username)}; "
+                                f"sudo -n -iu \"$USER_TO_SWITCH\" || su -l -s /bin/bash \"$USER_TO_SWITCH\""
+                            )
+                        shell.send_command(switch_cmd)
+                        await shell.read_output(timeout=1)
+                        # Activate user's virtual environment only after switch
+                        if user_context.get("venv_path"):
+                            venv_activate_cmd = f"source {user_context['venv_path']}/bin/activate"
+                            check_cmd = f"test -r {user_context['venv_path']}/bin/activate >/dev/null 2>&1"
+                            try:
+                                if isinstance(shell, SSHInteractiveSession):
+                                    fix_owner = (
+                                        f"sudo -n chown -R {shlex.quote(system_username)}:a0-users "
+                                        f"{shlex.quote(user_context['venv_path'])} >/dev/null 2>&1 || true"
+                                    )
+                                    fix_dirs = (
+                                        f"sudo -n find {shlex.quote(user_context['venv_path'])} -type d -exec chmod 755 {{}} + "
+                                        f">/dev/null 2>&1 || true"
+                                    )
+                                    fix_activate = (
+                                        f"sudo -n chmod 755 {shlex.quote(user_context['venv_path'])}/bin/activate "
+                                        f">/dev/null 2>&1 || true"
+                                    )
+                                    shell.send_command(fix_owner)
+                                    shell.send_command(fix_dirs)
+                                    shell.send_command(fix_activate)
+                            except Exception:
+                                pass
+                            shell.send_command(check_cmd)
+                            shell.send_command(venv_activate_cmd)
+
+                self.state.shells[session].send_command(command)
 
                 PrintStyle(
                     background_color="white", font_color="#1B4F72", bold=True
-                ).print(f"{self.agent.agent_name} code execution output{locl}")
+                ).print(f"{self.agent.agent_name} code execution output")
                 return await self.get_terminal_output(session=session, prefix=prefix)
 
             except Exception as e:
                 if i == 1:
                     # try again on lost connection
                     PrintStyle.error(str(e))
-                    await self.prepare_state(reset=True, session=session)
+                    await self.prepare_state(reset=True)
                     continue
                 else:
                     raise e
@@ -195,10 +356,6 @@ class CodeExecution(Tool):
         sleep_time=0.1,
         prefix="",
     ):
-
-        # if not self.state:
-        self.state = await self.prepare_state(session=session)
-
         # Common shell prompt regex patterns (add more as needed)
         prompt_patterns = [
             re.compile(r"\\(venv\\).+[$#] ?$"),  # (venv) ...$ or (venv) ...#

@@ -2,7 +2,7 @@ import argparse
 import inspect
 import secrets
 from typing import TypeVar, Callable, Awaitable, Union, overload, cast
-from python.helpers import dotenv, rfc, settings, files
+from python.helpers import dotenv, rfc, files
 import asyncio
 import threading
 import queue
@@ -49,9 +49,19 @@ def has_arg(name: str):
     return name in args
 
 def is_dockerized() -> bool:
-    return bool(get_arg("dockerized"))
+    # First check command line arguments
+    if get_arg("dockerized"):
+        return True
+
+    # If no args, check if we're in container by looking for /a0 directory
+    # This ensures manual scripts inside container don't use RFC
+    import os
+    return os.path.exists("/a0")
 
 def is_development() -> bool:
+    # Ensure runtime is initialized before checking
+    if not args:
+        initialize()
     return not is_dockerized()
 
 def get_local_url():
@@ -62,7 +72,7 @@ def get_local_url():
 def get_runtime_id() -> str:
     global runtime_id
     if not runtime_id:
-        runtime_id = secrets.token_hex(8)   
+        runtime_id = secrets.token_hex(8)
     return runtime_id
 
 def get_persistent_id() -> str:
@@ -104,39 +114,54 @@ async def handle_rfc(rfc_call: rfc.RFCCall):
 
 
 def _get_rfc_password() -> str:
-    password = dotenv.get_dotenv_value(dotenv.KEY_RFC_PASSWORD)
+    """Get RFC password from environment or fallback to default"""
+    import os
+
+    # First try environment variable
+    password = os.getenv("RFC_PASSWORD")
     if not password:
-        raise Exception("No RFC password, cannot handle RFC calls.")
+        # Try dotenv
+        password = dotenv.get_dotenv_value(dotenv.KEY_RFC_PASSWORD)
+    if not password:
+        # Fallback to runtime ID as password
+        password = get_runtime_id()
+    if not password:
+        # Last resort: use a default for development
+        password = "default_rfc_password"
+
     return password
 
 
 def _get_rfc_url() -> str:
-    set = settings.get_settings()
-    url = set["rfc_url"]
-    if not "://" in url:
-        url = "http://"+url
-    if url.endswith("/"):
-        url = url[:-1]
-    url = url+":"+str(set["rfc_port_http"])
-    url += "/rfc"
+    # RFC settings should be global and independent of user management
+    # to avoid circular dependencies during initialization
+    import os
+
+    # Use environment variables or sensible defaults for RFC settings
+    # This avoids the circular dependency with user management
+    rfc_host = os.getenv("RFC_HOST", "localhost")
+    rfc_port = int(os.getenv("RFC_PORT", "8880"))
+
+    # Build URL
+    url = f"http://{rfc_host}:{rfc_port}/rfc"
     return url
 
 
 def call_development_function_sync(func: Union[Callable[..., T], Callable[..., Awaitable[T]]], *args, **kwargs) -> T:
     # run async function in sync manner
     result_queue = queue.Queue()
-    
+
     def run_in_thread():
         result = asyncio.run(call_development_function(func, *args, **kwargs))
         result_queue.put(result)
-    
+
     thread = threading.Thread(target=run_in_thread)
     thread.start()
     thread.join(timeout=30)  # wait for thread with timeout
-    
+
     if thread.is_alive():
         raise TimeoutError("Function call timed out after 30 seconds")
-    
+
     result = result_queue.get_nowait()
     return cast(T, result)
 

@@ -146,6 +146,16 @@ const fullComponentImplementation = function() {
             // Refresh initial data
             this.fetchTasks();
 
+            // Listen for authentication success to reload tasks
+            window.addEventListener('authenticationSuccess', () => {
+                // Wait a bit for API calls to be properly resumed
+                setTimeout(() => {
+                    if (!window.isApiCallsPaused || !window.isApiCallsPaused()) {
+                        this.fetchTasks();
+                    }
+                }, 100);
+            });
+
             // Set up event handler for tab selection to ensure view is refreshed when tab becomes visible
             document.addEventListener('click', (event) => {
                 // Check if a tab was clicked
@@ -327,10 +337,13 @@ const fullComponentImplementation = function() {
                     this.updateTasksUI();
                 }
             } catch (error) {
-                console.error('Error fetching tasks:', error);
-                // Only show toast for errors on manual refresh, not during polling
-                if (!this.pollingInterval) {
-                    showToast('Failed to fetch tasks: ' + error.message, 'error');
+                // Don't log AUTH_PAUSED errors (expected during login)
+                if (error.message !== 'AUTH_PAUSED') {
+                    console.error('Error fetching tasks:', error);
+                    // Only show toast for errors on manual refresh, not during polling
+                    if (!this.pollingInterval) {
+                        showToast('Failed to fetch tasks: ' + error.message, 'error');
+                    }
                 }
                 // Reset tasks to empty array on error
                 this.tasks = [];

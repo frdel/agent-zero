@@ -19,6 +19,10 @@
     <link rel="stylesheet" href="css/scheduler-datepicker.css">
     <link rel="stylesheet" href="css/tunnel.css">
     <link rel="stylesheet" href="css/notification.css">
+    <link rel="stylesheet" href="css/user_management.css">
+
+    <!-- Login Overlay CSS -->
+    <link rel="stylesheet" href="css/login_overlay.css">
 
     <!-- Flatpickr for datetime picker -->
     <link rel="stylesheet" href="vendor/flatpickr/flatpickr.min.css">
@@ -130,6 +134,7 @@
     <script type="text/javascript" src="js/file_browser.js"></script>
     <script type="text/javascript" src="js/modal.js"></script>
     <script type="module" src="js/tunnel.js"></script>
+
 </head>
 
 <body class="dark-mode device-pointer">
@@ -174,6 +179,12 @@
                                 d="m50.301 66.5c-9 0-16.398-7.3008-16.398-16.398 0-9.1016 7.3008-16.398 16.398-16.398 9.1016 0 16.398 7.3008 16.398 16.398 0 9.0977-7.3984 16.398-16.398 16.398zm0-25.5c-5 0-9.1016 4.1016-9.1016 9.1016s4.1016 9.1016 9.1016 9.1016 9.1016-4.1016 9.1016-9.1016c-0.003906-5-4.1016-9.1016-9.1016-9.1016z">
                             </path>
                         </svg>Settings</button>
+
+                    <!-- Logout button - always visible for now, will be hidden by login overlay when needed -->
+                    <button class="config-button" id="logout" @click="logout()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                        </svg>Logout</button>
 
                 </div>
 
@@ -580,7 +591,7 @@
                                             </a>
                                         </li>
                                     </template>
-                                    <!-- Tunnel navigation entry - only visible in the External Services tab -->
+                                                                        <!-- Tunnel navigation entry - only visible in the External Services tab -->
                                     <li x-show="activeTab === 'external'">
                                         <a href="#section-tunnel">
                                             <img src="/public/tunnel.svg" alt="Tunnel">
@@ -1660,6 +1671,13 @@
 
     <!-- Drag and Drop Overlay Component -->
     <x-component path="chat/attachments/dragDropOverlay.html"></x-component>
+
+    <!-- Login Overlay Component -->
+    <div id="loginOverlay">
+        <x-component path="auth/login-overlay.html"></x-component>
+    </div>
+
+
 
 </body>
 

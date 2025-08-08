@@ -5,6 +5,10 @@ from python.helpers import runtime
 class RFC(ApiHandler):
 
     @classmethod
+    def requires_auth(cls) -> bool:
+        return False    # RFC uses its own password-based authentication
+
+    @classmethod
     def requires_csrf(cls) -> bool:
         return False
 

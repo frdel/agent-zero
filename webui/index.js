@@ -8,6 +8,73 @@ import { store as notificationStore } from "/components/notifications/notificati
 
 globalThis.fetchApi = api.fetchApi; // TODO - backward compatibility for non-modular scripts, remove once refactored to alpine
 
+// Global authentication handler
+function setupGlobalAuthHandler() {
+    // Override fetch to handle authentication failures globally
+    const originalFetch = window.fetch;
+    window.fetch = async function(...args) {
+        const response = await originalFetch.apply(this, args);
+
+        // Check if this is an API call that failed due to authentication
+        if (response.status === 401 || response.status === 403) {
+            try {
+                const data = await response.clone().json();
+                if (data.error && (data.error.includes('Authentication') || data.error.includes('CSRF') || data.error.includes('required'))) {
+                                        // Trigger global authentication required event, but only once per session
+                    if (!window.authFailureTriggered) {
+                        window.authFailureTriggered = true;
+
+                        // Pause all API calls to prevent CSRF cascade
+                        if (window.pauseApiCalls) {
+                            window.pauseApiCalls();
+                        }
+
+                        window.dispatchEvent(new CustomEvent('authenticationRequired'));
+
+                        // Reset the flag after a delay to allow future auth checks
+                        setTimeout(() => {
+                            window.authFailureTriggered = false;
+                        }, 5000);
+                    }
+                }
+            } catch (e) {
+                // Ignore JSON parsing errors
+            }
+        }
+
+        return response;
+    };
+}
+
+// Initialize global auth handler
+setupGlobalAuthHandler();
+
+// Global polling control functions
+globalThis.pausePolling = function() {
+    pollingPaused = true;
+    // Silent pause - no console logging
+};
+
+globalThis.resumePolling = function() {
+    pollingPaused = false;
+    // Silent resume - no console logging
+};
+
+// API control functions
+globalThis.pauseApiCalls = function() {
+    apiCallsPaused = true;
+    // Silent pause - no console logging
+};
+
+globalThis.resumeApiCalls = function() {
+    apiCallsPaused = false;
+    // Silent resume - no console logging
+};
+
+globalThis.isApiCallsPaused = function() {
+    return apiCallsPaused;
+};
+
 const leftPanel = document.getElementById("left-panel");
 const rightPanel = document.getElementById("right-panel");
 const container = document.querySelector(".container");
@@ -331,8 +398,15 @@ function setConnectionStatus(connected) {
 let lastLogVersion = 0;
 let lastLogGuid = "";
 let lastSpokenNo = 0;
+let pollingPaused = false;
+let apiCallsPaused = true; // Start with API calls paused until authentication is confirmed
 
 async function poll() {
+  // Skip polling if login overlay is shown or API calls are paused
+  if (pollingPaused || apiCallsPaused) {
+    return false;
+  }
+
   let updated = false;
   try {
     // Get timezone from navigator
@@ -507,7 +581,10 @@ async function poll() {
     lastLogVersion = response.log_version;
     lastLogGuid = response.log_guid;
   } catch (error) {
-    console.error("Error:", error);
+    // Don't log AUTH_PAUSED errors (expected during login)
+    if (error.message !== 'AUTH_PAUSED') {
+      console.error("Error:", error);
+    }
     setConnectionStatus(false);
   }
 
@@ -999,7 +1076,7 @@ function justToast(text, type = "info", timeout = 5000, group = "") {
     group
   )
 }
-  
+
 
 function toast(text, type = "info", timeout = 5000) {
   // Convert timeout from milliseconds to seconds for new notification system
@@ -1075,6 +1152,83 @@ async function startPolling() {
 
   _doPoll();
 }
+
+// Make startPolling globally available
+globalThis.startPolling = startPolling;
+
+// Global logout function
+globalThis.logout = async function() {
+  if (confirm('Are you sure you want to log out?')) {
+    try {
+      // First pause API calls to prevent any interference
+      if (window.pauseApiCalls) {
+        window.pauseApiCalls();
+      }
+
+      // Call logout API
+      const response = await sendJsonData('/user_logout', {});
+
+      if (response.success) {
+        // Clear any cached CSRF token
+        if (window.clearCsrfToken) {
+          window.clearCsrfToken();
+        }
+
+        // Reset authentication failure flag to ensure login overlay can show
+        window.authFailureTriggered = false;
+
+        // Clear any cached authentication state
+        try {
+          sessionStorage.clear();
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('isAuthenticated');
+        } catch (e) {
+          console.warn('Failed to clear cached auth state:', e);
+        }
+
+        // Force trigger the login overlay by manually calling the overlay's showOverlay method
+        const loginOverlay = document.querySelector('[x-data*="loginOverlay"]');
+        if (loginOverlay && window.Alpine) {
+          const overlayData = Alpine.$data(loginOverlay);
+          if (overlayData && overlayData.showOverlay) {
+            overlayData.showOverlay();
+          }
+        }
+
+        // Also dispatch the authentication required event as a backup
+        window.dispatchEvent(new CustomEvent('authenticationRequired'));
+
+        // Dispatch specific logout event
+        window.dispatchEvent(new CustomEvent('userLogout'));
+
+        // Optional: Show success message
+        if (window.toast) {
+          window.toast('Logged out successfully', 'success');
+        }
+      } else {
+        console.error('Logout failed:', response.error);
+        if (window.toast) {
+          window.toast('Logout failed: ' + (response.error || 'Unknown error'), 'error');
+        }
+
+        // Re-enable API calls if logout failed
+        if (window.resumeApiCalls) {
+          window.resumeApiCalls();
+        }
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      if (window.toast) {
+        window.toast('Logout failed: ' + error.message, 'error');
+      }
+
+      // Re-enable API calls if logout failed
+      if (window.resumeApiCalls) {
+        window.resumeApiCalls();
+      }
+    }
+  }
+};
 
 document.addEventListener("DOMContentLoaded", startPolling);
 
@@ -1179,8 +1333,10 @@ function activateTab(tabName) {
     }
   }
 
-  // Request a poll update
-  poll();
+  // Request a poll update (only if API calls are not paused)
+  if (!pollingPaused && !apiCallsPaused) {
+    poll();
+  }
 }
 
 // Add function to initialize active tab and selections from localStorage
@@ -1194,6 +1350,13 @@ function initializeActiveTab() {
   }
 
   const activeTab = localStorage.getItem("activeTab") || "chats";
+
+  // Delay activation if API calls are paused or about to be paused
+  if (apiCallsPaused || window.authFailureTriggered) {
+    // Silently delay tab activation
+    return;
+  }
+
   activateTab(activeTab);
 }
 

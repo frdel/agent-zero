@@ -30,7 +30,7 @@ const model = {
 
   // NEW: Toast stack management
   toastStack: [],
-  
+
   init() {
     this.initialize();
   },
@@ -593,7 +593,7 @@ const model = {
     this.toastStack.push(toast);
 
     // Enforce max stack limit (remove oldest from top)
-    if (this.toastStack.length > this.maxToastStack) {
+    if (this.toastStack.length > maxToasts) {
       const removed = this.toastStack.shift(); // Remove from top
       if (removed.autoRemoveTimer) {
         clearTimeout(removed.autoRemoveTimer);
@@ -608,7 +608,7 @@ const model = {
     return notification.id;
   },
 
-  // NEW: Enhanced frontend toast that tries backend first, falls back to frontend-only
+    // NEW: Enhanced frontend toast that tries backend first, falls back to frontend-only
   async addFrontendToast(
     type,
     message,
@@ -617,6 +617,41 @@ const model = {
     group = "",
     priority = defaultPriority
   ) {
+    // Check if API calls are paused - if so, go straight to frontend-only
+    if (window.isApiCallsPaused && window.isApiCallsPaused()) {
+      // Silently use frontend-only notification
+      return this.addFrontendToastOnly(
+        type,
+        message,
+        title,
+        display_time,
+        group,
+        priority
+      );
+    }
+
+    // Check if this is an authentication/CSRF related error to avoid infinite loops
+    const isAuthError = message && (
+      message.includes('CSRF') ||
+      message.includes('Authentication') ||
+      message.includes('token') ||
+      message.includes('401') ||
+      message.includes('403')
+    );
+
+    // For auth errors, skip backend and go straight to frontend-only
+    if (isAuthError) {
+      // Silently use frontend-only notification for auth errors
+      return this.addFrontendToastOnly(
+        type,
+        message,
+        title,
+        display_time,
+        group,
+        priority
+      );
+    }
+
     // Try to send to backend first if connected
     if (this.isConnected()) {
       try {
@@ -639,6 +674,11 @@ const model = {
             error.message || error
           }`
         );
+
+        // If it's a CSRF/auth error, trigger authentication required
+        if (error.message && (error.message.includes('CSRF') || error.message.includes('Authentication'))) {
+          window.dispatchEvent(new CustomEvent('authenticationRequired'));
+        }
       }
     } else {
       console.log("Backend disconnected, showing as frontend-only toast");
@@ -655,7 +695,7 @@ const model = {
     );
   },
 
-  // NEW: Convenience methods for frontend notifications (updated to use new backend-first logic)
+  // NEW: Convenience methods for frontend notifications (will fallback to frontend-only when API paused)
   async frontendError(
     message,
     title = "Connection Error",

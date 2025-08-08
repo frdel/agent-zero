@@ -16,6 +16,10 @@ class GetCsrfToken(ApiHandler):
         return ["GET"]
 
     @classmethod
+    def requires_auth(cls) -> bool:
+        return False
+
+    @classmethod
     def requires_csrf(cls) -> bool:
         return False
 

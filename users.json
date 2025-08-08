@@ -1,0 +1,26 @@
+{
+  "admin": {
+    "username": "admin",
+    "password_hash": "$2b$12$/2/YwpesKGWcqIxovqQYvOMODVcoMdbVLIfwAAECetujzALuc4mlK",
+    "is_admin": true,
+    "created_at": "2025-08-06T12:15:19.286030+00:00"
+  },
+  "rafael": {
+    "username": "rafael",
+    "password_hash": "$2b$12$QkNF.e9dfPB2eFZz9B866.8P65T3LqGcHNrhdiMXZXorSelwQe19G",
+    "is_admin": false,
+    "created_at": "2025-08-06T14:51:02.862404+00:00"
+  },
+  "testuser1": {
+    "username": "testuser1",
+    "password_hash": "$2b$12$eiMFe6O1PvrLExxJqjoHqu82SVm19E6ceis8G9g6KmDPKlLjRwxc2",
+    "is_admin": false,
+    "created_at": "2025-08-06T15:19:27.092226+00:00"
+  },
+  "testuser2": {
+    "username": "testuser2",
+    "password_hash": "$2b$12$wiqe2GmSoopO8pCwKtBvb.l9mWXodXCwxxV8d1rM4EAb.xBanM8Kq",
+    "is_admin": false,
+    "created_at": "2025-08-06T15:19:27.421919+00:00"
+  }
+}

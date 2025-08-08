@@ -1,3 +1,5 @@
+# flake8: noqa
+
 import asyncio
 import nest_asyncio
 
@@ -33,10 +35,29 @@ class AgentContextType(Enum):
 
 
 class AgentContext:
+    # Default owner attribute for backward compatibility when instances were created before attribute existed
+    owner: str = "default"
 
-    _contexts: dict[str, "AgentContext"] = {}
+    # User-scoped context registry {username: {context_id: AgentContext}}
+    _user_contexts: dict[str, dict[str, "AgentContext"]] = {}
     _counter: int = 0
     _notification_manager = None
+
+    @staticmethod
+    def _current_owner() -> str:
+        """Return current username or 'default' if not authenticated."""
+        try:
+            from python.helpers.user_management import get_current_username
+            return get_current_username()
+        except Exception:
+            return "default"
+
+    @classmethod
+    def _contexts_for_owner(cls, owner: str | None = None) -> dict[str, "AgentContext"]:
+        owner = owner or cls._current_owner()
+        if owner not in cls._user_contexts:
+            cls._user_contexts[owner] = {}
+        return cls._user_contexts[owner]
 
     def __init__(
         self,
@@ -50,7 +71,11 @@ class AgentContext:
         created_at: datetime | None = None,
         type: AgentContextType = AgentContextType.USER,
         last_message: datetime | None = None,
+        owner_username: str | None = None,
     ):
+        # determine owner (current authenticated user)
+        self.owner = owner_username or AgentContext._current_owner()
+
         # build context
         self.id = id or str(uuid.uuid4())
         self.name = name
@@ -67,24 +92,30 @@ class AgentContext:
         # set to start of unix epoch
         self.last_message = last_message or datetime.now(timezone.utc)
 
-        existing = self._contexts.get(self.id, None)
+        # Register in owner-specific registry
+        owner_ctxs = AgentContext._contexts_for_owner(self.owner)
+        existing = owner_ctxs.get(self.id)
         if existing:
             AgentContext.remove(self.id)
-        self._contexts[self.id] = self
+        owner_ctxs[self.id] = self
+
+    # helper to simplify existing code
+    _get_user_contexts = _contexts_for_owner
 
     @staticmethod
     def get(id: str):
-        return AgentContext._contexts.get(id, None)
+        return AgentContext._contexts_for_owner().get(id)
 
     @staticmethod
     def first():
-        if not AgentContext._contexts:
+        owner_ctxs = AgentContext._contexts_for_owner()
+        if not owner_ctxs:
             return None
-        return list(AgentContext._contexts.values())[0]
+        return list(owner_ctxs.values())[0]
 
     @staticmethod
     def all():
-        return list(AgentContext._contexts.values())
+        return list(AgentContext._contexts_for_owner().values())
 
     @classmethod
     def get_notification_manager(cls):
@@ -95,7 +126,7 @@ class AgentContext:
 
     @staticmethod
     def remove(id: str):
-        context = AgentContext._contexts.pop(id, None)
+        context = AgentContext._contexts_for_owner().pop(id, None)
         if context and context.task:
             context.task.kill()
         return context

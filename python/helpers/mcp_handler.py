@@ -1034,7 +1034,37 @@ class MCPClientRemote(MCPClientBase):
     ]:
         """Connect to an MCP server, init client and save stdio/write streams"""
         server: MCPServerRemote = cast(MCPServerRemote, self.server)
-        set = settings.get_settings()
+
+        # MCP timeouts should come from admin settings (global config)
+        from python.helpers.user_management import get_user_manager, set_current_user, get_current_user
+
+        user_manager = get_user_manager()
+        admin_user = user_manager.get_user("admin")
+        original_user = None
+
+        try:
+            # Try Flask session first (works across threads)
+            try:
+                from flask import session
+                username = session.get('username')
+                if username:
+                    original_user = user_manager.get_user(username)
+                else:
+                    raise RuntimeError("No session username")
+            except (RuntimeError, ImportError):
+                # Fallback to thread-local storage
+                original_user = get_current_user()
+        except RuntimeError:
+            # No current user, that's fine
+            pass
+
+        try:
+            if admin_user:
+                set_current_user(admin_user)
+            set = settings.get_settings()
+        finally:
+            # Restore original user context
+            set_current_user(original_user)
 
         # Use lower timeouts for faster failure detection
         init_timeout = min(server.init_timeout or set["mcp_client_init_timeout"], 5)

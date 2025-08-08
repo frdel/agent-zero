@@ -1,0 +1,540 @@
+<!-- User Management Modal Content -->
+<title>Manage Users</title>
+<div x-data="userManagementData()" x-init="checkAuthentication()">
+
+    <!-- Messages -->
+    <div x-show="error" x-cloak class="message-error">
+        <span x-text="error"></span>
+    </div>
+
+    <div x-show="success" x-cloak class="message-success">
+        <span x-text="success"></span>
+    </div>
+
+    <!-- Authentication Form (shown when not authenticated) -->
+    <div x-show="!isAuthenticated" x-cloak class="auth-section">
+        <h3>Admin Authentication Required</h3>
+        <p>Please enter your admin credentials to manage users.</p>
+        <form @submit.prevent="authenticateAdmin()">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="adminUsername">Username</label>
+                    <input type="text"
+                           id="adminUsername"
+                           x-model="authForm.username"
+                           placeholder="Enter admin username"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label for="adminPassword">Password</label>
+                    <input type="password"
+                           id="adminPassword"
+                           x-model="authForm.password"
+                           placeholder="Enter admin password"
+                           required>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit"
+                        class="btn-primary"
+                        :disabled="loading">
+                    <span x-show="!loading">Login</span>
+                    <span x-show="loading" x-cloak>Authenticating...</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- User Management Content (shown when authenticated) -->
+    <div x-show="isAuthenticated" x-cloak class="user-management-content">
+
+        <!-- Create User Form -->
+        <div class="user-form-section">
+        <h3>Create New User</h3>
+        <form @submit.prevent="createUser()">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text"
+                           id="username"
+                           x-model="form.username"
+                           placeholder="Enter username"
+                           required
+                           minlength="3">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password"
+                           id="password"
+                           x-model="form.password"
+                           placeholder="Enter password"
+                           required
+                           minlength="6">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password"
+                           id="confirmPassword"
+                           x-model="form.confirmPassword"
+                           placeholder="Confirm password"
+                           required>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox"
+                               x-model="form.isAdmin">
+                        <span class="checkmark"></span>
+                        Admin User
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit"
+                        class="btn-primary"
+                        :disabled="loading">
+                    <span x-show="!loading">Create User</span>
+                    <span x-show="loading" x-cloak>Creating...</span>
+                </button>
+
+                <button type="button"
+                        @click="clearForm()"
+                        class="btn-secondary">
+                    Clear
+                </button>
+            </div>
+        </form>
+            </div>
+
+        <!-- Change Password Section -->
+        <div class="password-change-section">
+            <h3>Change Password</h3>
+            <form @submit.prevent="changePassword()">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="changeUsername">Username</label>
+                        <select id="changeUsername" x-model="passwordForm.username" required>
+                            <option value="">Select user</option>
+                            <template x-for="user in users" :key="user.username">
+                                <option :value="user.username" x-text="user.username"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div class="form-group" x-show="passwordForm.username && passwordForm.username !== 'admin'">
+                        <label for="currentPassword">Current Password</label>
+                        <input type="password"
+                               id="currentPassword"
+                               x-model="passwordForm.currentPassword"
+                               placeholder="Enter current password"
+                               :required="passwordForm.username && passwordForm.username !== 'admin'">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password"
+                               id="newPassword"
+                               x-model="passwordForm.newPassword"
+                               placeholder="Enter new password"
+                               required
+                               minlength="6">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmNewPassword">Confirm New Password</label>
+                        <input type="password"
+                               id="confirmNewPassword"
+                               x-model="passwordForm.confirmNewPassword"
+                               placeholder="Confirm new password"
+                               required>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit"
+                            class="btn-primary"
+                            :disabled="loading">
+                        <span x-show="!loading">Change Password</span>
+                        <span x-show="loading" x-cloak>Changing...</span>
+                    </button>
+
+                    <button type="button"
+                            @click="clearPasswordForm()"
+                            class="btn-secondary">
+                        Clear
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Users List -->
+        <div class="users-list-section">
+        <h3>Existing Users</h3>
+
+        <div x-show="loading && users.length === 0"
+             x-cloak
+             class="loading-message">
+            Loading users...
+        </div>
+
+        <div x-show="!loading && users.length === 0"
+             x-cloak
+             class="empty-message">
+            No users found.
+        </div>
+
+        <div x-show="users.length > 0" class="users-table-container">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="user in users" :key="user.username">
+                        <tr>
+                            <td x-text="user.username"></td>
+                            <td>
+                                <span class="role-badge"
+                                      :class="getUserRoleBadgeClass(user.is_admin)"
+                                      x-text="getUserRoleText(user.is_admin)">
+                                </span>
+                            </td>
+                            <td x-text="formatDate(user.created_at)"></td>
+                            <td>
+                                <button @click="deleteUser(user.username)"
+                                        class="btn-danger btn-small"
+                                        :disabled="loading">
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    </div> <!-- End user-management-content -->
+</div>
+
+<script>
+function userManagementData() {
+    return {
+        // State
+        loading: false,
+        users: [],
+        error: null,
+        success: null,
+        isAuthenticated: false,
+
+        // Form state
+        form: {
+            username: '',
+            password: '',
+            confirmPassword: '',
+            isAdmin: false
+        },
+
+        // Auth form state
+        authForm: {
+            username: '',
+            password: ''
+        },
+
+        // Track if current modal session is using temporary admin elevation
+        usingTemporaryAdmin: false,
+
+        // Password change form state
+        passwordForm: {
+            username: '',
+            currentPassword: '',
+            newPassword: '',
+            confirmNewPassword: ''
+        },
+
+        clearForm() {
+            this.form.username = '';
+            this.form.password = '';
+            this.form.confirmPassword = '';
+            this.form.isAdmin = false;
+        },
+
+        clearMessages() {
+            this.error = null;
+            this.success = null;
+        },
+
+        clearPasswordForm() {
+            this.passwordForm.username = '';
+            this.passwordForm.currentPassword = '';
+            this.passwordForm.newPassword = '';
+            this.passwordForm.confirmNewPassword = '';
+        },
+
+        async checkAuthentication() {
+            // Check if user is already authenticated globally
+            try {
+                const response = await fetch('/auth_check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({})
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.authenticated === true && data.user && data.user.is_admin) {
+                        this.isAuthenticated = true;
+                        this.authForm.username = data.user.username;
+                        this.showAuthForm = false;
+                        await this.loadUsers();
+                        return;
+                    } else if (data.authenticated === true && data.user && !data.user.is_admin) {
+                        this.isAuthenticated = false;
+                        this.showAuthForm = true;
+                        return;
+                    } else {
+                    }
+                } else if (response.status === 401) {
+                } else {
+                }
+            } catch (error) {
+            }
+
+            // If not authenticated as admin, show auth form
+            this.isAuthenticated = false;
+            this.showAuthForm = true;
+        },
+
+        async authenticateAdmin() {
+            // If already authenticated, don't re-authenticate
+            if (this.isAuthenticated) {
+                return;
+            }
+
+            this.loading = true;
+            this.clearMessages();
+
+            try {
+                const response = await fetch('/user_authenticate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: this.authForm.username,
+                        password: this.authForm.password,
+                        temporary: true  // CRITICAL: Prevents session corruption!
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    if (data.temporary) {
+                        this.usingTemporaryAdmin = true;
+                    }
+                    this.isAuthenticated = true;
+                    this.success = data.message;
+                    this.authForm.username = '';
+                    this.authForm.password = '';
+                    // Load users after successful authentication
+                    await this.loadUsers();
+                } else {
+                    this.error = data.error || 'Authentication failed';
+                }
+            } catch (error) {
+                this.error = 'Network error: ' + error.message;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async loadUsers() {
+            this.loading = true;
+            this.clearMessages();
+
+            try {
+                const response = await fetch('/user_list', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(this.usingTemporaryAdmin ? { 'X-Temporary-Admin': '1' } : {}),
+                    },
+                    body: JSON.stringify({})
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    this.users = data.users;
+                } else {
+                    this.error = data.error || 'Failed to load users';
+                }
+            } catch (error) {
+                this.error = 'Network error: ' + error.message;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async createUser() {
+            if (this.form.password !== this.form.confirmPassword) {
+                this.error = 'Passwords do not match';
+                return;
+            }
+
+            this.loading = true;
+            this.clearMessages();
+
+            try {
+                const response = await fetch('/user_create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: this.form.username,
+                        password: this.form.password,
+                        is_admin: this.form.isAdmin
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    this.success = `User "${this.form.username}" created successfully`;
+                    this.clearForm();
+                    this.loadUsers(); // Refresh the list
+                } else {
+                    this.error = data.error || 'Failed to create user';
+                }
+            } catch (error) {
+                this.error = 'Network error: ' + error.message;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async deleteUser(username) {
+            if (!confirm(`Are you sure you want to delete user "${username}"?`)) {
+                return;
+            }
+
+            this.loading = true;
+            this.clearMessages();
+
+            try {
+                const response = await fetch('/user_delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    this.success = `User "${username}" deleted successfully`;
+                    this.loadUsers(); // Refresh the list
+                } else {
+                    this.error = data.error || 'Failed to delete user';
+                }
+            } catch (error) {
+                this.error = 'Network error: ' + error.message;
+            } finally {
+                this.loading = false;
+            }
+                },
+
+        async changePassword() {
+            if (this.passwordForm.newPassword !== this.passwordForm.confirmNewPassword) {
+                this.error = 'New passwords do not match';
+                return;
+            }
+
+            this.loading = true;
+            this.clearMessages();
+
+            try {
+                const requestBody = {
+                    username: this.passwordForm.username,
+                    new_password: this.passwordForm.newPassword
+                };
+
+                // Add current password if not admin or changing own password
+                if (this.passwordForm.currentPassword) {
+                    requestBody.current_password = this.passwordForm.currentPassword;
+                }
+
+                const response = await fetch('/user_change_password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    this.success = data.message;
+                    this.clearPasswordForm();
+
+                    // If the user changed their own password, they need to log in again
+                    if (data.logout) {
+                        // Update success message to explain what will happen
+                        this.success = data.message + ' - You will be logged out in 3 seconds and need to log in again with your new password.';
+
+                        setTimeout(() => {
+                            // Close the modal before triggering logout
+                            if (window.closeModal) {
+                                window.closeModal();
+                            }
+                            // Trigger the global authentication required event
+                            window.dispatchEvent(new CustomEvent('authenticationRequired'));
+                        }, 3000); // Give user more time to read the message
+                    }
+                } else {
+                    this.error = data.error || 'Failed to change password';
+                }
+            } catch (error) {
+                this.error = 'Network error: ' + error.message;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        getUserRoleText(isAdmin) {
+            return isAdmin ? 'Admin' : 'User';
+        },
+
+        getUserRoleBadgeClass(isAdmin) {
+            return isAdmin ? 'role-admin' : 'role-user';
+        },
+
+        formatDate(dateString) {
+            try {
+                return new Date(dateString).toLocaleDateString();
+            } catch {
+                return 'Unknown';
+            }
+        }
+    }
+}
+</script>
