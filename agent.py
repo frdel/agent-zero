@@ -71,9 +71,10 @@ class AgentContext:
         created_at: datetime | None = None,
         type: AgentContextType = AgentContextType.USER,
         last_message: datetime | None = None,
+        owner_username: str | None = None,
     ):
         # determine owner (current authenticated user)
-        self.owner = AgentContext._current_owner()
+        self.owner = owner_username or AgentContext._current_owner()
 
         # build context
         self.id = id or str(uuid.uuid4())

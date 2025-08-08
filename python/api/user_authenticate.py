@@ -60,6 +60,11 @@ class UserAuthenticate(ApiHandler):
             if user_manager.authenticate(username, password):
                 user = user_manager.get_user(username)
                 if user:
+                    # Set central username immediately (works outside request contexts)
+                    try:
+                        user_manager.set_central_current_username(user.username)
+                    except Exception:
+                        pass
                     # Decide whether to treat this as temporary elevation even without explicit flag
                     current_username = session.get('username')
                     current_is_admin = session.get('is_admin')
@@ -121,6 +126,11 @@ class UserAuthenticate(ApiHandler):
                             }
                         }
 
+            # Clear central username on failure to prevent empty/default usage
+            try:
+                get_user_manager().set_central_current_username(None)
+            except Exception:
+                pass
             return {"error": "Invalid credentials"}
 
         except Exception as e:

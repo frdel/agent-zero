@@ -28,6 +28,13 @@ class UserLogout(ApiHandler):
             # Clear the entire session
             session.clear()
 
+            # Clear central username storage
+            try:
+                from python.helpers.user_management import get_user_manager
+                get_user_manager().set_central_current_username(None)
+            except Exception:
+                pass
+
             # Force session to be saved
             session.modified = True
 

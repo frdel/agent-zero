@@ -17,9 +17,12 @@ import re
 from python.helpers.print_style import PrintStyle
 
 # Silence all debug output in this module
+
 def _silent_print(*args, **kwargs):
     return None
+
 print = _silent_print  # type: ignore
+
 
 def _log_migration(message: str) -> None:
     try:
@@ -33,6 +36,7 @@ _thread_local = threading.local()
 # One-time guard for Stage 6 migrations
 _migrations_lock = threading.Lock()
 _stage6_migrations_done: bool = False
+_integrity_users_done: bool = False
 
 
 # RFC-accessible functions for system command execution
@@ -259,6 +263,8 @@ class UserManager:
         self.user_file = user_file or os.path.join(files.get_base_dir(), "tmp", "users.json")
         self.users: Dict[str, User] = {}
         self.system_router = SystemCommandRouter()
+        # Central storage for current username to support non-request contexts
+        self._central_current_username: Optional[str] = None
         self._load_users()
 
     def _load_users(self) -> None:
@@ -442,6 +448,13 @@ class UserManager:
                 if username and isinstance(username, str):
                     return username
         except (ImportError, RuntimeError):
+            pass
+
+        # Next, try centrally stored username (set during authentication)
+        try:
+            if self._central_current_username:
+                return self._central_current_username
+        except Exception:
             pass
 
         # Fallback to thread-local storage
@@ -2150,17 +2163,131 @@ class UserManager:
             return False
 
         home_dir = f"/home/{system_username}"
-        activate_line = f"source {venv_path}/bin/activate"
+        activate_path = f"{venv_path}/bin/activate"
+        conditional_line = f"[ -r {activate_path} ] && . {activate_path}"
         profile_files = [".bashrc", ".profile"]
+
+        # Preemptively normalize venv ownership/permissions (best-effort)
+        try:
+            # Ensure entire venv directory is owned by the system user (recursive)
+            self.system_router.run_system_command(
+                ["chown", "-R", f"{system_username}:a0-users", venv_path],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            # Ensure directories are traversable and activate is readable
+            self.system_router.run_system_command(
+                ["bash", "-lc", f"find {venv_path} -type d -exec chmod 755 {{}} +"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.system_router.run_system_command(
+                ["chmod", "755", f"{activate_path}"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except Exception:
+            pass
 
         for pf in profile_files:
             file_path = f"{home_dir}/{pf}"
-            # Touch file, append line if missing, and fix ownership
-            self.system_router.run_system_command(["bash", "-lc", f"touch {file_path}"] , capture_output=True, text=True, check=False)
-            self.system_router.run_system_command(["bash", "-lc", f"grep -qxF '{activate_line}' {file_path} || echo '{activate_line}' >> {file_path}"] , capture_output=True, text=True, check=False)
+            # Touch file
+            self.system_router.run_system_command(["bash", "-lc", f"touch {file_path}"], capture_output=True, text=True, check=False)
+            # Clean up any broken or duplicate lines referencing the activate script
+            # Remove every line that contains the activate path to start clean
+            self.system_router.run_system_command(
+                [
+                    "bash",
+                    "-lc",
+                    f"sed -i '\\|{activate_path}|d' {file_path}",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            # Ensure only one correct conditional source line is present
+            self.system_router.run_system_command(
+                [
+                    "bash",
+                    "-lc",
+                    f"grep -qxF '{conditional_line}' {file_path} || echo '{conditional_line}' >> {file_path}",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            # Fix ownership
             self.system_router.run_system_command(["chown", f"{system_username}:a0-users", file_path], capture_output=True, text=True, check=False)
-
+            self.system_router.run_system_command(["touch", f"{home_dir}/.hushlogin"], capture_output=True, text=True, check=False)
         return True
+
+    def set_central_current_username(self, username: Optional[str]) -> None:
+        """Set or clear the centrally stored current username"""
+        self._central_current_username = username
+
+    def run_integrity_pass_once(self) -> None:
+        """Run integrity pass exactly once per installation (guarded by file marker and in-process flag)."""
+        global _integrity_users_done
+        if _integrity_users_done:
+            return
+        from python.helpers import files
+        done_marker = os.path.join(files.get_base_dir(), "tmp", ".integrity_users_done")
+        running_marker = os.path.join(files.get_base_dir(), "tmp", ".integrity_users_running")
+
+        # Fast path: if marker exists, skip
+        try:
+            if os.path.exists(done_marker):
+                _integrity_users_done = True
+                return
+        except Exception:
+            pass
+
+        # Single-process guard using existing migrations lock
+        with _migrations_lock:
+            if _integrity_users_done:
+                return
+            try:
+                if os.path.exists(done_marker):
+                    _integrity_users_done = True
+                    return
+            except Exception:
+                pass
+
+            # Atomically create running marker to prevent concurrent executions across processes
+            created_running = False
+            try:
+                os.makedirs(os.path.dirname(running_marker), exist_ok=True)
+                fd = os.open(running_marker, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                with os.fdopen(fd, 'w') as f:
+                    f.write(f"Integrity running at: {datetime.now(timezone.utc).isoformat()}\n")
+                created_running = True
+            except FileExistsError:
+                return
+            except Exception:
+                # Proceed without running marker if atomic create fails for non-critical reasons
+                pass
+
+            try:
+                # Run integrity and write done marker (best-effort)
+                info = self.ensure_system_users_integrity()
+                try:
+                    os.makedirs(os.path.dirname(done_marker), exist_ok=True)
+                    with open(done_marker, 'w') as f:
+                        f.write(f"Integrity ensured at: {datetime.now(timezone.utc).isoformat()}\n")
+                        f.write(json.dumps(info))
+                except Exception:
+                    pass
+                _integrity_users_done = True
+            finally:
+                if created_running:
+                    try:
+                        if os.path.exists(running_marker):
+                            os.remove(running_marker)
+                    except Exception:
+                        pass
 
 
 # Global user manager instance
@@ -2175,10 +2302,9 @@ def get_user_manager() -> UserManager:
         _user_manager.ensure_default_admin()
         try:
             _user_manager.run_stage6_migrations()
-            # Always perform an integrity pass to create missing system users/sudoers
+            # Perform integrity pass only once per installation
             try:
-                info = _user_manager.ensure_system_users_integrity()
-                _log_migration(f"Integrity ensured: users={info.get('ensured_users', 0)}, sudoers={info.get('sudoers_updated', 0)}")
+                _user_manager.run_integrity_pass_once()
             except Exception as e:
                 _log_migration(f"Integrity pass skipped/failed: {e}")
         except Exception as e:
@@ -2207,6 +2333,7 @@ def get_current_username() -> str:
 def is_current_user_admin() -> bool:
     """Check if the current user is an admin"""
     return get_current_user().is_admin
+
 
 def require_admin() -> None:
     """Raise an exception if the current user is not an admin"""

@@ -219,15 +219,23 @@ function loginOverlayData() {
             this.error = '';
 
             try {
+                // Clear any cached CSRF token before attempting login
+                if (window.clearCsrfToken) {
+                    window.clearCsrfToken();
+                }
+
                 const response = await fetch('/user_authenticate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Cache-Control': 'no-store'
                     },
                     body: JSON.stringify({
                         username: this.authForm.username,
                         password: this.authForm.password
-                    })
+                    }),
+                    credentials: 'same-origin',
+                    cache: 'no-cache'
                 });
 
                 const data = await response.json();
@@ -240,26 +248,67 @@ function loginOverlayData() {
                         window.clearCsrfToken();
                     }
 
-                    // Resume API calls immediately
-                    if (window.resumeApiCalls) {
-                        window.resumeApiCalls();
-                    }
-
-                    // Hide overlay immediately
-                    this.hideOverlay();
-
-                    // Allow some time for session to be established
-                    setTimeout(() => {
-                        this.triggerComponentRefresh();
-                    }, 200);
+                    // Allow some time for session cookie to be stored, then verify
+                    setTimeout(async () => {
+                        try {
+                            const chk = await fetch('/auth_check', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, body: JSON.stringify({}), credentials: 'same-origin', cache: 'no-cache' });
+                            if (chk.ok) {
+                                // Hide overlay and resume APIs only after confirmed auth
+                                this.hideOverlay();
+                                if (window.resumeApiCalls) { window.resumeApiCalls(); }
+                                this.triggerComponentRefresh();
+                            } else {
+                                this.error = 'Session not ready, retrying...';
+                                await this._retryLoginOnce();
+                            }
+                        } catch (e) {
+                            this.error = 'Session check failed, retrying...';
+                            await this._retryLoginOnce();
+                        }
+                    }, 250);
                 } else {
-                    this.error = data.message || 'Authentication failed';
+                    this.error = data.message || 'Authentication failed, retrying...';
+                    await this._retryLoginOnce();
                 }
             } catch (error) {
                 console.error('Authentication error:', error);
-                this.error = 'Network error. Please try again.';
+                this.error = 'Network error, retrying...';
+                await this._retryLoginOnce();
             } finally {
                 this.loading = false;
+            }
+        },
+
+        async _retryLoginOnce() {
+            try {
+                // Clear CSRF again before retry
+                if (window.clearCsrfToken) { window.clearCsrfToken(); }
+                const response = await fetch('/user_authenticate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+                    body: JSON.stringify({ username: this.authForm.username, password: this.authForm.password }),
+                    credentials: 'same-origin',
+                    cache: 'no-cache'
+                });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    setTimeout(async () => {
+                        try {
+                            const chk = await fetch('/auth_check', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, body: JSON.stringify({}), credentials: 'same-origin', cache: 'no-cache' });
+                            if (chk.ok) {
+                                this.hideOverlay();
+                                if (window.resumeApiCalls) { window.resumeApiCalls(); }
+                                this.triggerComponentRefresh();
+                            } else {
+                                this.error = 'Login session not established. Please try again.';
+                            }
+                        } catch (e) {
+                            this.error = 'Login session verification failed. Please try again.';
+                        }
+                    }, 250);
+                }
+            } catch (e) {
+                // Give up; user will see error
             }
         },
 

@@ -388,11 +388,16 @@ def _get_user_specific_path(*relative_paths) -> str:
         from python.helpers.user_management import get_user_manager
         user_manager = get_user_manager()
         username = user_manager.get_current_username_safe()
-        # Insert username after the first directory component
-        if len(relative_paths) == 1:
-            user_path = os.path.join(get_base_dir(), relative_paths[0], username)
+
+        # If the username is already present as the second path segment, don't insert it again
+        if len(relative_paths) >= 2 and relative_paths[1] == username:
+            user_path = os.path.join(get_base_dir(), *relative_paths)
         else:
-            user_path = os.path.join(get_base_dir(), relative_paths[0], username, *relative_paths[1:])
+            # Insert username after the first directory component
+            if len(relative_paths) == 1:
+                user_path = os.path.join(get_base_dir(), relative_paths[0], username)
+            else:
+                user_path = os.path.join(get_base_dir(), relative_paths[0], username, *relative_paths[1:])
 
         # Ensure the user data directory exists
         os.makedirs(os.path.dirname(user_path), exist_ok=True)
