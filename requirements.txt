@@ -10,6 +10,7 @@ flask[async]==3.0.3
 flask-basicauth==0.2.0
 flaredantic==0.1.4
 GitPython==3.1.43
+graphrag_sdk==0.8.0
 inputimeout==1.0.4
 kokoro>=0.9.2
 simpleeval==1.0.3

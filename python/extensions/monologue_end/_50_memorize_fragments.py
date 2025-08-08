@@ -98,7 +98,7 @@ class MemorizeMemories(Extension):
             txt = f"{memory}"
 
             if set["memory_memorize_consolidation"]:
-                
+
                 try:
                     # Use intelligent consolidation system
                     from python.helpers.memory_consolidation import create_memory_consolidator
@@ -136,6 +136,18 @@ class MemorizeMemories(Extension):
                                 temp=False,  # Show completion message
                                 update_progress="none"  # Show briefly then disappear
                             )
+
+                        # Ingest into GraphRAG after successful memory save (if enabled)
+                        try:
+                            set = settings.get_settings()
+                            if set.get("use_graphrag", True):
+                                # Extract memory ID from consolidation result if available
+                                memory_id = getattr(consolidation_result, 'memory_id', None) if 'consolidation_result' in locals() else None
+                                await self._ingest_to_graphrag(txt, Memory.Area.FRAGMENTS.value, memory_id)
+                        except Exception as e:
+                            # GraphRAG ingestion failure shouldn't break memory saving
+                            pass
+
                     else:
                         if memory_log:
                             memory_log.update(
@@ -177,14 +189,54 @@ class MemorizeMemories(Extension):
                 # insert new memory
                 await db.insert_text(text=txt, metadata={"area": Memory.Area.FRAGMENTS.value})
 
+                # Ingest into GraphRAG after successful memory save (if enabled)
+                try:
+                    set = settings.get_settings()
+                    if set.get("use_graphrag", True):
+                        await self._ingest_to_graphrag(txt, Memory.Area.FRAGMENTS.value, None)
+                except Exception as e:
+                    # GraphRAG ingestion failure shouldn't break memory saving
+                    pass
+
                 log_item.update(
                     result=f"{len(memories)} entries memorized.",
                     heading=f"{len(memories)} entries memorized.",
                 )
                 if rem:
                     log_item.stream(result=f"\nReplaced {len(rem)} previous memories.")
-            
 
+    async def _ingest_to_graphrag(self, text: str, area: str, memory_id: str | None = None):
+        """Ingest memory text into GraphRAG knowledge graph with metadata."""
+        try:
+            from python.helpers.graphrag_helper import GraphRAGHelper
+
+            # Get area-specific instruction for better entity extraction
+            area_instructions = {
+                Memory.Area.FRAGMENTS.value: "Focus on extracting people, facts, events, and relationships from memory fragments",
+                Memory.Area.MAIN.value: "Focus on extracting key concepts, entities, and important information",
+                Memory.Area.SOLUTIONS.value: "Focus on extracting problem-solving approaches, methods, and technical solutions",
+                Memory.Area.INSTRUMENTS.value: "Focus on extracting tools, technologies, and instruments used"
+            }
+
+            instruction = area_instructions.get(area, "Focus on extracting entities and relationships")
+
+            # Create metadata for memory source tracking
+            import time
+            metadata = {
+                "source_type": "memory_fragment",
+                "source_id": memory_id or f"fragment_{int(time.time())}",
+                "memory_id": memory_id,
+                "area": area,
+                "agent_id": self.agent.config.agent_name if hasattr(self.agent.config, 'agent_name') else "unknown"
+            }
+
+            # Get GraphRAG helper for fragments area and ingest
+            helper = GraphRAGHelper.get_for_area(area)
+            helper.ingest_text(text, instruction, metadata)
+
+        except Exception as e:
+            # Silently fail - GraphRAG integration shouldn't break memory system
+            pass
 
 
     # except Exception as e:

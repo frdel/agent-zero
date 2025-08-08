@@ -17,7 +17,7 @@ class MemorizeSolutions(Extension):
 
         if not set["memory_memorize_enabled"]:
             return
- 
+
         # show full util message
         log_item = self.agent.context.log.log(
             type="util",
@@ -182,6 +182,15 @@ class MemorizeSolutions(Extension):
                 # insert new solution
                 await db.insert_text(text=txt, metadata={"area": Memory.Area.SOLUTIONS.value})
 
+                # Ingest into GraphRAG after successful memory save (if enabled)
+                try:
+                    set = settings.get_settings()
+                    if set.get("use_graphrag", True):
+                        await self._ingest_to_graphrag(txt, Memory.Area.SOLUTIONS.value, None)
+                except Exception as e:
+                    # GraphRAG ingestion failure shouldn't break memory saving
+                    pass
+
                 log_item.update(
                     result=f"{len(solutions)} solutions memorized.",
                     heading=f"{len(solutions)} solutions memorized.",
@@ -189,6 +198,38 @@ class MemorizeSolutions(Extension):
                 if rem:
                     log_item.stream(result=f"\nReplaced {len(rem)} previous solutions.")
 
+    async def _ingest_to_graphrag(self, text: str, area: str, memory_id: str | None = None):
+        """Ingest memory text into GraphRAG knowledge graph with metadata."""
+        try:
+            from python.helpers.graphrag_helper import GraphRAGHelper
+
+            # Get area-specific instruction for better entity extraction
+            area_instructions = {
+                Memory.Area.FRAGMENTS.value: "Focus on extracting people, facts, events, and relationships from memory fragments",
+                Memory.Area.MAIN.value: "Focus on extracting key concepts, entities, and important information",
+                Memory.Area.SOLUTIONS.value: "Focus on extracting problem-solving approaches, methods, and technical solutions",
+                Memory.Area.INSTRUMENTS.value: "Focus on extracting tools, technologies, and instruments used"
+            }
+
+            instruction = area_instructions.get(area, "Focus on extracting entities and relationships")
+
+            # Create metadata for memory source tracking
+            import time
+            metadata = {
+                "source_type": "memory_solution",
+                "source_id": memory_id or f"solution_{int(time.time())}",
+                "memory_id": memory_id,
+                "area": area,
+                "agent_id": self.agent.config.agent_name if hasattr(self.agent.config, 'agent_name') else "unknown"
+            }
+
+            # Get GraphRAG helper for solutions area and ingest
+            helper = GraphRAGHelper.get_for_area(area)
+            helper.ingest_text(text, instruction, metadata)
+
+        except Exception as e:
+            # Silently fail - GraphRAG integration shouldn't break memory system
+            pass
 
     # except Exception as e:
     #     err = errors.format_error(e)

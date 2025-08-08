@@ -7,6 +7,13 @@ ARG BRANCH
 RUN if [ -z "$BRANCH" ]; then echo "ERROR: BRANCH is not set!" >&2; exit 1; fi
 ENV BRANCH=$BRANCH
 
+ENV FALKORDB_BIN_PATH=/FalkorDB/
+ENV FALKORDB_DATA_PATH=/FalkorDB/data
+ENV FALKORDB_TLS_PATH=/FalkorDB/tls
+# ENV FALKORDB_ARGS="--tls 1"
+ENV FALKORDB_BROWSER_PATH=
+ENV BROWSER=0
+
 # Copy filesystem files to root
 COPY ./fs/ /
 
@@ -27,9 +34,9 @@ RUN echo "cache buster $CACHE_DATE" && bash /ins/install_A02.sh $BRANCH
 RUN bash /ins/post_install.sh $BRANCH
 
 # Expose ports
-EXPOSE 22 80 9000-9009
+EXPOSE 22 80 6379 3000 9000-9009
 
-RUN chmod +x /exe/initialize.sh /exe/run_A0.sh /exe/run_searxng.sh /exe/run_tunnel_api.sh
+RUN chmod +x /exe/initialize.sh /FalkorDB/run.sh /exe/run_A0.sh /exe/run_searxng.sh /exe/run_tunnel_api.sh
 
 # initialize runtime and switch to supervisord
 CMD ["/exe/initialize.sh", "$BRANCH"]

@@ -55,6 +55,8 @@ class RecallMemories(Extension):
             del extras["memories"]
         if "solutions" in extras:
             del extras["solutions"]
+        if "graph_knowledge" in extras:
+            del extras["graph_knowledge"]
 
 
         set = settings.get_settings()
@@ -99,7 +101,7 @@ class RecallMemories(Extension):
                     heading="Failed to generate memory query",
                 )
                 return
-        
+
         # otherwise use the message and history as query
         else:
             query = user_instruction + "\n\n" + history
@@ -203,6 +205,93 @@ class RecallMemories(Extension):
         if solutions_txt:
             log_item.update(solutions=solutions_txt)
 
+        # Query GraphRAG knowledge graph for additional insights
+        # Query both the memory areas and main area for comprehensive results
+        memory_context = {
+            'memories': memories_txt if memories_txt else None,
+            'solutions': solutions_txt if solutions_txt else None,
+            'original_query': query
+        }
+
+        # Determine which areas to query based on what memories were found
+        areas_to_query = ["main"]  # Always query main
+        if memories_txt:
+            areas_to_query.extend(["main", "fragments"])  # Main and fragments for general memories
+        if solutions_txt:
+            areas_to_query.append("solutions")  # Solutions area
+
+        # Remove duplicates while preserving order
+        areas_to_query = list(dict.fromkeys(areas_to_query))
+
+        # Query GraphRAG only if enabled
+        graph_knowledge_txt = ""
+        try:
+            set = settings.get_settings()
+            if set.get("use_graphrag", True):
+                # Enhanced query with memory context if available
+                if memory_context and (memory_context.get('memories') or memory_context.get('solutions')):
+                    context_info = []
+
+                    if memory_context.get('memories'):
+                        context_info.append(f"Related memories found:\n{memory_context['memories'][:500]}...")
+
+                    if memory_context.get('solutions'):
+                        context_info.append(f"Related solutions found:\n{memory_context['solutions'][:500]}...")
+
+                    # Create context-enhanced query
+                    enhanced_query = f"""Based on the following memory context, provide additional insights from the knowledge graph:
+
+{chr(10).join(context_info)}
+
+Original question: {query}
+
+Focus on entities, relationships, or knowledge that complements the above memories and solutions."""
+
+                    # Try the context-enhanced query first
+                    try:
+                        from python.helpers.graphrag_helper import GraphRAGHelper
+                        helper = GraphRAGHelper.get_default()
+                        result = helper.query_with_memory_context(enhanced_query, memory_context)
+                        if result and "No relevant information" not in result:
+                            log_item.update(graph_knowledge=result)
+                            graph_knowledge_txt = result
+                    except Exception:
+                        pass  # Fall back to standard queries
+
+                # Fallback to multiple query formulations for better coverage if no context result
+                if not graph_knowledge_txt:
+                    queries_to_try = [
+                        query,  # Original query
+                        f"What do you know about {query}?",  # More direct
+                        f"Tell me about entities related to: {query}",  # Entity-focused
+                    ]
+
+                    results = []
+                    for q in queries_to_try[:2]:  # Limit to 2 queries to avoid too much processing
+                        try:
+                            from python.helpers.graphrag_helper import GraphRAGHelper
+                            helper = GraphRAGHelper.get_default()
+                            result = helper.query(q)
+                            if result and "No relevant information" not in result:
+                                results.append(result)
+                        except Exception:
+                            continue
+
+                    if results:
+                        graph_knowledge_txt = "\n\n".join(results)
+                        log_item.update(graph_knowledge=graph_knowledge_txt)
+                    else:
+                        # Final fallback to multi-area query
+                        graph_knowledge_txt = await self._query_graphrag_multi_area(query, areas_to_query, log_item, memory_context)
+                else:
+                    # Also try multi-area query to get comprehensive results
+                    multi_area_result = await self._query_graphrag_multi_area(query, areas_to_query, log_item, memory_context)
+                    if multi_area_result and multi_area_result != graph_knowledge_txt:
+                        graph_knowledge_txt = f"{graph_knowledge_txt}\n\n{multi_area_result}"
+        except Exception:
+            # GraphRAG failure shouldn't break memory recall
+            pass
+
         # place to prompt
         if memories_txt:
             extras["memories"] = self.agent.parse_prompt(
@@ -212,3 +301,32 @@ class RecallMemories(Extension):
             extras["solutions"] = self.agent.parse_prompt(
                 "agent.system.solutions.md", solutions=solutions_txt
             )
+        if graph_knowledge_txt:
+            extras["graph_knowledge"] = self.agent.parse_prompt(
+                "agent.system.graph_knowledge.md", graph_knowledge=graph_knowledge_txt
+            )
+
+    async def _query_graphrag_multi_area(self, query: str, areas: list[str], log_item, memory_context: dict = None) -> str:
+        """Query multiple GraphRAG knowledge graph areas for comprehensive insights."""
+        try:
+            from python.helpers.graphrag_helper import GraphRAGHelper
+
+            # Query multiple areas and combine results
+            results = GraphRAGHelper.query_multi_area(query, areas, memory_context)
+
+            if results:
+                # Format results from multiple areas
+                formatted_result = GraphRAGHelper.format_multi_area_results(results)
+                log_item.update(graph_knowledge=formatted_result)
+                return formatted_result
+            else:
+                return ""
+
+        except Exception as e:
+            # GraphRAG query failure shouldn't break memory recall
+            return ""
+
+    async def _query_graphrag(self, query: str, log_item, memory_context: dict = None) -> str:
+        """Query GraphRAG knowledge graph for additional insights with memory context (legacy method)."""
+        # Fallback to multi-area query with main area only for compatibility
+        return await self._query_graphrag_multi_area(query, ["main"], log_item, memory_context)
