@@ -1289,9 +1289,6 @@ def normalize_settings(settings: Settings) -> Settings:
                 copy_dict[key] = type(value)(copy_dict[key])  # type: ignore
                 if isinstance(copy_dict[key], str):
                     copy_dict[key] = copy_dict[key].strip() # strip strings
-                copy[key] = type(value)(copy[key])  # type: ignore
-                if isinstance(copy[key], str):
-                    copy[key] = copy[key].strip()  # strip strings
             except (ValueError, TypeError):
                 copy_dict[key] = value  # make default instead
 
