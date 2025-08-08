@@ -1271,6 +1271,7 @@ def _read_settings_file() -> Settings | None:
 
 
 def _write_settings_file(settings: Settings):
+    settings = settings.copy()
     _write_sensitive_settings(settings)
     _remove_sensitive_settings(settings)
 
@@ -1308,7 +1309,7 @@ def get_default_settings() -> Settings:
     return Settings(
         version=_get_version(),
         chat_model_provider="openrouter",
-        chat_model_name="openai/gpt-5",
+        chat_model_name="openai/gpt-5-chat",
         chat_model_api_base="",
         chat_model_kwargs={"temperature": "0"},
         chat_model_ctx_length=100000,
@@ -1333,7 +1334,7 @@ def get_default_settings() -> Settings:
         embed_model_rl_requests=0,
         embed_model_rl_input=0,
         browser_model_provider="openrouter",
-        browser_model_name="openai/gpt-5",
+        browser_model_name="openai/gpt-5-chat",
         browser_model_api_base="",
         browser_model_vision=True,
         browser_model_rl_requests=0,

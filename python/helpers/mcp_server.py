@@ -273,6 +273,7 @@ class DynamicMcpProxy:
 
     def __init__(self):
         cfg = settings.get_settings()
+        self.token = ""
         self.sse_app: ASGIApp | None = None
         self.http_app: ASGIApp | None = None
         self.http_session_manager = None
@@ -287,6 +288,9 @@ class DynamicMcpProxy:
         return DynamicMcpProxy._instance
 
     def reconfigure(self, token: str):
+        if self.token == token:
+            return
+
         self.token = token
         sse_path = f"/t-{self.token}/sse"
         http_path = f"/t-{self.token}/http"
@@ -404,7 +408,7 @@ class DynamicMcpProxy:
         # Route based on path
         path = scope.get("path", "")
 
-        if f"/t-{self.token}/sse" in path:
+        if f"/t-{self.token}/sse" in path or f"t-{self.token}/messages" in path:
             # Route to SSE app
             await sse_app(scope, receive, send)
         elif f"/t-{self.token}/http" in path:
