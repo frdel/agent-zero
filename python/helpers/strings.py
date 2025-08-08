@@ -11,9 +11,20 @@ def sanitize_string(s: str, encoding: str = "utf-8") -> str:
 def calculate_valid_match_lengths(first: bytes | str, second: bytes | str, 
                                   deviation_threshold: int = 5, 
                                   deviation_reset: int = 5, 
-                                  ignore_patterns: list[bytes|str] = [],
+                                  ignore_patterns: list[bytes|str] | None = None,
                                   debug: bool = False) -> tuple[int, int]:
     
+    if ignore_patterns is None:
+        ignore_patterns = []
+    using_bytes = isinstance(first, (bytes, bytearray)) or isinstance(second, (bytes, bytearray))
+    if using_bytes:
+        if isinstance(first, str): first = first.encode()
+        if isinstance(second, str): second = second.encode()
+        ignore_patterns = [p if isinstance(p, (bytes, bytearray)) else str(p).encode() for p in ignore_patterns]
+    else:
+        if isinstance(first, (bytes, bytearray)): first = first.decode(errors="ignore")
+        if isinstance(second, (bytes, bytearray)): second = second.decode(errors="ignore")
+        ignore_patterns = [p.decode(errors="ignore") if isinstance(p, (bytes, bytearray)) else str(p) for p in ignore_patterns]
     first_length = len(first)
     second_length = len(second)
 
