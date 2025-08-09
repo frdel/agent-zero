@@ -23,6 +23,7 @@ from datetime import timedelta
 import json
 from python.helpers import errors
 from python.helpers import settings
+from python.helpers import files
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -79,9 +80,10 @@ def _is_streaming_http_type(server_type: str) -> bool:
 
 
 def initialize_mcp(mcp_servers_config: str):
-    if not MCPConfig.get_instance().is_initialized():
+    # Ensure default/global MCP is initialized
+    if not MCPConfig.get_instance("default").is_initialized():
         try:
-            MCPConfig.update(mcp_servers_config)
+            MCPConfig.update(mcp_servers_config, profile="default")
         except Exception as e:
             from agent import AgentContext
 
@@ -95,6 +97,29 @@ def initialize_mcp(mcp_servers_config: str):
                 background_color="black", font_color="red", padding=True
             ).print(f"Failed to update MCP settings: {e}")
 
+    # Eagerly initialize all agent profile MCP configs (create empty when missing)
+    try:
+        profiles = [p for p in files.get_subdirectories("agents") if p != "_example"]
+        for profile in profiles:
+            # Avoid re-initializing if already loaded
+            if not MCPConfig.get_instance(profile).is_initialized():
+                try:
+                    has_cfg = files.exists("agents", profile, "mcp.json")
+                    cfg = files.read_file(f"agents/{profile}/mcp.json") if has_cfg else settings.get_default_settings()["mcp_servers"]
+                    MCPConfig.update(cfg, profile=profile)
+                    PrintStyle(font_color="green").print(
+                        f"Initialized MCP for profile '{profile}'"
+                    )
+                except Exception as e:
+                    PrintStyle(
+                        background_color="#AA4455", font_color="white", padding=True
+                    ).print(f"Failed to initialize MCP for profile '{profile}': {e}")
+    except Exception as e:
+        # Non-fatal: just log
+        PrintStyle(
+            background_color="#AA4455", font_color="white", padding=True
+        ).print(f"MCP eager profile initialization error: {e}")
+
 
 class MCPTool(Tool):
     """MCP Tool wrapper"""
@@ -102,9 +127,14 @@ class MCPTool(Tool):
     async def execute(self, **kwargs: Any):
         error = ""
         try:
-            response: CallToolResult = await MCPConfig.get_instance().call_tool(
-                self.name, kwargs
-            )
+            # Prefer agent-specific MCP config if available, fallback to default
+            profile = getattr(self.agent.config, "profile", None) or "default"
+            response: CallToolResult
+            config_for_profile = MCPConfig.get_instance(profile)
+            if config_for_profile.has_tool(self.name):
+                response = await config_for_profile.call_tool(self.name, kwargs)
+            else:
+                response = await MCPConfig.get_instance("default").call_tool(self.name, kwargs)
             message = "\n\n".join(
                 [item.text for item in response.content if item.type == "text"]
             )
@@ -218,7 +248,7 @@ class MCPServerRemote(BaseModel):
     tool_timeout: int = Field(default=0)
     disabled: bool = Field(default=False)
 
-    __lock: ClassVar[threading.Lock] = PrivateAttr(default=threading.Lock())
+    __lock: ClassVar[threading.RLock] = PrivateAttr(default=threading.RLock())
     __client: Optional["MCPClientRemote"] = PrivateAttr(default=None)
 
     def __init__(self, config: dict[str, Any]):
@@ -295,7 +325,7 @@ class MCPServerLocal(BaseModel):
     tool_timeout: int = Field(default=0)
     disabled: bool = Field(default=False)
 
-    __lock: ClassVar[threading.Lock] = PrivateAttr(default=threading.Lock())
+    __lock: ClassVar[threading.RLock] = PrivateAttr(default=threading.RLock())
     __client: Optional["MCPClientLocal"] = PrivateAttr(default=None)
 
     def __init__(self, config: dict[str, Any]):
@@ -368,16 +398,21 @@ MCPServer = Annotated[
 class MCPConfig(BaseModel):
     servers: list[MCPServer] = Field(default_factory=list)
     disconnected_servers: list[dict[str, Any]] = Field(default_factory=list)
-    __lock: ClassVar[threading.Lock] = PrivateAttr(default=threading.Lock())
-    __instance: ClassVar[Any] = PrivateAttr(default=None)
-    __initialized: ClassVar[bool] = PrivateAttr(default=False)
+    __lock: ClassVar[threading.RLock] = PrivateAttr(default=threading.RLock())
+    # Multiton registry keyed by profile id ("default" for global config)
+    __instances: ClassVar[dict[str, "MCPConfig"]] = PrivateAttr(default={})
+    __initialized: ClassVar[dict[str, bool]] = PrivateAttr(default={})
 
     @classmethod
-    def get_instance(cls) -> "MCPConfig":
-        # with cls.__lock:
-        if cls.__instance is None:
-            cls.__instance = cls(servers_list=[])
-        return cls.__instance
+    def get_instance(cls, profile: str = "default") -> "MCPConfig":
+        key = (profile or "default").strip()
+        with cls.__lock:
+            inst = cls.__instances.get(key)
+            if inst is None:
+                inst = cls(servers_list=[])
+                cls.__instances[key] = inst
+                cls.__initialized.setdefault(key, False)
+            return inst
 
     @classmethod
     def wait_for_lock(cls):
@@ -385,100 +420,47 @@ class MCPConfig(BaseModel):
             return
 
     @classmethod
-    def update(cls, config_str: str) -> Any:
-        with cls.__lock:
-            servers_data: List[Dict[str, Any]] = []  # Default to empty list
-
-            if (
-                config_str and config_str.strip()
-            ):  # Only parse if non-empty and not just whitespace
-                try:
-                    # Try with standard json.loads first, as it should handle escaped strings correctly
-                    parsed_value = dirty_json.try_parse(config_str)
-                    normalized = cls.normalize_config(parsed_value)
-
-                    if isinstance(normalized, list):
-                        valid_servers = []
-                        for item in normalized:
-                            if isinstance(item, dict):
-                                valid_servers.append(item)
-                            else:
-                                PrintStyle(
-                                    background_color="yellow",
-                                    font_color="black",
-                                    padding=True,
-                                ).print(
-                                    f"Warning: MCP config item (from json.loads) was not a dictionary and was ignored: {item}"
-                                )
-                        servers_data = valid_servers
-                    else:
-                        PrintStyle(
-                            background_color="red", font_color="white", padding=True
-                        ).print(
-                            f"Error: Parsed MCP config (from json.loads) top-level structure is not a list. Config string was: '{config_str}'"
-                        )
-                        # servers_data remains empty
-                except (
-                    Exception
-                ) as e_json:  # Catch json.JSONDecodeError specifically if possible, or general Exception
-                    PrintStyle.error(
-                        f"Error parsing MCP config string: {e_json}. Config string was: '{config_str}'"
+    def update(cls, config_str: str, profile: str = "default") -> Any:
+        key = (profile or "default").strip()
+        # Parse and build servers list outside the lock
+        servers_data: List[Dict[str, Any]] = []
+        if config_str and config_str.strip():
+            try:
+                parsed_value = dirty_json.try_parse(config_str)
+                normalized = cls.normalize_config(parsed_value)
+                if isinstance(normalized, list):
+                    valid_servers = []
+                    for item in normalized:
+                        if isinstance(item, dict):
+                            valid_servers.append(item)
+                        else:
+                            PrintStyle(
+                                background_color="yellow",
+                                font_color="black",
+                                padding=True,
+                            ).print(
+                                f"Warning: MCP config item (from json.loads) was not a dictionary and was ignored: {item}"
+                            )
+                    servers_data = valid_servers
+                else:
+                    PrintStyle(
+                        background_color="red", font_color="white", padding=True
+                    ).print(
+                        f"Error: Parsed MCP config (from json.loads) top-level structure is not a list. Config string was: '{config_str}'"
                     )
+            except Exception as e_json:
+                PrintStyle.error(
+                    f"Error parsing MCP config string: {e_json}. Config string was: '{config_str}'"
+                )
 
-                    # # Fallback to DirtyJson or log error if standard json.loads fails
-                    # PrintStyle(background_color="orange", font_color="black", padding=True).print(
-                    #     f"Standard json.loads failed for MCP config: {e_json}. Attempting DirtyJson as fallback."
-                    # )
-                    # try:
-                    #     parsed_value = DirtyJson.parse_string(config_str)
-                    #     if isinstance(parsed_value, list):
-                    #         valid_servers = []
-                    #         for item in parsed_value:
-                    #             if isinstance(item, dict):
-                    #                 valid_servers.append(item)
-                    #             else:
-                    #                 PrintStyle(background_color="yellow", font_color="black", padding=True).print(
-                    #                     f"Warning: MCP config item (from DirtyJson) was not a dictionary and was ignored: {item}"
-                    #                 )
-                    #         servers_data = valid_servers
-                    #     else:
-                    #         PrintStyle(background_color="red", font_color="white", padding=True).print(
-                    #             f"Error: Parsed MCP config (from DirtyJson) top-level structure is not a list. Config string was: '{config_str}'"
-                    #         )
-                    #         # servers_data remains empty
-                    # except Exception as e_dirty:
-                    #     PrintStyle(background_color="red", font_color="white", padding=True).print(
-                    #         f"Error parsing MCP config string with DirtyJson as well: {e_dirty}. Config string was: '{config_str}'"
-                    #     )
-                    #     # servers_data remains empty, allowing graceful degradation
+        # Construct new instance OUTSIDE the class lock to avoid long-held locks during server init
+        new_instance = cls(servers_list=servers_data)
 
-            # Initialize/update the singleton instance with the (potentially empty) list of server data
-            instance = cls.get_instance()
-            # Directly update the servers attribute of the existing instance or re-initialize carefully
-            # For simplicity and to ensure __init__ logic runs if needed for setup:
-            new_instance_data = {
-                "servers": servers_data
-            }  # Prepare data for re-initialization or update
-
-            # Option 1: Re-initialize the existing instance (if __init__ is idempotent for other fields)
-            instance.__init__(servers_list=servers_data)
-
-            # Option 2: Or, if __init__ has side effects we don't want to repeat,
-            # and 'servers' is the primary thing 'update' changes:
-            # instance.servers = [] # Clear existing servers first
-            # for server_item_data in servers_data:
-            #     try:
-            #         if server_item_data.get("url", None):
-            #             instance.servers.append(MCPServerRemote(server_item_data))
-            #         else:
-            #             instance.servers.append(MCPServerLocal(server_item_data))
-            #     except Exception as e_init:
-            #         PrintStyle(background_color="grey", font_color="red", padding=True).print(
-            #             f"MCPConfig.update: Failed to create MCPServer from item '{server_item_data.get('name', 'Unknown')}': {e_init}"
-            #         )
-
-            cls.__initialized = True
-            return instance
+        # Swap instance under lock
+        with cls.__lock:
+            cls.__instances[key] = new_instance
+            cls.__initialized[key] = True
+            return new_instance
 
     @classmethod
     def normalize_config(cls, servers: Any):
@@ -677,7 +659,12 @@ class MCPConfig(BaseModel):
     def is_initialized(self) -> bool:
         """Check if the client is initialized"""
         with self.__lock:
-            return self.__initialized
+            # Determine this instance's key by reverse lookup
+            for key, inst in self.__class__.__instances.items():
+                if inst is self:
+                    return self.__class__.__initialized.get(key, False)
+            # Fallback to False
+            return False
 
     def get_tools(self) -> List[dict[str, dict[str, Any]]]:
         """Get all tools from all servers"""
@@ -782,7 +769,7 @@ class MCPClientBase(ABC):
     # tools: List[dict[str, Any]] # Defined in __init__
     # No self.session, self.exit_stack, self.stdio, self.write as persistent instance fields
 
-    __lock: ClassVar[threading.Lock] = threading.Lock()
+    __lock: ClassVar[threading.RLock] = threading.RLock()
 
     def __init__(self, server: Union[MCPServerLocal, MCPServerRemote]):
         self.server = server

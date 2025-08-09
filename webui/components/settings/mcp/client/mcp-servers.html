@@ -21,6 +21,13 @@
                     <button class="btn slim primary" :disabled="$store.mcpServersStore.loading"
                         style="margin-left: 0.5em;" @click="$store.mcpServersStore.applyNow()">Apply now</button>
                 </h3>
+                <div class="profile-select-row">
+                    <label>Profile:</label>
+                    <select id="mcp-profiles-select"
+                            x-model="$store.mcpServersStore.selectedProfile"
+                            @change="$store.mcpServersStore.onProfileChange($event.target.value)">
+                    </select>
+                </div>
                 <div id="mcp-servers-config-json"></div>
 
                 <h3 id="mcp-servers-status">Servers status (refreshing automatically)</h3>
@@ -33,8 +40,8 @@
                                 <!-- Status indicator -->
                                 <div class="status-dot" x-data="{ connected: server.connected }">
                                     <svg viewBox="0 0 16 16" width="12" height="12">
-                                        <circle cx="8" cy="8" r="6" x-bind:fill="server.connected 
-                                                ? (server.error ? '#e40138' : (server.tool_count > 0 ? '#00c340' : '#e40138')) 
+                                        <circle cx="8" cy="8" r="6" x-bind:fill="server.connected
+                                                ? (server.error ? '#e40138' : (server.tool_count > 0 ? '#00c340' : '#e40138'))
                                                 : 'none'" x-bind:opacity="server.connected ? 1 : 0" />
                                         <circle cx="8" cy="8" r="6" fill="none" stroke="#e40138" stroke-width="2"
                                             x-bind:opacity="server.connected ? 0 : 1" />
@@ -80,6 +87,12 @@
         margin-top: 2rem;
         margin-bottom: 2rem;
     }
+        .profile-select-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+            margin-bottom: 0.6em;
+        }
         #mcp-servers-config-json {
             width: 100%;
             height: 40em;
