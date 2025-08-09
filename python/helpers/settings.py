@@ -99,7 +99,7 @@ class Settings(TypedDict):
     mcp_server_token: str
 
     a2a_server_enabled: bool
-    
+
 
 
 class PartialSettings(Settings, total=False):
@@ -1436,9 +1436,9 @@ def _apply_settings(previous: Settings | None):
                     type="info", content="Updating MCP settings...", temp=True
                 )
 
-                mcp_config = MCPConfig.get_instance()
+                mcp_config = MCPConfig.get_instance("default")
                 try:
-                    MCPConfig.update(mcp_servers)
+                    MCPConfig.update(mcp_servers, profile="default")
                 except Exception as e:
                     AgentContext.log_to_all(
                         type="error",

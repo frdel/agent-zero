@@ -9,10 +9,21 @@ const model = {
   loading: true,
   statusCheck: false,
   serverLog: "",
+  // profile management
+  profiles: ["default"],
+  selectedProfile: "default",
 
   async initialize() {
     // Initialize the JSON Viewer after the modal is rendered
     const container = document.getElementById("mcp-servers-config-json");
+    // Ensure profiles are loaded first so UI can render options safely
+    // Wait briefly if settingsModalProxy is not ready yet
+    let retries = 10;
+    while ((!window.settingsModalProxy || !settingsModalProxy.settings) && retries-- > 0) {
+      await sleep(50);
+    }
+    await this._loadProfiles();
+    this._renderProfilesSelect();
     if (container) {
       const editor = ace.edit("mcp-servers-config-json");
 
@@ -24,7 +35,7 @@ const model = {
       }
 
       editor.session.setMode("ace/mode/json");
-      const json = this.getSettingsFieldConfigJson().value;
+      const json = await this._getConfigForSelectedProfile();
       editor.setValue(json);
       editor.clearSelection();
       this.editor = editor;
@@ -66,7 +77,9 @@ const model = {
 
   onClose() {
     const val = this.getEditorValue();
-    this.getSettingsFieldConfigJson().value = val;
+    if (this.selectedProfile === "default") {
+      this.getSettingsFieldConfigJson().value = val;
+    }
     this.stopStatusCheck();
   },
 
@@ -75,21 +88,31 @@ const model = {
     let firstLoad = true;
 
     while (this.statusCheck) {
-      await this._statusCheck();
-      if (firstLoad) {
-        this.loading = false;
-        firstLoad = false;
+      try {
+        await this._statusCheck();
+      } catch (e) {
+        console.error("MCP status check failed:", e);
+      } finally {
+        if (firstLoad) {
+          this.loading = false;
+          firstLoad = false;
+        }
       }
       await sleep(3000);
     }
   },
 
   async _statusCheck() {
-    const resp = await API.callJsonApi("mcp_servers_status", null);
-    if (resp.success) {
-      this.servers = resp.status;
+    const resp = await API.callJsonApi("mcp_servers_status", { profile: this.selectedProfile });
+    if (resp && resp.success) {
+      this.servers = resp.status || [];
       this.servers.sort((a, b) => a.name.localeCompare(b.name));
+    } else {
+      // In case of failure, show empty list rather than hang in loading
+      this.servers = this.servers || [];
     }
+    // Always ensure loading indicator can be cleared by status checks
+    this.loading = false;
   },
 
   async stopStatusCheck() {
@@ -103,10 +126,13 @@ const model = {
       scrollModal("mcp-servers-status");
       const resp = await API.callJsonApi("mcp_servers_apply", {
         mcp_servers: this.getEditorValue(),
+        profile: this.selectedProfile,
       });
       if (resp.success) {
         this.servers = resp.status;
         this.servers.sort((a, b) => a.name.localeCompare(b.name));
+        // Immediately refresh once to reflect current state
+        try { await this._statusCheck(); } catch (e) { /* ignore */ }
       }
       this.loading = false;
       await sleep(100); // wait for ui and scroll
@@ -121,6 +147,7 @@ const model = {
     this.serverLog = "";
     const resp = await API.callJsonApi("mcp_server_get_log", {
       server_name: serverName,
+      profile: this.selectedProfile,
     });
     if (resp.success) {
       this.serverLog = resp.log;
@@ -131,11 +158,82 @@ const model = {
   async onToolCountClick(serverName) {
     const resp = await API.callJsonApi("mcp_server_get_detail", {
       server_name: serverName,
+      profile: this.selectedProfile,
     });
     if (resp.success) {
       this.serverDetail = resp.detail;
       openModal("settings/mcp/client/mcp-server-tools.html");
     }
+  },
+
+  async _loadProfiles() {
+    // Try API first so we see a network call and get accurate list from backend
+    try {
+      const resp = await API.callJsonApi("list_agent_profiles", null);
+      if (resp && resp.success && Array.isArray(resp.profiles)) {
+        const list = ["default", ...resp.profiles.filter((p) => p && p !== "_example")];
+        this.profiles = list.length ? list : ["default"];
+      } else {
+        throw new Error("profiles api failed");
+      }
+    } catch (_e) {
+      // Fallback to reading from settings schema if API is not available yet
+      const agentSection = (window.settingsModalProxy && settingsModalProxy.settings && settingsModalProxy.settings.sections)
+        ? settingsModalProxy.settings.sections.find((s) => s.id === "agent")
+        : null;
+      const agentProfileField = agentSection && Array.isArray(agentSection.fields)
+        ? agentSection.fields.find((f) => f.id === "agent_profile")
+        : null;
+      const opts = agentProfileField && Array.isArray(agentProfileField.options) ? agentProfileField.options : [];
+      const values = opts.map((o) => o.value).filter((p) => p && p !== "_example");
+      const list = ["default", ...values];
+      this.profiles = list.length ? list : ["default"];
+    }
+    // Keep current selection if still valid, otherwise reset to default
+    if (!this.profiles.includes(this.selectedProfile)) {
+      this.selectedProfile = "default";
+    }
+    this._renderProfilesSelect();
+  },
+
+  _renderProfilesSelect() {
+    const select = document.getElementById("mcp-profiles-select");
+    if (!select) return;
+    // Clear existing options
+    select.innerHTML = "";
+    // Render new options
+    for (const p of this.profiles) {
+      const opt = document.createElement("option");
+      opt.value = p;
+      opt.textContent = p;
+      select.appendChild(opt);
+    }
+    // Keep selection in sync
+    select.value = this.selectedProfile;
+  },
+
+  async _getConfigForSelectedProfile() {
+    if (this.selectedProfile === "default") {
+      return this.getSettingsFieldConfigJson().value;
+    }
+    // try to read file content via API
+    const resp = await API.callJsonApi("mcp_profile_get_config", { profile: this.selectedProfile });
+    if (resp.success) {
+      return resp.mcp_servers;
+    }
+    return '{\n  "mcpServers": {}\n}';
+  },
+
+  async onProfileChange(profile) {
+    this.selectedProfile = profile;
+    if (this.editor) {
+      const json = await this._getConfigForSelectedProfile();
+      this.editor.setValue(json);
+      this.editor.clearSelection();
+    }
+    // force refresh status list for new profile
+    await this._statusCheck();
+    this._renderProfilesSelect();
   },
 };
 
