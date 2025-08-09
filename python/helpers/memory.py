@@ -7,7 +7,7 @@ from langchain.embeddings import CacheBackedEmbeddings
 from langchain_community.vectorstores import FAISS
 
 # faiss needs to be patched for python 3.12 on arm #TODO remove once not needed
-from python.helpers import faiss_monkey_patch
+from python.helpers import faiss_monkey_patch  # noqa: F401
 import faiss
 
 
@@ -15,9 +15,9 @@ from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
 )
-from langchain_core.embeddings import Embeddings
 
-import os, json
+import os
+import json
 
 import numpy as np
 
@@ -26,7 +26,7 @@ from . import files
 from langchain_core.documents import Document
 import uuid
 from python.helpers import knowledge_import
-from python.helpers.log import Log, LogItem
+from python.helpers.log import LogItem
 from enum import Enum
 from agent import Agent
 import models
@@ -241,8 +241,23 @@ class Memory:
             with open(index_path, "r") as f:
                 index = json.load(f)
 
-        # preload knowledge folders
+        # preload knowledge folders (global)
         index = self._preload_knowledge_folders(log_item, kn_dirs, index)
+
+        # preload agent profile private knowledge folders
+        try:
+            profile = self.agent.config.profile or ""
+            if profile:
+                for area in Memory.Area:
+                    index = knowledge_import.load_knowledge(
+                        log_item,
+                        files.get_abs_path("agents", profile, "knowledge", area.value),
+                        index,
+                        {"area": area.value, "owner": profile},
+                    )
+        except Exception as e:
+            # do not fail on errors here; just log
+            PrintStyle.error(f"Error loading profile knowledge: {e}")
 
         for file in index:
             if index[file]["state"] in ["changed", "removed"] and index[file].get(
@@ -281,7 +296,7 @@ class Memory:
                     log_item,
                     files.get_abs_path("knowledge", kn_dir, area.value),
                     index,
-                    {"area": area.value},
+                    {"area": area.value, "owner": "default"},
                 )
 
         # load instruments descriptions
@@ -289,16 +304,20 @@ class Memory:
             log_item,
             files.get_abs_path("instruments"),
             index,
-            {"area": Memory.Area.INSTRUMENTS.value},
+            {"area": Memory.Area.INSTRUMENTS.value, "owner": "default"},
             filename_pattern="**/*.md",
         )
 
         return index
 
     async def search_similarity_threshold(
-        self, query: str, limit: int, threshold: float, filter: str = ""
+        self, query: str, limit: int, threshold: float, filter: Any = ""
     ):
-        comparator = Memory._get_comparator(filter) if filter else None
+        comparator = None
+        if callable(filter):
+            comparator = filter
+        elif isinstance(filter, str) and filter:
+            comparator = Memory._get_comparator(filter)
 
         return await self.db.asearch(
             query,
@@ -370,6 +389,12 @@ class Memory:
                 doc.metadata["timestamp"] = timestamp  # add timestamp
                 if not doc.metadata.get("area", ""):
                     doc.metadata["area"] = Memory.Area.MAIN.value
+                # ensure owner field exists for safe filtering later
+                if "owner" not in doc.metadata:
+                    doc.metadata["owner"] = ""
+                # set import timestamp for knowledge sources if not present
+                if doc.metadata.get("knowledge_source") and not doc.metadata.get("import_timestamp"):
+                    doc.metadata["import_timestamp"] = timestamp
 
             await self.db.aadd_documents(documents=docs, ids=ids)
             self._save_db()  # persist

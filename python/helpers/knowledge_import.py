@@ -169,6 +169,8 @@ def load_knowledge(
                         "file_type": ext,
                         "knowledge_source": True,  # Flag to distinguish from conversation memories
                         "import_timestamp": None,  # Will be set when inserted into memory
+                        # Owner will be passed via metadata when available
+                        "owner": metadata.get("owner", "default"),
                     }
 
                     # Apply metadata to all documents
