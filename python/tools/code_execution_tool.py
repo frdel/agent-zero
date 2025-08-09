@@ -243,6 +243,24 @@ class CodeExecution(Tool):
         prefix="",
     ):
 
+        # if not self.state:
+        self.state = await self.prepare_state(session=session)
+
+        # Common shell prompt regex patterns (add more as needed)
+        prompt_patterns = [
+            re.compile(r"\\(venv\\).+[$#] ?$"),  # (venv) ...$ or (venv) ...#
+            re.compile(r"root@[^:]+:[^#]+# ?$"),  # root@container:~#
+            re.compile(r"[a-zA-Z0-9_.-]+@[^:]+:[^$#]+[$#] ?$"),  # user@host:~$
+        ]
+
+        # potential dialog detection
+        dialog_patterns = [
+            re.compile(r"Y/N", re.IGNORECASE),  # Y/N anywhere in line
+            re.compile(r"yes/no", re.IGNORECASE),  # yes/no anywhere in line
+            re.compile(r":\s*$"),  # line ending with colon
+            re.compile(r"\?\s*$"),  # line ending with question mark
+        ]
+        
         start_time = time.time()
         last_output_time = start_time
         full_output = ""
