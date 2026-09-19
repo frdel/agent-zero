@@ -2,9 +2,9 @@
 
 ## Purpose
 
-- Own the `fasta2a_client.py` helper module.
-- This module connects Agent Zero to external A2A agents.
-- Keep this file-level DOX profile synchronized with `fasta2a_client.py` because this directory is intentionally flat.
+- Own the `fasta2a_client.py` helper module of the `_a2a_chat` plugin.
+- This module connects Agent Zero to external A2A agents; the `_a2a_chat` tool is its only consumer.
+- Keep this file-level DOX profile synchronized with `fasta2a_client.py`.
 
 ## Ownership
 

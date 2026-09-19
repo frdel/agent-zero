@@ -107,6 +107,7 @@ Direct child DOX files:
 | [_tool_access/AGENTS.md](_tool_access/AGENTS.md) | Always-on project/profile tool-policy execution gate. |
 | [_notify_user/AGENTS.md](_notify_user/AGENTS.md) | Out-of-band user notification tool. |
 | [_search_engine/AGENTS.md](_search_engine/AGENTS.md) | Live web search tool via local SearXNG. |
+| [_a2a_chat/AGENTS.md](_a2a_chat/AGENTS.md) | FastA2A agent-to-agent chat tool. |
 | [_wait/AGENTS.md](_wait/AGENTS.md) | Wait tool for duration and timestamp pauses. |
 | [_whatsapp_integration/AGENTS.md](_whatsapp_integration/AGENTS.md) | WhatsApp Baileys bridge integration. |
 | [_whats_new/AGENTS.md](_whats_new/AGENTS.md) | Version-gated What's New showcase modal, card list, and startup trigger. |

@@ -2,7 +2,7 @@ from typing import Any
 
 from helpers.tool import Tool, Response
 from helpers.print_style import PrintStyle
-from helpers.fasta2a_client import connect_to_agent, is_client_available
+from plugins._a2a_chat.helpers.fasta2a_client import connect_to_agent, is_client_available
 
 
 A2A_EMPTY_RESPONSE_ERROR = (
