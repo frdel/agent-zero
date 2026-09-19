@@ -698,8 +698,8 @@ def test_behaviour_adjustment_normalizes_duplicate_rules(monkeypatch):
     memory_stub.get_memory_subdir_abs = lambda agent: "/tmp"
     monkeypatch.setitem(sys.modules, "plugins._memory.helpers.memory", memory_stub)
 
-    sys.modules.pop("plugins._memory.tools.behaviour_adjustment", None)
-    module = importlib.import_module("plugins._memory.tools.behaviour_adjustment")
+    sys.modules.pop("plugins._behaviour_adjustment.tools.behaviour_adjustment", None)
+    module = importlib.import_module("plugins._behaviour_adjustment.tools.behaviour_adjustment")
 
     rules = module.normalize_ruleset(
         "## Behavioral rules\n"
@@ -714,10 +714,10 @@ def test_behaviour_adjustment_normalizes_duplicate_rules(monkeypatch):
 
 def test_behaviour_prompts_preserve_exact_rules_and_avoid_promptinclude():
     behaviour_prompt_path = Path(
-        "plugins/_memory/prompts/agent.system.tool.behaviour.md"
+        "plugins/_behaviour_adjustment/prompts/agent.system.tool.behaviour.md"
     )
     behaviour_prompt = behaviour_prompt_path.read_text(encoding="utf-8")
-    merge_prompt = Path("prompts/behaviour.merge.sys.md").read_text(
+    merge_prompt = Path("plugins/_behaviour_adjustment/prompts/behaviour.merge.sys.md").read_text(
         encoding="utf-8"
     )
     promptinclude_prompt = Path(

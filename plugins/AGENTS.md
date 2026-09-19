@@ -109,6 +109,7 @@ Direct child DOX files:
 | [_search_engine/AGENTS.md](_search_engine/AGENTS.md) | Live web search tool via local SearXNG. |
 | [_a2a_chat/AGENTS.md](_a2a_chat/AGENTS.md) | FastA2A agent-to-agent chat tool. |
 | [_scheduler/AGENTS.md](_scheduler/AGENTS.md) | Agent tool for scheduled, ad-hoc, and planned task management. |
+| [_behaviour_adjustment/AGENTS.md](_behaviour_adjustment/AGENTS.md) | Persistent behavior rules tool and system-prompt injection. |
 | [_wait/AGENTS.md](_wait/AGENTS.md) | Wait tool for duration and timestamp pauses. |
 | [_whatsapp_integration/AGENTS.md](_whatsapp_integration/AGENTS.md) | WhatsApp Baileys bridge integration. |
 | [_whats_new/AGENTS.md](_whats_new/AGENTS.md) | Version-gated What's New showcase modal, card list, and startup trigger. |

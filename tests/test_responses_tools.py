@@ -202,7 +202,7 @@ def test_response_tool_native_contract_stays_provider_neutral(monkeypatch):
 
 def test_complex_prompt_args_are_not_guessed_as_string_schemas():
     for path in (
-        PROJECT_ROOT / "prompts" / "agent.system.tool.scheduler.md",
+        PROJECT_ROOT / "plugins" / "_scheduler" / "prompts" / "agent.system.tool.scheduler.md",
         PROJECT_ROOT / "prompts" / "agent.system.tool.parallel.md",
     ):
         schema = responses_tools._schema_from_prompt(path.read_text(encoding="utf-8"))

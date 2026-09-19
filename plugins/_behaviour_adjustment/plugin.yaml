@@ -1,0 +1,7 @@
+name: _behaviour_adjustment
+title: Behaviour Adjustment
+description: Update persistent agent behavior rules through a Utility Model merge and inject them into the system prompt.
+version: 1.0.0
+settings_sections: []
+per_project_config: false
+per_agent_config: false
