@@ -1,0 +1,7 @@
+name: _notify_user
+title: Notify User
+description: Send out-of-band notifications to the user without ending the current task.
+version: 1.0.0
+settings_sections: []
+per_project_config: false
+per_agent_config: false

@@ -105,6 +105,7 @@ Direct child DOX files:
 | [_text_editor/AGENTS.md](_text_editor/AGENTS.md) | Native text read, write, and patch tool. |
 | [_time_travel/AGENTS.md](_time_travel/AGENTS.md) | Workspace history, diff, travel, snapshot, and revert flows. |
 | [_tool_access/AGENTS.md](_tool_access/AGENTS.md) | Always-on project/profile tool-policy execution gate. |
+| [_notify_user/AGENTS.md](_notify_user/AGENTS.md) | Out-of-band user notification tool. |
 | [_wait/AGENTS.md](_wait/AGENTS.md) | Wait tool for duration and timestamp pauses. |
 | [_whatsapp_integration/AGENTS.md](_whatsapp_integration/AGENTS.md) | WhatsApp Baileys bridge integration. |
 | [_whats_new/AGENTS.md](_whats_new/AGENTS.md) | Version-gated What's New showcase modal, card list, and startup trigger. |

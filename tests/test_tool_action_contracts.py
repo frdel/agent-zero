@@ -799,9 +799,9 @@ def test_a2a_empty_response_message_is_explicit_failure(monkeypatch):
 
 
 def test_notify_user_prompt_documents_numeric_priority_values():
-    prompt = Path("prompts/agent.system.tool.notify_user.md").read_text(
-        encoding="utf-8"
-    )
+    prompt = Path(
+        "plugins/_notify_user/prompts/agent.system.tool.notify_user.md"
+    ).read_text(encoding="utf-8")
 
     assert "priority values: `20` high urgency, `10` normal urgency" in prompt
 
