@@ -155,8 +155,6 @@ export async function getMessageHandler(type) {
       return drawMessageResponse;
     case "tool":
       return drawMessageTool;
-    case "progress":
-      return drawMessageProgress;
     case "mcp":
       return drawMessageMcp;
     case "subagent":
@@ -2511,36 +2509,6 @@ export function drawMessageHint({
   });
 
   return { element };
-}
-
-/**
- * @param {MessageHandlerArgs & Record<string, any>} param0
- * @returns {MessageHandlerResult}
- */
-export function drawMessageProgress({
-  id,
-  type,
-  heading,
-  content,
-  kvps,
-  timestamp,
-  agentno = 0,
-  ...additional
-}) {
-  const title = cleanStepTitle(heading || content);
-  let displayKvps = { ...kvps };
-
-  return drawProcessStep({
-    id,
-    title,
-    code: "HDL",
-    classes: undefined,
-    kvps: displayKvps,
-    content,
-    // contentClasses: [],
-    actionButtons: [],
-    log: arguments[0],
-  });
 }
 
 /**

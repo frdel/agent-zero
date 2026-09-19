@@ -76,7 +76,7 @@ class WaitTool(Tool):
 
     def get_log_object(self):
         return self.agent.context.log.log(
-            type="progress",
+            type="wait",
             heading=self.get_heading(),
             content="",
             kvps=self.args,
