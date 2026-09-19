@@ -3,7 +3,7 @@ import asyncio
 from agent import Agent, AgentContext, UserMessage
 from helpers import message_queue, persist_chat, projects, subagents
 from helpers.errors import RepairableException
-from helpers.tool import Tool, Response
+from helpers.tool import Tool, Response, coerce_bool
 from initialize import initialize_agent
 from extensions.python.hist_add_tool_result import _90_save_tool_call_file as save_tool_call_file
 from plugins._model_config.helpers.model_config import DEFAULT_PRESET_NAME, get_configured_preset_name
@@ -131,7 +131,7 @@ def get_or_create_subordinate(
 ) -> Agent:
     requested_profile = _validate_subordinate_profile(parent, profile)
     target_context_id = str(context_id or "").strip()
-    reset_requested = str(reset).lower().strip() == "true"
+    reset_requested = coerce_bool(reset, False)
     if target_context_id and reset_requested:
         raise RepairableException(
             "`context_id` continues an existing subordinate and requires reset=false. "

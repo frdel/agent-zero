@@ -5,7 +5,7 @@ import asyncio
 import uuid
 from typing import Any
 
-from helpers.tool import Response, Tool
+from helpers.tool import Response, Tool, coerce_bool
 from helpers.ws_manager import (
     ConnectionNotFoundError,
     WsPayloadTooLargeError,
@@ -45,15 +45,6 @@ class CodeExecutionRemote(Tool):
         return runtime in {"terminal", "python", "nodejs"}
 
     @staticmethod
-    def _coerce_bool(value: Any) -> bool:
-        if isinstance(value, bool):
-            return value
-        if isinstance(value, (int, float)):
-            return bool(value)
-        if isinstance(value, str):
-            return value.strip().lower() in {"1", "true", "yes", "on"}
-        return False
-
     @staticmethod
     def _timeout_group_for_runtime(
         runtime: str,
@@ -169,7 +160,7 @@ class CodeExecutionRemote(Tool):
             "session": session,
             "context_id": context_id,
         }
-        if runtime != "reset" and self._coerce_bool(self.args.get("reset")):
+        if runtime != "reset" and coerce_bool(self.args.get("reset"), False):
             payload["reset"] = True
 
         if runtime in {"terminal", "python", "nodejs"}:

@@ -109,10 +109,25 @@ def _skill_instruction_name(message) -> str:
     return ""
 
 
+def _fake_coerce_bool(value, default):
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+    return bool(value)
+
+
 def _install_tool_stub(monkeypatch) -> None:
     tool_stub = types.ModuleType("helpers.tool")
     tool_stub.Tool = _FakeTool
     tool_stub.Response = _FakeResponse
+    tool_stub.coerce_bool = _fake_coerce_bool
     monkeypatch.setitem(sys.modules, "helpers.tool", tool_stub)
 
 
