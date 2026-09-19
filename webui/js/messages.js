@@ -2243,8 +2243,6 @@ export async function drawMessageTool({
     return drawMessageToolSimple({ ...arguments[0], code: "SKL", displayKvps });
   } else if (kvps._tool_name === "vision_load") {
     return drawMessageToolSimple({ ...arguments[0], code: "EYE" });
-  } else if (kvps._tool_name === "search_engine") {
-    return drawMessageToolSimple({ ...arguments[0], code: "WEB" });
   } else if (kvps._tool_name.startsWith("memory_")) {
     return drawMessageToolSimple({ ...arguments[0], code: "MEM" });
   }
