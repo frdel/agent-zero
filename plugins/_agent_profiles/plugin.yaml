@@ -1,0 +1,8 @@
+name: _agent_profiles
+title: Agent Profiles
+description: Bundled specialist agent profiles (developer, hacker, researcher, tiny-local).
+version: 1.0.0
+always_enabled: true
+settings_sections: []
+per_project_config: false
+per_agent_config: false

@@ -10,6 +10,8 @@
 - Each direct profile directory owns its `agent.yaml`, optional `prompts/`, optional `tools/`, and optional `extensions/`.
 - `_example/` demonstrates profile layout, is not selectable, and should stay
   suitable as a reference.
+- Specialist profiles (developer, hacker, researcher, tiny-local) live in the
+  `_agent_profiles` plugin; this directory keeps `agent0`, `default`, and `_example`.
 - User-created local profiles belong under `usr/agents/`, not here, unless they are intended to ship with the product.
 
 ## Local Contracts

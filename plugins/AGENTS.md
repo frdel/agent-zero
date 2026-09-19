@@ -104,6 +104,7 @@ Direct child DOX files:
 | [_promptinclude/AGENTS.md](_promptinclude/AGENTS.md) | Promptinclude scanning and prompt injection. |
 | [_right-click/AGENTS.md](_right-click/AGENTS.md) | Optional right-click menus for sidebar chats/tasks and Files entries. |
 | [_scheduler/AGENTS.md](_scheduler/AGENTS.md) | Scheduler agent tool, Tasks WebUI, CRUD API endpoints, and sidebar task list. |
+| [_agent_profiles/AGENTS.md](_agent_profiles/AGENTS.md) | Bundled specialist agent profiles (developer, hacker, researcher, tiny-local). |
 | [_search_engine/AGENTS.md](_search_engine/AGENTS.md) | Live web search tool via local SearXNG. |
 | [_sidebar_folders/AGENTS.md](_sidebar_folders/AGENTS.md) | Project folder presentation, filters, sorting, drag ordering, and chat project moves. |
 | [_skills/AGENTS.md](_skills/AGENTS.md) | Active and hidden skill configuration and prompt injection. |
