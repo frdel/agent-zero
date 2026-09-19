@@ -877,8 +877,8 @@ def _load_scheduler_tool(monkeypatch):
     projects_stub.load_basic_project_data = lambda project: {}
     monkeypatch.setitem(sys.modules, "helpers.projects", projects_stub)
 
-    sys.modules.pop("tools.scheduler", None)
-    return importlib.import_module("tools.scheduler")
+    sys.modules.pop("plugins._scheduler.tools.scheduler", None)
+    return importlib.import_module("plugins._scheduler.tools.scheduler")
 
 
 def test_scheduler_accepts_action_alias(monkeypatch):
@@ -1019,7 +1019,7 @@ def test_scheduler_invalid_timezone_returns_repairable_message(monkeypatch):
 def test_scheduler_prompt_includes_update_timezone_and_dedicated_context():
     project_root = Path(__file__).resolve().parents[1]
     text = (
-        project_root / "prompts/agent.system.tool.scheduler.md"
+        project_root / "plugins/_scheduler/prompts/agent.system.tool.scheduler.md"
     ).read_text(encoding="utf-8")
 
     assert "update_task" in text
@@ -1042,7 +1042,7 @@ def test_corrected_tool_prompts_only_teach_action_contract():
     prompt_paths = [
         project_root / "plugins/_text_editor/prompts/agent.system.tool.text_editor.md",
         project_root / "prompts/agent.system.tool.skills.md",
-        project_root / "prompts/agent.system.tool.scheduler.md",
+        project_root / "plugins/_scheduler/prompts/agent.system.tool.scheduler.md",
         project_root / "plugins/_a0_connector/prompts/agent.system.tool.text_editor_remote.md",
         project_root / "plugins/_office/prompts/agent.system.tool.office_artifact.md",
         project_root / "plugins/_office/skills/office-artifacts/SKILL.md",

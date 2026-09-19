@@ -1,0 +1,7 @@
+name: _scheduler
+title: Scheduler
+description: Agent tool for listing, creating, updating, running, and deleting scheduled, ad-hoc, and planned tasks.
+version: 1.0.0
+settings_sections: []
+per_project_config: false
+per_agent_config: false
