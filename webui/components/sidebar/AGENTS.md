@@ -9,7 +9,7 @@
 - `left-sidebar.html` and `sidebar-store.js` own sidebar shell and shared state.
 - `top-section/` owns header and quick actions.
 - `chats/` owns chat list UI and state; `chat-tree.html` is the shared parent/parallel-child row.
-- `tasks/` owns task list UI and state; `task-row.html` is the shared scheduler row.
+- `tasks/` content is contributed by the `_scheduler` plugin through the `sidebar-tasks-list` extension point; core owns the `#tasks-section` container and its layout styles in `left-sidebar.html`.
 - `bottom/` owns lower sidebar controls and preferences panel.
 
 ## Local Contracts

@@ -2,7 +2,7 @@
 <head>
   <title>Tasks</title>
   <script type="module">
-    import { store } from "/components/modals/scheduler/scheduler-store.js";
+    import { store } from "/plugins/_scheduler/webui/scheduler/scheduler-store.js";
   </script>
 </head>
 <body>
@@ -11,8 +11,8 @@
       <div class="scheduler-modal-content">
         <div id="scheduler-settings-root" class="scheduler-dashboard">
           <div class="scheduler-dashboard-description">Manage tasks and automated processes for Agent Zero.</div>
-          <x-component path="modals/scheduler/scheduler-task-editor.html"></x-component>
-          <x-component path="modals/scheduler/scheduler-task-list.html"></x-component>
+          <x-component path="/plugins/_scheduler/webui/scheduler/scheduler-task-editor.html"></x-component>
+          <x-component path="/plugins/_scheduler/webui/scheduler/scheduler-task-list.html"></x-component>
         </div>
       </div>
     </template>

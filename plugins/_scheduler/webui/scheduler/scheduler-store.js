@@ -295,7 +295,7 @@ async function callSchedulerEndpoint(endpoint, payload = {}, defaultError) {
 const schedulerApi = {
   async listTasks() {
     const result = await callSchedulerEndpoint(
-      "/scheduler_tasks_list",
+      "/plugins/_scheduler/scheduler_tasks_list",
       { timezone: getUserTimezone() },
       "Failed to fetch tasks"
     );
@@ -310,7 +310,7 @@ const schedulerApi = {
 
   async createTask(payload) {
     const result = await callSchedulerEndpoint(
-      "/scheduler_task_create",
+      "/plugins/_scheduler/scheduler_task_create",
       payload,
       "Failed to create task"
     );
@@ -321,7 +321,7 @@ const schedulerApi = {
 
   async updateTask(payload) {
     const result = await callSchedulerEndpoint(
-      "/scheduler_task_update",
+      "/plugins/_scheduler/scheduler_task_update",
       payload,
       "Failed to update task"
     );
@@ -332,7 +332,7 @@ const schedulerApi = {
 
   async runTask(taskId) {
     return callSchedulerEndpoint(
-      "/scheduler_task_run",
+      "/plugins/_scheduler/scheduler_task_run",
       { task_id: taskId, timezone: getUserTimezone() },
       "Failed to run task"
     );
@@ -340,7 +340,7 @@ const schedulerApi = {
 
   async deleteTask(taskId) {
     return callSchedulerEndpoint(
-      "/scheduler_task_delete",
+      "/plugins/_scheduler/scheduler_task_delete",
       { task_id: taskId, timezone: getUserTimezone() },
       "Failed to delete task"
     );
@@ -757,11 +757,11 @@ const schedulerStoreModel = {
   openPromptEditor(field) {
     if (!["system_prompt", "prompt"].includes(field)) return;
     this.promptField = field;
-    return openModal("modals/scheduler/scheduler-prompt-editor.html");
+    return openModal("/plugins/_scheduler/webui/scheduler/scheduler-prompt-editor.html");
   },
 
   closePromptEditor() {
-    return closeModal("modals/scheduler/scheduler-prompt-editor.html");
+    return closeModal("/plugins/_scheduler/webui/scheduler/scheduler-prompt-editor.html");
   },
 
   resetEditingTask() {
@@ -996,7 +996,7 @@ const schedulerStoreModel = {
     }
 
     this.selectedTaskForDetail = snapshot;
-    const closePromise = window.openModal("modals/scheduler/scheduler-task-detail.html");
+    const closePromise = window.openModal("/plugins/_scheduler/webui/scheduler/scheduler-task-detail.html");
     if (closePromise && typeof closePromise.then === "function") {
       closePromise.then(() => {
         if (this.selectedTaskForDetail?.uuid === snapshot.uuid) {
@@ -1017,7 +1017,7 @@ const schedulerStoreModel = {
     this.closeTaskDetail();
     await this.startEditTask(taskId);
     // Open main scheduler modal to show the editor
-    window.openModal("modals/scheduler/scheduler-modal.html");
+    window.openModal("/plugins/_scheduler/webui/scheduler/scheduler-modal.html");
   },
 
   async deleteFromDetail() {

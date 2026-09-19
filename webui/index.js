@@ -9,7 +9,7 @@ import { store as notificationStore } from "/components/notifications/notificati
 import { store as preferencesStore } from "/components/sidebar/bottom/preferences/preferences-store.js";
 import { store as inputStore } from "/components/chat/input/input-store.js";
 import { store as chatsStore } from "/components/sidebar/chats/chats-store.js";
-import { store as tasksStore } from "/components/sidebar/tasks/tasks-store.js";
+import { getStore } from "/js/AlpineStore.js";
 import { store as chatTopStore } from "/components/chat/top-section/chat-top-store.js";
 import { store as _tooltipsStore } from "/components/tooltips/tooltip-store.js";
 import { store as messageQueueStore } from "/components/chat/message-queue/message-queue-store.js";
@@ -384,7 +384,7 @@ export async function applySnapshot(snapshot, options = {}) {
     : {
         ...snapshot,
         contexts: chatsStore.contexts,
-        tasks: tasksStore.tasks,
+        tasks: getStore("tasks")?.tasks ?? [],
       };
   const snapCtx = {
     snapshot: extensionSnapshot,
@@ -444,7 +444,7 @@ export async function applySnapshot(snapshot, options = {}) {
     chatsStore.applyContexts(snapshot.contexts);
 
     // Update tasks list using store
-    tasksStore.applyTasks(snapshot.tasks);
+    getStore("tasks")?.applyTasks?.(snapshot.tasks);
 
     // Make sure the active context is properly selected in both lists
     // Leave an empty selection unchanged so the welcome screen stays visible.
@@ -453,10 +453,10 @@ export async function applySnapshot(snapshot, options = {}) {
       chatsStore.setSelected(context);
 
       const contextInChats = chatsStore.contains(context);
-      const contextInTasks = tasksStore.contains(context);
+      const contextInTasks = getStore("tasks")?.contains?.(context);
 
       if (contextInTasks) {
-        tasksStore.setSelected(context);
+        getStore("tasks")?.setSelected?.(context);
       }
 
       if (!contextInChats && !contextInTasks) {
@@ -631,7 +631,7 @@ export const setContext = function (id) {
 
   // Update both selected states using stores
   chatsStore.setSelected(id);
-  tasksStore.setSelected(id);
+  getStore("tasks")?.setSelected?.(id);
 
   // Trigger a new WS handshake for the newly selected context (push-based sync).
   // This keeps the UI current without needing /poll during healthy operation.

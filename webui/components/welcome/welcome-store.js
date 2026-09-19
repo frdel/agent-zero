@@ -256,7 +256,7 @@ const model = {
         chatsStore.newChat();
         break;
       case "scheduler":
-        window.openModal("modals/scheduler/scheduler-modal.html");
+        window.openModal("/plugins/_scheduler/webui/scheduler/scheduler-modal.html");
         break;
       case "settings":
         window.openModal("settings/settings.html");

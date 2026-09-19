@@ -103,7 +103,7 @@ Direct child DOX files:
 | [_plugin_validator/AGENTS.md](_plugin_validator/AGENTS.md) | Plugin manifest, structure, convention, and security validator. |
 | [_promptinclude/AGENTS.md](_promptinclude/AGENTS.md) | Promptinclude scanning and prompt injection. |
 | [_right-click/AGENTS.md](_right-click/AGENTS.md) | Optional right-click menus for sidebar chats/tasks and Files entries. |
-| [_scheduler/AGENTS.md](_scheduler/AGENTS.md) | Agent tool for scheduled, ad-hoc, and planned task management. |
+| [_scheduler/AGENTS.md](_scheduler/AGENTS.md) | Scheduler agent tool, Tasks WebUI, CRUD API endpoints, and sidebar task list. |
 | [_search_engine/AGENTS.md](_search_engine/AGENTS.md) | Live web search tool via local SearXNG. |
 | [_sidebar_folders/AGENTS.md](_sidebar_folders/AGENTS.md) | Project folder presentation, filters, sorting, drag ordering, and chat project moves. |
 | [_skills/AGENTS.md](_skills/AGENTS.md) | Active and hidden skill configuration and prompt injection. |
