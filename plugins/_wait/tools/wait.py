@@ -2,7 +2,7 @@ import asyncio
 from datetime import timedelta
 from helpers.tool import Tool, Response
 from helpers.print_style import PrintStyle
-from helpers.wait import managed_wait
+from plugins._wait.helpers.wait import managed_wait
 from helpers.localization import Localization
 
 class WaitTool(Tool):
