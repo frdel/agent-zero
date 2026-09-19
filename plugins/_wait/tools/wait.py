@@ -10,10 +10,6 @@ class WaitTool(Tool):
     async def execute(self, **kwargs) -> Response:
         await self.agent.handle_intervention()
 
-        seconds = self.args.get("seconds", 0)
-        minutes = self.args.get("minutes", 0)
-        hours = self.args.get("hours", 0)
-        days = self.args.get("days", 0)
         until_timestamp_str = self.args.get("until")
 
         is_duration_wait = not bool(until_timestamp_str)
@@ -21,30 +17,34 @@ class WaitTool(Tool):
         now = Localization.get().now()
         target_time = None
 
-        if until_timestamp_str:
-            try:
+        try:
+            if until_timestamp_str:
                 target_time = Localization.get().localtime_str_to_utc_dt(until_timestamp_str)
                 if not target_time:
                     raise ValueError(f"Invalid timestamp format: {until_timestamp_str}")
-            except ValueError as e:
-                return Response(
-                    message=str(e),
-                    break_loop=False,
+            else:
+                seconds = int(self.args.get("seconds", 0) or 0)
+                minutes = int(self.args.get("minutes", 0) or 0)
+                hours = int(self.args.get("hours", 0) or 0)
+                days = int(self.args.get("days", 0) or 0)
+                wait_duration = timedelta(
+                    days=days,
+                    hours=hours,
+                    minutes=minutes,
+                    seconds=seconds,
                 )
-        else:
-            wait_duration = timedelta(
-                days=int(days),
-                hours=int(hours),
-                minutes=int(minutes),
-                seconds=int(seconds),
+                if wait_duration.total_seconds() <= 0:
+                    return Response(
+                        message="Wait duration must be positive.",
+                        break_loop=False,
+                    )
+                target_time = now + wait_duration
+        except (TypeError, ValueError) as e:
+            return Response(
+                message=f"Invalid wait arguments: {e}",
+                break_loop=False,
             )
-            if wait_duration.total_seconds() <= 0:
-                return Response(
-                    message="Wait duration must be positive.",
-                    break_loop=False,
-                )
-            target_time = now + wait_duration
-        
+
         if target_time <= now:
             return Response(
                 message=f"Target time {Localization.get().serialize_datetime(target_time)} is in the past.",
@@ -85,5 +85,5 @@ class WaitTool(Tool):
     def get_heading(self, text: str = "", done: bool = False):
         done_icon = " icon://done_all" if done else ""
         if not text:
-            text = f"Waiting..."
+            text = "Waiting..."
         return f"icon://timer Wait: {text}{done_icon}"

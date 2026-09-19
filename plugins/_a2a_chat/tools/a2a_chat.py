@@ -95,7 +95,14 @@ class A2AChatTool(Tool):
         agent_url: str | None = kwargs.get("agent_url")  # required
         user_message: str | None = kwargs.get("message")  # required
         attachments = kwargs.get("attachments", None)  # optional list[str]
-        reset = bool(kwargs.get("reset", False))
+        reset = kwargs.get("reset", False)
+        if not isinstance(reset, bool):
+            if isinstance(reset, str) and reset.strip().lower() in {"true", "1", "yes"}:
+                reset = True
+            elif isinstance(reset, str) and reset.strip().lower() in {"false", "0", "no", "", "none", "null"}:
+                reset = False
+            else:
+                return Response(message=f"Invalid reset value: {reset}. Use a JSON boolean.", break_loop=False)
         if not agent_url or not isinstance(agent_url, str):
             return Response(message="agent_url argument missing", break_loop=False)
         if not user_message or not isinstance(user_message, str):
@@ -119,9 +126,10 @@ class A2AChatTool(Tool):
                 final = await conn.wait_for_completion(task_id)
                 new_context_id = final["result"].get("context_id")  # type: ignore[index]
                 if isinstance(new_context_id, str):
-                    sessions[cache_key] = new_context_id
-                    # persist back to agent data
-                    self.agent.set_data("_a2a_sessions", sessions)
+                    # re-read to merge with concurrent calls instead of overwriting them
+                    current: dict[str, str] = self.agent.get_data("_a2a_sessions") or sessions
+                    current[cache_key] = new_context_id
+                    self.agent.set_data("_a2a_sessions", current)
                 assistant_text = _extract_latest_assistant_text(final)
                 if not assistant_text:
                     return Response(

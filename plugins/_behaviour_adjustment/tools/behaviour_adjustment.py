@@ -13,7 +13,11 @@ class UpdateBehaviour(Tool):
         if not isinstance(adjustments, str):
             adjustments = str(adjustments)
 
-        await update_behaviour(self.agent, self.log, adjustments)
+        updated = await update_behaviour(self.agent, self.log, adjustments)
+        if not updated:
+            return Response(
+                message=self.agent.read_prompt("behaviour.rejected.md"), break_loop=False
+            )
         return Response(
             message=self.agent.read_prompt("behaviour.updated.md"), break_loop=False
         )
@@ -40,11 +44,15 @@ async def update_behaviour(agent: Agent, log_item: LogItem, adjustments: str):
         callback=log_callback,
     )
     adjustments_merge = normalize_ruleset(adjustments_merge)
+    if not adjustments_merge.strip():
+        log_item.update(result="Behaviour update rejected: merged ruleset is empty")
+        return False
 
     # update rules file
     rules_file = get_custom_rules_file(agent)
     files.write_file(rules_file, adjustments_merge)
     log_item.update(ruleset=adjustments_merge, result="Behaviour updated")
+    return True
 
 
 def get_custom_rules_file(agent: Agent):

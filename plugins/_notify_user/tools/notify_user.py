@@ -11,7 +11,11 @@ class NotifyUserTool(Tool):
         detail = self.args.get("detail", "")
         notification_type = self.args.get("type", NotificationType.INFO)
         priority = self.args.get("priority", NotificationPriority.HIGH) # by default, agents should notify with high priority
-        timeout = int(self.args.get("timeout", 30)) # agent's notifications should have longer timeouts
+
+        try:
+            timeout = int(self.args.get("timeout", 30)) # agent's notifications should have longer timeouts
+        except (TypeError, ValueError):
+            return Response(message=f"Invalid notification timeout: {self.args.get('timeout')}", break_loop=False)
 
         try:
             notification_type = NotificationType(notification_type)
