@@ -5,7 +5,7 @@ from helpers.log import LogItem
 from plugins._memory.helpers import memory
 
 
-class UpdateBehaviour(Tool):
+class UpdateBehavior(Tool):
 
     async def execute(self, adjustments="", **kwargs):
 
@@ -13,20 +13,20 @@ class UpdateBehaviour(Tool):
         if not isinstance(adjustments, str):
             adjustments = str(adjustments)
 
-        updated = await update_behaviour(self.agent, self.log, adjustments)
+        updated = await update_behavior(self.agent, self.log, adjustments)
         if not updated:
             return Response(
-                message=self.agent.read_prompt("behaviour.rejected.md"), break_loop=False
+                message=self.agent.read_prompt("behavior.rejected.md"), break_loop=False
             )
         return Response(
-            message=self.agent.read_prompt("behaviour.updated.md"), break_loop=False
+            message=self.agent.read_prompt("behavior.updated.md"), break_loop=False
         )
 
 
-async def update_behaviour(agent: Agent, log_item: LogItem, adjustments: str):
+async def update_behavior(agent: Agent, log_item: LogItem, adjustments: str):
 
     # get system message and current ruleset
-    system = agent.read_prompt("behaviour.merge.sys.md")
+    system = agent.read_prompt("behavior.merge.sys.md")
     current_rules = read_rules(agent)
 
     # log query streamed by LLM
@@ -34,7 +34,7 @@ async def update_behaviour(agent: Agent, log_item: LogItem, adjustments: str):
         log_item.stream(ruleset=content)
 
     msg = agent.read_prompt(
-        "behaviour.merge.msg.md", current_rules=current_rules, adjustments=adjustments
+        "behavior.merge.msg.md", current_rules=current_rules, adjustments=adjustments
     )
 
     # call util llm to find solutions in history
@@ -45,18 +45,23 @@ async def update_behaviour(agent: Agent, log_item: LogItem, adjustments: str):
     )
     adjustments_merge = normalize_ruleset(adjustments_merge)
     if not adjustments_merge.strip():
-        log_item.update(result="Behaviour update rejected: merged ruleset is empty")
+        log_item.update(result="Behavior update rejected: merged ruleset is empty")
         return False
 
     # update rules file
     rules_file = get_custom_rules_file(agent)
     files.write_file(rules_file, adjustments_merge)
-    log_item.update(ruleset=adjustments_merge, result="Behaviour updated")
+    log_item.update(ruleset=adjustments_merge, result="Behavior updated")
     return True
 
 
 def get_custom_rules_file(agent: Agent):
-    return files.get_abs_path(memory.get_memory_subdir_abs(agent), "behaviour.md")
+    rules_file = files.get_abs_path(memory.get_memory_subdir_abs(agent), "behavior.md")
+    # Legacy fallback: rules saved before the behavior rename live in behaviour.md.
+    legacy_file = files.get_abs_path(memory.get_memory_subdir_abs(agent), "behaviour.md")
+    if not files.exists(rules_file) and files.exists(legacy_file):
+        return legacy_file
+    return rules_file
 
 
 def read_rules(agent: Agent):
@@ -64,7 +69,7 @@ def read_rules(agent: Agent):
     if files.exists(rules_file):
         return agent.read_prompt(rules_file)
     else:
-        return agent.read_prompt("agent.system.behaviour_default.md")
+        return agent.read_prompt("agent.system.behavior_default.md")
 
 
 def normalize_ruleset(ruleset: str):

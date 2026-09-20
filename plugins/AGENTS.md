@@ -72,7 +72,7 @@ Direct child DOX files:
 | [_a2a_chat/AGENTS.md](_a2a_chat/AGENTS.md) | FastA2A agent-to-agent chat tool. |
 | [_agent_editor/AGENTS.md](_agent_editor/AGENTS.md) | Deterministic sparse agent-profile editor API, helpers, and WebUI. |
 | [_browser/AGENTS.md](_browser/AGENTS.md) | Playwright browser tool, helpers, viewer, and browser panel UI. |
-| [_behaviour_adjustment/AGENTS.md](_behaviour_adjustment/AGENTS.md) | Persistent behavior rules tool and system-prompt injection. |
+| [_behavior_adjustment/AGENTS.md](_behavior_adjustment/AGENTS.md) | Persistent behavior rules tool and system-prompt injection. |
 | [_chat_branching/AGENTS.md](_chat_branching/AGENTS.md) | Chat branching from an existing message. |
 | [_chat_compaction/AGENTS.md](_chat_compaction/AGENTS.md) | Full-chat compaction into a summary message. |
 | [_chat_naming/AGENTS.md](_chat_naming/AGENTS.md) | Built-in manual and Utility Model-assisted chat naming. |

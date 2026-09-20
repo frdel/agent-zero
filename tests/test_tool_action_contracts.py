@@ -697,7 +697,7 @@ def test_memory_load_coerces_numeric_string_args(monkeypatch):
     ]
 
 
-def test_behaviour_adjustment_normalizes_duplicate_rules(monkeypatch):
+def test_behavior_adjustment_normalizes_duplicate_rules(monkeypatch):
     _install_tool_stub(monkeypatch)
     monkeypatch.syspath_prepend(str(Path.cwd()))
 
@@ -713,8 +713,8 @@ def test_behaviour_adjustment_normalizes_duplicate_rules(monkeypatch):
     memory_stub.get_memory_subdir_abs = lambda agent: "/tmp"
     monkeypatch.setitem(sys.modules, "plugins._memory.helpers.memory", memory_stub)
 
-    sys.modules.pop("plugins._behaviour_adjustment.tools.behaviour_adjustment", None)
-    module = importlib.import_module("plugins._behaviour_adjustment.tools.behaviour_adjustment")
+    sys.modules.pop("plugins._behavior_adjustment.tools.behavior_adjustment", None)
+    module = importlib.import_module("plugins._behavior_adjustment.tools.behavior_adjustment")
 
     rules = module.normalize_ruleset(
         "## Behavioral rules\n"
@@ -727,24 +727,24 @@ def test_behaviour_adjustment_normalizes_duplicate_rules(monkeypatch):
     assert rules == "## Behavioral rules\n* Favor Linux commands.\n* Token rule.\n"
 
 
-def test_behaviour_prompts_preserve_exact_rules_and_avoid_promptinclude():
-    behaviour_prompt_path = Path(
-        "plugins/_behaviour_adjustment/prompts/agent.system.tool.behaviour.md"
+def test_behavior_prompts_preserve_exact_rules_and_avoid_promptinclude():
+    behavior_prompt_path = Path(
+        "plugins/_behavior_adjustment/prompts/agent.system.tool.behavior.md"
     )
-    behaviour_prompt = behaviour_prompt_path.read_text(encoding="utf-8")
-    merge_prompt = Path("plugins/_behaviour_adjustment/prompts/behaviour.merge.sys.md").read_text(
+    behavior_prompt = behavior_prompt_path.read_text(encoding="utf-8")
+    merge_prompt = Path("plugins/_behavior_adjustment/prompts/behavior.merge.sys.md").read_text(
         encoding="utf-8"
     )
     promptinclude_prompt = Path(
         "plugins/_promptinclude/prompts/agent.system.promptinclude.md"
     ).read_text(encoding="utf-8")
 
-    assert "exact-response rules" in behaviour_prompt
-    assert "preserve it verbatim" in behaviour_prompt
-    assert "do not edit promptinclude files" in behaviour_prompt
-    assert not Path("prompts/agent.system.tool.behaviour.md").exists()
+    assert "exact-response rules" in behavior_prompt
+    assert "preserve it verbatim" in behavior_prompt
+    assert "do not edit promptinclude files" in behavior_prompt
+    assert not Path("prompts/agent.system.tool.behavior.md").exists()
     assert "respond exactly with a phrase" in merge_prompt
-    assert "behaviour_adjustment" not in promptinclude_prompt
+    assert "behavior_adjustment" not in promptinclude_prompt
 
 
 def _load_a2a_chat_tool(monkeypatch):

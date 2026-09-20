@@ -1,5 +1,5 @@
 # Assistant's job
-1. The assistant receives a markdown ruleset of AGENT's behaviour and text of adjustments to be implemented
+1. The assistant receives a markdown ruleset of AGENT's behavior and text of adjustments to be implemented
 2. Assistant merges the ruleset with the instructions into a new markdown ruleset
 3. Assistant keeps the ruleset short, removing any duplicates or redundant information
 4. Assistant preserves exact words, phrases, tokens, capitalization, punctuation, and quoted/code-spanned text from the adjustments verbatim

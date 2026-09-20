@@ -87,6 +87,7 @@ def get_skill_roots(
         plugins_agents = files.find_existing_paths_by_pattern("plugins/*/agents/*/skills") # agents in plugins
         usr_plugins_agents = files.find_existing_paths_by_pattern("usr/plugins/*/agents/*/skills") # agents in plugins
         paths = [
+            files.get_abs_path("skills"),
             files.get_abs_path("usr/skills"),
             *project_agents,
             *projects,

@@ -1,8 +1,3 @@
-/**
- * Custom handler for wait tool messages
- * The wait plugin owns the legacy progress presentation: current `wait` logs
- * and historical `progress` records render with the corrected HLD badge.
- */
 import {
   buildDetailPayload,
   cleanStepTitle,

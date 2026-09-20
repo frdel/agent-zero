@@ -2,8 +2,7 @@
 
 ## Purpose
 
-- Own the bundled skill collection plus current-chat skill loading, hidden skill
-  configuration, and profile-level visibility policy.
+- Own the bundled skill collection plus current-chat skill loading, hidden skill configuration, and profile-level visibility policy.
 
 ## Ownership
 
@@ -19,11 +18,8 @@
 - Loaded skills are append-only from the user UI because their instructions live in chat history.
 - Store configured skills in normalized portable paths.
 - Hidden skills affect catalog/search/load visibility but must not remove loaded skill history.
-- A profile visibility policy has an explicit future-skill default. It limits
-  discovery and new loading without pinning skills or removing history-loaded
-  instructions.
-- Chat visibility overrides may reverse legacy `hidden_skills`, but cannot
-  re-enable a skill blocked by profile policy.
+- A profile visibility policy has an explicit future-skill default. It limits discovery and new loading without pinning skills or removing history-loaded instructions.
+- Chat visibility overrides may reverse legacy `hidden_skills`, but cannot re-enable a skill blocked by profile policy.
 
 ## Work Guidance
 
