@@ -4,7 +4,7 @@
 
 - Agent profiles: `/a0/helpers/subagents.py`, `/a0/agents/AGENTS.md`
 - Prompt rendering: `/a0/agent.py`, `/a0/helpers/files.py`, `/a0/prompts/AGENTS.md`
-- Skill runtime: `/a0/helpers/skills.py`, `/a0/tools/skills_tool.py`, `/a0/skills/AGENTS.md`
+- Skill runtime: `/a0/helpers/skills.py`, `/a0/tools/skills_tool.py`, `/a0/plugins/_skills/skills/AGENTS.md`
 - Project metadata: `/a0/helpers/projects.py`, `/a0/api/projects.py`, `/a0/webui/components/projects/`
 
 ## Agent Profiles

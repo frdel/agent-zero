@@ -52,7 +52,7 @@ def test_tool_examples_are_complete_valid_json(path):
 
 
 def test_default_skill_descriptions_fit_preview_and_remain_searchable(monkeypatch):
-    paths = [*ROOT.glob("skills/*/SKILL.md"), *ROOT.glob("plugins/*/skills/*/SKILL.md")]
+    paths = [*ROOT.glob("plugins/*/skills/*/SKILL.md")]
     candidates = []
     for path in paths:
         if "_a0_connector" in path.parts:  # Host-only skills are outside the default catalog.

@@ -33,7 +33,7 @@
 - Plugin routes are `GET /plugins/<name>/<path>`, `POST /api/plugins/<name>/<handler>`, and `POST /api/plugins` for management actions.
 - `_a0_connector` WebSocket history replay must stay bounded: emit large chat history as paged `connector_context_snapshot` payloads, keep `last_sequence` as the Agent Zero log-output cursor, and avoid sending an entire long transcript in one frame.
 - Frontend plugin HTML extensions live under `extensions/webui/<point>/`, include a root Alpine scope, and use `x-move-*` directives when targeting static breakpoints.
-- Frontend plugin JS extensions live under `extensions/webui/<point>/` and export a default function. Custom process-step handlers in `get_message_handler` must also register their log types through `get_process_step_types`; standalone types are omitted. See `skills/a0-create-plugin/references/webui.md` for the handler contract.
+- Frontend plugin JS extensions live under `extensions/webui/<point>/` and export a default function. Custom process-step handlers in `get_message_handler` must also register their log types through `get_process_step_types`; standalone types are omitted. See `_skills/skills/a0-create-plugin/references/webui.md` for the handler contract.
 - Plugin UI must use the A0 notification system for errors, warnings, success, and info instead of inline success/error boxes.
 - Bundled plugin WebUI must author Material Symbols as empty `<x-icon name="lowercase_snake_case"></x-icon>` elements and use `:name` for Alpine-driven icon names. Legacy `.material-symbols-outlined` and `.material-icons-outlined` spans remain runtime-compatible for community plugins, but bundled plugins must not introduce new ligature-text spans.
 - Banners and discovery cards are provided through Python `banners` extensions by appending dictionaries with unique `id`, `type`, `priority`, and display fields to the `banners` list.
@@ -107,7 +107,7 @@ Direct child DOX files:
 | [_agent_profiles/AGENTS.md](_agent_profiles/AGENTS.md) | Bundled specialist agent profiles (developer, hacker, researcher, tiny-local). |
 | [_search_engine/AGENTS.md](_search_engine/AGENTS.md) | Live web search tool via local SearXNG. |
 | [_sidebar_folders/AGENTS.md](_sidebar_folders/AGENTS.md) | Project folder presentation, filters, sorting, drag ordering, and chat project moves. |
-| [_skills/AGENTS.md](_skills/AGENTS.md) | Active and hidden skill configuration and prompt injection. |
+| [_skills/AGENTS.md](_skills/AGENTS.md) | Bundled skill collection plus active and hidden skill configuration and prompt injection. |
 | [_telegram_integration/AGENTS.md](_telegram_integration/AGENTS.md) | Telegram bot integration and per-user chat sessions. |
 | [_text_editor/AGENTS.md](_text_editor/AGENTS.md) | Native text read, write, and patch tool. |
 | [_time_travel/AGENTS.md](_time_travel/AGENTS.md) | Workspace history, diff, travel, snapshot, and revert flows. |

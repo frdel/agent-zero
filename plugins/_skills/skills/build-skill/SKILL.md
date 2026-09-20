@@ -35,7 +35,7 @@ Use lowercase letters, digits, and hyphens. Prefer short verb-led names such as 
 ## Workflow
 
 1. Identify two or three real user requests that should trigger the skill.
-2. Decide whether the skill belongs in core `skills/` or inside a plugin's `plugins/<plugin>/skills/` directory.
+2. Decide whether the skill belongs in the bundled `_skills` collection (`plugins/_skills/skills/`) or inside a specific plugin's `plugins/<plugin>/skills/` directory.
 3. Write the frontmatter description with the core trigger condition and key context; add `triggers` for short user phrases that should rank highly in skill search or relevant-skill recall.
 4. Keep the body focused on procedure, contracts, failure handling, and the files/scripts to load next.
 5. Move long examples, schemas, policies, or variant-specific detail to one-level-deep `references/` files.
@@ -46,7 +46,7 @@ Use lowercase letters, digits, and hyphens. Prefer short verb-led names such as 
 
 Use plugin-scoped skills when the skill exists to explain a plugin-owned tool or UI surface. Examples: Browser workflows belong under `_browser`; A0 CLI host tools belong under `_a0_connector`; Desktop canvas workflows belong under `_desktop`.
 
-Use root `skills/` for Agent Zero framework workflows that are not owned by one plugin, such as building skills, developing core features, or managing community plugins.
+Use the bundled `_skills` collection for Agent Zero framework workflows that are not owned by one plugin, such as building skills, developing core features, or managing community plugins; its skills carry a `/a0/plugins/_skills/skills/...` runtime path even though they are core-maintained.
 
 ## Writing Rules
 

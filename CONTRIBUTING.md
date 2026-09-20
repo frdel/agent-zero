@@ -22,7 +22,7 @@ For the full contribution workflow, start with:
 
 - **Core bugfix or docs for Agent Zero itself:** contribute back to `agent0ai/agent-zero` from a public fork.
 - **Community plugin:** publish the plugin in its own public repository, then submit it to `agent0ai/a0-plugins`.
-- **Reusable skill:** contribute it to Agent Zero's `skills/` tree or publish it in a dedicated public repository/collection.
+- **Reusable skill:** contribute it to Agent Zero's bundled skills collection under `plugins/_skills/skills/` or publish it in a dedicated public repository/collection.
 - **Private experiment, customer-specific code, local R&D, or sensitive material:** keep it out of public forks and upstream PRs.
 
 If you're unsure, use the decision guide in [`docs/developer/sharing-and-safety.md`](docs/developer/sharing-and-safety.md).

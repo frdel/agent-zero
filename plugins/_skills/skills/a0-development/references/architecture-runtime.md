@@ -62,14 +62,14 @@ Key root areas:
 | `plugins/` | Bundled system plugins. |
 | `agents/` | Bundled agent profiles. |
 | `prompts/` | Core prompt fragments. |
-| `skills/` | Bundled skills. |
+| `plugins/_skills/skills/` | Bundled skills. |
 | `webui/` | Alpine.js frontend shell, components, CSS, assets, and vendor code. |
 
 ## Discovery Order
 
 Agent-specific path resolution is handled by `helpers.subagents.get_paths(...)`. In broad terms, project and user/profile paths have higher priority than plugin and bundled defaults, then user root/plugin roots, then base defaults. Inspect `helpers/subagents.py` for exact order before changing discovery behavior.
 
-Skill discovery is handled by `helpers.skills.get_skill_roots(...)`. Skills may come from bundled `skills/`, user `usr/skills/`, project metadata, agent profile folders, and plugin roots. Loaded skills can expose additional files via `skills_tool action=read_file`.
+Skill discovery is handled by `helpers.skills.get_skill_roots(...)`. Skills may come from the bundled `plugins/_skills/skills/` collection, user `usr/skills/`, project metadata, agent profile folders, and other plugin roots. Loaded skills can expose additional files via `skills_tool action=read_file`.
 
 ## Development Bias
 

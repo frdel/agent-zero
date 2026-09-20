@@ -2,7 +2,7 @@
 
 Sources: `/a0/plugins/_plugin_installer/api/plugin_install.py`, `/a0/plugins/_plugin_installer/helpers/install.py`, `/a0/api/plugins.py`, `/a0/helpers/plugins.py`, and `/a0/plugins/_plugin_scan/api/plugin_scan_run.py`.
 
-Use the authorized session/CSRF client from `/a0/skills/a0-development/references/operate-agent-zero.md`. Discover the live origin; do not assume an internal or published port. The session cookie and `X-CSRF-Token` header are sufficient; do not invent an additional required CSRF cookie. Preserve login and CSRF protections.
+Use the authorized session/CSRF client from `/a0/plugins/_skills/skills/a0-development/references/operate-agent-zero.md`. Discover the live origin; do not assume an internal or published port. The session cookie and `X-CSRF-Token` header are sufficient; do not invent an additional required CSRF cookie. Preserve login and CSRF protections.
 
 ## Security Scan
 

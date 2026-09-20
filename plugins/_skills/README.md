@@ -18,7 +18,8 @@ and layered skill visibility, including profile-level policy from Agent Editor.
 Agent Zero already supports loading skills dynamically with `skills_tool`, and already has great built-in skill management surfaces. What it did not have was a lightweight way to use that same history-backed skill loading from the Skills screen.
 
 Skills fills that gap as a bundled built-in plugin.
-The shared skill discovery and loaded-skill ledger live in `helpers/skills.py`, and this plugin focuses on catalog UI, chat loading, and visibility.
+
+The plugin also owns the bundled Agent Zero skill collection under `skills/`, moved 1:1 from the former core `skills/` directory. The shared skill discovery and loaded-skill ledger live in `helpers/skills.py`, and this plugin focuses on the bundled collection, catalog UI, chat loading, and visibility. The plugin is always enabled so the bundled skills stay discoverable.
 
 ## Notes
 

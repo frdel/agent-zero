@@ -4,7 +4,7 @@ Sources: `/a0/plugins/_plugin_installer/api/plugin_install.py`, `/a0/plugins/_pl
 
 ## Fetch The Current Catalog
 
-Use the authenticated `api()` client from `/a0/skills/a0-development/references/operate-agent-zero.md` with the verified instance origin:
+Use the authenticated `api()` client from `/a0/plugins/_skills/skills/a0-development/references/operate-agent-zero.md` with the verified instance origin:
 
 ```python
 result = api("plugins/_plugin_installer/plugin_install", {"action": "fetch_index"})

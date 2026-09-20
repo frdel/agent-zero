@@ -17,7 +17,7 @@ trigger_patterns:
 > [!IMPORTANT]
 > Do **not** create new profiles in `/a0/agents/` — that directory is reserved for core framework profiles (`default`, `agent0`, `developer`, `hacker`, `researcher`, `_example`). User profiles belong in `/a0/usr/agents/<profile_name>/`.
 
-Related skills: `/a0/skills/a0-development/SKILL.md` (broader framework guide) | `/a0/skills/a0-create-plugin/SKILL.md` (bundle a profile inside a plugin).
+Related skills: `/a0/plugins/_skills/skills/a0-development/SKILL.md` (broader framework guide) | `/a0/plugins/_skills/skills/a0-create-plugin/SKILL.md` (bundle a profile inside a plugin).
 
 Primary references:
 - `/a0/agents/_example/` — the canonical reference profile (tool + extension + prompt overrides)

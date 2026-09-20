@@ -57,7 +57,7 @@ If yes:
 
 1. Develop it locally in `usr/skills/`.
 2. Validate the structure and examples.
-3. Move it into `skills/` for an Agent Zero contribution, or publish it in a dedicated public repository/collection.
+3. Move it into `plugins/_skills/skills/` for an Agent Zero contribution, or publish it in a dedicated public repository/collection.
 
 See [`contributing-skills.md`](contributing-skills.md) for the authoring standard.
 

@@ -92,7 +92,7 @@ Ask before:
 | [plugins/AGENTS.md](plugins/AGENTS.md) | Bundled system plugins and custom-plugin architecture. |
 | [prompts/AGENTS.md](prompts/AGENTS.md) | Core prompt templates. |
 | [scripts/AGENTS.md](scripts/AGENTS.md) | Repository maintenance scripts and automation inputs. |
-| [skills/AGENTS.md](skills/AGENTS.md) | Bundled Agent Zero skills. |
+| [skills/AGENTS.md](skills/AGENTS.md) | Pointer to the bundled skills collection in the `_skills` plugin. |
 | [tests/AGENTS.md](tests/AGENTS.md) | Pytest regression and contract tests. |
 | [tools/AGENTS.md](tools/AGENTS.md) | Core agent tool implementations. |
 | [webui/AGENTS.md](webui/AGENTS.md) | Alpine.js WebUI shell, components, JavaScript, CSS, and assets. |
