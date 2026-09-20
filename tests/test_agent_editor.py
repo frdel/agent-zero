@@ -215,7 +215,7 @@ def test_state_catalog_is_complete_truthful_and_omits_internal_tools() -> None:
         prompt for prompt in state["prompts"]
         if prompt["filename"] == editor.SPECIFICS_FILE
     )
-    assert specifics["source_chain"] == ["Framework", "Researcher"]
+    assert specifics["source_chain"] == ["Framework", "Plugin · _agent_profiles"]
     assert any(
         any(source.startswith("Plugin ·") for source in prompt["source_chain"])
         for prompt in state["prompts"]
@@ -226,7 +226,7 @@ def test_state_catalog_is_complete_truthful_and_omits_internal_tools() -> None:
 
 
 def test_builtin_prompt_override_never_touches_bundled_profile(user_root: Path) -> None:
-    bundled = Path("agents/researcher")
+    bundled = Path("plugins/_agent_profiles/agents/researcher")
     before = {path: path.read_bytes() for path in bundled.rglob("*") if path.is_file()}
     content = "Only the user-layer instructions change."
     plan = editor.build_change_plan(
@@ -725,7 +725,7 @@ def test_duplicate_profile_materializes_the_effective_profile(
     assert metadata["description"] == "Agent specialized in complex software development."
     assert "enabled" not in metadata
     assert (duplicate / "prompts" / editor.SPECIFICS_FILE).read_bytes() == (
-        Path("agents/developer/prompts") / editor.SPECIFICS_FILE
+        Path("plugins/_agent_profiles/agents/developer/prompts") / editor.SPECIFICS_FILE
     ).read_bytes()
     assert not (duplicate / "AGENTS.md").exists()
 

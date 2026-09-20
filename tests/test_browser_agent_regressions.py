@@ -16,6 +16,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+# Import real modules first so setdefault stubs below never shadow them for later collectors.
+import agent
+import helpers.tool
+import helpers.ws
+import helpers.ws_manager
+import plugins._model_config.helpers.model_config
+
 
 class _TestAgentContext:
     @staticmethod
@@ -4716,7 +4723,7 @@ async def test_browser_runtime_screenshot_file_defaults_to_chat_scoped_artifact(
 
 @pytest.mark.anyio
 async def test_vision_load_materializes_ephemeral_browser_refs(monkeypatch, tmp_path):
-    monkeypatch.setitem(sys.modules, "helpers.tool", SimpleNamespace(Response=_TestResponse, Tool=_TestTool))
+    monkeypatch.setitem(sys.modules, "helpers.tool", SimpleNamespace(Response=_TestResponse, Tool=_TestTool, coerce_bool=helpers.tool.coerce_bool))
     history_stub = ModuleType("helpers.history")
 
     class _RawMessage(dict):

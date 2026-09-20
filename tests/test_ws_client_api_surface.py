@@ -261,6 +261,6 @@ def test_partial_snapshot_retains_sidebar_collections_and_extension_shape() -> N
     assert "Array.isArray(snapshot.contexts) && Array.isArray(snapshot.tasks)" in source
     assert "snapshot: extensionSnapshot" in source
     assert "contexts: chatsStore.contexts" in source
-    assert "tasks: tasksStore.tasks" in source
+    assert "tasks: getStore(\"tasks\")?.tasks" in source
     assert "if (hasCollections)" in source
     assert "snapshot.contexts || []" not in source

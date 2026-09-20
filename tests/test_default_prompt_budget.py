@@ -205,22 +205,22 @@ After
 async def test_tiny_local_profile_prompt_is_action_first_json_contract():
     system_text = await _build_system_text("tiny-local")
     communication_prompt = (
-        PROJECT_ROOT / "agents" / "tiny-local" / "prompts" / "agent.system.main.communication.md"
+        PROJECT_ROOT / "plugins" / "_agent_profiles" / "agents" / "tiny-local" / "prompts" / "agent.system.main.communication.md"
     ).read_text(encoding="utf-8")
     code_prompt = (
-        PROJECT_ROOT / "agents" / "tiny-local" / "prompts" / "agent.system.tool.code_exe.md"
+        PROJECT_ROOT / "plugins" / "_agent_profiles" / "agents" / "tiny-local" / "prompts" / "agent.system.tool.code_exe.md"
     ).read_text(encoding="utf-8")
     response_prompt = (
-        PROJECT_ROOT / "agents" / "tiny-local" / "prompts" / "agent.system.tool.response.md"
+        PROJECT_ROOT / "plugins" / "_agent_profiles" / "agents" / "tiny-local" / "prompts" / "agent.system.tool.response.md"
     ).read_text(encoding="utf-8")
     repeat_prompt = (
-        PROJECT_ROOT / "agents" / "tiny-local" / "prompts" / "fw.msg_repeat.md"
+        PROJECT_ROOT / "plugins" / "_agent_profiles" / "agents" / "tiny-local" / "prompts" / "fw.msg_repeat.md"
     ).read_text(encoding="utf-8")
     text_editor_prompt = (
-        PROJECT_ROOT / "agents" / "tiny-local" / "prompts" / "agent.system.tool.text_editor.md"
+        PROJECT_ROOT / "plugins" / "_agent_profiles" / "agents" / "tiny-local" / "prompts" / "agent.system.tool.text_editor.md"
     ).read_text(encoding="utf-8")
     solving_prompt = (
-        PROJECT_ROOT / "agents" / "tiny-local" / "prompts" / "agent.system.main.solving.md"
+        PROJECT_ROOT / "plugins" / "_agent_profiles" / "agents" / "tiny-local" / "prompts" / "agent.system.main.solving.md"
     ).read_text(encoding="utf-8")
 
     assert "You are Agent Zero. Act on the user's behalf." in system_text
