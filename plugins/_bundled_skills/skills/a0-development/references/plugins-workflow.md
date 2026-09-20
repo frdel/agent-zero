@@ -4,7 +4,7 @@
 
 - Plugin contract: `/a0/plugins/AGENTS.md`
 - Plugin helper code: `/a0/helpers/plugins.py`
-- Plugin entrypoints: `/a0/plugins/_skills/skills/a0-create-plugin/SKILL.md` and `/a0/plugins/_skills/skills/a0-manage-plugin/SKILL.md`
+- Plugin entrypoints: `/a0/plugins/_bundled_skills/skills/a0-create-plugin/SKILL.md` and `/a0/plugins/_bundled_skills/skills/a0-manage-plugin/SKILL.md`
 - Root development contract: `/a0/AGENTS.md`
 
 ## Plugin-First Rule

@@ -36,7 +36,7 @@ Use this skill to find useful existing plugins and manage installed ones. For bu
 | Search the Plugin Index, compare candidates, recommend useful plugins | `references/discovery.md` |
 | Security scan, install, update, config, enable/disable or remove | `references/lifecycle.md` |
 
-Read references through `skills_tool` with `action: "read_file"`, `skill_name: "a0-manage-plugin"`, and the file path. API examples reuse the session/CSRF client in `/a0/plugins/_skills/skills/a0-development/references/operate-agent-zero.md`. Load `a0-development` before reading that reference through `skills_tool`; discover the correct live origin.
+Read references through `skills_tool` with `action: "read_file"`, `skill_name: "a0-manage-plugin"`, and the file path. API examples reuse the session/CSRF client in `/a0/plugins/_bundled_skills/skills/a0-development/references/operate-agent-zero.md`. Load `a0-development` before reading that reference through `skills_tool`; discover the correct live origin.
 
 ## Discovery Discipline
 

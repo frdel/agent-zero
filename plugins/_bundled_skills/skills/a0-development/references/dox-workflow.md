@@ -3,9 +3,9 @@
 ## Source Anchors
 
 - Root DOX contract: `/a0/AGENTS.md`
-- Skill parent contract: `/a0/plugins/_skills/skills/AGENTS.md`
-- Local skill contract: `/a0/plugins/_skills/skills/a0-development/AGENTS.md`
-- Reference-file contract: `/a0/plugins/_skills/skills/a0-development/references/AGENTS.md`
+- Skill parent contract: `/a0/plugins/_bundled_skills/skills/AGENTS.md`
+- Local skill contract: `/a0/plugins/_bundled_skills/skills/a0-development/AGENTS.md`
+- Reference-file contract: `/a0/plugins/_bundled_skills/skills/a0-development/references/AGENTS.md`
 - File-level DOX examples: `/a0/api/*.py.dox.md`, `/a0/tools/*.py.dox.md`, `/a0/helpers/*.py.dox.md`
 
 ## Before Editing

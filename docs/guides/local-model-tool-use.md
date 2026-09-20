@@ -11,7 +11,7 @@ Choose the **Tiny Local** profile when starting or switching a chat that uses a 
 The bundled profile lives at:
 
 ```text
-agents/tiny-local/
+plugins/_agent_profiles/agents/tiny-local/
 ```
 
 Tiny Local keeps the normal Agent Zero tool-call shape, but removes visible reasoning fields from the communication prompt. It tells the model to emit one executable JSON object with `tool_name` and `tool_args`.

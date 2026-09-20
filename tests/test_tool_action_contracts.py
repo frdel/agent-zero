@@ -845,7 +845,7 @@ def test_local_model_tool_use_guide_stays_prompt_profile_plugin_only():
     guide = Path("docs/guides/local-model-tool-use.md").read_text(encoding="utf-8")
 
     assert "Tiny Local" in guide
-    assert "agents/tiny-local/" in guide
+    assert "plugins/_agent_profiles/agents/tiny-local/" in guide
     assert "*.promptinclude.md" in guide
     assert "Do not change `agent.py`" in guide
     assert "Do not change `helpers/extract_tools.py`" in guide
@@ -1029,6 +1029,50 @@ def test_scheduler_invalid_timezone_returns_repairable_message(monkeypatch):
     response = asyncio.run(tool.execute(**tool.args))
 
     assert "Invalid timezone: Mars/Base" in response.message
+
+
+def test_scheduler_invalid_state_returns_repairable_message(monkeypatch):
+    module = _load_scheduler_tool(monkeypatch)
+
+    class FakeTaskState:
+        IDLE = "idle"
+        VALUES = {"idle", "running", "disabled", "error"}
+
+        def __init__(self, value):
+            if str(value).strip().lower() not in self.VALUES:
+                raise ValueError(f"unknown state: {value}")
+            self.value = str(value).strip().lower()
+
+    module.TaskState = FakeTaskState
+
+    class FakeTask:
+        uuid = "task-1"
+        state = "idle"
+        context_id = ""
+
+    async def reload():
+        return None
+
+    module.TaskScheduler = types.SimpleNamespace(
+        get=lambda: types.SimpleNamespace(
+            reload=reload,
+            get_task_by_uuid=lambda uuid: FakeTask(),
+        )
+    )
+
+    tool = module.SchedulerTool(
+        _FakeAgent(),
+        "scheduler",
+        None,
+        {"action": "update_task", "uuid": "task-1", "state": "paused"},
+        "",
+        None,
+    )
+
+    response = asyncio.run(tool.execute(**tool.args))
+
+    assert "Invalid task state: paused" in response.message
+    assert "Use one of: idle, running, disabled, error." in response.message
 
 
 def test_scheduler_prompt_includes_update_timezone_and_dedicated_context():

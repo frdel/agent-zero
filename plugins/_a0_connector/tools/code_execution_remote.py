@@ -45,7 +45,6 @@ class CodeExecutionRemote(Tool):
         return runtime in {"terminal", "python", "nodejs"}
 
     @staticmethod
-    @staticmethod
     def _timeout_group_for_runtime(
         runtime: str,
         exec_config: dict[str, Any],

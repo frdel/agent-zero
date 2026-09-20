@@ -1,4 +1,4 @@
-import { createStore } from "/js/AlpineStore.js";
+import { createStore, getStore } from "/js/AlpineStore.js";
 import { callJsonApi } from "/js/api.js";
 import {
   sendJsonData,
@@ -399,7 +399,7 @@ const model = {
     this.selected = contextId || "";
     this.selectedContext = this.contexts.find((ctx) => ctx.id === this.selected);
     // if not found in contexts, try to find in tasks < not nice, will need refactor later
-    if(!this.selectedContext) this.selectedContext = (globalThis.Alpine?.store("tasks")?.tasks ?? []).find((ctx) => ctx.id === this.selected);
+    if(!this.selectedContext) this.selectedContext = (getStore("tasks")?.tasks ?? []).find((ctx) => ctx.id === this.selected);
     this.expandAncestors(this.selectedContext);
     if (this.selected) {
       sessionStorage.setItem("lastSelectedChat", this.selected);
