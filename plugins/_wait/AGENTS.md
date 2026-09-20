@@ -10,6 +10,7 @@
 - `helpers/wait.py` owns intervention-aware waiting and remaining-time formatting.
 - `prompts/` owns the tool prompt and the wait-complete framework message.
 - `extensions/webui/` owns the tool's message presentation.
+- `webui/css/` owns the HLD badge accent loaded through the `extensions/webui/page-head/` extension.
 - `plugin.yaml` and `README.md` own metadata and docs.
 
 ## Local Contracts

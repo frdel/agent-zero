@@ -204,14 +204,6 @@
   --step-accent: #4f46e5;
 }
 
-/* WAIT - progress type (slate) */
-.process-group .HDL {
-  --step-accent: #94a3b8;
-}
-.light-mode .process-group .HDL {
-  --step-accent: #475569;
-}
-
 /* INF - info type (gray) */
 .process-group .INF {
   --step-accent: #94a3b8;
