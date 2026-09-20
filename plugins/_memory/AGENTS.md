@@ -10,6 +10,7 @@
 - `helpers/knowledge_import.py` and `helpers/memory_consolidation.py` own import and consolidation behavior.
 - `tools/` owns memory save/load/delete/forget tools.
 - `api/` and `webui/` own memory dashboard and knowledge reindex/import flows.
+- `extensions/webui/` owns the welcome-screen Memory card and the quick-actions dropdown entries.
 - `prompts/`, `default_config.yaml`, and `plugin.yaml` own memory prompts, defaults, and metadata.
 
 ## Local Contracts

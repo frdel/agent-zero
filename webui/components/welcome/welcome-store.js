@@ -264,9 +264,6 @@ const model = {
       case "projects":
         projectsStore.openProjectsModal();
         break;
-      case "memory":
-        memoryStore.openModal();
-        break;
       case "files":
         fileBrowserStore.open();
         break;
