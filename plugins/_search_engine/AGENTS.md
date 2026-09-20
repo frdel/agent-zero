@@ -20,6 +20,7 @@
 ## Verification
 
 - Import the tool in the framework runtime and run the tool contract and WebUI plugin process-type tests after changes.
+- Run `tests/test_search_engine_tool.py` for the tool formatting and execution regression tests.
 
 ## Child DOX Index
 

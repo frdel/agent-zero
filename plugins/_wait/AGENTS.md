@@ -21,7 +21,7 @@
 
 ## Verification
 
-- Run the focused scheduler/wait-related tests under `tests/` after changes.
+- Run `tests/test_wait_tool.py` for the wait logic regression tests covering argument validation, countdown tick anchoring, intervention pause extension, and remaining-time formatting.
 
 ## Child DOX Index
 
