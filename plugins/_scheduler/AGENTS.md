@@ -9,9 +9,12 @@
 - `tools/scheduler.py` owns action dispatch, timezone normalization, cron/plan validation, and agent-facing task CRUD.
 - `prompts/` owns the tool prompt.
 - `api/` owns the scheduler CRUD HTTP endpoints (`scheduler_task_create`, `scheduler_task_delete`, `scheduler_task_run`, `scheduler_task_update`, `scheduler_tasks_list`); core `api/scheduler_tick.py` stays with the scheduling engine.
-- `webui/scheduler/` owns the Tasks modal (store, modal, detail, editor, list) and `webui/css/` owns the scheduler styles preloaded by `webui/index.html`.
+- `webui/scheduler/` owns the Tasks modal (store, modal, detail, editor, list) and `webui/css/` owns the scheduler styles loaded through the plugin `page-head` extension.
 - `webui/sidebar/` owns the sidebar tasks list and its store, injected through the `sidebar-tasks-list` extension point.
 - `extensions/webui/sidebar-tasks-list/` owns the plugin contribution to that extension point.
+- `extensions/webui/sidebar-quick-actions-dropdown-start/` owns the Tasks dropdown button, moved after the Files item via `x-move-after`.
+- `extensions/webui/welcome-actions-end/` owns the Tasks card on the welcome screen.
+- `extensions/webui/page-head/` owns the scheduler, datepicker, and flatpickr asset loading.
 - `plugin.yaml` and `README.md` own metadata and docs.
 
 ## Local Contracts
