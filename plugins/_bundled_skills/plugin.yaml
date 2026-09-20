@@ -2,7 +2,6 @@ name: _bundled_skills
 title: Bundled Skills
 description: Bundled Agent Zero skill collection resolved as a global skill root.
 version: 1.0.0
-always_enabled: true
 settings_sections: []
 per_project_config: false
 per_agent_config: false

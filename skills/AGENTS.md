@@ -12,7 +12,7 @@
 
 ## Local Contracts
 
-- Skill discovery carries no contract for this directory: `helpers/skills.py` resolves bundled skills through the always-enabled `_bundled_skills` plugin root, and the historical `skills/` path remains on the global root list for compatibility; keep it skill-free.
+- Skill discovery carries no contract for this directory: `helpers/skills.py` resolves bundled skills through the `_bundled_skills` plugin root, and the historical `skills/` path remains on the global root list for compatibility; keep it skill-free.
 - Do not add skill directories here; new bundled skills belong in `plugins/_bundled_skills/skills/`, and plugin-specific skills belong in their owning plugin.
 - Keep this pointer short and current; move any detailed guidance to the owning plugin DOX.
 

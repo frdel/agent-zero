@@ -2,7 +2,7 @@
 
 ## Purpose
 
-- Own the bundled Agent Zero skill collection as an always-available plugin skill root.
+- Own the bundled Agent Zero skill collection as a standalone plugin skill root.
 
 ## Ownership
 
@@ -12,7 +12,7 @@
 
 ## Local Contracts
 
-- The plugin declares `always_enabled: true` so bundled skills keep resolving independently of the `_skills` feature plugin and other toggles; disabling it would remove every bundled skill from discovery.
+- The plugin follows the standard enabled-state rules; disabling it removes the bundled skill collection from discovery, so keep it enabled where bundled skills should stay available.
 - The plugin owns no runtime code; discovery resolves `skills/` through the standard plugin skill-root scan in `helpers/skills.py`.
 - Skill loading, visibility policy, and the catalog API stay owned by the `_skills` plugin.
 

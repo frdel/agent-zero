@@ -16,8 +16,8 @@
 ## Local Contracts
 
 - Every skill directory must include a `SKILL.md`.
-- Skill discovery resolves this collection through the always-enabled `_bundled_skills` plugin root in `helpers/skills.py`; skill names and file layouts are unchanged, so search, loading, visibility policy, and project overrides keep resolving.
-- The plugin declares `always_enabled: true`: disabling it would remove every bundled skill from discovery.
+- Skill discovery resolves this collection through the `_bundled_skills` plugin root in `helpers/skills.py`; skill names and file layouts are unchanged, so search, loading, visibility policy, and project overrides keep resolving.
+- The plugin follows the standard enabled-state rules; disabling it removes every bundled skill from discovery.
 - Do not include secrets, private user data, or environment-specific credentials.
 - Skill instructions must be operational and scoped to the skill's purpose.
 - Supporting files referenced by a skill must exist relative to that skill directory.
