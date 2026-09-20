@@ -757,7 +757,7 @@ def test_connector_skill_root_follows_connection_without_mutating_cached_paths(m
     connector = PROJECT_ROOT / "plugins" / "_a0_connector"
     roots = [
         str(connector / "skills"),
-        str(PROJECT_ROOT / "plugins" / "_skills" / "skills"),
+        str(PROJECT_ROOT / "plugins" / "_bundled_skills" / "skills"),
     ]
 
     def get_paths(_agent, *parts, **kwargs):

@@ -2,13 +2,12 @@
 
 ## Purpose
 
-- Own the bundled skill collection plus current-chat skill loading, hidden skill configuration, and profile-level visibility policy.
+- Own current-chat skill loading, hidden skill configuration, and profile-level visibility policy.
 
 ## Ownership
 
-- `skills/` owns the bundled Agent Zero skill collection, moved 1:1 from the former core `skills/` directory; `skills/AGENTS.md` owns its local contract.
 - `hooks.py` owns skill config normalization.
-- `api/skills_catalog.py` owns skill catalog access and loading selected skills into chat history.
+- `api/skills_catalog.py` owns skill catalog access and loading selected skills into chat history; bundled skill files live in the `_bundled_skills` plugin.
 - `webui/` owns skill settings UI and store.
 - `default_config.yaml`, `plugin.yaml`, `README.md`, and `LICENSE` own defaults, metadata, docs, and license.
 
@@ -29,10 +28,3 @@
 
 - Run skill runtime/catalog tests or smoke-test active, hidden, global, project, and chat-scope behavior after changes.
 
-## Child DOX Index
-
-Direct child DOX files:
-
-| Child | Scope |
-| --- | --- |
-| [skills/AGENTS.md](skills/AGENTS.md) | Bundled Agent Zero skill collection and its skill-level contracts. |

@@ -402,7 +402,7 @@ def test_invalid_skill_frontmatter_warns_when_skill_is_skipped(monkeypatch, tmp_
 
 
 def test_a0_manage_plugin_skill_frontmatter_is_valid_yaml():
-    text = (PROJECT_ROOT / "plugins" / "_skills" / "skills" / "a0-manage-plugin" / "SKILL.md").read_text(
+    text = (PROJECT_ROOT / "plugins" / "_bundled_skills" / "skills" / "a0-manage-plugin" / "SKILL.md").read_text(
         encoding="utf-8"
     )
 
@@ -415,14 +415,14 @@ def test_a0_manage_plugin_skill_frontmatter_is_valid_yaml():
 
 def test_renamed_skills_use_standard_frontmatter_only():
     skill_paths = [
-        PROJECT_ROOT / "plugins" / "_skills" / "skills" / "build-skill" / "SKILL.md",
-        PROJECT_ROOT / "plugins" / "_skills" / "skills" / "scheduled-tasks" / "SKILL.md",
+        PROJECT_ROOT / "plugins" / "_bundled_skills" / "skills" / "build-skill" / "SKILL.md",
+        PROJECT_ROOT / "plugins" / "_bundled_skills" / "skills" / "scheduled-tasks" / "SKILL.md",
         PROJECT_ROOT / "plugins" / "_a0_connector" / "skills" / "host-code-execution" / "SKILL.md",
         PROJECT_ROOT / "plugins" / "_a0_connector" / "skills" / "host-computer-use" / "SKILL.md",
         PROJECT_ROOT / "plugins" / "_a0_connector" / "skills" / "host-computer-use-macos" / "SKILL.md",
         PROJECT_ROOT / "plugins" / "_a0_connector" / "skills" / "host-computer-use-windows" / "SKILL.md",
         PROJECT_ROOT / "plugins" / "_a0_connector" / "skills" / "host-file-editing" / "SKILL.md",
-        PROJECT_ROOT / "plugins" / "_skills" / "skills" / "setup-a0-cli" / "SKILL.md",
+        PROJECT_ROOT / "plugins" / "_bundled_skills" / "skills" / "setup-a0-cli" / "SKILL.md",
         PROJECT_ROOT / "plugins" / "_browser" / "skills" / "browser-automation" / "SKILL.md",
         PROJECT_ROOT / "plugins" / "_browser" / "skills" / "browser-extension-control" / "SKILL.md",
         PROJECT_ROOT / "plugins" / "_browser" / "skills" / "browser-form-workflows" / "SKILL.md",

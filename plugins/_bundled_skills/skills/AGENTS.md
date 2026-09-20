@@ -7,7 +7,7 @@
 
 ## Ownership
 
-- This subtree is the `_skills` plugin's `skills/` collection, moved from the former core `skills/` directory; `skills/AGENTS.md` remains as a pointer DOX.
+- This subtree is the `_bundled_skills` plugin's `skills/` collection, moved 1:1 from the former core `skills/` directory and later out of the `_skills` feature plugin.
 - Each direct skill directory owns its `SKILL.md` and any local supporting files.
 - Skills that explain another plugin's tool or UI surface belong under that plugin's `skills/` directory.
 - `setup-a0-cli/` owns primary host-connector setup guidance and remains discoverable without a connected CLI.
@@ -16,7 +16,7 @@
 ## Local Contracts
 
 - Every skill directory must include a `SKILL.md`.
-- Skill discovery resolves this collection through the always-enabled `_skills` plugin root in `helpers/skills.py`; skill names and file layouts are unchanged, so search, loading, visibility policy, and project overrides keep resolving.
+- Skill discovery resolves this collection through the always-enabled `_bundled_skills` plugin root in `helpers/skills.py`; skill names and file layouts are unchanged, so search, loading, visibility policy, and project overrides keep resolving.
 - The plugin declares `always_enabled: true`: disabling it would remove every bundled skill from discovery.
 - Do not include secrets, private user data, or environment-specific credentials.
 - Skill instructions must be operational and scoped to the skill's purpose.

@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_plugin_entrypoints_load_references_and_replace_retired_skills(monkeypatch):
-    candidates = [skills.skill_from_markdown(path) for path in ROOT.glob("plugins/_skills/skills/*/SKILL.md")]
+    candidates = [skills.skill_from_markdown(path) for path in ROOT.glob("plugins/_bundled_skills/skills/*/SKILL.md")]
     assert all(candidates)
     monkeypatch.setattr(skills, "list_skills", lambda *args, **kwargs: candidates)
     for query, expected in [
@@ -24,7 +24,7 @@ def test_plugin_entrypoints_load_references_and_replace_retired_skills(monkeypat
     for retired in ("a0-plugin-router", "a0-contribute-plugin", "a0-review-plugin", "a0-debug-plugin"):
         assert retired not in {skill.name for skill in candidates}
     for name in ("a0-create-plugin", "a0-manage-plugin"):
-        folder = ROOT / "plugins" / "_skills" / "skills" / name
+        folder = ROOT / "plugins" / "_bundled_skills" / "skills" / name
         refs = set(re.findall(r"(?<!/)references/[a-z-]+\.md", (folder / "SKILL.md").read_text()))
         assert refs
         for ref in refs:
@@ -32,7 +32,7 @@ def test_plugin_entrypoints_load_references_and_replace_retired_skills(monkeypat
 
 
 def test_index_discovery_example_handles_nulls_and_bounds_output(capsys):
-    text = (ROOT / "plugins/_skills/skills/a0-manage-plugin/references/discovery.md").read_text()
+    text = (ROOT / "plugins/_bundled_skills/skills/a0-manage-plugin/references/discovery.md").read_text()
     blocks = re.findall(r"```python\n(.*?)\n```", text, re.S)
     entries = {
         "source_search": {"title": "Source Search", "tags": None, "description": None},

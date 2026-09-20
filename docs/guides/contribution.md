@@ -44,7 +44,7 @@ If your fork contains GitHub Actions workflows, be careful with GitHub's "Allow 
 
 - **Core bugfixes and docs for Agent Zero itself:** prepare them in a clean fork/clone of `agent-zero` and open a PR back to the upstream repository.
 - **Community plugins:** publish the plugin in its own public repository, then submit it to [`agent0ai/a0-plugins`](https://github.com/agent0ai/a0-plugins).
-- **Skills:** develop locally in `usr/skills/`, then move stable skills to `plugins/_skills/skills/` for Agent Zero contributions or publish them in a dedicated public repository/collection.
+- **Skills:** develop locally in `usr/skills/`, then move stable skills to `plugins/_bundled_skills/skills/` for Agent Zero contributions or publish them in a dedicated public repository/collection.
 - **Private experiments, credentials, local R&D, or customer-specific assets:** keep them out of public forks and upstream pull requests.
 
 For a contributor-focused decision guide that covers fixes, plugins, skills, and

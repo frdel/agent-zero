@@ -310,7 +310,7 @@ One skill = one expertise area. If your skill is getting too long, split it:
 
 3. **Move to Bundled Collection (for contribution):**
    ```bash
-   mv usr/skills/my-skill plugins/_skills/skills/my-skill
+   mv usr/skills/my-skill plugins/_bundled_skills/skills/my-skill
    ```
 
 4. **Create a Pull Request:**
@@ -372,7 +372,7 @@ my-skills-collection/
 
 ### Q: Where should I put my skills?
 
-**A:** During development, use `usr/skills/`. For contribution, move to `plugins/_skills/skills/`.
+**A:** During development, use `usr/skills/`. For contribution, move to `plugins/_bundled_skills/skills/`.
 
 ### Q: How are skills discovered?
 
