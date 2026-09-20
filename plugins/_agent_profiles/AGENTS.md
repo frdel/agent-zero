@@ -12,7 +12,7 @@
 ## Local Contracts
 
 - Profile discovery resolves plugin-provided profiles through the standard chain (project > user > plugin > core) in `helpers/subagents.py`; profile names and file layouts are unchanged, so existing settings, subordinate calls, and project overrides keep resolving.
-- The plugin declares `always_enabled: true`: profiles are selectable in settings and valid subordinate targets, and disabling the plugin would break agents configured with them.
+- Profiles are selectable in settings and valid subordinate targets; the plugin follows the standard enabled-state rules, and disabling it removes its profiles from discovery, breaking agents configured with them, so keep it enabled in such setups.
 - Core `agents/` keeps `agent0` (default setting value), the `default` utility profile, and `_example` (reference profile).
 - Profile IDs must not collide with core or user profiles; user overrides in `usr/agents/` and project overrides in `.a0proj/agents/` still take precedence over the plugin layer.
 
