@@ -15,7 +15,7 @@ trigger_patterns:
 # Create an Agent Zero Agent Profile
 
 > [!IMPORTANT]
-> Do **not** create new profiles in `/a0/agents/` — that directory is reserved for core framework profiles (`default`, `agent0`, `developer`, `hacker`, `researcher`, `_example`). User profiles belong in `/a0/usr/agents/<profile_name>/`.
+> Do **not** create new profiles in `/a0/agents/` — that directory is reserved for core framework profiles (`default`, `agent0`, `_example`). Bundled specialist profiles (`developer`, `hacker`, `researcher`, `tiny-local`) are plugin-distributed under `/a0/plugins/_agent_profiles/agents/`. User profiles belong in `/a0/usr/agents/<profile_name>/`.
 
 Related skills: `/a0/plugins/_bundled_skills/skills/a0-development/SKILL.md` (broader framework guide) | `/a0/plugins/_bundled_skills/skills/a0-create-plugin/SKILL.md` (bundle a profile inside a plugin).
 
@@ -40,11 +40,12 @@ Use the shipped profiles as calibration:
 
 | Profile | Pattern to copy |
 |---|---|
-| `agent0` | Minimal top-level assistant identity |
-| `developer` | Rich capabilities, methodology, output requirements |
-| `researcher` | Rich capabilities, methodology, evidence standards |
-| `hacker` | Short, direct operational identity plus optional environment override |
-| `_example` | Minimal demo of prompt/tool/extension override surfaces |
+| `agent0` | Minimal top-level assistant identity (`/a0/agents/agent0/`) |
+| `_example` | Minimal demo of prompt/tool/extension override surfaces (`/a0/agents/_example/`) |
+| `developer` | Rich capabilities, methodology, output requirements (`/a0/plugins/_agent_profiles/agents/developer/`) |
+| `researcher` | Rich capabilities, methodology, evidence standards (`/a0/plugins/_agent_profiles/agents/researcher/`) |
+| `hacker` | Short, direct operational identity plus optional environment override (`/a0/plugins/_agent_profiles/agents/hacker/`) |
+| `tiny-local` | Small local model workarounds via tool prompt overrides (`/a0/plugins/_agent_profiles/agents/tiny-local/`) |
 
 For most new profiles, create `agent.yaml` plus one strong `agent.system.main.specifics.md`. Add other prompt overrides, tools, or extensions only when the blueprint explicitly needs them.
 
@@ -267,14 +268,14 @@ Profiles inherit all prompts from `/a0/prompts/` and from `/a0/agents/default/`.
 
 This is the designated extension slot for profile-specific role, identity, and behavior instructions. The file ships **empty** in both `/a0/prompts/agent.system.main.specifics.md` and `/a0/agents/default/prompts/agent.system.main.specifics.md` precisely so profiles can fill it in without fighting the base prompt. It is included from `agent.system.main.md` right after `agent.system.main.role.md`, so whatever you put here layers on top of the inherited role.
 
-**Every shipped profile in `/a0/agents/` overrides this file** — a good sanity check that this is the right place for your specialization. Look at the existing profiles for concrete shape:
+**Every core and bundled specialist profile overrides this file** (tiny-local overrides tool prompts instead) — a good sanity check that this is the right place for your specialization. Look at the existing profiles for concrete shape:
 
 | Profile | What its `agent.system.main.specifics.md` does |
 |---|---|
 | `/a0/agents/agent0/prompts/agent.system.main.specifics.md` | Establishes the top-level user-facing agent's behavior |
-| `/a0/agents/developer/prompts/agent.system.main.specifics.md` | Full "Master Developer" role + process spec (most elaborate example) |
-| `/a0/agents/hacker/prompts/agent.system.main.specifics.md` | Concise red/blue team pentester identity |
-| `/a0/agents/researcher/prompts/agent.system.main.specifics.md` | Research methodology and deliverable expectations |
+| `/a0/plugins/_agent_profiles/agents/developer/prompts/agent.system.main.specifics.md` | Full "Master Developer" role + process spec (most elaborate example) |
+| `/a0/plugins/_agent_profiles/agents/hacker/prompts/agent.system.main.specifics.md` | Concise red/blue team pentester identity |
+| `/a0/plugins/_agent_profiles/agents/researcher/prompts/agent.system.main.specifics.md` | Research methodology and deliverable expectations |
 | `/a0/agents/_example/prompts/agent.system.main.specifics.md` | Minimal demo override (fictional "Agent Zero" persona) |
 
 Start by copying whichever existing profile's `specifics.md` is closest to your target, then rewrite.
@@ -321,8 +322,8 @@ When a blueprint includes any of these, add an entry to `prompt_strategy.root_pr
 | File | When to override | Shipped example |
 |---|---|---|
 | `agent.system.main.role.md` | Replace the base role framing wholesale (rare — most profiles layer via `specifics.md` instead) | `/a0/agents/agent0/prompts/agent.system.main.role.md` |
-| `agent.system.main.communication.md` | Change reply format / communication style | `/a0/agents/developer/prompts/agent.system.main.communication.md`, `/a0/agents/researcher/prompts/...` |
-| `agent.system.main.environment.md` | Describe a non-default runtime environment | `/a0/agents/hacker/prompts/agent.system.main.environment.md` (Kali/Docker) |
+| `agent.system.main.communication.md` | Change reply format / communication style | `/a0/plugins/_agent_profiles/agents/tiny-local/prompts/agent.system.main.communication.md` |
+| `agent.system.main.environment.md` | Describe a non-default runtime environment | `/a0/plugins/_agent_profiles/agents/hacker/prompts/agent.system.main.environment.md` (Kali/Docker) |
 | `agent.system.tool.<name>.md` | Document a profile-specific tool (see Step 6) | `/a0/agents/_example/prompts/agent.system.tool.example_tool.md` |
 
 > [!TIP]
