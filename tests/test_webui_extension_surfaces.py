@@ -61,7 +61,6 @@ SURFACE_SCENARIOS: list[tuple[str, str]] = [
     ("welcome-screen-start", "webui/components/welcome/welcome-screen.html"),
     ("welcome-screen-end", "webui/components/welcome/welcome-screen.html"),
     ("welcome-actions-start", "webui/components/welcome/welcome-screen.html"),
-    ("welcome-actions-middle", "webui/components/welcome/welcome-screen.html"),
     ("welcome-actions-end", "webui/components/welcome/welcome-screen.html"),
     ("welcome-banners-start", "webui/components/welcome/welcome-screen.html"),
     ("welcome-banners-end", "webui/components/welcome/welcome-screen.html"),

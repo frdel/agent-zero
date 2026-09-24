@@ -13,7 +13,7 @@
 - `webui/sidebar/` owns the sidebar tasks list and its store, injected through the `sidebar-tasks-list` extension point.
 - `extensions/webui/sidebar-tasks-list/` owns the plugin contribution to that extension point.
 - `extensions/webui/sidebar-quick-actions-dropdown-start/` owns the Tasks dropdown button, moved after the Files item via `x-move-after`.
-- `extensions/webui/welcome-actions-middle/` owns the Tasks card on the welcome screen, contributed through the `welcome-actions-middle` point between the Memory and Files cards.
+- `extensions/webui/welcome-actions-start/` owns the Tasks card on the welcome screen, contributed through the `welcome-actions-start` point.
 - `extensions/webui/page-head/` owns the scheduler and datepicker asset loading; core `webui/index.html` owns the shared flatpickr preload.
 - `plugin.yaml` and `README.md` own metadata and docs.
 
