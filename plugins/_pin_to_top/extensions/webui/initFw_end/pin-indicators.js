@@ -1,6 +1,6 @@
 import { store } from "/plugins/_pin_to_top/webui/pin-to-top-store.js";
 
-const TITLES = '#chats-section x-component[path$="sidebar/chats/chat-tree.html"] .chat-name, #tasks-section x-component[path$="sidebar/tasks/task-row.html"] .task-name';
+const TITLES = '#chats-section x-component[path$="sidebar/chats/chat-tree.html"] .chat-name, #tasks-section x-component[path$="sidebar/task-row.html"] .task-name';
 let observer = null;
 
 function addIndicator(title) {

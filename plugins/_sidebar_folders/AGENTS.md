@@ -7,7 +7,7 @@
 ## Ownership
 
 - `webui/sidebar-folders-store.js` owns presentation, preferences, drag and drop, and folder actions.
-- `webui/folder-list.html` reuses the core `chat-tree.html` and `task-row.html` components.
+- `webui/folder-list.html` reuses the core `chat-tree.html` and the `_scheduler` plugin's shared `task-row.html` components.
 - `webui/thumbnail.webp` supplies the plugin gallery thumbnail at 256×256 pixels and under 20 KB.
 - `api/layout.py` persists independent project/chat/task order lists through `helpers.kvp`.
 - `api/move_chat.py` changes project context for an entire chat family.

@@ -41,6 +41,7 @@ SURFACE_SCENARIOS: list[tuple[str, str]] = [
     ("sidebar-chats-list-view", "webui/components/sidebar/chats/chats-list.html"),
     ("sidebar-chats-list-end", "webui/components/sidebar/chats/chats-list.html"),
     ("sidebar-tasks-list-start", "plugins/_scheduler/webui/sidebar/tasks-list.html"),
+    ("sidebar-tasks-list-view", "plugins/_scheduler/webui/sidebar/tasks-list.html"),
     ("sidebar-tasks-list-end", "plugins/_scheduler/webui/sidebar/tasks-list.html"),
     ("sidebar-tasks-list", "webui/components/sidebar/left-sidebar.html"),
     ("sidebar-row-actions-menu", "webui/components/sidebar/left-sidebar.html"),
