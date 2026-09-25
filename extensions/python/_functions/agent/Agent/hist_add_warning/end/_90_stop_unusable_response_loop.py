@@ -25,6 +25,7 @@ class StopUnusableResponseLoop(Extension):
             self.agent.read_prompt("fw.msg_empty_response.md"),
             self.agent.read_prompt("fw.msg_reasoning_only.md"),
             self.agent.read_prompt("fw.msg_thoughts_fallback.md"),
+            self.agent.read_prompt("fw.msg_output_limit.md"),
         }:
             return
 

@@ -24,6 +24,7 @@ def _agent():
         "fw.msg_empty_response.md": "empty response",
         "fw.msg_reasoning_only.md": "reasoning only",
         "fw.msg_thoughts_fallback.md": "thoughts fallback",
+        "fw.msg_output_limit.md": "output limit",
     }
 
     def read_prompt(name, **kwargs):
@@ -130,3 +131,17 @@ def test_general_settings_expose_the_default_failure_limit():
     assert "after 3 consecutive" in read_prompt_file(
         "fw.msg_unusable_response_limit.md", ["prompts"], limit=3
     )
+
+
+def test_output_limit_warning_counts_toward_the_limit(monkeypatch):
+    monkeypatch.setattr(
+        response_loop,
+        "get_settings",
+        lambda: {"max_consecutive_unusable_responses": 1},
+    )
+    agent = _agent()
+    extension = response_loop.StopUnusableResponseLoop(agent=agent)
+
+    data = _run(extension, agent, "output limit")
+
+    assert isinstance(data["exception"], HandledException)

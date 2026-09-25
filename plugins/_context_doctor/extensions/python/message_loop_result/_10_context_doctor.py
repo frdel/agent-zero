@@ -21,6 +21,8 @@ class ContextDoctor(Extension):
     def execute(self, result_data: dict[str, Any] | None = None, **kwargs: Any) -> None:
         if not self.agent or not isinstance(result_data, dict):
             return
+        if result_data.get("skip_default_processing"):
+            return
 
         # Extract LLM response
         llm_result = result_data.get("llm_result")

@@ -51,3 +51,33 @@ async def test_refusal_stops_model_call_without_retry_and_closes_stream(monkeypa
         )
     assert calls == 1
     assert closed == stream
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stream", [False, True])
+async def test_length_finish_reason_is_recorded_as_truncation(monkeypatch, stream):
+    partial = '{"thoughts":["planning"],"tool_name":"response","tool_args":{"text":"cut'
+    raw = {"model": "test", "choices": [{"finish_reason": "length", "message": {"content": partial}}]}
+    chunks_raw = [
+        {"model": "test", "choices": [{"finish_reason": None, "delta": {"content": partial}}]},
+        {"model": "test", "choices": [{"finish_reason": "length", "delta": {}}]},
+    ]
+
+    async def chunks():
+        for chunk in chunks_raw:
+            yield chunk
+
+    async def completion(**kwargs):
+        return chunks() if kwargs["stream"] else raw
+
+    async def callback(*args):
+        return None
+
+    monkeypatch.setattr(litellm_transport, "acompletion", completion)
+    wrapper = models.LiteLLMChatWrapper(model="test", provider="openai")
+    result = await wrapper.unified_turn.__wrapped__(
+        wrapper, messages=[], response_callback=callback if stream else None,
+    )
+    assert result.response == partial
+    assert result.finish_reason == "length"
+    assert result.truncated is True

@@ -9,6 +9,7 @@ RESPONSE_METADATA_KEY = "responses"
 LOCAL_FUNCTION_TOOL_TYPES = {"function_call"}
 TEXT_OUTPUT_TYPES = {"message"}
 REASONING_OUTPUT_TYPES = {"reasoning"}
+TRUNCATED_FINISH_REASONS = {"length", "max_tokens"}
 
 
 @dataclass
@@ -64,6 +65,7 @@ class LLMResult:
     raw: dict[str, Any] = field(default_factory=dict)
     capability: dict[str, Any] = field(default_factory=dict)
     history_extras: str = ""
+    finish_reason: str = ""
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> "LLMResult":
@@ -86,6 +88,7 @@ class LLMResult:
             raw=object_to_dict(data.get("raw") or {}),
             capability=object_to_dict(data.get("capability") or {}),
             history_extras=extras if isinstance(extras, str) else "",
+            finish_reason=str(data.get("finish_reason") or ""),
         )
 
     @classmethod
@@ -133,6 +136,7 @@ class LLMResult:
         output_items: list[dict[str, Any]] | None = None,
         provider_model_key: str = "",
         capability: dict[str, Any] | None = None,
+        finish_reason: str = "",
     ) -> "LLMResult":
         items = [ResponseItem.from_any(item) for item in output_items or []]
         if response and not items:
@@ -167,6 +171,7 @@ class LLMResult:
             state="off",
             usage=object_to_dict(usage or {}),
             capability=dict(capability or {}),
+            finish_reason=finish_reason,
         )
         if not result.response and result.function_calls:
             result.response = result.function_calls_text()
@@ -176,6 +181,11 @@ class LLMResult:
     def non_llm(cls) -> "LLMResult":
         """Sentinel for non-LLM AI turns; no response_id, mode/state off."""
         return cls(mode="", state="off")
+
+    @property
+    def truncated(self) -> bool:
+        """True when the provider stopped because the output token limit was reached."""
+        return self.finish_reason in TRUNCATED_FINISH_REASONS
 
     @property
     def function_calls(self) -> list[ResponseFunctionCall]:
@@ -233,6 +243,7 @@ class LLMResult:
             "raw": self.raw,
             "capability": self.capability,
             "history_extras": self.history_extras,
+            "finish_reason": self.finish_reason,
         }
 
     def metadata(self) -> dict[str, Any]:

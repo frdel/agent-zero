@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 from extensions.python.message_loop_result import _20_empty_response as empty_response
+from extensions.python.message_loop_result._05_truncated_response import TruncatedResponse
 from extensions.python.message_loop_result._20_empty_response import EmptyResponse
 from extensions.python.message_loop_result._30_repeat_response import RepeatResponse
 from extensions.python._functions.agent.Agent.hist_add_warning.end import (
@@ -39,6 +40,8 @@ class FakeAgent:
             "fw.msg_repeat_response.md": "Repeated response detected. Retrying.",
             "fw.msg_reasoning_only.md": "reasoning only",
             "fw.msg_reasoning_only_response.md": "Reasoning-only response detected. Retrying.",
+            "fw.msg_output_limit.md": "output limit",
+            "fw.msg_output_limit_response.md": f"truncated ({kwargs.get('finish_reason')})",
         }[name]
 
     def hist_add_ai_response(self, response, **kwargs):
@@ -53,10 +56,13 @@ class FakeAgent:
         return SimpleNamespace(id="warning")
 
 
-def _run(agent):
+def _run(agent, **llm_result):
     result_data = {
-        "llm_result": SimpleNamespace(response=agent.response, reasoning=agent.reasoning)
+        "llm_result": SimpleNamespace(
+            response=agent.response, reasoning=agent.reasoning, **llm_result
+        )
     }
+    TruncatedResponse(agent).execute(result_data)
     EmptyResponse(agent).execute(result_data)
     RepeatResponse(agent).execute(result_data)
     return result_data
@@ -224,3 +230,25 @@ def test_chat_repeat_includes_public_planning_fields(field, change):
     agent = FakeAgent(json.dumps(current), last_response=json.dumps(previous))
 
     assert bool(_run(agent).get("skip_default_processing")) is (change == "same")
+
+
+def test_truncated_result_warns_about_output_limit_instead_of_misformat():
+    agent = FakeAgent('{"thoughts":["planning"],"tool_name":"response","tool_args":{"text":"cut')
+
+    result = _run(agent, finish_reason="length", truncated=True, function_calls=[])
+
+    assert result["skip_default_processing"] is True
+    assert agent.history == []
+    assert agent.warnings == ["output limit"]
+    assert agent.logs == [
+        {"type": "warning", "content": "A0: truncated (length)", "id": "warning"}
+    ]
+
+
+def test_truncated_result_with_complete_tool_request_is_processed_normally():
+    agent = FakeAgent('{"tool_name":"response","tool_args":{"text":"done"}}')
+
+    result = _run(agent, finish_reason="length", truncated=True, function_calls=[])
+
+    assert "skip_default_processing" not in result
+    assert agent.warnings == []

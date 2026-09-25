@@ -182,6 +182,7 @@ class LiteLLMTransport:
     stop: Optional[list[str]] = None
     policy: TransportPolicy = field(init=False)
     last_result: LLMResult | None = field(init=False, default=None)
+    last_finish_reason: str = field(init=False, default="")
     last_request_state: str = field(init=False, default=RESPONSES_STATE_PROVIDER)
     explicit_prompt_caching: bool = field(init=False, default=False)
     history_prefix_hash: str = field(init=False, default="")
@@ -211,6 +212,7 @@ class LiteLLMTransport:
                 if self.policy.mode is TransportMode.CHAT_COMPLETIONS:
                     raw_response = completion(**self._chat_request(stream=False))
                     parsed = ChatCompletionsTransport.parse(raw_response)
+                    self.last_finish_reason = _finish_reason(raw_response)
                     self.last_result = self._llm_result_from_chat(
                         parsed, raw_response
                     )
@@ -235,6 +237,7 @@ class LiteLLMTransport:
                         **self._chat_request(stream=False)
                     )
                     parsed = ChatCompletionsTransport.parse(raw_response)
+                    self.last_finish_reason = _finish_reason(raw_response)
                     self.last_result = self._llm_result_from_chat(
                         parsed, raw_response
                     )
@@ -269,6 +272,7 @@ class LiteLLMTransport:
                     if _has_chunk_delta(parsed):
                         got_any_chunk = True
                         yield parsed
+                    self.last_finish_reason = parser.finish_reason
                     self.last_result = self._stream_result_from_chat_parser(parser)
                 else:
                     request = self._responses_request(stream=True)
@@ -310,6 +314,7 @@ class LiteLLMTransport:
                     if _has_chunk_delta(parsed):
                         got_any_chunk = True
                         yield parsed
+                    self.last_finish_reason = parser.finish_reason
                     self.last_result = self._stream_result_from_chat_parser(parser)
                 else:
                     request = self._responses_request(stream=True)
@@ -452,6 +457,7 @@ class LiteLLMTransport:
             output_items=parsed.get("_output_items"),
             provider_model_key=self.model,
             capability=self._capability_metadata(),
+            finish_reason=self.last_finish_reason,
         )
 
     def _llm_result_from_response(
@@ -489,6 +495,7 @@ class LiteLLMTransport:
             output_items=output_items,
             provider_model_key=self.model,
             capability=self._capability_metadata(),
+            finish_reason=self.last_finish_reason,
         )
 
     def _capability_metadata(self) -> dict[str, Any]:
@@ -680,6 +687,7 @@ class ChatCompletionsStreamParser:
         self.order: list[str] = []
         self.emitted = False
         self.usage: dict[str, Any] = {}
+        self.finish_reason = ""
 
     def parse(self, chunk: Any) -> ChatChunk:
         if usage := _reported_usage(chunk):
@@ -690,7 +698,9 @@ class ChatCompletionsStreamParser:
         self._append_tool_calls(_get_value(delta, "tool_calls"))
         self._append_legacy_function_call(_get_value(delta, "function_call"))
 
-        if _get_value(choice, "finish_reason") in {"tool_calls", "function_call"}:
+        if finish_reason := _finish_reason(chunk):
+            self.finish_reason = finish_reason
+        if finish_reason in {"tool_calls", "function_call"}:
             text = self._emit()
             if text and not parsed["response_delta"]:
                 parsed["response_delta"] = text
@@ -2220,6 +2230,10 @@ def _without_stream_kwarg(kwargs: dict[str, Any]) -> dict[str, Any]:
 def _first_choice(chunk: Any) -> Any:
     choices = _get_value(chunk, "choices") or []
     return choices[0] if choices else {}
+
+
+def _finish_reason(chunk: Any) -> str:
+    return str(_get_value(_first_choice(chunk), "finish_reason") or "")
 
 
 def _get_value(obj: Any, key: str) -> Any:
