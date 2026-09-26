@@ -7,6 +7,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from json_repair import repair_json
+from helpers.leaked_tool_calls import salvage_leaked_tool_call
 
 from plugins._context_doctor.helpers.json_repair_patch import apply_patch
 
@@ -125,6 +126,12 @@ def transform_response(
     response: str, *, suppress_xml: bool, split_thoughts: bool = True
 ) -> str:
     """Repair model output, falling back to compact thoughts JSON for raw text."""
+    leak = salvage_leaked_tool_call(response)
+    if leak.status != "clean":
+        # The core hook owns availability checks and bounded rejection.
+        return response
+    if leak.detail == "quoted_tool_syntax":
+        return _compact_json({"thoughts": [response]})
     value = _select_value(response)
     if value is None:
         if suppress_xml and "<" in response and ">" in response:
@@ -137,6 +144,9 @@ def transform_response(
 
 def looks_like_tool_call(response: str, transformed: str) -> bool:
     """Return True if transformed output is a JSON with usable A0 content."""
+    leak = salvage_leaked_tool_call(response)
+    if leak.status != "clean" or leak.detail == "quoted_tool_syntax":
+        return False
     if not response or _select_value(response) is None:
         return False
     try:

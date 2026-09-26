@@ -6,6 +6,8 @@
 
 ## Ownership
 
+- `_05_leaked_tool_call.py` validates and recovers one standalone leaked call before Context Doctor. Responses recovery uses the current turn's `responses_tool_name_map`; Chat Completions resolves the current policy-filtered prompt/MCP surface with the existing builder only after recognizing a complete candidate. Missing/empty surfaces fail closed and normal turns do not build schemas. Rejected/truncated calls preserve the assistant turn with `hist_add_ai_response` (which owns state advancement), emit a static counted warning, and skip further processing. Native calls remain authoritative; quoted examples and multiple calls are never recovered.
+
 - Extensions receive mutable `result_data` with `llm_result` and may set `skip_default_processing` after fully handling the turn.
 - `_05_truncated_response.py` retries turns the provider cut off at the output token limit (`LLMResult.truncated`) that carry no complete tool request: add an agent-facing `fw.msg_output_limit.md` history warning with a separate `fw.msg_output_limit_response.md` user notice naming the finish reason, instead of the generic misformat warning, and count them through the stop-unusable-response-loop extension. Native calls are complete only when every raw argument value is a JSON object; a synthesized envelope around malformed arguments does not qualify.
 - `_20_empty_response.py` retries fully empty turns (no response and no reasoning): count them toward the unusable-response limit without adding a warning to model history, and use `fw.msg_empty_response.md` for agent-prefixed UI warning text only.

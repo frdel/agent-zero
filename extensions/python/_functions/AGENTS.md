@@ -12,6 +12,8 @@
 
 ## Local Contracts
 
+- The unusable-response counter also counts static leaked-call and truncated-call warnings once per iteration; variable diagnostics remain outside warning text.
+
 - Do not flatten nested qualname paths into retired legacy folder names.
 - Extension functions must match the implicit hook's supplied arguments.
 - Preserve ordering prefixes where exception handling, watchdog registration, or cleanup depends on them.

@@ -22,6 +22,8 @@ def _agent():
         "fw.msg_misformat.md": "misformatted",
         "fw.msg_repeat.md": "repeated",
         "fw.msg_empty_response.md": "empty response",
+        "fw.msg_leaked_tool_call.md": "leaked call",
+        "fw.msg_truncated_tool_call.md": "truncated call",
         "fw.msg_reasoning_only.md": "reasoning only",
         "fw.msg_thoughts_fallback.md": "thoughts fallback",
         "fw.msg_output_limit.md": "output limit",
@@ -145,3 +147,20 @@ def test_output_limit_warning_counts_toward_the_limit(monkeypatch):
     data = _run(extension, agent, "output limit")
 
     assert isinstance(data["exception"], HandledException)
+
+
+def test_leaked_and_truncated_warnings_share_budget_and_count_once(monkeypatch):
+    monkeypatch.setattr(
+        response_loop, "get_settings", lambda: {"max_consecutive_unusable_responses": 3}
+    )
+    agent = _agent()
+    extension = response_loop.StopUnusableResponseLoop(agent=agent)
+    assert _run(extension, agent, "leaked call")["exception"] is None
+    assert _run(extension, agent, "truncated call")["exception"] is None
+    assert agent.loop_data.params_persistent[response_loop.STATE_KEY]["count"] == 1
+    agent.loop_data.iteration = 1
+    assert _run(extension, agent, "misformatted")["exception"] is None
+    agent.loop_data.iteration = 2
+    assert isinstance(
+        _run(extension, agent, "truncated call")["exception"], HandledException
+    )
