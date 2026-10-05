@@ -76,7 +76,7 @@ Direct child DOX files:
 | [_chat_naming/AGENTS.md](_chat_naming/AGENTS.md) | Built-in manual and Utility Model-assisted chat naming. |
 | [_commands/AGENTS.md](_commands/AGENTS.md) | Built-in slash command manager, command file discovery, and chat composer slash picker. |
 | [_context_doctor/AGENTS.md](_context_doctor/AGENTS.md) | Tool-call JSON repair and compact persistence before default dispatch. |
-| [_context_window/AGENTS.md](_context_window/AGENTS.md) | Context-window token accounting, API, composer indicator, and visibility control. |
+| [_context_window/AGENTS.md](_context_window/AGENTS.md) | Context-window token accounting, API, composer indicator, visibility control, and per-call output speed. |
 | [_code_execution/AGENTS.md](_code_execution/AGENTS.md) | Terminal, Python, and Node.js execution tools and shell runtimes. |
 | [_desktop/AGENTS.md](_desktop/AGENTS.md) | Linux desktop runtime, sessions, and desktop surface. |
 | [_discovery/AGENTS.md](_discovery/AGENTS.md) | Welcome-screen plugin discovery cards and promotions. |

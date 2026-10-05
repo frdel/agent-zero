@@ -130,7 +130,15 @@ def latest_provider_usage(agent: Any) -> dict[str, int | float]:
         stored = data.get(PROVIDER_USAGE_KEY)
         if isinstance(stored, dict) and stored.get("available") is False:
             return {}
-        return provider_usage_snapshot(stored)
+        snapshot = provider_usage_snapshot(stored)
+        speed = (
+            _optional_non_negative_float(stored.get("output_tokens_per_second"))
+            if isinstance(stored, dict)
+            else None
+        )
+        if snapshot and speed:
+            snapshot["output_tokens_per_second"] = speed
+        return snapshot
 
     all_messages = getattr(getattr(agent, "history", None), "all_messages", None)
     if not callable(all_messages):
