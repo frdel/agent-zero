@@ -152,8 +152,8 @@
                      x-show="!$store.modelConfig.agentProfilesLoading"
                      :class="{ 'active': profile.key === $store.chats.selectedContext.agent_profile }">
                   <button type="button" class="model-switcher-item agent-profile-item"
-                       :disabled="$store.chats.selectedContext.running || $store.modelConfig.agentProfileSaving"
-                       :class="{ 'disabled': $store.chats.selectedContext.running || $store.modelConfig.agentProfileSaving }"
+                       :disabled="$store.modelConfig.agentProfileSaving"
+                       :class="{ 'disabled': $store.modelConfig.agentProfileSaving }"
                        @click="
                          if (profile.key === $store.chats.selectedContext.agent_profile) {
                            showProfileDropdown = false;

@@ -54,6 +54,9 @@
 - Concurrent agent-profile catalog loads for the same chat share one request;
   across chats, only the newest request may replace selector state or finish
   its loading lifecycle.
+- Selecting an agent profile is permitted while the chat is running; the
+  mid-run switch applies to the next model turn and intentionally drops the
+  prompt cache, matching chat preset overrides.
 - Snapshot-triggered profile and preset refreshes run independently of chat
   rendering and of each other. Only the latest refresh for the selected chat
   may apply selector state; older completions must not clear a newer loading flag.
