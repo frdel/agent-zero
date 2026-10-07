@@ -432,7 +432,7 @@ export async function applySnapshot(snapshot, options = {}) {
   notificationStore.updateFromPoll(snapshot);
 
   // set ui model vars from backend
-  inputStore.paused = snapshot.paused;
+  inputStore.applyPausedSnapshot(snapshot.paused);
 
   // Optional: treat snapshot application as proof of connectivity (poll path)
   if (touchConnectionStatus) {

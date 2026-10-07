@@ -28,6 +28,7 @@
 - The setup gate must delegate Cloud/Local setup, account connections, and advanced model configuration to the existing onboarding and model-preset editor modals; do not duplicate provider/model/key forms inline.
 - A connected OAuth account without Main/Utility model selection is its own gate state; route to model configuration and do not select models automatically.
 - Model setup surfaces that change readiness must notify the gate with `model-setup-changed`, `model-configured`, or an existing modal/onboarding completion signal so the pending prompt can retry automatically.
+- Composer pause state is optimistic: a click in flight suppresses poll-snapshot writes to the pause flag until its request settles.
 - The top-section project selector, clock, and connection indicator must respect the instance-level mobile/desktop visibility preferences.
 - While the selected context is running, an empty composer makes the primary button stop the active run; typed text still adds to the queue, and Enter with an empty composer still sends queued messages.
 - Pending queue items render image thumbnails from local blob URLs until the upload confirms; confirmed attachments use server `image_get` URLs, and a failed queue add drops its pending entry.
