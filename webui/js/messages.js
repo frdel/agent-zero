@@ -1949,7 +1949,6 @@ export function drawMessageAgent({
     actionButtons,
     log: arguments[0],
   });
-  if (result.kvpsTable) renderLatexText(result.kvpsTable);
   return result;
 }
 
@@ -2808,13 +2807,6 @@ function renderLatexElements(container) {
       displayMode: element.dataset.display === "true",
       throwOnError: false,
     });
-  });
-}
-
-function renderLatexText(container) {
-  globalThis.renderMathInElement(container, {
-    throwOnError: false,
-    errorCallback: () => {},
   });
 }
 

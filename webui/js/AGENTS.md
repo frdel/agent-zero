@@ -62,7 +62,7 @@
 - Do not expose secrets in localStorage, console logs, URLs, or WebSocket payloads.
 - Full message snapshots that start at backend log `no` 0 must replace the current message DOM before rendering; incremental snapshots should keep patching existing messages.
 - The state request builder advertises collection-delta support. An incremental snapshot may carry `contexts: null` and `tasks: null`; retain the current stores and skip sidebar selection/fallback reconciliation in that case. Extension hooks still receive the cached full collections so existing plugin contracts remain list-shaped.
-- Root responses render with safe Markdown and LaTeX throughout live updates and completion.
+- Root responses render with safe Markdown and LaTeX throughout live updates and completion. GEN process steps render thoughts and tool args as plain text without KaTeX, so `$$`-style sequences in technical prose stay literal.
 - Shared path linking recognizes plain paths, `file:///` URLs, and `/api/download_work_dir_file?path=` text, including inline code, while preserving existing anchors and fenced code blocks.
 - User sends render optimistically with their backend message ID; the matching log update must merge into that existing row rather than duplicate it.
 - Incremental message rendering must update standard action handlers without remounting unchanged button nodes or removing extension-owned actions.
