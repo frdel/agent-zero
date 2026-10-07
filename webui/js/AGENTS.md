@@ -21,6 +21,7 @@
 - `messages.js` routes unhandled log types through `drawMessageTool`, preserving generic tool-step presentation. Before raw-log grouping it resolves unregistered types from cached and incoming records through `getMessageHandler`; types selecting `drawMessageTool` join the process-step set. Explicit custom standalone handlers remain standalone. Keep the legacy `drawMessageDefault` export for plugin compatibility.
 - `messages.js` owns `drawMessageAgent` kvps rendering order: `thoughts`, `tool_name`, `tool_args` keys (spread per-key under actual names, not a sub-table, skipping reserved keys), then `step` at the end. Reserved keys (`thoughts`, `step`, `reasoning`, `tool_name`, `tool_args`, `args`, `headline`) win over any colliding `tool_args` key. The `response` tool check is hoisted to skip arg rendering entirely for response turns.
 - `messages.js` owns `Scroller` smooth-scroll suppression for `GEN` process steps (live agent responses) to prevent streamed-content jumpiness; non-`GEN` steps keep smooth scrolling.
+- Process step DOM ids are type-scoped (`process-step-<type>-<id>`): backend records may share an id across types (a subordinate response intentionally shares its GEN record's id), and one type's update must never overwrite another type's step.
 - `message-collapse.js` owns the layout-safe overflow measurement shared by collapsible user messages and responses.
 - `message-window.js` owns the bounded, tail-first raw-log window used by message rendering.
 - `loading-indicators.js` owns reusable DOM factories for shared loading visuals.

@@ -1314,7 +1314,8 @@ export function drawProcessStep({
   ...additional
 }) {
   // group and steps DOM elements
-  const stepId = `process-step-${id}`;
+  // Type-scoped: a subordinate response shares the GEN record's id and must not overwrite the GEN step
+  const stepId = `process-step-${log.type}-${id}`;
   let step = getChatHistoryElementById(stepId);
 
   const renderInfo = log[PROCESS_GROUP_RENDER_INFO];

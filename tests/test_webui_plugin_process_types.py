@@ -108,10 +108,10 @@ def test_plugin_declarations_match_live_and_replayed_dom(page, mode, replay, ena
           if (!replay) await msgs.setMessages([row(3, 'util')]);
           const group = historyEl.querySelector('.process-group');
           check(visible(group), `${type}: memory search hid previous process group`);
-          check(!!group.querySelector('#process-step-row-2') === isStep, `${type}: classification disagrees with renderer`);
-          check(!!group.querySelector('#process-step-row-3') === isStep, `${type}: utility crossed standalone boundary`);
+          check(!!group.querySelector(`#process-step-${type}-row-2`) === isStep, `${type}: classification disagrees with renderer`);
+          check(!!group.querySelector('#process-step-util-row-3') === isStep, `${type}: utility crossed standalone boundary`);
           prefs.showUtils = true;
-          check(visible(historyEl.querySelector('#process-step-row-3')), `${type}: utility toggle`);
+          check(visible(historyEl.querySelector('#process-step-util-row-3')), `${type}: utility toggle`);
           prefs.showUtils = false;
           await msgs.setMessages([row(4, 'response', {kvps: {finished: true}})]);
           check(historyEl.textContent.includes('response content'), `${type}: root response missing`);
@@ -138,7 +138,7 @@ def test_plugin_types_refresh_after_extension_cache_invalidation(page):
           await msgs.setMessages([row(0, 'util'), row(1, 'text_editor')]);
           const group = historyEl.querySelector('.process-group:not(.utility-only)');
           check(group && visible(group), 'disabled plugin fallback lost process grouping');
-          check(group.querySelector('#process-step-row-0'), 'utility lookahead missed plugin or fallback type');
+          check(group.querySelector('#process-step-util-row-0'), 'utility lookahead missed plugin or fallback type');
           check(!!group.querySelector('.TXT') === enabled, 'stale handler survived extension invalidation');
         }
       } finally {
@@ -171,7 +171,24 @@ def test_process_group_paging_preserves_hidden_utilities(page, step_type):
       await msgs.setMessages([row(128, 'util')]);
       const group = historyEl.querySelector('.process-group');
       check(visible(group) && group.querySelector('.process-group-response'), 'completion disappeared');
-      check(!group.querySelector('#process-step-row-128'), 'post-response utility reopened group');
+      check(!group.querySelector('#process-step-util-row-128'), 'post-response utility reopened group');
+    }""")
+
+
+def test_subordinate_response_with_shared_gen_id_preserves_gen_step(page):
+    page.evaluate("""async () => {
+      for (const replay of [false, true]) {
+        msgs.resetMessageRenderState();
+        const logs = [row(0, 'user'), row(1, 'agent', {content: 'thinking out loud'}),
+          row(1, 'response', {agentno: 1, heading: 'A1: Responding', content: 'subordinate answer'})];
+        if (replay) await msgs.setMessages(logs);
+        else { await msgs.setMessages(logs.slice(0, 2)); await msgs.setMessages([logs[2]]); }
+        const gen = historyEl.querySelector('#process-step-agent-row-1');
+        const res = historyEl.querySelector('#process-step-response-row-1');
+        check(gen && gen.textContent.includes('agent heading'), 'GEN step was wiped by the shared-id response');
+        check(res && res.textContent.includes('A1:'), 'subordinate response step missing');
+        check(gen !== res, 'shared id collapsed GEN and response into one step');
+      }
     }""")
 
 
@@ -280,8 +297,8 @@ def test_process_group_lookup_stops_at_standalone_tail(page, replay, boundary):
           const logs = [row(0, 'user'), row(1, 'agent'), row(2, boundary), row(3, nextType)];
           if (replay) await msgs.setMessages(logs);
           else for (const log of logs) await msgs.setMessages([log]);
-          const first = historyEl.querySelector('#process-step-row-1').closest('.process-group');
-          const next = historyEl.querySelector('#process-step-row-3, #message-row-3');
+          const first = historyEl.querySelector('#process-step-agent-row-1').closest('.process-group');
+          const next = historyEl.querySelector('#process-step-util-row-3, #process-step-agent-row-3, #process-step-warning-row-3, #process-step-rate_limit-row-3, #message-row-3');
           check(visible(first), `${boundary} -> ${nextType}: hid previous process group`);
           check(next && !first.contains(next), `${boundary} -> ${nextType}: crossed standalone boundary`);
           const boundaryElement = historyEl.querySelector('#message-row-2');
