@@ -19,7 +19,6 @@
             opacity: 1;
             transition: opacity 240ms ease;
         }
-        #startup-transition[data-theme="light"],
         body.light-mode #startup-transition { background: #fafafa; color: #000; }
         #startup-transition > svg {
             width: clamp(12rem, 34vw, 23rem);
@@ -42,6 +41,40 @@
         @media (prefers-reduced-motion: reduce) {
             #startup-transition { transition: none; }
         }
+        /* Icon guard inlined from vendor/google/google-icons.css so no stylesheet blocks first paint */
+        @font-face {
+            font-family: 'Material Symbols Outlined';
+            font-style: normal;
+            font-weight: 400;
+            font-display: block;
+            src: url(/vendor/google/google-icons.woff2) format('woff2'), url(/vendor/google/google-icons.ttf) format('truetype');
+        }
+        x-icon, .material-symbols-outlined, .material-icons-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            width: 1em !important;
+            min-width: 1em !important;
+            max-width: 1em !important;
+            height: 1em !important;
+            overflow: hidden !important;
+            flex: 0 0 1em !important;
+            vertical-align: middle;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+        }
+        html:not(.material-icons-ready) x-icon,
+        html:not(.material-icons-ready) .material-symbols-outlined,
+        html:not(.material-icons-ready) .material-icons-outlined { color: transparent !important; }
     </style>
 
     <script>
@@ -61,7 +94,6 @@
 
     <link rel="icon" type="image/svg+xml" href="public/favicon.svg">
     <link rel="preload" href="/vendor/google/google-icons.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="vendor/google/google-icons.css">
     <script type="module" src="/js/icons.js"></script>
     <script>
         (() => {
@@ -69,11 +101,25 @@
             let applicationReady = false
             let revealStarted = false
 
-            const revealApplication = (force = false) => {
+            const mainStylesheetReady = () => {
+                const link = document.querySelector('link[href="index.css"], link[href="/index.css"]')
+                return !link || Boolean(link.sheet)
+            }
+
+            const waitForStylesheets = () => new Promise((resolve) => {
+                if (mainStylesheetReady()) return resolve()
+                const timer = setTimeout(finish, 2000)
+                const poll = setInterval(() => { if (mainStylesheetReady()) finish() }, 50)
+                function finish() { clearInterval(poll); clearTimeout(timer); resolve() }
+            })
+
+            const revealApplication = async (force = false) => {
                 if (revealStarted || (!force && !applicationReady)) return
                 const overlay = document.getElementById("startup-transition")
                 if (!overlay) return
                 revealStarted = true
+                // Non-render-blocking stylesheets may still be pending; never fade to unstyled content
+                await waitForStylesheets()
                 requestAnimationFrame(() => requestAnimationFrame(() => {
                     const removeOverlay = () => overlay.remove()
                     overlay.classList.add("startup-transition-leaving")

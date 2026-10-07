@@ -13,6 +13,7 @@
 
 - Keep the WOFF2 and TTF fonts equivalent and keep their CSS references synchronized.
 - `<x-icon>` and legacy icon ligature elements must remain exactly one em wide and high, clip fallback text, and stay transparent until the Font Loading API confirms the Material Symbols face after the application document finishes parsing. A failed font may leave a blank square but must never expose a layout-breaking ligature name.
+- `index.html` inlines a copy of the icon guard (font-face plus em-square and transparency rules) so no stylesheet blocks first paint during startup; keep that inline copy byte-equivalent in effect with `google-icons.css` when updating either.
 - Keep `.material-symbols-outlined` and `.material-icons-outlined` rendering compatible for third-party plugins even though first-party markup uses `<x-icon>`.
 - Do not add unrelated remote font assets or tracking references.
 
