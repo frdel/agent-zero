@@ -33,3 +33,19 @@ def test_streaming_updates_keep_action_button_nodes_mounted() -> None:
     assert "syncActionButtons(stepActionBtns, actionButtons);" in messages
     assert "syncActionButtons(container, actionButtons);" in messages
     assert 'stepActionBtns.textContent = "";' not in messages
+
+
+def test_sync_action_buttons_never_reinserts_mounted_buttons() -> None:
+    actions = PROJECT_ROOT.joinpath(
+        "webui",
+        "components",
+        "messages",
+        "action-buttons",
+        "simple-action-buttons.js",
+    ).read_text(encoding="utf-8")
+
+    assert "if (current === button && current.isConnected) return;" in actions
+    assert (
+        "next.forEach((button) => container.insertBefore(button, anchor || null));"
+        not in actions
+    )
