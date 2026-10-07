@@ -36,7 +36,7 @@
                   <div class="queue-attachments">
                     <template x-for="att in item.attachments" :key="att">
                       <img 
-                        :src="$store.messageQueue.getAttachmentUrl(att)" 
+                        :src="$store.messageQueue.getAttachmentUrl(item, att)" 
                         :alt="att"
                         class="queue-attachment-thumb"
                         :title="att"
