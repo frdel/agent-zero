@@ -61,6 +61,7 @@
   --color-input-focus: var(--color-input-focus-dark);
   --color-background-hover: color-mix(in srgb, var(--color-border) 50%, transparent);
   --color-chat-background: var(--color-chat-background-dark);
+  --color-surface-translucent: color-mix(in srgb, var(--color-chat-background) 85%, transparent);
   --color-error-text:var(--color-error-text-dark);
   --color-warning-text:var(--color-warning-text-dark);
   --color-table-row: var(--color-table-row-dark);
@@ -111,6 +112,7 @@
   --color-input-focus: var(--color-input-focus-light);
   --color-background-hover: color-mix(in srgb, var(--color-border) 50%, transparent);
   --color-chat-background: var(--color-chat-background-light);
+  --color-surface-translucent: color-mix(in srgb, var(--color-chat-background) 85%, transparent);
   --color-error-text:var(--color-error-text-light);
   --color-warning-text:var(--color-warning-text-light);
   --color-table-row: var(--color-table-row-light);
