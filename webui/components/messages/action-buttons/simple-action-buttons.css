@@ -113,6 +113,8 @@
   display: inline-flex;
   opacity: 0;
   pointer-events: none;
+  /* Match the row fade so Show less never vanishes ahead of sibling buttons */
+  transition: opacity 0.2s ease-in-out;
 }
 
 .device-pointer

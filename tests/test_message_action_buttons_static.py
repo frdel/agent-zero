@@ -73,3 +73,21 @@ def test_sync_action_buttons_never_reinserts_mounted_buttons() -> None:
         "next.forEach((button) => container.insertBefore(button, anchor || null));"
         not in actions
     )
+
+
+def test_show_less_fade_matches_row_fade_timing() -> None:
+    css = PROJECT_ROOT.joinpath(
+        "webui",
+        "components",
+        "messages",
+        "action-buttons",
+        "simple-action-buttons.css",
+    ).read_text(encoding="utf-8")
+
+    reserved = css[
+        css.index(
+            ".device-pointer\n  .message.message-collapsible.has-overflow.expanded\n  > .step-action-buttons\n  .show-less-btn {"
+        ) :
+    ]
+    block = reserved[: reserved.index("}")]
+    assert "transition: opacity 0.2s ease-in-out;" in block
