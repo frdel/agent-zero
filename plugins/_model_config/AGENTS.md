@@ -63,6 +63,9 @@
 - Ignore refreshes for unselected chats before advancing the request sequence.
   Pending preset/profile saves keep their original chat target; preset save or
   clear results may update the selector only while that chat is selected.
+- Only the first switcher load raises `switcherLoading`; background refreshes
+  (chat switch, profile switch, override revision) keep the last-known label
+  mounted and replace selector state in place under the existing sequence guards.
 - Preset editor reset actions must remove the user override through the preset API and refresh the open draft from bundled defaults.
 - Preset rename, delete, and reset actions must repair scoped config and durable/live chat references; removed definitions fall back to `Default`.
 - Save/reset embedding comparisons use the matching before/after preset snapshots, including Default inheritance. Do not reload the collection per preset or persist a cross-request cache for this comparison.

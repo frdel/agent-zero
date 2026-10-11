@@ -216,7 +216,7 @@ export const switcherMethods = {
   async refreshSwitcher(contextId) {
     if (contextId !== (window.Alpine?.store("chats")?.selected || "")) return;
     const requestSeq = ++this.switcherLoadSeq;
-    this.switcherLoading = true;
+    if (!this.switcherPresets.length) this.switcherLoading = true;
     try {
       const state = await this.loadSwitcherState(contextId);
       if (requestSeq !== this.switcherLoadSeq || contextId !== (window.Alpine?.store("chats")?.selected || "")) return;
