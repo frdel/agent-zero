@@ -14,10 +14,6 @@ class InitialMessage(Extension):
         if not self.agent:
             return
 
-        # Only add initial message for main agent (A0), not subordinate agents
-        if self.agent.number != 0:
-            return
-
         # If the context already contains log messages, do not add another initial message
         if self.agent.context.log.logs:
             return
