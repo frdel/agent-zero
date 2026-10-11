@@ -1,4 +1,5 @@
 import base64
+from contextlib import contextmanager
 from contextvars import ContextVar, Token
 from copy import deepcopy
 import hashlib
@@ -181,8 +182,8 @@ UI_CONTROL_VISIBILITY_DEFAULTS = {
 
 SETTINGS_FILE = files.get_abs_path("usr/settings.json")
 _settings: Settings | None = None
-_apply_settings_cache: ContextVar[dict[str, str] | None] = ContextVar(
-    "apply_settings_cache", default=None
+_settings_version_cache: ContextVar[dict[str, str] | None] = ContextVar(
+    "settings_version_cache", default=None
 )
 _runtime_settings_snapshot: Settings | None = None
 _prompt_settings_snapshot: ContextVar[Settings | None] = ContextVar(
@@ -421,20 +422,26 @@ def set_runtime_settings_snapshot(settings: Settings) -> None:
     _runtime_settings_snapshot = settings.copy()
 
 
+@contextmanager
+def version_cache_scope(version: str | None = None):
+    cached = {"version": version or _get_version()}
+    token = _settings_version_cache.set(cached)
+    try:
+        yield
+    finally:
+        # Expire the cache in inherited task contexts too.
+        cached.clear()
+        _settings_version_cache.reset(token)
+
+
 def set_settings(settings: Settings, apply: bool = True, browser_timezone: str | None = None):
     global _settings
     previous = _settings
     _settings = normalize_settings(settings)
     _write_settings_file(_settings)
     if apply:
-        cached = {"version": _settings["version"]}
-        token = _apply_settings_cache.set(cached)
-        try:
+        with version_cache_scope(_settings["version"]):
             _apply_settings(previous, browser_timezone)
-        finally:
-            # Expire the cache in inherited task contexts too.
-            cached.clear()
-            _apply_settings_cache.reset(token)
     return reload_settings()
 
 
@@ -853,4 +860,4 @@ def create_auth_token() -> str:
 
 
 def _get_version():
-    return (_apply_settings_cache.get() or {}).get("version") or git.get_version()
+    return (_settings_version_cache.get() or {}).get("version") or git.get_version()

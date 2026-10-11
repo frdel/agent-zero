@@ -80,6 +80,7 @@
 - Update this file whenever public functions, classes, persistence behavior, path/security assumptions, side effects, or cross-module contracts change.
 - `clear_responses_provider_state(agent)` removes the active provider continuation IDs after local history rewrites while preserving stored response ID lists for later cleanup.
 - `Message.from_dict()` normalizes legacy AI Responses metadata through `LLMResult.metadata()` so loaded chats shed transient payloads while unrelated metadata and non-AI tool-result inputs remain intact.
+- `Message.from_dict()` passes saved token counts to the constructor to avoid recounting restored messages. It still restores the saved value after the summary, preserving zero/missing-count lazy recalculation against the summarized content.
 - Topic token totals and large-message compression include retained extras snapshots when the selected model uses Responses. Chat Completions keeps text-only accounting. Summarized messages/topics no longer contribute snapshot overhead; unchanged records conservatively count it even when replay eligibility later changes.
 - `output_langchain()` removes leading assistant messages after grouping so provider histories always begin with a user turn; the WebUI greeting remains persisted and displayed but is not sent as an orphaned assistant message.
 - `_json_dumps()` emits compact JSON (`","`, `":"` separators) for serialized history and generated non-string user-turn content.

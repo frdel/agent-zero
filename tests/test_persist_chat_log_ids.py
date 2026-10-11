@@ -58,6 +58,48 @@ def test_load_tmp_chats_skips_directories_without_chat_json(monkeypatch, capsys)
     assert "Error loading chat" not in capsys.readouterr().out
 
 
+def test_load_tmp_chats_reuses_only_version_and_isolates_bad_files(
+    monkeypatch, tmp_path, capsys
+) -> None:
+    from helpers import persist_chat, settings
+
+    configured = settings.get_default_settings()
+    version_reads = []
+    sensitive_reads = []
+    versions = []
+
+    def get_version():
+        version_reads.append(len(version_reads))
+        return str(len(version_reads))
+
+    def deserialize(data):
+        versions.append(settings.get_settings()["version"])
+        return SimpleNamespace(id=data["id"], data={})
+
+    monkeypatch.setattr(settings, "_settings", configured)
+    monkeypatch.setattr(settings.git, "get_version", get_version)
+    monkeypatch.setattr(settings, "_load_sensitive_settings", sensitive_reads.append)
+    monkeypatch.setattr(persist_chat, "CHATS_FOLDER", str(tmp_path))
+    monkeypatch.setattr(persist_chat, "_deserialize_context", deserialize)
+    monkeypatch.setattr(persist_chat.files, "list_files", lambda *_: ["first", "bad", "last"])
+    monkeypatch.setattr(persist_chat, "_convert_v080_chats", lambda: None)
+    for name in ("first", "bad", "last"):
+        folder = tmp_path / name
+        folder.mkdir()
+        (folder / "chat.json").write_text("{broken" if name == "bad" else json.dumps({"id": name}))
+
+    assert persist_chat.load_tmp_chats() == ["first", "last"]
+    assert versions == ["1", "1"]
+    assert len(sensitive_reads) == 2
+    assert "Error loading chat" in capsys.readouterr().out
+    assert settings._get_version() == "2"
+
+    assert persist_chat.load_tmp_chats() == ["first", "last"]
+    assert versions == ["1", "1", "3", "3"]
+    assert len(sensitive_reads) == 4
+    assert settings._get_version() == "4"
+
+
 def test_save_tmp_chat_preserves_existing_file_until_atomic_replace(
     monkeypatch, tmp_path
 ) -> None:

@@ -34,6 +34,7 @@
 - `get_settings() -> Settings`
 - `reload_settings() -> Settings`
 - `set_runtime_settings_snapshot(settings: Settings) -> None`
+- `version_cache_scope(version: str | None = None)`: Reuse only the Git version within one synchronous operation, expiring inherited copies on exit.
 - `set_settings(settings: Settings, apply: bool=..., browser_timezone: str | None=...)`
 - `set_settings_delta(delta: dict, apply: bool=...)`
 - `merge_settings(original: Settings, delta: dict) -> Settings`
@@ -70,11 +71,12 @@
 
 - Important called helpers/classes observed in the source: `TypeVar`, `files.get_abs_path`, `dotenv.get_dotenv_value`, `opts.insert`, `str.strip`, `_is_valid_timezone`, `str.strip.lower`, `_normalize_timezone_setting`, `SettingsOutput`, `get_default_settings`, `_ensure_option_present`, `_resolve_runtime_timezone`, `get_default_secrets_manager`, `get_settings`, `get_settings_for_prompt`, `normalize_settings`, `_load_sensitive_settings`, `deepcopy`, `settings.copy`, `_write_settings_file`, `reload_settings`, `set_settings`, `initialize_agent`.
 - Applying settings refreshes active context configs while preserving each subordinate agent's own profile.
-- Agent refreshes reuse the version already resolved by `set_settings()` in a
-  task-local scope, restored even on failure. Settings normalization, credential
-  reads, and initialization hooks still run for each agent; the final reload and
-  subsequent saves resolve the version afresh. The cache is cleared on exit so
-  deferred tasks cannot retain an expired version through an inherited context.
+- `version_cache_scope()` eagerly resolves or accepts a Git version in a task-local
+  scope. Settings application and persisted-chat loading reuse it while retaining
+  per-agent normalization, credential reads, and initialization hooks. Nested scopes
+  restore their parent even on failure. Each scope clears its cache on exit so
+  inherited task contexts cannot retain or repopulate an expired version; reads
+  outside an active scope resolve the version afresh.
 - Applying settings starts a deferred `MCPConfig.update(...)` with the current `mcp_servers` string when global MCP server settings change.
 - `get_settings()` retains normalize-on-read behavior. Prompt-building callers
   explicitly use `get_settings_for_prompt()` to reuse one task-local snapshot

@@ -6,6 +6,35 @@ import pytest
 from helpers import extension, settings
 
 
+def test_version_cache_scope_nests_and_expires_in_inherited_contexts(monkeypatch):
+    reads = []
+
+    def get_version():
+        reads.append("fresh")
+        return "fresh"
+
+    monkeypatch.setattr(settings.git, "get_version", get_version)
+
+    with settings.version_cache_scope("outer"):
+        outer_context = copy_context()
+        with pytest.raises(RuntimeError, match="scope failed"):
+            with settings.version_cache_scope():
+                assert settings._get_version() == "outer"
+                with settings.version_cache_scope("inner"):
+                    assert settings._get_version() == "inner"
+                    inner_context = copy_context()
+                assert settings._get_version() == "outer"
+                raise RuntimeError("scope failed")
+        assert settings._get_version() == "outer"
+        assert Context().run(settings._get_version) == "fresh"
+
+    assert settings._get_version() == "fresh"
+    assert outer_context.run(settings._get_version) == "fresh"
+    assert inner_context.run(settings._get_version) == "fresh"
+    assert inner_context.run(settings._get_version) == "fresh"
+    assert reads == ["fresh"] * 5
+
+
 @pytest.mark.parametrize("fail_apply", [False, True])
 def test_settings_apply_reuses_only_version_and_restores_scope(monkeypatch, fail_apply):
     configured = settings.get_default_settings()

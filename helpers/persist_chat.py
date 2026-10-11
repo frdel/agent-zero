@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any
 
 from agent import Agent, AgentConfig, AgentContext, AgentContextType
-from helpers import files, history
+from helpers import files, history, settings
 from helpers.litellm_transport import delete_stored_response_ids
 from helpers.localization import Localization
 from initialize import initialize_agent
@@ -80,15 +80,16 @@ def load_tmp_chats():
             json_files.append(chat_file)
 
     ctxids = []
-    for file in json_files:
-        try:
-            js = files.read_file(file)
-            data = json.loads(js)
-            ctx = _deserialize_context(data)
-            mark_chat_saved(ctx)
-            ctxids.append(ctx.id)
-        except Exception as e:
-            print(f"Error loading chat {file}: {e}")
+    with settings.version_cache_scope():
+        for file in json_files:
+            try:
+                js = files.read_file(file)
+                data = json.loads(js)
+                ctx = _deserialize_context(data)
+                mark_chat_saved(ctx)
+                ctxids.append(ctx.id)
+            except Exception as e:
+                print(f"Error loading chat {file}: {e}")
     return ctxids
 
 

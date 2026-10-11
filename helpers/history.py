@@ -161,6 +161,7 @@ class Message(Record):
         msg = Message(
             ai=data["ai"],
             content=content,
+            tokens=data.get("tokens", 0),
             id=data.get("id", ""),
             metadata=metadata,
             sequence=int(data.get("sequence", 0) or 0),

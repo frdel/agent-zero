@@ -73,9 +73,18 @@ def create_flush_callback():
 
 @extension.extensible
 def init_a0():
-    initialize.initialize_preload()
+    init_preload = initialize.initialize_preload()
     init_chats = initialize.initialize_chats()
     init_chats.result_sync()
+
+    # Give the first chat a warm model without waiting indefinitely on downloads.
+    if init_preload:
+        try:
+            init_preload.result_sync(timeout=10)
+        except TimeoutError:
+            pass
+        except Exception as e:
+            PrintStyle().error(f"Error waiting for preload: {e}")
 
     initialize.initialize_mcp()
     initialize.initialize_job_loop()
