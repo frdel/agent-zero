@@ -27,7 +27,7 @@ def test_initial_greeting_keeps_user_first_order_and_linked_log_after_reload(gre
         number=0,
         context=SimpleNamespace(log=log),
         read_prompt=lambda name: "Hello!" if name == "fw.initial_user_message.md" else greeting,
-        hist_add_user_message=lambda message: messages.append(history.Message(False, message.message)),
+        hist_add_user_message=lambda message: messages.append(history.Message(False, message.message)) or messages[-1],
         hist_add_ai_response=add_ai,
     )
     extension = InitialMessage(agent)

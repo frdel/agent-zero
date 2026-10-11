@@ -24,7 +24,8 @@ class InitialMessage(Extension):
 
         # Add initial user turn ("Hello!") so AI greeting is not the first message
         initial_user_message = self.agent.read_prompt("fw.initial_user_message.md").strip()
-        self.agent.hist_add_user_message(UserMessage(message=initial_user_message))
+        seed_message = self.agent.hist_add_user_message(UserMessage(message=initial_user_message))
+        seed_message.metadata["initial_seed"] = True
 
         # Construct the initial message from prompt template
         initial_message = self.agent.read_prompt("fw.initial_message.md")

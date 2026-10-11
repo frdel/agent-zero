@@ -7,7 +7,7 @@ import pytest
 from agent import AgentContextType
 from helpers import yaml
 from plugins._chat_naming.commands import rename_command
-from plugins._chat_naming.extensions.python.monologue_end import _60_rename_chat as rename_chat
+from plugins._chat_naming.extensions.python.monologue_start import _60_rename_chat as rename_chat
 from plugins._chat_naming.helpers import naming
 
 
@@ -15,10 +15,11 @@ pytestmark = pytest.mark.asyncio
 
 
 class _Message:
-    def __init__(self, content, *, ai=False, sequence=0):
+    def __init__(self, content, *, ai=False, sequence=0, metadata=None):
         self.content = content
         self.ai = ai
         self.sequence = sequence
+        self.metadata = metadata or {}
 
 
 class _History:
@@ -60,15 +61,34 @@ class _Agent:
 async def test_user_message_selection_excludes_assistant_work_and_tool_results():
     agent = _Agent(
         [
-            _Message({"user_message": "Plan a launch"}, sequence=1),
-            _Message({"tool_name": "search", "tool_result": "internal work"}, sequence=2),
-            _Message("assistant response", ai=True, sequence=3),
-            _Message({"user_intervention": "Okay, do it"}, sequence=4),
+            _Message({"user_message": "Hello!"}, sequence=1, metadata={"initial_seed": True}),
+            _Message({"user_message": "Plan a launch"}, sequence=2),
+            _Message({"tool_name": "search", "tool_result": "internal work"}, sequence=3),
+            _Message("assistant response", ai=True, sequence=4),
+            _Message({"user_intervention": "Okay, do it"}, sequence=5),
         ]
     )
 
     assert naming.get_user_messages(agent) == ["Plan a launch", "Okay, do it"]
-    assert naming.latest_user_sequence(agent) == 4
+    assert naming.latest_user_sequence(agent) == 5
+
+
+async def test_initial_seed_turn_never_names_a_chat(monkeypatch):
+    agent = _Agent(
+        [
+            _Message({"user_message": "Hello!"}, sequence=1, metadata={"initial_seed": True}),
+            _Message("assistant greeting", ai=True, sequence=2),
+        ]
+    )
+    monkeypatch.setattr(rename_chat.naming, "get_config", lambda _agent: {
+        "automatic_naming": True,
+        "automatic_naming_mode": "always",
+    })
+    scheduled = []
+    monkeypatch.setattr(rename_chat.asyncio, "create_task", scheduled.append)
+
+    await rename_chat.RenameChat(agent=agent).execute()
+    assert scheduled == []
 
 
 @pytest.mark.parametrize("mode", ["once", "always"])
@@ -89,8 +109,10 @@ async def test_once_mode_uses_first_message_and_does_not_override_a_name(monkeyp
     scheduled = []
     agent = _Agent(
         [
-            _Message({"user_message": "First request"}, sequence=1),
-            _Message({"user_message": "Second request"}, sequence=2),
+            _Message({"user_message": "Hello!"}, sequence=1, metadata={"initial_seed": True}),
+            _Message("assistant greeting", ai=True, sequence=2),
+            _Message({"user_message": "First request"}, sequence=3),
+            _Message({"user_message": "Second request"}, sequence=4),
         ]
     )
     monkeypatch.setattr(

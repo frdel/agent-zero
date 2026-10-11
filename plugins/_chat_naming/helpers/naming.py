@@ -15,6 +15,7 @@ MANUAL_NAME_KEY = "chat_naming_manual"
 RECENT_USER_MESSAGES = 4
 GENERATED_NAME_LIMIT = 40
 UTILITY_CONTEXT_INPUT_RATIO = 0.7
+INITIAL_SEED_METADATA = "initial_seed"
 
 
 def get_config(agent: Agent) -> dict[str, Any]:
@@ -32,6 +33,8 @@ def get_user_messages(agent: Agent, *, limit: int | None = RECENT_USER_MESSAGES)
     messages: list[str] = []
     for message in agent.history.all_messages():
         if message.ai:
+            continue
+        if message.metadata.get(INITIAL_SEED_METADATA):
             continue
         text = _user_message_text(message.content)
         if text:
