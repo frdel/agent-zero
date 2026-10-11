@@ -35,6 +35,30 @@ def test_streaming_updates_keep_action_button_nodes_mounted() -> None:
     assert 'stepActionBtns.textContent = "";' not in messages
 
 
+def test_show_less_hover_reveal_reserves_layout_space() -> None:
+    css = PROJECT_ROOT.joinpath(
+        "webui",
+        "components",
+        "messages",
+        "action-buttons",
+        "simple-action-buttons.css",
+    ).read_text(encoding="utf-8")
+
+    reserved = css[
+        css.index(
+            ".device-pointer\n  .message.message-collapsible.has-overflow.expanded\n  > .step-action-buttons\n  .show-less-btn {"
+        ) :
+    ]
+    block = reserved[: reserved.index("}")]
+    assert "display: inline-flex;" in block
+    assert "opacity: 0;" in block
+
+    hover = reserved[reserved.index(".has-overflow.expanded:hover") :]
+    hover_block = hover[: hover.index("}")]
+    assert "display:" not in hover_block
+    assert "opacity: 1;" in hover_block
+
+
 def test_sync_action_buttons_never_reinserts_mounted_buttons() -> None:
     actions = PROJECT_ROOT.joinpath(
         "webui",

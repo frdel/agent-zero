@@ -105,11 +105,21 @@
   pointer-events: auto;
 }
 
+/* Reserve Show less space on pointer devices so hover reveal never shifts layout */
+.device-pointer
+  .message.message-collapsible.has-overflow.expanded
+  > .step-action-buttons
+  .show-less-btn {
+  display: inline-flex;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .device-pointer
   .message.message-collapsible.has-overflow.expanded:hover
   > .step-action-buttons
   .show-less-btn {
-  display: inline-flex;
+  opacity: 1;
   pointer-events: auto;
 }
 
