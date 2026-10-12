@@ -745,8 +745,9 @@ def get_existing_memory_subdirs() -> list[str]:
 def get_knowledge_subdirs_by_memory_subdir(
     memory_subdir: str, default: list[str]
 ) -> list[str]:
+    subdirs = list(default)
     if memory_subdir.startswith("projects/"):
         from helpers.projects import get_project_meta
 
-        default.append(get_project_meta(memory_subdir[9:], "knowledge"))
-    return default
+        subdirs.append(get_project_meta(memory_subdir[9:], "knowledge"))
+    return subdirs
