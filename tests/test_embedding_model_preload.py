@@ -39,13 +39,26 @@ def _clear_local_embedding_models():
         models._LOCAL_EMBEDDING_MODELS.clear()
 
 
+@pytest.fixture
+def startup_runtime(monkeypatch):
+    import run_ui
+
+    monkeypatch.setattr(run_ui, "configure_process_environment", lambda: None)
+    monkeypatch.setattr(run_ui, "run_migration_checks", lambda: None)
+    monkeypatch.setattr(run_ui, "prepare_web_runtime", lambda: (None, "localhost", 0))
+    monkeypatch.setattr(run_ui, "start_web_server", lambda *_args: None)
+    return run_ui
+
+
 @pytest.mark.parametrize("skip_init", [False, True])
-def test_runtime_preload_overlaps_chat_restoration_within_extension_hooks(monkeypatch, skip_init):
+def test_runtime_preload_overlaps_chat_restoration_within_extension_hooks(monkeypatch, skip_init, startup_runtime):
     import run_ui
 
     calls = []
 
     def extension_hook(point, agent, data):
+        if not point.startswith("_functions/run_ui/init_a0/"):
+            return
         calls.append(point.rsplit("/", 1)[-1])
         if skip_init and point.endswith("/start"):
             data["result"] = None
@@ -68,15 +81,15 @@ def test_runtime_preload_overlaps_chat_restoration_within_extension_hooks(monkey
     monkeypatch.setattr(run_ui.initialize, "initialize_mcp", lambda: calls.append("mcp"))
     monkeypatch.setattr(run_ui.initialize, "initialize_job_loop", lambda: calls.append("jobs"))
 
-    run_ui.init_a0()
+    run_ui.run()
 
     assert calls == (["start", "end"] if skip_init else [
-        "start", "preload", "chats", "preload_ready", "mcp", "jobs", "end",
+        "start", "preload", "chats", "end", "preload_ready", "mcp", "jobs",
     ])
 
 
 @pytest.mark.parametrize("error", [None, TimeoutError(), RuntimeError("preload failed")])
-def test_runtime_preload_wait_remains_best_effort(monkeypatch, error):
+def test_runtime_preload_wait_remains_best_effort(monkeypatch, error, startup_runtime):
     import run_ui
 
     calls = []
@@ -97,16 +110,16 @@ def test_runtime_preload_wait_remains_best_effort(monkeypatch, error):
     )
     monkeypatch.setattr(run_ui.initialize, "initialize_mcp", lambda: calls.append("mcp"))
     monkeypatch.setattr(run_ui.initialize, "initialize_job_loop", lambda: calls.append("jobs"))
-    monkeypatch.setattr(run_ui, "PrintStyle", lambda: SimpleNamespace(error=errors.append))
+    monkeypatch.setattr(run_ui, "PrintStyle", lambda: SimpleNamespace(print=lambda _: None, error=errors.append))
 
-    run_ui.init_a0()
+    run_ui.run()
 
     assert calls == ["chats", "mcp", "jobs"]
     assert errors == (["Error waiting for preload: preload failed"] if isinstance(error, RuntimeError) else [])
 
 
 @pytest.mark.parametrize("blocked_stage", ["construction", "encoding"])
-def test_startup_continues_after_ten_seconds_with_model_still_loading(monkeypatch, blocked_stage, record_property):
+def test_startup_continues_after_ten_seconds_with_model_still_loading(monkeypatch, blocked_stage, record_property, startup_runtime):
     import preload
     import run_ui
     from helpers import persist_chat
@@ -152,13 +165,13 @@ def test_startup_continues_after_ten_seconds_with_model_still_loading(monkeypatc
     monkeypatch.setattr(run_ui.initialize, "initialize_mcp", lambda: later_startup.append("mcp"))
     monkeypatch.setattr(run_ui.initialize, "initialize_job_loop", lambda: later_startup.append("jobs"))
     monkeypatch.setattr(preload, "PrintStyle", lambda: SimpleNamespace(print=lambda _: None, error=errors.append))
-    monkeypatch.setattr(run_ui, "PrintStyle", lambda: SimpleNamespace(error=errors.append))
+    monkeypatch.setattr(run_ui, "PrintStyle", lambda: SimpleNamespace(print=lambda _: None, error=errors.append))
     _clear_local_embedding_models()
 
     # Release blocked work even if a regression removes the startup timeout.
     with ThreadPoolExecutor(max_workers=1) as pool:
         started = time.monotonic()
-        startup = pool.submit(run_ui.init_a0)
+        startup = pool.submit(run_ui.run)
         try:
             assert blocked.wait(3)
             assert chats_loaded.wait(3)
@@ -186,7 +199,7 @@ def test_startup_continues_after_ten_seconds_with_model_still_loading(monkeypatc
 
 
 @pytest.mark.parametrize("scenario", ["cached", "missing", "broken", "remote", "busy_restoration"])
-def test_real_preload_startup_handles_ready_or_unavailable_models(monkeypatch, scenario, record_property):
+def test_real_preload_startup_handles_ready_or_unavailable_models(monkeypatch, scenario, record_property, startup_runtime):
     import preload
     import run_ui
     from helpers import persist_chat
@@ -234,14 +247,14 @@ def test_real_preload_startup_handles_ready_or_unavailable_models(monkeypatch, s
     monkeypatch.setattr(run_ui.initialize, "initialize_mcp", lambda: calls.append("mcp"))
     monkeypatch.setattr(run_ui.initialize, "initialize_job_loop", lambda: calls.append("jobs"))
     monkeypatch.setattr(preload, "PrintStyle", lambda: SimpleNamespace(print=lambda _: None, error=errors.append))
-    monkeypatch.setattr(run_ui, "PrintStyle", lambda: SimpleNamespace(error=errors.append))
+    monkeypatch.setattr(run_ui, "PrintStyle", lambda: SimpleNamespace(print=lambda _: None, error=errors.append))
     _clear_local_embedding_models()
     if scenario == "cached":
         models.get_embedding_model(config.provider, config.name)
 
     with ThreadPoolExecutor(max_workers=1) as pool:
         started = time.monotonic()
-        startup = pool.submit(run_ui.init_a0)
+        startup = pool.submit(run_ui.run)
         try:
             assert chats_started.wait(2)
             if scenario == "busy_restoration":
@@ -484,3 +497,68 @@ async def test_preload_skips_remote_models_and_contains_local_failures(monkeypat
     else:
         assert calls == []
         assert errors == []
+
+
+def test_watchdog_setup_overlaps_real_warmup_before_mcp_and_http(monkeypatch, startup_runtime):
+    import preload
+    import run_ui
+    from helpers import persist_chat
+    from helpers.defer import EventLoopThread
+    from plugins._model_config.helpers import model_config
+
+    model_started = threading.Event()
+    release_model = threading.Event()
+    preload_done = threading.Event()
+    calls = []
+    config = models.ModelConfig(
+        models.ModelType.EMBEDDING, "huggingface", "sentence-transformers/overlap-test"
+    )
+
+    class Model:
+        def __init__(self, *_args, **_kwargs):
+            model_started.set()
+            assert release_model.wait(5)
+
+        def encode(self, inputs, **_kwargs):
+            calls.append("model_warmed")
+            return [[1.0] for _ in inputs]
+
+    def extension_hook(point, agent, data):
+        if point.endswith("/initialize_preload/end"):
+            data["result"].add_done_callback(lambda _: preload_done.set())
+        if point.endswith("/init_a0/end"):
+            assert model_started.wait(2)
+            assert not preload_done.is_set()
+            calls.append("watchdogs_start")
+            release_model.set()
+            assert preload_done.wait(2)
+            calls.append("watchdogs_end")
+
+    monkeypatch.setitem(sys.modules, "sentence_transformers", SimpleNamespace(SentenceTransformer=Model))
+    monkeypatch.setattr(model_config, "get_embedding_model_config_object", lambda: config)
+    monkeypatch.setattr(models, "get_provider_config", lambda *_args: None)
+    monkeypatch.setattr(models, "get_api_key_raw", lambda *_args: "None")
+    monkeypatch.setattr(run_ui.extension, "call_extensions_sync", extension_hook)
+    monkeypatch.setattr(persist_chat, "load_tmp_chats", lambda: calls.append("chats"))
+    monkeypatch.setattr(run_ui.initialize, "initialize_mcp", lambda: calls.append("mcp"))
+    monkeypatch.setattr(run_ui.initialize, "initialize_job_loop", lambda: calls.append("jobs"))
+    monkeypatch.setattr(run_ui, "start_web_server", lambda *_args: calls.append("http"))
+    _clear_local_embedding_models()
+    try:
+        run_ui.run()
+        assert calls == ["chats", "watchdogs_start", "model_warmed", "watchdogs_end", "mcp", "jobs", "http"]
+    finally:
+        release_model.set()
+        assert preload_done.wait(2)
+        EventLoopThread().terminate()
+        _clear_local_embedding_models()
+
+
+def test_runtime_accepts_extension_skip_result(monkeypatch, startup_runtime):
+    import run_ui
+
+    calls = []
+    monkeypatch.setattr(run_ui, "init_a0", lambda: True)
+    monkeypatch.setattr(run_ui, "start_web_server", lambda *_args: calls.append("http"))
+    run_ui.run()
+    assert calls == ["http"]

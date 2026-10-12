@@ -16,7 +16,9 @@ def run():
     server_runtime, host, port = prepare_web_runtime()
 
     PrintStyle().print("Initializing Agent Zero components...")
-    init_a0()
+    finish_init = init_a0()
+    if callable(finish_init):
+        finish_init()
 
     PrintStyle().print("Starting UI/API server...")
     start_web_server(server_runtime, host, port)
@@ -77,17 +79,21 @@ def init_a0():
     init_chats = initialize.initialize_chats()
     init_chats.result_sync()
 
-    # Give the first chat a warm model without waiting indefinitely on downloads.
-    if init_preload:
-        try:
-            init_preload.result_sync(timeout=10)
-        except TimeoutError:
-            pass
-        except Exception as e:
-            PrintStyle().error(f"Error waiting for preload: {e}")
+    def finish_init():
+        # Give the first chat a warm model without waiting indefinitely on downloads.
+        if init_preload:
+            try:
+                init_preload.result_sync(timeout=10)
+            except TimeoutError:
+                pass
+            except Exception as e:
+                PrintStyle().error(f"Error waiting for preload: {e}")
 
-    initialize.initialize_mcp()
-    initialize.initialize_job_loop()
+        initialize.initialize_mcp()
+        initialize.initialize_job_loop()
+
+    # Let end hooks run during warmup before waiting and starting MCP/jobs.
+    return finish_init
 
 
 if __name__ == "__main__":
