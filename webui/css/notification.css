@@ -44,8 +44,8 @@
 }
 
 .notification-toggle.has-unread {
-    border-color: #2196F3;
-    background: rgba(33, 150, 243, 0.1);
+    border-color: var(--color-highlight);
+    background: color-mix(in srgb, var(--color-highlight) 10%, transparent);
     animation: pulse 2s infinite;
 }
 
@@ -90,11 +90,6 @@
 .light-mode .notification-toggle {
     background: var(--color-surface-translucent);
     border-color: color-mix(in srgb, var(--color-border) 60%, transparent);
-}
-
-.light-mode .notification-toggle.has-unread {
-    border-color: #2196F3;
-    background: rgba(33, 150, 243, 0.1);
 }
 
 .light-mode .notification-toggle.disabled:hover {

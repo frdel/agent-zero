@@ -62,7 +62,7 @@ def test_welcome_screen_embeds_shared_new_chat_composer() -> None:
     assert 'const hashIndex = path.indexOf("#");' in welcome_store
     assert 'history.replaceState(null, "", `#${hash}`);' in welcome_store
     assert ".welcome-banner-html .btn,\n        .welcome-banner-html button" in welcome
-    assert "background-color: #4248f1;" in welcome
+    assert "background-color: var(--color-highlight);" in welcome
     assert 'aria-label="Dismiss Connect Channels"' in discovery_cards
     assert "dismissFeatureCards()" in discovery_cards
     assert "dismissFeatureCards() {" in discovery_store
@@ -164,7 +164,7 @@ def test_welcome_composer_buttons_keep_target_geometry_without_glow() -> None:
     mic_css = _read("plugins/_whisper_stt/webui/whisper-stt.css")
 
     assert "#send-button {\n      order: 2;\n      border-radius: 12px;" in chat_bar
-    assert "background-color: #4248f1;" in chat_bar
+    assert "background-color: var(--color-highlight);" in chat_bar
     assert "background-color: #e67e22;" in chat_bar
     assert "linear-gradient" not in chat_bar
     assert "#microphone-button {\n  order: 1;" in mic_css

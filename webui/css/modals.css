@@ -297,7 +297,7 @@ the old and the new system. */
 }
 .btn.primary {
   border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border));
-  background: color-mix(in srgb, #2196f3 78%, var(--color-panel));
+  background: color-mix(in srgb, var(--color-highlight) 78%, var(--color-panel));
   color: white;
   width: fit-content;
   align-items: center;
@@ -307,8 +307,8 @@ the old and the new system. */
   cursor: not-allowed;
 }
 .btn-ok {
-  border-color: color-mix(in srgb, #4248f1 56%, var(--color-border));
-  background: color-mix(in srgb, #4248f1 86%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-highlight) 56%, var(--color-border));
+  background: color-mix(in srgb, var(--color-highlight) 86%, var(--color-panel));
   color: white;
   display: inline-flex;
   align-items: center;
@@ -319,11 +319,11 @@ the old and the new system. */
   max-width: 20px;
 }
 .btn-ok:hover {
-  border-color: color-mix(in srgb, #656bff 70%, var(--color-border));
-  background: #353bc5;
+  border-color: color-mix(in srgb, var(--color-highlight) 70%, var(--color-border));
+  background: color-mix(in srgb, var(--color-highlight) 80%, black);
 }
 .btn-ok:active {
-  background: #2b309c;
+  background: color-mix(in srgb, var(--color-highlight) 65%, black);
 }
 .btn-cancel {
   background: transparent;
@@ -348,8 +348,8 @@ the old and the new system. */
   color: var(--color-background);
 }
 .btn-field {
-  border-color: color-mix(in srgb, #2196f3 48%, var(--color-border));
-  background: color-mix(in srgb, #2196f3 78%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-highlight) 48%, var(--color-border));
+  background: color-mix(in srgb, var(--color-highlight) 78%, var(--color-panel));
   color: white;
   width: fit-content;
 }

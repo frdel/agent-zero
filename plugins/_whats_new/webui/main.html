@@ -128,7 +128,7 @@
       border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
       border-radius: 7px;
       background:
-        radial-gradient(circle at 18% 12%, color-mix(in srgb, #4248f1 18%, transparent), transparent 34%),
+        radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--color-highlight) 18%, transparent), transparent 34%),
         color-mix(in srgb, var(--color-panel) 78%, #000 22%);
     }
 
@@ -150,7 +150,7 @@
     }
 
     .whats-new-eyebrow {
-      color: color-mix(in srgb, #2196f3 86%, var(--color-text));
+      color: color-mix(in srgb, var(--color-highlight) 86%, var(--color-text));
       font-size: 0.74rem;
       font-weight: 760;
       letter-spacing: 0.04em;
@@ -199,8 +199,8 @@
       width: 0.42rem;
       height: 0.42rem;
       border-radius: 999px;
-      background: color-mix(in srgb, #4248f1 72%, #2196f3 28%);
-      box-shadow: 0 0 0 3px color-mix(in srgb, #4248f1 18%, transparent);
+      background: var(--color-highlight);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-highlight) 18%, transparent);
     }
 
     .whats-new-footer {
@@ -252,12 +252,12 @@
 
     .whats-new-dot.active {
       width: 1.2rem;
-      background: color-mix(in srgb, #4248f1 74%, #2196f3 26%);
+      background: var(--color-highlight);
     }
 
     .whats-new-dot:hover {
       transform: translateY(-1px);
-      background: color-mix(in srgb, #2196f3 72%, var(--color-text));
+      background: color-mix(in srgb, var(--color-highlight) 72%, var(--color-text));
     }
 
     .whats-new-never-show {
@@ -276,7 +276,7 @@
       height: 0.95rem;
       margin: 0;
       flex: 0 0 auto;
-      accent-color: #4248f1;
+      accent-color: var(--color-highlight);
     }
 
     .whats-new-never-show span {

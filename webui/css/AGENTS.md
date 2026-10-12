@@ -37,6 +37,7 @@
 - Shared message collapsing targets `.message-collapse-content`; user-message attachments must remain outside that target so expanding text never changes attachment visibility.
 - The virtualized chat history disables native scroll anchoring and replay fade-in motion; the message-window renderer owns anchor restoration during atomic page swaps.
 - The persistent right panel transitions its background symmetrically between Welcome and chat in 200ms; the Welcome container remains transparent so it cannot hide the return transition.
+- Shared accent-highlight controls (`.btn-ok`, `.btn-field`, `.btn.primary`, send/upload/annotation buttons, checked togglers, notification unread and info accents) use `var(--color-highlight)` with `color-mix(in srgb, var(--color-highlight) N%, black)` hover and active steps instead of hardcoded blue literals, so a single token retints the accent family.
 - Do not add decorative one-note palette changes that conflict with existing WebUI design.
 
 ## Work Guidance

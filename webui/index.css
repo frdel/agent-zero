@@ -104,6 +104,7 @@
   --color-primary: var(--color-primary-light);
   --color-secondary: var(--color-secondary-light);
   --color-accent: var(--color-accent-light);
+  --color-highlight: var(--color-highlight-light);
   --color-message-bg: var(--color-message-bg-light);
   --color-message-text: var(--color-message-text-light);
   --color-panel: var(--color-panel-light);

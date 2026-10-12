@@ -1259,7 +1259,7 @@
         display: inline-flex;
         align-items: center;
         padding: 8px 16px;
-        background: #4248f1;
+        background: var(--color-highlight);
         gap: 0.5rem;
         color: white;
         border-radius: 4px;
@@ -1270,10 +1270,10 @@
         width: 20px;
       }
       .btn-upload:hover {
-        background-color: #353bc5;
+        background-color: color-mix(in srgb, var(--color-highlight) 80%, black);
       }
       .btn-upload:active {
-        background-color: #2b309c;
+        background-color: color-mix(in srgb, var(--color-highlight) 65%, black);
       }
 
       .file-browser-footer {

@@ -59,7 +59,7 @@
 }
 
 #toast.toast--info {
-  background-color: #2196F3;
+  background-color: var(--color-highlight);
 }
 
 .toast__close,
