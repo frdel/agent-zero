@@ -1920,7 +1920,10 @@ def test_cleanup_hook_enables_official_xpra_repo_when_kali_lacks_candidate(tmp_p
     assert keyring.read_bytes() == b"xpra-key"
     assert "URIs: https://xpra.org\n" in source.read_text(encoding="utf-8")
     assert "Suites: trixie" in source.read_text(encoding="utf-8")
-    assert calls.count(["apt-get", "update"]) == 2
+    assert calls.count(["apt-get", "update"]) == 1
+    assert [
+        "bash", str(PROJECT_ROOT / "plugins/_desktop/helpers/refresh_xpra_index.sh"), str(source),
+    ] in calls
     assert calls[-1][:4] == ["apt-get", "install", "-y", "--no-install-recommends"]
 
 
@@ -1964,12 +1967,39 @@ def test_cleanup_hook_uses_trixie_xpra_components_for_kali_arm64(tmp_path, monke
     source_text = source.read_text(encoding="utf-8")
     assert "URIs: https://xpra.org\n" in source_text
     assert "Suites: trixie" in source_text
+    assert [
+        "bash", str(PROJECT_ROOT / "plugins/_desktop/helpers/refresh_xpra_index.sh"), str(source),
+    ] in calls
     assert "xpra" not in calls[-1]
     assert calls[-1][-3:] == [
         f"xpra-server={desktop_hooks.XPRA_VERSION}",
         f"xpra-x11={desktop_hooks.XPRA_VERSION}",
         "xpra-html5",
     ]
+
+
+def test_cleanup_hook_stops_when_xpra_index_refresh_fails(monkeypatch):
+    calls = []
+    monkeypatch.setattr(desktop_hooks.os, "geteuid", lambda: 0)
+    monkeypatch.setattr(desktop_hooks.shutil, "which", lambda name: f"/usr/bin/{name}")
+    monkeypatch.setattr(desktop_hooks, "RUNTIME_PACKAGES", ("xpra-server",))
+    monkeypatch.setattr(desktop_hooks, "_package_installed", lambda package: False)
+    monkeypatch.setattr(desktop_hooks, "_package_candidates_available", lambda packages: False)
+    monkeypatch.setattr(desktop_hooks, "_ensure_xpra_repository", lambda installed, errors: None)
+
+    def run(command, **kwargs):
+        calls.append(command)
+        failed = command[0] == "bash"
+        return types.SimpleNamespace(returncode=100 if failed else 0, stdout="", stderr="bad index signature" if failed else "")
+
+    monkeypatch.setattr(desktop_hooks, "_run_apt_command", run)
+    installed = []
+    errors = []
+    desktop_hooks._ensure_runtime_dependencies(installed, errors)
+    assert installed == []
+    assert errors == ["bad index signature"]
+    assert len(calls) == 2
+    assert calls[-1][0] == "bash"
 
 
 def test_cleanup_hook_installs_matching_xpra_client_stack(monkeypatch):

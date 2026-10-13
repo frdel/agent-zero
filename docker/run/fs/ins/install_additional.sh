@@ -71,7 +71,7 @@ Signed-By: /usr/share/keyrings/xpra.asc
 Architectures: $arch
 EOF
 echo "deb [arch=$arch signed-by=/usr/share/keyrings/xpra.asc] https://xpra.org trixie main" >>/etc/apt/a0-desktop.list
-apt-get "${APT_OPTIONS[@]}" update
+bash /git/agent-zero/plugins/_desktop/helpers/refresh_xpra_index.sh /etc/apt/sources.list.d/xpra.sources
 DEBIAN_FRONTEND=noninteractive apt-get "${APT_OPTIONS[@]}" install -y --no-install-recommends --allow-downgrades \
   "${ATK_PACKAGES[@]}" \
   gir1.2-gtk-3.0 \

@@ -52,7 +52,11 @@ def test_runtime_apt_propagates_source_write_errors(tmp_path, monkeypatch):
 
 @pytest.mark.parametrize("arch", ["amd64", "arm64"])
 def test_desktop_install_script_uses_compatible_architecture_packages(tmp_path, arch):
-    script = (Path(__file__).resolve().parents[1] / "docker/run/fs/ins/install_additional.sh").read_text()
+    root = Path(__file__).resolve().parents[1]
+    script = (root / "docker/run/fs/ins/install_additional.sh").read_text()
+    refresh = tmp_path / "refresh_xpra_index.sh"
+    refresh.write_text((root / "plugins/_desktop/helpers/refresh_xpra_index.sh").read_text())
+    script = script.replace("/git/agent-zero/plugins/_desktop/helpers/refresh_xpra_index.sh", str(refresh))
     for path in ("/etc/apt", "/usr/share/keyrings", "/var/lib/apt/lists"):
         (tmp_path / path.lstrip("/")).mkdir(parents=True)
         script = script.replace(path, str(tmp_path / path.lstrip("/")))
@@ -63,13 +67,27 @@ def test_desktop_install_script_uses_compatible_architecture_packages(tmp_path, 
     stubs = r'''
 apt-get() {
   [[ "$(<"$SIM_ROOT/etc/apt/sources.list")" == *kali-rolling* ]] || return 1
-  [[ "$*" == *"Dir::Etc::sourcelist=$SIM_ROOT/etc/apt/a0-desktop.list"* ]] || return 1
   [[ "$*" == *"Dir::Etc::sourceparts=-"* ]] || return 1
+  if [[ "$*" == *"/xpra.sources"* ]]; then
+    [[ "$*" == *'MetaKey=$(COMPONENT)/binary-$(ARCHITECTURE)/Packages.gz'* ]] || return 1
+    [[ "$*" == *"APT::Get::List-Cleanup=false"* ]] || return 1
+    [[ "$*" == *"APT::Update::Error-Mode=any"* ]] || return 1
+  else
+    [[ "$*" == *"Dir::Etc::sourcelist=$SIM_ROOT/etc/apt/a0-desktop.list"* ]] || return 1
+  fi
   grep -q "signed-by=$SIM_ROOT/usr/share/keyrings/debian-archive-keyring.gpg" "$SIM_ROOT/etc/apt/a0-desktop.list" || return 1
   grep -q 'snapshot.debian.org/archive/debian/20260624T000000Z/' "$SIM_ROOT/etc/apt/a0-desktop.list" || return 1
   while [[ "$1" == -o ]]; do shift 2; done
   printf '%s\0' "$@" >> "$SIM_ROOT/apt.log"
   printf '\0' >> "$SIM_ROOT/apt.log"
+  index="$SIM_ROOT/var/lib/apt/lists/xpra.org_dists_trixie_main_binary-${SIM_ARCH}_Packages.gz"
+  if [[ "$1" == update && -f "$SIM_ROOT/etc/apt/sources.list.d/xpra.sources" ]]; then
+    printf 'signed gzip index' > "$index.gz"
+  elif [[ "$1" == indextargets ]]; then
+    printf '%s\n' "$index.gz"
+  elif [[ "$1" == install && "$*" == *xpra-common* ]]; then
+    [[ "$(<"$index")" == 'signed gzip index' ]] || return 1
+  fi
 }
 dpkg() { printf '%s\n' "$SIM_ARCH"; }
 dpkg-query() {
@@ -80,6 +98,7 @@ dpkg-query() {
   fi
 }
 wget() { return 0; }
+export -f apt-get
 '''
     result = subprocess.run(
         ["bash", "-e", "-c", stubs + script], text=True, capture_output=True,
@@ -99,3 +118,25 @@ wget() { return 0; }
     assert ("at-spi2-core=2.60.3-1" in installs[-1]) == (arch == "arm64")
     assert f"Architectures: {arch}\n" in (tmp_path / "etc/apt/sources.list.d/xpra.sources").read_text()
     assert f"arch={arch}" in (tmp_path / "etc/apt/a0-desktop.list").read_text()
+
+
+@pytest.mark.parametrize("failure", ["update", "indextargets", "missing_index"])
+def test_xpra_index_refresh_stops_on_failure(tmp_path, failure):
+    script = Path(__file__).resolve().parents[1] / "plugins/_desktop/helpers/refresh_xpra_index.sh"
+    stubs = r'''
+apt-get() {
+  while [[ "$1" == -o ]]; do shift 2; done
+  [[ "$1" != "$SIM_FAILURE" ]] || return 42
+  if [[ "$1" == indextargets ]]; then
+    printf '%s\n' "$SIM_ROOT/missing_Packages.gz.gz"
+  fi
+}
+export -f apt-get
+'''
+    result = subprocess.run(
+        ["bash", "-ec", stubs + 'bash "$1" "$SIM_ROOT/xpra.sources"', "--", str(script)],
+        text=True, capture_output=True,
+        env={**os.environ, "SIM_ROOT": str(tmp_path), "SIM_FAILURE": failure},
+    )
+    assert result.returncode == (1 if failure == "missing_index" else 42)
+    assert not (tmp_path / "missing_Packages.gz").exists()

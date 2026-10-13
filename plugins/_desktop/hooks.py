@@ -266,7 +266,7 @@ def _ensure_runtime_dependencies(installed: list[str], errors: list[str]) -> Non
     if required_xpra_missing and not _package_candidates_available(required_xpra_missing):
         previous_error_count = len(errors)
         _ensure_xpra_repository(installed, errors)
-        if len(errors) > previous_error_count or not _apt_update(errors):
+        if len(errors) > previous_error_count or not _apt_update(errors, xpra_only=True):
             return
         missing = [package for package in RUNTIME_PACKAGES if not _package_installed(package)]
         if not missing:
@@ -329,8 +329,12 @@ def _install_runtime_packages(
     return False
 
 
-def _apt_update(errors: list[str]) -> bool:
-    result = _run_apt_command(["apt-get", "update"], timeout=300)
+def _apt_update(errors: list[str], *, xpra_only: bool = False) -> bool:
+    command = (
+        ["bash", files.get_abs_path("plugins/_desktop/helpers/refresh_xpra_index.sh"), str(XPRA_SOURCE_FILE)]
+        if xpra_only else ["apt-get", "update"]
+    )
+    result = _run_apt_command(command, timeout=300)
     if result.returncode == 0:
         return True
     errors.append((result.stderr or result.stdout or "apt-get update failed").strip())
