@@ -36,6 +36,7 @@
 - Repair provider-specific model-config aliases at the model-config read/build boundary; keep provider-specific repairs out of provider-agnostic core wrappers such as `models.py`.
 - The `Agent.read_prompt/end` Anthropic hook adapts only the two bundled thoughts instructions in main/communication/solving prompt results when the effective main provider or model name contains `anthropic`, or the model name contains `claude` (case-insensitive, regardless of provider). Keep prompt files, JSON fields, history, custom wording, and other models unchanged; standalone communication reads must match main-prompt rendering for native protocol projection. Verify with `tests/test_anthropic_thoughts_prompt.py`.
 - `modelConfig.createPresetEditor()` owns local preset drafts, row actions, and stable UI-only row keys so deletion or renaming cannot rebind nested model fields.
+- Presets may change outside the editor, so the `open_modal_before` hook reloads them before every preset-editor open, including `/presets`, and resolves the chat's active preset unless `openPresetEditor()` pinned one.
 - The preset editor maps each model provider's API-key field to the shared API-key store; saving the editor persists dirty keys separately and never writes secrets into preset YAML.
 - The compact chat selector label combines the effective preset with only the leaf name of its main model; utility and provider text stay out of the closed selector.
 - The compact selector strip exposes `model-context-strip-end` after the agent
