@@ -60,6 +60,51 @@ const callJsonApi = async (endpoint, data) => {
 
 
 @pytest.mark.skipif(not shutil.which("node"), reason="Node.js is required")
+@pytest.mark.parametrize("operation", ["selectPresetSwitch", "clearOverrideSwitch"])
+@pytest.mark.parametrize("switch_chat", [False, True])
+def test_preset_changes_retry_setup_prompt_only_after_success(operation, switch_chat):
+    switcher = Path("plugins/_model_config/webui/switcher-mixin.js").read_text()
+    switcher = re.sub(r"^import .*?;\n", "", switcher, flags=re.MULTILINE)
+    harness = GATE_HARNESS.replace(
+        "const document = {addEventListener() {}};", "const document = new EventTarget();"
+    ) + f"const operation = {operation!r};\nconst switchChat = {str(switch_chat).lower()};\n" + """
+let selected = 'chat-a', saveOk = false;
+globalThis.window = {Alpine: {store: () => ({selected})}};
+const overrides = [];
+const fetchApi = async (_url, options) => {
+  overrides.push(JSON.parse(options.body));
+  return {json: async () => ({ok: saveOk, preset_name: 'Ready', effective_preset: 'Ready'})};
+};
+"""
+    run_module("webui/components/chat/model-gate-store.js", harness, switcher + """
+store.start({message: 'Original setup prompt', attachments: [], messageId: 'pending-id', context: 'chat-a'});
+const pending = store.pending;
+const sends = [];
+globalThis.sendMessage = async options => { sends.push(options); return true; };
+const switcher = {...switcherState, ...switcherMethods};
+if (switchChat) selected = 'chat-b';
+assert.equal(await switcher[operation]('chat-a', 'Ready'), false);
+await new Promise(setImmediate);
+assert.equal(requests.length, 0, 'failed preset save notified the gate');
+assert.equal(store.pending, pending);
+assert.equal(saved.size, 1);
+saveOk = true;
+assert.equal(await switcher[operation]('chat-a', 'Ready'), true);
+await new Promise(setImmediate);
+assert.equal(requests.length, 1);
+assert.equal(requests[0].data.context_id, 'chat-a', 'readiness used the selected chat instead of the pending chat');
+assert.equal(sends.length, 1);
+assert.equal(sends[0].context, 'chat-a');
+assert.equal(sends[0].message, 'Original setup prompt');
+assert.equal(sends[0].preserveInput, true);
+assert.equal(store.pending, null);
+assert.equal(saved.size, 0);
+assert.deepEqual(overrides.map(data => data.context_id), ['chat-a', 'chat-a']);
+assert.equal(switcher.switcherEffectivePreset, switchChat ? 'Default' : 'Ready');
+""")
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="Node.js is required")
 def test_gate_keeps_saved_prompt_until_an_idle_send_accepts_it():
     run_module("webui/components/chat/model-gate-store.js", GATE_HARNESS, """
 store.start({message: 'Original prompt', attachments: [], messageId: 'pending-id', context: 'chat-a'});

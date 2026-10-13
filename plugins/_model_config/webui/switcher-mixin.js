@@ -119,6 +119,7 @@ export const switcherMethods = {
         body: JSON.stringify({ action: "set_preset", context_id: contextId, preset_name: presetName }),
       });
       const data = await res.json();
+      if (data?.ok) document.dispatchEvent(new Event("model-setup-changed"));
       return data?.ok ? data : null;
     } catch (e) {
       console.error("Failed to set preset override:", e);
@@ -134,6 +135,7 @@ export const switcherMethods = {
         body: JSON.stringify({ action: "clear", context_id: contextId }),
       });
       const data = await res.json();
+      if (data?.ok) document.dispatchEvent(new Event("model-setup-changed"));
       return data?.ok ? data : null;
     } catch (e) {
       console.error("Failed to clear override:", e);
