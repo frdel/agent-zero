@@ -1,0 +1,9 @@
+name: _anysearch
+title: AnySearch
+description: Optional AnySearch web search integration (general search, vertical-domain search, batch search, URL extraction). SearXNG stays the default search_engine tool; enabling this plugin adds AnySearch as a separate, opt-in tool.
+version: 1.1.0
+always_enabled: false
+settings_sections:
+  - external
+per_project_config: false
+per_agent_config: false

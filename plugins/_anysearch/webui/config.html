@@ -1,0 +1,64 @@
+<html>
+<head>
+  <title>AnySearch</title>
+</head>
+
+<body>
+  <div x-data>
+    <template x-if="config">
+      <div class="plugin-config-page">
+        <div class="section-title">AnySearch</div>
+        <div class="section-description">
+          Optional web search integration. Adds a separate <code>anysearch</code>
+          tool alongside the default SearXNG-based <code>search_engine</code> tool;
+          it does not replace it. Works anonymously out of the box with lower rate
+          limits and quota. To use an authenticated key with higher limits, add <code>API_KEY_ANYSEARCH</code> to
+          your <code>usr/.env</code> file — API keys are not configured here.
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Base URL</div>
+            <div class="field-description">
+              AnySearch API base URL (default: https://api.anysearch.com).
+              Advanced override for a trusted endpoint only: authenticated
+              requests send your API key as a Bearer credential to this URL.
+              With an API key configured, plain http:// is refused except for
+              loopback development endpoints (localhost, 127.0.0.0/8, ::1).
+            </div>
+          </div>
+          <div class="field-control">
+            <input type="text" x-model="config.base_url" placeholder="https://api.anysearch.com">
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Request timeout (seconds)</div>
+            <div class="field-description">
+              Per-request HTTP timeout for search, sub-domain discovery, and
+              extraction calls.
+            </div>
+          </div>
+          <div class="field-control">
+            <input type="number" min="1" step="1" x-model.number="config.timeout">
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Default max results</div>
+            <div class="field-description">
+              Default number of results per search when the agent does not
+              specify one (AnySearch allows 1-10).
+            </div>
+          </div>
+          <div class="field-control">
+            <input type="number" min="1" max="10" step="1" x-model.number="config.max_results">
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+</body>
+</html>

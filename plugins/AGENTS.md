@@ -70,6 +70,7 @@ Direct child DOX files:
 | --- | --- |
 | [_a0_connector/AGENTS.md](_a0_connector/AGENTS.md) | HTTP and WebSocket connector integration with remote tools and runtime bridges. |
 | [_agent_editor/AGENTS.md](_agent_editor/AGENTS.md) | Deterministic sparse agent-profile editor API, helpers, and WebUI. |
+| [_anysearch/AGENTS.md](_anysearch/AGENTS.md) | Optional, disabled-by-default AnySearch REST search, sub-domain discovery, batch search, and URL extraction tool. |
 | [_browser/AGENTS.md](_browser/AGENTS.md) | Playwright browser tool, helpers, viewer, and browser panel UI. |
 | [_chat_branching/AGENTS.md](_chat_branching/AGENTS.md) | Chat branching from an existing message. |
 | [_chat_compaction/AGENTS.md](_chat_compaction/AGENTS.md) | Full-chat compaction into a summary message. |

@@ -1,0 +1,11 @@
+# AnySearch plugin configuration
+# All timeout values in seconds
+
+base_url: https://api.anysearch.com   # AnySearch API base URL
+timeout: 20                           # per-request HTTP timeout (connect + read)
+max_results: 10                       # default results per search query when the agent
+                                       # omits it or sends it as null, for both `search`
+                                       # and every `batch_search` item (API range: 1-10)
+
+# Note: AnySearch's batch_search limit (5 queries per call) is a fixed
+# protocol constraint, not a user setting — it is not configurable here.
