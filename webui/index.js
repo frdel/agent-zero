@@ -111,24 +111,6 @@ export async function sendMessage(options = {}) {
     }
 
     if (message || hasAttachments) {
-      if (!options.bypassModelGate && !(await modelGateStore.canSendToModel())) {
-        modelGateStore.start({
-          message,
-          attachments: attachmentsWithUrls,
-          messageId,
-          context: sendContext,
-        });
-
-        if (shouldResetInput) {
-          inputStore.reset();
-          adjustTextareaHeight();
-        }
-
-        await setMessages(modelGateStore.syntheticMessages(sendContext));
-        forceScrollChatToBottom();
-        return;
-      }
-
       // Check if agent is busy - queue instead of sending
       if (chatsStore.selectedContext?.running || messageQueueStore.hasQueue) {
         const success = messageQueueStore.addToQueue(message, attachmentsWithUrls);
@@ -194,6 +176,17 @@ export async function sendMessage(options = {}) {
       const jsonResponse = await response.json();
       if (!jsonResponse) {
         toast("No response returned.", "error");
+      } else if (jsonResponse.model_not_configured) {
+        // Backend rejected dispatch; open the setup gate (synthetic row merges by message id)
+        modelGateStore.start({
+          message,
+          attachments: attachmentsWithUrls,
+          messageId,
+          context: sendContext,
+        });
+
+        await setMessages(modelGateStore.syntheticMessages(sendContext));
+        forceScrollChatToBottom();
       } else {
         setContext(jsonResponse.context);
       }

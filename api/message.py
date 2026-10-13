@@ -13,6 +13,12 @@ class Message(ApiHandler):
         return await self.respond(task, context)
 
     async def respond(self, task: DeferredTask, context: AgentContext):
+        if task is None:
+            return {
+                "message": "Model not configured.",
+                "model_not_configured": True,
+                "context": context.id,
+            }
         result = await task.result()  # type: ignore
         return {
             "message": result,
@@ -61,6 +67,8 @@ class Message(ApiHandler):
         await extension.call_extensions_async("user_message_ui", agent=context.get_agent(), data=data)
         message = data.get("message", "")
         attachment_paths = data.get("attachment_paths", [])
+        if data.get("model_not_configured"):
+            return None, context
 
         # Store attachments in agent data
         # context.agent0.set_data("attachments", attachment_paths)

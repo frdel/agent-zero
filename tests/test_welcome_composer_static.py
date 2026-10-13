@@ -100,7 +100,9 @@ def test_welcome_composer_can_create_a_chat_before_sending() -> None:
     assert index_js.index(optimistic_user) < index_js.index("if (hasAttachments)")
     assert "return response.ctxid;" in chats_store
     assert 'return "arrow_forward";' in input_store
-    assert "modelGateStore.canSendToModel()" in index_js
+    assert "modelGateStore.canSendToModel()" not in index_js
+    assert "modelGateStore.syntheticMessages(sendContext)" in index_js
+    assert "model_not_configured" in index_js
     assert "modelGateStore.mergeSyntheticMessages(snapshot.logs, context)" in index_js
     assert 'type: "model_setup_gate"' in gate_store
     assert 'STORAGE_KEY = "a0:model-gate-pending:v1"' in gate_store
@@ -122,7 +124,8 @@ def test_welcome_composer_can_create_a_chat_before_sending() -> None:
     assert "this.choice = \"\";" in gate_store
     assert 'document.addEventListener("model-configured"' in gate_store
     assert 'document.addEventListener("model-setup-changed"' in gate_store
-    assert "bypassModelGate: true" in gate_store
+    assert "bypassModelGate" not in gate_store
+    assert "skipExtensions: true" in gate_store
     assert "modelConfigStore.openPresetEditor(" in gate_store
     assert 'openPluginConfig("_oauth"' not in gate_store
     assert "Your message sends automatically once a model is connected." in gate_component

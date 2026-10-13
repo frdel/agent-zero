@@ -23,7 +23,7 @@
 - Unsent composer text is kept as a separate browser-session draft for each selected chat and restored when switching contexts; a Welcome-screen prompt must follow the chat created for its first send.
 - Composer text uses the main UI font by default; typing a triple-backtick fence and pressing Enter turns that line into a visual code block that serializes back to fenced Markdown, while pasted fenced Markdown stays plain text.
 - The contenteditable composer sizes naturally between its CSS minimum and maximum heights; do not freeze measured scroll heights into pixels during mounting or editing.
-- Missing model setup is gated at send intent: the first unconfigured send renders an in-thread setup card, keeps the pending prompt in browser session storage for refresh recovery, and must not call `/message_async` until a chat model is configured.
+- The backend rejects dispatches when no chat model is configured: a `user_message_ui` extension in `_model_config` flags the chat and `/message_async` returns a `model_not_configured` payload before logging or dispatching. The client opens the setup gate from that response and must not round-trip a per-send configuration pre-check.
 - While the setup gate is open, the composer remains typeable but send is blocked until setup succeeds.
 - The setup gate must delegate Cloud/Local setup, account connections, and advanced model configuration to the existing onboarding and model-preset editor modals; do not duplicate provider/model/key forms inline.
 - A connected OAuth account without Main/Utility model selection is its own gate state; route to model configuration and do not select models automatically.

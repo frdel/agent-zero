@@ -162,7 +162,6 @@ export const store = createStore("modelGate", {
     this.clearSavedPending();
     try {
       await globalThis.sendMessage?.({
-        bypassModelGate: true,
         skipExtensions: true,
         preserveInput: true,
         message: pending.message,
