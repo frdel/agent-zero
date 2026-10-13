@@ -151,18 +151,16 @@ export const store = createStore("modelGate", {
 
   async dispatchPendingIfConfigured() {
     this.init();
-    if (this.dispatching || !this.pending) return;
-    const configured = await this.canSendToModel();
-    if (!configured) return;
-
     const pending = this.pending;
-    this.pending = null;
-    this.connected = true;
+    if (this.dispatching || !pending) return;
     this.dispatching = true;
-    this.clearSavedPending();
     try {
+      const configured = await this.canSendToModel();
+      if (!configured || this.pending !== pending) return;
+      this.pending = null;
+      this.connected = true;
+      this.clearSavedPending();
       await globalThis.sendMessage?.({
-        bypassModelGate: true,
         skipExtensions: true,
         preserveInput: true,
         message: pending.message,

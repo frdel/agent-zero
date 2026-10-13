@@ -85,6 +85,9 @@ function finishChatLoading(id) {
 // Sidebar toggle logic is now handled by sidebar-store.js
 
 export async function sendMessage(options = {}) {
+  // Rapid clicks or Enter presses must not issue duplicate sends while the first is still in flight
+  if (sendMessage.inFlight) return;
+  sendMessage.inFlight = true;
   try {
     const hasProvidedMessage = Object.prototype.hasOwnProperty.call(options, "message");
     let message = String(hasProvidedMessage ? options.message : inputStore.message).trim();
@@ -108,24 +111,6 @@ export async function sendMessage(options = {}) {
     }
 
     if (message || hasAttachments) {
-      if (!options.bypassModelGate && !(await modelGateStore.canSendToModel())) {
-        modelGateStore.start({
-          message,
-          attachments: attachmentsWithUrls,
-          messageId,
-          context: sendContext,
-        });
-
-        if (shouldResetInput) {
-          inputStore.reset();
-          adjustTextareaHeight();
-        }
-
-        await setMessages(modelGateStore.syntheticMessages(sendContext));
-        forceScrollChatToBottom();
-        return;
-      }
-
       // Check if agent is busy - queue instead of sending
       if (chatsStore.selectedContext?.running || messageQueueStore.hasQueue) {
         const success = messageQueueStore.addToQueue(message, attachmentsWithUrls);
@@ -191,12 +176,25 @@ export async function sendMessage(options = {}) {
       const jsonResponse = await response.json();
       if (!jsonResponse) {
         toast("No response returned.", "error");
+      } else if (jsonResponse.model_not_configured) {
+        // Backend rejected dispatch; open the setup gate (synthetic row merges by message id)
+        modelGateStore.start({
+          message,
+          attachments: attachmentsWithUrls,
+          messageId,
+          context: sendContext,
+        });
+
+        await setMessages(modelGateStore.syntheticMessages(sendContext));
+        forceScrollChatToBottom();
       } else {
         setContext(jsonResponse.context);
       }
     }
   } catch (e) {
     toastFetchError("Error sending message", e); // Will use new notification system
+  } finally {
+    sendMessage.inFlight = false;
   }
 }
 globalThis.sendMessage = sendMessage;
@@ -432,7 +430,7 @@ export async function applySnapshot(snapshot, options = {}) {
   notificationStore.updateFromPoll(snapshot);
 
   // set ui model vars from backend
-  inputStore.paused = snapshot.paused;
+  inputStore.applyPausedSnapshot(snapshot.paused);
 
   // Optional: treat snapshot application as proof of connectivity (poll path)
   if (touchConnectionStatus) {

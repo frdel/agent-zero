@@ -14,14 +14,15 @@ def test_model_search_discards_stale_requests_and_allows_fresh_search():
     controller = html.unescape(re.search(r'x-data="(\{ results: \[\], source:.*?})"', source, re.S).group(1))
     script = r'''
 import assert from 'node:assert/strict';
-for (const change of ['query', 'draft', 'provider', 'base']) {
+for (const change of ['draft', 'provider', 'base']) {
   let model = {name:'first'}, _prov = 'openai', _apiBase = 'same';
   const searchType = 'chat';
+  let requestedQuery;
   let resolve;
-  const $store = {modelConfig:{searchModelsDetailed:()=>new Promise(r=>resolve=r)}};
+  const $store = {modelConfig:{searchModelsDetailed:(p, q) => { requestedQuery = q; return new Promise(r=>resolve=r); }}};
   const field = eval('(' + CONTROLLER + ')');
   field.doSearch();
-  if (change === 'query') model.name = 'second';
+  assert.equal(requestedQuery, '');
   if (change === 'draft') model = {name:'first'};
   if (change === 'provider') _prov = 'other';
   if (change === 'base') _apiBase = 'other';

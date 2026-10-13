@@ -105,8 +105,10 @@ def test_safe_mode_disables_workers_before_rendering_index_directly() -> None:
 def test_only_the_icon_guard_stylesheet_blocks_application_paint() -> None:
     index_html = (PROJECT_ROOT / "webui" / "index.html").read_text(encoding="utf-8")
 
-    assert index_html.count('<link rel="stylesheet"') == 1
-    assert '<link rel="stylesheet" href="vendor/google/google-icons.css">' in index_html
+    assert index_html.count('<link rel="stylesheet"') == 0
+    assert '<link rel="stylesheet" href="vendor/google/google-icons.css">' not in index_html
+    assert "font-family: 'Material Symbols Outlined'" in index_html
+    assert "html:not(.material-icons-ready) x-icon" in index_html
     assert '<script type="module" src="/js/icons.js"></script>' in index_html
     assert index_html.count('rel="preload" as="style"') == 20
     assert index_html.count("onload=\"this.onload=null;this.rel='stylesheet'\"") == 20

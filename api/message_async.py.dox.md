@@ -18,6 +18,7 @@
 
 - HTTP handlers must derive from `helpers.api.ApiHandler`; WebSocket handlers must derive from `helpers.ws.WsHandler`.
 - Update this file whenever request payloads, authentication or CSRF requirements, response shapes, route side effects, or WebSocket event contracts change.
+- When `communicate` rejects the message (`model_not_configured`), the response payload reports `"model_not_configured": true` with the context id instead of the acknowledgment payload.
 - Observed side-effect areas: scheduler state.
 - Imported dependency areas include: `agent`, `api.message`, `helpers.defer`.
 

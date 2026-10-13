@@ -22,13 +22,14 @@
 - `SetAgentProfile` defines `process(...)`.
 - Observed side-effect areas: filesystem writes, settings/state persistence.
 - Switching a chat profile updates the context and top-level agent profile only; existing subordinate agents keep their own profile configs.
+- Switching is allowed while the chat is running; the new profile applies to subsequent model turns and intentionally forfeits the prompt cache, matching chat model-preset overrides.
 - A profile can be selected only when it is available in the chat's active
   project scope; profiles owned by other projects are not valid candidates.
 - Imported dependency areas include: `agent`, `helpers`, `helpers.api`, `helpers.persist_chat`, `helpers.state_monitor_integration`.
 
 ## Key Concepts
 
-- Important called helpers/classes observed in the source: `str.strip`, `context.is_running`, `initialize_agent`, `context.agent0.config`, `save_tmp_chat`, `mark_dirty_for_context`, `projects.get_context_project_name`, `subagents.get_available_agents_dict`, `Response`.
+- Important called helpers/classes observed in the source: `str.strip`, `initialize_agent`, `context.agent0.config`, `save_tmp_chat`, `mark_dirty_for_context`, `projects.get_context_project_name`, `subagents.get_available_agents_dict`, `Response`.
 - Keep request/response, tool, or helper semantics documented here at the same time as source changes.
 
 ## Work Guidance

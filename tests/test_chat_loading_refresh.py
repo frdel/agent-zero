@@ -261,3 +261,32 @@ await failed;
 assert.equal(errors.length, 1);
 """,
     )
+
+
+def test_model_switcher_keeps_the_label_mounted_during_background_refresh():
+    run_module(
+        "plugins/_model_config/webui/switcher-mixin.js",
+        DEFERRED + """
+globalThis.window = { Alpine: { store: () => ({ selected }) } };
+const callJsonApi = pending;
+""",
+        """
+const store = { ...switcherState, ...switcherMethods, loadSwitcherState: pending,
+  switcherPresets: [{ name: "Default" }], switcherEffectivePreset: "Default",
+  switcherLoading: false };
+const refresh = store.refreshSwitcher("a");
+assert.equal(store.switcherLoading, false, "background refresh unmounted the switcher label");
+requests[0].resolve({ allowed: true, presets: [{ name: "Fast" }], override: null,
+  configuredPreset: "Fast", effectivePreset: "Fast" });
+await refresh;
+assert.equal(store.switcherEffectivePreset, "Fast", "background refresh did not apply the fresh state");
+assert.equal(store.switcherLoading, false);
+
+const fresh = { ...switcherState, ...switcherMethods, loadSwitcherState: pending };
+const initial = fresh.refreshSwitcher("a");
+assert.ok(fresh.switcherLoading, "first load did not gate the label");
+requests[1].resolve({ allowed: true, presets: [], override: null,
+  configuredPreset: "Default", effectivePreset: "Default" });
+await initial;
+""",
+    )

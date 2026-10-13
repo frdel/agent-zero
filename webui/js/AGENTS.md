@@ -21,6 +21,7 @@
 - `messages.js` routes unhandled log types through `drawMessageTool`, preserving generic tool-step presentation. Before raw-log grouping it resolves unregistered types from cached and incoming records through `getMessageHandler`; types selecting `drawMessageTool` join the process-step set. Explicit custom standalone handlers remain standalone. Keep the legacy `drawMessageDefault` export for plugin compatibility.
 - `messages.js` owns `drawMessageAgent` kvps rendering order: `thoughts`, `tool_name`, `tool_args` keys (spread per-key under actual names, not a sub-table, skipping reserved keys), then `step` at the end. Reserved keys (`thoughts`, `step`, `reasoning`, `tool_name`, `tool_args`, `args`, `headline`) win over any colliding `tool_args` key. The `response` tool check is hoisted to skip arg rendering entirely for response turns.
 - `messages.js` owns `Scroller` smooth-scroll suppression for `GEN` process steps (live agent responses) to prevent streamed-content jumpiness; non-`GEN` steps keep smooth scrolling.
+- Process step DOM ids are type-scoped (`process-step-<type>-<id>`): backend records may share an id across types (a subordinate response intentionally shares its GEN record's id), and one type's update must never overwrite another type's step.
 - `message-collapse.js` owns the layout-safe overflow measurement shared by collapsible user messages and responses.
 - `message-window.js` owns the bounded, tail-first raw-log window used by message rendering.
 - `loading-indicators.js` owns reusable DOM factories for shared loading visuals.
@@ -58,11 +59,12 @@
 - Every `<x-component>` instance must await cached module-load promises before markup is appended so Alpine bindings only run after imported stores exist.
 - Frontend extension hooks such as `confirm_dialog_after_render` and `get_tool_message_handler` must preserve their mutable context contracts.
 - Sanitize or safely render user/model-provided HTML and markdown.
+- Safe markdown parsing requires double tildes for strikethrough, matching GitHub; single tildes render literally so approximate-value prose like `~1-2%` never collapses into del markup. The override lives in `safe-markdown.js` and applies to the shared marked instance every renderer imports.
 - Convert standard TeX delimiters before Markdown parsing without touching inline or fenced code. Keep thought-card math rendering local to the agent-message handler rather than adding math flags to generic process-step or key/value rendering.
 - Do not expose secrets in localStorage, console logs, URLs, or WebSocket payloads.
 - Full message snapshots that start at backend log `no` 0 must replace the current message DOM before rendering; incremental snapshots should keep patching existing messages.
 - The state request builder advertises collection-delta support. An incremental snapshot may carry `contexts: null` and `tasks: null`; retain the current stores and skip sidebar selection/fallback reconciliation in that case. Extension hooks still receive the cached full collections so existing plugin contracts remain list-shaped.
-- Root responses render with safe Markdown and LaTeX throughout live updates and completion.
+- Root responses render with safe Markdown and LaTeX throughout live updates and completion. GEN process steps render thoughts and tool args as plain text without KaTeX, so `$$`-style sequences in technical prose stay literal.
 - Shared path linking recognizes plain paths, `file:///` URLs, and `/api/download_work_dir_file?path=` text, including inline code, while preserving existing anchors and fenced code blocks.
 - User sends render optimistically with their backend message ID; the matching log update must merge into that existing row rather than duplicate it.
 - Incremental message rendering must update standard action handlers without remounting unchanged button nodes or removing extension-owned actions.

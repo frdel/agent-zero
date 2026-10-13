@@ -169,11 +169,6 @@ export const switcherMethods = {
     if (this.agentProfileSaving) return false;
     const chatsStore = window.Alpine?.store("chats");
     const selectedContext = chatsStore?.selectedContext;
-    if (selectedContext?.running) {
-      window.justToast?.("Agent profile can be changed after the current run finishes.", "warning", 2500, "agent-profile-switch");
-      return false;
-    }
-
     const activeProfile = selectedContext?.agent_profile || "";
     if (activeProfile === agentProfile) return true;
 
@@ -221,7 +216,7 @@ export const switcherMethods = {
   async refreshSwitcher(contextId) {
     if (contextId !== (window.Alpine?.store("chats")?.selected || "")) return;
     const requestSeq = ++this.switcherLoadSeq;
-    this.switcherLoading = true;
+    if (!this.switcherPresets.length) this.switcherLoading = true;
     try {
       const state = await this.loadSwitcherState(contextId);
       if (requestSeq !== this.switcherLoadSeq || contextId !== (window.Alpine?.store("chats")?.selected || "")) return;

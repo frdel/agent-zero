@@ -57,7 +57,7 @@ body.right-canvas-resizing {
   border-right: 0;
   border-radius: 8px 0 0 8px;
   box-shadow: -10px 0 30px rgba(0, 0, 0, 0.24);
-  background: var(--color-chat-background);
+  background: var(--color-surface-translucent);
 }
 
 .right-canvas-rail-separator {

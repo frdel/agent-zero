@@ -2,6 +2,26 @@ import DOMPurify from "/vendor/dompurify/purify.es.mjs";
 import { marked } from "/vendor/marked/marked.esm.js";
 import { addBlankTargetsToLinks } from "/js/html-links.js";
 
+// Strikethrough needs double tildes like GitHub so single-tilde approximations stay literal prose
+function forceDoubleTildeStrikethrough(markedInstance) {
+  markedInstance.use({
+    tokenizer: {
+      del(src) {
+        const cap = /^~~(?=[^\s~])((?:\\.|[^\\])*?(?:\\.|[^\s~\\]))~~(?=[^~]|$)/.exec(src);
+        if (!cap) return;
+        return {
+          type: "del",
+          raw: cap[0],
+          text: cap[1],
+          tokens: this.lexer.inlineTokens(cap[1]),
+        };
+      },
+    },
+  });
+}
+
+forceDoubleTildeStrikethrough(marked);
+
 const GITHUB_REPO_ROUTE_PREFIXES = new Set([
   "actions",
   "blob",

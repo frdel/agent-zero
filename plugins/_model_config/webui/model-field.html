@@ -49,9 +49,9 @@
              doSearch() {
                if (this.searching) return;
                this.searching = true;
-               const provider = _prov, apiBase = _apiBase, draft = model, query = model.name;
-               $store.modelConfig.searchModelsDetailed(provider, query, searchType, apiBase).then(r => {
-                 if (provider !== _prov || apiBase !== _apiBase || draft !== model || query !== model.name) return;
+               const provider = _prov, apiBase = _apiBase, draft = model;
+               $store.modelConfig.searchModelsDetailed(provider, '', searchType, apiBase).then(r => {
+                 if (provider !== _prov || apiBase !== _apiBase || draft !== model) return;
                  this.results = r.models;
                  this.source = r.source;
                  this.open = true;

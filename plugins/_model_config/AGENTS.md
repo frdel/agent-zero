@@ -54,19 +54,26 @@
 - Concurrent agent-profile catalog loads for the same chat share one request;
   across chats, only the newest request may replace selector state or finish
   its loading lifecycle.
+- Selecting an agent profile is permitted while the chat is running; the
+  mid-run switch applies to the next model turn and intentionally drops the
+  prompt cache, matching chat preset overrides.
 - Snapshot-triggered profile and preset refreshes run independently of chat
   rendering and of each other. Only the latest refresh for the selected chat
   may apply selector state; older completions must not clear a newer loading flag.
 - Ignore refreshes for unselected chats before advancing the request sequence.
   Pending preset/profile saves keep their original chat target; preset save or
   clear results may update the selector only while that chat is selected.
+- Only the first switcher load raises `switcherLoading`; background refreshes
+  (chat switch, profile switch, override revision) keep the last-known label
+  mounted and replace selector state in place under the existing sequence guards.
 - Preset editor reset actions must remove the user override through the preset API and refresh the open draft from bundled defaults.
 - Preset rename, delete, and reset actions must repair scoped config and durable/live chat references; removed definitions fall back to `Default`.
 - Save/reset embedding comparisons use the matching before/after preset snapshots, including Default inheritance. Do not reload the collection per preset or persist a cross-request cache for this comparison.
 - Migration must preserve existing definitions and distinct scoped model choices, back up replaced user files once, strip inline secrets, and remain idempotent.
 - Venice migration applies chat-only kwargs to chat slots and removes them from embedding slots without discarding embedding-specific kwargs.
 - On every startup after migration, short-circuit when `usr/plugins/_model_config/presets.yaml` exists. Only a missing collection may fetch `agent0ai/a0-presets`; parse remote and plugin-local fallback YAML through the same validator, strip secrets before persistence, and persist `mode_presets_fallback.yaml` when download or validation fails.
-- Model-name catalogs open below the input from either a field click or the embedded magnifier. Discard asynchronous results if their provider, API base, model draft, or query changed while the request was pending.
+- Model-name catalogs open below the input from either a field click or the embedded magnifier and always load the full provider model list; the field text only re-ranks entries client-side through `groupResults` and must never be sent as a server-side filter query. Discard asynchronous results if their provider, API base, or model draft changed while the request was pending.
+- A `user_message_ui` extension (`extensions/python/user_message_ui/_10_check_chat_model.py`) flags unconfigured chats with `model_not_configured` in the extension data so the core message handlers reject before logging or dispatching; it must stay in sync with `is_chat_model_configured` and never dispatch its own model calls.
 - Keep the model-search magnifier and loading spinner in the same grid cell by targeting the button's `x-icon` children.
 - Additional parameter drafts retain plain-string compatibility but reject malformed JSON-shaped values and invalid KEY=VALUE lines with a standard notification. Reparse every preset slot before saving presets or API keys; invalid drafts stay editable and never silently save stale kwargs. Save errors identify the preset and model slot even when that draft is no longer selected.
 

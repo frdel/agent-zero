@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import asyncio
+import threading
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -549,4 +551,69 @@ async def test_agent_profile_set_uses_scope_and_preserves_subagent_profile(
         assert child.config.profile == "developer"
         assert requested_scopes == [project_name]
     finally:
+        AgentContext.remove(context_id)
+
+
+@pytest.mark.asyncio
+async def test_agent_profile_set_allows_switch_during_run(monkeypatch) -> None:
+    import api.agent_profile_set as agent_profile_set
+
+    monkeypatch.setattr(
+        agent_profile_set.subagents,
+        "get_agents_dict",
+        lambda scope: {"researcher": SimpleNamespace(title="Researcher", enabled=True)},
+    )
+    monkeypatch.setattr(
+        agent_profile_set,
+        "initialize_agent",
+        lambda override_settings=None: AgentConfig(
+            mcp_servers="",
+            profile=(override_settings or {}).get("agent_profile", "agent0"),
+        ),
+    )
+    monkeypatch.setattr(agent_profile_set, "save_tmp_chat", lambda _context: None)
+    monkeypatch.setattr(
+        agent_profile_set,
+        "mark_dirty_for_context",
+        lambda *_args, **_kwargs: None,
+    )
+
+    context_id = "ctx-profile-switch-running"
+    AgentContext.remove(context_id)
+    context = AgentContext(
+        config=AgentConfig(mcp_servers="", profile="agent0"),
+        id=context_id,
+        set_current=False,
+    )
+    started = threading.Event()
+    release = threading.Event()
+
+    async def block_run() -> None:
+        started.set()
+        while not release.is_set():
+            await asyncio.sleep(0.02)
+
+    context.task = DeferredTask().start_task(block_run)
+    try:
+        assert started.wait(2)
+        assert context.is_running()
+
+        handler = agent_profile_set.SetAgentProfile.__new__(
+            agent_profile_set.SetAgentProfile
+        )
+        response = await handler.process(
+            {"context_id": context_id, "agent_profile": "researcher"},
+            request=None,  # type: ignore[arg-type]
+        )
+
+        assert response["ok"] is True
+        assert context.config.profile == "researcher"
+        assert context.agent0.config.profile == "researcher"
+    finally:
+        release.set()
+        if context.task:
+            try:
+                context.task.result_sync(timeout=2)
+            except Exception:
+                pass
         AgentContext.remove(context_id)

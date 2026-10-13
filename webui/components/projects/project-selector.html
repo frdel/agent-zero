@@ -65,8 +65,18 @@
         display: inline-flex;
         align-items: center;
         gap: 0.3em;
+        height: 36px;
         padding-left: 0.5em;
         padding-right: 0.5em;
+        background: var(--color-surface-translucent);
+        border-color: color-mix(in srgb, var(--color-border) 60%, transparent);
+        border-radius: 8px;
+        box-sizing: border-box;
+    }
+
+    .light-mode .project-dropdown-button {
+        background: var(--color-surface-translucent);
+        border-color: color-mix(in srgb, var(--color-border) 60%, transparent);
     }
 
     /* Keep the menu flush with the trigger so the pointer does not cross a tiny hover gap. */

@@ -27,7 +27,7 @@ def test_initial_greeting_keeps_user_first_order_and_linked_log_after_reload(gre
         number=0,
         context=SimpleNamespace(log=log),
         read_prompt=lambda name: "Hello!" if name == "fw.initial_user_message.md" else greeting,
-        hist_add_user_message=lambda message: messages.append(history.Message(False, message.message)),
+        hist_add_user_message=lambda message: messages.append(history.Message(False, message.message)) or messages[-1],
         hist_add_ai_response=add_ai,
     )
     extension = InitialMessage(agent)
@@ -50,3 +50,27 @@ def test_initial_greeting_keeps_user_first_order_and_linked_log_after_reload(gre
         assert log.logs[0].content == "Welcome."
     else:
         assert log.logs[0].content == greeting
+
+
+def test_subordinate_agents_receive_the_seed_turn_as_few_shot_example():
+    messages = []
+    log = Log()
+
+    def add_ai(content, llm_result):
+        message = history.Message(True, content, metadata=llm_result.metadata())
+        messages.append(message)
+        return message
+
+    agent = SimpleNamespace(
+        number=1,
+        context=SimpleNamespace(log=log),
+        read_prompt=lambda name: "Hello!" if name == "fw.initial_user_message.md" else "A1: Responding",
+        hist_add_user_message=lambda message: messages.append(history.Message(False, message.message)) or messages[-1],
+        hist_add_ai_response=add_ai,
+    )
+    extension = InitialMessage(agent)
+    extension.execute()
+
+    assert len(messages) == 2
+    assert messages[0].content == "Hello!"
+    assert messages[0].metadata["initial_seed"] is True

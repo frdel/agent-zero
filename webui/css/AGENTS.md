@@ -14,7 +14,7 @@
 - Component-specific styles should usually stay inside the component HTML unless they are intentionally shared.
 - `modals.css` owns the shared stacked modal shell, backdrop, scroll area, footer slot, modal button classes, floating/no-backdrop modal behavior, and shared modal section primitives.
 - `surfaces.css` owns surface modal switchers, action rails, draggable header affordances, focus-button state, and right-canvas surface primitives. Files, Editor, and Browser opt into `surface-workspace` for the lighter panel palette, common toolbar chrome, flat `surface-control` buttons, and group separators. Surface modal headers share a 48px border-box height with centered titles and controls; component styles must not override their sizing. Surface modal header controls are borderless in normal, hover, and active states; preserve group separators and keyboard focus outlines. Tab bars and toolbars share a 48px baseline with vertically centered controls. File trees use `--color-background` to contrast with the lighter `--color-panel` workspace. Keep these styles opt-in and preserve viewer/content themes; primary empty-state actions such as Open Browser retain their existing button styling.
-- `index.css` defines global theme variables such as `--color-*`, `--spacing-*`, `--font-size-*`, and `--transition-speed`.
+- `index.css` defines global theme variables such as `--color-*`, `--spacing-*`, `--font-size-*`, and `--transition-speed`; `--color-surface-translucent` is the shared glass fill for floating header and canvas surfaces and stays theme-derived through the chat background.
 
 - `tables.css` owns the shared selection summary and borderless close control used by Files and Memory.
 
@@ -37,6 +37,7 @@
 - Shared message collapsing targets `.message-collapse-content`; user-message attachments must remain outside that target so expanding text never changes attachment visibility.
 - The virtualized chat history disables native scroll anchoring and replay fade-in motion; the message-window renderer owns anchor restoration during atomic page swaps.
 - The persistent right panel transitions its background symmetrically between Welcome and chat in 200ms; the Welcome container remains transparent so it cannot hide the return transition.
+- Shared accent-highlight controls (`.btn-ok`, `.btn-field`, `.btn.primary`, send/upload/annotation buttons, checked togglers, notification unread and info accents) use `var(--color-highlight)` with `color-mix(in srgb, var(--color-highlight) N%, black)` hover and active steps instead of hardcoded blue literals, so a single token retints the accent family.
 - Do not add decorative one-note palette changes that conflict with existing WebUI design.
 
 ## Work Guidance

@@ -14,17 +14,14 @@ class InitialMessage(Extension):
         if not self.agent:
             return
 
-        # Only add initial message for main agent (A0), not subordinate agents
-        if self.agent.number != 0:
-            return
-
         # If the context already contains log messages, do not add another initial message
         if self.agent.context.log.logs:
             return
 
         # Add initial user turn ("Hello!") so AI greeting is not the first message
         initial_user_message = self.agent.read_prompt("fw.initial_user_message.md").strip()
-        self.agent.hist_add_user_message(UserMessage(message=initial_user_message))
+        seed_message = self.agent.hist_add_user_message(UserMessage(message=initial_user_message))
+        seed_message.metadata["initial_seed"] = True
 
         # Construct the initial message from prompt template
         initial_message = self.agent.read_prompt("fw.initial_message.md")

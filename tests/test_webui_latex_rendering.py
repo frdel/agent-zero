@@ -59,5 +59,5 @@ def test_katex_renderer_uses_text_content_and_display_metadata():
     assert 'displayMode: element.dataset.display === "true"' in source
     assert "drawKvpsIncremental(stepDetailScroll, kvps)" in source
     assert "drawKvpsIncremental(stepDetailScroll, kvps, latex)" not in source
-    assert "if (result.kvpsTable) renderLatexText(result.kvpsTable)" in source
-    assert "globalThis.renderMathInElement(container" in source
+    assert "renderLatexText(result.kvpsTable)" not in source
+    assert "globalThis.renderMathInElement(" not in source

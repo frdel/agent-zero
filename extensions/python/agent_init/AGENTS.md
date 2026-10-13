@@ -17,6 +17,7 @@
 - Minify the initial AI message JSON before storage; preserve raw text as the displayed greeting when JSON parsing fails.
 - `_10_initial_message.py` passes `LLMResult.non_llm()` to `hist_add_ai_response` so the Responses-API state seam runs uniformly; the sentinel carries no `response_id` and marks `mode=""`/`state="off"` so stored metadata does not claim a Responses-API turn.
 - The synthetic `Hello!` user turn has no UI log. The assistant greeting is displayed as a response log with the same ID as its history message, preserving the log/history link for branching. Keep the user-first seed without duplicating the visible greeting on reload.
+- Every agent receives the seed turn, including subordinate agents, where it serves as a few-shot example of the response tool-call JSON; it is marked with `initial_seed` metadata so consumers such as chat naming can exclude the synthetic turn from user-derived processing.
 
 ## Work Guidance
 

@@ -183,10 +183,10 @@
       flex-direction: column;
       align-items: flex-start;
       padding: var(--spacing-xs) var(--spacing-sm);
-      background-color: var(--color-chat-background);
-      border: none;
+      background-color: var(--color-surface-translucent);
+      border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
       border-radius: 8px;
-      box-shadow: 0 2px 13px 2px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24);
       overflow: hidden;
       white-space: nowrap;
       transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
@@ -429,7 +429,7 @@
     
     /* Light mode fixes */
     .light-mode .sidebar-header-panel {
-      background-color: var(--color-background);
+      background-color: var(--color-surface-translucent);
       color: #333333;
     }
 

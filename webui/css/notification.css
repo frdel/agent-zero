@@ -7,9 +7,9 @@
     justify-content: center;
     position: relative;
     padding: 0;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
+    background: var(--color-surface-translucent);
+    border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+    border-radius: 8px;
     color: var(--color-text);
     cursor: pointer;
     transition: background-color 0.2s ease, border-color 0.2s ease,
@@ -24,10 +24,9 @@
 }
 
 .notification-toggle:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08),
-        0 4px 12px rgba(0, 0, 0, 0.18);
+    background: color-mix(in srgb, var(--color-panel) 80%, var(--color-background-hover));
+    border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
 }
 
 .notification-toggle .notification-icon {
@@ -45,8 +44,8 @@
 }
 
 .notification-toggle.has-unread {
-    border-color: #2196F3;
-    background: rgba(33, 150, 243, 0.1);
+    border-color: var(--color-highlight);
+    background: color-mix(in srgb, var(--color-highlight) 10%, transparent);
     animation: pulse 2s infinite;
 }
 
@@ -89,18 +88,8 @@
 
 /* Light Mode Styles */
 .light-mode .notification-toggle {
-    background: rgba(0, 0, 0, 0.05);
-    border-color: rgba(0, 0, 0, 0.1);
-}
-
-.light-mode .notification-toggle:hover {
-    background: rgba(0, 0, 0, 0.1);
-    border-color: rgba(0, 0, 0, 0.2);
-}
-
-.light-mode .notification-toggle.has-unread {
-    border-color: #2196F3;
-    background: rgba(33, 150, 243, 0.1);
+    background: var(--color-surface-translucent);
+    border-color: color-mix(in srgb, var(--color-border) 60%, transparent);
 }
 
 .light-mode .notification-toggle.disabled:hover {

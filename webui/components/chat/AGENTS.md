@@ -12,6 +12,7 @@
 - `navigation/` owns chat navigation state.
 - `top-section/` owns chat header/top area.
 - `model-gate-store.js` and `model-setup-gate.html` own the deferred in-thread model setup gate.
+- Gate dispatch (`dispatchPendingIfConfigured`) must capture `pending` and raise its latch before any await, and re-verify pending identity after awaits; pending is never re-read from the store after an await point.
 
 ## Local Contracts
 
@@ -23,13 +24,16 @@
 - Unsent composer text is kept as a separate browser-session draft for each selected chat and restored when switching contexts; a Welcome-screen prompt must follow the chat created for its first send.
 - Composer text uses the main UI font by default; typing a triple-backtick fence and pressing Enter turns that line into a visual code block that serializes back to fenced Markdown, while pasted fenced Markdown stays plain text.
 - The contenteditable composer sizes naturally between its CSS minimum and maximum heights; do not freeze measured scroll heights into pixels during mounting or editing.
-- Missing model setup is gated at send intent: the first unconfigured send renders an in-thread setup card, keeps the pending prompt in browser session storage for refresh recovery, and must not call `/message_async` until a chat model is configured.
+- The backend rejects dispatches when no chat model is configured: a `user_message_ui` extension in `_model_config` flags the chat and `/message_async` returns a `model_not_configured` payload before logging or dispatching. The client opens the setup gate from that response and must not round-trip a per-send configuration pre-check.
 - While the setup gate is open, the composer remains typeable but send is blocked until setup succeeds.
 - The setup gate must delegate Cloud/Local setup, account connections, and advanced model configuration to the existing onboarding and model-preset editor modals; do not duplicate provider/model/key forms inline.
 - A connected OAuth account without Main/Utility model selection is its own gate state; route to model configuration and do not select models automatically.
 - Model setup surfaces that change readiness must notify the gate with `model-setup-changed`, `model-configured`, or an existing modal/onboarding completion signal so the pending prompt can retry automatically.
+- Rapid sends (clicks or Enter presses) cannot dispatch duplicate `/message_async` calls: an in-flight send makes further `sendMessage` invocations no-ops until the first completes, before backend `running` state flips.
+- Composer pause state is optimistic: a click in flight suppresses poll-snapshot writes to the pause flag until its request settles.
 - The top-section project selector, clock, and connection indicator must respect the instance-level mobile/desktop visibility preferences.
 - While the selected context is running, an empty composer makes the primary button stop the active run; typed text still adds to the queue, and Enter with an empty composer still sends queued messages.
+- Pending queue items render image thumbnails from local blob URLs until the upload confirms; confirmed attachments use server `image_get` URLs, and a failed queue add drops its pending entry.
 - Chat navigation controls must cross virtual message-window boundaries; top and bottom target the full cached history rather than only the mounted DOM slice.
 - The page-wide attachment drop overlay must activate only for external file drags so internal WebUI drag interactions keep their own targets.
 

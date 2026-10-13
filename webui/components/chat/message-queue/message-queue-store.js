@@ -7,6 +7,7 @@ import {
 } from "/components/notifications/notification-store.js";
 import { sleep } from "/js/sleep.js";
 import { store as chatsStore } from "/components/sidebar/chats/chats-store.js";
+import { store as attachmentsStore } from "/components/chat/attachments/attachmentsStore.js";
 
 const model = {
   // items: [],
@@ -61,6 +62,7 @@ const model = {
       id: tempId,
       text: text.substring(0, 200) || "(attachment only)",
       attachments: attachments.map((a) => a.name || a.file?.name || "file"),
+      attachmentUrls: this._pendingAttachmentUrls(attachments),
       pending: true,
     };
 
@@ -120,15 +122,21 @@ const model = {
         });
 
         if (!resp || !resp.ok) {
+          this._dropPendingItem(tempId);
           return false;
         }
 
         const response = await resp.json();
 
+        if (!response?.ok) {
+          this._dropPendingItem(tempId);
+        }
+
         return response?.ok || false;
       } catch (e) {
         if (e?.name !== "AbortError") {
           console.error("Failed to queue message:", e);
+          this._dropPendingItem(tempId);
         }
         return false;
       } finally {
@@ -142,6 +150,21 @@ const model = {
     const chained = previous.catch(() => false).then(run);
     this._lastAddToQueuePromise = chained.catch(() => false);
     return await chained;
+  },
+
+  _pendingAttachmentUrls(attachments) {
+    const urls = {};
+    for (const att of attachments) {
+      const name = att.name || att.file?.name || "file";
+      if (attachmentsStore.isImageFile(name)) {
+        urls[name] = att.url || (att.file ? URL.createObjectURL(att.file) : null);
+      }
+    }
+    return urls;
+  },
+
+  _dropPendingItem(tempId) {
+    this.pendingItems = this.pendingItems.filter((p) => p.id !== tempId);
   },
 
   async removeItem(itemId) {
@@ -236,8 +259,9 @@ const model = {
     // this.scrollQueueToBottom();
   },
 
-  getAttachmentUrl(filename) {
-    return `/api/image_get?path=/a0/usr/uploads/${encodeURIComponent(filename)}`;
+  getAttachmentUrl(item, filename) {
+    const local = item?.pending ? item.attachmentUrls?.[filename] : null;
+    return local || `/api/image_get?path=/a0/usr/uploads/${encodeURIComponent(filename)}`;
   },
 };
 

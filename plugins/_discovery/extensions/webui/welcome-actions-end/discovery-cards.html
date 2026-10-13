@@ -450,7 +450,7 @@
             border: 0;
             border-radius: 8px;
             padding: 0.55rem 0.9rem;
-            background-color: #4248f1;
+            background-color: var(--color-highlight);
             color: #fff;
             font-family: var(--font-family-main, "Rubik", Arial, Helvetica, sans-serif);
             font-size: 0.88rem;
@@ -461,7 +461,7 @@
 
         .discovery-account-cta:hover,
         .discovery-account-cta:focus-visible {
-            background-color: #353bc5;
+            background-color: color-mix(in srgb, var(--color-highlight) 80%, black);
             filter: none;
             outline: none;
         }

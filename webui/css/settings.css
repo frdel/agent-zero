@@ -134,7 +134,7 @@ textarea:focus {
 }
 
 input:checked + .toggler {
-  background-color: #2196f3;
+  background-color: var(--color-highlight);
 }
 
 input:checked + .toggler:before {

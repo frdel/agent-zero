@@ -19,12 +19,6 @@ class SetAgentProfile(ApiHandler):
         context = AgentContext.get(context_id)
         if not context:
             return Response(status=404, response="Context not found")
-        if context.is_running():
-            return Response(
-                status=409,
-                response="Agent profile can be changed after the current run finishes.",
-            )
-
         profiles = subagents.get_available_agents_dict(
             projects.get_context_project_name(context)
         )

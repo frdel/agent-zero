@@ -1356,13 +1356,13 @@
 
     .browser-annotation-send {
       border-radius: 12px;
-      background: #4248f1;
+      background: var(--color-highlight);
     }
 
-    .browser-annotation-send:hover { background: #353bc5; }
-    .browser-annotation-send:active { background: #2b309c; transform: translateY(1px) scale(0.98); }
+    .browser-annotation-send:hover { background: color-mix(in srgb, var(--color-highlight) 80%, black); }
+    .browser-annotation-send:active { background: color-mix(in srgb, var(--color-highlight) 65%, black); transform: translateY(1px) scale(0.98); }
     .browser-annotation-send:disabled {
-      background: #4248f1;
+      background: var(--color-highlight);
       cursor: not-allowed;
       opacity: 0.5;
     }

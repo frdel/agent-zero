@@ -51,6 +51,7 @@ function convertIconMarkersToHtml(value) {
 
 const model = {
   paused: false,
+  _pendingPause: 0,
   _message: "",
   _editorEl: null,
   _history: [],
@@ -422,19 +423,28 @@ const model = {
     }
   },
 
+  applyPausedSnapshot(paused) {
+    // A click in flight owns the pause state until its request settles
+    if ((this._pendingPause || 0) > 0) return;
+    this.paused = paused;
+  },
+
   async pauseAgent(paused) {
     const prev = this.paused;
     this.paused = paused;
+    this._pendingPause = (this._pendingPause || 0) + 1;
     try {
       const context = globalThis.getContext?.();
       if (!globalThis.sendJsonData)
         throw new Error("sendJsonData not available");
       await globalThis.sendJsonData("/pause", { paused, context });
     } catch (e) {
-      this.paused = prev;
+      if ((this._pendingPause || 0) <= 1) this.paused = prev;
       if (globalThis.toastFetchError) {
         globalThis.toastFetchError("Error pausing agent", e);
       }
+    } finally {
+      this._pendingPause = Math.max(0, (this._pendingPause || 0) - 1);
     }
   },
 
