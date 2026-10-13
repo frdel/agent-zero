@@ -325,6 +325,7 @@
             <div class="field-title">Additional parameters</div>
             <div class="field-description">
               Any other parameters supported by <a href='https://docs.litellm.ai/docs/set_keys' target='_blank'>LiteLLM</a>. Format is KEY=VALUE on individual lines. Values can be JSON objects, arrays, numbers, lowercase true/false/null, or text. Quote strings to keep values such as "true" as text.
+              <div x-show="modelType !== 'embedding'">For custom providers, set <code>a0_prompt_cache_mode=prompt_cache_key</code> or <code>a0_prompt_cache_mode=cache_control</code> to match the provider's cache support. The default is <code>auto</code>; <code>off</code> disables automatic cache hints.</div>
             </div>
           </div>
           <div class="field-control">

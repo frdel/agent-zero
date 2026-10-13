@@ -47,7 +47,9 @@
 - Preserve provider-state metadata when Responses API calls succeed, and fall back to local replay when provider state is unsupported.
 - Keep prompt-cache markers only for providers that accept them.
 - Chat Completions parsing prefers `reasoning_content` and falls back to `reasoning` for both streaming deltas and complete messages, preserving response content and applying the same encrypted-reasoning filter. Verify with `test_chat_reasoning_field_fallback` in `tests/test_stream_tool_early_stop.py`.
-- Automatic `cache_control` marker placement is provider-gated; the OpenAI/Codex Responses configuration bypasses it. Skipping a marker target never removes its message, tool call, or reasoning content. Responses `phase: commentary`, encrypted reasoning, native replay, and request flags remain owned by their Responses paths.
+- `a0_prompt_cache_mode` selects `auto` (existing provider detection), `prompt_cache_key`, `cache_control`, or `off` (no automatic hints). Reject invalid values before provider calls and strip the internal control from both transports. Provider defaults and model Additional parameters may set it; embeddings do not acquire chat-provider defaults.
+- Cache-key mode hashes the stable leading context and tool definitions, excluding changing conversation tails. Preserve caller keys at the request level or in `extra_body`; explicit retention still passes through when automatic hints are off. Strip message markers in cache-key mode without mutating callers.
+- Automatic `cache_control` marker placement follows the selected cache mode; default OpenAI/Codex Responses configuration bypasses it. An explicit `cache_control` override keeps marked requests on Chat Completions, including custom OpenAI-compatible endpoints. Skipping a marker target never removes its message, tool call, or reasoning content. Responses `phase: commentary`, encrypted reasoning, native replay, and request flags remain owned by their Responses paths.
 - For supported Chat providers, mark the last leading system/developer message and the last two nonempty assistant messages. Retain the previous assistant boundary as the conversation grows; leave user/tool tails containing rebuilt extras unmarked. Before the first assistant message, cache only the leading context. Do not add markers to empty assistant content or thinking/redacted-thinking blocks. Automatic placement uses at most three message breakpoints, leaving one for tool definitions; this is not a limit on conversation messages or native tool calls. Do not mutate caller messages or stored history.
 
 ## Work Guidance
@@ -65,6 +67,7 @@
 - Run `pytest tests/test_stream_tool_early_stop.py tests/test_responses_architecture.py -q` after changing transport normalization or fallback behavior.
 - Run `pytest tests/test_prompt_protocol.py -q` for cache-boundary changes; the multi-turn check covers changing extras, preserved prior boundaries, and deliberate invalidation after a protocol edit.
 - Run local-provider smoke checks when changing OpenAI-compatible request cleanup.
+- Run `pytest tests/test_litellm_sdk.py -q` for outgoing cache-routing bodies on Venice, Agent Zero API, and custom providers across sync/async and streaming/non-streaming calls.
 
 ## Child DOX Index
 

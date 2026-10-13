@@ -384,7 +384,7 @@ class LiteLLMTransport:
             "messages": ChatCompletionsTransport.prepare_messages(
                 self.messages,
                 model=self.model,
-                kwargs=chat_kwargs,
+                kwargs=self.kwargs,
             ),
             "stream": stream,
             **chat_kwargs,
@@ -543,7 +543,7 @@ class ChatCompletionsTransport:
         model: str = "",
         kwargs: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
-        if _is_openai_prompt_cache_provider(model, kwargs or {}):
+        if _prompt_cache_mode(model, kwargs or {}) == "prompt_cache_key":
             stripped = _without_cache_control(messages)
             return stripped if isinstance(stripped, list) else messages
         return messages
@@ -558,18 +558,19 @@ class ChatCompletionsTransport:
         explicit_prompt_caching: bool = False,
     ) -> dict[str, Any]:
         chat_kwargs = dict(kwargs)
+        cache_mode = _prompt_cache_mode(model, chat_kwargs)
         _drop_internal_transport_kwargs(chat_kwargs)
         if not _has_tools(chat_kwargs.get("tools")):
             chat_kwargs.pop("tools", None)
             chat_kwargs.pop("tool_choice", None)
             chat_kwargs.pop("parallel_tool_calls", None)
-        if _is_openai_prompt_cache_provider(model, chat_kwargs):
+        if cache_mode == "prompt_cache_key":
             _prepare_openai_prompt_cache_params(
                 chat_kwargs,
                 messages or [],
                 model=model,
             )
-        elif _supports_cache_control_markers(model, chat_kwargs) and (
+        elif cache_mode == "cache_control" and (
             explicit_prompt_caching or _has_cache_control(messages or [])
         ):
             _apply_tool_cache_control(chat_kwargs)
@@ -872,6 +873,7 @@ class ResponsesTransport:
             request.pop("parallel_tool_calls", None)
 
         cls.prepare_prompt_caching(request, messages or [], model=model)
+        request.pop("a0_prompt_cache_mode", None)
 
         _ = stop
         return {key: value for key, value in request.items() if value is not None}
@@ -954,10 +956,10 @@ class ResponsesTransport:
         messages: list[dict[str, Any]],
         model: str = "",
     ) -> None:
-        if not _is_openai_prompt_cache_provider(model, request):
+        if _prompt_cache_mode(model, request) == "prompt_cache_key":
+            _prepare_openai_prompt_cache_params(request, messages, model=model)
+        elif not _is_openai_prompt_cache_provider(model, request):
             return
-
-        _prepare_openai_prompt_cache_params(request, messages, model=model)
 
         for key in OPENAI_RESPONSES_EXTRA_BODY_PARAMS:
             if key not in request:
@@ -1558,6 +1560,7 @@ def _drop_responses_only_kwargs(kwargs: dict[str, Any]) -> None:
 
 def _drop_internal_transport_kwargs(kwargs: dict[str, Any]) -> None:
     _drop_legacy_transport_kwargs(kwargs)
+    kwargs.pop("a0_prompt_cache_mode", None)
     kwargs.pop("a0_explicit_prompt_caching", None)
     kwargs.pop("a0_responses_function_tools", None)
     kwargs.pop("responses_builtin_tools", None)
@@ -1628,7 +1631,7 @@ def apply_chat_prompt_cache_markers(
     model: str = "",
     kwargs: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
-    if not _supports_cache_control_markers(model, kwargs or {}):
+    if _prompt_cache_mode(model, kwargs or {}) != "cache_control":
         return [dict(message) for message in messages]
 
     prepared = [_strip_message_cache_control(message) for message in messages]
@@ -1750,7 +1753,26 @@ def _should_preserve_cache_control_on_chat(
 ) -> bool:
     if not (_has_cache_control(messages) or _has_cache_control(kwargs.get("tools"))):
         return False
-    return not _is_native_responses_provider(model, kwargs)
+    return (
+        _prompt_cache_mode(model, kwargs) == "cache_control"
+        or not _is_native_responses_provider(model, kwargs)
+    )
+
+
+def _prompt_cache_mode(model: str, kwargs: dict[str, Any]) -> str:
+    value = kwargs.get("a0_prompt_cache_mode")
+    mode = "auto" if value is None else str(value).strip().lower()
+    if mode not in {"auto", "prompt_cache_key", "cache_control", "off"}:
+        raise ValueError(
+            "a0_prompt_cache_mode must be auto, prompt_cache_key, cache_control, or off"
+        )
+    if mode != "auto":
+        return mode
+    if _is_openai_prompt_cache_provider(model, kwargs):
+        return "prompt_cache_key"
+    if _supports_cache_control_markers(model, kwargs):
+        return "cache_control"
+    return "off"
 
 
 def _is_native_responses_provider(model: str, kwargs: dict[str, Any]) -> bool:
@@ -1811,7 +1833,10 @@ def _prepare_openai_prompt_cache_params(
     *,
     model: str = "",
 ) -> None:
-    if "prompt_cache_key" in request:
+    extra_body = request.get("extra_body")
+    if "prompt_cache_key" in request or (
+        isinstance(extra_body, dict) and "prompt_cache_key" in extra_body
+    ):
         return
 
     sanitized_messages = _without_cache_control(messages)

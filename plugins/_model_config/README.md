@@ -36,6 +36,12 @@ The normal plugin resolution order selects the most specific available reference
 - The preset editor exposes the shared API key for each selected provider and saves key changes separately from secret-free preset definitions.
 - Project Settings selects from the same global preset definitions.
 
+## Cache Routing
+
+Venice and Agent Zero API send a stable `prompt_cache_key` derived from the model, leading instructions, and tool definitions. This is a routing hint; cache availability and retention remain provider-controlled. Venice documents it in its [Chat Completions API](https://docs.venice.ai/api-reference/endpoint/chat/completions).
+
+In a chat model's **Advanced Settings → Additional parameters**, set `a0_prompt_cache_mode=prompt_cache_key` or `a0_prompt_cache_mode=cache_control` to match a custom provider's supported format. `auto` keeps the existing provider detection; `off` disables automatic hints. Explicit keys, including `extra_body` keys, remain unchanged. Marker mode keeps marked requests on Chat Completions and uses the existing stable message/tool boundaries.
+
 ## Initial Presets And Migration
 
 The startup migration converts the prior global full model configuration into `Default`, preserves existing global presets, promotes distinct scoped full configurations and legacy project presets into uniquely named global presets, and rewrites scoped config files to selection-only JSON. Original files receive a `.pre-unified-presets.bak` backup before replacement; the migration is idempotent.

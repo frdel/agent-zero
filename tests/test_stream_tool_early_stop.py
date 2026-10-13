@@ -1283,6 +1283,81 @@ def test_chat_kwargs_add_openai_prompt_cache_key_for_chat_completions():
     assert kwargs["max_tokens"] == 10
 
 
+@pytest.mark.parametrize("model,mode,expected", [
+    ("openai/gpt-5.4", "auto", "prompt_cache_key"),
+    ("anthropic/claude-sonnet-4-5", "auto", "cache_control"),
+    ("openai/custom", "auto", "off"),
+    ("openai/custom", "prompt_cache_key", "prompt_cache_key"),
+    ("openai/custom", "cache_control", "cache_control"),
+    ("openai/gpt-5.4", "off", "off"),
+    ("anthropic/claude-sonnet-4-5", "off", "off"),
+])
+def test_prompt_cache_mode_controls_hints_without_mutating_callers(model, mode, expected):
+    from copy import deepcopy
+
+    messages = [{"role": "system", "content": "Stable instructions"},
+                {"role": "user", "content": "Question"}]
+    kwargs = {"a0_prompt_cache_mode": mode, "a0_explicit_prompt_caching": True}
+    if model == "openai/custom":
+        kwargs["api_base"] = "https://custom.example/v1"
+    original = deepcopy((messages, kwargs))
+    request = litellm_transport.LiteLLMTransport(
+        model=model, messages=messages, kwargs=kwargs
+    )._chat_request(stream=False)
+
+    assert (messages, kwargs) == original
+    assert ("prompt_cache_key" in request) == (expected == "prompt_cache_key")
+    assert litellm_transport._has_cache_control(request["messages"]) == (expected == "cache_control")
+    assert "a0_prompt_cache_mode" not in request
+
+
+@pytest.mark.parametrize("value", [False, "", "typo"])
+def test_invalid_prompt_cache_mode_fails_before_provider_call(value):
+    with pytest.raises(ValueError, match="a0_prompt_cache_mode must be"):
+        litellm_transport.ChatCompletionsTransport.prepare_kwargs(
+            {"a0_prompt_cache_mode": value}, model="openai/custom"
+        )
+
+
+def test_custom_cache_control_override_keeps_markers_on_chat():
+    transport = litellm_transport.LiteLLMTransport(
+        model="openai/custom",
+        messages=[{"role": "system", "content": "Stable instructions"}],
+        kwargs={"api_base": "https://custom.example/v1", "a0_api_mode": "responses",
+                "a0_prompt_cache_mode": "cache_control", "a0_explicit_prompt_caching": True},
+    )
+    assert transport.policy.mode is litellm_transport.TransportMode.CHAT_COMPLETIONS
+    assert litellm_transport._has_cache_control(transport._chat_request(stream=False)["messages"])
+
+
+@pytest.mark.parametrize("mode", ["prompt_cache_key", "off"])
+def test_responses_cache_mode_preserves_explicit_retention(mode):
+    request = litellm_transport.ResponsesTransport.from_chat(
+        [{"role": "system", "content": "Stable instructions"}],
+        {"a0_prompt_cache_mode": mode, "prompt_cache_retention": "24h"},
+        model="openai/gpt-5.4",
+    )
+    assert ("prompt_cache_key" in request) == (mode == "prompt_cache_key")
+    assert request["extra_body"]["prompt_cache_retention"] == "24h"
+    assert "a0_prompt_cache_mode" not in request
+
+
+@pytest.mark.parametrize("key_kwargs", [
+    {"prompt_cache_key": "caller-key"},
+    {"extra_body": {"prompt_cache_key": "caller-key"}},
+])
+def test_prompt_cache_mode_preserves_explicit_keys_on_both_transports(key_kwargs):
+    messages = [{"role": "system", "content": "Stable instructions"}]
+    kwargs = {"api_base": "https://custom.example/v1",
+              "a0_prompt_cache_mode": "prompt_cache_key", **key_kwargs}
+    for prepare in (litellm_transport.ChatCompletionsTransport.prepare_kwargs,
+                    litellm_transport.ResponsesTransport.prepare_kwargs):
+        request = prepare(kwargs, model="openai/custom", messages=messages)
+        assert request.get("prompt_cache_key") == key_kwargs.get("prompt_cache_key")
+        assert request.get("extra_body", {}).get("prompt_cache_key") == key_kwargs.get("extra_body", {}).get("prompt_cache_key")
+        assert "a0_prompt_cache_mode" not in request
+
+
 def test_chat_messages_strip_cache_control_for_openai_prompt_cache():
     messages = [
         {

@@ -203,6 +203,72 @@ def test_sdk_anthropic_cache_markers_over_http(provider):
     assert body["messages"][1]["content"][-1]["cache_control"] == {"type": "ephemeral"}
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("async_call", [False, True])
+@pytest.mark.parametrize("stream", [False, True])
+@pytest.mark.parametrize("provider_id,mode,expected", [
+    ("venice", None, "prompt_cache_key"),
+    ("a0_venice", None, "prompt_cache_key"),
+    ("other", "prompt_cache_key", "prompt_cache_key"),
+    ("other", "cache_control", "cache_control"),
+    ("other", "auto", "off"),
+    ("venice", "off", "off"),
+])
+async def test_sdk_provider_cache_routing_over_http(provider, monkeypatch, provider_id, mode, expected, stream, async_call):
+    from copy import deepcopy
+    from pathlib import Path
+    import yaml
+    from helpers.litellm_transport import _has_cache_control
+
+    definitions = yaml.safe_load((Path(__file__).resolve().parents[1] / "conf/model_providers.yaml").read_text())
+    monkeypatch.setattr(models, "get_provider_config", lambda kind, pid: definitions[kind].get(pid))
+    monkeypatch.setattr(models, "get_api_key", lambda _pid: "test-key")
+    wrapper = models.get_chat_model(provider_id, "llama-3.3-70b", **(
+        {"a0_prompt_cache_mode": mode} if mode is not None else {}
+    ))
+    messages = [{"role": "system", "content": "Stable instructions"},
+                {"role": "user", "content": "Hello"}]
+    kwargs = {**wrapper.kwargs, **provider.kwargs, "a0_explicit_prompt_caching": True,
+              "tools": [{"type": "function", "function": {k: v for k, v in TOOL.items() if k != "type"}}]}
+    original = deepcopy((messages, kwargs))
+    provider.replies.append((200, chat_reply(stream)))
+    transport = LiteLLMTransport(model=wrapper.model_name, messages=messages, kwargs=kwargs)
+    if stream:
+        chunks = [chunk async for chunk in transport.astream()] if async_call else list(transport.stream())
+        assert chunks
+    elif async_call:
+        await transport.acomplete()
+    else:
+        transport.complete()
+
+    _, path, body = provider.requests[0]
+    assert path == "/v1/chat/completions"
+    assert (messages, kwargs) == original
+    assert not any(key.startswith("a0_") for key in body)
+    assert ("prompt_cache_key" in body) == (expected == "prompt_cache_key")
+    assert _has_cache_control(body) == (expected == "cache_control")
+    if expected == "prompt_cache_key":
+        assert body["prompt_cache_key"].startswith("a0-")
+    elif expected == "cache_control":
+        assert body["messages"][0]["content"][-1]["cache_control"] == {"type": "ephemeral"}
+        assert body["tools"][0]["function"]["cache_control"] == {"type": "ephemeral"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["prompt_cache_key", "off"])
+async def test_sdk_custom_responses_cache_mode_over_http(provider, mode):
+    provider.replies.append((200, response_reply(False)))
+    transport = LiteLLMTransport(
+        model="openai/gpt-4o", messages=[{"role": "system", "content": "Stable instructions"}],
+        kwargs={**provider.kwargs, "a0_api_mode": "responses", "a0_prompt_cache_mode": mode},
+    )
+    await transport.acomplete()
+    _, path, body = provider.requests[0]
+    assert path == "/v1/responses"
+    assert ("prompt_cache_key" in body) == (mode == "prompt_cache_key")
+    assert "a0_prompt_cache_mode" not in body
+
+
 @pytest.mark.parametrize("provider_id,name,route,base", [
     ("cerebras", "gpt-oss-120b", "cerebras", "https://api.cerebras.ai/v1"),
     ("nebius", "meta-llama/Llama-3.3-70B-Instruct", "nebius", "https://api.tokenfactory.nebius.com/v1"),

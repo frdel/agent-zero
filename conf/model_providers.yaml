@@ -33,6 +33,7 @@ chat:
       endpoint_url: "https://api.venice.ai/api/v1/models"
     kwargs:
       a0_api_mode: chat
+      a0_prompt_cache_mode: prompt_cache_key
       api_base: https://llm.agent-zero.ai/v1
       venice_parameters:
         include_venice_system_prompt: false
@@ -215,6 +216,7 @@ chat:
       endpoint_url: "https://api.venice.ai/api/v1/models"
     kwargs:
       a0_api_mode: chat
+      a0_prompt_cache_mode: prompt_cache_key
       extra_body:
         venice_parameters:
           include_venice_system_prompt: false
