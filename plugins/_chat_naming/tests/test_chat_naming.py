@@ -340,6 +340,21 @@ async def test_rename_command_saves_a_custom_name(monkeypatch):
     }
 
 
+async def test_rejected_rename_does_not_disable_automatic_naming():
+    agent = _Agent([], name="Automatic Name")
+
+    with pytest.raises(ValueError, match="200 characters"):
+        await rename_command.run(
+            {
+                "invocation": {"raw_arguments": "x" * 201},
+                "context": {"agent": agent},
+            }
+        )
+
+    assert agent.context.name == "Automatic Name"
+    assert agent.context.get_data(naming.MANUAL_NAME_KEY) is None
+
+
 async def test_rename_auto_generates_and_saves_a_name(monkeypatch):
     agent = _Agent([_Message({"user_message": "Plan a launch"}, sequence=1)])
     generated = []
