@@ -1,4 +1,4 @@
-from typing import Any, List, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 from langchain.storage import InMemoryByteStore, LocalFileStore
 from langchain.embeddings import CacheBackedEmbeddings
 from helpers import guids
@@ -17,7 +17,8 @@ from langchain_community.vectorstores.utils import (
 )
 from langchain_core.embeddings import Embeddings
 
-import os, json, hashlib, re
+import os, json, hashlib, re, pickle
+from pathlib import Path
 
 import numpy as np
 
@@ -49,6 +50,105 @@ class MyFaiss(FAISS):
 
     def get_all_docs(self):
         return self.docstore._dict  # type: ignore
+
+    # --- Fix C: atomic save_local (dev-ticket-2026-08-21, upstream PR #1797) ---
+    def save_local(self, folder_path: str, index_name: str = "index") -> None:
+        """Save FAISS index, docstore, and index_to_docstore_id to disk atomically.
+
+        Both files are written to temp paths first, then renamed into place
+        via os.replace(). A crash or task cancellation between the two writes
+        can no longer leave a half-written index.faiss/index.pkl pair (the
+        index/docstore desync root cause); on failure the temp files are
+        removed and the originals stay intact.
+        """
+        path = Path(folder_path)
+        path.mkdir(exist_ok=True, parents=True)
+
+        index_tmp = str(path / f"{index_name}.faiss.tmp")
+        pkl_tmp = str(path / f"{index_name}.pkl.tmp")
+
+        try:
+            # save index separately since it is not picklable
+            faiss.write_index(self.index, index_tmp)
+
+            # save docstore and index_to_docstore_id
+            with open(pkl_tmp, "wb") as f:
+                pickle.dump((self.docstore, self.index_to_docstore_id), f)
+                f.flush()
+                os.fsync(f.fileno())
+
+            # atomically move both files into place (POSIX rename is atomic)
+            os.replace(index_tmp, str(path / f"{index_name}.faiss"))
+            os.replace(pkl_tmp, str(path / f"{index_name}.pkl"))
+        except BaseException:
+            # clean up temp files; originals remain untouched. BaseException
+            # so cleanup also runs on asyncio.CancelledError.
+            for tmp in (index_tmp, pkl_tmp):
+                try:
+                    os.remove(tmp)
+                except OSError:
+                    pass
+            raise
+
+    # --- Fix B: orphan-skip (dev-ticket-2026-08-21, upstream PR #1797) ---
+    def similarity_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Union[Callable, Dict[str, Any]]] = None,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Search that self-heals index/docstore desync instead of raising.
+
+        If a vector's mapping entry is missing (KeyError) or points to a
+        docstore id that no longer exists (ValueError), the orphaned vectors
+        are removed, the mapping is compacted, and the search retries once.
+        """
+        try:
+            return super().similarity_search_with_score_by_vector(
+                embedding, k=k, filter=filter, fetch_k=fetch_k, **kwargs
+            )
+        except ValueError as e:
+            if "Could not find document for id" not in str(e):
+                raise
+        except KeyError:
+            pass
+
+        try:
+            self._remove_orphaned_ids()
+            return super().similarity_search_with_score_by_vector(
+                embedding, k=k, filter=filter, fetch_k=fetch_k, **kwargs
+            )
+        except Exception:
+            # never crash memory recall on a corrupted store
+            return []
+
+    def _remove_orphaned_ids(self) -> None:
+        """Remove vectors whose mapping entry is outside the mapping range or
+        whose docstore id no longer exists, then compact the mapping."""
+        try:
+            doc_ids = set(self.docstore._dict.keys())
+        except AttributeError:
+            return
+        orphan_positions = set()
+        for i in range(self.index.ntotal):
+            doc_id = self.index_to_docstore_id.get(i)
+            if doc_id is None or doc_id not in doc_ids:
+                orphan_positions.add(i)
+        if not orphan_positions:
+            return
+        self.index.remove_ids(
+            np.fromiter(sorted(orphan_positions), dtype=np.int64)
+        )
+        remaining = [
+            doc_id
+            for i, doc_id in sorted(self.index_to_docstore_id.items())
+            if i not in orphan_positions
+        ]
+        self.index_to_docstore_id = {
+            i: doc_id for i, doc_id in enumerate(remaining)
+        }
 
 
 class Memory:

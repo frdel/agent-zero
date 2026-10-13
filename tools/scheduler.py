@@ -165,6 +165,23 @@ class SchedulerTool(Tool):
             color = None
         return project_slug, color
 
+    def _project_metadata_from_kwargs(self, kwargs: dict) -> tuple[str | None, str | None, str | None]:
+        """Resolve project metadata for task creation.
+
+        An explicit `project` kwarg overrides the chat-context project.
+        Returns (slug, color, error). error is non-None for an unknown project.
+        """
+        override: str | None = kwargs.get("project", None)
+        if override:
+            try:
+                metadata = load_basic_project_data(override)
+            except Exception:
+                return None, None, f"Unknown project '{override}'. Task not created."
+            color = metadata.get("color") or None
+            return override, color, None
+        slug, color = self._resolve_project_metadata()
+        return slug, color, None
+
     async def list_tasks(self, **kwargs) -> Response:
         state_filter: list[str] | None = kwargs.get("state", None)
         type_filter: list[str] | None = kwargs.get("type", None)
@@ -294,6 +311,13 @@ class SchedulerTool(Tool):
                 return Response(message=err, break_loop=False)
             update_params["plan"] = task_plan
 
+        if "project" in kwargs:
+            project_slug, project_color, project_err = self._project_metadata_from_kwargs(kwargs)
+            if project_err:
+                return Response(message=project_err, break_loop=False)
+            update_params["project_name"] = project_slug
+            update_params["project_color"] = project_color
+
         updated_task = await scheduler.update_task(task_uuid, **update_params)
         await scheduler.save()
         if not updated_task:
@@ -328,7 +352,9 @@ class SchedulerTool(Tool):
         if err := _validate_task_schedule(task_schedule):
             return Response(message=err, break_loop=False)
 
-        project_slug, project_color = self._resolve_project_metadata()
+        project_slug, project_color, project_err = self._project_metadata_from_kwargs(kwargs)
+        if project_err:
+            return Response(message=project_err, break_loop=False)
 
         task = ScheduledTask.create(
             name=name,
@@ -352,7 +378,9 @@ class SchedulerTool(Tool):
         token: str = str(random.randint(1000000000000000000, 9999999999999999999))
         dedicated_context: bool = kwargs.get("dedicated_context", True)
 
-        project_slug, project_color = self._resolve_project_metadata()
+        project_slug, project_color, project_err = self._project_metadata_from_kwargs(kwargs)
+        if project_err:
+            return Response(message=project_err, break_loop=False)
 
         task = AdHocTask.create(
             name=name,
@@ -380,7 +408,9 @@ class SchedulerTool(Tool):
         if err:
             return Response(message=err, break_loop=False)
 
-        project_slug, project_color = self._resolve_project_metadata()
+        project_slug, project_color, project_err = self._project_metadata_from_kwargs(kwargs)
+        if project_err:
+            return Response(message=project_err, break_loop=False)
 
         # Create planned task with task plan
         task = PlannedTask.create(
