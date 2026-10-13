@@ -68,6 +68,84 @@ def page():
         browser.close()
 
 
+def test_action_buttons_keep_order_and_mounted_nodes_during_updates(page):
+    page.evaluate("""async () => {
+      const {createActionButton, syncActionButtons} = await import(
+        '/components/messages/action-buttons/simple-action-buttons.js');
+      const bar = document.createElement('div');
+      const expand = document.createElement('button');
+      expand.className = 'expand-btn';
+      const plugin = document.createElement('button');
+      bar.append(expand, plugin);
+      document.body.append(bar);
+      const buttons = names => names.map(name => createActionButton(name));
+      const order = () => [...bar.querySelectorAll('.action-button')]
+        .map(button => button.dataset.actionKey.split(':')[0]).join(',');
+      try {
+        syncActionButtons(bar, buttons(['detail', 'copy', 'speak']));
+        check(order() === 'detail,copy,speak', 'new action bar reversed its actions');
+        const mounted = [...bar.querySelectorAll('.action-button')];
+        mounted[1].focus();
+        const observer = new MutationObserver(() => {});
+        observer.observe(bar, {childList:true});
+        syncActionButtons(bar, buttons(['detail', 'copy', 'speak']));
+        check(observer.takeRecords().length === 0, 'stream update remounted unchanged buttons');
+        observer.disconnect();
+        check(document.activeElement === mounted[1], 'stream update lost button focus');
+        syncActionButtons(bar, buttons(['detail', 'other', 'speak']));
+        check(order() === 'detail,other,speak', 'replacement moved behind a retained action');
+        check(bar.querySelector('.action-speak') === mounted[2], 'unchanged trailing action was remounted');
+        syncActionButtons(bar, buttons(['copy', 'speak']));
+        check(order() === 'copy,speak', 'omitting an action changed the remaining order');
+        check(expand.parentNode === bar && plugin.parentNode === bar, 'extension or collapse action was removed');
+        check(bar.lastChild === plugin, 'standard actions moved behind the plugin action');
+      } finally {
+        bar.remove();
+      }
+    }""")
+
+
+def test_preset_switch_preserves_composer_and_saved_chat_draft(page):
+    page.evaluate("""async () => {
+      const input = (await import('/components/chat/input/input-store.js')).store;
+      const chats = (await import('/components/sidebar/chats/chats-store.js')).store;
+      const {switcherState, switcherMethods} = await import('/plugins/_model_config/webui/switcher-mixin.js');
+      const previousFetch = window.fetch, previousAlpine = window.Alpine, previousChat = chats.selected;
+      const requests = [];
+      const editor = document.createElement('div');
+      editor.id = 'chat-input';
+      editor.contentEditable = 'true';
+      document.body.append(editor);
+      try {
+        chats.selected = 'draft-chat';
+        window.fetch = async (url, options) => {
+          if (url === '/api/csrf_token') return new Response(JSON.stringify({ok:true, token:'fixture'}));
+          requests.push(JSON.parse(options.body));
+          return new Response(JSON.stringify({ok:true, preset_name:'Fast'}));
+        };
+        input.mountEditor(editor);
+        input.message = 'An unfinished prompt\\nwith a second line';
+        const draft = input.message;
+        window.Alpine = {store: name => name === 'chats' ? {selected:'draft-chat'} : undefined};
+        const switcher = {...switcherState, ...switcherMethods,
+          loadSwitcherState: async () => ({allowed:true, presets:[{name:'Fast'}],
+            override:{preset_name:'Fast'}, configuredPreset:'Default', effectivePreset:'Fast'})};
+        check(await switcher.selectPresetSwitch('draft-chat', 'Fast'), 'preset switch failed');
+        await switcher.refreshSwitcher('draft-chat');
+        check(switcher.switcherEffectivePreset === 'Fast', 'preset selection did not change');
+        check(requests[0].context_id === 'draft-chat', 'preset switch targeted another chat');
+        check(input.message === draft && editor.textContent === draft, 'preset switch cleared the composer');
+        check(sessionStorage.getItem('a0:chat-draft:draft-chat') === draft, 'preset switch erased session recovery');
+      } finally {
+        window.fetch = previousFetch;
+        window.Alpine = previousAlpine;
+        input.unmountEditor(editor);
+        chats.selected = previousChat;
+        editor.remove();
+      }
+    }""")
+
+
 @pytest.mark.parametrize("mode", ["collapsed", "current", "expanded"])
 @pytest.mark.parametrize("replay", [False, True])
 @pytest.mark.parametrize("enabled", [False, True])

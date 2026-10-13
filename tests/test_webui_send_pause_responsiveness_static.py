@@ -22,9 +22,9 @@ def test_pause_snapshots_respect_in_flight_clicks() -> None:
 def test_send_message_guards_against_in_flight_duplicates() -> None:
     index_js = read("webui", "index.js")
 
-    assert "if (sendMessage.inFlight) return;" in index_js
+    assert "if (sendMessage.inFlight) return false;" in index_js
     assert "sendMessage.inFlight = true;" in index_js
     fn = index_js[index_js.index("export async function sendMessage") : index_js.index("globalThis.sendMessage = sendMessage;")]
-    assert fn.index("if (sendMessage.inFlight) return;") < fn.index("callJsExtensions")
+    assert fn.index("if (sendMessage.inFlight) return false;") < fn.index("callJsExtensions")
     assert "finally {" in fn
     assert "sendMessage.inFlight = false;" in fn.split("finally {", 1)[1].split("}", 1)[0]

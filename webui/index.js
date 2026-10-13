@@ -86,7 +86,7 @@ function finishChatLoading(id) {
 
 export async function sendMessage(options = {}) {
   // Rapid clicks or Enter presses must not issue duplicate sends while the first is still in flight
-  if (sendMessage.inFlight) return;
+  if (sendMessage.inFlight) return false;
   sendMessage.inFlight = true;
   try {
     const hasProvidedMessage = Object.prototype.hasOwnProperty.call(options, "message");
@@ -112,14 +112,11 @@ export async function sendMessage(options = {}) {
 
     if (message || hasAttachments) {
       // Check if agent is busy - queue instead of sending
-      if (chatsStore.selectedContext?.running || messageQueueStore.hasQueue) {
+      if (sendContext === context && (chatsStore.selectedContext?.running || messageQueueStore.hasQueue)) {
         const success = messageQueueStore.addToQueue(message, attachmentsWithUrls);
-        // no await for the queue
-        // if (success) {
-          if (shouldResetInput) inputStore.reset();
-          adjustTextareaHeight();
-        // }
-        return;
+        if (shouldResetInput) inputStore.reset();
+        adjustTextareaHeight();
+        return success;
       }
 
       // Sending a message is an explicit user intent to go to the bottom
@@ -189,13 +186,18 @@ export async function sendMessage(options = {}) {
         forceScrollChatToBottom();
       } else {
         setContext(jsonResponse.context);
+        return true;
       }
     }
   } catch (e) {
     toastFetchError("Error sending message", e); // Will use new notification system
   } finally {
     sendMessage.inFlight = false;
+    if (modelGateStore.pending && !modelGateStore.dispatching) {
+      void modelGateStore.dispatchPendingIfConfigured();
+    }
   }
+  return false;
 }
 globalThis.sendMessage = sendMessage;
 

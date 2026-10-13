@@ -12,7 +12,7 @@
 - `navigation/` owns chat navigation state.
 - `top-section/` owns chat header/top area.
 - `model-gate-store.js` and `model-setup-gate.html` own the deferred in-thread model setup gate.
-- Gate dispatch (`dispatchPendingIfConfigured`) must capture `pending` and raise its latch before any await, and re-verify pending identity after awaits; pending is never re-read from the store after an await point.
+- Gate dispatch (`dispatchPendingIfConfigured`) captures `pending` before awaiting and uses that object for the payload; re-check its identity and the send latch after readiness resolves. Keep pending state and session recovery until the send is accepted. Busy sends defer retry until `sendMessage` settles; readiness and preset-editor reads use the pending chat's context. A retry for another context must never enter the selected chat's queue.
 
 ## Local Contracts
 
@@ -21,7 +21,7 @@
 - Do not bypass CSRF or WebSocket state-sync expectations.
 - The shared composer can be mounted on the Welcome screen with no selected chat; sending from that state must create and select a chat context before dispatch.
 - Text-only and attachment sends must render the first user turn immediately with the request message ID so the backend log merges into the same row.
-- Unsent composer text is kept as a separate browser-session draft for each selected chat and restored when switching contexts; a Welcome-screen prompt must follow the chat created for its first send.
+- Unsent composer text is kept as a separate browser-session draft for each selected chat and restored when switching contexts; a Welcome-screen prompt must follow the chat created for its first send. Preset changes and setup-gate retries must preserve any new unsent composer draft.
 - Composer text uses the main UI font by default; typing a triple-backtick fence and pressing Enter turns that line into a visual code block that serializes back to fenced Markdown, while pasted fenced Markdown stays plain text.
 - The contenteditable composer sizes naturally between its CSS minimum and maximum heights; do not freeze measured scroll heights into pixels during mounting or editing.
 - The backend rejects dispatches when no chat model is configured: a `user_message_ui` extension in `_model_config` flags the chat and `/message_async` returns a `model_not_configured` payload before logging or dispatching. The client opens the setup gate from that response and must not round-trip a per-send configuration pre-check.

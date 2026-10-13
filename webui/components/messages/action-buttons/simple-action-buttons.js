@@ -73,19 +73,18 @@ export function syncActionButtons(container, actionButtons = []) {
     existing?.remove();
     return button;
   });
-  // Re-inserting a mounted button detaches and remounts it, killing hover and clicks mid-stream
+  const anchor = [...container.children].find(
+    (child) =>
+      !previous.includes(child) &&
+      !next.includes(child) &&
+      !child.classList.contains("expand-btn"),
+  );
+  // Re-inserting a mounted button kills hover and clicks mid-stream.
   next.forEach((button, index) => {
     const current = previous[index];
     if (current === button && current.isConnected) return;
-    const anchor =
-      current?.isConnected && current !== button
-        ? current
-        : [...container.children].find(
-            (child) =>
-              !previous.includes(child) &&
-              !child.classList.contains("expand-btn"),
-          );
-    container.insertBefore(button, anchor || null);
+    const nextMounted = next.slice(index + 1).find((child) => child.parentNode === container);
+    container.insertBefore(button, nextMounted || anchor || null);
   });
   previous.slice(next.length).forEach((button) => button.remove());
   container.__managedActionButtons = next;

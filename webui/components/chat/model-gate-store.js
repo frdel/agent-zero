@@ -52,9 +52,9 @@ export const store = createStore("modelGate", {
     });
   },
 
-  async canSendToModel() {
+  async canSendToModel(contextId) {
     try {
-      const data = await callJsonApi("/plugins/_model_config/model_config_get", {});
+      const data = await callJsonApi("/plugins/_model_config/model_config_get", { context_id: contextId });
       this.applyModelStatus(data);
       if (!data?.model_configured) await this.refreshConnectedAccountState();
       return !!data?.model_configured;
@@ -135,7 +135,7 @@ export const store = createStore("modelGate", {
 
   async openAdvancedModelConfiguration() {
     try {
-      const data = await callJsonApi("/plugins/_model_config/model_config_get", {});
+      const data = await callJsonApi("/plugins/_model_config/model_config_get", { context_id: this.pending?.context || "" });
       await modelConfigStore.openPresetEditor(
         data?.selected_preset || data?.configured_preset || "Default"
       );
@@ -152,15 +152,12 @@ export const store = createStore("modelGate", {
   async dispatchPendingIfConfigured() {
     this.init();
     const pending = this.pending;
-    if (this.dispatching || !pending) return;
+    if (this.dispatching || !pending || globalThis.sendMessage?.inFlight) return;
     this.dispatching = true;
     try {
-      const configured = await this.canSendToModel();
-      if (!configured || this.pending !== pending) return;
-      this.pending = null;
-      this.connected = true;
-      this.clearSavedPending();
-      await globalThis.sendMessage?.({
+      const configured = await this.canSendToModel(pending.context);
+      if (!configured || this.pending !== pending || globalThis.sendMessage?.inFlight) return;
+      const accepted = await globalThis.sendMessage?.({
         skipExtensions: true,
         preserveInput: true,
         message: pending.message,
@@ -168,6 +165,10 @@ export const store = createStore("modelGate", {
         messageId: pending.messageId,
         context: pending.context,
       });
+      if (!accepted || this.pending !== pending) return;
+      this.pending = null;
+      this.connected = true;
+      this.clearSavedPending();
     } finally {
       this.dispatching = false;
     }
