@@ -52,6 +52,7 @@ function convertIconMarkersToHtml(value) {
 const model = {
   paused: false,
   _pendingPause: 0,
+  _sending: false,
   _message: "",
   _editorEl: null,
   _history: [],
@@ -151,25 +152,32 @@ const model = {
   },
 
   async sendMessage() {
-    this._syncMessageFromEditor();
-    const pendingMessage = this.message;
+    if (this._sending) return;
+    this._sending = true;
+    try {
+      this._syncMessageFromEditor();
+      const pendingMessage = this.message;
 
-    if (!chatsStore.selected && (this.message.trim() || attachmentsStore?.attachments?.length > 0)) {
-      const ctxid = await chatsStore.newChat();
-      if (!ctxid && !chatsStore.selected) return;
-      this.message = pendingMessage;
-    }
+      if (!chatsStore.selected && (this.message.trim() || attachmentsStore?.attachments?.length > 0)) {
+        const ctxid = await chatsStore.newChat();
+        if (!ctxid && !chatsStore.selected) return;
+        this.message = pendingMessage;
+      }
 
-    // Capture sent prompt to per-chat history (bash-style)
-    try { this._pushHistory(this.message); } catch (_e) { /* ignore */ }
+      // Capture sent prompt to per-chat history (bash-style)
+      try { this._pushHistory(this.message); } catch (_e) { /* ignore */ }
 
-    // Delegate to the global function
-    if (globalThis.sendMessage) {
-      await globalThis.sendMessage();
+      // Delegate to the global function
+      if (globalThis.sendMessage) {
+        await globalThis.sendMessage();
+      }
+    } finally {
+      this._sending = false;
     }
   },
 
   async activateSendButton() {
+    if (this._sending) return;
     this._syncMessageFromEditor();
     if (this._getSendState() === "stop") {
       await this.stopAgent();

@@ -6,6 +6,8 @@ import subprocess
 
 import pytest
 
+from test_chat_loading_refresh import run_module
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 INPUT_STORE = PROJECT_ROOT / "webui/components/chat/input/input-store.js"
@@ -100,3 +102,65 @@ model.unmountEditor(editor);
 """
 
     subprocess.run(["node", "--input-type=module", "-e", script], check=True, text=True)
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="Node.js is required")
+def test_welcome_send_serializes_chat_creation_and_dispatch() -> None:
+    run_module("webui/components/chat/input/input-store.js", """
+const createStore = (_name, model) => model;
+const shortcuts = {}, fileBrowserStore = {}, messageQueueStore = {hasQueue: false};
+const attachmentsStore = {attachments: []};
+const chatsStore = {selected: '', selectedContext: null};
+const document = {activeElement: null, getElementById: () => null};
+""", """
+store._saveDraft = () => {};
+const history = [];
+store._pushHistory = text => history.push(text);
+store.message = 'First Welcome prompt';
+let finishCreate, finishSend, creates = 0, sends = 0, stops = 0;
+chatsStore.newChat = () => {
+  creates++;
+  return new Promise(resolve => { finishCreate = resolve; });
+};
+globalThis.sendMessage = () => {
+  sends++;
+  assert.equal(store.message, 'First Welcome prompt');
+  store.message = '';
+  chatsStore.selectedContext = {running: true};
+  return new Promise(resolve => { finishSend = resolve; });
+};
+store.stopAgent = async () => { stops++; };
+const first = store.sendMessage();
+await Promise.all([store.sendMessage(), store.activateSendButton(), store.sendMessage()]);
+assert.equal(creates, 1, 'repeated sends created multiple Welcome chats');
+assert.equal(sends, 0);
+chatsStore.selected = 'new-chat';
+store.message = '';
+finishCreate('new-chat');
+await Promise.resolve();
+assert.equal(sends, 1);
+await Promise.all([store.activateSendButton(), store.sendMessage()]);
+assert.equal(stops, 0, 'a repeated send click stopped the new run before dispatch settled');
+assert.equal(sends, 1);
+assert.deepEqual(history, ['First Welcome prompt']);
+finishSend();
+await first;
+await store.activateSendButton();
+assert.equal(stops, 1, 'Stop was not available after sending settled');
+
+chatsStore.selected = '';
+chatsStore.selectedContext = null;
+store.message = 'Retry prompt';
+chatsStore.newChat = async () => { throw new Error('creation failed'); };
+await assert.rejects(store.sendMessage(), /creation failed/);
+assert.equal(store.message, 'Retry prompt');
+chatsStore.newChat = async () => null;
+await store.sendMessage();
+assert.equal(sends, 1, 'a failed chat creation dispatched the prompt');
+chatsStore.selected = 'retry-chat';
+globalThis.sendMessage = async () => { sends++; throw new Error('dispatch failed'); };
+await assert.rejects(store.sendMessage(), /dispatch failed/);
+globalThis.sendMessage = async () => { sends++; };
+await store.sendMessage();
+assert.equal(sends, 3, 'a failed create or dispatch left sending locked');
+""")

@@ -29,7 +29,7 @@
 - The setup gate must delegate Cloud/Local setup, account connections, and advanced model configuration to the existing onboarding and model-preset editor modals; do not duplicate provider/model/key forms inline.
 - A connected OAuth account without Main/Utility model selection is its own gate state; route to model configuration and do not select models automatically.
 - Model setup surfaces that change readiness must notify the gate with `model-setup-changed`, `model-configured`, or an existing modal/onboarding completion signal so the pending prompt can retry automatically.
-- Rapid sends (clicks or Enter presses) cannot dispatch duplicate `/message_async` calls: an in-flight send makes further `sendMessage` invocations no-ops until the first completes, before backend `running` state flips.
+- Rapid sends (clicks or Enter presses) cannot dispatch duplicate `/message_async` calls: the composer latch covers Welcome chat creation through dispatch and makes further sends or primary-button actions no-ops until it settles. The global send latch also protects direct and setup-gate dispatches before backend `running` state flips.
 - Composer pause state is optimistic: a click in flight suppresses poll-snapshot writes to the pause flag until its request settles.
 - The top-section project selector, clock, and connection indicator must respect the instance-level mobile/desktop visibility preferences.
 - While the selected context is running, an empty composer makes the primary button stop the active run; typed text still adds to the queue, and Enter with an empty composer still sends queued messages.
