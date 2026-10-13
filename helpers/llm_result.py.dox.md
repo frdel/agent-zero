@@ -22,6 +22,7 @@
 - `from_dict(...)` preserves explicit modes, including the empty non-LLM sentinel; only missing or null modes use the legacy `responses` default.
 - `from_chat(...)` must produce an equivalent chat-completions result with `mode="chat_completions"` and `state="off"`, preserving optional function-call output items and provider usage when the chat transport supplies them.
 - Function-call output items must preserve `call_id` and optional acknowledged safety checks.
+- `finish_reason` carries the provider stop reason for the turn and is not persisted in history metadata; `truncated` is true for output-token-limit reasons (`length`, `max_tokens`).
 - `repeat_response_text()` combines response text and canonical calls for native repeat detection, excluding provider IDs, usage and separate reasoning. Non-native replies retain their full response text. This comparison value is transient and does not replace canonical call history or provider metadata.
 - Argument parsing must tolerate JSON strings, dictionaries, and malformed values without throwing.
 

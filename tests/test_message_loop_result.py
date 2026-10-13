@@ -2,8 +2,10 @@ import json
 from types import SimpleNamespace
 
 import pytest
+from helpers.llm_result import LLMResult
 
 from extensions.python.message_loop_result import _20_empty_response as empty_response
+from extensions.python.message_loop_result._05_truncated_response import TruncatedResponse
 from extensions.python.message_loop_result._20_empty_response import EmptyResponse
 from extensions.python.message_loop_result._30_repeat_response import RepeatResponse
 from extensions.python._functions.agent.Agent.hist_add_warning.end import (
@@ -39,6 +41,8 @@ class FakeAgent:
             "fw.msg_repeat_response.md": "Repeated response detected. Retrying.",
             "fw.msg_reasoning_only.md": "reasoning only",
             "fw.msg_reasoning_only_response.md": "Reasoning-only response detected. Retrying.",
+            "fw.msg_output_limit.md": "output limit",
+            "fw.msg_output_limit_response.md": f"truncated ({kwargs.get('finish_reason')})",
         }[name]
 
     def hist_add_ai_response(self, response, **kwargs):
@@ -53,10 +57,13 @@ class FakeAgent:
         return SimpleNamespace(id="warning")
 
 
-def _run(agent):
+def _run(agent, **llm_result):
     result_data = {
-        "llm_result": SimpleNamespace(response=agent.response, reasoning=agent.reasoning)
+        "llm_result": SimpleNamespace(
+            response=agent.response, reasoning=agent.reasoning, **llm_result
+        )
     }
+    TruncatedResponse(agent).execute(result_data)
     EmptyResponse(agent).execute(result_data)
     RepeatResponse(agent).execute(result_data)
     return result_data
@@ -224,3 +231,67 @@ def test_chat_repeat_includes_public_planning_fields(field, change):
     agent = FakeAgent(json.dumps(current), last_response=json.dumps(previous))
 
     assert bool(_run(agent).get("skip_default_processing")) is (change == "same")
+
+
+def test_truncated_result_warns_about_output_limit_instead_of_misformat():
+    agent = FakeAgent('{"thoughts":["planning"],"tool_name":"response","tool_args":{"text":"cut')
+
+    result = _run(agent, finish_reason="length", truncated=True, function_calls=[])
+
+    assert result["skip_default_processing"] is True
+    assert agent.history == []
+    assert agent.warnings == ["output limit"]
+    assert agent.logs == [
+        {"type": "warning", "content": "A0: truncated (length)", "id": "warning"}
+    ]
+
+
+def test_truncated_result_with_complete_tool_request_is_processed_normally():
+    agent = FakeAgent('{"tool_name":"response","tool_args":{"text":"done"}}')
+
+    result = _run(agent, finish_reason="length", truncated=True, function_calls=[])
+
+    assert "skip_default_processing" not in result
+    assert agent.warnings == []
+
+
+@pytest.mark.parametrize("arguments,complete", [
+    ('{"text":"done"}', True),
+    ({"text": "done"}, True),
+    ('{}', True),
+    ('{"text":"cut', False),
+    ('', False),
+    ('[]', False),
+    (None, False),
+])
+def test_truncated_native_call_requires_complete_arguments(arguments, complete):
+    result = LLMResult.from_chat(
+        response="", finish_reason="length", output_items=[
+            {"type": "function_call", "name": "response", "call_id": "call_cut",
+             "arguments": arguments},
+        ],
+    )
+    agent = FakeAgent(result.response)
+    data = {"llm_result": result}
+
+    TruncatedResponse(agent).execute(data)
+
+    assert bool(data.get("skip_default_processing")) is not complete
+    assert agent.warnings == ([] if complete else ["output limit"])
+    assert agent.history == []
+
+
+def test_truncated_batch_retries_if_any_native_call_is_incomplete():
+    result = LLMResult.from_chat(
+        response="", finish_reason="length", output_items=[
+            {"type": "function_call", "name": "response", "arguments": arguments}
+            for arguments in ('{"text":"done"}', '{"text":"cut')
+        ],
+    )
+    agent = FakeAgent(result.response)
+    data = {"llm_result": result}
+
+    TruncatedResponse(agent).execute(data)
+
+    assert data["skip_default_processing"] is True
+    assert agent.warnings == ["output limit"]

@@ -776,6 +776,7 @@ class LiteLLMChatWrapper(SimpleChatModel):
                     input_items=ResponsesTransport.input_from_messages(msgs_conv),
                     provider_model_key=self.model_name,
                     capability=transport._capability_metadata(),
+                    finish_reason=transport.last_finish_reason,
                 )
                 if result.output()["response_delta"] and not llm_result.function_calls:
                     llm_result.response = result.output()["response_delta"]

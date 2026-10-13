@@ -214,6 +214,19 @@ async def test_extension_leaves_native_calls_and_accompanying_text_intact(monkey
     assert agent._execute_tool_request.call_args.kwargs["tool_name"] == "code_execution_tool"
 
 
+def test_leaves_results_handled_by_earlier_extensions_untouched():
+    response = '{"thoughts":["planning"],"tool_name":"response","tool_args":{"text":"cut'
+    result = LLMResult.from_chat(response=response, finish_reason="length")
+    agent = SimpleNamespace(hist_add_ai_response=AsyncMock(), hist_add_warning=AsyncMock())
+    data = {"llm_result": result, "skip_default_processing": True}
+
+    ContextDoctor(agent).execute(data)
+
+    assert result.response == response
+    agent.hist_add_ai_response.assert_not_called()
+    agent.hist_add_warning.assert_not_called()
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("text", ["Done.", "First paragraph.\n\nSecond paragraph.", "<p>Done.</p>"])
 async def test_responses_text_reaches_core_response_dispatch(monkeypatch, text):

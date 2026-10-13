@@ -1,0 +1,1 @@
+Your previous response was cut off because it reached the output token limit, so no complete tool request was received. Respond again with a single valid tool-call JSON object that fits within the limit: keep thoughts and tool arguments brief, and split large content across multiple steps.

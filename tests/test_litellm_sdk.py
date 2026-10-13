@@ -70,20 +70,20 @@ def sse(events, *, done=False):
     )
 
 
-def chat_reply(stream):
+def chat_reply(stream, *, arguments=ARGUMENTS, finish_reason="tool_calls"):
     base = {"id": "chatcmpl-test", "created": 1, "model": "gpt-4o"}
     call = {"index": 0, "id": "call_test", "type": "function",
-            "function": {"name": "lookup", "arguments": ARGUMENTS}}
+            "function": {"name": "lookup", "arguments": arguments}}
     if not stream:
         return {**base, "object": "chat.completion", "usage": USAGE,
-                "choices": [{"index": 0, "finish_reason": "tool_calls",
+                "choices": [{"index": 0, "finish_reason": finish_reason,
                              "message": {"role": "assistant", "content": "Working.", "tool_calls": [call]}}]}
     return sse([
         {**base, "object": "chat.completion.chunk", "choices": [{"index": 0, "finish_reason": None,
           "delta": {"role": "assistant", "tool_calls": [{**call, "function": {"name": "lookup", "arguments": ""}}]}}]},
         {**base, "object": "chat.completion.chunk", "choices": [{"index": 0, "finish_reason": None,
-          "delta": {"tool_calls": [{"index": 0, "function": {"arguments": ARGUMENTS}}]}}]},
-        {**base, "object": "chat.completion.chunk", "choices": [{"index": 0, "finish_reason": "tool_calls", "delta": {}}]},
+          "delta": {"tool_calls": [{"index": 0, "function": {"arguments": arguments}}]}}]},
+        {**base, "object": "chat.completion.chunk", "choices": [{"index": 0, "finish_reason": finish_reason, "delta": {}}]},
         {**base, "object": "chat.completion.chunk", "choices": [], "usage": USAGE},
     ], done=True)
 
@@ -157,6 +157,37 @@ async def test_sdk_tools_usage_and_state_over_http(provider, mode, stream, async
         assert provider.requests[2][:2] == ("DELETE", "/v1/responses/resp_test")
     elif stream:
         assert body["stream_options"]["include_usage"] is True
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("async_call", [False, True])
+@pytest.mark.parametrize("finish_reason", ["length", "tool_calls"])
+async def test_sdk_chat_terminal_metadata_survives_early_stop(provider, async_call, finish_reason):
+    arguments = '{"q":"cut' if finish_reason == "length" else ARGUMENTS
+    provider.replies.append((200, chat_reply(True, arguments=arguments, finish_reason=finish_reason)))
+    transport = LiteLLMTransport(
+        model="openai/gpt-4o", messages=[{"role": "user", "content": "Look up café"}],
+        kwargs=provider.kwargs,
+    )
+
+    if async_call:
+        stream = transport.astream()
+        async for chunk in stream:
+            assert "lookup" in chunk["response_delta"]
+            break
+        await stream.aclose()
+    else:
+        stream = transport.stream()
+        for chunk in stream:
+            assert "lookup" in chunk["response_delta"]
+            break
+        stream.close()
+
+    assert transport.last_finish_reason == finish_reason
+    result = transport.last_result
+    assert result is not None and result.finish_reason == finish_reason
+    assert result.function_calls[0].call_id == "call_test"
+    assert result.function_calls[0].raw["arguments"] == arguments
 
 
 @pytest.mark.asyncio

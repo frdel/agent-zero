@@ -33,6 +33,7 @@
 - `Agent.read_prompt` and `Agent.parse_prompt` strip trailing newlines from returned content, so prompt template files may safely keep a final newline. Do not rely on trailing newlines for formatting; render-time joins in `output_text()` already separate turns.
 - `fw.initial_user_message.md` owns the placeholder user turn (`Hello!`) that `extensions/python/agent_init/_10_initial_message.py` pairs before the AI greeting from `fw.initial_message.md`; the user-first ordering guarantees `output_langchain` does not pop the greeting as a leading `AIMessage` on project or non-project paths. Do not remove either prompt without replacing the turn-order guarantee.
 - `fw.msg_reasoning_only.md` and `fw.msg_reasoning_only_response.md` own the reasoning-only turn warning pair used by `extensions/python/message_loop_result/_20_empty_response.py`.
+- `fw.msg_output_limit.md` and `fw.msg_output_limit_response.md` own the output-limit truncation warning pair used by `extensions/python/message_loop_result/_05_truncated_response.py`.
 
 ## Work Guidance
 
