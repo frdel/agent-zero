@@ -97,6 +97,11 @@ def _get_chat_file_path(ctxid: str):
     return files.get_abs_path(CHATS_FOLDER, ctxid, CHAT_FILE_NAME)
 
 
+def chat_file_exists(ctxid: str) -> bool:
+    """True if this context has a persisted chat.json on disk."""
+    return files.exists(_get_chat_file_path(ctxid))
+
+
 def _write_atomic(path: str, content: str) -> None:
     directory = os.path.dirname(path)
     os.makedirs(directory, exist_ok=True)
