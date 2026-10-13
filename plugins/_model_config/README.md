@@ -31,7 +31,7 @@ The normal plugin resolution order selects the most specific available reference
 
 - Agent Settings shows the global selection, its three resolved models, and actions for preset editing, API keys, and per-project/agent settings.
 - The full plugin settings modal uses the generic scope selector and stores only the chosen preset at that scope.
-- The closed chat switcher shows the effective preset plus the main model's short name; its menu supports a chat-only selection or returning to the scoped preset.
+- The closed chat switcher shows the effective preset plus the main model's short name; its menu supports a chat-only selection or returning to the scoped preset. Preset and profile menus shrink to fit short windows so the full scroll track stays reachable.
 - The adjacent profile switcher shows the active agent's effective title and avatar and links to Create, Edit, and Manage agents.
 - The preset editor exposes the shared API key for each selected provider and saves key changes separately from secret-free preset definitions.
 - Project Settings selects from the same global preset definitions.

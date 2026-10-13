@@ -5,7 +5,15 @@
 
 <div x-data>
 <template x-if="$store.modelConfig">
-<div class="model-switcher-root" x-data="{ showDropdown: false, showProfileDropdown: false }"
+<div class="model-switcher-root" x-data="{
+       showDropdown: false, showProfileDropdown: false, dropdownMaxHeight: 550,
+       resizeDropdowns() {
+         this.dropdownMaxHeight = Math.max(0, this.$el.getBoundingClientRect().top - 6 - 8);
+       }
+     }"
+     :style="{ '--switcher-available-height': dropdownMaxHeight + 'px' }"
+     x-effect="if (showDropdown || showProfileDropdown) resizeDropdowns()"
+     @resize.window="resizeDropdowns()"
      x-init="
        await Promise.all([
          $store.modelConfig.refreshSwitcher($store.chats?.selected || ''),
@@ -292,7 +300,7 @@
     bottom: calc(100% + 6px);
     left: 0;
     min-width: 280px;
-    max-height: 550px;
+    max-height: min(550px, var(--switcher-available-height, 550px));
     overflow-y: auto;
     background-color: var(--color-panel);
     border: 1px solid var(--color-border);
@@ -307,7 +315,7 @@
     left: 0;
     min-width: 260px;
     max-width: min(320px, 90vw);
-    max-height: 550px;
+    max-height: min(550px, var(--switcher-available-height, 550px));
     overflow-y: auto;
     background-color: var(--color-panel);
     border: 1px solid var(--color-border);
@@ -315,6 +323,10 @@
     padding: 6px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     z-index: 100;
+  }
+  .overflow-hidden .model-switcher-dropdown,
+  .overflow-hidden .agent-profile-dropdown {
+    max-height: 550px;
   }
   .model-switcher-item {
     padding: 6px 10px;

@@ -39,6 +39,7 @@
 - Presets may change outside the editor, so the `open_modal_before` hook reloads them before every preset-editor open, including `/presets`, and resolves the chat's active preset unless `openPresetEditor()` pinned one.
 - The preset editor maps each model provider's API-key field to the shared API-key store; saving the editor persists dirty keys separately and never writes secrets into preset YAML.
 - The compact chat selector label combines the effective preset with only the leaf name of its main model; utility and provider text stay out of the closed selector.
+- Preset and agent-profile menus cap their height to the space above the selector on opening and window resize, keeping the full scroll track inside the viewport. Overflow submenus retain the shared `x-overflow` positioning limits.
 - The compact selector strip exposes `model-context-strip-end` after the agent
   profile selector so adjacent bundled controls can stay plugin-owned.
 - The selector strip uses the shared `x-overflow` directive for built-in and plugin controls. Its root must remain shrinkable; overflow entries open the original selector panels and retain their Alpine state. The profile avatar uses `data-overflow-icon` so its color, initials, or image also appear in overflow.

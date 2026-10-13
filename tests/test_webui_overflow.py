@@ -282,6 +282,108 @@ def test_overflow_preserves_original_controls_and_plugin_menus():
         browser.close()
 
 
+def test_model_switcher_menus_fit_short_windows_and_remain_scrollable():
+    component = (ROOT / "plugins/_model_config/extensions/webui/chat-input-progress-start/model-switcher.html").read_text()
+    component = component.split("</script>", 1)[1]
+    html = """<!doctype html><html><head>
+      <link rel="stylesheet" href="/index.css">
+      <link rel="stylesheet" href="/css/buttons.css">
+      <link rel="stylesheet" href="/css/overflow.css">
+      <script type="module">
+        import { registerOverflow } from '/js/overflow.js';
+        document.addEventListener('alpine:init', () => {
+          registerOverflow(Alpine);
+          Alpine.store('chats', { selected: 'test', selectedContext: { agent_profile: 'agent0' } });
+          Alpine.store('modelConfig', {
+            switcherAllowed: true, switcherLoading: false, switcherOverride: null,
+            switcherEffectivePreset: 'Preset 0', agentProfilesLoading: false,
+            switcherPresets: Array.from({length: 20}, (_, i) => ({
+              name: `Preset ${i}`, chat: {provider: 'test', name: 'main-model'},
+              utility: {provider: 'test', name: 'utility-model'},
+              embedding: {provider: 'test', name: 'embedding-model'},
+            })),
+            refreshSwitcher() {}, loadAgentProfiles() {},
+            getSwitcherLabel() { return this.switcherEffectivePreset; },
+            selectPresetSwitch(chat, name) { this.switcherEffectivePreset = name; },
+            getAgentProfileVisual() { return {color: 'gray', initials: 'A0', url: ''}; },
+            getAgentProfileList() {
+              return Array.from({length: 20}, (_, i) => ({key: `agent${i}`, label: `Agent ${i}`}));
+            },
+          });
+        });
+        await import('/vendor/alpine/alpine.min.js');
+      </script>
+    </head><body>
+      <div id="composer" style="position:fixed; bottom:120px; left:20px; right:20px;">
+    """ + component + "</div></body></html>"
+
+    with playwright.sync_playwright() as p:
+        try:
+            browser = p.chromium.launch(ignore_default_args=["--hide-scrollbars"])
+        except playwright.Error as error:
+            if "Executable doesn't exist" in str(error):
+                pytest.skip("An installed Playwright Chromium browser is required.")
+            raise
+        page = browser.new_page(viewport={"width": 912, "height": 780})
+        errors = []
+        page.on("pageerror", lambda error: errors.append(str(error)))
+        serve_page(page, html)
+        page.goto("http://switcher.test/")
+        page.wait_for_selector(".model-switcher-btn")
+
+        def assert_menu_fits(selector):
+            page.wait_for_function("""selector => {
+              const r = document.querySelector(selector).getBoundingClientRect();
+              return r.top >= 8 && r.bottom <= innerHeight - 8
+                && r.left >= 8 && r.right <= innerWidth - 8 && r.height > 0;
+            }""", arg=selector)
+
+        for trigger, selector in [
+            (".model-switcher-btn", ".model-switcher-dropdown"),
+            (".agent-profile-btn", ".agent-profile-dropdown"),
+        ]:
+            page.locator(trigger).click()
+            menu = page.locator(selector)
+            assert_menu_fits(selector)
+            for height in [780, 440, 280, 780]:
+                page.set_viewport_size({"width": 912, "height": height})
+                assert_menu_fits(selector)
+                assert menu.evaluate("el => el.scrollHeight > el.clientHeight")
+                assert menu.evaluate("el => getComputedStyle(el).scrollbarWidth") == "thin"
+            assert menu.bounding_box()["height"] == 550
+            page.set_viewport_size({"width": 912, "height": 440})
+            assert_menu_fits(selector)
+            bounds = menu.bounding_box()
+            page.mouse.move(bounds["x"] + bounds["width"] - 6, bounds["y"] + 32)
+            page.mouse.down()
+            page.mouse.move(bounds["x"] + bounds["width"] - 6, bounds["y"] + bounds["height"] - 18, steps=12)
+            page.mouse.up()
+            page.wait_for_function("""selector => {
+              const el = document.querySelector(selector);
+              return el.scrollTop >= el.scrollHeight - el.clientHeight - 1;
+            }""", arg=selector)
+            menu.hover()
+            page.mouse.wheel(0, -10000)
+            page.wait_for_function("selector => document.querySelector(selector).scrollTop === 0", arg=selector)
+            page.locator(trigger).click()
+
+        # The original panel must also fit when opened through the overflow menu.
+        page.set_viewport_size({"width": 390, "height": 440})
+        page.evaluate("document.getElementById('composer').style.width = '80px'")
+        more = page.get_by_role("button", name="More controls", exact=True)
+        playwright.expect(more).to_be_visible()
+        more.click()
+        page.get_by_role("menuitem", name="Preset 0").click()
+        page.wait_for_selector(".model-switcher-dropdown:popover-open")
+        assert_menu_fits(".model-switcher-dropdown")
+        last_preset = page.locator(".model-switcher-preset-name").get_by_text("Preset 19", exact=True)
+        last_preset.scroll_into_view_if_needed()
+        last_preset.click()
+        playwright.expect(page.locator(".model-switcher-label")).to_have_text("Preset 19")
+        assert errors == []
+        browser.close()
+
+
 def test_browser_zoom_does_not_create_false_overflow():
     html = """<!doctype html><html><head>
       <link rel="stylesheet" href="/index.css">
