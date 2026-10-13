@@ -532,7 +532,9 @@ def prepare_files_download(paths, current_path=""):
         except BaseException:
             Path(path).unlink(missing_ok=True)
             raise
-        name = posixpath.basename(paths[0]) if single else selected_archive_name(len(paths))
+        name = posixpath.basename(paths[0]) if single else (
+            f"{posixpath.basename(paths[0])}.zip" if len(paths) == 1 else selected_archive_name(len(paths))
+        )
         temporary = True
     elif len(paths) == 1 and Path(paths[0]).is_file():
         import stat
@@ -557,7 +559,10 @@ def prepare_files_download(paths, current_path=""):
         temporary = True
     else:
         path = create_selected_zip(paths, current_path, limit, FileBrowser.max_archive_entries())
-        name = selected_archive_name(len(paths))
+        name = (
+            f"{Path(paths[0]).name}.zip" if len(paths) == 1
+            else selected_archive_name(len(paths))
+        )
         temporary = True
     return {"file_source": path, "download_name": name, "max_bytes": limit, "delete_after": temporary}
 

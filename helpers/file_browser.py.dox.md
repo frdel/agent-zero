@@ -58,7 +58,7 @@
 
 No child DOX files.
 
-`read_text` owns bounded local Editor reads. `encode_upload` bounds the development RFC adapter. `prepare_files_download` owns Files routing and policy; `register_files_download` rechecks remote permission at delivery. API handlers do not select byte limits. Generic attachment/Connector downloads remain separate.
+`read_text` owns bounded local Editor reads. `encode_upload` bounds the development RFC adapter. `prepare_files_download` owns Files routing and policy; a single selected directory downloads as `<folder>.zip` while true multi-selections keep the timestamped `agent-zero-selected-<count>-<stamp>.zip` archive name. `register_files_download` rechecks remote permission at delivery. API handlers do not select byte limits. Generic attachment/Connector downloads remain separate.
 
 Destructive entry operations resolve parent directories while preserving the final symlink. Delete/Rename operate on the link itself; empty/root targets are rejected in the shared helper. Local Files downloads stage a bounded snapshot and reject in-place source changes during preparation. Cancelled preparation closes late responses and their temporary descriptors.
 
