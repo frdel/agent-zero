@@ -90,9 +90,8 @@ const model = {
       const updated = this.contexts.find((ctx) => ctx.id === selectedId);
       if (updated) {
         if (this.selectedContext !== updated) this.selectedContext = updated;
-        if (updated.parent_context_id) {
-          this.expandAncestors(updated);
-        } else if (
+        this.expandAncestors(updated);
+        if (
           this.hasChildren(selectedId) &&
           this.expandedParents[selectedId] === undefined
         ) {

@@ -109,6 +109,25 @@ assert(
   model.expandedParents.parent === true,
   "selection synchronization must still run for unchanged contexts",
 );
+for (const selected of ["parent", "child", "grandchild"]) {{
+  model.expandedParents = {{}};
+  reset(tree.slice(0, tree.findIndex(context => context.id === selected) + 1), selected);
+  assert(!model.isExpanded(selected), "a chat without children remains collapsed");
+  model.applyContexts(tree);
+  assert(
+    model.isExpanded(selected),
+    "a selected agent must reveal its children at every depth",
+  );
+  const expanded = model.expandedParents;
+  model.applyContexts(tree);
+  assert(model.expandedParents === expanded, "unchanged expansion preserves identity");
+  model.toggleChildren(selected);
+  model.applyContexts(tree);
+  assert(
+    !model.isExpanded(selected),
+    "snapshot refresh must preserve manually collapsed children",
+  );
+}}
 model.expandedParents = {{}};
 model.setSelected("greatgrandchild");
 assert(
