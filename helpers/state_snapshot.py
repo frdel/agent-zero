@@ -151,6 +151,8 @@ def _prune_missing_saved_contexts() -> None:
         if (
             ctx.data.get(persist_chat.SAVED_CHAT_CONTEXT_DATA_KEY)
             and ctx.id not in saved_ids
+            # Re-check disk: saved_ids may be stale vs. a concurrent first save.
+            and not persist_chat.chat_file_exists(ctx.id)
         ):
             AgentContext.remove(ctx.id)
 
