@@ -85,6 +85,9 @@ function finishChatLoading(id) {
 // Sidebar toggle logic is now handled by sidebar-store.js
 
 export async function sendMessage(options = {}) {
+  // Rapid clicks or Enter presses must not issue duplicate sends while the first is still in flight
+  if (sendMessage.inFlight) return;
+  sendMessage.inFlight = true;
   try {
     const hasProvidedMessage = Object.prototype.hasOwnProperty.call(options, "message");
     let message = String(hasProvidedMessage ? options.message : inputStore.message).trim();
@@ -197,6 +200,8 @@ export async function sendMessage(options = {}) {
     }
   } catch (e) {
     toastFetchError("Error sending message", e); // Will use new notification system
+  } finally {
+    sendMessage.inFlight = false;
   }
 }
 globalThis.sendMessage = sendMessage;
