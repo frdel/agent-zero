@@ -114,19 +114,19 @@
                     x-show="$store.browserPage.runtimeBackend === 'host_required'"
                     @click="$store.browserPage.openExtensionsSettings()">Configure host browser</button>
                 </div>
-                <div class="browser-quick-row browser-zoom-row" title="Zoom the page in the container browser">
+                <div class="browser-quick-row browser-zoom-row">
                   <span>Zoom</span>
                   <div class="browser-zoom-actions">
                     <div class="browser-zoom-stepper" role="group" aria-label="Page zoom">
-                      <button type="button" aria-label="Zoom out" title="Zoom out"
+                      <button type="button" aria-label="Zoom out"
                         :disabled="!$store.browserPage.canZoom() || $store.browserPage.zoomPercent() <= 25"
                         @click="$store.browserPage.command('zoom', { direction: 'out' })"><x-icon name="remove"></x-icon></button>
                       <span class="browser-zoom-value" aria-live="polite" x-text="$store.browserPage.zoomPercent() + '%'">100%</span>
-                      <button type="button" aria-label="Zoom in" title="Zoom in"
+                      <button type="button" aria-label="Zoom in"
                         :disabled="!$store.browserPage.canZoom() || $store.browserPage.zoomPercent() >= 500"
                         @click="$store.browserPage.command('zoom', { direction: 'in' })"><x-icon name="add"></x-icon></button>
                     </div>
-                    <button type="button" class="browser-zoom-reset" aria-label="Reset zoom" title="Reset zoom"
+                    <button type="button" class="browser-zoom-reset" aria-label="Reset zoom"
                       :disabled="!$store.browserPage.canZoom() || $store.browserPage.zoomPercent() === 100"
                       @click="$store.browserPage.command('zoom', { direction: 'reset' })"><x-icon name="restart_alt"></x-icon></button>
                   </div>
@@ -140,7 +140,7 @@
                       x-show="$store.browserPage.extensionsListLoading" name="progress_activity"></x-icon>
                   </div>
                   <template x-for="extension in $store.browserPage.extensionsList" :key="extension.path">
-                    <div class="browser-extension-row" :title="extension.path">
+                    <div class="browser-extension-row">
                       <span class="browser-extension-row-text">
                         <span class="browser-extension-name" x-text="extension.name || 'Unnamed extension'"></span>
                         <span class="browser-extension-meta"
@@ -149,7 +149,6 @@
                       <span class="browser-extension-row-actions">
                         <button type="button" class="browser-extension-open"
                           x-show="$store.browserPage.extensionHasOpenUi(extension)"
-                          :title="$store.browserPage.extensionOpenTitle(extension)"
                           :aria-label="$store.browserPage.extensionOpenTitle(extension)"
                           :disabled="!extension.enabled || $store.browserPage.isBusy()"
                           @click.stop="$store.browserPage.openExtensionUi(extension)">
