@@ -38,7 +38,12 @@ class _Agent:
         )
         self.context.agent0 = self
         self.context.output_data = {}
+        self.context.data = {}
         self.context.get_output_data = self.context.output_data.get
+        self.context.get_data = lambda key, recursive=True: self.context.data.get(key)
+        self.context.set_data = lambda key, value, recursive=True: self.context.data.__setitem__(
+            key, value
+        )
         self.history = _History(messages)
         self.config = SimpleNamespace(profile="agent0")
         self._response = response
@@ -384,7 +389,13 @@ async def test_manual_task_rename_updates_scheduler_and_context(monkeypatch):
     dirty = []
     monkeypatch.setattr(chat_name.AgentContext, "get", lambda _id: agent.context)
     monkeypatch.setattr(chat_name.TaskScheduler, "get", lambda: scheduler)
-    monkeypatch.setattr(chat_name, "save_tmp_chat", lambda context: saved.append(context.name))
+    monkeypatch.setattr(
+        chat_name,
+        "save_tmp_chat",
+        lambda context: saved.append(
+            (context.name, context.get_data(naming.MANUAL_NAME_KEY))
+        ),
+    )
     monkeypatch.setattr(chat_name, "mark_dirty_all", lambda *, reason: dirty.append(reason))
 
     response = await object.__new__(chat_name.ChatName).process(
@@ -400,7 +411,8 @@ async def test_manual_task_rename_updates_scheduler_and_context(monkeypatch):
     assert response == {"ok": True, "name": "Daily Report"}
     assert scheduler.updated == [(agent.context.id, {"name": "Daily Report"})]
     assert agent.context.name == "Daily Report"
-    assert saved == ["Daily Report"]
+    assert saved == [("Daily Report", True)]
+    assert agent.context.data[naming.MANUAL_NAME_KEY] is True
     assert dirty == ["plugins._chat_naming.save_task_name"]
 
 
@@ -409,3 +421,173 @@ async def test_chat_naming_endpoints_keep_default_auth_and_csrf_protection():
 
     assert ChatName.requires_auth() is True
     assert ChatName.requires_csrf() is True
+
+
+async def test_always_mode_does_not_schedule_or_save_after_manual_name(monkeypatch):
+    """A name set with /rename must not be replaced by always-mode auto-naming (#1941)."""
+    agent = _Agent(
+        [_Message({"user_message": "Explain Docker networking"}, sequence=1)],
+        response="Docker Networking",
+    )
+    monkeypatch.setattr(naming.persist_chat, "save_tmp_chat", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(naming, "mark_dirty_all", lambda **_kwargs: None)
+    monkeypatch.setattr(
+        "plugins._model_config.helpers.model_config.get_utility_model_config",
+        lambda _agent: {"ctx_length": 1000},
+    )
+    monkeypatch.setattr(
+        naming.plugins,
+        "get_plugin_config",
+        lambda *_args, **_kwargs: {
+            "automatic_naming": True,
+            "automatic_naming_mode": "always",
+        },
+    )
+
+    await rename_command.run(
+        {
+            "invocation": {"raw_arguments": "Manual Name"},
+            "context": {"agent": agent},
+        }
+    )
+    assert agent.context.name == "Manual Name"
+    assert agent.context.data[naming.MANUAL_NAME_KEY] is True
+
+    scheduled = []
+    monkeypatch.setattr(
+        rename_chat.asyncio, "create_task", lambda coro: scheduled.append(coro)
+    )
+    await rename_chat.RenameChat(agent=agent).execute()
+    monkeypatch.setattr(rename_chat.AgentContext, "get", lambda _id: agent.context)
+    if scheduled:
+        await scheduled[0]
+
+    if scheduled and agent.context.name != "Manual Name":
+        pytest.fail(
+            "BUG_REPRODUCED: always-mode scheduled auto-naming and saved "
+            f"{agent.context.name!r} over the manual name"
+        )
+    assert scheduled == []
+    assert agent.context.name == "Manual Name"
+
+
+async def test_api_save_sets_manual_flag_and_blocks_always_mode(monkeypatch):
+    from plugins._chat_naming.api import chat_name
+
+    agent = _Agent(
+        [_Message({"user_message": "Name this chat"}, sequence=1)],
+        name="Greeting",
+    )
+    monkeypatch.setattr(chat_name.AgentContext, "get", lambda _id: agent.context)
+    monkeypatch.setattr(naming.persist_chat, "save_tmp_chat", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(naming, "mark_dirty_all", lambda **_kwargs: None)
+
+    response = await object.__new__(chat_name.ChatName).process(
+        {
+            "action": "save",
+            "kind": "chat",
+            "item_id": agent.context.id,
+            "name": "  Manual   Chat  ",
+        },
+        None,
+    )
+
+    assert response == {"ok": True, "name": "Manual Chat"}
+    assert agent.context.name == "Manual Chat"
+    assert agent.context.data[naming.MANUAL_NAME_KEY] is True
+
+    scheduled = []
+    monkeypatch.setattr(
+        naming.plugins,
+        "get_plugin_config",
+        lambda *_args, **_kwargs: {
+            "automatic_naming": True,
+            "automatic_naming_mode": "always",
+        },
+    )
+    monkeypatch.setattr(
+        rename_chat.asyncio, "create_task", lambda coro: scheduled.append(coro)
+    )
+    await rename_chat.RenameChat(agent=agent).execute()
+    assert scheduled == []
+    assert agent.context.name == "Manual Chat"
+
+
+async def test_rename_auto_clears_manual_flag_and_allows_always_mode(monkeypatch):
+    agent = _Agent(
+        [_Message({"user_message": "Plan a launch"}, sequence=1)],
+        name="Manual Name",
+    )
+    agent.context.set_data(naming.MANUAL_NAME_KEY, True)
+    monkeypatch.setattr(naming.persist_chat, "save_tmp_chat", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(naming, "mark_dirty_all", lambda **_kwargs: None)
+
+    async def generate(target_agent):
+        assert target_agent is agent
+        return "Launch Plan"
+
+    monkeypatch.setattr(rename_command.naming, "generate_name", generate)
+    result = await rename_command.run(
+        {
+            "invocation": {"raw_arguments": "auto"},
+            "context": {"agent": agent},
+        }
+    )
+
+    assert agent.context.get_data(naming.MANUAL_NAME_KEY) is False
+    assert agent.context.name == "Launch Plan"
+    assert result["effects"][0]["message"] == 'Chat renamed to "Launch Plan".'
+
+    scheduled = []
+    monkeypatch.setattr(
+        naming.plugins,
+        "get_plugin_config",
+        lambda *_args, **_kwargs: {
+            "automatic_naming": True,
+            "automatic_naming_mode": "always",
+        },
+    )
+    monkeypatch.setattr(
+        rename_chat.asyncio, "create_task", lambda coro: scheduled.append(coro)
+    )
+    await rename_chat.RenameChat(agent=agent).execute()
+    assert len(scheduled) == 1
+    scheduled[0].close()
+
+
+async def test_name_change_while_pending_does_not_overwrite(monkeypatch):
+    agent = _Agent(
+        [_Message({"user_message": "Explain Docker"}, sequence=6)],
+        name="Greeting",
+    )
+    scheduled = []
+    monkeypatch.setattr(
+        naming.plugins,
+        "get_plugin_config",
+        lambda *_args, **_kwargs: {
+            "automatic_naming": True,
+            "automatic_naming_mode": "always",
+        },
+    )
+    monkeypatch.setattr(
+        rename_chat.asyncio, "create_task", lambda coro: scheduled.append(coro)
+    )
+    await rename_chat.RenameChat(agent=agent).execute()
+    assert len(scheduled) == 1
+
+    async def generate(_agent, **kwargs):
+        _agent.context.name = "Manual Name"
+        return "Utility Name"
+
+    saved = []
+    monkeypatch.setattr(rename_chat.naming, "generate_name", generate)
+    monkeypatch.setattr(
+        rename_chat.naming,
+        "save_context_name",
+        lambda _agent, name: saved.append(name),
+    )
+    monkeypatch.setattr(rename_chat.AgentContext, "get", lambda _id: agent.context)
+    await scheduled.pop()
+
+    assert saved == []
+    assert agent.context.name == "Manual Name"
