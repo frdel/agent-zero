@@ -12,6 +12,7 @@
 - `navigation/` owns chat navigation state.
 - `top-section/` owns chat header/top area.
 - `model-gate-store.js` and `model-setup-gate.html` own the deferred in-thread model setup gate.
+- Gate dispatch (`dispatchPendingIfConfigured`) must capture `pending` and raise its latch before any await, and re-verify pending identity after awaits; pending is never re-read from the store after an await point.
 
 ## Local Contracts
 
