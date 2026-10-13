@@ -19,6 +19,7 @@
 - `save_tmp_chats()`: Save all contexts to the chats folder
 - `load_tmp_chats()`: Load all contexts from the chats folder
 - `_get_chat_file_path(ctxid: str)`
+- `chat_file_exists(ctxid: str) -> bool`
 - `_convert_v080_chats()`
 - `load_json_chats(jsons: list[str])`: Load contexts from JSON strings
 - `export_json_chat(context: AgentContext)`: Export context as JSON string
@@ -48,6 +49,7 @@
 - `load_tmp_chats()` reuses one Git version through `settings.version_cache_scope()` for its per-file restoration loop. Each agent still receives normal settings/credential reads and initialization hooks; the scope expires after the load, including failures.
 - Chat saves write and fsync a same-directory temporary file, atomically replace `chat.json`, and fsync the directory so an interrupted save cannot truncate the previous chat.
 - Contexts are marked with private `SAVED_CHAT_CONTEXT_DATA_KEY` only after a successful save or load from disk so snapshot code can detect deleted chat files without hiding fresh unsaved chats.
+- `chat_file_exists(ctxid)` reads the current `chat.json` path so snapshot pruning can confirm a missing file after taking an earlier directory listing.
 - Chat and message-file removal reject empty or whitespace-only context IDs before provider or filesystem deletion begins.
 
 ## Key Concepts
@@ -68,6 +70,7 @@
   - `tests/test_api_chat_lifetime.py`
   - `tests/test_browser_agent_regressions.py`
   - `tests/test_persist_chat_log_ids.py`
+  - `tests/test_snapshot_parity.py`
   - `tests/test_subagent_profiles.py`
   - `tests/test_tool_action_contracts.py`
 

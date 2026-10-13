@@ -78,16 +78,16 @@ async def test_snapshot_builder_active_context_includes_incremental_logs():
 
 
 @pytest.mark.asyncio
-async def test_snapshot_prunes_saved_context_missing_from_chat_files(monkeypatch):
+async def test_snapshot_prunes_saved_context_missing_from_chat_files(monkeypatch, tmp_path):
     from helpers import persist_chat
     from helpers import state_snapshot as snapshot
 
+    monkeypatch.setattr(persist_chat, "CHATS_FOLDER", str(tmp_path))
     missing_id = "ctx-saved-missing-chat-file"
     unsaved_id = "ctx-unsaved-chat-file"
     missing = AgentContext(config=initialize_agent(), id=missing_id, set_current=False)
     unsaved = AgentContext(config=initialize_agent(), id=unsaved_id, set_current=False)
     persist_chat.mark_chat_saved(missing)
-    monkeypatch.setattr(persist_chat, "saved_chat_ids", lambda: set())
 
     try:
         payload = await snapshot.build_snapshot(
@@ -106,3 +106,38 @@ async def test_snapshot_prunes_saved_context_missing_from_chat_files(monkeypatch
     finally:
         AgentContext.remove(missing_id)
         AgentContext.remove(unsaved_id)
+
+
+@pytest.mark.asyncio
+async def test_snapshot_keeps_context_saved_after_chat_file_listing(monkeypatch, tmp_path):
+    from helpers import persist_chat
+    from helpers import state_snapshot as snapshot
+
+    monkeypatch.setattr(persist_chat, "CHATS_FOLDER", str(tmp_path))
+    ctxid = "ctx-just-saved-chat-file"
+    ctx = AgentContext(config=initialize_agent(), id=ctxid, set_current=False)
+    saved_chat_ids = persist_chat.saved_chat_ids
+
+    def save_after_listing():
+        saved_ids = saved_chat_ids()
+        assert ctxid not in saved_ids
+        assert not ctx.data.get(persist_chat.SAVED_CHAT_CONTEXT_DATA_KEY)
+        persist_chat.save_tmp_chat(ctx)
+        return saved_ids
+
+    monkeypatch.setattr(persist_chat, "saved_chat_ids", save_after_listing)
+
+    try:
+        payload = await snapshot.build_snapshot(
+            context=ctxid,
+            log_from=0,
+            notifications_from=0,
+            timezone="UTC",
+        )
+
+        assert payload["deselect_chat"] is False
+        assert payload["context"] == ctxid
+        assert ctxid in {context["id"] for context in payload["contexts"]}
+        assert AgentContext.get(ctxid) is ctx
+    finally:
+        AgentContext.remove(ctxid)
