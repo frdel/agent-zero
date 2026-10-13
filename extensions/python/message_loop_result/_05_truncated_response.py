@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from helpers import extract_tools
@@ -19,10 +20,21 @@ class TruncatedResponse(Extension):
         llm_result = result_data.get("llm_result")
         if not getattr(llm_result, "truncated", False):
             return
-        if getattr(llm_result, "function_calls", None):
-            return
+        function_calls = getattr(llm_result, "function_calls", None)
         response = getattr(llm_result, "response", "")
-        if isinstance(response, str) and extract_tools.extract_tool_request(response):
+        if function_calls:
+            for call in function_calls:
+                arguments = call.raw.get("arguments")
+                if isinstance(arguments, str):
+                    try:
+                        arguments = json.loads(arguments)
+                    except ValueError:
+                        break
+                if not isinstance(arguments, dict):
+                    break
+            else:
+                return
+        elif isinstance(response, str) and extract_tools.extract_tool_request(response):
             return
 
         # Name truncation as the cause instead of the generic misformat warning.

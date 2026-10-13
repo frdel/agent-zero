@@ -2,6 +2,7 @@ import json
 from types import SimpleNamespace
 
 import pytest
+from helpers.llm_result import LLMResult
 
 from extensions.python.message_loop_result import _20_empty_response as empty_response
 from extensions.python.message_loop_result._05_truncated_response import TruncatedResponse
@@ -252,3 +253,45 @@ def test_truncated_result_with_complete_tool_request_is_processed_normally():
 
     assert "skip_default_processing" not in result
     assert agent.warnings == []
+
+
+@pytest.mark.parametrize("arguments,complete", [
+    ('{"text":"done"}', True),
+    ({"text": "done"}, True),
+    ('{}', True),
+    ('{"text":"cut', False),
+    ('', False),
+    ('[]', False),
+    (None, False),
+])
+def test_truncated_native_call_requires_complete_arguments(arguments, complete):
+    result = LLMResult.from_chat(
+        response="", finish_reason="length", output_items=[
+            {"type": "function_call", "name": "response", "call_id": "call_cut",
+             "arguments": arguments},
+        ],
+    )
+    agent = FakeAgent(result.response)
+    data = {"llm_result": result}
+
+    TruncatedResponse(agent).execute(data)
+
+    assert bool(data.get("skip_default_processing")) is not complete
+    assert agent.warnings == ([] if complete else ["output limit"])
+    assert agent.history == []
+
+
+def test_truncated_batch_retries_if_any_native_call_is_incomplete():
+    result = LLMResult.from_chat(
+        response="", finish_reason="length", output_items=[
+            {"type": "function_call", "name": "response", "arguments": arguments}
+            for arguments in ('{"text":"done"}', '{"text":"cut')
+        ],
+    )
+    agent = FakeAgent(result.response)
+    data = {"llm_result": result}
+
+    TruncatedResponse(agent).execute(data)
+
+    assert data["skip_default_processing"] is True
+    assert agent.warnings == ["output limit"]

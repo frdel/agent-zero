@@ -3,6 +3,8 @@ from litellm import ContentPolicyViolationError
 
 import models
 from helpers import litellm_transport
+from helpers import extract_tools
+from helpers.llm_result import LLMResult
 from helpers.litellm_transport import ChatCompletionsStreamParser, ChatCompletionsTransport
 
 
@@ -81,3 +83,42 @@ async def test_length_finish_reason_is_recorded_as_truncation(monkeypatch, strea
     assert result.response == partial
     assert result.finish_reason == "length"
     assert result.truncated is True
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("finish_reason", ["length", "max_tokens", "tool_calls"])
+@pytest.mark.parametrize("arguments", ['{"text":"cut', '{"text":"done"}'])
+async def test_native_chat_finish_metadata_survives_callback_stop(monkeypatch, finish_reason, arguments):
+    async def chunks():
+        yield {"choices": [{"delta": {"tool_calls": [
+            {"index": 0, "id": "call_cut", "type": "function",
+             "function": {"name": "response", "arguments": arguments}},
+        ]}, "finish_reason": None}]}
+        yield {"choices": [{"delta": {}, "finish_reason": finish_reason}]}
+
+    async def completion(**kwargs):
+        return chunks()
+
+    async def callback(chunk, full):
+        return full if extract_tools.extract_tool_request(full) is not None else None
+
+    monkeypatch.setattr(litellm_transport, "acompletion", completion)
+    wrapper = models.LiteLLMChatWrapper(model="test", provider="openai")
+    result = await wrapper.unified_turn.__wrapped__(
+        wrapper, messages=[], response_callback=callback,
+    )
+
+    assert result.finish_reason == finish_reason
+    assert result.function_calls[0].call_id == "call_cut"
+    assert result.function_calls[0].raw["arguments"] == arguments
+
+
+@pytest.mark.parametrize("finish_reason", ["length", "max_tokens", "stop"])
+def test_finish_reason_roundtrips_without_persisting_in_history(finish_reason):
+    result = LLMResult.from_chat(response="cut", finish_reason=finish_reason)
+    result.history_extras = "current extras"
+
+    assert LLMResult.from_dict(result.to_dict()) == result
+    assert result.truncated is (finish_reason != "stop")
+    assert "finish_reason" not in result.metadata()["responses"]
+    assert LLMResult.from_dict({"response": "legacy"}).finish_reason == ""

@@ -265,15 +265,18 @@ class LiteLLMTransport:
                     parser = ChatCompletionsStreamParser()
                     for chunk in iterator:
                         parsed = parser.parse(chunk)
+                        if parser.finish_reason:
+                            self.last_finish_reason = parser.finish_reason
+                            self.last_result = self._stream_result_from_chat_parser(parser)
                         if _has_chunk_delta(parsed):
                             got_any_chunk = True
                             yield parsed
                     parsed = parser.flush()
+                    self.last_finish_reason = parser.finish_reason
+                    self.last_result = self._stream_result_from_chat_parser(parser)
                     if _has_chunk_delta(parsed):
                         got_any_chunk = True
                         yield parsed
-                    self.last_finish_reason = parser.finish_reason
-                    self.last_result = self._stream_result_from_chat_parser(parser)
                 else:
                     request = self._responses_request(stream=True)
                     iterator = responses(**request)
@@ -307,15 +310,18 @@ class LiteLLMTransport:
                     parser = ChatCompletionsStreamParser()
                     async for chunk in iterator:  # type: ignore[union-attr]
                         parsed = parser.parse(chunk)
+                        if parser.finish_reason:
+                            self.last_finish_reason = parser.finish_reason
+                            self.last_result = self._stream_result_from_chat_parser(parser)
                         if _has_chunk_delta(parsed):
                             got_any_chunk = True
                             yield parsed
                     parsed = parser.flush()
+                    self.last_finish_reason = parser.finish_reason
+                    self.last_result = self._stream_result_from_chat_parser(parser)
                     if _has_chunk_delta(parsed):
                         got_any_chunk = True
                         yield parsed
-                    self.last_finish_reason = parser.finish_reason
-                    self.last_result = self._stream_result_from_chat_parser(parser)
                 else:
                     request = self._responses_request(stream=True)
                     iterator = await aresponses(**request)
