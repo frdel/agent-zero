@@ -11,6 +11,7 @@ from helpers.state_monitor_integration import mark_dirty_all
 PLUGIN_NAME = "_chat_naming"
 MODE_ONCE = "once"
 MODE_ALWAYS = "always"
+MANUAL_NAME_KEY = "chat_naming_manual"
 RECENT_USER_MESSAGES = 4
 GENERATED_NAME_LIMIT = 40
 UTILITY_CONTEXT_INPUT_RATIO = 0.7

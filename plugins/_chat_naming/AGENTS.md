@@ -20,11 +20,13 @@
 - Utility Model input contains the current name and user messages only; assistant work and tool results are excluded.
 - The complete naming prompt must remain within 70% of the effective Utility Model context window, preserving the newest user context when trimming is required.
 - `always` is the default and considers the latest user message plus recent user context; `once` names only unnamed user chats from their first user message. Preserve explicitly saved modes.
+- Manual renames (API `save` and `/rename <name>`) set persisted context data `chat_naming_manual` before the chat is saved. Automatic naming skips that chat while the flag is set. `/rename auto` clears the flag, then generates and saves a name.
+- Automatic naming does not save when `context.name` changed between scheduling and the Utility Model response.
 - Generated names are concise and normalized before persistence.
 - Renaming a parallel child updates both its context name and sidebar label.
 - Automatic naming skips delegated child contexts; their labels belong to `call_subordinate` or an explicit rename action, in both direct and parallel execution.
 - Manual task renames update both scheduler metadata and the task context name.
-- `/rename auto` uses the same generation and persistence helpers as the rename modal; any other non-empty argument is saved as the custom chat name.
+- `/rename auto` clears `chat_naming_manual` and uses the same generation and persistence helpers as the rename modal; any other non-empty argument is saved as the custom chat name and sets the flag.
 
 ## Work Guidance
 

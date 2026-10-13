@@ -5,6 +5,8 @@ from helpers.extension import Extension
 from helpers.notification import NotificationManager, NotificationPriority, NotificationType
 from plugins._chat_naming.helpers import naming
 
+_UNSET_SCHEDULED_NAME = object()
+
 
 class RenameChat(Extension):
     async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
@@ -17,6 +19,8 @@ class RenameChat(Extension):
 
         config = naming.get_config(self.agent)
         if not config["automatic_naming"]:
+            return
+        if self.agent.context.get_data(naming.MANUAL_NAME_KEY):
             return
 
         mode = config["automatic_naming_mode"]
@@ -37,6 +41,7 @@ class RenameChat(Extension):
                 messages=messages,
                 request_sequence=naming.latest_user_sequence(self.agent),
                 only_if_unnamed=(mode == naming.MODE_ONCE),
+                scheduled_name=self.agent.context.name,
             )
         )
 
@@ -46,6 +51,7 @@ class RenameChat(Extension):
         messages: list[str],
         request_sequence: int,
         only_if_unnamed: bool,
+        scheduled_name: object = _UNSET_SCHEDULED_NAME,
     ) -> None:
         if not self.agent:
             return
@@ -59,6 +65,13 @@ class RenameChat(Extension):
             if only_if_unnamed and str(self.agent.context.name or "").strip():
                 return
             if naming.latest_user_sequence(self.agent) != request_sequence:
+                return
+            if (
+                scheduled_name is not _UNSET_SCHEDULED_NAME
+                and self.agent.context.name != scheduled_name
+            ):
+                return
+            if self.agent.context.get_data(naming.MANUAL_NAME_KEY):
                 return
             if AgentContext.get(self.agent.context.id) is not self.agent.context:
                 return

@@ -17,6 +17,9 @@ async def run(payload: dict[str, Any]) -> dict[str, Any]:
 
     if raw_name.casefold() == "auto":
         raw_name = await naming.generate_name(agent)
+        agent.context.set_data(naming.MANUAL_NAME_KEY, False)
+    else:
+        agent.context.set_data(naming.MANUAL_NAME_KEY, True)
 
     name = naming.save_context_name(agent, raw_name)
     return _toast(f'Chat renamed to "{name}".')

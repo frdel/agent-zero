@@ -38,10 +38,12 @@ class ChatName(ApiHandler):
                 name = naming.normalize_manual_name(input.get("name", ""))
                 if kind == "task":
                     await self._save_task_name(item_id, name)
+                    context.set_data(naming.MANUAL_NAME_KEY, True)
                     context.name = name
                     save_tmp_chat(context)
                     mark_dirty_all(reason="plugins._chat_naming.save_task_name")
                 else:
+                    context.set_data(naming.MANUAL_NAME_KEY, True)
                     naming.save_context_name(context.agent0, name)
                 return {"ok": True, "name": name}
             return Response(f"Unknown action: {action}", 400)
