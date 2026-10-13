@@ -490,8 +490,8 @@ def normalize_settings(settings: Settings) -> Settings:
     if copy["agent_profile"] == "default":
         copy["agent_profile"] = "agent0"
 
-    # mcp server token is set automatically
-    copy["mcp_server_token"] = create_auth_token()
+    # mcp server token is set automatically (honors A0_SET_mcp_server_token env override)
+    copy["mcp_server_token"] = _resolve_mcp_server_token()
     copy["max_consecutive_unusable_responses"] = max(
         1, copy["max_consecutive_unusable_responses"]
     )
@@ -626,7 +626,7 @@ def get_default_settings() -> Settings:
         mcp_client_init_timeout=get_default_value("mcp_client_init_timeout", 10),
         mcp_client_tool_timeout=get_default_value("mcp_client_tool_timeout", 120),
         mcp_server_enabled=get_default_value("mcp_server_enabled", False),
-        mcp_server_token=create_auth_token(),
+        mcp_server_token=_resolve_mcp_server_token(),
         a2a_server_enabled=get_default_value("a2a_server_enabled", False),
         variables="",
         secrets="",
@@ -757,9 +757,9 @@ def _apply_settings(previous: Settings | None, browser_timezone: str | None = No
             )  # TODO overkill, replace with background task
 
         # update token in mcp server
-        current_token = (
-            create_auth_token()
-        )  # TODO - ugly, token in settings is generated from dotenv and does not always correspond
+        current_token = _settings[
+            "mcp_server_token"
+        ]  # normalized value honors A0_SET_mcp_server_token env override
         if not previous or current_token != previous["mcp_server_token"]:
 
             async def update_mcp_token(token: str):
@@ -846,6 +846,26 @@ def get_runtime_config(set: Settings):
     # SSH config is now managed by the code_execution plugin.
     # This function is kept for backward compatibility but returns an empty dict.
     return {}
+
+
+def _resolve_mcp_server_token() -> str:
+    """
+    Resolve the shared MCP/A2A server token.
+
+    Honors the framework A0_SET_ env override mechanism (A0_SET_mcp_server_token
+    or A0_SET_MCP_SERVER_TOKEN, read via get_default_value) so operators can pin
+    a stable token per instance (e.g. from a Kubernetes Secret). Without an
+    override, the token is derived from runtime identity as before.
+    """
+    override = get_default_value("mcp_server_token", "")
+    if override and re.fullmatch(r"[A-Za-z0-9_-]+", override):
+        return override
+    if override:
+        PrintStyle(background_color="yellow", font_color="black").print(
+            f"Warning: Ignoring A0_SET_mcp_server_token value with invalid characters; "
+            f"using derived token."
+        )
+    return create_auth_token()
 
 
 def create_auth_token() -> str:

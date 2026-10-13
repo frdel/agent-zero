@@ -46,6 +46,7 @@
 - `_remove_sensitive_settings(settings: Settings)`
 - `_write_sensitive_settings(settings: Settings)`
 - `get_default_settings() -> Settings`
+- `_resolve_mcp_server_token() -> str`: Resolve the shared MCP/A2A server token: a validated `A0_SET_mcp_server_token` env override or a `create_auth_token()` fallback.
 - `_apply_timezone_setting(previous: Settings | None, browser_timezone: str | None=...) -> None`
 - `_apply_settings(previous: Settings | None, browser_timezone: str | None=...)`
 - `_env_to_dict(data: str)`
@@ -81,6 +82,7 @@
 - `get_settings()` retains normalize-on-read behavior. Prompt-building callers
   explicitly use `get_settings_for_prompt()` to reuse one task-local snapshot
   within each `Agent.prepare_prompt()` call.
+- The shared MCP/A2A server token resolves through `_resolve_mcp_server_token()`: a non-empty `A0_SET_mcp_server_token` (or `A0_SET_MCP_SERVER_TOKEN`) env value matching `[A-Za-z0-9_-]+` overrides the token everywhere it is generated (defaults, `normalize_settings()`), so Kubernetes-style deployments can pin a stable per-instance token from a Secret. Invalid or missing values fall back to `create_auth_token()`. `_apply_settings()` pushes the normalized settings value (not a fresh hash) into the MCP and A2A proxies on change. The token remains a sensitive field: `_remove_sensitive_settings()` still blanks it before `settings.json` is written, and runtime reads re-resolve the env override on every normalize.
 - Explicit reloads also refresh an active prompt snapshot.
 - `max_consecutive_unusable_responses` defaults to `5` and controls the cost circuit breaker for malformed or repeated main-model outputs.
 - `ui_control_visibility` stores validated mobile and desktop visibility flags for the project selector, clock, connection status, context-window usage indicator, and right canvas rail; missing or malformed values fall back per device.
