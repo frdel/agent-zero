@@ -175,6 +175,8 @@ jobs:
           file: ${{ env.DOCKERFILE_PATH }}
           platforms: ${{ env.DOCKER_PLATFORMS }}
           push: true
+          provenance: mode=max
+          sbom: true
           tags: ${{ steps.resolve.outputs.tags }}
           build-args: |
             BRANCH=${{ matrix.branch }}
