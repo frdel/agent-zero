@@ -50,6 +50,98 @@ class MyFaiss(FAISS):
     def get_all_docs(self):
         return self.docstore._dict  # type: ignore
 
+    def similarity_search_with_score_by_vector(self, embedding, k, filter=None, **kwargs):
+        """Override to gracefully handle orphaned IDs in the docstore (desync resilience).
+
+        If the parent method raises ValueError for an ID that exists in
+        index_to_docstore_id but not in the docstore, we remove the orphaned
+        entry from the in-memory index and retry. If the retry still fails,
+        we return empty results instead of crashing.
+        """
+        import logging
+        _log = logging.getLogger("plugins._memory")
+        try:
+            return super().similarity_search_with_score_by_vector(
+                embedding, k, filter=filter, **kwargs
+            )
+        except ValueError as e:
+            if "Could not find document for id" not in str(e):
+                raise
+            _log.warning(f"FAISS docstore desync detected: {e}. Attempting repair.")
+            # Identify and remove orphaned IDs from index_to_docstore_id
+            docstore_ids = set(self.docstore._dict.keys())
+            orphaned_positions = [
+                pos for pos, doc_id in self.index_to_docstore_id.items()
+                if str(doc_id) not in docstore_ids
+            ]
+            if orphaned_positions:
+                import numpy as np
+                _log.warning(
+                    f"Removing {len(orphaned_positions)} orphaned entries from FAISS index: "
+                    f"{[self.index_to_docstore_id[p] for p in orphaned_positions]}"
+                )
+                # Remove orphaned vectors from the FAISS index
+                self.index.remove_ids(
+                    np.fromiter(orphaned_positions, dtype=np.int64)
+                )
+                # Rebuild index_to_docstore_id with remaining entries
+                remaining = [
+                    doc_id for i, doc_id in sorted(self.index_to_docstore_id.items())
+                    if i not in set(orphaned_positions)
+                ]
+                self.index_to_docstore_id = {
+                    i: doc_id for i, doc_id in enumerate(remaining)
+                }
+            # Retry search after repair
+            try:
+                return super().similarity_search_with_score_by_vector(
+                    embedding, k, filter=filter, **kwargs
+                )
+            except ValueError:
+                _log.error("FAISS search still failing after orphan removal. Returning empty results.")
+                return []
+
+    def save_local(self, folder_path: str, index_name: str = "index") -> None:
+        """Atomic save: write to temp files, fsync, then os.replace.
+
+        Prevents FAISS index/docstore desync by ensuring both files are
+        fully written to temp paths before either becomes visible to
+        readers via os.replace (atomic on POSIX).
+        """
+        from pathlib import Path
+        import pickle as _pickle
+
+        path = Path(folder_path)
+        path.mkdir(exist_ok=True, parents=True)
+
+        faiss_path = str(path / f"{index_name}.faiss")
+        pkl_path = str(path / f"{index_name}.pkl")
+        tmp_faiss = faiss_path + ".tmp"
+        tmp_pkl = pkl_path + ".tmp"
+
+        try:
+            # Step 1: Write index.faiss to temp file
+            faiss.write_index(self.index, tmp_faiss)
+
+            # Step 2: Write index.pkl to temp file with fsync
+            with open(tmp_pkl, "wb") as f:
+                _pickle.dump((self.docstore, self.index_to_docstore_id), f)
+                f.flush()
+                os.fsync(f.fileno())
+
+            # Step 3: Atomically replace both files (POSIX rename is atomic)
+            os.replace(tmp_faiss, faiss_path)
+            os.replace(tmp_pkl, pkl_path)
+
+        except Exception:
+            # Clean up temp files on failure - originals remain untouched
+            for tmp in [tmp_faiss, tmp_pkl]:
+                try:
+                    os.unlink(tmp)
+                except OSError:
+                    pass
+            raise
+
 
 class Memory:
 
@@ -559,10 +651,18 @@ class Memory:
             with open(faiss_path, "rb") as f:
                 for chunk in iter(lambda: f.read(65536), b""):
                     h.update(chunk)
-            with open(hash_path, "w") as f:
+            tmp_hash = hash_path + ".tmp"
+            with open(tmp_hash, "w") as f:
                 f.write(h.hexdigest())
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_hash, hash_path)
         except Exception as e:
             PrintStyle(font_color="yellow").print(f"Warning: could not write FAISS hash: {e}")
+            try:
+                os.unlink(tmp_hash)
+            except OSError:
+                pass
 
     @staticmethod
     def _verify_index_hash(abs_dir: str) -> bool:
