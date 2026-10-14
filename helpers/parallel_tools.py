@@ -578,6 +578,8 @@ async def execute_tool_call(
             tool_args=tool_args or {},
             tool_name=tool_name,
         )
+        # Re-sync so hook mutations reach tools that read self.args.
+        tool.args = tool_args
         response = await tool.execute(**tool_args)
         await agent.handle_intervention()
         await call_extensions_async(
