@@ -383,6 +383,33 @@ def test_cerebras_provider_uses_chat_completions_and_live_model_catalog(monkeypa
     assert model.kwargs["api_key"] == "test-key"
 
 
+def test_io_net_provider_uses_chat_completions_and_live_model_catalog(monkeypatch):
+    import yaml
+
+    from plugins._model_config.helpers import model_config
+
+    monkeypatch.setattr(models, "get_api_key", lambda provider: "test-key")
+
+    provider_path = PROJECT_ROOT / "conf/model_providers.yaml"
+    provider_config = yaml.safe_load(provider_path.read_text(encoding="utf-8"))
+    io_net = provider_config["chat"]["io_net"]
+
+    assert io_net["name"] == "IO Intelligence"
+    assert io_net["litellm_provider"] == "openai"
+    assert io_net["models_list"]["endpoint_url"] == "/models"
+    assert io_net["kwargs"] == {
+        "a0_api_mode": "chat",
+        "api_base": "https://api.intelligence.io.solutions/api/v1",
+    }
+    assert model_config.provider_requires_api_key("io_net") is True
+
+    model = models.get_chat_model("io_net", "meta-llama/Llama-3.3-70B-Instruct")
+    assert model.model_name == "openai/meta-llama/Llama-3.3-70B-Instruct"
+    assert model.kwargs["a0_api_mode"] == "chat"
+    assert model.kwargs["api_base"] == "https://api.intelligence.io.solutions/api/v1"
+    assert model.kwargs["api_key"] == "test-key"
+
+
 def test_direct_venice_chat_provider_defaults_to_chat_completions(monkeypatch):
     import yaml
 

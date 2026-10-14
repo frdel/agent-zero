@@ -24,6 +24,7 @@ export const MORE_CLOUD_PROVIDER_IDS = [
   "github_copilot",
   "sambanova",
   "cometapi",
+  "io_net",
   "other",
 ];
 
@@ -129,6 +130,15 @@ export const ONBOARDING_PROVIDER_OVERRIDES = {
     api_key_mode: "required",
     model_list_autoload: false,
     short_description: "Open model hub and hosted inference.",
+  },
+  io_net: {
+    logo: "https://io.net/favicon.ico",
+    setup_url: "https://ai.io.net/ai/api-keys",
+    api_key_url: "https://ai.io.net/ai/api-keys",
+    docs_url: "https://io.net/docs/reference/ai-models/create-chat-completion",
+    api_key_mode: "required",
+    model_list_autoload: true,
+    short_description: "Open-weights model inference by io.net.",
   },
   lm_studio: {
     logo: "https://lmstudio.ai/favicon.ico",

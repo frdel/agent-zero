@@ -226,6 +226,25 @@ def test_nvidia_nim_is_a_first_class_provider():
     assert "https://docs.api.nvidia.com/nim/reference/llm-apis" in provider_ui
 
 
+def test_io_net_is_a_first_class_provider():
+    provider_config = yaml.safe_load(
+        (PROJECT_ROOT / "conf/model_providers.yaml").read_text(encoding="utf-8")
+    )
+    provider_ui = (PROJECT_ROOT / "plugins/_onboarding/webui/onboarding-providers.js").read_text(
+        encoding="utf-8"
+    )
+
+    provider = provider_config["chat"]["io_net"]
+    assert provider["litellm_provider"] == "openai"
+    assert provider["models_list"]["endpoint_url"] == "/models"
+    assert provider["kwargs"]["api_base"] == "https://api.intelligence.io.solutions/api/v1"
+
+    assert "io_net" not in provider_config["embedding"]
+
+    assert '"io_net"' in provider_ui
+    assert "https://io.net/docs/reference/ai-models/create-chat-completion" in provider_ui
+
+
 def test_discovery_auto_modal_extension_contains_required_guards():
     content = (PROJECT_ROOT / "plugins/_discovery/extensions/webui/initFw_end/auto-modal.js").read_text(encoding="utf-8")
 
