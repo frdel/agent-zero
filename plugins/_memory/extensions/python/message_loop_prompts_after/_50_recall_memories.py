@@ -232,6 +232,33 @@ class RecallMemories(Extension):
             )
             return {}
 
+        # optional cross-encoder rerank: reorder candidates by joint
+        # query-document relevance before truncation and post-filtering so
+        # the most relevant documents are the ones kept/injected
+        if set.get("memory_recall_rerank_enabled"):
+            from plugins._memory.helpers.reranker import rerank_docs
+
+            try:
+                reranked = await rerank_docs(
+                    self.agent,
+                    query,
+                    memories + solutions,
+                    model_name=set.get("memory_recall_rerank_model", ""),
+                )
+                if reranked is not None:
+                    mem_count = len(memories)
+                    memories = reranked[:mem_count]
+                    solutions = reranked[mem_count:]
+                    log_item.update(
+                        heading="Memories reranked by cross-encoder",
+                    )
+            except Exception as e:
+                self.agent.context.log.log(
+                    type="warning",
+                    heading="Memory rerank failed, keeping original order",
+                    content=errors.format_error(e),
+                )
+
         # if post filtering is enabled
         if set["memory_recall_post_filter"]:
             # assemble an enumerated dict of memories and solutions for AI validation

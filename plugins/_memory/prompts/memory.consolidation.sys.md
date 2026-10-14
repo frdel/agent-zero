@@ -32,6 +32,7 @@ Default bias: for mutable user preferences, project state, configuration choices
 ### 2. Content Relationships
 - **Complementary information** should be merged into comprehensive memories
 - **Contradictory information** requires careful analysis of which is more accurate/current
+- **Polarity/negation flips are contradictions, not complements**: pairs like "stopped using X" vs "uses X", "loves X" vs "hates X", or "feature removed" vs "feature present" must resolve to ONE current fact - choose update/replace toward the newer statement and never keep both polarity variants as separate memories (vector search cannot distinguish them later)
 - **Duplicate content** should be consolidated to eliminate redundancy
 - **Distinct but related topics** may be better kept separate
 - **Same subject, changed value** should usually be update or replace, not keep_separate

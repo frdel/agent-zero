@@ -7,6 +7,7 @@
 ## Ownership
 
 - `helpers/memory.py` owns FAISS store loading, embedding metadata, and knowledge preload.
+- `helpers/reranker.py` owns the optional local cross-encoder rerank used by auto-recall and `memory_load` (lazy singleton, reorder-only, fails safe to original order).
 - `helpers/knowledge_import.py` and `helpers/memory_consolidation.py` own import and consolidation behavior.
 - `tools/` owns memory save/load/delete/forget and behavior adjustment tools.
 - `api/` and `webui/` own memory dashboard and knowledge reindex/import flows.
@@ -23,6 +24,7 @@
 - Keep auto-recall context capability-neutral; memory-tool routing belongs in
   the policy-filtered memory tool prompt.
 - Avoid storing transient action-history noise as durable memory.
+- Cross-encoder rerank is disabled by default (`memory_recall_rerank_enabled`). When enabled, candidates are reordered by joint query-document relevance after vector search and before truncation and the optional LLM post-filter; rerank never drops or mutates documents and falls back to original order on model-load or scoring failure. The default model `cross-encoder/ms-marco-MiniLM-L6-v2` uses the framework-pinned sentence-transformers/torch stack with no new install.
 
 ## Work Guidance
 
@@ -34,6 +36,7 @@
 ## Verification
 
 - Smoke-test save, recall, delete, dashboard search/update, and knowledge import/reindex after changes.
+- For reranker changes, verify disabled default behavior, enabled reorder ordering, and load-failure fallback in `plugins/_memory/tests`.
 
 ## Child DOX Index
 

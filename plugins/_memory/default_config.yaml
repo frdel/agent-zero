@@ -10,6 +10,8 @@ memory_recall_solutions_max_result: 3
 memory_recall_similarity_threshold: 0.7
 memory_recall_query_prep: false
 memory_recall_post_filter: false
+memory_recall_rerank_enabled: true
+memory_recall_rerank_model: cross-encoder/ms-marco-MiniLM-L6-v2
 memory_memorize_enabled: true
 memory_memorize_consolidation: true
 memory_memorize_replace_threshold: 0.9

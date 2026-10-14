@@ -34,7 +34,7 @@ class ConsolidationConfig:
     max_llm_context_memories: int = 5
     keyword_extraction_sys_prompt: str = "memory.keyword_extraction.sys.md"
     keyword_extraction_msg_prompt: str = "memory.keyword_extraction.msg.md"
-    processing_timeout_seconds: int = 60
+    processing_timeout_seconds: int = 300  # was 60; consolidation includes a utility-model LLM call that can take minutes on long histories
     # Add safety threshold for REPLACE actions
     replace_similarity_threshold: float = 0.75  # Threshold tuned for real cosine similarity scores
 

@@ -121,6 +121,34 @@
 
                 <div class="field">
                     <div class="field-label">
+                        <div class="field-title">Memory auto-recall rerank (cross-encoder)</div>
+                        <div class="field-description">
+                            Reorders recalled memories by query-document relevance using a local cross-encoder model before they are injected. Improves precision of injected context; adds a short local scoring pass per recall. Pure reordering, fails safe to original order.
+                        </div>
+                    </div>
+                    <div class="field-control">
+                        <label class="toggle">
+                            <input type="checkbox"
+                                x-model="config.memory_recall_rerank_enabled" />
+                            <span class="toggler"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label">
+                        <div class="field-title">Rerank model</div>
+                        <div class="field-description">
+                            Hugging Face cross-encoder model name used for reranking (default: cross-encoder/ms-marco-MiniLM-L6-v2, ~80 MB, local).
+                        </div>
+                    </div>
+                    <div class="field-control">
+                        <input type="text" x-model="config.memory_recall_rerank_model" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label">
                         <div class="field-title">Memory auto-recall interval</div>
                         <div class="field-description">
                             Memories are recalled after every user or superior agent message. During agent's monologue,
