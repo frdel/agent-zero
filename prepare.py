@@ -1,4 +1,4 @@
-from helpers import dotenv, runtime, settings
+from helpers import dotenv, migration, runtime, settings
 import string
 import random
 import sys
@@ -24,6 +24,9 @@ def _retire_legacy_collabora_runtime() -> None:
 
 
 PrintStyle.standard("Preparing environment...")
+
+migration.migrate_dotenv()
+dotenv.load_dotenv()
 
 try:
 

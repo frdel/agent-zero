@@ -29,6 +29,7 @@
 - LiteLLM and OpenAI pins must remain compatible. Retain shared dependency security floors and verify upgrades with installed-SDK HTTP tests in `tests/test_litellm_sdk.py` using the framework runtime.
 - Native agent-turn response callbacks may receive a display-only commentary preview as their full text; legacy callbacks, accumulated model output, usage and native dispatch retain the original text and result metadata.
 - `run_ui.py` is the WebUI entry point.
+- `prepare.py` migrates and loads legacy `.env` configuration before writing the root password; `helpers/migration.py` owns preservation of existing files and symlink handling.
 - `DockerfileLocal` must remain compatible with the contracts under `docker/`.
 - Runtime or user state under `usr/` and `tmp/` is intentionally outside tracked DOX unless the user explicitly asks otherwise.
 

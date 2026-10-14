@@ -35,7 +35,7 @@ def migrate_user_data() -> None:
     
     _move_file("tmp/settings.json", "usr/settings.json")
     _move_file("tmp/secrets.env", "usr/secrets.env")
-    _move_file(".env", "usr/.env", overwrite=True)
+    migrate_dotenv()
 
     # --- Special Migration Cases ---------------------------------------------------
     
@@ -51,6 +51,34 @@ def migrate_user_data() -> None:
     
     # Remove obsolete directories after migration
     _cleanup_obsolete()
+
+
+def migrate_dotenv() -> None:
+    """Preserve active configuration while migrating a legacy file or symlink."""
+    source = files.get_abs_path(".env")
+    destination = files.get_abs_path("usr/.env")
+    if not os.path.lexists(source):
+        return
+    if os.path.lexists(destination):
+        if not os.path.isfile(destination):
+            raise ValueError("Cannot migrate .env: usr/.env must resolve to a regular file.")
+        if not os.path.isfile(source) or not os.path.samefile(source, destination):
+            PrintStyle.warning("Keeping existing usr/.env; legacy .env was left unchanged.")
+        return
+    if not os.path.isfile(source):
+        raise ValueError("Cannot migrate .env: the legacy file must resolve to a regular file.")
+    if not os.path.islink(source):
+        _move_file(".env", "usr/.env")
+        return
+
+    # Relative targets must be rebased from usr/'s actual directory.
+    PrintStyle().print("Migrating .env to usr/.env...")
+    os.makedirs(os.path.dirname(destination), exist_ok=True)
+    target = os.path.join(
+        os.path.relpath(os.path.dirname(source), os.path.realpath(os.path.dirname(destination))),
+        os.readlink(source),
+    )
+    os.symlink(target, destination)
 
 
 def convert_agents_json_yaml() -> None:
