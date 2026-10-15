@@ -166,9 +166,13 @@ def test_litellm_global_kwargs_merge_defaults_and_config(monkeypatch):
         lambda: {"litellm_global_kwargs": {}},
     )
 
-    assert models._merge_litellm_call_kwargs({})["drop_params"] is True
+    assert models._merge_litellm_call_kwargs({}) == {
+        "drop_params": True,
+        "timeout": 180,
+    }
     assert models._merge_litellm_call_kwargs({"temperature": 0}) == {
         "drop_params": True,
+        "timeout": 180,
         "temperature": 0,
     }
 
@@ -409,6 +413,7 @@ async def test_chat_completions_default_uses_acompletion(monkeypatch):
     async def fake_acompletion(*args, **kwargs):
         calls.append("chat")
         assert kwargs["stream"] is True
+        assert kwargs["timeout"] == 180
         assert "a0_api_mode" not in kwargs
         return stream
 
