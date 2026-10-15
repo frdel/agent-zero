@@ -839,8 +839,19 @@ def get_embedding_model_config(agent=None) -> dict:
         model_cfg["name"] = name.removeprefix("huggingface/")
     elif name.startswith("sentence-transformers/") and provider in {"", "openai", "other"}:
         model_cfg["provider"] = "huggingface"
-    elif provider == "huggingface" and name == "all-MiniLM-L6-v2":
-        model_cfg["name"] = "sentence-transformers/all-MiniLM-L6-v2"
+    elif provider == "huggingface" and name and not str(
+        model_cfg.get("api_base") or ""
+    ).strip():
+        # huggingface embeddings without an explicit api_base default to
+        # the LOCAL sentence-transformers route: remote HF inference needs
+        # an api_base anyway, and an HF token alone is not a remote signal
+        # (tokens also authorize local model downloads). A non-empty
+        # api_base is the explicit remote opt-in. Without this, unprefixed
+        # local names (e.g. BAAI/bge-small-en-v1.5) fell through to the
+        # remote HF Inference API and failed mid-turn (incident 2026-10-15).
+        base = name.removeprefix("huggingface/")
+        if not base.startswith("sentence-transformers/"):
+            model_cfg["name"] = "sentence-transformers/" + base
 
     return model_cfg
 

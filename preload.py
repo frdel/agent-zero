@@ -18,7 +18,18 @@ async def preload():
                 model_config=emb_cfg,
                 **emb_cfg.build_kwargs(),
             )
-            await emb_mod.aembed_query("test")
+            vector = await emb_mod.aembed_query("test")
+            dim = len(vector) if isinstance(vector, (list, tuple)) and vector else "?"
+            PrintStyle().print(
+                "Preload completed. Embeddings: "
+                + type(emb_mod).__name__
+                + " "
+                + str(getattr(emb_mod, "model_name", emb_cfg.name))
+                + " (dim "
+                + str(dim)
+                + ")"
+            )
+            return
         PrintStyle().print("Preload completed.")
     except Exception as e:
         PrintStyle().error(f"Error in preload: {e}")
