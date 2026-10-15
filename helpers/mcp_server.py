@@ -14,12 +14,11 @@ from initialize import initialize_agent
 from helpers.print_style import PrintStyle
 from helpers import settings, projects
 from starlette.middleware import Middleware
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import PlainTextResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import ASGIApp, Receive, Scope, Send
 from fastmcp.server.http import create_sse_app, create_base_app, build_resource_metadata_url # type: ignore
 from starlette.routing import Mount  # type: ignore
-from starlette.requests import Request
 import threading
 
 _PRINTER = PrintStyle(italic=True, font_color="green", padding=False)
@@ -330,7 +329,7 @@ class DynamicMcpProxy:
 
         # Create new MCP apps with updated settings
         with self._lock:
-            middleware = [Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)]
+            middleware = [Middleware(PureAsgiMcpMiddleware)]
 
             self.sse_app = create_sse_app(
                 server=mcp_server,
@@ -476,14 +475,24 @@ class DynamicMcpProxy:
             )
 
 
-async def mcp_middleware(request: Request, call_next):
-    """Middleware to check if MCP server is enabled."""
-    # check if MCP server is enabled
-    cfg = settings.get_settings()
-    if not cfg["mcp_server_enabled"]:
-        PrintStyle.error("[MCP] Access denied: MCP server is disabled in settings.")
-        raise StarletteHTTPException(
-            status_code=403, detail="MCP server is disabled in settings."
-        )
+class PureAsgiMcpMiddleware:
+    """Pure ASGI middleware to check if MCP server is enabled.
 
-    return await call_next(request)
+    Avoids BaseHTTPMiddleware which buffers or iterates response streams,
+    breaking Server-Sent Events (SSE) and HTTP streaming in Starlette/Uvicorn.
+    """
+
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http":
+            cfg = settings.get_settings()
+            if not cfg.get("mcp_server_enabled", False):
+                PrintStyle.error("[MCP] Access denied: MCP server is disabled in settings.")
+                response = PlainTextResponse(
+                    "MCP server is disabled in settings.", status_code=403
+                )
+                await response(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
