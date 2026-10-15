@@ -46,6 +46,14 @@ chat:
         limit: "1000"
     kwargs:
       a0_api_mode: chat
+  atlascloud:
+    name: Atlas Cloud
+    litellm_provider: openai
+    models_list:
+      endpoint_url: "/models"
+    kwargs:
+      a0_api_mode: chat
+      api_base: https://api.atlascloud.ai/v1
   cerebras:
     name: Cerebras
     litellm_provider: cerebras
