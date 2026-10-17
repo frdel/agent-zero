@@ -1,0 +1,7 @@
+name: _search_engine
+title: Search Engine
+description: Web search tool returning live titles, urls, and content snippets via the local SearXNG instance.
+version: 1.0.0
+settings_sections: []
+per_project_config: false
+per_agent_config: false

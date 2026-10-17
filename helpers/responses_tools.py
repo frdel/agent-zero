@@ -37,7 +37,7 @@ BUNDLED_TOOL_PARAMETERS: dict[str, dict[str, Any]] = {
     "tools/response.py": {
         "text": {"type": "string", "minLength": 1},
     },
-    "tools/search_engine.py": {"query": {"type": "string"}},
+    "plugins/_search_engine/tools/search_engine.py": {"query": {"type": "string"}},
     "tools/vision_load.py": {
         "paths": {"type": "array", "items": {"type": "string"}},
         "query": {"type": "string"},

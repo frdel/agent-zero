@@ -15,6 +15,8 @@
   - `async execute(self, query=..., **kwargs)`
   - `async searxng_search(self, question)`
   - `format_result_searxng(self, result, source)`
+  - `get_log_object(self)`
+  - `get_heading(self)`
 - Notable constants/configuration names: `SEARCH_ENGINE_RESULTS`.
 
 ## Runtime Contracts
@@ -23,7 +25,7 @@
 - Update this file whenever tool arguments, output shape, `break_loop` behavior, intervention handling, prompt instructions, or side effects change.
 - `SearchEngine` is a `Tool`.
 - `SearchEngine` defines `execute(...)`.
-- Imported dependency areas include: `asyncio`, `helpers`, `helpers.errors`, `helpers.print_style`, `helpers.searxng`, `helpers.tool`, `os`.
+- Imported dependency areas include: `helpers.errors`, `helpers.searxng`, `helpers.strings`, `helpers.tool`, `uuid`.
 
 ## Key Concepts
 
@@ -38,8 +40,7 @@
 
 ## Verification
 
-- Run targeted tool and prompt-contract tests for changed behavior; smoke-test agent execution when no focused test exists.
-- No direct test reference was found by name search; choose the nearest behavioral test or perform a focused smoke check.
+- Run `tests/test_search_engine_tool.py` for the result formatting and search execution regression tests.
 
 ## Child DOX Index
 

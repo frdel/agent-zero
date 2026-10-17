@@ -1,0 +1,7 @@
+/* SRC - search engine type (indigo) */
+.process-group .SRC {
+  --step-accent: #818cf8;
+}
+.light-mode .process-group .SRC {
+  --step-accent: #4f46e5;
+}
