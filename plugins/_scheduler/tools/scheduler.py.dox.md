@@ -20,6 +20,9 @@
   - `async delete_task(self, **kwargs) -> Response`
   - `async update_task(self, **kwargs) -> Response`
   - `async create_scheduled_task(self, **kwargs) -> Response`
+  - `async create_adhoc_task(self, **kwargs) -> Response`
+  - `async create_planned_task(self, **kwargs) -> Response`
+  - `async wait_for_task(self, **kwargs) -> Response`
 - Top-level functions:
 - `_current_action(tool: Tool, kwargs: dict) -> str`
 - `_normalize_timezone(value: Any) -> str | None`
@@ -36,6 +39,7 @@
 - `SchedulerTool` is a `Tool`.
 - `SchedulerTool` defines `execute(...)`.
 - Observed side-effect areas: filesystem writes, filesystem deletion, settings/state persistence, secret handling, scheduler state.
+- Agent-facing repair messages render from `prompts/` framework message files.
 - Imported dependency areas include: `agent`, `asyncio`, `datetime`, `helpers`, `helpers.localization`, `helpers.projects`, `helpers.task_scheduler`, `helpers.tool`, `json`, `pytz`, `random`, `re`, `typing`.
 
 ## Key Concepts
@@ -53,6 +57,7 @@
 
 - Run targeted tool and prompt-contract tests for changed behavior; smoke-test agent execution when no focused test exists.
 - Related tests observed by source search:
+  - `tests/test_scheduler_tool_ui.py`
   - `tests/test_task_scheduler_timezone.py`
   - `tests/test_timezone_regressions.py`
   - `tests/test_tool_action_contracts.py`

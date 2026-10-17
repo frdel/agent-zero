@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from datetime import datetime
 import json
 import random
@@ -14,6 +15,7 @@ from helpers.task_scheduler import (
 from agent import AgentContext
 from helpers import persist_chat
 from helpers.localization import Localization
+from helpers.strings import truncate_text
 from helpers.projects import get_context_project_name, load_basic_project_data
 
 DEFAULT_WAIT_TIMEOUT = 300
@@ -89,9 +91,22 @@ def _task_schedule_from_input(schedule: Any, timezone: str | None = None) -> Tas
     return TaskSchedule(**task_schedule_kwargs)
 
 
+def parse_bool_arg(value: Any) -> bool | None:
+    """Coerce JSON-style boolean args; strings true/false are accepted, anything else is invalid."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"true", "1", "yes", "y"}:
+            return True
+        if lowered in {"false", "0", "no", "n"}:
+            return False
+    return None
+
+
 def _validate_task_schedule(task_schedule: TaskSchedule) -> str:
     # Validate cron expression, agent might hallucinate
-    cron_regex = r"^((((\d+,)+\d+|(\d+(\/|-|#)\d+)|\d+L?|\*(\/\d+)?|L(-\d+)?|\?|[A-Z]{3}(-[A-Z]{3})?) ?){5,7})$"
+    cron_regex = r"^((((\d+,)+\d+|(\d+(\/|-|#)\d+)|(\d+-\d+(\/\d+)?)|\d+L?|\*(\/\d+)?|L(-\d+)?|\?|[A-Z]{3}(-[A-Z]{3})?) ?){5,7})$"
     crontab = task_schedule.to_crontab()
     return "" if re.match(cron_regex, crontab) else f"Invalid cron expression: {crontab}"
 
@@ -265,10 +280,30 @@ class SchedulerTool(Tool):
                 update_params[field] = kwargs[field]
 
         if "state" in kwargs:
-            update_params["state"] = TaskState(kwargs.get("state", TaskState.IDLE))
+            state_value = kwargs.get("state", TaskState.IDLE)
+            if not isinstance(state_value, TaskState):
+                try:
+                    state_value = TaskState(str(state_value).strip().lower())
+                except ValueError:
+                    return Response(
+                        message=self.agent.read_prompt(
+                            "fw.scheduler.invalid_task_state.md",
+                            state=kwargs.get("state"),
+                        ),
+                        break_loop=False,
+                    )
+            update_params["state"] = state_value
 
         if "dedicated_context" in kwargs:
-            dedicated_context = bool(kwargs.get("dedicated_context"))
+            dedicated_context = parse_bool_arg(kwargs.get("dedicated_context"))
+            if dedicated_context is None:
+                return Response(
+                    message=self.agent.read_prompt(
+                        "fw.scheduler.invalid_dedicated_context.md",
+                        dedicated_context=kwargs.get("dedicated_context"),
+                    ),
+                    break_loop=False,
+                )
             update_params["context_id"] = task.uuid if dedicated_context else self.agent.context.id
 
         try:
@@ -429,3 +464,17 @@ class SchedulerTool(Tool):
             message=f"*Task*: {task_uuid}\n*State*: {task.state}\n*Last run*: {serialize_datetime(task.last_run)}\n*Result*:\n{task.last_result}",
             break_loop=False
         )
+
+    def get_log_object(self):
+        return self.agent.context.log.log(
+            type="scheduler",
+            heading=self.get_heading(),
+            content="",
+            kvps=self.args,
+            id=str(uuid.uuid4()),
+        )
+
+    def get_heading(self):
+        action = _current_action(self, self.args)
+        text = f"Schedule: {truncate_text(action.replace('_', ' ').title(), 60)}" if action else "Schedule"
+        return f"icon://calendar_month {text}"
