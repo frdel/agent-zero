@@ -284,9 +284,12 @@ def test_microsoft_dev_tunnel_emits_setup_progress_notifications(
 )
 def test_flaredantic_provider_helpers_emit_manager_notifications(
     tunnel_manager_module,
+    monkeypatch,
     provider,
     expected_label,
 ):
+    # This test exercises notification wiring, not the readiness wait.
+    monkeypatch.setenv("A0_TUNNEL_READY_TIMEOUT", "0")
     manager = tunnel_manager_module.TunnelManager()
     tunnel = manager._create_tunnel(50001, provider)
 
