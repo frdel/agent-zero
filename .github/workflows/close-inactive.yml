@@ -25,7 +25,7 @@ env:
 jobs:
   close_inactive:
     if: github.repository == 'agent0ai/agent-zero' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-    runs-on: [self-hosted, Windows, X64, local-windows]
+    runs-on: ubuntu-latest
     steps:
       - name: Find and optionally close inactive issues/PRs
         uses: actions/github-script@v7
