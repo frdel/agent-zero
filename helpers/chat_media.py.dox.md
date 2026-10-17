@@ -23,6 +23,7 @@
 - `is_chat_scoped_path(context_id: str, path: str | Path) -> bool`
 - `infer_source(value: str=..., preferred_name: str=...) -> str`
 - `category_for_source(source: str) -> ImageCategory`
+- `snapshot_image_refs(text: str, context_id: str, source: str=...) -> str`: Copy live local image files referenced by `img://` or `/api/image_get?path=` onto unique chat artifacts and rewrite those refs so later filename reuse cannot overwrite earlier chat bubbles.
 - `_guess_image_mime(path: Path) -> str`
 - `_is_data_image_url(value: str) -> bool`
 - `_split_image_data_url(data_url: str) -> tuple[str, str]`
@@ -33,11 +34,12 @@
 - Helper modules own reusable framework APIs and must preserve public callers unless all callers, tests, and docs are updated together.
 - Update this file whenever public functions, classes, persistence behavior, path/security assumptions, side effects, or cross-module contracts change.
 - Observed side-effect areas: filesystem reads, filesystem writes, filesystem deletion.
-- Imported dependency areas include: `__future__`, `dataclasses`, `helpers`, `pathlib`, `time`, `typing`, `uuid`.
+- Imported dependency areas include: `__future__`, `dataclasses`, `helpers`, `pathlib`, `re`, `time`, `typing`, `uuid`.
+- Finished chat responses that embed `img://` or `/api/image_get?path=` local image refs are rewritten onto unique files under `usr/chats/<id>/images/response/`. Already chat-scoped artifacts are left in place. Missing or non-image refs are left unchanged.
 
 ## Key Concepts
 
-- Important called helpers/classes observed in the source: `dataclass`, `artifact_dir`, `bytes`, `media_artifacts.normalize_mime`, `media_artifacts.guess_extension`, `media_artifacts.safe_filename`, `Path`, `time.strftime`, `path.parent.mkdir`, `path.write_bytes`, `ChatImage`, `media_artifacts.decode_base64_payload`, `save_image_bytes`, `image_path.read_bytes`, `_split_image_data_url`, `save_image_base64`, `str.strip`, `category_for_source`, `_is_data_image_url`, `images.resolve_ref`.
+- Important called helpers/classes observed in the source: `dataclass`, `artifact_dir`, `bytes`, `media_artifacts.normalize_mime`, `media_artifacts.guess_extension`, `media_artifacts.safe_filename`, `Path`, `time.strftime`, `path.parent.mkdir`, `path.write_bytes`, `ChatImage`, `media_artifacts.decode_base64_payload`, `save_image_bytes`, `image_path.read_bytes`, `_split_image_data_url`, `save_image_base64`, `str.strip`, `category_for_source`, `_is_data_image_url`, `images.resolve_ref`, `snapshot_image_refs`.
 - Keep request/response, tool, or helper semantics documented here at the same time as source changes.
 
 ## Work Guidance
@@ -54,6 +56,7 @@
   - `tests/test_host_browser_connector.py`
   - `tests/test_tool_action_contracts.py`
   - `tests/test_vision_load_image_refs.py`
+  - `tests/test_chat_media_response_snapshots.py`
 
 ## Child DOX Index
 

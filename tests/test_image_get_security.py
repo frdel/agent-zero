@@ -33,6 +33,12 @@ async def _request_image(path: str):
         return await handler.process({"path": path}, request)
 
 
+def _write_fallback_icon(base_dir: Path) -> None:
+    icon_path = base_dir / "webui" / "public" / "image.svg"
+    icon_path.parent.mkdir(parents=True, exist_ok=True)
+    icon_path.write_text("<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>", encoding="utf-8")
+
+
 def test_image_get_serves_images_inside_base_dir(tmp_path, monkeypatch):
     base_dir = tmp_path / "a0"
     _patch_base_dir(monkeypatch, base_dir)
@@ -45,6 +51,35 @@ def test_image_get_serves_images_inside_base_dir(tmp_path, monkeypatch):
     assert response.status_code == 200
     assert response.headers["X-File-Type"] == "image"
     assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["Cache-Control"] == "no-cache"
+
+
+def test_image_get_does_not_cache_missing_image_fallback(tmp_path, monkeypatch):
+    base_dir = tmp_path / "a0"
+    _patch_base_dir(monkeypatch, base_dir)
+    _write_fallback_icon(base_dir)
+    missing = base_dir / "usr" / "workdir" / "missing.png"
+
+    response = asyncio.run(_request_image(str(missing)))
+
+    assert response.status_code == 200
+    assert response.headers["Cache-Control"] == "no-store"
+    assert response.mimetype == "image/svg+xml"
+
+
+def test_image_get_caches_unique_chat_artifacts(tmp_path, monkeypatch):
+    base_dir = tmp_path / "a0"
+    _patch_base_dir(monkeypatch, base_dir)
+    image_path = (
+        base_dir / "usr" / "chats" / "chat-1" / "images" / "response" / "logo-unique.png"
+    )
+    image_path.parent.mkdir(parents=True)
+    image_path.write_bytes(b"\x89PNG\r\n\x1a\n")
+
+    response = asyncio.run(_request_image(str(image_path)))
+
+    assert response.status_code == 200
+    assert response.headers["Cache-Control"] == "public, max-age=3600"
 
 
 def test_image_get_blocks_image_paths_outside_base_dir(tmp_path, monkeypatch):

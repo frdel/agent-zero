@@ -1,5 +1,13 @@
+from helpers import chat_media, parallel_tools
 from helpers.errors import RepairableException
 from helpers.tool import Tool, Response
+
+
+def _response_context_id(agent) -> str:
+    context = getattr(agent, "context", None)
+    get_data = getattr(context, "get_data", None)
+    parent_id = get_data(parallel_tools.PARALLEL_WORKER_PARENT_CONTEXT_KEY) if get_data else ""
+    return str(parent_id or getattr(context, "id", "") or "").strip()
 
 
 class ResponseTool(Tool):
@@ -23,4 +31,14 @@ class ResponseTool(Tool):
 
         if self.loop_data and "log_item_response" in self.loop_data.params_temporary:
             log = self.loop_data.params_temporary["log_item_response"]
-            log.update(finished=True) # mark the message as finished
+            content = log.content or (
+                response.message if isinstance(response.message, str) else ""
+            )
+            snapshotted = chat_media.snapshot_image_refs(
+                content,
+                context_id=_response_context_id(self.agent),
+            )
+            updates = {"finished": True}
+            if snapshotted != log.content:
+                updates["content"] = snapshotted
+            log.update(**updates)

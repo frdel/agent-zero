@@ -15,6 +15,8 @@
   - `async execute(self, **kwargs)`
   - `async before_execution(self, **kwargs)`
   - `async after_execution(self, response, **kwargs)`
+- Top-level functions:
+- `_response_context_id(agent) -> str`
 
 ## Runtime Contracts
 
@@ -26,11 +28,12 @@
   argument, preferring `text` and falling back to `message` when `text` is blank.
   Invalid arguments raise `RepairableException` so the agent can surface a correction
   warning and retry rather than crash.
-- Imported dependency areas include: `helpers.errors`, `helpers.tool`.
+- Imported dependency areas include: `helpers`, `helpers.errors`, `helpers.tool`.
+- `after_execution` marks the live response log finished and rewrites local `img://` / `/api/image_get?path=` image refs onto unique chat-scoped snapshots so later filename reuse cannot overwrite earlier bubbles.
 
 ## Key Concepts
 
-- Important called helpers/classes observed in the source: `Response`.
+- Important called helpers/classes observed in the source: `Response`, `chat_media.snapshot_image_refs`.
 - Keep request/response, tool, or helper semantics documented here at the same time as source changes.
 
 ## Work Guidance
@@ -51,6 +54,9 @@
   - `tests/test_download_toast_regressions.py`
   - `tests/test_fasta2a_client.py`
   - `tests/test_fastmcp_openapi_security.py`
+  - `tests/test_chat_media_response_snapshots.py`
+  - `tests/test_response_tool_validation.py`
+  - `tests/test_plain_response_logging.py`
 
 ## Child DOX Index
 

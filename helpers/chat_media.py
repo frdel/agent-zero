@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import time
 import uuid
 from dataclasses import dataclass
@@ -242,3 +243,113 @@ def _split_image_data_url(data_url: str) -> tuple[str, str]:
     if not _is_data_image_url(value) or "," not in value:
         raise ValueError("image data URL must be data:image/*;base64,...")
     return value.split(",", 1)
+
+
+_IMAGE_REF_RE = re.compile(
+    r"(?:img://+|/api/image_get\?path=)(?P<path>[^)\s\"'<>]+)",
+    re.IGNORECASE,
+)
+_IMAGE_EXTENSIONS = {
+    ".bmp",
+    ".gif",
+    ".ico",
+    ".jpeg",
+    ".jpg",
+    ".png",
+    ".svg",
+    ".svgz",
+    ".webp",
+}
+
+
+def snapshot_image_refs(
+    text: str,
+    *,
+    context_id: str,
+    source: str = "response",
+) -> str:
+    """Copy live image files referenced in chat text onto unique chat artifacts.
+
+    Chat markdown historically points at live workdir paths such as
+    `img:///a0/usr/workdir/logo.png`. Reusing that filename later overwrites the
+    file, so older chat bubbles show the newest image. This rewrites each
+    non-chat-scoped local image onto a unique snapshot under the chat folder.
+    """
+    value = str(text or "")
+    if not value or not str(context_id or "").strip():
+        return value
+
+    replacements: dict[str, str] = {}
+
+    def _replace(match: re.Match[str]) -> str:
+        original = match.group(0)
+        if original in replacements:
+            return replacements[original]
+        rewritten = _snapshot_matched_image_ref(
+            original,
+            context_id=context_id,
+            source=source,
+        )
+        replacements[original] = rewritten
+        return rewritten
+
+    return _IMAGE_REF_RE.sub(_replace, value)
+
+
+def _snapshot_matched_image_ref(
+    original: str,
+    *,
+    context_id: str,
+    source: str,
+) -> str:
+    path_value = _image_ref_path(original)
+    if not path_value:
+        return original
+    if not _looks_like_image_path(path_value):
+        return original
+    try:
+        from helpers import images
+
+        source_path = images.resolve_ref(path_value)
+        if is_chat_scoped_path(context_id=context_id, path=source_path):
+            snapshotted = files.normalize_a0_path(str(source_path))
+        else:
+            saved = save_image_file(
+                context_id=context_id,
+                path=source_path,
+                category="images",
+                source=source,
+                preferred_name=source_path.name,
+            )
+            snapshotted = saved.a0_path
+    except (FileNotFoundError, OSError, ValueError):
+        return original
+    return _rewrite_image_ref(original, snapshotted)
+
+
+def _image_ref_path(value: str) -> str:
+    raw = str(value or "").strip()
+    lowered = raw.lower()
+    if lowered.startswith("img:"):
+        rest = raw.split(":", 1)[1]
+        if rest.startswith("//"):
+            rest = rest[2:]
+        if rest.lower().startswith("a0/"):
+            rest = "/" + rest
+        raw = rest
+    elif "path=" in lowered:
+        raw = raw.split("path=", 1)[1]
+    return raw.split("&", 1)[0].strip()
+
+
+def _looks_like_image_path(path_value: str) -> bool:
+    suffix = Path(path_value.split("?", 1)[0]).suffix.lower()
+    return suffix in _IMAGE_EXTENSIONS
+
+
+def _rewrite_image_ref(original: str, snapshotted: str) -> str:
+    if original.lower().startswith("img:"):
+        return f"img://{snapshotted}"
+    if original.lower().startswith("/api/image_get?path="):
+        return f"/api/image_get?path={snapshotted}"
+    return snapshotted

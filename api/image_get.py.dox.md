@@ -16,7 +16,8 @@
   - `async process(self, input: dict, request: Request) -> dict | Response`
 - Top-level functions:
 - `_resolve_allowed_image_path(path: str) -> str`: Resolve a requested image path and keep it inside Agent Zero's base dir.
-- `_set_image_headers(response: Response, filename: str, file_ext: str) -> None`
+- `_cache_control_for_image(path: str, exists: bool) -> str`: Choose cache policy for a served image URL. Missing-file fallbacks use `no-store`; unique chat artifacts may be cached; mutable workdir files revalidate with `no-cache`.
+- `_set_image_headers(response: Response, filename: str, file_ext: str, cache_control: str=...) -> None`
 - `_send_file_type_icon(file_ext, filename=...)`: Return appropriate icon for file type
 - `_send_fallback_icon(icon_name)`: Return fallback icon from public directory
 - Notable constants/configuration names: `IMAGE_EXTENSIONS`, `SVG_EXTENSIONS`, `SVG_CONTENT_SECURITY_POLICY`.
@@ -29,6 +30,7 @@
 - `ImageGet` defines `process(...)`.
 - `ImageGet` defines `get_methods(...)`.
 - Observed side-effect areas: filesystem reads, network calls, subprocess/runtime control, settings/state persistence.
+- Image responses set `Cache-Control` from `_cache_control_for_image(...)`. Do not cache missing-file fallback icons under the requested image URL; that hid later writes and mixed chat replay after a UI reload.
 - Imported dependency areas include: `base64`, `helpers`, `helpers.api`, `io`, `mimetypes`, `os`, `pathlib`, `urllib.parse`.
 
 ## Key Concepts

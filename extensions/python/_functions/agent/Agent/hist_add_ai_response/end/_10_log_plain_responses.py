@@ -1,6 +1,6 @@
 from typing import Any
 
-from helpers import extract_tools
+from helpers import chat_media, extract_tools, parallel_tools
 from helpers.extension import Extension
 
 
@@ -38,10 +38,18 @@ class LogPlainResponses(Extension):
             return
 
         params["log_item_response"] = log_item
+        context = getattr(self.agent, "context", None)
+        get_data = getattr(context, "get_data", None)
+        parent_id = (
+            get_data(parallel_tools.PARALLEL_WORKER_PARENT_CONTEXT_KEY)
+            if get_data
+            else ""
+        )
+        context_id = str(parent_id or getattr(context, "id", "") or "").strip()
         log_item.update(
             type="response",
             heading="",
-            content=message,
+            content=chat_media.snapshot_image_refs(message, context_id=context_id),
             finished=True,
             update_progress="none",
         )

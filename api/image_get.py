@@ -49,10 +49,14 @@ class ImageGet(ApiHandler):
             except ValueError as exc:
                 return Response(str(exc), status=403, mimetype="text/plain")
 
+            served_path = local_path
+            served_existing_file = False
+
             # in development environment, try to serve the image from local file system if exists, otherwise from docker
             if runtime.is_development():
                 if files.exists(local_path):
                     response = send_file(local_path)
+                    served_existing_file = True
                 else:
                     # Try fetching from Docker via RFC as fallback
                     try:
@@ -75,6 +79,8 @@ class ImageGet(ApiHandler):
                                 as_attachment=False,
                                 download_name=filename,
                             )
+                            served_path = str(remote_path)
+                            served_existing_file = True
                         else:
                             response = _send_fallback_icon("image")
                     except Exception:
@@ -82,10 +88,18 @@ class ImageGet(ApiHandler):
             else:
                 if files.exists(local_path):
                     response = send_file(local_path)
+                    served_existing_file = True
                 else:
                     response = _send_fallback_icon("image")
 
-            _set_image_headers(response, filename, file_ext)
+            _set_image_headers(
+                response,
+                filename,
+                file_ext,
+                cache_control=_cache_control_for_image(
+                    served_path, exists=served_existing_file
+                ),
+            )
             return response
         else:
             # Handle non-image files with fallback icons
@@ -114,9 +128,30 @@ def _resolve_allowed_image_path(path: str) -> str:
     return str(resolved)
 
 
-def _set_image_headers(response: Response, filename: str, file_ext: str) -> None:
+def _cache_control_for_image(path: str, *, exists: bool) -> str:
+    """Choose cache policy for a served image URL.
+
+    Chat markdown historically points at live workdir files. Caching a missing-file
+    fallback icon under that same URL hides later writes for an hour. Unique chat
+    artifacts are immutable and can be cached; mutable workdir files must revalidate.
+    """
+    if not exists:
+        return "no-store"
+    normalized = str(path or "").replace("\\", "/").lower()
+    if "/usr/chats/" in normalized:
+        return "public, max-age=3600"
+    return "no-cache"
+
+
+def _set_image_headers(
+    response: Response,
+    filename: str,
+    file_ext: str,
+    *,
+    cache_control: str = "no-cache",
+) -> None:
     # Add cache headers for better device sync performance.
-    response.headers["Cache-Control"] = "public, max-age=3600"
+    response.headers["Cache-Control"] = cache_control
     response.headers["X-File-Type"] = "image"
     response.headers["X-File-Name"] = quote(filename)
     response.headers["X-Content-Type-Options"] = "nosniff"
