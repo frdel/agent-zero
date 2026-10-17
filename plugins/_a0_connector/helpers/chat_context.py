@@ -80,6 +80,9 @@ def create_context(
             set_current=True,
         )
 
+        if agent_profile:
+            context.set_data("agent_profile_manually_set", True)
+
         if current_context and settings.get_settings().get("chat_inherit_project", True):
             current_project = current_context.get_data(projects.CONTEXT_DATA_KEY_PROJECT)
             if current_project:

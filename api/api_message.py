@@ -100,6 +100,8 @@ class ApiMessage(ApiHandler):
             context = AgentContext(config=config, type=AgentContextType.USER)
             AgentContext.use(context.id)
             context_id = context.id
+            if agent_profile:
+                context.set_data("agent_profile_manually_set", True)
             # Activate project if provided
             if project_name:
                 try:

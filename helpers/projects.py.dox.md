@@ -43,6 +43,7 @@
 - `get_active_projects_list()`
 - `get_file_structure(name: str, basic_data: BasicProjectData|None=None, output_mode: str = file_tree.OUTPUT_MODE_STRING) -> str`
 - `_get_projects_list(parent_dir)`
+- `get_project_default_agent(name: str | None) -> str | None`: Read the project's preferred default agent profile from `.a0proj/default_agent.json`; returns None when absent, unreadable, or malformed.
 - `reconcile_agent_profile(context: AgentContext, project_name: str | None) -> bool`
 - `reconcile_agent_profiles(project_name: str | None, *, all_scopes: bool=...) -> None`
 - `activate_project(context_id: str, name: str, mark_dirty: bool=...)`
@@ -93,6 +94,18 @@
   scope; only chats whose active profile actually changes are persisted and
   marked dirty. Context creation uses the same reconciliation after resolving
   its scope, so a disabled configured profile cannot become invisibly active.
+- `reconcile_agent_profile(...)` additionally applies the per-project default
+  agent from `.a0proj/default_agent.json` (read via
+  `get_project_default_agent(...)`): when the context still runs the global
+  default profile and the configured default agent is available in the current
+  scope, the context switches to that agent. The switch is skipped entirely
+  when the context carries a truthy `agent_profile_manually_set` data flag
+  (set by `api/agent_profile_set.py` on explicit per-chat selection), so
+  manual selections are never overridden by reconcile sweeps. Projects
+  without the file behave exactly as before. The fallback branch (active
+  profile missing from the available catalog) prefers the project default
+  agent even over an available global default; fallback ordering is: project
+  default, then `agent0`, then first available.
 - Project updates and deletion refresh only chats assigned to that project and
   persist each affected chat once; unrelated chats are never rewritten.
 - Observed side-effect areas: filesystem reads, filesystem writes, filesystem deletion, plugin state, settings/state persistence, secret handling.
@@ -114,6 +127,7 @@
 
 - Run targeted tests for changed helper behavior; run security regressions for auth, filesystem, WebSocket, tunnel, upload, or secret-handling helpers.
 - Related tests observed by source search:
+  - `tests/test_project_default_agent.py`
   - `tests/test_model_config_project_presets.py`
   - `tests/test_office_document_store.py`
   - `tests/test_plugin_activation_ui.py`

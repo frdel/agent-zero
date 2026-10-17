@@ -399,6 +399,19 @@ def _get_projects_list(parent_dir):
     return projects
 
 
+def get_project_default_agent(name: str | None) -> str | None:
+    """Return the project's preferred default agent profile, or None."""
+    if not name:
+        return None
+    try:
+        abs_path = files.get_abs_path(get_project_meta(name), "default_agent.json")
+        data = dirty_json.parse(files.read_file(abs_path))
+        agent = str(data.get("agent", "") or "").strip() if isinstance(data, dict) else ""
+        return agent or None
+    except Exception:
+        return None
+
+
 def reconcile_agent_profile(
     context: "AgentContext", project_name: str | None, available: dict | None = None
 ) -> bool:
@@ -408,11 +421,42 @@ def reconcile_agent_profile(
     if available is None:
         available = subagents.get_available_agents_dict(project_name)
     if getattr(context.config, "profile", "") in available:
+        # project default agent: switch only when the context still runs the
+        # global default (i.e. no explicit per-chat selection has been made)
+        manually_set = context.get_data("agent_profile_manually_set")
+        default_agent = get_project_default_agent(project_name)
+        if (
+            not manually_set
+            and default_agent
+            and default_agent in available
+            and default_agent != getattr(context.config, "profile", "")
+        ):
+            from helpers import settings as settings_helper
+
+            global_default = settings_helper.get_settings().get("agent_profile", "")
+            if getattr(context.config, "profile", "") == global_default:
+                config = initialize_agent(
+                    override_settings={"agent_profile": default_agent}
+                )
+                context.config = config
+                context.agent0.config = config
+                return True
         return False
 
     config = initialize_agent()
-    if config.profile not in available:
-        fallback = "agent0" if "agent0" in available else next(iter(available), "agent0")
+    default_agent = get_project_default_agent(project_name)
+    if config.profile not in available or (
+        default_agent
+        and default_agent in available
+        and config.profile != default_agent
+    ):
+        fallback = (
+            default_agent
+            if default_agent in available
+            else "agent0"
+            if "agent0" in available
+            else next(iter(available), "agent0")
+        )
         config = initialize_agent(override_settings={"agent_profile": fallback})
     context.config = config
     context.agent0.config = config

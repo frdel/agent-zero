@@ -469,6 +469,7 @@ def _handle_agent(context: "AgentContext", args: str) -> str:
     config = initialize_agent(override_settings={"agent_profile": profile})
     context.config = config
     context.agent0.config = config
+    context.set_data("agent_profile_manually_set", True)
     save_tmp_chat(context)
     mark_dirty_for_context(context.id, reason="integration_commands.agent_set")
     return f"Switched agent to {match.get('label') or profile}."

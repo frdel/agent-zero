@@ -32,6 +32,8 @@
   preserve existing subordinate agent profiles. Picker rows and direct matches
   use the shared presentation catalog while current status may still report an
   existing chat that uses the utility profile.
+- Explicit agent picker selections record the `agent_profile_manually_set`
+  context flag so project-default reconciliation cannot override them.
 - Model picker status shows the effective preset; clearing a chat override returns to its scoped preset rather than assuming `Default`.
 
 ## Work Guidance

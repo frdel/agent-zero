@@ -27,6 +27,7 @@
 - `ApiMessage` defines `requires_csrf(...)`.
 - `ApiMessage` defines `requires_api_key(...)`.
 - Observed side-effect areas: filesystem reads, filesystem writes, settings/state persistence, secret handling, scheduler state.
+- New-context creation with an explicit `agent_profile` records the `agent_profile_manually_set` context data flag (before project activation triggers reconciliation) so manual selections are protected from project-default reconciliation.
 - Imported dependency areas include: `agent`, `base64`, `datetime`, `helpers`, `helpers.api`, `helpers.print_style`, `helpers.projects`, `helpers.security`, `initialize`, `os`, `uuid`.
 
 ## Key Concepts

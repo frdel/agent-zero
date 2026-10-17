@@ -23,6 +23,9 @@
 - `/agent` switches the top-level chat profile and preserves existing
   subordinate agent profiles. Choices come from the shared presentation
   catalog, though status may report an existing chat using the utility profile.
+- Explicit `/agent` selection records the `agent_profile_manually_set` context
+  data flag so manual selections are protected from project-default
+  reconciliation in `helpers/projects.py`.
 - `/model <preset>` stores a per-chat global preset reference, `/model inherit` clears it, and status always reports the effective scoped-or-chat preset. `Default` is a real selectable preset, not an alias for clearing the chat selection.
 
 ## Key Concepts

@@ -22,6 +22,7 @@
 - `SetAgentProfile` defines `process(...)`.
 - Observed side-effect areas: filesystem writes, settings/state persistence.
 - Switching a chat profile updates the context and top-level agent profile only; existing subordinate agents keep their own profile configs.
+- Explicit profile selection sets the `agent_profile_manually_set` context data flag (persisted via `save_tmp_chat` because non-underscore `context.data` keys are serialized); `helpers/projects.py` `reconcile_agent_profile(...)` skips project-default-agent overrides for flagged contexts, so explicit selections survive reconcile sweeps.
 - A profile can be selected only when it is available in the chat's active
   project scope; profiles owned by other projects are not valid candidates.
 - Imported dependency areas include: `agent`, `helpers`, `helpers.api`, `helpers.persist_chat`, `helpers.state_monitor_integration`.
