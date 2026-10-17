@@ -9,6 +9,7 @@
 
 - `plugin.yaml` owns the always-enabled `_goal` plugin metadata.
 - `tools/goal.py` owns the single agent-facing goal tool, file-backed state under `usr/plugins/_goal/goals/`, and goal status normalization.
+- The tool logs its message as type `goal` with an `icon://flag` verb headline such as `Setting goal`, without quoting argument text; `extensions/webui/get_message_handler/` owns the `AIM` badge presentation and `extensions/webui/get_process_step_types/` registers the type.
 - `api/goal.py` owns the WebUI JSON API for reading, editing, pausing, resuming, and deleting goals.
 - `commands/` owns the `/goal` slash command contributed to `_commands`.
 - `webui/` and `extensions/webui/` own the composer goal strip, Goal mode shortcut, and inline controls.
