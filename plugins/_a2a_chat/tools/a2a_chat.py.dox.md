@@ -26,7 +26,7 @@
 - `A2AChatTool` is a `Tool`.
 - `A2AChatTool` defines `execute(...)`.
 - Observed side-effect areas: agent state in `agent.data["_a2a_sessions"]`.
-- Agent-facing failure and repair messages render from `prompts/` framework message files.
+- Agent-facing failure messages render from `prompts/` framework message files.
 - Imported dependency areas include: `plugins._a2a_chat.helpers.fasta2a_client`, `helpers.print_style`, `helpers.tool`, `typing`.
 
 ## Key Concepts

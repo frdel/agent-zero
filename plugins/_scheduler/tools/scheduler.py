@@ -6,7 +6,7 @@ import random
 import re
 from typing import Any
 import pytz
-from helpers.tool import Tool, Response
+from helpers.tool import Tool, Response, coerce_bool
 from helpers.task_scheduler import (
     TaskScheduler, ScheduledTask, AdHocTask, PlannedTask,
     serialize_task, TaskState, TaskSchedule, TaskPlan, parse_datetime,
@@ -89,19 +89,6 @@ def _task_schedule_from_input(schedule: Any, timezone: str | None = None) -> Tas
         task_schedule_kwargs["timezone"] = normalized_timezone
 
     return TaskSchedule(**task_schedule_kwargs)
-
-
-def parse_bool_arg(value: Any) -> bool | None:
-    """Coerce JSON-style boolean args; strings true/false are accepted, anything else is invalid."""
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        lowered = value.strip().lower()
-        if lowered in {"true", "1", "yes", "y"}:
-            return True
-        if lowered in {"false", "0", "no", "n"}:
-            return False
-    return None
 
 
 def _validate_task_schedule(task_schedule: TaskSchedule) -> str:
@@ -295,15 +282,7 @@ class SchedulerTool(Tool):
             update_params["state"] = state_value
 
         if "dedicated_context" in kwargs:
-            dedicated_context = parse_bool_arg(kwargs.get("dedicated_context"))
-            if dedicated_context is None:
-                return Response(
-                    message=self.agent.read_prompt(
-                        "fw.scheduler.invalid_dedicated_context.md",
-                        dedicated_context=kwargs.get("dedicated_context"),
-                    ),
-                    break_loop=False,
-                )
+            dedicated_context = coerce_bool(kwargs.get("dedicated_context"), False)
             update_params["context_id"] = task.uuid if dedicated_context else self.agent.context.id
 
         try:

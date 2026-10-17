@@ -28,7 +28,6 @@ def format_remaining_time(total_seconds: float) -> str:
 
 
 async def managed_wait(agent, target_time, is_duration_wait, log, get_heading_callback):
-    
     # Anchor updates to absolute 1s ticks so overhead cannot shift the countdown phase.
     next_tick = Localization.get().now()
 

@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from helpers.tool import Tool, Response
+from helpers.tool import Tool, Response, coerce_bool
 from helpers.print_style import PrintStyle
 from helpers.strings import truncate_text
 from plugins._a2a_chat.helpers.fasta2a_client import connect_to_agent, is_client_available
@@ -92,17 +92,7 @@ class A2AChatTool(Tool):
         agent_url: str | None = kwargs.get("agent_url")  # required
         user_message: str | None = kwargs.get("message")  # required
         attachments = kwargs.get("attachments", None)  # optional list[str]
-        reset = kwargs.get("reset", False)
-        if not isinstance(reset, bool):
-            if isinstance(reset, str) and reset.strip().lower() in {"true", "1", "yes"}:
-                reset = True
-            elif isinstance(reset, str) and reset.strip().lower() in {"false", "0", "no", "", "none", "null"}:
-                reset = False
-            else:
-                return Response(
-                    message=self.agent.read_prompt("fw.a2a_chat.invalid_reset.md", reset=reset),
-                    break_loop=False,
-                )
+        reset = coerce_bool(kwargs.get("reset", False), False)
         if not agent_url or not isinstance(agent_url, str):
             return Response(
                 message=self.agent.read_prompt("fw.a2a_chat.agent_url_missing.md"),
