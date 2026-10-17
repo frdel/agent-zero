@@ -920,9 +920,14 @@ def build_vision_model(agent=None):
     mc = build_model_config(cfg, models.ModelType.CHAT)
     mc.vision = True
     kwargs = mc.build_kwargs()
+    # Presets may carry max_completion_tokens (OpenAI-style models);
+    # defaulting max_tokens alongside it makes providers reject the call.
+    token_key = (
+        "max_completion_tokens" if "max_completion_tokens" in kwargs else "max_tokens"
+    )
     for key, default in (
         ("timeout", DEFAULT_VISION_TIMEOUT_SECONDS),
-        ("max_tokens", DEFAULT_VISION_MAX_TOKENS),
+        (token_key, DEFAULT_VISION_MAX_TOKENS),
     ):
         value = cfg.get(key)
         if value not in (None, ""):

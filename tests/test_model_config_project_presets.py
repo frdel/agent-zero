@@ -1305,6 +1305,33 @@ def test_vision_model_build_applies_only_its_preset_call_limits(monkeypatch):
     assert "max_tokens" not in main
 
 
+def test_vision_model_does_not_duplicate_token_params(monkeypatch):
+    from plugins._model_config.helpers import model_config
+
+    calls = []
+
+    def fake_get_chat_model(provider, name, **kwargs):
+        calls.append((provider, name, kwargs))
+        return kwargs
+
+    monkeypatch.setattr(model_config.models, "get_chat_model", fake_get_chat_model)
+    monkeypatch.setattr(
+        model_config,
+        "get_vision_model_config",
+        lambda _agent=None: {
+            "provider": "openai",
+            "name": "gpt-4o-mini",
+            "kwargs": {"max_completion_tokens": 32768},
+        },
+    )
+
+    built = model_config.build_vision_model()
+    assert built["max_completion_tokens"] == 32768
+    assert "max_tokens" not in built
+    assert built["timeout"] == model_config.DEFAULT_VISION_TIMEOUT_SECONDS
+    assert calls[-1][0] == "openai"
+
+
 def test_legacy_utility_preset_defaults_preserve_tuning_but_clear_kwargs(
     monkeypatch,
     tmp_path,
