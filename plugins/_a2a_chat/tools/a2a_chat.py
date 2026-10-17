@@ -1,16 +1,10 @@
+import uuid
 from typing import Any
 
 from helpers.tool import Tool, Response
 from helpers.print_style import PrintStyle
-from helpers.fasta2a_client import connect_to_agent, is_client_available
-
-
-A2A_EMPTY_RESPONSE_ERROR = (
-    "A2A chat failed: the remote task completed but no assistant text was found. "
-    "Expected final.result.history to include an assistant message with a text "
-    "part, or a text artifact/status message. Treat this as a failed remote "
-    "response, not success."
-)
+from helpers.strings import truncate_text
+from plugins._a2a_chat.helpers.fasta2a_client import connect_to_agent, is_client_available
 
 
 def _session_key(agent_url: str) -> str:
@@ -90,16 +84,35 @@ class A2AChatTool(Tool):
 
     async def execute(self, **kwargs):
         if not is_client_available():
-            return Response(message="FastA2A client not available on this instance.", break_loop=False)
+            return Response(
+                message=self.agent.read_prompt("fw.a2a_chat.unavailable.md"),
+                break_loop=False,
+            )
 
         agent_url: str | None = kwargs.get("agent_url")  # required
         user_message: str | None = kwargs.get("message")  # required
         attachments = kwargs.get("attachments", None)  # optional list[str]
-        reset = bool(kwargs.get("reset", False))
+        reset = kwargs.get("reset", False)
+        if not isinstance(reset, bool):
+            if isinstance(reset, str) and reset.strip().lower() in {"true", "1", "yes"}:
+                reset = True
+            elif isinstance(reset, str) and reset.strip().lower() in {"false", "0", "no", "", "none", "null"}:
+                reset = False
+            else:
+                return Response(
+                    message=self.agent.read_prompt("fw.a2a_chat.invalid_reset.md", reset=reset),
+                    break_loop=False,
+                )
         if not agent_url or not isinstance(agent_url, str):
-            return Response(message="agent_url argument missing", break_loop=False)
+            return Response(
+                message=self.agent.read_prompt("fw.a2a_chat.agent_url_missing.md"),
+                break_loop=False,
+            )
         if not user_message or not isinstance(user_message, str):
-            return Response(message="message argument missing", break_loop=False)
+            return Response(
+                message=self.agent.read_prompt("fw.a2a_chat.message_missing.md"),
+                break_loop=False,
+            )
 
         # Retrieve or create session cache on the Agent instance
         sessions: dict[str, str] = self.agent.get_data("_a2a_sessions") or {}
@@ -115,20 +128,41 @@ class A2AChatTool(Tool):
                 task_resp = await conn.send_message(user_message, attachments=attachments, context_id=context_id)
                 task_id = task_resp.get("result", {}).get("id")  # type: ignore[index]
                 if not task_id:
-                    return Response(message="Remote agent failed to create task.", break_loop=False)
+                    return Response(
+                        message=self.agent.read_prompt("fw.a2a_chat.task_failed.md"),
+                        break_loop=False,
+                    )
                 final = await conn.wait_for_completion(task_id)
                 new_context_id = final["result"].get("context_id")  # type: ignore[index]
                 if isinstance(new_context_id, str):
-                    sessions[cache_key] = new_context_id
-                    # persist back to agent data
-                    self.agent.set_data("_a2a_sessions", sessions)
+                    # re-read to merge with concurrent calls instead of overwriting them
+                    current: dict[str, str] = self.agent.get_data("_a2a_sessions") or sessions
+                    current[cache_key] = new_context_id
+                    self.agent.set_data("_a2a_sessions", current)
                 assistant_text = _extract_latest_assistant_text(final)
                 if not assistant_text:
                     return Response(
-                        message=A2A_EMPTY_RESPONSE_ERROR,
+                        message=self.agent.read_prompt("fw.a2a_chat.empty_response.md"),
                         break_loop=False,
                     )
                 return Response(message=assistant_text, break_loop=False)
         except Exception as e:
             PrintStyle.error(f"A2A chat error: {e}")
-            return Response(message=f"A2A chat error: {e}", break_loop=False)
+            return Response(
+                message=self.agent.read_prompt("fw.a2a_chat.error.md", error=e),
+                break_loop=False,
+            )
+
+    def get_log_object(self):
+        return self.agent.context.log.log(
+            type="a2a_chat",
+            heading=self.get_heading(),
+            content="",
+            kvps=self.args,
+            id=str(uuid.uuid4()),
+        )
+
+    def get_heading(self):
+        url = str(self.args.get("agent_url") or "").strip()
+        text = f"Chatting: {truncate_text(url, 60)}" if url else "Chatting"
+        return f"icon://hub {text}"

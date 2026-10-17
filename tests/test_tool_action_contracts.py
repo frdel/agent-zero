@@ -734,8 +734,8 @@ def test_behaviour_prompts_preserve_exact_rules_and_avoid_promptinclude():
 
 def _load_a2a_chat_tool(monkeypatch):
     _install_tool_stub(monkeypatch)
-    sys.modules.pop("tools.a2a_chat", None)
-    return importlib.import_module("tools.a2a_chat")
+    sys.modules.pop("plugins._a2a_chat.tools.a2a_chat", None)
+    return importlib.import_module("plugins._a2a_chat.tools.a2a_chat")
 
 
 def test_a2a_extracts_latest_assistant_text_from_history(monkeypatch):
@@ -794,8 +794,11 @@ def test_a2a_empty_response_message_is_explicit_failure(monkeypatch):
     module = _load_a2a_chat_tool(monkeypatch)
 
     assert module._extract_latest_assistant_text({"result": {"history": []}}) == ""
-    assert "failed" in module.A2A_EMPTY_RESPONSE_ERROR
-    assert "not success" in module.A2A_EMPTY_RESPONSE_ERROR
+    prompt = Path("plugins/_a2a_chat/prompts/fw.a2a_chat.empty_response.md").read_text(
+        encoding="utf-8"
+    )
+    assert "failed" in prompt
+    assert "not success" in prompt
 
 
 def test_notify_user_prompt_documents_priority_names():

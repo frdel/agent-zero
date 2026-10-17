@@ -1,0 +1,7 @@
+name: _a2a_chat
+title: A2A Chat
+description: Chat with remote FastA2A-compatible agents while preserving per-agent conversation context.
+version: 1.0.0
+settings_sections: []
+per_project_config: false
+per_agent_config: false

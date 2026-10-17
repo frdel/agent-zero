@@ -1,0 +1,1 @@
+A2A chat failed: the remote task completed but no assistant text was found. Expected final.result.history to include an assistant message with a text part, or a text artifact/status message. Treat this as a failed remote response, not success.

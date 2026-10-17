@@ -18,7 +18,6 @@
 - `_text_from_part(part: Any) -> str`
 - `_text_from_message(message: Any) -> str`
 - `_extract_latest_assistant_text(task_response: Any) -> str`
-- Notable constants/configuration names: `A2A_EMPTY_RESPONSE_ERROR`.
 
 ## Runtime Contracts
 
@@ -26,8 +25,9 @@
 - Update this file whenever tool arguments, output shape, `break_loop` behavior, intervention handling, prompt instructions, or side effects change.
 - `A2AChatTool` is a `Tool`.
 - `A2AChatTool` defines `execute(...)`.
-- Observed side-effect areas: filesystem writes, scheduler state.
-- Imported dependency areas include: `helpers.fasta2a_client`, `helpers.print_style`, `helpers.tool`, `typing`.
+- Observed side-effect areas: agent state in `agent.data["_a2a_sessions"]`.
+- Agent-facing failure and repair messages render from `prompts/` framework message files.
+- Imported dependency areas include: `plugins._a2a_chat.helpers.fasta2a_client`, `helpers.print_style`, `helpers.tool`, `typing`.
 
 ## Key Concepts
 
@@ -44,6 +44,7 @@
 
 - Run targeted tool and prompt-contract tests for changed behavior; smoke-test agent execution when no focused test exists.
 - Related tests observed by source search:
+  - `tests/test_a2a_chat_tool.py`
   - `tests/test_tool_action_contracts.py`
 
 ## Child DOX Index
