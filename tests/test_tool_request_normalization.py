@@ -11,6 +11,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from helpers.extract_tools import (
     extract_tool_request,
+    extract_tool_request_final,
     is_misformatted_tool_request,
     json_parse_dirty,
     normalize_tool_request,
@@ -127,6 +128,32 @@ def test_extract_tool_request_requires_a_complete_tool_message() -> None:
     assert extract_tool_request('{"status":"ok"}') is None
     assert extract_tool_request(f"Example: {request}") is None
     assert extract_tool_request(f"{request} trailing text") is None
+
+
+def test_extract_tool_request_final_tolerates_trailing_prose() -> None:
+    request = '{"tool_name":"response","tool_args":{"text":"ok"}}'
+
+    assert extract_tool_request_final(request) == {
+        "tool_name": "response",
+        "tool_args": {"text": "ok"},
+    }
+    assert extract_tool_request_final(f"{request} stray trailing text") == {
+        "tool_name": "response",
+        "tool_args": {"text": "ok"},
+    }
+    # Preamble before the request stays rejected.
+    assert extract_tool_request_final(f"Example: {request}") is None
+    # Concatenated second root still routes to repair, not silent execution.
+    concatenated = f"{request}{{'second':'root'}}"
+    assert extract_tool_request_final(concatenated) is None
+    # Trailing text containing braces or brackets is not benign prose.
+    assert extract_tool_request_final(f"{request} note {{a}}") is None
+    assert extract_tool_request_final(f"{request} note [b]") is None
+    # Truncated payloads stay rejected.
+    assert extract_tool_request_final(request[: int(len(request) * 0.7)]) is None
+    # Non-objects and plain prose stay rejected.
+    assert extract_tool_request_final('{"status":"ok"}') is None
+    assert extract_tool_request_final("plain text only") is None
 
 
 def test_is_misformatted_tool_request_requires_agent_tool_envelope() -> None:

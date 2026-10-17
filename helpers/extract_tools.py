@@ -36,6 +36,34 @@ def extract_tool_request(content: str) -> dict[str, Any] | None:
     return request if request is not None and _is_tool_request(request) else None
 
 
+def extract_tool_request_final(content: str) -> dict[str, Any] | None:
+    """Extract a tool request from a final, completed message.
+
+    Lenient sibling of :func:`extract_tool_request` for non-streaming use:
+    accepts trailing non-JSON text after a complete tool request. Preamble
+    text before the request, concatenated additional JSON roots, and
+    trailing text containing braces or brackets are still rejected so those
+    cases keep routing to the repair path instead of executing partially.
+    """
+    if not content or not isinstance(content, str):
+        return None
+
+    content = content.strip()
+    if not content.startswith("{"):
+        return None
+
+    root = extract_json_root_string(content)
+    if root is None or not content.startswith(root):
+        return None
+
+    remainder = content[len(root):]
+    if "{" in remainder or "[" in remainder or '"' in remainder:
+        return None
+
+    request = _parse_json_root_object(root)
+    return request if request is not None and _is_tool_request(request) else None
+
+
 def is_misformatted_tool_request(content: str) -> bool:
     if not content or not isinstance(content, str):
         return False

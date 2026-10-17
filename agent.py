@@ -1438,7 +1438,11 @@ class Agent:
     @extension.extensible
     async def process_tools(self, msg: str):
         # search for tool usage requests in agent message
-        tool_request = extract_tools.extract_tool_request(msg)
+        # Final (non-streaming) message: tolerate benign trailing prose after a
+        # complete tool request while still rejecting preamble, concatenated
+        # roots, and brace-bearing suffixes. Streaming snapshots keep the strict
+        # extract_tool_request boundary in models.py callbacks.
+        tool_request = extract_tools.extract_tool_request_final(msg)
 
         raw_tool_name = ""
         tool_args = {}
