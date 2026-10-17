@@ -21,7 +21,7 @@ This page addresses frequently asked questions (FAQ) and provides troubleshootin
 Refer to the [Choosing your LLMs](../setup/installation.md#installing-and-using-ollama-local-models) section for configuring local models (Ollama, LM Studio, etc.).
 
 > [!TIP]
-> Some LLM providers offer free usage tiers, for example Groq, Mistral, SambaNova, or CometAPI.
+> Some LLM providers offer free usage tiers, for example Groq, Mistral, SambaNova, API Route, or CometAPI.
 
 **7. How can I make Agent Zero retain memory between sessions?**
 Use **Settings -> Backup & Restore** and avoid mapping the entire `/a0` directory. See [How to update Agent Zero](../setup/installation.md#how-to-update-agent-zero).

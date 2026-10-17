@@ -119,8 +119,10 @@ def test_onboarding_provider_grid_names_are_present_in_metadata():
     assert 'default_api_base: "http://host.docker.internal:8000/v1"' in provider_ui
     assert 'logo: "/plugins/_onboarding/webui/assets/provider-logos/vllm.svg"' in provider_ui
     assert 'docs_url: "https://docs.vllm.ai/en/stable/serving/online_serving/"' in provider_ui
+    assert 'logo: "/plugins/_onboarding/webui/assets/provider-logos/apiroute.svg"' in provider_ui
     assert 'logo: "/plugins/_onboarding/webui/assets/provider-logos/cerebras.svg"' in provider_ui
     assert 'docs_url: "https://inference-docs.cerebras.ai/quickstart"' in provider_ui
+    assert 'default_chat_model: "claude-3-7-sonnet-20250219"' in provider_ui
     assert 'default_chat_model: "gpt-oss-120b"' in provider_ui
     assert 'docs_url: ""' in provider_ui
     assert "api_key_mode: none" in model_metadata
@@ -155,7 +157,7 @@ def test_onboarding_provider_grid_names_are_present_in_metadata():
     ]:
         assert name in provider_yaml + provider_ui
 
-    for name in ["Ollama Cloud", "AWS Bedrock", "Groq", "Cerebras"]:
+    for name in ["Ollama Cloud", "AWS Bedrock", "Groq", "Cerebras", "API Route"]:
         assert name in provider_yaml + provider_ui
 
     for forbidden in [
@@ -180,6 +182,7 @@ def test_onboarding_provider_grid_names_are_present_in_metadata():
         "groq.svg",
         "sambanova.png",
         "cometapi.ico",
+        "apiroute.svg",
         "cerebras.svg",
         "github-copilot.svg",
         "llama-cpp.svg",
@@ -190,6 +193,7 @@ def test_onboarding_provider_grid_names_are_present_in_metadata():
         assert logo in provider_ui
 
     assert (PROJECT_ROOT / "plugins/_onboarding/webui/assets/provider-logos/llama-cpp.svg").exists()
+    assert (PROJECT_ROOT / "plugins/_onboarding/webui/assets/provider-logos/apiroute.svg").exists()
     assert (PROJECT_ROOT / "plugins/_onboarding/webui/assets/provider-logos/cerebras.svg").exists()
     assert (PROJECT_ROOT / "plugins/_onboarding/webui/assets/provider-logos/omlx.svg").exists()
     assert (PROJECT_ROOT / "plugins/_onboarding/webui/assets/provider-logos/vllm.svg").exists()

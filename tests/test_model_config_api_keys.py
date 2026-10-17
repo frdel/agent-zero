@@ -358,6 +358,33 @@ def test_ollama_cloud_provider_config_requires_key_and_base_url():
     assert "api_key_mode" not in ollama_cloud
 
 
+def test_apiroute_provider_uses_chat_completions_and_live_model_catalog(monkeypatch):
+    import yaml
+
+    from plugins._model_config.helpers import model_config
+
+    monkeypatch.setattr(models, "get_api_key", lambda provider: "test-key")
+
+    provider_path = PROJECT_ROOT / "conf/model_providers.yaml"
+    provider_config = yaml.safe_load(provider_path.read_text(encoding="utf-8"))
+    apiroute = provider_config["chat"]["apiroute"]
+
+    assert apiroute["name"] == "API Route"
+    assert apiroute["litellm_provider"] == "openai"
+    assert apiroute["models_list"]["endpoint_url"] == "https://global.api-route.com/v1/models"
+    assert apiroute["kwargs"] == {
+        "a0_api_mode": "chat",
+        "api_base": "https://global.api-route.com/v1",
+    }
+    assert model_config.provider_requires_api_key("apiroute") is True
+
+    model = models.get_chat_model("apiroute", "claude-3-7-sonnet-20250219")
+    assert model.model_name == "openai/claude-3-7-sonnet-20250219"
+    assert model.kwargs["a0_api_mode"] == "chat"
+    assert model.kwargs["api_base"] == "https://global.api-route.com/v1"
+    assert model.kwargs["api_key"] == "test-key"
+
+
 def test_cerebras_provider_uses_chat_completions_and_live_model_catalog(monkeypatch):
     import yaml
 

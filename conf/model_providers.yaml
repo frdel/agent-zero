@@ -46,6 +46,14 @@ chat:
         limit: "1000"
     kwargs:
       a0_api_mode: chat
+  apiroute:
+    name: API Route
+    litellm_provider: openai
+    models_list:
+      endpoint_url: "https://global.api-route.com/v1/models"
+    kwargs:
+      a0_api_mode: chat
+      api_base: https://global.api-route.com/v1
   cerebras:
     name: Cerebras
     litellm_provider: cerebras
@@ -259,6 +267,11 @@ chat:
       a0_api_mode: chat
 
 embedding:
+  apiroute:
+    name: API Route
+    litellm_provider: openai
+    kwargs:
+      api_base: https://global.api-route.com/v1
   huggingface:
     name: HuggingFace
     litellm_provider: huggingface
