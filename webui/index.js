@@ -413,6 +413,19 @@ export async function applySnapshot(snapshot, options = {}) {
     lastLogGuid = snapshot.log_guid;
   }
 
+  // Apply cheap agent-state fields BEFORE the potentially expensive message
+  // render below. After a reconnect, a large chat log can take a long time to
+  // re-render; sequencing these behind `await setMessages(...)` leaves a stale
+  // "Reasoning..."/paused indicator on screen until the render backlog drains,
+  // making an idle agent look like it is still working.
+  updateProgress(snapshot.log_progress, snapshot.log_progress_active);
+
+  // Update notifications from snapshot
+  notificationStore.updateFromPoll(snapshot);
+
+  // set ui model vars from backend
+  inputStore.paused = snapshot.paused;
+
   if (lastLogVersion != snapshot.log_version) {
     updated = true;
     if (snapshot.logs?.[0]?.no === 0) {
@@ -425,14 +438,6 @@ export async function applySnapshot(snapshot, options = {}) {
 
   lastLogVersion = snapshot.log_version;
   lastLogGuid = snapshot.log_guid;
-
-  updateProgress(snapshot.log_progress, snapshot.log_progress_active);
-
-  // Update notifications from snapshot
-  notificationStore.updateFromPoll(snapshot);
-
-  // set ui model vars from backend
-  inputStore.paused = snapshot.paused;
 
   // Optional: treat snapshot application as proof of connectivity (poll path)
   if (touchConnectionStatus) {
