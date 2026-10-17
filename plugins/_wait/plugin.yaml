@@ -1,0 +1,7 @@
+name: _wait
+title: Wait
+description: Pause agent execution until a duration elapses or a timestamp is reached, with intervention-aware waiting.
+version: 1.0.0
+settings_sections: []
+per_project_config: false
+per_agent_config: false

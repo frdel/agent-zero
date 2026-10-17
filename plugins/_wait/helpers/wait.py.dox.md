@@ -22,7 +22,7 @@
 
 ## Key Concepts
 
-- Important called helpers/classes observed in the source: `divmod`, `join`, `Localization.get.now`, `total_seconds`, `agent.handle_intervention`, `asyncio.sleep`, `pause_duration.total_seconds`, `PrintStyle.info`, `get_heading_callback`, `format_remaining_time`, `Localization.get.serialize_datetime`.
+- Important called helpers/classes observed in the source: `divmod`, `int`, `join`, `max`, `Localization.get.now`, `total_seconds`, `agent.handle_intervention`, `asyncio.sleep`, `pause_duration.total_seconds`, `PrintStyle.info`, `get_heading_callback`, `format_remaining_time`, `Localization.get.serialize_datetime`.
 - Keep request/response, tool, or helper semantics documented here at the same time as source changes.
 
 ## Work Guidance

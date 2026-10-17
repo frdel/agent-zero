@@ -23,7 +23,7 @@
 - `WaitTool` is a `Tool`.
 - `WaitTool` defines `execute(...)`.
 - Observed side-effect areas: settings/state persistence.
-- Imported dependency areas include: `asyncio`, `datetime`, `helpers.localization`, `helpers.print_style`, `helpers.tool`, `helpers.wait`.
+- Imported dependency areas include: `datetime`, `helpers.localization`, `helpers.print_style`, `helpers.tool`, `plugins._wait.helpers.wait`.
 
 ## Key Concepts
 
@@ -39,15 +39,7 @@
 ## Verification
 
 - Run targeted tool and prompt-contract tests for changed behavior; smoke-test agent execution when no focused test exists.
-- Related tests observed by source search:
-  - `tests/email_parser_test.py`
-  - `tests/rate_limiter_test.py`
-  - `tests/test_api_chat_lifetime.py`
-  - `tests/test_browser_agent_regressions.py`
-  - `tests/test_chat_compaction.py`
-  - `tests/test_default_prompt_budget.py`
-  - `tests/test_document_query_plugin.py`
-  - `tests/test_download_toast_regressions.py`
+- Run `tests/test_wait_tool.py` for the wait logic regression tests covering argument validation, countdown tick anchoring, and intervention pause extension.
 
 ## Child DOX Index
 

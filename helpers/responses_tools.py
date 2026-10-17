@@ -42,7 +42,7 @@ BUNDLED_TOOL_PARAMETERS: dict[str, dict[str, Any]] = {
         "paths": {"type": "array", "items": {"type": "string"}},
         "query": {"type": "string"},
     },
-    "tools/wait.py": {
+    "plugins/_wait/tools/wait.py": {
         "seconds": {"type": "number"},
         "minutes": {"type": "number"},
         "hours": {"type": "number"},
