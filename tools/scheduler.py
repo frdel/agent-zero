@@ -116,6 +116,25 @@ def _task_plan_from_input(plan: Any) -> tuple[TaskPlan | None, str]:
     return TaskPlan.create(todo=todo, in_progress=None, done=[]), ""
 
 
+def _validate_pinned_preset(value: Any) -> tuple[str | None, str]:
+    """Normalize and validate an optional pinned model preset name."""
+    if value is None:
+        return None, ""
+    name = str(value).strip()
+    if not name:
+        return None, ""
+    try:
+        from plugins._model_config.helpers import model_config
+    except ImportError:
+        return None, "Cannot validate pinned_preset: _model_config plugin unavailable."
+    if not model_config.get_preset_by_name(name):
+        presets = ", ".join(
+            str(p.get("name")) for p in model_config.get_presets() if p.get("name")
+        )
+        return None, f"Pinned preset not found: {name}. Available presets: {presets or 'none'}"
+    return name, ""
+
+
 class SchedulerTool(Tool):
 
     async def execute(self, **kwargs):
@@ -264,6 +283,13 @@ class SchedulerTool(Tool):
             if field in kwargs:
                 update_params[field] = kwargs[field]
 
+        if "pinned_preset" in kwargs:
+            pinned_preset, preset_err = _validate_pinned_preset(kwargs.get("pinned_preset"))
+            if preset_err:
+                return Response(message=preset_err, break_loop=False)
+            # empty string clears the pin (BaseTask.update skips None kwargs values)
+            update_params["pinned_preset"] = pinned_preset if pinned_preset is not None else ""
+
         if "state" in kwargs:
             update_params["state"] = TaskState(kwargs.get("state", TaskState.IDLE))
 
@@ -319,6 +345,9 @@ class SchedulerTool(Tool):
         attachments: list[str] = kwargs.get("attachments", [])
         schedule: dict[str, str] = kwargs.get("schedule", {})
         dedicated_context: bool = kwargs.get("dedicated_context", True)
+        pinned_preset, preset_err = _validate_pinned_preset(kwargs.get("pinned_preset"))
+        if preset_err:
+            return Response(message=preset_err, break_loop=False)
 
         try:
             task_schedule = _task_schedule_from_input(schedule, timezone=_schedule_timezone(kwargs))
@@ -340,6 +369,7 @@ class SchedulerTool(Tool):
             context_id=None if dedicated_context else self.agent.context.id,
             project_name=project_slug,
             project_color=project_color,
+            pinned_preset=pinned_preset,
         )
         await TaskScheduler.get().add_task(task)
         return Response(message=f"Scheduled task '{name}' created: {task.uuid}", break_loop=False)
@@ -351,6 +381,9 @@ class SchedulerTool(Tool):
         attachments: list[str] = kwargs.get("attachments", [])
         token: str = str(random.randint(1000000000000000000, 9999999999999999999))
         dedicated_context: bool = kwargs.get("dedicated_context", True)
+        pinned_preset, preset_err = _validate_pinned_preset(kwargs.get("pinned_preset"))
+        if preset_err:
+            return Response(message=preset_err, break_loop=False)
 
         project_slug, project_color = self._resolve_project_metadata()
 
@@ -363,6 +396,7 @@ class SchedulerTool(Tool):
             context_id=None if dedicated_context else self.agent.context.id,
             project_name=project_slug,
             project_color=project_color,
+            pinned_preset=pinned_preset,
         )
         await TaskScheduler.get().add_task(task)
         return Response(message=f"Adhoc task '{name}' created: {task.uuid}", break_loop=False)
@@ -374,6 +408,9 @@ class SchedulerTool(Tool):
         attachments: list[str] = kwargs.get("attachments", [])
         plan: list[str] = kwargs.get("plan", [])
         dedicated_context: bool = kwargs.get("dedicated_context", True)
+        pinned_preset, preset_err = _validate_pinned_preset(kwargs.get("pinned_preset"))
+        if preset_err:
+            return Response(message=preset_err, break_loop=False)
 
         # Convert plan to list of datetimes in UTC
         task_plan, err = _task_plan_from_input(plan)
@@ -391,7 +428,8 @@ class SchedulerTool(Tool):
             plan=task_plan,
             context_id=None if dedicated_context else self.agent.context.id,
             project_name=project_slug,
-            project_color=project_color
+            project_color=project_color,
+            pinned_preset=pinned_preset
         )
         await TaskScheduler.get().add_task(task)
         return Response(message=f"Planned task '{name}' created: {task.uuid}", break_loop=False)

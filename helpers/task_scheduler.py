@@ -162,6 +162,7 @@ class TaskPlan(BaseModel):
 class BaseTask(BaseModel):
     uuid: str = Field(default_factory=lambda: guids.generate_id())
     context_id: Optional[str] = Field(default=None)
+    pinned_preset: str | None = Field(default=None)
     state: TaskState = Field(default=TaskState.IDLE)
     name: str = Field()
     system_prompt: str
@@ -293,7 +294,8 @@ class AdHocTask(BaseTask):
         attachments: list[str] | None = None,
         context_id: str | None = None,
         project_name: str | None = None,
-        project_color: str | None = None
+        project_color: str | None = None,
+        pinned_preset: str | None = None
     ):
         return cls(name=name,
                    system_prompt=system_prompt,
@@ -302,7 +304,8 @@ class AdHocTask(BaseTask):
                    token=token,
                    context_id=context_id,
                    project_name=project_name,
-                   project_color=project_color)
+                   project_color=project_color,
+                   pinned_preset=pinned_preset)
 
     def update(self,
                name: str | None = None,
@@ -343,6 +346,7 @@ class ScheduledTask(BaseTask):
         timezone: str | None = None,
         project_name: str | None = None,
         project_color: str | None = None,
+        pinned_preset: str | None = None,
     ):
         # Set timezone in schedule if provided
         if timezone is not None:
@@ -357,7 +361,8 @@ class ScheduledTask(BaseTask):
                    schedule=schedule,
                    context_id=context_id,
                    project_name=project_name,
-                   project_color=project_color)
+                   project_color=project_color,
+                   pinned_preset=pinned_preset)
 
     def update(self,
                name: str | None = None,
@@ -431,7 +436,8 @@ class PlannedTask(BaseTask):
         attachments: list[str] | None = None,
         context_id: str | None = None,
         project_name: str | None = None,
-        project_color: str | None = None
+        project_color: str | None = None,
+        pinned_preset: str | None = None
     ):
         return cls(name=name,
                    system_prompt=system_prompt,
@@ -440,7 +446,8 @@ class PlannedTask(BaseTask):
                    attachments=list(attachments or []),
                    context_id=context_id,
                    project_name=project_name,
-                   project_color=project_color)
+                   project_color=project_color,
+                   pinned_preset=pinned_preset)
 
     def update(self,
                name: str | None = None,
@@ -850,7 +857,39 @@ class TaskScheduler:
         save_tmp_chat(context)
         return context
 
+    def _resolve_pinned_preset(self, task: Union[ScheduledTask, AdHocTask, PlannedTask]) -> dict | None:
+        """Resolve a pinned task's model preset, failing loudly if it no longer exists.
+
+        wOS D4: an unattended task must never silently fall back to ambient
+        model settings when its pinned preset is missing at fire time.
+        """
+        if not task.pinned_preset:
+            return None
+        try:
+            from plugins._model_config.helpers import model_config
+        except ImportError as exc:
+            message = (
+                f"Pinned preset '{task.pinned_preset}' for scheduler task '{task.name}' "
+                f"({task.uuid}) cannot be resolved: _model_config plugin unavailable"
+            )
+            PrintStyle.error(message)
+            raise ValueError(message) from exc
+        preset = model_config.get_preset_by_name(task.pinned_preset)
+        if not preset:
+            message = (
+                f"Pinned preset '{task.pinned_preset}' for scheduler task '{task.name}' "
+                f"({task.uuid}) no longer exists. Refusing to fall back to ambient model "
+                f"settings (wOS D4). Update or clear pinned_preset to resume this task."
+            )
+            PrintStyle.error(message)
+            raise ValueError(message)
+        return preset
+
     async def _get_chat_context(self, task: Union[ScheduledTask, AdHocTask, PlannedTask]) -> AgentContext:
+        # Resolve any pinned preset first: missing presets must fail loudly
+        # before any context is loaded or created (no silent ambient fallback).
+        pinned_preset = self._resolve_pinned_preset(task)
+
         context = AgentContext.get(task.context_id) if task.context_id else None
 
         if context:
@@ -859,7 +898,6 @@ class TaskScheduler:
                 f"Scheduler Task {task.name} loaded from task {task.uuid}, context ok"
             )
             save_tmp_chat(context)
-            return context
         else:
             message = (
                 f"Scheduler Task {task.name} loaded from task {task.uuid} but context not found"
@@ -868,7 +906,19 @@ class TaskScheduler:
                 PrintStyle.info(f"{message}; creating dedicated context")
             else:
                 PrintStyle.warning(message)
-            return await self.__new_context(task)
+            context = await self.__new_context(task)
+
+        # Enforce the pinned preset on every fire, for both freshly created
+        # and already existing contexts, so ambient drift never changes the
+        # task's model (wOS D4).
+        if pinned_preset is not None:
+            preset_name = str(pinned_preset.get("name") or task.pinned_preset)
+            context.set_data("chat_model_override", {"preset_name": preset_name})
+            save_tmp_chat(context)
+            PrintStyle.info(
+                f"Scheduler Task '{task.name}' pinned to model preset '{preset_name}'"
+            )
+        return context
 
     async def _persist_chat(self, task: Union[ScheduledTask, AdHocTask, PlannedTask], context: AgentContext):
         if context.id != task.context_id:
@@ -1204,6 +1254,7 @@ def serialize_task(task: Union[ScheduledTask, AdHocTask, PlannedTask]) -> Dict[s
         "next_run": serialize_datetime(task.get_next_run()),
         "last_result": task.last_result,
         "context_id": task.context_id,
+        "pinned_preset": task.pinned_preset,
         "dedicated_context": task.is_dedicated(),
         "project": {
             "name": task.project_name,
@@ -1275,6 +1326,7 @@ def deserialize_task(task_data: Dict[str, Any], task_class: Optional[Type[T]] = 
         "last_run": parse_datetime(task_data.get("last_run")),
         "last_result": task_data.get("last_result"),
         "context_id": task_data.get("context_id"),
+        "pinned_preset": task_data.get("pinned_preset"),
     }
 
     # Add type-specific fields
