@@ -4,6 +4,7 @@ from helpers import yaml as yaml_helper
 from typing import TypedDict, TYPE_CHECKING, Literal
 from pydantic import BaseModel, model_validator
 import json
+import logging
 import os
 
 GLOBAL_DIR = "."
@@ -11,6 +12,13 @@ USER_DIR = "usr"
 DEFAULT_AGENTS_DIR = "agents"
 USER_AGENTS_DIR = "usr/agents"
 PATHS_CACHE_AREA = "subagent_paths(plugins)"
+
+logger = logging.getLogger(__name__)
+
+# projects whose agents.json registrations were already cross-checked against
+# discovery in this process; keeps the check from spamming on every call
+# (get_available_agents_dict is a hot path)
+_UNDISCOVERED_CHECKED_PROJECTS: set[str] = set()
 
 cache.toggle_area(PATHS_CACHE_AREA, False)
 
@@ -110,7 +118,15 @@ def _get_agents_list_from_dir(dir: str, origin: Origin) -> dict[str, SubAgentLis
             agent_data.path = files.get_abs_path(dir, subdir)
             agent_data.origin = [origin]
             result[name] = agent_data
-        except Exception:
+        except Exception as e:
+            logger.warning(
+                "Skipping agent definition '%s' in '%s' (origin=%s): %s: %s",
+                subdir,
+                dir,
+                origin,
+                type(e).__name__,
+                e,
+            )
             continue
 
     return result
@@ -321,6 +337,52 @@ def get_default_promp_file_names() -> list[str]:
     return files.list_files("prompts", filter="*.md")
 
 
+def _warn_undiscovered_project_agents(
+    project_name: str, discovered: dict[str, SubAgentListItem]
+) -> None:
+    """Warn (once per project per process) when a slug is registered in the
+    project's agents.json but was not discovered by agent discovery — e.g. its
+    agent.yaml failed to parse and was skipped."""
+    if project_name in _UNDISCOVERED_CHECKED_PROJECTS:
+        return
+    _UNDISCOVERED_CHECKED_PROJECTS.add(project_name)
+
+    from helpers import projects
+
+    try:
+        abs_path = files.get_abs_path(
+            projects.get_project_meta(project_name), "agents.json"
+        )
+        data = json.loads(files.read_file(abs_path))
+    except Exception:
+        return
+
+    registered: list[str] = []
+    if isinstance(data, dict):
+        agents_field = data.get("agents")
+        if isinstance(agents_field, list):
+            # manifest format: {"agents": [{"slug": ...}, ...]}
+            for entry in agents_field:
+                if isinstance(entry, dict) and isinstance(entry.get("slug"), str):
+                    registered.append(entry["slug"])
+        else:
+            # flat availability format: {"<slug>": {"enabled": ...}}
+            registered = [
+                key for key, value in data.items() if isinstance(value, dict)
+            ]
+    if not registered:
+        return
+
+    undiscovered = [slug for slug in registered if slug not in discovered]
+    if undiscovered:
+        logger.warning(
+            "Project '%s': agents registered in agents.json but not discovered: %s "
+            "(check their agent.yaml for parse errors)",
+            project_name,
+            ", ".join(sorted(undiscovered)),
+        )
+
+
 def get_available_agents_dict(
     project_name: str | None,
 ) -> dict[str, SubAgentListItem]:
@@ -330,6 +392,9 @@ def get_available_agents_dict(
     project_settings = (
         projects.load_project_subagents(project_name) if project_name else {}
     )
+
+    if project_name:
+        _warn_undiscovered_project_agents(project_name, all_agents)
 
     filtered_agents: dict[str, SubAgentListItem] = {}
     for name, agent in all_agents.items():
