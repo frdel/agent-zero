@@ -722,9 +722,9 @@ function updateProcessGroupPagingControls(history) {
     group.dataset.fullInfoSteps = String(
       allSteps.filter((message) => message?.type === "info").length,
     );
-    const lastAgentMessage = allSteps.findLast(
-      (message) => message?.type === "agent",
-    );
+    const lastAgentMessage =
+      allSteps.findLast((message) => message?.type === "agent") ||
+      allSteps[allSteps.length - 1];
     const fullTitle = cleanStepTitle(lastAgentMessage?.heading, 50);
     if (fullTitle) {
       const title = group.querySelector(".process-group-header .group-title");
@@ -2460,17 +2460,26 @@ export function drawMessageUtil({
       ].filter(Boolean)
     : [];
 
+  // Post-turn bookkeeping utilities (e.g. memory memorization) carry a
+  // finished kvp set by the backend when the background job ends. Do not
+  // display it as data; use it to close the process group so a completed
+  // turn does not keep rendering an in-flight "Processing..." phase.
+  const displayKvps = { ...kvps };
+  delete displayKvps.finished;
+
   const result = drawProcessStep({
     id,
     title,
     code: "UTL",
     classes: ["message-util"],
-    kvps,
+    kvps: displayKvps,
     content,
     actionButtons,
     log: arguments[0],
     allowCompletedGroup: false,
   });
+
+  if (kvps?.finished) completeLastProcessGroup();
 
   result.dontScroll = !preferencesStore.showUtils;
   return result;
@@ -3213,15 +3222,18 @@ function updateProcessGroupHeader(group) {
     const agentSteps = Array.from(steps).filter(
       (step) => step.getAttribute("data-log-type") === "agent",
     );
-    if (agentSteps.length > 0) {
-      const lastAgentStep = agentSteps[agentSteps.length - 1];
-      const lastHeading =
-        lastAgentStep.querySelector(".step-title")?.textContent;
-      if (lastHeading) {
-        const cleanTitle = cleanStepTitle(lastHeading, 50);
-        if (cleanTitle) {
-          titleEl.textContent = cleanTitle;
-        }
+    // Groups made only of utility steps (post-turn memory memorization)
+    // never get an agent step; fall back to the last step's title so the
+    // header does not stay on the "Processing..." placeholder forever.
+    const titleStep =
+      agentSteps.length > 0
+        ? agentSteps[agentSteps.length - 1]
+        : steps[steps.length - 1];
+    const lastHeading = titleStep?.querySelector(".step-title")?.textContent;
+    if (lastHeading) {
+      const cleanTitle = cleanStepTitle(lastHeading, 50);
+      if (cleanTitle) {
+        titleEl.textContent = cleanTitle;
       }
     }
   }

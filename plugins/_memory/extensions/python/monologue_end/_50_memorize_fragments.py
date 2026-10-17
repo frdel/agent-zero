@@ -27,9 +27,13 @@ class MemorizeMemories(Extension):
             return
 
         # show full util message
+        # update_progress="none": this is a post-turn background bookkeeping
+        # item logged after the final response; it must not take over the
+        # status bar (monologue_end resets progress to "Waiting for input").
         log_item = self.agent.context.log.log(
             type="util",
             heading="Memorizing new information...",
+            update_progress="none",
         )
 
         # memorize in background
@@ -73,25 +77,28 @@ class MemorizeMemories(Extension):
 
             # Add validation and error handling for memories_json
             if not memories_json or not isinstance(memories_json, str):
-                log_item.update(heading="No response from utility model.")
+                log_item.update(heading="No response from utility model.", finished=True)
                 return
 
             # Strip any whitespace that might cause issues
             memories_json = memories_json.strip()
 
             if not memories_json:
-                log_item.update(heading="Empty response from utility model.")
+                log_item.update(heading="Empty response from utility model.", finished=True)
                 return
 
             try:
                 memories = DirtyJson.parse_string(memories_json)
             except Exception as e:
-                log_item.update(heading=f"Failed to parse memories response: {str(e)}")
+                log_item.update(
+                        heading=f"Failed to parse memories response: {str(e)}",
+                        finished=True,
+                    )
                 return
 
             # Validate that memories is a list or convertible to one
             if memories is None:
-                log_item.update(heading="No valid memories found in response.")
+                log_item.update(heading="No valid memories found in response.", finished=True)
                 return
 
             # If memories is not a list, try to make it one
@@ -99,11 +106,11 @@ class MemorizeMemories(Extension):
                 if isinstance(memories, (str, dict)):
                     memories = [memories]
                 else:
-                    log_item.update(heading="Invalid memories format received.")
+                    log_item.update(heading="Invalid memories format received.", finished=True)
                     return
 
             if not isinstance(memories, list) or len(memories) == 0:
-                log_item.update(heading="No useful information to memorize.")
+                log_item.update(heading="No useful information to memorize.", finished=True)
                 return
 
             raw_memories_count = len(memories)
@@ -114,6 +121,7 @@ class MemorizeMemories(Extension):
                 log_item.update(
                     heading="No durable information to memorize.",
                     filtered_memories_count=filtered_memories_count,
+                    finished=True,
                 )
                 return
 
@@ -216,11 +224,23 @@ class MemorizeMemories(Extension):
                     )
                     if rem:
                         log_item.stream(result=f"\nReplaced {len(rem)} previous memories.")
-                
+
+            # Terminal marker: the background job is done. The Web UI uses the
+            # finished kvp to close the process group holding this utility
+            # item; without it the post-turn group never completes and keeps
+            # rendering as an in-flight "Processing..." phase.
+            log_item.update(finished=True, update_progress="none")
 
 
         except Exception as e:
+            # Mark the utility item finished even on failure so its process
+            # group does not stay open, and keep the warning off the status
+            # bar (progress was already reset to "Waiting for input").
+            log_item.update(finished=True, update_progress="none")
             err = errors.format_error(e)
             self.agent.context.log.log(
-                type="warning", heading="Memorize memories extension error", content=err
+                type="warning",
+                heading="Memorize memories extension error",
+                content=err,
+                update_progress="none",
             )

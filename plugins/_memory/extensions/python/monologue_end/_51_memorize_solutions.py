@@ -25,9 +25,13 @@ class MemorizeSolutions(Extension):
             return
  
         # show full util message
+        # update_progress="none": this is a post-turn background bookkeeping
+        # item logged after the final response; it must not take over the
+        # status bar (monologue_end resets progress to "Waiting for input").
         log_item = self.agent.context.log.log(
             type="util",
             heading="Memorizing succesful solutions...",
+            update_progress="none",
         )
 
         # memorize in background
@@ -75,25 +79,28 @@ class MemorizeSolutions(Extension):
 
             # Add validation and error handling for solutions_json
             if not solutions_json or not isinstance(solutions_json, str):
-                log_item.update(heading="No response from utility model.")
+                log_item.update(heading="No response from utility model.", finished=True)
                 return
 
             # Strip any whitespace that might cause issues
             solutions_json = solutions_json.strip()
 
             if not solutions_json:
-                log_item.update(heading="Empty response from utility model.")
+                log_item.update(heading="Empty response from utility model.", finished=True)
                 return
 
             try:
                 solutions = DirtyJson.parse_string(solutions_json)
             except Exception as e:
-                log_item.update(heading=f"Failed to parse solutions response: {str(e)}")
+                log_item.update(
+                        heading=f"Failed to parse solutions response: {str(e)}",
+                        finished=True,
+                    )
                 return
 
             # Validate that solutions is a list or convertible to one
             if solutions is None:
-                log_item.update(heading="No valid solutions found in response.")
+                log_item.update(heading="No valid solutions found in response.", finished=True)
                 return
 
             # If solutions is not a list, try to make it one
@@ -101,11 +108,11 @@ class MemorizeSolutions(Extension):
                 if isinstance(solutions, (str, dict)):
                     solutions = [solutions]
                 else:
-                    log_item.update(heading="Invalid solutions format received.")
+                    log_item.update(heading="Invalid solutions format received.", finished=True)
                     return
 
             if not isinstance(solutions, list) or len(solutions) == 0:
-                log_item.update(heading="No successful solutions to memorize.")
+                log_item.update(heading="No successful solutions to memorize.", finished=True)
                 return
             else:
                 solutions_txt = "\n\n".join([str(solution) for solution in solutions]).strip()
@@ -209,9 +216,22 @@ class MemorizeSolutions(Extension):
                     if rem:
                         log_item.stream(result=f"\nReplaced {len(rem)} previous solutions.")
 
+            # Terminal marker: the background job is done. The Web UI uses the
+            # finished kvp to close the process group holding this utility
+            # item; without it the post-turn group never completes and keeps
+            # rendering as an in-flight "Processing..." phase.
+            log_item.update(finished=True, update_progress="none")
+
 
         except Exception as e:
+            # Mark the utility item finished even on failure so its process
+            # group does not stay open, and keep the warning off the status
+            # bar (progress was already reset to "Waiting for input").
+            log_item.update(finished=True, update_progress="none")
             err = errors.format_error(e)
             self.agent.context.log.log(
-                type="warning", heading="Memorize solutions extension error", content=err
+                type="warning",
+                heading="Memorize solutions extension error",
+                content=err,
+                update_progress="none",
             )
