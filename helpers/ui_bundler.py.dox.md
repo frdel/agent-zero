@@ -21,7 +21,7 @@
 - Valid UTF-8 HTML, CSS, and JavaScript files no larger than 512 KiB each are embedded. Oversized eligible text is still scanned for dependencies but its body is omitted so the browser can request it normally. Images, audio, video, fonts, manifests, and other file types remain under normal browser HTTP caching.
 - Every entry carries the response content type required by browsers and native ES modules.
 - Bundle versions cover the caller entries, cache policy, and HTML/CSS/JavaScript path/mtime/size inventory. Policy or eligible-file changes therefore advance the service-worker cache version; the helper cache also participates in normal extension/plugin invalidation.
-- Caller entry sets have distinct helper-cache keys. A built bundle is returned without rescanning the filesystem until extension/plugin invalidation or process restart; deployed core WebUI changes take effect with the new server process.
+- Caller entry sets have distinct helper-cache keys. Every call recomputes the asset signature and reuses the cached bundle only while the signature still matches, so patched core or plugin WebUI assets invalidate the cached bundle on the next request without a process restart; the signature stat cost runs once per page-load endpoint request.
 - Serialized JSON is returned by the authenticated `/ui/asset-bundle` endpoint rather than inserted into the application document. HTTP gzip compresses the shared transfer.
 
 ## Work Guidance

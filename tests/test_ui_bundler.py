@@ -228,3 +228,48 @@ def test_bundle_recursively_scans_a_caller_supplied_entry(
     index_bundle = ui_bundler.get_ui_asset_bundle(["/index.html"], agent=None)
     assert set(index_bundle["files"]) == {"/index.html"}
     assert index_bundle["version"] != bundle["version"]
+
+
+def test_bundle_cache_invalidates_when_plugin_asset_changes(
+    tmp_path: Path, monkeypatch
+) -> None:
+    webui = tmp_path / "webui"
+    extension_root = tmp_path / "extensions" / "webui"
+    plugin_root = tmp_path / "plugins" / "example" / "webui"
+    assets = {
+        webui / "index.html": (
+            '<script type="module" src="/plugins/example/webui/store.js"></script>'
+        ).encode(),
+        plugin_root / "store.js": b"export const slot = 'none';",
+    }
+    for path, content in assets.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+
+    configure_roots(tmp_path, monkeypatch, extension_root, plugin_root)
+    bundle = ui_bundler.get_ui_asset_bundle(["/index.html"], agent=None)
+    assert (
+        bundle["files"]["/plugins/example/webui/store.js"][2]
+        == "export const slot = 'none';"
+    )
+
+    # Unchanged assets keep serving the cached bundle without a rebuild.
+    cached_bundle = ui_bundler.get_ui_asset_bundle(["/index.html"], agent=None)
+    assert cached_bundle is bundle
+
+    # Patching a plugin webui asset must invalidate the in-memory bundle on
+    # the next call without cache.clear() or a process restart, so the served
+    # version advances and clients re-register the service worker
+    # (dev-ticket-2026-08-24). Different content length guarantees the
+    # signature changes even when mtime granularity is coarse.
+    (plugin_root / "store.js").write_bytes(b"export const slot = 'vision';")
+    rebuilt = ui_bundler.get_ui_asset_bundle(["/index.html"], agent=None)
+    assert rebuilt is not bundle
+    assert rebuilt["version"] != bundle["version"]
+    assert (
+        rebuilt["files"]["/plugins/example/webui/store.js"][2]
+        == "export const slot = 'vision';"
+    )
+
+    # The rebuilt bundle is cached again under the new signature.
+    assert ui_bundler.get_ui_asset_bundle(["/index.html"], agent=None) is rebuilt

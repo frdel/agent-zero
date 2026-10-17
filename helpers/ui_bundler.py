@@ -97,9 +97,6 @@ def get_ui_asset_bundle(
     """Build a versioned recursive text-asset bundle from the supplied entries."""
     entries = list(dict.fromkeys(entry_urls))
     cache_key = _cache_key(entries)
-    cached = cache.get(_CACHE_AREA, cache_key)
-    if cached is not None:
-        return cached["bundle"]
 
     roots, extension_roots = _get_asset_roots(agent)
 
@@ -118,7 +115,15 @@ def get_ui_asset_bundle(
             if url:
                 entries.append(url)
 
+    # Recompute the signature on every call: patched core or plugin webui
+    # assets must invalidate the cached bundle without a process restart.
+    # The filesystem stat cost is acceptable for a once-per-page-load
+    # endpoint; the cached bundle is reused only while it still matches.
     signature = _bundle_signature(roots, entries)
+    cached = cache.get(_CACHE_AREA, cache_key)
+    if cached is not None and cached["signature"] == signature:
+        return cached["bundle"]
+
     result = _build_asset_bundle(entries, roots, signature)
     cache.add(
         _CACHE_AREA,
