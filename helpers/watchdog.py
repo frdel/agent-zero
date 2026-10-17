@@ -2,14 +2,23 @@ from __future__ import annotations
 
 import os
 import threading
+from collections.abc import Iterable
+from contextlib import contextmanager
 from dataclasses import dataclass
-from pathlib import PurePosixPath
-from typing import Any, Callable, Iterable, Literal, cast
+from fnmatch import fnmatch
+from typing import Any, Callable, Literal, cast
+
+from pathspec import PathSpec
+from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer as _WatchdogObserver
+from watchdog.observers.api import BaseObserver
+
+from helpers.print_style import PrintStyle
 
 
-class _DispatchHandler:
+class _DispatchHandler(FileSystemEventHandler):
     def __init__(self, registry: "_WatchRegistry", scheduled_root: str):
+        super().__init__()
         self.registry = registry
         self.scheduled_root = scheduled_root
 
@@ -23,10 +32,17 @@ WatchItem = list[str]
 WatchHandler = Callable[[list[WatchItem]], None]
 PatternMatcher = Callable[[str], bool]
 
+_9p_warned: bool = False
 _DEFAULT_PATTERNS = ["**/*"]
+_DEFAULT_IGNORE_FOLDERS: frozenset[str] = frozenset({
+    ".git",
+    "__pycache__",
+    "venv",
+    ".venv",
+    "node_modules",
+    ".npm",
+})
 _DEFAULT_IGNORE_PATTERNS = [
-    "**/__pycache__",
-    "**/__pycache__/*",
     "**/*.pyc",
     "**/*.pyo",
 ]
@@ -65,11 +81,12 @@ class _PendingBatch:
 class _WatchRegistry:
     def __init__(self):
         self._lock = threading.RLock()
-        self._observer: Any = None
+        self._observer: BaseObserver | None = None
         self._watches: dict[str, _Watch] = {}
         self._watch_ids_by_group: dict[str, set[str]] = {}
         self._scheduled_roots: set[str] = set()
         self._pending_batches: dict[str, _PendingBatch] = {}
+        self._batching: bool = False
 
     def add(
         self,
@@ -81,12 +98,12 @@ class _WatchRegistry:
         debounce: float,
         handler: WatchHandler,
     ) -> None:
-        self._ensure_watchdog_available()
-        normalized_roots = _normalize_roots(roots)
+        raw_roots = _normalize_roots(roots)
+        normalized_roots = [r for r in raw_roots if not _is_9p_mount(r) and os.path.basename(r) not in _DEFAULT_IGNORE_FOLDERS]
         normalized_patterns = _normalize_patterns(patterns)
-        normalized_ignore_patterns = _normalize_patterns(
-            ignore_patterns, default=_DEFAULT_IGNORE_PATTERNS
-        )
+        normalized_ignore_patterns = _normalize_patterns(ignore_patterns, default=[])
+        normalized_ignore_patterns.extend(_DEFAULT_IGNORE_PATTERNS)
+        normalized_ignore_patterns.extend(f"**/{d}/**" for d in _DEFAULT_IGNORE_FOLDERS)
         normalized_events = _normalize_events(events)
         normalized_debounce = _normalize_debounce(debounce)
         watch_ids = [id] if len(normalized_roots) == 1 else [f"{id}:{index}" for index in range(len(normalized_roots))]
@@ -117,6 +134,7 @@ class _WatchRegistry:
                     pending.timer.cancel()
             self._watches.update(watches)
             self._watch_ids_by_group[id] = set(watches)
+        if not self._batching:
             self._refresh_observer()
 
     def remove(self, id: str) -> bool:
@@ -128,9 +146,9 @@ class _WatchRegistry:
                 pending = self._pending_batches.pop(watch_id, None)
                 if pending and pending.timer:
                     pending.timer.cancel()
-            if removed:
-                self._refresh_observer()
-            return removed
+        if removed and not self._batching:
+            self._refresh_observer()
+        return removed
 
     def clear(self) -> None:
         with self._lock:
@@ -138,6 +156,7 @@ class _WatchRegistry:
             self._watch_ids_by_group.clear()
             pending_batches = list(self._pending_batches.values())
             self._pending_batches.clear()
+        if not self._batching:
             self._refresh_observer()
         for pending in pending_batches:
             if pending.timer:
@@ -174,6 +193,8 @@ class _WatchRegistry:
         for path in paths:
             if not _is_same_or_nested(path, scheduled_root):
                 continue
+            if any(part in _DEFAULT_IGNORE_FOLDERS for part in path.split(os.sep)):
+                continue
             for watch in watches:
                 if event_type not in watch.events:
                     continue
@@ -182,9 +203,6 @@ class _WatchRegistry:
                 if not watch.matcher(path):
                     continue
                 self._queue_event(watch, path, event_type)
-
-    def _ensure_watchdog_available(self) -> None:
-        return None
 
     def _queue_event(self, watch: _Watch, path: str, event_type: WatchEvent) -> None:
         item: WatchItem = [path, event_type]
@@ -220,22 +238,30 @@ class _WatchRegistry:
             handler(items)
 
     def _refresh_observer(self) -> None:
-        target_roots = _covering_roots(watch.root for watch in self._watches.values())
+        with self._lock:
+            target_roots = _covering_roots(watch.root for watch in self._watches.values())
+            observer = self._observer
+            if not target_roots:
+                self._observer = None
+                self._scheduled_roots = set()
+            elif observer is None:
+                observer = self._create_observer()
+                observer.start()
+                self._observer = observer
+            elif target_roots == self._scheduled_roots:
+                return
         if not target_roots:
-            self._stop_observer()
+            if observer is not None:
+                observer.unschedule_all()
+                observer.stop()
+                observer.join()
             return
-        observer = self._observer
-        if observer is None:
-            observer = self._create_observer()
-            self._observer = observer
-            observer.start()
-        if target_roots == self._scheduled_roots:
-            return
-        observer = cast(Any, observer)
+        observer = cast(BaseObserver, observer)
         observer.unschedule_all()
         for root in target_roots:
             observer.schedule(_DispatchHandler(self, root), root, recursive=True)
-        self._scheduled_roots = target_roots
+        with self._lock:
+            self._scheduled_roots = target_roots
 
     def _stop_observer(self) -> None:
         with self._lock:
@@ -248,9 +274,19 @@ class _WatchRegistry:
         observer.stop()
         observer.join()
 
-    def _create_observer(self) -> Any:
-        observer = cast(Any, _WatchdogObserver())
-        return observer
+    def _create_observer(self) -> BaseObserver:
+        return _WatchdogObserver()
+
+    @contextmanager
+    def batch(self):
+        with self._lock:
+            self._batching = True
+        try:
+            yield
+        finally:
+            with self._lock:
+                self._batching = False
+            self._refresh_observer()
 
 
 def _normalize_root(root: str) -> str:
@@ -273,7 +309,8 @@ def _normalize_patterns(
     patterns: list[str] | None,
     default: list[str] | None = None,
 ) -> list[str]:
-    default = default or _DEFAULT_PATTERNS
+    if default is None:
+        default = _DEFAULT_PATTERNS
     if not patterns:
         return list(default)
     normalized = [pattern.strip().replace("\\", "/") for pattern in patterns if pattern and pattern.strip()]
@@ -312,6 +349,39 @@ def _covering_roots(roots: Iterable[str]) -> set[str]:
     return covered
 
 
+def _is_9p_mount(path: str) -> bool:
+    """
+    Check if path resides on a 9p remote filesystem
+    Related: https://github.com/microsoft/WSL/issues/4739
+    """
+    path = os.path.realpath(path)
+    best = ""
+    try:
+        with open("/proc/mounts", "r") as f:
+            for line in f:
+                parts = line.split()
+                if len(parts) < 3:
+                    continue
+                mountpoint, fstype = parts[1], parts[2]
+                if fstype != "9p":
+                    continue
+                real_mp = os.path.realpath(mountpoint)
+                if path.startswith(real_mp + os.sep) or path == real_mp:
+                    if len(real_mp) > len(best):
+                        best = real_mp
+    except OSError:
+        return False
+    if best:
+        global _9p_warned
+        if not _9p_warned:
+            PrintStyle.warning(
+                "Watchdog file monitoring experience degraded. Some folders cannot be watched for changes"
+            )
+            _9p_warned = True
+        return True
+    return False
+
+
 def _is_same_or_nested(path: str, root: str) -> bool:
     return path == root or path.startswith(root + os.sep)
 
@@ -341,26 +411,31 @@ def _compile_single_matcher(root: str, patterns: list[str]) -> PatternMatcher:
     if any(pattern in {"**", "**/*", "*"} for pattern in patterns):
         return lambda path: True
 
-    relative_patterns = [pattern for pattern in patterns if "/" in pattern]
+    relative_specs = [
+        PathSpec.from_lines("gitwildmatch", [pattern])
+        for pattern in patterns
+        if "/" in pattern
+    ]
     name_patterns = [
-        pattern for pattern in patterns if "/" not in pattern and pattern not in {"**", "**/*", "*"}
+        pattern
+        for pattern in patterns
+        if "/" not in pattern and pattern not in {"**", "**/*", "*"}
     ]
 
     def matches(path: str) -> bool:
         relative = os.path.relpath(path, root).replace("\\", "/")
         if relative == ".":
             relative = ""
-        relative_path = PurePosixPath(relative) if relative else PurePosixPath("")
-        name_path = PurePosixPath(os.path.basename(path))
-
-        for pattern in relative_patterns:
-            if relative and relative_path.match(pattern):
+        for spec in relative_specs:
+            if relative and (
+                spec.match_file(relative) or spec.match_file(relative + "/")
+            ):
                 return True
-        for pattern in name_patterns:
-            if name_path.match(pattern):
-                return True
-            if relative and relative_path.match(pattern):
-                return True
+        if name_patterns:
+            basename = os.path.basename(path)
+            for pattern in name_patterns:
+                if fnmatch(basename, pattern):
+                    return True
         return False
 
     return matches
@@ -400,6 +475,10 @@ def clear_watchdogs() -> None:
     _registry.clear()
 
 
+def batch_watchdogs():
+    return _registry.batch()
+
+
 def start_watchdog_daemon() -> None:
     _registry.start()
 
@@ -416,6 +495,7 @@ __all__ = [
     "add_watchdog",
     "remove_watchdog",
     "clear_watchdogs",
+    "batch_watchdogs",
     "start_watchdog_daemon",
     "stop_watchdog_daemon",
 ]
