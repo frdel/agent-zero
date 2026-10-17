@@ -192,14 +192,56 @@ export async function getMessageHandler(type) {
 
 // entrypoint called from poll/WS communication, this is how all messages are rendered and updated
 // input is raw log format
+//
+// Render conflation: streaming pushes can arrive far faster than individual
+// renders complete. Chaining one full render per snapshot makes the render
+// queue grow unboundedly, so the chat body falls behind in real time during an
+// active turn and only catches up long after the agent finishes (a finished
+// workflow looks like it is still running). Snapshot logs are deltas, but
+// merging is cumulative-safe (message-window dedups by id+type, last write
+// wins), so accumulate pending deltas and drain them in as few renders as
+// possible instead of rendering every intermediate state.
+let _messageRenderRunning = false;
+let _messageRenderPending = null;
+let _messageRenderPendingGeneration = -1;
+
 export function setMessages(messages) {
   const generation = _messageRenderGeneration;
-  const task = _messageRenderQueue.then(
-    () => setMessagesNow(messages, generation),
-    () => setMessagesNow(messages, generation),
-  );
+  if (_messageRenderPendingGeneration !== generation) {
+    // A render-state reset happened since the last call; drop stale deltas.
+    _messageRenderPending = null;
+    _messageRenderPendingGeneration = generation;
+  }
+  const incoming = Array.isArray(messages) ? messages : [];
+  _messageRenderPending = (_messageRenderPending || []).concat(incoming);
+
+  if (_messageRenderRunning) {
+    // A drain is already in flight; its loop picks up everything accumulated
+    // above before finishing, so resolve with the current drain.
+    return _messageRenderQueue;
+  }
+
+  const task = _messageRenderQueue.then(drain, drain);
   _messageRenderQueue = task.catch(() => undefined);
   return task;
+
+  async function drain() {
+    _messageRenderRunning = true;
+    try {
+      while (
+        generation === _messageRenderGeneration &&
+        _messageRenderPending &&
+        _messageRenderPending.length
+      ) {
+        const batch = _messageRenderPending;
+        _messageRenderPending = null;
+        await setMessagesNow(batch, generation);
+      }
+    } finally {
+      _messageRenderRunning = false;
+    }
+    return null;
+  }
 }
 
 async function setMessagesNow(messages, generation) {
