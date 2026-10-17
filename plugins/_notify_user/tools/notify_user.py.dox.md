@@ -13,6 +13,8 @@
 - Classes:
 - `NotifyUserTool` (`Tool`)
   - `async execute(self, **kwargs)`
+  - `get_log_object(self)`
+  - `get_heading(self)`
 
 ## Runtime Contracts
 
@@ -20,7 +22,8 @@
 - Update this file whenever tool arguments, output shape, `break_loop` behavior, intervention handling, prompt instructions, or side effects change.
 - `NotifyUserTool` is a `Tool`.
 - `NotifyUserTool` defines `execute(...)`.
-- Imported dependency areas include: `agent`, `helpers.notification`, `helpers.tool`.
+- Every call logs as the dedicated `notify_user` type with an `icon://notifications Notifying user: <title>` headline naming the title, or a plain notifying headline without a title; `extensions/webui/get_message_handler/` owns the `NTF` badge presentation and `get_process_step_types/` registers the type.
+- Imported dependency areas include: `agent`, `helpers.notification`, `helpers.strings`, `helpers.tool`, `uuid`.
 
 ## Key Concepts
 
@@ -37,6 +40,7 @@
 
 - Run targeted tool and prompt-contract tests for changed behavior; smoke-test agent execution when no focused test exists.
 - Related tests observed by source search:
+  - `tests/test_notify_user_tool.py`
   - `tests/test_tool_action_contracts.py`
 
 ## Child DOX Index

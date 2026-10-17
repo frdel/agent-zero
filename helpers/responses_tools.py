@@ -49,13 +49,12 @@ BUNDLED_TOOL_PARAMETERS: dict[str, dict[str, Any]] = {
         "days": {"type": "number"},
         "until": {"type": "string"},
     },
-    "tools/notify_user.py": {
+    "plugins/_notify_user/tools/notify_user.py": {
         "message": {"type": "string"},
         "title": {"type": "string"},
         "detail": {"type": "string"},
         "type": {"type": "string", "enum": ["info", "success", "warning", "error", "progress"]},
-        "priority": {"type": "integer", "enum": [10, 20]},
-        "timeout": {"type": "integer"},
+        "priority": {"type": "string", "enum": ["normal", "high"]},
     },
     "tools/call_subordinate.py": {
         "message": {"type": "string"},

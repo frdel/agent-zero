@@ -798,12 +798,22 @@ def test_a2a_empty_response_message_is_explicit_failure(monkeypatch):
     assert "not success" in module.A2A_EMPTY_RESPONSE_ERROR
 
 
-def test_notify_user_prompt_documents_numeric_priority_values():
-    prompt = Path("prompts/agent.system.tool.notify_user.md").read_text(
-        encoding="utf-8"
-    )
+def test_notify_user_prompt_documents_priority_names():
+    prompt = Path(
+        "plugins/_notify_user/prompts/agent.system.tool.notify_user.md"
+    ).read_text(encoding="utf-8")
 
-    assert "priority values: `20` high urgency, `10` normal urgency" in prompt
+    assert "`priority`: `normal` or `high`; omit for `high`" in prompt
+
+
+def test_notify_user_prompt_gates_sends_to_a_stale_user_picture():
+    prompt = Path(
+        "plugins/_notify_user/prompts/agent.system.tool.notify_user.md"
+    ).read_text(encoding="utf-8")
+
+    assert "send only when the user's picture of the work became false or stale" in prompt
+    assert "never send about starting, resuming, continuing, or attempting work" in prompt
+    assert "task end and goal completion go to the final response, never here" in prompt
 
 
 def test_tool_prompts_prevent_top_level_multi_tool():
