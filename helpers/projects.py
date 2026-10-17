@@ -101,7 +101,30 @@ def delete_project(name: str):
     abs_path = files.get_abs_path(PROJECTS_PARENT_DIR, name)
     files.delete_dir(abs_path)
     deactivate_project_in_chats(name)
+    _notify_project_deleted(name)
     return name
+
+
+def _notify_project_deleted(name: str) -> None:
+    """Notify enabled plugins that a project was deleted.
+
+    Plugins may implement ``project_deleted(project_name: str, **kwargs)``
+    in their ``hooks.py`` to clean up external resources tied to the project
+    (e.g. per-project memory banks). Hook failures must never break the
+    deletion itself, so every plugin notification is guarded.
+    """
+    try:
+        from helpers import plugins as plugin_helper
+
+        for plugin_name in plugin_helper.get_enabled_plugins(None):
+            try:
+                plugin_helper.call_plugin_hook(
+                    plugin_name, "project_deleted", default=None, project_name=name
+                )
+            except Exception:
+                pass
+    except Exception:
+        pass
 
 
 def create_project(name: str, data: BasicProjectData):

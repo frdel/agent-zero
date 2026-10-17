@@ -21,7 +21,8 @@
 - `get_project_folder(name: str)`
 - `get_project_meta(name: str, *sub_dirs)`
 - `validate_project_name(name: str | None) -> str`
-- `delete_project(name: str)`
+- `delete_project(name: str)`: Deletes the project directory, deactivates it in chats, then notifies enabled plugins via `_notify_project_deleted`.
+- `_notify_project_deleted(name: str)`: Calls the `project_deleted(project_name=...)` hook on every enabled plugin (from `hooks.py`) so plugins can clean up external per-project resources; failures are swallowed and never break deletion.
 - `create_project(name: str, data: BasicProjectData)`
 - `clone_git_project(name: str, git_url: str, git_token: str, data: BasicProjectData)`: Clone a git repository as a new A0 project. Token is used only for cloning via http header.
 - `load_project_header(name: str)`
