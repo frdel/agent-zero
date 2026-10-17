@@ -924,6 +924,10 @@ def build_vision_model(agent=None):
         ("timeout", DEFAULT_VISION_TIMEOUT_SECONDS),
         ("max_tokens", DEFAULT_VISION_MAX_TOKENS),
     ):
+        if key == "max_tokens" and "max_completion_tokens" in kwargs:
+            # OpenAI rejects requests that set both max_tokens and
+            # max_completion_tokens; preset kwargs already set the limit.
+            continue
         value = cfg.get(key)
         if value not in (None, ""):
             kwargs[key] = _normalize_kwargs({key: value})[key]
