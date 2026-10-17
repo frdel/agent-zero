@@ -8,9 +8,9 @@
 
 - `helpers/memory.py` owns FAISS store loading, embedding metadata, and knowledge preload.
 - `helpers/knowledge_import.py` and `helpers/memory_consolidation.py` own import and consolidation behavior.
-- `tools/` owns memory save/load/delete/forget and behavior adjustment tools.
+- `tools/` owns memory save/load/delete/forget tools.
 - `api/` and `webui/` own memory dashboard and knowledge reindex/import flows.
-- `prompts/`, `default_config.yaml`, and `plugin.yaml` own memory and behavior-tool prompts, defaults, and metadata.
+- `prompts/`, `default_config.yaml`, and `plugin.yaml` own memory prompts, defaults, and metadata.
 
 ## Local Contracts
 

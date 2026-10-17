@@ -108,7 +108,7 @@ BUNDLED_TOOL_PARAMETERS: dict[str, dict[str, Any]] = {
         "threshold": {"type": "number"},
         "filter": {"type": "string"},
     },
-    "plugins/_memory/tools/behaviour_adjustment.py": {"adjustments": {"type": "string"}},
+    "plugins/_behavior_adjustment/tools/behavior_adjustment.py": {"adjustments": {"type": "string"}},
     "plugins/_goal/tools/goal.py": {
         "action": {"type": "string", "enum": ["get", "create", "update"]},
         "objective": {"type": "string"},

@@ -1,1 +1,0 @@
-- favor linux commands for simple tasks where possible instead of python

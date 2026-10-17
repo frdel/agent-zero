@@ -73,9 +73,9 @@ def test_responses_function_tools_use_prompt_declared_names(monkeypatch, tmp_pat
     )
     _write_prompt(
         prompt_root,
-        "agent.system.tool.behaviour.md",
+        "agent.system.tool.behavior.md",
         """
-        ### behaviour_adjustment
+        ### behavior_adjustment
         update persistent behavioral rules
         """,
     )
@@ -109,17 +109,17 @@ def test_responses_function_tools_use_prompt_declared_names(monkeypatch, tmp_pat
         "memory_delete",
         "memory_forget",
         "call_subordinate",
-        "behaviour_adjustment",
+        "behavior_adjustment",
         "filename_only",
     } <= names
-    assert not {"code_exe", "memory", "call_sub", "behaviour"} & names
+    assert not {"code_exe", "memory", "call_sub", "behavior"} & names
     assert name_map["code_execution_tool"] == "code_execution_tool"
     assert name_map["memory_load"] == "memory_load"
     assert name_map["memory_save"] == "memory_save"
     assert name_map["memory_delete"] == "memory_delete"
     assert name_map["memory_forget"] == "memory_forget"
     assert name_map["call_subordinate"] == "call_subordinate"
-    assert name_map["behaviour_adjustment"] == "behaviour_adjustment"
+    assert name_map["behavior_adjustment"] == "behavior_adjustment"
     assert name_map["filename_only"] == "filename_only"
     assert all(isinstance(tool["parameters"].get("properties"), dict) for tool in tools)
 
@@ -202,7 +202,7 @@ def test_response_tool_native_contract_stays_provider_neutral(monkeypatch):
 
 def test_complex_prompt_args_are_not_guessed_as_string_schemas():
     for path in (
-        PROJECT_ROOT / "prompts" / "agent.system.tool.scheduler.md",
+        PROJECT_ROOT / "plugins" / "_scheduler" / "prompts" / "agent.system.tool.scheduler.md",
         PROJECT_ROOT / "prompts" / "agent.system.tool.parallel.md",
     ):
         schema = responses_tools._schema_from_prompt(path.read_text(encoding="utf-8"))
