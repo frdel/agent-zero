@@ -401,7 +401,6 @@ class DirtyJson:
         ]:
             result += self.current_char
             self._advance()
-        self._advance()
         return result.strip()
 
     def _peek(self, n):

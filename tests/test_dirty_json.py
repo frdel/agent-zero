@@ -93,3 +93,18 @@ def test_value_can_still_end_before_quoted_key_when_comma_is_missing() -> None:
     parsed = DirtyJson.parse_string('{"first":"one" "second":"two"}')
 
     assert parsed == {"first": "one", "second": "two"}
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected"),
+    [
+        ("[foo, bar, baz]", ["foo", "bar", "baz"]),
+        ('[foo, "bar"]', ["foo", "bar"]),
+        ('["foo", bar]', ["foo", "bar"]),
+        ("[foo]", ["foo"]),
+    ],
+)
+def test_unquoted_array_elements_are_all_kept(payload, expected) -> None:
+    # A bareword element must not consume its own trailing delimiter, which
+    # previously truncated the array after the first unquoted value.
+    assert DirtyJson.parse_string(payload) == expected
