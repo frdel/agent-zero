@@ -54,6 +54,17 @@ def save_image_bytes(
     if max_bytes is not None and len(data) > max_bytes:
         raise media_artifacts.ArtifactTooLarge(len(data), max_bytes)
 
+    # Compress oversized uploads at ingest so chats cannot accumulate multi-MB images
+    # that later blow past the model gateway request-body limit.
+    if len(data) > 1_500_000:
+        try:
+            from helpers import images as _images
+
+            data = _images.compress_image(data, max_pixels=1_000_000, quality=80)
+            mime_type = "image/jpeg"
+        except Exception:
+            pass
+
     safe_mime = media_artifacts.normalize_mime(
         mime_type,
         default="image/png",

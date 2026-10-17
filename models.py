@@ -410,9 +410,15 @@ class LiteLLMChatWrapper(SimpleChatModel):
             "system": "system",
             "tool": "tool",
         }
+        image_budget = images.image_budget_for(
+            [getattr(m, "content", None) for m in messages]
+        )
         for m in messages:
             role = role_mapping.get(m.type, m.type)
-            message_dict = {"role": role, "content": images.prepare_content(m.content)}
+            message_dict = {
+                "role": role,
+                "content": images.prepare_content(m.content, image_budget=image_budget),
+            }
 
             # Handle tool calls for AI messages
             tool_calls = getattr(m, "tool_calls", None)
