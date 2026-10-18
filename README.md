@@ -103,6 +103,11 @@ Open the Web UI, configure your LLM provider, and start with a concrete task. Fo
 - **Installing on a server:** use the A0 Install Quick Start command with `--quick-start --name agent-zero --port 5080`.
 - **Still blocked:** see the [Troubleshooting guide](./docs/guides/troubleshooting.md).
 
+# One-Click Deploy
+
+<a href="https://repocloud.io/details/Agent%20Zero/"><img src="https://d16t0pc4846x52.cloudfront.net/deploylobe.svg" alt="Deploy on RepoCloud" height="40"></a>
+<a href="https://railway.com/deploy/agent-zero"><img src="https://railway.com/button.svg" alt="Deploy on Railway" height="40"></a>
+
 # Try These First
 
 - **Annotate a design you like:** "Open this template site in the Browser. I'll annotate the hero section - re-implement it in my project's React + Tailwind stack."
