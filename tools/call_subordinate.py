@@ -262,7 +262,7 @@ class Delegation(Tool):
     def get_log_object(self):
         return self.agent.context.log.log(
             type="subagent",
-            heading=f"icon://communication {self.agent.agent_name}: Calling Subordinate Agent",
+            heading="icon://communication Calling Subordinate Agent",
             content="",
             kvps=self.args,
         )

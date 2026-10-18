@@ -5,6 +5,7 @@ from extensions.python.system_prompt._11_tools_prompt import (
 
 
 class Unknown(Tool):
+
     async def execute(self, **kwargs):
         tools = await build_tools_prompt(self.agent)
         return Response(

@@ -78,6 +78,7 @@
 - Update this file whenever public functions, classes, persistence behavior, path/security assumptions, side effects, or cross-module contracts change.
 - `MCPTool` is a `Tool`.
 - `MCPTool` defines `execute(...)`.
+- The `mcp` log headline is `icon://extension Using MCP tool 'server.tool'` without an agent-name prefix; the tool name stays visible as a log row.
 - Global MCP configuration remains backed by settings; project MCP configuration is loaded through `helpers.projects` and merged with global config when an active agent context has `context.project`.
 - Project-scoped MCP servers overlay global servers by normalized name. The resulting `MCPConfig` cache key is derived from both config strings so project instances refresh when either scope changes.
 - Server status and detail responses include `scope`, and MCP tools resolve through `MCPConfig.get_for_agent(agent)` before execution.

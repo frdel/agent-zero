@@ -21,6 +21,8 @@
 
 ## Runtime Contracts
 
+- Parallel-wrapped subordinate jobs log their start row as the static `icon://communication Calling Subordinate Agent` headline without an agent-name prefix.
+- Parallel-wrapped jobs without a resolvable dedicated tool log their start row as the prefix-free `icon://construction Using tool <name>` fallback.
 - Helper modules own reusable framework APIs and must preserve public callers unless all callers, tests, and docs are updated together.
 - Wrapped tool-call items must use the same shape as normal tool calls: a tool name plus arguments.
 - Normalization accepts full agent-reply-shaped objects when `tool_name` and `tool_args` are present; non-contract planning fields such as `thoughts` or `headline` are ignored.

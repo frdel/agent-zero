@@ -45,6 +45,7 @@
 
 ## Key Concepts
 
+- The `subagent` log headline is the static `icon://communication Calling Subordinate Agent` without an agent-name prefix.
 - Important called helpers/classes observed in the source: `AgentContext.all`, `projects.get_context_project_name`, `projects.activate_project`, `subagents.get_available_agents_dict`, `RepairableException`, `initialize_agent`, `message_queue.log_user_message`, `persist_chat.save_tmp_chat`, `UserMessage`, `subordinate.monologue`, and `subordinate.history.new_topic`.
 - Keep request/response, tool, or helper semantics documented here at the same time as source changes.
 

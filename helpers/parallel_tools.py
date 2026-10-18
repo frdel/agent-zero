@@ -683,7 +683,7 @@ def _log_parallel_child_started(agent: "Agent", job: ParallelJob) -> None:
     if job.kind == "subordinate":
         job.log_item = agent.context.log.log(
             type="subagent",
-            heading=f"icon://communication {agent.agent_name}: Calling Subordinate Agent",
+            heading="icon://communication Calling Subordinate Agent",
             content="",
             kvps=job.tool_args,
             id=job.log_id,
@@ -701,7 +701,7 @@ def _log_parallel_child_started(agent: "Agent", job: ParallelJob) -> None:
                 f"Failed to derive parallel child log for {job.tool_name}: {exc}"
             )
 
-    heading = f"icon://construction {agent.agent_name}: Using tool '{job.tool_name}'"
+    heading = f"icon://construction Using tool '{job.tool_name}'"
     job.log_item = agent.context.log.log(
         type="tool",
         heading=heading,

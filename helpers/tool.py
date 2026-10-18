@@ -76,9 +76,9 @@ class Tool:
         import uuid
         pre_id = str(uuid.uuid4())
         if self.method:
-            heading = f"icon://construction {self.agent.agent_name}: Using tool '{self.name}:{self.method}'"
+            heading = f"icon://construction Using tool '{self.name}:{self.method}'"
         else:
-            heading = f"icon://construction {self.agent.agent_name}: Using tool '{self.name}'"
+            heading = f"icon://construction Using tool '{self.name}'"
         return self.agent.context.log.log(type="tool", heading=heading, content="", kvps=self.args, _tool_name=self.name, id=pre_id)
 
     def nice_key(self, key:str):

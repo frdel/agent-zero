@@ -11,7 +11,7 @@ def create_editor_log(tool, *, remote: bool = False):
     heading = (
         f"icon://construction {verb} {path}{suffix}".strip()
         if verb and path
-        else f"icon://construction {tool.agent.agent_name}: Using tool '{tool.name}'{suffix}"
+        else f"icon://construction Using tool '{tool.name}'{suffix}"
     )
     return tool.agent.context.log.log(
         type="text_editor",
