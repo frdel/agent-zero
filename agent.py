@@ -1207,7 +1207,7 @@ class Agent:
             PrintStyle(font_color="red", padding=True).print(error_detail)
             self.context.log.log(
                 type="warning",
-                content=f"{self.agent_name}: {error_detail}",
+                content=error_detail,
                 id=wmsg.id,
             )
             return None
@@ -1531,7 +1531,7 @@ class Agent:
                 wmsg = self.hist_add_warning(error_detail)
                 PrintStyle(font_color="red", padding=True).print(error_detail)
                 self.context.log.log(
-                    type="warning", content=f"{self.agent_name}: {error_detail}", id=wmsg.id
+                    type="warning", content=error_detail, id=wmsg.id
                 )
         else:
             warning_msg_misformat = self.read_prompt("fw.msg_misformat.md")
@@ -1539,7 +1539,7 @@ class Agent:
             PrintStyle(font_color="red", padding=True).print(warning_msg_misformat)
             self.context.log.log(
                 type="warning",
-                content=f"{self.agent_name}: Message misformat, no valid tool request found.",
+                content="Message misformat, no valid tool request found.",
                 id=wmsg.id,
             )
 

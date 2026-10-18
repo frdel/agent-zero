@@ -75,7 +75,7 @@ def test_empty_result_skips_default_processing():
     assert _run(agent)["skip_default_processing"] is True
     assert agent.history == []
     assert agent.warnings == []
-    assert agent.logs == [{"type": "warning", "content": "A0: empty"}]
+    assert agent.logs == [{"type": "warning", "content": "empty"}]
 
 
 def test_empty_result_counts_toward_unusable_response_limit(monkeypatch):
@@ -122,7 +122,7 @@ def test_repeat_skips_default_processing():
     assert agent.logs == [
         {
             "type": "warning",
-            "content": "A0: Repeated response detected. Retrying.",
+            "content": "Repeated response detected. Retrying.",
             "id": "warning",
         }
     ]
@@ -146,7 +146,7 @@ def test_reasoning_only_retries_with_agent_warning():
     assert agent.logs == [
         {
             "type": "warning",
-            "content": "A0: Reasoning-only response detected. Retrying.",
+            "content": "Reasoning-only response detected. Retrying.",
             "id": "warning",
         }
     ]
@@ -242,7 +242,7 @@ def test_truncated_result_warns_about_output_limit_instead_of_misformat():
     assert agent.history == []
     assert agent.warnings == ["output limit"]
     assert agent.logs == [
-        {"type": "warning", "content": "A0: truncated (length)", "id": "warning"}
+        {"type": "warning", "content": "truncated (length)", "id": "warning"}
     ]
 
 

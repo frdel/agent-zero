@@ -353,7 +353,7 @@ def test_extension_handles_raw_text_fallback_with_warning_and_skip(monkeypatch):
     assert llm_result.response == '{"thoughts":["Hello there…"]}'
     assert ai_responses == ['{"thoughts":["Hello there…"]}']
     assert warnings == ["fallback warning"]
-    assert logs[0]["content"] == "A0: fallback notice"
+    assert logs[0]["content"] == "fallback notice"
     assert logs[0]["id"] == "warning"
     assert log_item.data["kvps"]["reasoning"] == "thinking"
     assert log_item.data["content"] == "Hello there…"
