@@ -1,7 +1,6 @@
 import re
 import sys
 import time
-from helpers import files
 
 def sanitize_string(s: str, encoding: str = "utf-8") -> str:
     # Replace surrogates and invalid unicode with replacement character
@@ -160,6 +159,9 @@ def truncate_text_by_ratio(text: str, threshold: int, replacement: str = "...", 
 
 
 def replace_file_includes(text: str, placeholder_pattern: str = r"§§include\(([^)]+)\)") -> str:
+    # Imported here because helpers.files imports sanitize_string from this module
+    from helpers import files
+
     # Replace include aliases with file content
     if not text:
         return text

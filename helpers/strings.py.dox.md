@@ -28,6 +28,7 @@
 
 ## Key Concepts
 
+- `helpers.files` is imported inside `replace_file_includes`, its only consumer, because `helpers.files` imports `sanitize_string` back from this module mid-file; keeping the import deferred avoids a startup import cycle.
 - Important called helpers/classes observed in the source: `s.encode.decode`, `join`, `join.rstrip`, `re.sub`, `skip_ignored_patterns`, `match.group`, `s.encode`, `sys.stdout.write`, `sys.stdout.flush`, `time.sleep`, `c.isupper`, `result.islower`, `word.capitalize`, `files.fix_dev_path`, `files.read_file`, `re.match`, `formatted.split`, `c.isalnum`, `format_key`.
 - Keep request/response, tool, or helper semantics documented here at the same time as source changes.
 
