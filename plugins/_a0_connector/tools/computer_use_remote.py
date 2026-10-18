@@ -76,6 +76,40 @@ _SUPPORTED_ACTIONS = {
 
 
 class ComputerUseRemote(Tool):
+    def get_log_object(self):
+        return self.agent.context.log.log(
+            type="computer_use_remote",
+            heading=self.get_heading(),
+            content="",
+            kvps=self.args,
+            id=str(uuid.uuid4()),
+        )
+
+    _HEADING_VERBS = {
+        "start_session": "Starting session",
+        "status": "Checking status",
+        "capture": "Capturing screen",
+        "list_windows": "Listing windows",
+        "get_window_state": "Reading window state",
+        "element_action": "Acting on element",
+        "ax_snapshot": "Taking accessibility snapshot",
+        "ax_action": "Acting via accessibility",
+        "uia_snapshot": "Taking UIA snapshot",
+        "uia_action": "Acting via UIA",
+        "move": "Moving pointer",
+        "click": "Clicking",
+        "scroll": "Scrolling",
+        "key": "Pressing keys",
+        "type": "Typing",
+        "stop_session": "Ending session",
+    }
+
+    def get_heading(self):
+        action = str(self.args.get("action") or "").strip().lower()
+        verb = self._HEADING_VERBS.get(action, "Working on desktop")
+        text = f"Computer use: {verb}" if action else "Computer use"
+        return f"icon://desktop_windows {text}"
+
     async def execute(self, **kwargs: Any) -> Response:
         self._latest_capture_content: list[dict[str, Any]] | None = None
         self._latest_capture_preview = ""
