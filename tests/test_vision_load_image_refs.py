@@ -76,6 +76,41 @@ def test_prepare_content_keeps_missing_local_image_refs_strict():
         )
 
 
+def test_prepare_content_resolves_secret_masked_local_image_ref(monkeypatch, tmp_path):
+    image_path = tmp_path / "private-image.png"
+    image_path.write_bytes(b"png-data")
+
+    class _SecretsManager:
+        def replace_placeholders(self, value):
+            return value.replace("§§secret(IMAGE_DIR)", str(tmp_path))
+
+    monkeypatch.setattr(
+        "helpers.secrets.get_secrets_manager",
+        lambda: _SecretsManager(),
+    )
+
+    prepared = images.prepare_content(
+        [{"type": "image_url", "image_url": {"url": "§§secret(IMAGE_DIR)/private-image.png"}}]
+    )
+
+    assert prepared[0]["image_url"]["url"].startswith("data:image/png;base64,")
+
+
+def test_resolve_ref_keeps_unknown_secret_placeholder_masked(monkeypatch):
+    class _SecretsManager:
+        def replace_placeholders(self, value):
+            raise RuntimeError("secret lookup failed")
+
+    monkeypatch.setattr(
+        "helpers.secrets.get_secrets_manager",
+        lambda: _SecretsManager(),
+    )
+
+    masked_path = "/tmp/§§secret(UNKNOWN)/image.png"
+    with pytest.raises(FileNotFoundError, match="§§secret\\(UNKNOWN\\)"):
+        images.resolve_ref(masked_path)
+
+
 @pytest.mark.anyio
 async def test_vision_load_materializes_local_image_to_chat_artifact(monkeypatch, tmp_path):
     _install_tool_stub(monkeypatch)
