@@ -13,6 +13,7 @@
 - Classes:
 - `SkillsTool` (`Tool`)
   - `get_log_object(self)`
+  - `get_heading(self)`
   - `async before_execution(self, **kwargs)`
   - `async execute(self, **kwargs) -> Response`
   - `_visible_skill_loaded(self, skill_name: str) -> bool`
@@ -30,12 +31,13 @@
 - Loaded skill IDs are stored in chat-wide context data.
 - Duplicate loads omit the full body when the same skill name remains visible in model history.
 - Missing or empty `action` defaults to `list`, and legacy `method` is accepted as a deprecated alias when `action` is absent.
+- All actions log as the dedicated `skills_tool` type with an `icon://school` verb headline naming the skill, the query, or the skill file being read; `extensions/webui/get_message_handler/` owns the `SKL` badge presentation and `extensions/webui/get_process_step_types/` registers the type.
 - Observed side-effect areas: filesystem reads, filesystem deletion, settings/state persistence, chat history persistence.
-- Imported dependency areas include: `__future__`, `helpers`, `helpers.print_style`, `helpers.tool`, `pathlib`, `typing`.
+- Imported dependency areas include: `__future__`, `helpers`, `helpers.print_style`, `helpers.strings`, `helpers.tool`, `pathlib`, `typing`, `uuid`.
 
 ## Key Concepts
 
-- Important called helpers/classes observed in the source: `str.strip.lower.replace`, `skill_name.strip`, `super.get_log_object`, `self._normalize_skill_name`, `self.get_log_object`, `skills_helper.list_skills`, `join`, `skills_helper.search_skills`, `skills_helper.find_skill`, `skills_helper.load_skill_for_agent`, `skills_helper.add_loaded_skill_name`, `skills_helper.skill_instruction_name`, `skill.path.resolve`, `Path`, `resolved.read_text`, `skill_name.startswith`, `skill_name.endswith`, `self._current_action`, `self.agent.context.log.log`, `Response`, `strip`, `target.is_absolute`.
+- Important called helpers/classes observed in the source: `str.strip.lower.replace`, `skill_name.strip`, `self.get_heading`, `self._normalize_skill_name`, `self.get_log_object`, `skills_helper.list_skills`, `join`, `skills_helper.search_skills`, `skills_helper.find_skill`, `skills_helper.load_skill_for_agent`, `skills_helper.add_loaded_skill_name`, `skills_helper.skill_instruction_name`, `skill.path.resolve`, `Path`, `resolved.read_text`, `skill_name.startswith`, `skill_name.endswith`, `self._current_action`, `self.agent.context.log.log`, `Response`, `strip`, `target.is_absolute`.
 - Keep request/response, tool, or helper semantics documented here at the same time as source changes.
 
 ## Work Guidance
