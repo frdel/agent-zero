@@ -12,6 +12,8 @@
 - `vision_load.py.dox.md` owns durable notes about responsibilities, contracts, side effects, and verification for that implementation.
 - Classes:
 - `VisionLoad` (`Tool`)
+  - `get_log_object(self)`
+  - `get_heading(self)`
   - `async execute(self, paths, query="", **kwargs) -> Response`
   - `async after_execution(self, response: Response, **kwargs)`
 - Notable constants/configuration names: `TOKENS_ESTIMATE`.
@@ -31,11 +33,12 @@
 - Native tool-result summaries omit the skipped-images section when no images were skipped; when the limit drops inputs, the section reports the skipped paths and active maximum.
 - Vision Model calls use the selected model's Advanced `kwargs`; this tool does not impose a separate timeout or output-token limit.
 - An empty Vision Model response is reported as an image-analysis error instead of a successful empty capsule.
+- Every call logs as the dedicated `vision_load` type with an `icon://imagesmode` headline naming the first image and the extra count; `extensions/webui/get_message_handler/` owns the `EYE` badge presentation and `get_process_step_types/` registers the type.
 - Update this file whenever tool arguments, output shape, `break_loop` behavior, intervention handling, prompt instructions, or side effects change.
 - `VisionLoad` is a `Tool`.
 - `VisionLoad` defines `execute(...)`.
 - Observed side-effect areas: filesystem writes, model calls, plugin state, settings/state persistence, secret handling.
-- Imported dependency areas include: `helpers`, `helpers.tool`, `langchain_core.messages`, `mimetypes`, and `_model_config`.
+- Imported dependency areas include: `helpers`, `helpers.strings`, `helpers.tool`, `langchain_core.messages`, `mimetypes`, `uuid`, and `_model_config`.
 
 ## Key Concepts
 

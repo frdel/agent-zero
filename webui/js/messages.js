@@ -2235,8 +2235,6 @@ export async function drawMessageTool({
 
   if (!tool_name) {
     return drawMessageToolSimple({ ...arguments[0] });
-  } else if (kvps._tool_name === "vision_load") {
-    return drawMessageToolSimple({ ...arguments[0], code: "EYE" });
   }
 
   /** @type {{ tool_name: string, kvps: any, handler: Function | undefined }} */
