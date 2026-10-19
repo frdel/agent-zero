@@ -33,6 +33,7 @@
 
 - Preserve public helper APIs used by core code and plugins unless every caller is updated.
 - Keep path, auth, secret, persistence, network, and subprocess behavior explicit and bounded.
+- `is_local_ref` recognizes a leading secret placeholder so fully masked paths still enter image preparation. `resolve_ref` uses restored placeholders only for filesystem lookup; unresolved paths retain their masked form in errors, and ordinary paths do not load secrets.
 - Prefer adding cohesive helper functions here only when behavior is reused across modules.
 
 ## Verification

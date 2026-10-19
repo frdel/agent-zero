@@ -35,7 +35,7 @@ def is_local_ref(url: str) -> bool:
     lowered = url.lower()
     if lowered.startswith(("http://", "https://", "data:")):
         return False
-    return lowered.startswith("file://") or url.startswith(("/", "./", "../", "~"))
+    return lowered.startswith("file://") or url.startswith(("/", "./", "../", "~", "§§secret("))
 
 
 def to_data_url(url: str) -> str:
@@ -49,12 +49,21 @@ def to_data_url(url: str) -> str:
 
 def resolve_ref(url: str) -> Path:
     raw_path = unquote(urlparse(url).path) if url.lower().startswith("file://") else url
-    path = Path(raw_path).expanduser()
+    resolution_path = raw_path
+    if "§§secret(" in resolution_path:
+        from helpers.secrets import get_secrets_manager
+
+        try:
+            resolution_path = get_secrets_manager().replace_placeholders(raw_path)
+        except Exception:
+            # Keep unresolved placeholders on the normal missing-path error path.
+            pass
+    path = Path(resolution_path).expanduser()
     candidates = [path]
-    if raw_path.startswith("/a0/"):
+    if resolution_path.startswith("/a0/"):
         from helpers import files
 
-        candidates.append(Path(files.fix_dev_path(raw_path)))
+        candidates.append(Path(files.fix_dev_path(resolution_path)))
     elif not path.is_absolute():
         from helpers import files
 
