@@ -604,7 +604,7 @@ def test_skills_tool_read_file_action_reads_inside_skill_dir(
     assert "Use labels before typing." in response.message
 
 
-def test_memory_forget_tool_imports_plugin_memory_load(monkeypatch):
+def test_memory_forget_action_deletes_matching_memories(monkeypatch):
     _install_tool_stub(monkeypatch)
     monkeypatch.syspath_prepend(str(Path.cwd()))
 
@@ -625,14 +625,14 @@ def test_memory_forget_tool_imports_plugin_memory_load(monkeypatch):
     memory_stub.Memory = types.SimpleNamespace(get=get_memory)
     monkeypatch.setitem(sys.modules, "plugins._memory.helpers.memory", memory_stub)
 
-    sys.modules.pop("plugins._memory.tools.memory_load", None)
-    sys.modules.pop("plugins._memory.tools.memory_forget", None)
-    module = importlib.import_module("plugins._memory.tools.memory_forget")
-    tool = module.MemoryForget(
+    sys.modules.pop("plugins._memory.tools.memory", None)
+    module = importlib.import_module("plugins._memory.tools.memory")
+    tool = module.MemoryTool(
         _FakeAgent(),
-        "memory_forget",
+        "memory",
         None,
         {
+            "action": "forget",
             "query": "codex memory forget token",
             "threshold": 0.99,
             "filter": "area=='codex_sweep'",
@@ -655,7 +655,7 @@ def test_memory_forget_tool_imports_plugin_memory_load(monkeypatch):
     ]
 
 
-def test_memory_load_coerces_numeric_string_args(monkeypatch):
+def test_memory_load_action_coerces_numeric_string_args(monkeypatch):
     _install_tool_stub(monkeypatch)
     monkeypatch.syspath_prepend(str(Path.cwd()))
 
@@ -676,13 +676,14 @@ def test_memory_load_coerces_numeric_string_args(monkeypatch):
     memory_stub.Memory = types.SimpleNamespace(get=get_memory)
     monkeypatch.setitem(sys.modules, "plugins._memory.helpers.memory", memory_stub)
 
-    sys.modules.pop("plugins._memory.tools.memory_load", None)
-    module = importlib.import_module("plugins._memory.tools.memory_load")
-    tool = module.MemoryLoad(
+    sys.modules.pop("plugins._memory.tools.memory", None)
+    module = importlib.import_module("plugins._memory.tools.memory")
+    tool = module.MemoryTool(
         _FakeAgent(),
-        "memory_load",
+        "memory",
         None,
         {
+            "action": "load",
             "query": "smoke test project context",
             "threshold": "0.7",
             "limit": "3",
@@ -701,6 +702,24 @@ def test_memory_load_coerces_numeric_string_args(monkeypatch):
             "filter": "",
         }
     ]
+
+
+def test_memory_tool_rejects_unknown_action(monkeypatch):
+    _install_tool_stub(monkeypatch)
+    monkeypatch.syspath_prepend(str(Path.cwd()))
+
+    memory_stub = types.ModuleType("plugins._memory.helpers.memory")
+    memory_stub.Memory = types.SimpleNamespace(get=lambda _agent: None)
+    monkeypatch.setitem(sys.modules, "plugins._memory.helpers.memory", memory_stub)
+
+    sys.modules.pop("plugins._memory.tools.memory", None)
+    module = importlib.import_module("plugins._memory.tools.memory")
+    tool = module.MemoryTool(_FakeAgent(), "memory", None, {"action": "bogus"}, "", None)
+    tool.agent.read_prompt = lambda name, **kwargs: name
+
+    response = asyncio.run(tool.execute(**tool.args))
+
+    assert response.message == "fw.memory.invalid_action.md"
 
 
 def test_behavior_adjustment_normalizes_duplicate_rules(monkeypatch):

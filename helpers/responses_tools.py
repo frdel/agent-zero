@@ -92,20 +92,14 @@ BUNDLED_TOOL_PARAMETERS: dict[str, dict[str, Any]] = {
         "keyboard": {"type": "string"},
         "session": {"type": "integer"},
     },
-    "plugins/_memory/tools/memory_load.py": {
+    "plugins/_memory/tools/memory.py": {
+        "action": {"type": "string", "enum": ["load", "save", "delete", "forget"]},
         "query": {"type": "string"},
+        "text": {"type": "string"},
+        "ids": {"type": "string"},
+        "area": {"type": "string"},
         "threshold": {"type": "number"},
         "limit": {"type": "integer"},
-        "filter": {"type": "string"},
-    },
-    "plugins/_memory/tools/memory_save.py": {
-        "text": {"type": "string"},
-        "area": {"type": "string"},
-    },
-    "plugins/_memory/tools/memory_delete.py": {"ids": {"type": "string"}},
-    "plugins/_memory/tools/memory_forget.py": {
-        "query": {"type": "string"},
-        "threshold": {"type": "number"},
         "filter": {"type": "string"},
     },
     "plugins/_behavior_adjustment/tools/behavior_adjustment.py": {"adjustments": {"type": "string"}},

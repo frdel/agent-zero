@@ -8,7 +8,8 @@
 
 - `helpers/memory.py` owns FAISS store loading, embedding metadata, and knowledge preload.
 - `helpers/knowledge_import.py` and `helpers/memory_consolidation.py` own import and consolidation behavior.
-- `tools/` owns memory save/load/delete/forget tools.
+- `tools/memory.py` owns the single `memory` tool whose `action` arg selects load, save, delete or forget.
+- The memory tool logs messages as its own `memory` type with icon verb headlines; `extensions/webui/get_message_handler/` owns the shared `MEM` badge presentation in the behavior adjustment brain pink accent and `extensions/webui/get_process_step_types/` registers the types.
 - `api/` and `webui/` own memory dashboard and knowledge reindex/import flows.
 - `extensions/webui/` owns the welcome-screen Memory card and the quick-actions dropdown entries.
 - `prompts/`, `default_config.yaml`, and `plugin.yaml` own memory prompts, defaults, and metadata.
@@ -18,9 +19,9 @@
 - Keep memory scoped by configured subdirectory/context.
 - Preserve embedding metadata needed to rebuild indexes safely.
 - Delayed recall results must survive `LoopData` replacement, stay scoped to the originating memory/profile/project, and be consumed once by the next prompt; do not persist live task objects into chat JSON.
-- `memory_load` accepts numeric `threshold` and `limit` values as native numbers or numeric strings and coerces them before vector search.
-- Grouped tool-prompt declarations must start with `arg` or `args` so native Responses models receive every memory tool.
-- Auto-recall embeds each prepared query once and reuses that vector for the memory and solution filters; manual `memory_load` keeps the ordinary text-query path.
+- The `load` action accepts numeric `threshold` and `limit` values as native numbers or numeric strings and coerces them before vector search.
+- The tool-prompt declaration must start with `args` so native Responses models receive the `memory` tool.
+- Auto-recall embeds each prepared query once and reuses that vector for the memory and solution filters; manual `load` keeps the ordinary text-query path.
 - Keep auto-recall context capability-neutral; memory-tool routing belongs in
   the policy-filtered memory tool prompt.
 - Avoid storing transient action-history noise as durable memory.

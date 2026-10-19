@@ -49,14 +49,11 @@ def test_responses_function_tools_use_prompt_declared_names(monkeypatch, tmp_pat
         prompt_root,
         "agent.system.tool.memory.md",
         """
-        ## memory tools
-        durable memory operations
-        - `memory_load`: args `query`, optional `threshold`, `limit`, `filter`
-        - `memory_save`: args `text`, optional `area`
-        - `memory_delete`: arg `ids`
-        - `memory_forget`: args `query`, optional `threshold`, `filter`
+        ### memory
+        durable memory operations with action dispatch
+        - `action`: load, save, delete, or forget
         ```json
-        {"tool_name": "memory_load", "tool_args": {"query": "responses naming"}}
+        {"tool_name": "memory", "tool_args": {"action": "load", "query": "responses naming"}}
         ```
         """,
     )
@@ -104,20 +101,14 @@ def test_responses_function_tools_use_prompt_declared_names(monkeypatch, tmp_pat
     names = {tool["name"] for tool in tools}
     assert {
         "code_execution_tool",
-        "memory_load",
-        "memory_save",
-        "memory_delete",
-        "memory_forget",
+        "memory",
         "call_subordinate",
         "behavior_adjustment",
         "filename_only",
     } <= names
-    assert not {"code_exe", "memory", "call_sub", "behavior"} & names
+    assert not {"code_exe", "call_sub", "behavior"} & names
     assert name_map["code_execution_tool"] == "code_execution_tool"
-    assert name_map["memory_load"] == "memory_load"
-    assert name_map["memory_save"] == "memory_save"
-    assert name_map["memory_delete"] == "memory_delete"
-    assert name_map["memory_forget"] == "memory_forget"
+    assert name_map["memory"] == "memory"
     assert name_map["call_subordinate"] == "call_subordinate"
     assert name_map["behavior_adjustment"] == "behavior_adjustment"
     assert name_map["filename_only"] == "filename_only"
@@ -320,27 +311,22 @@ def test_local_tool_prompts_use_registered_render_kwargs(monkeypatch, tmp_path):
 
 
 def test_explicit_tool_name_precedes_a_generic_heading():
-    prompt = """## memory tools
-durable memory operations
-{"tool_name": "memory_load", "tool_args": {}}
+    prompt = """## call sub
+subordinate delegation
+{"tool_name": "call_subordinate", "tool_args": {}}
 """
 
     assert responses_tools._tool_names_from_prompt(
-        prompt, fallback="memory"
-    ) == ["memory_load"]
+        prompt, fallback="call_sub"
+    ) == ["call_subordinate"]
 
 
-def test_bundled_memory_prompt_exposes_every_memory_tool():
+def test_bundled_memory_prompt_exposes_the_unified_memory_tool():
     prompt = (
         PROJECT_ROOT / "plugins/_memory/prompts/agent.system.tool.memory.md"
     ).read_text(encoding="utf-8")
 
-    assert responses_tools._tool_names_from_prompt(prompt, fallback="memory") == [
-        "memory_load",
-        "memory_save",
-        "memory_delete",
-        "memory_forget",
-    ]
+    assert responses_tools._tool_names_from_prompt(prompt, fallback="memory") == ["memory"]
 
 
 def test_native_description_preserves_guidance_and_projects_only_tool_examples():

@@ -16,8 +16,7 @@ triggers:
 allowed_tools:
   - code_execution_tool
   - code_execution_remote
-  - memory_load
-  - memory_save
+  - memory
 ---
 
 # Orchestrator
@@ -30,7 +29,7 @@ Prefer the user's own host-machine CLI when that is what they mean. Container-in
 
 - For Codex, Claude Code, Cursor CLI, Gemini CLI, Grok Build, Hermes Agent, and OpenCode, first decide the execution place: the user's local machine through A0 CLI, or the Agent Zero Docker/container shell.
 - If the user did not specify local/host versus container, check memory for this coding agent's execution-place preference. If no current preference is known, ask: "Do you want me to use your own local <agent> through A0 CLI, or the <agent> installed inside the Agent Zero container?"
-- After the user chooses, save a stable per-agent preference with `memory_save`, for example: "For orchestrator, the user prefers Claude Code to run on the host machine through A0 CLI by default." If memory tools are unavailable, continue without saving.
+- After the user chooses, save a stable per-agent preference with `memory` action=save, for example: "For orchestrator, the user prefers Claude Code to run on the host machine through A0 CLI by default." If memory tools are unavailable, continue without saving.
 - Never use Computer Use to drive coding-agent terminals, menus, or TUIs. Use headless CLI commands through `code_execution_remote` or `code_execution_tool`; if that is not possible, stop and ask.
 - ACP may be available as a community plugin, but do not assume it is installed. Mention it only if the user explicitly asks for ACP or the direct CLI path is unsuitable.
 - For Codex, Claude Code, Cursor CLI, Gemini CLI, Grok Build, Hermes Agent, and OpenCode, setup is part of the workflow: check whether the CLI is installed, install only the requested CLI if missing, probe its version/help, run a tiny smoke prompt, then run the real task.

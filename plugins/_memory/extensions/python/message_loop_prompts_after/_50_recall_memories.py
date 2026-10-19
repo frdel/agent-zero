@@ -5,7 +5,7 @@ from helpers import cache, dirty_json, errors, log, plugins
 
 # Direct import - this extension lives inside the memory plugin
 from plugins._memory.helpers.memory import Memory, get_agent_memory_subdir
-from plugins._memory.tools.memory_load import DEFAULT_THRESHOLD as DEFAULT_MEMORY_THRESHOLD
+from plugins._memory.tools.memory import DEFAULT_THRESHOLD as DEFAULT_MEMORY_THRESHOLD
 
 
 DATA_NAME_TASK = "_recall_memories_task"

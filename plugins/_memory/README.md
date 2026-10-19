@@ -31,10 +31,7 @@ This plugin stores memories and knowledge embeddings in a FAISS-backed vector da
 - **Consolidation**
   - `helpers/memory_consolidation.py` contains memory consolidation logic.
 - **Tools**
-  - `tools/memory_save.py`
-  - `tools/memory_load.py`
-  - `tools/memory_delete.py`
-  - `tools/memory_forget.py`
+  - `tools/memory.py` (single tool, `action` selects load, save, delete or forget)
 - **API**
   - `api/memory_dashboard.py` powers the memory management dashboard.
   - `api/import_knowledge.py` and `api/knowledge_reindex.py` handle knowledge import and reindexing.

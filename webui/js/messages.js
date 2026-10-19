@@ -2241,8 +2241,6 @@ export async function drawMessageTool({
     return drawMessageToolSimple({ ...arguments[0], code: "SKL", displayKvps });
   } else if (kvps._tool_name === "vision_load") {
     return drawMessageToolSimple({ ...arguments[0], code: "EYE" });
-  } else if (kvps._tool_name.startsWith("memory_")) {
-    return drawMessageToolSimple({ ...arguments[0], code: "MEM" });
   }
 
   /** @type {{ tool_name: string, kvps: any, handler: Function | undefined }} */

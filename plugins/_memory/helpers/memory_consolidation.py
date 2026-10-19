@@ -12,7 +12,7 @@ from helpers.localization import Localization
 from helpers.log import LogItem
 from helpers.print_style import PrintStyle
 from agent import Agent
-from plugins._memory.tools.memory_load import DEFAULT_THRESHOLD as DEFAULT_MEMORY_THRESHOLD
+from plugins._memory.tools.memory import DEFAULT_THRESHOLD as DEFAULT_MEMORY_THRESHOLD
 
 
 class ConsolidationAction(Enum):

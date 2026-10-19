@@ -53,7 +53,7 @@ work to one of these CLIs. The skill keeps the global setup loop in
 `skills/orchestrator/references/` before acting.
 
 If the user does not specify host versus container, Agent Zero asks and saves a
-per-agent preference with `memory_save`. Local/host mode uses the connector's
+per-agent preference with `memory` action=save. Local/host mode uses the connector's
 `code_execution_remote` tool and may load `host-code-execution`; container mode
 uses `code_execution_tool`.
 
