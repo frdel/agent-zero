@@ -7,7 +7,7 @@ import {
 } from "/components/notifications/notification-store.js";
 import { store as chatsStore } from "/components/sidebar/chats/chats-store.js";
 import { store as sidebarStore } from "/components/sidebar/sidebar-store.js";
-import { store as tasksStore } from "/components/sidebar/tasks/tasks-store.js";
+import { store as tasksStore } from "/plugins/_scheduler/webui/sidebar/tasks-store.js";
 
 const PLUGIN_ID = "_chat_naming";
 const MODAL_PATH = `/plugins/${PLUGIN_ID}/webui/rename.html`;

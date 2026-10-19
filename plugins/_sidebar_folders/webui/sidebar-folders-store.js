@@ -3,7 +3,7 @@ import { callJsonApi } from "/js/api.js";
 import { toastFrontendError } from "/components/notifications/notification-store.js";
 import { store as sidebar } from "/components/sidebar/sidebar-store.js";
 import { store as chats } from "/components/sidebar/chats/chats-store.js";
-import { store as tasks } from "/components/sidebar/tasks/tasks-store.js";
+import { store as tasks } from "/plugins/_scheduler/webui/sidebar/tasks-store.js";
 import { store as projects } from "/components/projects/projects-store.js";
 import { store as pins } from "/plugins/_pin_to_top/webui/pin-to-top-store.js";
 
