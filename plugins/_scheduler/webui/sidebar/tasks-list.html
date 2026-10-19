@@ -1,7 +1,7 @@
 <html>
 <head>
   <script type="module">
-    import { store } from "/components/sidebar/tasks/tasks-store.js";
+    import { store } from "/plugins/_scheduler/webui/sidebar/tasks-store.js";
   </script>
 </head>
 <body>
@@ -29,7 +29,7 @@
                   <template x-for="(task, taskIndex) in $store.tasks.visibleTasks()" :key="task.id">
                     <li class="task-list-item"
                       :class="{ 'sidebar-list-divider': $store.sidebar.hasRowDividerBefore('task', task, taskIndex, $store.tasks.visibleTasks()) }">
-                      <x-component path="sidebar/tasks/task-row.html"></x-component>
+                      <x-component path="/plugins/_scheduler/webui/sidebar/task-row.html"></x-component>
                     </li>
                   </template>
                 </ul>

@@ -17,7 +17,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from helpers import task_scheduler as scheduler
-from api.scheduler_task_create import SchedulerTaskCreate
+from plugins._scheduler.api.scheduler_task_create import SchedulerTaskCreate
 
 
 def test_scheduler_json_default_and_optional_yaml():
@@ -172,7 +172,7 @@ def test_scheduler_creation_applies_state_before_persistence():
 
 
 def test_scheduler_editor_preserves_drafts_until_save_succeeds():
-    source = (PROJECT_ROOT / "webui/components/modals/scheduler/scheduler-store.js").read_text()
+    source = (PROJECT_ROOT / "plugins/_scheduler/webui/scheduler/scheduler-store.js").read_text()
     source = re.sub(r"^import\b[\s\S]*?;\n", "", source, flags=re.M)
     source = source.replace("export { store };", "")
     script = r'''

@@ -110,8 +110,8 @@ def test_only_the_icon_guard_stylesheet_blocks_application_paint() -> None:
     assert "font-family: 'Material Symbols Outlined'" in index_html
     assert "html:not(.material-icons-ready) x-icon" in index_html
     assert '<script type="module" src="/js/icons.js"></script>' in index_html
-    assert index_html.count('rel="preload" as="style"') == 20
-    assert index_html.count("onload=\"this.onload=null;this.rel='stylesheet'\"") == 20
+    assert index_html.count('rel="preload" as="style"') == 18
+    assert index_html.count("onload=\"this.onload=null;this.rel='stylesheet'\"") == 18
     assert 'id="startup-splash"' not in index_html
     assert 'document.addEventListener("webui-bundle-loaded"' not in index_html
 

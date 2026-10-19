@@ -1,7 +1,7 @@
 import { createStore } from "/js/AlpineStore.js";
 import { store as chatsStore } from "/components/sidebar/chats/chats-store.js";
 import { store as sidebarStore } from "/components/sidebar/sidebar-store.js";
-import { store as schedulerStore } from "/components/modals/scheduler/scheduler-store.js";
+import { store as schedulerStore } from "/plugins/_scheduler/webui/scheduler/scheduler-store.js";
 
 // Tasks sidebar store: tasks list and selected task id
 const model = {

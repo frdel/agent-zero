@@ -25,9 +25,9 @@
               <x-component path="sidebar/chats/chats-list.html"></x-component>
             </div>
 
-            <!-- Tasks List -->
-            <div class="config-section" id="tasks-section">
-              <x-component path="sidebar/tasks/tasks-list.html"></x-component>
+            <!-- Plugin-provided sections -->
+            <div class="config-section" id="extensions-section">
+              <x-extension id="sidebar-extensions"></x-extension>
             </div>
           </div>
           <!--Sidebar lower elements-->
@@ -141,8 +141,8 @@
       overflow: hidden;
     }
 
-    /* Tasks section container inside sidebar */
-    #tasks-section {
+    /* Plugin sections container inside sidebar */
+    #extensions-section {
       display: -webkit-flex;
       display: flex;
       flex-direction: column;
@@ -159,21 +159,21 @@
     }
 
     #chats-section .section-header-row,
-    #tasks-section .section-header {
+    #extensions-section .section-header {
       margin-inline-start: var(--spacing-sm);
     }
 
     /* Flatten wrapper elements to maintain flex chain for inner scroll containers */
     #chats-section>x-component,
     #chats-section>x-component>div[x-data],
-    #tasks-section>x-component,
-    #tasks-section>x-component>div[x-data],
-    #tasks-section>x-component>div[x-data]>div[x-data] {
+    #extensions-section>x-component,
+    #extensions-section>x-component>div[x-data],
+    #extensions-section>x-component>div[x-data]>div[x-data] {
       display: contents;
     }
 
     /* Bootstrap collapse elements need proper display for animation to work */
-    #tasks-section .collapse {
+    #extensions-section .collapse {
       display: flex;
       flex-direction: column;
       flex: 1;
@@ -181,7 +181,7 @@
     }
 
     /* During the collapsing transition, allow height animation to control size */
-    #tasks-section .collapsing {
+    #extensions-section .collapsing {
       flex: 0 0 auto !important;
     }
 

@@ -7,7 +7,7 @@
 
 ## Ownership
 
-- Each CSS file owns a named surface or primitive family such as buttons, messages, modals, notifications, scheduler, settings, surfaces, tables, or toast.
+- Each CSS file owns a named surface or primitive family such as buttons, messages, modals, notifications, settings, surfaces, tables, or toast.
 - `loading-indicators.css` owns reusable loading visuals; `messages.css` owns chat-history paging placement, the context-switch splash surface, and lazy message-preview states in addition to message presentation.
 - `overflow.css` owns the globally loaded `x-overflow` row, borderless ellipsis button, and popover styles constrained by both viewport and available submenu space; original plugin panel styling remains in its owner.
 - Overflow entry visuals retain their owner styles inside a non-interactive `.overflow-icon` slot. Empty slots must not reserve space.

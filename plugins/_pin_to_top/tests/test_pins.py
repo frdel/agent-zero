@@ -173,9 +173,15 @@ assert.equal(calls.length, callCount, 'only an explicit empty project ID represe
 
 
 def test_pin_presentation_does_not_depend_on_core_sidebar_pin_code():
-    sidebar = Path(__file__).resolve().parents[3] / "webui/components/sidebar"
-    for name in ("sidebar-store.js", "left-sidebar.html", "chats/chat-tree.html", "tasks/task-row.html"):
-        source = (sidebar / name).read_text(encoding="utf-8")
+    root = Path(__file__).resolve().parents[3]
+    sources = [
+        root / "webui/components/sidebar/sidebar-store.js",
+        root / "webui/components/sidebar/left-sidebar.html",
+        root / "webui/components/sidebar/chats/chat-tree.html",
+        root / "plugins/_scheduler/webui/sidebar/task-row.html",
+    ]
+    for source_path in sources:
+        source = source_path.read_text(encoding="utf-8")
         assert "isRowPinned" not in source
         assert "pinToTop" not in source
         assert 'name="push_pin"' not in source

@@ -72,15 +72,15 @@
   </div>
   <style>
     .sidebar-folder-controls { display: flex; align-items: center; }
-    #left-panel:has(.sidebar-folder-controls) :is(#chats-section, #tasks-section) { width: calc(100% + var(--spacing-sm) + var(--spacing-xs)); }
+    #left-panel:has(.sidebar-folder-controls) :is(#chats-section, #extensions-section) { width: calc(100% + var(--spacing-sm) + var(--spacing-xs)); }
     #left-panel:has(.sidebar-folder-controls) #chats-section .section-header-row,
-    #left-panel:has(.sidebar-folder-controls) #tasks-section .section-header { margin-inline-end: var(--spacing-xs); }
-    #left-panel:has(.sidebar-folder-controls) :is(#chats-section, #tasks-section) .btn-icon-action { border: 1px solid var(--color-border); box-shadow: none; }
+    #left-panel:has(.sidebar-folder-controls) #extensions-section .section-header { margin-inline-end: var(--spacing-xs); }
+    #left-panel:has(.sidebar-folder-controls) :is(#chats-section, #extensions-section) .btn-icon-action { border: 1px solid var(--color-border); box-shadow: none; }
     #left-panel:has(.sidebar-folder-controls) #chats-section .section-header-row .btn-icon-action:not(:hover) { border-color: transparent; }
-    #left-panel:has(.sidebar-folder-controls) :is(#chats-section, #tasks-section) .chat-list-action-btn { margin-right: var(--spacing-xs); }
-    #left-panel:has(.sidebar-folder-controls) #tasks-section .task-actions { gap: var(--spacing-xs); }
-    #left-panel:has(.sidebar-folder-controls) :is(#chats-section, #tasks-section) .btn-icon-action:hover { border-color: var(--color-primary); background-color: var(--color-background-hover); color: var(--color-text); box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 20%, transparent); }
-    #left-panel:has(.sidebar-folder-controls) :is(#chats-section, #tasks-section) .btn-icon-action:focus-visible { color: var(--color-text); outline: 1px solid var(--color-text); outline-offset: -2px; }
+    #left-panel:has(.sidebar-folder-controls) :is(#chats-section, #extensions-section) .chat-list-action-btn { margin-right: var(--spacing-xs); }
+    #left-panel:has(.sidebar-folder-controls) #extensions-section .task-actions { gap: var(--spacing-xs); }
+    #left-panel:has(.sidebar-folder-controls) :is(#chats-section, #extensions-section) .btn-icon-action:hover { border-color: var(--color-primary); background-color: var(--color-background-hover); color: var(--color-text); box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 20%, transparent); }
+    #left-panel:has(.sidebar-folder-controls) :is(#chats-section, #extensions-section) .btn-icon-action:focus-visible { color: var(--color-text); outline: 1px solid var(--color-text); outline-offset: -2px; }
     #chats-section:has(.sidebar-folder-controls) #newChat { opacity: 1; filter: none; transition-property: background-color, border-color, color, box-shadow; transition-duration: 0.18s; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
     #chats-section:has(.sidebar-folder-controls) .section-header-row .btn-icon-action > x-icon { color: inherit; font-size: 1.125rem; }
     .sidebar-folders-menu { position: fixed; z-index: 10000; width: 232px; margin: 0; overflow-y: auto; box-sizing: border-box; }

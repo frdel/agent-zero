@@ -35,7 +35,7 @@ def test_chat_and_task_rows_reclaim_left_space_without_shifting_headers() -> Non
     assert left_sidebar.count("width: calc(100% + var(--spacing-sm));") == 2
     assert (
         "#chats-section .section-header-row,\n"
-        "    #tasks-section .section-header {\n"
+        "    #extensions-section .section-header {\n"
         "      margin-inline-start: var(--spacing-sm);"
     ) in left_sidebar
     assert "flex: 1 1 auto;" in chats_list

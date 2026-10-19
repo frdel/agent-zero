@@ -10,8 +10,7 @@
 - Each direct child folder owns one modal workflow and its store.
 - Modal HTML files own body content, titles, scoped styles, and `data-modal-footer` content.
 - Modal store files own modal-local state and cleanup.
-- `scheduler/` owns task editing: both prompt fields use full-width resizable textareas, with a shared expanded prompt modal bound to the same draft. Closing the expanded view retains draft edits; only a successful task save clears the draft. API error bodies must be treated as failures even with HTTP 200.
-- Scheduler actions live in the pinned footer. New tasks offer idle/disabled initial states and inherit only the active chat's project, otherwise defaulting to no project.
+- Task editing modals live in the `_scheduler` plugin (`webui/scheduler/`); this folder does not own scheduler modal content.
 
 ## Local Contracts
 
@@ -27,7 +26,6 @@
 ## Verification
 
 - Smoke-test open, close, Escape, click-outside, scrolling, stacked modals, and pinned footers after modal changes.
-- For scheduler editing, run `pytest tests/test_scheduler_editor.py` and check prompt expansion, draft retention, and save/reopen on desktop and mobile.
 
 ## Child DOX Index
 
