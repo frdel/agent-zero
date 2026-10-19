@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from helpers.strings import truncate_text
 from helpers.tool import Response, Tool
 from plugins._office.helpers import artifact_editor, document_store, libreoffice
 
@@ -202,11 +203,42 @@ class OfficeArtifact(Tool):
     def get_log_object(self):
         return self.agent.context.log.log(
             type="tool",
-            heading=f"icon://description {self.agent.agent_name}: Using office artifact",
+            heading=self.get_heading(),
             content="",
-            kvps={**self.args, "_tool_name": self.name},
+            kvps={k: v for k, v in self.args.items() if k != "_tool_name"},
             _tool_name=self.name,
         )
+
+    _HEADING_VERBS = {
+        "create": "Creating",
+        "open": "Opening",
+        "read": "Reading",
+        "extract": "Extracting",
+        "edit": "Editing",
+        "update": "Updating",
+        "patch": "Patching",
+        "inspect": "Inspecting",
+        "version_history": "Listing versions",
+        "restore_version": "Restoring version",
+        "export": "Exporting",
+        "status": "Checking status",
+    }
+
+    _VERBS_WITH_OBJECT = {
+        "create", "open", "read", "extract", "edit", "update", "patch", "inspect", "restore_version", "export"
+    }
+
+    def get_heading(self):
+        action = str(self.args.get("action") or "").strip().lower()
+        verb = self._HEADING_VERBS.get(action, "Working on")
+        text = f"Office: {verb}" if action else "Office"
+        if action in self._VERBS_WITH_OBJECT:
+            path = str(self.args.get("path") or "").strip()
+            title = str(self.args.get("title") or "").strip()
+            name = Path(path).name if path else title
+            if name:
+                text += f" {truncate_text(name, 60)}"
+        return f"icon://description {text}"
 
     def _document_from_input(self, file_id: str = "", path: str = "") -> dict[str, Any]:
         if file_id:

@@ -7,6 +7,7 @@
 ## Ownership
 
 - `tools/office_artifact.py` owns the agent-facing office artifact tool.
+- The tool logs its message with an `icon://description` gerund headline naming the action and document name, such as `Office: Reading report.odt`; `extensions/webui/get_tool_message_handler/` owns the `OFF` badge presentation with the document-blue accent shared with the `DOC` family; `extensions/webui/page-head/` loads the badge styles.
 - `helpers/` owns artifact editing, canvas context, document storage, LibreOffice runtime, and presentation writing.
 - `api/` owns office session and WebSocket handlers.
 - `hooks.py`, `prompts/`, `skills/`, `extensions/`, and `webui/` own lifecycle behavior, prompts, skill guidance, hooks, and office panel UI.
