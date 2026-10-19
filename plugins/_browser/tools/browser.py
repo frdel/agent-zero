@@ -9,6 +9,7 @@ from typing import Any
 
 from helpers import files
 from helpers.print_style import PrintStyle
+from helpers.strings import truncate_text
 from helpers.tool import Response, Tool
 from plugins._browser.helpers.config import activate_browser_model
 from plugins._browser.helpers.selector import get_tool_runtime
@@ -326,11 +327,68 @@ class Browser(Tool):
     def get_log_object(self):
         return self.agent.context.log.log(
             type="tool",
-            heading=f"icon://captive_portal {self.agent.agent_name}: Using browser",
+            heading=self.get_heading(),
             content="",
             kvps=self.args,
             _tool_name=self.name,
         )
+
+    _HEADING_ALIASES = {
+        "setactive": "set_active",
+        "activate": "set_active",
+        "focus": "set_active",
+        "typesubmit": "type_submit",
+        "keychord": "key_chord",
+    }
+
+    _HEADING_VERBS = {
+        "open": "Opening",
+        "navigate": "Navigating to",
+        "list": "Listing tabs",
+        "state": "Reading state",
+        "content": "Reading content",
+        "detail": "Inspecting",
+        "click": "Clicking",
+        "hover": "Hovering",
+        "double_click": "Double-clicking",
+        "right_click": "Right-clicking",
+        "drag": "Dragging",
+        "type": "Typing",
+        "type_submit": "Typing",
+        "submit": "Submitting",
+        "scroll": "Scrolling",
+        "select_option": "Selecting",
+        "set_checked": "Toggling",
+        "upload_file": "Uploading",
+        "evaluate": "Evaluating",
+        "key_chord": "Pressing",
+        "keyboard": "Typing",
+        "mouse": "Moving pointer",
+        "wheel": "Scrolling",
+        "clipboard": "Using clipboard",
+        "set_viewport": "Resizing viewport",
+        "back": "Going back",
+        "forward": "Going forward",
+        "reload": "Reloading",
+        "close": "Closing",
+        "close_all": "Closing all tabs",
+        "multi": "Running batch",
+        "screenshot": "Taking screenshot",
+        "set_active": "Selecting tab",
+        "copy": "Copying",
+        "cut": "Cutting",
+        "paste": "Pasting",
+    }
+
+    def get_heading(self):
+        action = str(self.args.get("action") or "").strip().lower()
+        action = self._HEADING_ALIASES.get(action, action)
+        verb = self._HEADING_VERBS.get(action, "Working")
+        text = f"Browser: {verb}" if action else "Browser"
+        url = str(self.args.get("url") or "").strip()
+        if action in {"open", "navigate"} and url:
+            text += f" {truncate_text(url, 60)}"
+        return f"icon://captive_portal {text}"
 
     @staticmethod
     def _require_ref(ref: int | str | None) -> int | str:
