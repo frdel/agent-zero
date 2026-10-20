@@ -484,6 +484,9 @@ Configure API keys for various service providers directly within the Web UI. Cli
 > [!TIP]
 > For OpenAI-compatible providers (e.g., custom gateways or Z.AI/GLM), add the API key under **External Services -> Other OpenAI-compatible API keys**, then select **OpenAI Compatible** as the provider in model settings.
 
+> [!TIP]
+> **OpenCode Go:** Subscribe at [opencode.ai/auth](https://opencode.ai/auth), paste the key for **OpenCode Go**, then search the model list. Chat, Responses, and Anthropic-style models share that provider. Embedding stays on a separate embedding provider. An existing `OPENCODE_API_KEY` is also accepted.
+
 > [!CAUTION]
 > **GitHub Copilot Provider:** When using the GitHub Copilot provider, after selecting the model and entering your first prompt, the OAuth login procedure will begin. You'll find the authentication code and link in the output logs. Complete the authentication process by following the provided link and entering the code, then you may continue using Agent Zero.
 

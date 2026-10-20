@@ -24,6 +24,7 @@ export const MORE_CLOUD_PROVIDER_IDS = [
   "github_copilot",
   "sambanova",
   "cometapi",
+  "opencode",
   "other",
 ];
 
@@ -220,6 +221,17 @@ export const ONBOARDING_PROVIDER_OVERRIDES = {
     api_key_mode: "none",
     model_list_autoload: true,
     short_description: "High-throughput local OpenAI-compatible serving.",
+  },
+  opencode: {
+    logo: "https://opencode.ai/favicon.ico",
+    setup_url: "https://opencode.ai/auth",
+    api_key_url: "https://opencode.ai/auth",
+    docs_url: "https://opencode.ai/docs/go/",
+    default_chat_model: "glm-5.3-flash",
+    default_utility_model: "glm-5.3-flash",
+    api_key_mode: "required",
+    model_list_autoload: true,
+    short_description: "One key for OpenCode Go coding models.",
   },
   openai: {
     logo: "https://openai.com/favicon.ico",

@@ -147,6 +147,7 @@ def test_onboarding_provider_grid_names_are_present_in_metadata():
         "Moonshot AI",
         "Nebius Token Factory",
         "Z.AI",
+        "OpenCode Go",
         "Mistral AI",
         "Azure OpenAI",
         "llama.cpp",
