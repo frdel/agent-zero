@@ -37,6 +37,14 @@ chat:
       api_base: https://llm.agent-zero.ai/v1
       venice_parameters:
         include_venice_system_prompt: false
+  aistupidlevel:
+    name: AI Stupid Level
+    litellm_provider: openai
+    models_list:
+      endpoint_url: "https://aistupidlevel.info/v1/models"
+    kwargs:
+      a0_api_mode: chat
+      api_base: https://aistupidlevel.info/v1
   anthropic:
     name: Anthropic
     litellm_provider: anthropic
