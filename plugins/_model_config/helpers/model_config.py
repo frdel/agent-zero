@@ -3,6 +3,7 @@ from copy import deepcopy
 
 import models
 from helpers import cache, defer, plugins, files
+from plugins._model_config.helpers.opencode_go import apply_opencode_go_route
 from helpers.extension import call_extensions_async
 from helpers import yaml as yaml_helper
 from helpers.providers import get_provider_config, get_providers
@@ -900,8 +901,9 @@ def build_chat_model(agent=None):
     """Build and return a LiteLLMChatWrapper from config."""
     cfg = get_chat_model_config(agent)
     mc = build_model_config(cfg, models.ModelType.CHAT)
+    kwargs = apply_opencode_go_route(mc.provider, mc.name, mc.build_kwargs(), agent)
     return models.get_chat_model(
-        mc.provider, mc.name, model_config=mc, **mc.build_kwargs()
+        mc.provider, mc.name, model_config=mc, **kwargs
     )
 
 
@@ -909,8 +911,9 @@ def build_utility_model(agent=None):
     """Build and return a LiteLLMChatWrapper for utility tasks."""
     cfg = get_utility_model_config(agent)
     mc = build_model_config(cfg, models.ModelType.CHAT)
+    kwargs = apply_opencode_go_route(mc.provider, mc.name, mc.build_kwargs(), agent)
     return models.get_chat_model(
-        mc.provider, mc.name, model_config=mc, **mc.build_kwargs()
+        mc.provider, mc.name, model_config=mc, **kwargs
     )
 
 
@@ -929,6 +932,7 @@ def build_vision_model(agent=None):
             kwargs[key] = _normalize_kwargs({key: value})[key]
         else:
             kwargs.setdefault(key, default)
+    kwargs = apply_opencode_go_route(mc.provider, mc.name, kwargs, agent)
     return models.get_chat_model(
         mc.provider, mc.name, model_config=mc, **kwargs
     )

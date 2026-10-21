@@ -7,6 +7,7 @@
 ## Ownership
 
 - `helpers/model_config.py` owns config resolution, presets, overrides, and runtime model object construction.
+- `helpers/opencode_go.py` and `opencode_go_models.yaml` own OpenCode Go model-class routing for chat, utility, and vision builds.
 - `api/` owns model config, override, preset, search, and API-key endpoints.
 - `webui/` owns model settings, summaries, switcher, and API-key UI.
 - `extensions/python/startup_migration/` owns conversion from legacy full configs and project presets, followed by first-launch preset initialization.
@@ -35,6 +36,7 @@
 - Changing a model provider in the settings UI must clear `api_base` and `kwargs` because both may be provider-specific.
 - Chat, Vision, and Utility Additional parameters expose `a0_prompt_cache_mode` overrides through existing kwargs; keep cache-mode help out of embedding fields. The shared transport validates and strips this control.
 - Repair provider-specific model-config aliases at the model-config read/build boundary; keep provider-specific repairs out of provider-agnostic core wrappers such as `models.py`.
+- OpenCode Go (`opencode`) is chat-only. `build_chat_model`, `build_utility_model`, and `build_vision_model` apply `opencode_go_models.yaml` before `models.get_chat_model`. Documented Responses models set `a0_api_mode: responses` and disable Responses fallback. Documented Messages models set `a0_litellm_provider: anthropic` and default `api_base` to `https://opencode.ai/zen/go` when the slot has no base. `qwen` and `minimax` prefixes use Messages; `glm` uses Chat Completions. Unknown ids stay on Chat Completions. Explicit slot kwargs win. The same build sets `User-Agent: agent-zero/<version>` and, when the agent has a chat context, a stable `x-opencode-session` shared by utility and vision in that chat.
 - The `Agent.read_prompt/end` Anthropic hook adapts only the two bundled thoughts instructions in main/communication/solving prompt results when the effective main provider or model name contains `anthropic`, or the model name contains `claude` (case-insensitive, regardless of provider). Keep prompt files, JSON fields, history, custom wording, and other models unchanged; standalone communication reads must match main-prompt rendering for native protocol projection. Verify with `tests/test_anthropic_thoughts_prompt.py`.
 - `modelConfig.createPresetEditor()` owns local preset drafts, row actions, and stable UI-only row keys so deletion or renaming cannot rebind nested model fields.
 - Presets may change outside the editor, so the `open_modal_before` hook reloads them before every preset-editor open, including `/presets`, and resolves the chat's active preset unless `openPresetEditor()` pinned one.

@@ -379,3 +379,87 @@ def test_extra_body_defaults_merge_without_provider_specific_rules(monkeypatch):
     assert defaults["kwargs"]["extra_body"] == {"vendor_options": {"enabled": False}, "default_only": 1}
     _, legacy = models._merge_provider_defaults("chat", "test-provider", {"vendor_options": {"enabled": True}})
     assert legacy["extra_body"]["vendor_options"] == {"enabled": True}
+
+
+def test_litellm_provider_override_replaces_yaml_route(monkeypatch):
+    monkeypatch.setattr(models, "get_provider_config", lambda kind, pid: {
+        "litellm_provider": "openai", "kwargs": {"a0_api_mode": "chat"}})
+    monkeypatch.setattr(models, "get_api_key", lambda pid: "None")
+    route, kwargs = models._merge_provider_defaults("chat", "opencode", {
+        "a0_litellm_provider": "anthropic", "api_base": "https://opencode.ai/zen/go"})
+    assert route == "anthropic"
+    assert "a0_litellm_provider" not in kwargs
+    assert kwargs["a0_api_mode"] == "chat"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("model_name,path,auth_header", [
+    ("glm-5.3-flash", "/v1/chat/completions", "authorization"),
+    ("grok-4.7", "/v1/responses", "authorization"),
+    ("qwen3.8-max", "/v1/messages", "x-api-key"),
+])
+async def test_opencode_go_routes_over_http(provider, monkeypatch, model_name, path, auth_header):
+    from pathlib import Path
+    from types import SimpleNamespace
+    import yaml
+    from plugins._model_config.helpers import opencode_go
+
+    definitions = yaml.safe_load((Path(__file__).resolve().parents[1] / "conf/model_providers.yaml").read_text())
+    monkeypatch.setattr(models, "get_provider_config", lambda kind, pid: definitions[kind].get(pid))
+    monkeypatch.setattr(models, "get_api_key", lambda pid: "test-key")
+    monkeypatch.setattr(opencode_go, "agent_zero_user_agent", lambda: "agent-zero/test")
+    agent = SimpleNamespace(context=SimpleNamespace(id="chat-9"))
+    routed = opencode_go.apply_opencode_go_route("opencode", model_name, {}, agent)
+    wrapper = models.get_chat_model("opencode", model_name, **routed)
+    assert "a0_litellm_provider" not in wrapper.kwargs
+    call_kwargs = {**wrapper.kwargs, **provider.kwargs}
+    if path == "/v1/messages":
+        assert wrapper.model_name == f"anthropic/{model_name}"
+        assert wrapper.kwargs["api_base"] == "https://opencode.ai/zen/go"
+        call_kwargs["api_base"] = provider.kwargs["api_base"].removesuffix("/v1")
+        provider.replies.append((200, {"id": "msg_test", "type": "message", "role": "assistant",
+            "model": model_name, "content": [{"type": "text", "text": "Hello"}],
+            "stop_reason": "end_turn", "stop_sequence": None,
+            "usage": {"input_tokens": 10, "output_tokens": 1}}))
+    else:
+        assert wrapper.model_name == f"openai/{model_name}"
+        reply = response_reply(False) if path == "/v1/responses" else chat_reply(False)
+        provider.replies.append((200, reply))
+
+    transport = LiteLLMTransport(
+        model=wrapper.model_name,
+        messages=[{"role": "user", "content": "Hello"}],
+        kwargs=call_kwargs,
+    )
+    await transport.acomplete()
+    method, request_path, body = provider.requests[0]
+    assert method == "POST"
+    assert request_path == path
+    assert body["model"] == model_name
+    assert not any(str(key).startswith("a0_") for key in body)
+    headers = {key.lower(): value for key, value in provider.headers[0].items()}
+    assert headers["user-agent"].startswith("agent-zero/")
+    assert headers["x-opencode-session"] == "agent-zero-chat-9"
+    assert "test-key" in headers[auth_header]
+
+
+@pytest.mark.asyncio
+async def test_opencode_go_responses_do_not_fall_back(provider, monkeypatch):
+    from pathlib import Path
+    import yaml
+    from plugins._model_config.helpers import opencode_go
+
+    definitions = yaml.safe_load((Path(__file__).resolve().parents[1] / "conf/model_providers.yaml").read_text())
+    monkeypatch.setattr(models, "get_provider_config", lambda kind, pid: definitions[kind].get(pid))
+    monkeypatch.setattr(models, "get_api_key", lambda pid: "test-key")
+    routed = opencode_go.apply_opencode_go_route("opencode", "grok-4.7", {}, None)
+    wrapper = models.get_chat_model("opencode", "grok-4.7", **routed)
+    provider.replies.append((404, {"error": {"message": "Responses endpoint not found", "type": "invalid_request_error"}}))
+    transport = LiteLLMTransport(
+        model=wrapper.model_name,
+        messages=[{"role": "user", "content": "Hello"}],
+        kwargs={**wrapper.kwargs, **provider.kwargs},
+    )
+    with pytest.raises(Exception):
+        await transport.acomplete()
+    assert [row[1] for row in provider.requests] == ["/v1/responses"]
