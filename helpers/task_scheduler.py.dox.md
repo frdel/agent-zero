@@ -85,6 +85,7 @@
 
 - `SchedulerTaskList` keeps `usr/scheduler/tasks.json` as its default and prefers it when both formats exist. An existing `tasks.yaml` is supported when no JSON file exists; saves use the same selection and format. Loading never migrates, renames, or creates a second file.
 - JSON retains its existing Pydantic parser and `helpers.files` persistence path. Optional YAML uses `helpers.yaml` with the same task models. Invalid data raises before replacing the in-memory task list; YAML comments and formatting are regenerated on save.
+- Scheduler runs persist their owning task UUID in chat context data as `scheduler_task_uuid`. The `Agent.monologue/end` extension uses this association to atomically change an errored task to idle and persist its recovered result after a successful main-agent chat continuation. Legacy dedicated chats use their context ID as the task UUID; shared chats need the explicit association to avoid updating unrelated tasks. Failed continuations, subordinate results, and tasks no longer in error are ignored. Normal scheduler runs retain their existing callbacks and plan progression.
 - Helper modules own reusable framework APIs and must preserve public callers unless all callers, tests, and docs are updated together.
 - Update this file whenever public functions, classes, persistence behavior, path/security assumptions, side effects, or cross-module contracts change.
 - Observed side-effect areas: filesystem reads, filesystem writes, filesystem deletion, network calls, settings/state persistence, secret handling, scheduler state.
@@ -106,6 +107,7 @@
 - Run targeted tests for changed helper behavior; run security regressions for auth, filesystem, WebSocket, tunnel, upload, or secret-handling helpers.
 - Related tests observed by source search:
   - `tests/test_task_scheduler_timezone.py`
+  - `tests/test_task_scheduler_recovery.py`
   - `tests/test_scheduler_editor.py`
   - `tests/test_timezone_regressions.py`
   - `tests/test_tool_action_contracts.py`

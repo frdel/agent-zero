@@ -911,6 +911,7 @@ class TaskScheduler:
                 PrintStyle.info(f"Scheduler Task '{current_task.name}' started")
 
                 context = await self._get_chat_context(current_task)
+                context.set_data("scheduler_task_uuid", current_task.uuid)
                 AgentContext.use(context.id)
 
                 # Ensure the context is properly registered in the AgentContext._contexts
