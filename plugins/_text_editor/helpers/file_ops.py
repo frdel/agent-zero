@@ -301,6 +301,7 @@ def apply_patch(path: str, edits: list[dict]) -> int:
             edit_idx = 0
             line_no = 1  # 1-based
             total_written = 0
+            last_line_unterminated = False
 
             for raw_line in src:
                 # Process all inserts targeting this line first
@@ -334,11 +335,17 @@ def apply_patch(path: str, edits: list[dict]) -> int:
                 dst.write(raw_line)
                 total_written += 1
                 line_no += 1
+                last_line_unterminated = not raw_line.endswith("\n")
 
             # Remaining edits past end of file
             while edit_idx < len(edits):
                 edit = edits[edit_idx]
                 if edit["content"]:
+                    # Terminate an unterminated last line so appended
+                    # content starts on its own line instead of merging.
+                    if last_line_unterminated:
+                        dst.write("\n")
+                        last_line_unterminated = False
                     dst.write(edit["content"])
                     total_written += _count_content_lines(edit["content"])
                 edit_idx += 1
