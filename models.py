@@ -972,6 +972,7 @@ def _merge_provider_defaults(
     provider_type: ProviderModelType, original_provider: str, kwargs: dict
 ) -> tuple[str, dict]:
     provider_name = original_provider  # default: unchanged
+    litellm_override = kwargs.pop("a0_litellm_provider", None)
     cfg = get_provider_config(provider_type, original_provider)
     if cfg:
         provider_name = cfg.get("litellm_provider", original_provider).lower()
@@ -989,6 +990,9 @@ def _merge_provider_defaults(
                     kwargs[k] = body
                 else:
                     kwargs.setdefault(k, v)
+
+    if isinstance(litellm_override, str) and litellm_override.strip():
+        provider_name = litellm_override.strip().lower()
 
     # Inject API key based on the *original* provider id if still missing
     if "api_key" not in kwargs:
