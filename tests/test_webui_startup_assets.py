@@ -5,14 +5,30 @@ from html.parser import HTMLParser
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
-class ScriptParser(HTMLParser):
+class AssetParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
         self.scripts: list[dict[str, str | None]] = []
+        self.asset_references: list[tuple[str, dict[str, str | None]]] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         if tag == "script":
             self.scripts.append(dict(attrs))
+        if any(name in ("src", "href") for name, _value in attrs):
+            self.asset_references.append((tag, dict(attrs)))
+
+
+def assert_bootstrap_assets_are_self_contained(html: str) -> None:
+    parser = AssetParser()
+    parser.feed(html)
+    # A local tab icon does not execute or block the inline startup document.
+    # Reject external scripts/styles/images while retaining the favicon.
+    assert [(tag, attrs.get("rel"), attrs.get("href"))
+            for tag, attrs in parser.asset_references] == [
+        ("link", "icon", "/public/favicon.svg")
+    ]
+    assert "src" not in parser.asset_references[0][1]
+    assert (PROJECT_ROOT / "webui" / "public" / "favicon.svg").is_file()
 
 
 def test_bootstrap_is_local_and_deferred() -> None:
@@ -25,7 +41,7 @@ def test_bootstrap_is_local_and_deferred() -> None:
 
 def test_classic_startup_scripts_are_deferred() -> None:
     index_html = (PROJECT_ROOT / "webui" / "index.html").read_text(encoding="utf-8")
-    parser = ScriptParser()
+    parser = AssetParser()
     parser.feed(index_html)
 
     blocking_scripts = [
@@ -91,8 +107,7 @@ def test_safe_mode_disables_workers_before_rendering_index_directly() -> None:
     assert "location.replace(target.href)" in safe_html
     assert 'fetch("/ui/asset-bundle"' not in safe_html
     assert "navigator.serviceWorker.register" not in safe_html
-    assert ' src="' not in safe_html
-    assert ' href="/' not in safe_html
+    assert_bootstrap_assets_are_self_contained(safe_html)
     assert 'request.args.get("__direct") == "1"' in ui_server
     assert "return await self.serve_index()" in ui_server
     assert 'files.read_file("webui/safe.html")' in ui_server
@@ -151,8 +166,7 @@ def test_startup_splash_is_handed_to_the_index_and_fades_when_ready() -> None:
     assert '<svg xmlns="http://www.w3.org/2000/svg"' in splash_html
     assert '<main id="startup-transition"' in splash_html
     assert 'localStorage.getItem("darkMode") === "false"' in splash_html
-    assert ' src="' not in splash_html
-    assert ' href="/' not in splash_html
+    assert_bootstrap_assets_are_self_contained(splash_html)
 
 
 def test_generic_loading_indicator_has_a_shared_default_delay() -> None:

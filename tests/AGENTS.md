@@ -16,6 +16,7 @@
 - Tests must not require real API keys, network-only services, private user data, or local `usr/` runtime state. Manual provider demos must guard model creation and requests behind their executable entry point so collection never runs them.
 - Keep tests deterministic and isolated from existing chats, uploads, downloads, plugin state, and settings.
 - Prefer exercising public helper/API contracts over fragile implementation details when practical.
+- Unit tests for an extension body instantiate the owning extension directly; discovery tests isolate configuration and caches. Optional network transports use scoped collaborator fakes without importing their SDKs, restoring both module and package bindings after the test.
 - Security regression tests should assert the protected behavior directly.
 - Launcher gateway tests must cover feature negotiation, authenticated and
   CSRF-protected control, acknowledgement timeout, identity lifecycle,

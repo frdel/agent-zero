@@ -6,7 +6,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from helpers import extension
+from plugins._model_config.extensions.python.user_message_ui._10_check_chat_model import (
+    CheckChatModel,
+)
 
 _PATCH_TARGET = "plugins._model_config.helpers.model_config.get_effective_config"
 
@@ -32,11 +34,7 @@ def test_check_chat_model_flags_unconfigured(monkeypatch):
         lambda config: False,
     )
     data = {"message": "hello", "attachment_paths": []}
-    asyncio.run(
-        extension.call_extensions_async(
-            "user_message_ui", agent=_StubAgent(), data=data
-        )
-    )
+    asyncio.run(CheckChatModel(agent=_StubAgent()).execute(data=data))
     assert data["model_not_configured"] is True
 
 
@@ -47,19 +45,13 @@ def test_check_chat_model_passes_configured(monkeypatch):
         lambda config: True,
     )
     data = {"message": "hello", "attachment_paths": []}
-    asyncio.run(
-        extension.call_extensions_async(
-            "user_message_ui", agent=_StubAgent(), data=data
-        )
-    )
+    asyncio.run(CheckChatModel(agent=_StubAgent()).execute(data=data))
     assert "model_not_configured" not in data
 
 
 def test_check_chat_model_skips_missing_agent():
     data = {"message": "hello", "attachment_paths": []}
-    asyncio.run(
-        extension.call_extensions_async("user_message_ui", agent=None, data=data)
-    )
+    asyncio.run(CheckChatModel(agent=None).execute(data=data))
     assert "model_not_configured" not in data
 
 

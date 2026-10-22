@@ -685,8 +685,11 @@ def test_document_query_prompt_uses_progressive_skill_disclosure():
     assert "local/remote documents" in prompt
     assert "Use vision tools first" in prompt
     assert "fallback OCR" in prompt
-    assert "answering questions over local or remote documents" in skill.description
-    assert "fallback OCR" in skill.description
+    description = skill.description.casefold()
+    # Discovery metadata stays concise; the loaded skill owns detailed routing.
+    for capability in ("read", "extract", "compare", "pdf", "office", "url", "text", "ocr", "vision"):
+        assert capability in description
+    assert any(condition in description for condition in ("fails", "unavailable", "insufficient"))
     assert "### Answer Questions Over A Document" in skill.content
     assert "Use vision tools first" in skill.content
     assert "### Fallback OCR After Vision Cannot Read A Document Image" in skill.content
