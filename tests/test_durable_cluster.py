@@ -226,6 +226,29 @@ def test_ui_hooks_run_on_claimed_worker_and_unknown_preparation_never_replays(no
     assert observed == ["Raw UI input", "Known preparation"] and len(nodes.rig.requests) == 2
 
 
+def test_runner_release_during_command_refresh_does_not_disable_worker(nodes, monkeypatch):
+    run = admit(nodes)
+    assert nodes.second.sync("claim", run["run_id"])
+    nodes.second._restore_claimed(run)
+    refresh = nodes.second.refresh_commands
+    released = []
+
+    def finish_before_refresh(context, run_id):
+        if run_id == run["run_id"] and not released:
+            # scan() has already observed this live claim and active run.
+            nodes.second.sync("transition", run_id, "completed", status="completed")
+            nodes.second.sync("release", run_id)
+            released.append(run_id)
+        return refresh(context, run_id)
+
+    monkeypatch.setattr(nodes.second, "refresh_commands", finish_before_refresh)
+    nodes.second.recover()
+    assert released == [run["run_id"]] and not nodes.second.failed
+    following = nodes.second.communicate_remote(nodes.rig.context.id, UserMessage("Following input", id="after-release"))
+    assert following.result_sync(timeout=10) == "Done"
+    assert not nodes.second.failed and len(nodes.rig.requests) == 1
+
+
 def test_scheduler_projection_uses_compare_and_swap_without_host_files(nodes, monkeypatch, tmp_path):
     from helpers import task_scheduler as scheduler
     monkeypatch.setattr(scheduler, "SCHEDULER_FOLDER", str(tmp_path / "must-not-exist"))

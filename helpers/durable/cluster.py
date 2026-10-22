@@ -289,7 +289,13 @@ class ClusterRecoveryService(RecoveryService):
                         self.sync("release", run_id)
                         self.contexts.pop(run_id, None)
                     continue
-                self.refresh_commands(context, run_id)
+                try:
+                    self.refresh_commands(context, run_id)
+                except (OwnershipError, StaleRunError):
+                    # A runner can finish/release or be reset after owns().
+                    # The next scan removes its stale local context; losing
+                    # one claim is not a failure of this database session.
+                    continue
             for header in self.sync("list_run_headers", ACTIVE):
                 run_id = header["run_id"]
                 if run_id in self.driving or run_id in self._maintenance_tasks:

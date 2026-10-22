@@ -92,4 +92,3 @@ def intervention(owner, context, run_id, command):
         raise
     except Exception:
         raise RecoveryHeld("ui_input_preparation_failed") from None
-
