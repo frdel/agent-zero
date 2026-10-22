@@ -217,6 +217,11 @@ def child_main(root, scenario, action):
             owner.recover()
             context = AgentContext.get("workflow-parent")
             task = context.task
+        if owner.distributed:
+            # Shared scheduler admission returns a ledger handle; the poller
+            # may execute it in a different reconstructed context or host.
+            header = next(row for row in owner.sync("list_run_headers") if row["context_id"] == "workflow-parent")
+            task = owner.dispatch_for_run(header["run_id"])
         task.result_sync(timeout=15)
         runs = owner.sync("list_runs")
         parent = next(run for run in runs if run["context_id"] == context.id)

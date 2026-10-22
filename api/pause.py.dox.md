@@ -16,6 +16,8 @@
 
 ## Runtime Contracts
 
+- Shared mode routes an explicit context ID to `pause_remote` before constructing a local context. The response is a queued command receipt and requested pause value; it does not claim the execution owner is quiescent. A supplied request ID remains stable; older callers receive a generated identity.
+
 - With a durable run, pause/unpause commits the checkpoint control state before reporting success. Unpausing a restored supported run goes through the sole dispatcher; it never creates a second driver. Off-mode behavior is unchanged.
 
 - HTTP handlers must derive from `helpers.api.ApiHandler`; WebSocket handlers must derive from `helpers.ws.WsHandler`.

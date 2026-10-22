@@ -23,6 +23,7 @@ const model = {
   loggedIn: false,
   expandedParents: {},
   deletedContextIds: {},
+  resetRequests: {},
 
   // for convenience
   getSelectedChatId() {
@@ -249,9 +250,9 @@ const model = {
   async resetChat(ctxid = null) {
     try {
       const context = ctxid || this.selected || getContext();
-      await sendJsonData("/chat_reset", {
-        context
-      });
+      const requestId = this.resetRequests[context] || (this.resetRequests[context] = crypto.randomUUID());
+      await sendJsonData("/chat_reset", { context, request_id: requestId });
+      delete this.resetRequests[context];
 
       // Increment reset counter
       if (typeof globalThis.resetCounter === 'number') {

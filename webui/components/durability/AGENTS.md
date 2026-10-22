@@ -15,6 +15,7 @@
 - Display only the backend's bounded public projection. Render server/user values through `x-text` or form models; never HTML.
 - Inventory pages load only on explicit request; Refresh revalidates all loaded pages before replacing rows/selections.
 - An acknowledgment retry resends only the frozen approved payload/ID/version, survives a status refresh, and clears on context switch or unmount.
+- Queued cross-host decisions distinguish database acceptance from worker application. Explicit Refresh checks scoped pending/applied/rejected receipts; close or context switch clears private receipt state.
 - Every mutation includes its original revision/version and a stable request ID across identical retries. Backend authorization remains authoritative.
 - Selection of restored runs is explicit; dependency errors never select related or unseen runs automatically.
 - Completion evidence stops a run without inventing a tool result. A new attempt requires a separate explicit duplicate-effect/cost acknowledgment.

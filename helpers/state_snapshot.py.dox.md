@@ -41,6 +41,7 @@
 
 - Important called helpers/classes observed in the source: `dataclass`, `_build_schema_from_typeddict`, `get_origin`, `timezone.strip`, `StateRequestV1`, `localization.get_timezone`, `localization.set_timezone`, `ctxid.strip`, `_coerce_non_negative_int`, `AgentContext.get_notification_manager`, `notification_manager.output`, `_get_agent_profile_labels`, `ctxs.sort`, `tasks.sort`, `validate_snapshot_schema_v1`, `_coerce_state_request_inputs`, `super.__init__`, `get_args`, `_annotation_to_isinstance_types`, `TypeError`.
 - Snapshot building prunes non-running in-memory contexts that were previously saved but no longer have a `chat.json`, preventing stale sidebar rows after chat files are deleted outside `/chat_remove`. A context absent from the saved-ID listing is rechecked with `persist_chat.chat_file_exists()` before removal so a concurrent first save cannot lose its in-memory context.
+- PostgreSQL snapshots read shared checkpoint context/log projections and preadmission chat projections without constructing/selecting `AgentContext`, running agent hooks, importing local chat files, or pruning the local registry. Reset generations clear displayed logs before the next admission; deleted contexts disappear. Committed checkpoint cursors replay bounded log items when any item changes, including edits at the same log length. Stable run/generation/window GUIDs reset correctly across admission, reset and log-window changes. Shared scheduler definitions supply task rows; notifications remain local and live stream previews do not masquerade as shared committed outcomes.
 - Notification payloads use the manager's matching GUID and cursor from the same atomic read, preventing a concurrent notification from being skipped by the WebUI.
 - `StateRequestV1.collections_delta` is an optional, false-by-default capability. Negotiated state pushes may use `null` for both `contexts` and `tasks` when those collections are unchanged; HTTP polling and legacy WebSocket clients always receive full lists.
 - Keep request/response, tool, or helper semantics documented here at the same time as source changes.
@@ -57,6 +58,7 @@
 - Related tests observed by source search:
   - `tests/test_multi_tab_isolation.py`
   - `tests/test_snapshot_parity.py`
+  - `tests/test_durable_cluster_snapshot.py` (explicit disposable PostgreSQL; two-service result/read/reset selection and registry isolation)
   - `tests/test_snapshot_schema_v1.py`
   - `tests/test_state_monitor.py`
   - `tests/test_state_sync_handler.py`

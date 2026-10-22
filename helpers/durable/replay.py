@@ -21,3 +21,14 @@ AUDITED_WORKFLOWS = {
     ('Delegation', '631918e65e9e189912c9f264160ab8b10ac2a79a9d0f1e7db3a6b30410837bd2'),
     ('ParallelTool', '7e6c3aef4de60b02e483d1e7d862f9dcf5a3f7adf36ff75803625bb8317d8904'),
 }
+
+# Constructor recovery may only repeat these local projection/config readers.
+AUDITED_INIT_HOOKS = {
+    ('InitialMessage', '6f481bc1336f0ff03ba63813a4acc12658322ca4576ca59ce26d9af3c618c7df'),
+    ('LoadProfileSettings', 'bcdb72dd58bf73787ec480de4c9044769b78d563d156dde91988d57e6be09589'),
+}
+
+AUDITED_INITIAL_HISTORY_HOOKS = {
+    ('MaskHistoryContent', 'eb613a29492b4e9fa9b238de709d3fcee747b7ab6dee78e7871b0371dafb3f41'),
+    ('LogPlainResponses', '8e560915a78d34ae28f3d8ca6ef9e2f39cb2af6ad794174eb37626f000d46b2d'),
+}

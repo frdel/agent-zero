@@ -268,12 +268,21 @@ async def build_snapshot_from_request(
 ) -> SnapshotV1:
     """Build a poll-shaped snapshot for both /poll and state_push."""
 
+    from helpers.durable.runtime import service
+    owner = service()
+    shared = owner is not None and getattr(owner, "distributed", False)
     localization = Localization.get()
     previous_timezone = localization.get_timezone()
     localization.set_timezone(request.timezone)
     current_timezone = localization.get_timezone()
-    if current_timezone != previous_timezone:
+    if current_timezone != previous_timezone and not shared:
         _notify_timezone_changed(previous_timezone, current_timezone)
+    if shared:
+        from helpers.durable.projection import build_snapshot as shared_snapshot
+        snapshot = shared_snapshot(owner, request, include_collections=include_collections,
+                                   labels=_get_agent_profile_labels() if include_collections else {})
+        validate_snapshot_schema_v1(snapshot)
+        return snapshot
 
     ctxid = request.context if isinstance(request.context, str) else ""
     ctxid = ctxid.strip()

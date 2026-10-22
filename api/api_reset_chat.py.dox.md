@@ -20,6 +20,8 @@
 
 ## Runtime Contracts
 
+- Shared mode requires a stable `request_id` (HTTP 409 with no effects when absent) and fences the named context through the database coordinator's atomic control receipt without looking up or constructing a local chat. Accepted retries cannot reset newer work. The existing API-key protection remains required; workers discard the previous generation asynchronously.
+
 - HTTP handlers must derive from `helpers.api.ApiHandler`; WebSocket handlers must derive from `helpers.ws.WsHandler`.
 - Update this file whenever request payloads, authentication or CSRF requirements, response shapes, route side effects, or WebSocket event contracts change.
 - `ApiResetChat` is an `ApiHandler`.

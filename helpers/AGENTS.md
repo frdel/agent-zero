@@ -48,4 +48,4 @@
 
 | Child | Scope |
 | --- | --- |
-| [durable/AGENTS.md](durable/AGENTS.md) | Opt-in local recovery storage, private codecs, blob/retention custody, phase-aware runner, scheduler/child adapters and replay audits. |
+| [durable/AGENTS.md](durable/AGENTS.md) | SQLite/PostgreSQL recovery storage, session-fenced workers, durable commands, private codecs, shared payload/retention custody, scheduler/child adapters and replay audits. |

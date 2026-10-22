@@ -92,6 +92,8 @@ async def submit(engine, task, task_context=None, *, occurrence_id=None):
     _audited(task)
     if task.state == scheduler.TaskState.DISABLED:
         raise RuntimeError("Disabled scheduler task cannot be admitted")
+    if getattr(owner, "distributed", False):
+        return await _submit_shared(owner, engine, task, task_context, occurrence_id)
     context = await engine._get_chat_context(task)
     occurrence_id = occurrence_id or "manual:" + uuid.uuid4().hex
     launch = task.plan.should_launch() if isinstance(task, scheduler.PlannedTask) else None
@@ -110,6 +112,49 @@ async def submit(engine, task, task_context=None, *, occurrence_id=None):
     message = UserMessage(message=prompt, system_message=[task.system_prompt], attachments=attachments, id=input_id)
     deferred = owner.submit_owned(context, message, origin)
     _register_occurrence(engine, task.uuid, deferred, context.id, input_id)
+    return True
+
+
+async def _submit_shared(owner, engine, task, task_context, occurrence_id):
+    """Admit from shared history; host-local chat files never seed an occurrence."""
+    from agent import AgentContext, UserMessage
+    from helpers.durable import codec
+    from helpers.durable.cluster import portable, RunHandle, latest_header, seed_context
+    if task.project_name or task.attachments:
+        _held("distributed_scheduler_resource_adapter_required")
+    occurrence_id = occurrence_id or "manual:" + uuid.uuid4().hex
+    input_id = "scheduler:" + hashlib.sha256((task.uuid + ":" + occurrence_id).encode()).hexdigest()
+    headers = owner.sync("list_run_headers", context_id=task.context_id)
+    duplicate = next((row for row in headers if row["input_id"] == input_id), None)
+    if duplicate:
+        handle = RunHandle(owner, duplicate["run_id"])
+        _register_occurrence(engine, task.uuid, handle, task.context_id, input_id)
+        owner.dispatch_for_run(duplicate["run_id"])
+        return True
+    if headers:
+        latest = latest_header(owner, headers)
+        previous = owner.sync("get_run", latest["run_id"])
+        data, generation = seed_context(owner, previous, task.context_id)
+    else:
+        context = AgentContext(scheduler.initialize_agent(), id=task.context_id, name=task.name)
+        context.set_data("scheduler_task_uuid", task.uuid)
+        data = codec.checkpoint(context.agent0)
+        generation = owner.sync("document_generation", task.context_id)
+    launch = task.plan.should_launch() if isinstance(task, scheduler.PlannedTask) else None
+    origin = {"kind": "scheduler", "task_uuid": task.uuid, "context_id": task.context_id,
+              "occurrence_id": occurrence_id, "implementation": implementation_fingerprint(),
+              "configuration": _configuration(task), "launch_time": _utc(launch) if launch else None}
+    data.update(origin=origin, paused=False, terminal=None, intervention=None, result=None, ui_input_pending=False)
+    data["context"]["data"]["scheduler_task_uuid"] = task.uuid
+    prompt = f"## Context:\n{task_context}\n\n## Task:\n{task.prompt}" if task_context else f"## Task:\n{task.prompt}"
+    message = UserMessage(prompt, system_message=[task.system_prompt], id=input_id)
+    payload = owner._mask_payload(task.context_id, codec.message_payload(message))
+    if not portable(data, payload):
+        _held("distributed_scheduler_resource_adapter_required")
+    run = owner.sync("admit", task.context_id, input_id, payload, data, expected_generation=generation)
+    handle = RunHandle(owner, run["run_id"])
+    _register_occurrence(engine, task.uuid, handle, task.context_id, input_id)
+    owner.dispatch_for_run(run["run_id"])
     return True
 
 

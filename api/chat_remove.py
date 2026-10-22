@@ -7,6 +7,11 @@ from helpers.task_scheduler import TaskScheduler
 class RemoveChat(ApiHandler):
     async def process(self, input: Input, request: Request) -> Output:
         ctxid = input.get("context", "")
+        try:
+            persist_chat.ensure_removal_supported(ctxid)
+        except persist_chat.SharedDeletionHeld as exc:
+            import json
+            return Response(json.dumps({"error": str(exc)}), status=409, mimetype="application/json")
 
         scheduler = TaskScheduler.get()
         scheduler.cancel_tasks_by_context(ctxid, terminate_thread=True)

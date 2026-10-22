@@ -30,10 +30,20 @@ class Durability(ApiHandler):
                 return review.restore_select(owner, input.get("run_ids"), input.get("versions"),
                                              _text(input, "epoch"), request_id)
             context_id = _text(input, "context")
+            if action == "command_status":
+                return review.command_status(owner, context_id, _text(input, "run_id"), request_id)
             if action == "resolve":
                 return review.resolve(owner, context_id, _text(input, "run_id"), _text(input, "version"),
                                       input.get("decision"), input.get("note", ""), request_id,
                                       _text(input, "call_id", required=False))
+            if review.distributed(owner):
+                if action == "document_read":
+                    return {"document": review.read_shared_document(owner, context_id, _text(input, "kind"))}
+                from agent import AgentContext
+                candidate = AgentContext.get(context_id)
+                turn = getattr(candidate, "_durable_turn", None) if candidate else None
+                if not turn or not owner.sync("owns", turn.run_id):
+                    return self.error("Shared document edits require the execution owner's masking and policy context. Your draft was not saved.", 409)
             context = review.context_for(context_id)
             if action == "document_read":
                 return {"document": documents.read(owner, context, _text(input, "kind"))}
@@ -64,7 +74,7 @@ class Durability(ApiHandler):
                 return result
             raise ValueError("Unknown durability action")
         except review.ReviewError as exc:
-            return self.error(str(exc), 400, required_ids=exc.required_ids)
+            return self.error(str(exc), exc.status, required_ids=exc.required_ids)
         except ConflictError:
             return self.error("The saved version changed. Refresh and review the current state.", 409)
         except StaleRunError:

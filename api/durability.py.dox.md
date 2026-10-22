@@ -2,6 +2,8 @@
 
 ## Purpose and contract
 
+Shared PostgreSQL status/document reads use committed masked projections without constructing live contexts. Remote decisions queue exact, versioned requests for the execution owner; `command_status` requires the same context/run/request identity and returns only `pending`, `applied`, or fixed-safe `rejected` state. Earlier restore-epoch commands are rejected. Stop remains a direct versioned database control, including for unreadable or unselected checkpoints. Remote document edits hold with HTTP 409 unless the local process owns the live masking/policy context, preserving the user's draft.
+
 `POST /durability` uses the standard authenticated, origin-checked and CSRF-protected `ApiHandler` route. `status` returns active work first with `offset`, `next_offset` and `total`, at most 50 masked run summaries per page, each with at most 20 logical calls and the next two pending document proposals, opaque review versions, safe action flags and restore epoch. Resolving proposals exposes subsequent conflicts. It never creates a context or returns provider request envelopes, tool arguments or raw exceptions.
 
 `resolve` requires context/run identity, the exact review version, a stable request ID and a decision. Completion/non-completion confirmations require evidence and stop the run and owned descendants without fabricating an outcome. Resume and bounded new attempts pass current compatibility, control, policy and replay checks. Repeating an accepted request cannot dispatch another attempt.

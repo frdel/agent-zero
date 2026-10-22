@@ -54,6 +54,28 @@ def save_tmp_chat(context: AgentContext):
     if context.type == AgentContextType.BACKGROUND:
         return
 
+    from helpers.durable.runtime import service
+    owner = service()
+    if owner and getattr(owner, "distributed", False):
+        headers = owner.sync("list_run_headers", context_id=context.id)
+        turn = getattr(context, "_durable_turn", None)
+        if headers and (not turn or not owner.sync("owns", turn.run_id)):
+            return  # A requester-side shadow cannot publish history or policy.
+        from helpers.durable import codec
+        value = codec.masked(context.agent0, _serialize_context(context))
+        key = "chat:" + context.id
+        previous = owner.sync("get_projection", key)
+        if previous and not headers and previous["value"] != value:
+            raise ValueError("Shared chat genesis already exists with different content")
+        owner.sync("put_projection", key, value, previous["version"] if previous else 0)
+        if not headers:
+            genesis = codec.checkpoint(context.agent0)
+            genesis_key = "genesis:" + context.id
+            prior_genesis = owner.sync("get_projection", genesis_key)
+            if prior_genesis and prior_genesis["value"] != genesis:
+                raise ValueError("Shared chat genesis already exists with different content")
+            owner.sync("put_projection", genesis_key, genesis, prior_genesis["version"] if prior_genesis else 0)
+
     path = _get_chat_file_path(context.id)
     data = _serialize_context(context)
     js = _safe_json_serialize(data, ensure_ascii=False)
@@ -72,6 +94,12 @@ def save_tmp_chats():
 
 def load_tmp_chats():
     """Load all contexts from the chats folder"""
+    from helpers.durable.runtime import service
+    owner = service()
+    if owner and getattr(owner, "distributed", False):
+        # Workers reconstruct only after a database claim. Host-local chat.json
+        # is neither a migration source nor an execution authority in this mode.
+        return []
     _convert_v080_chats()
     folders = files.list_files(CHATS_FOLDER, "*")
     json_files = []
@@ -100,6 +128,10 @@ def _get_chat_file_path(ctxid: str):
 
 def chat_file_exists(ctxid: str) -> bool:
     """True if this context has a persisted chat.json on disk."""
+    from helpers.durable.runtime import service
+    owner = service()
+    if owner and getattr(owner, "distributed", False):
+        return bool(owner.sync("get_projection", "chat:" + ctxid) or owner.sync("list_run_headers", context_id=ctxid))
     return files.exists(_get_chat_file_path(ctxid))
 
 
@@ -130,6 +162,10 @@ def mark_chat_saved(context: AgentContext) -> None:
 
 
 def saved_chat_ids() -> set[str]:
+    from helpers.durable.runtime import service
+    owner = service()
+    if owner and getattr(owner, "distributed", False):
+        return {row["context_id"] for row in owner.sync("list_run_headers")}
     return {
         files.basename(files.dirname(path))
         for path in files.find_existing_paths_by_pattern(
@@ -166,10 +202,24 @@ def export_json_chat(context: AgentContext):
     return js
 
 
+class SharedDeletionHeld(RuntimeError):
+    """Shared payloads remain available until provider cleanup has an owner."""
+
+
+def ensure_removal_supported(ctxid):
+    from helpers.durable.runtime import service
+    owner = service()
+    if owner and getattr(owner, "distributed", False) and (
+            owner.sync("list_run_headers", context_id=ctxid) or owner.sync("get_projection", "chat:" + ctxid)
+            or owner.sync("get_projection", "genesis:" + ctxid)):
+        raise SharedDeletionHeld("Shared chat removal requires execution-owner provider cleanup. No chat records were removed.")
+
+
 def remove_chat(ctxid):
     """Remove a chat or task context"""
     if not isinstance(ctxid, str) or not ctxid.strip():
         raise ValueError("remove_chat: context id must not be empty")
+    ensure_removal_supported(ctxid)
     from helpers.durable.runtime import control, service
     owner = service()
     # Fence execution before reading known outcomes, but retain private ledger

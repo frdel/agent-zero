@@ -40,7 +40,13 @@ async def scheduler_tick():
     # Run the scheduler tick
     await scheduler.tick()
 
-    # Run job_loop extensions (e.g. email polling)
+    # Stateful integration pollers must have one session owner across hosts.
+    # Their own delivery/idempotency adapters still own external effects.
+    from helpers.durable.runtime import service
+    owner = service()
+    if owner and owner.distributed:
+        if owner.failed or not owner.enabled or not owner.sync("try_role", "job-loop"):
+            return
     from helpers.extension import call_extensions_async
     await call_extensions_async("job_loop")
 

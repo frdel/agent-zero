@@ -26,6 +26,27 @@ class Message(ApiHandler):
         }
 
     async def communicate(self, input: dict, request: Request):
+        from helpers.durable.runtime import service
+        owner = service()
+        new_shared_context_id = None
+        if owner and getattr(owner, "distributed", False):
+            multipart = (request.content_type or "").startswith("multipart/form-data")
+            data = request.form if multipart else (request.get_json() or {})
+            ctxid = data.get("context", "")
+            if not ctxid:
+                import uuid
+                initial_id = data.get("message_id")
+                new_shared_context_id = (uuid.uuid5(uuid.NAMESPACE_URL, "agent-zero/shared-ui/" + initial_id).hex
+                                         if isinstance(initial_id, str) and initial_id else uuid.uuid4().hex)
+                ctxid = new_shared_context_id
+            if multipart and request.files.getlist("attachments"):
+                raise ValueError("Shared recovery cannot transfer host-local attachments. Submit portable text without attachments.")
+            if ctxid and (owner.sync("list_run_headers", context_id=ctxid) or owner.sync("get_projection", "genesis:" + ctxid)):
+                from types import SimpleNamespace
+                message = UserMessage(message=data.get("text", ""), id=data.get("message_id") or "")
+                # Remote owners apply message hooks/logging at their own safe
+                # boundary. Never run them against a stale requester-side chat.
+                return owner.communicate_remote(ctxid, message, ui=True), SimpleNamespace(id=ctxid)
         # Handle both JSON and multipart/form-data
         if request.content_type.startswith("multipart/form-data"):
             text = request.form.get("text", "")
@@ -60,7 +81,13 @@ class Message(ApiHandler):
         message = text
 
         # Obtain agent context
+        if new_shared_context_id and not ctxid:
+            ctxid = new_shared_context_id
         context = self.use_context(ctxid)
+
+        if owner and getattr(owner, "distributed", False):
+            return owner.admit_from_context(context, UserMessage(message=message, attachments=attachment_paths,
+                                                               id=message_id or ""), ui=True), context
 
         # call extension point, alow it to modify data
         data = { "message": message, "attachment_paths": attachment_paths }

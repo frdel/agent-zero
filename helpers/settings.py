@@ -56,7 +56,7 @@ def get_default_value(name: str, value: T) -> T:
 
 class Settings(TypedDict):
     version: str
-    durability_backend: str
+    durability_backend: Literal["off", "local", "postgres"]
     durability_retention_runs: int
     durability_retention_days: int
 

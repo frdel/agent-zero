@@ -297,6 +297,10 @@ class LocalStore:
         for statement in statements:
             self._connection.execute(statement)
 
+    def _now(self):
+        """The backend owns timestamps used for retention and audit metadata."""
+        return time.time()
+
     def _ensure_open(self):
         if os.getpid() != self._pid:
             raise OwnershipError("Recovery store must not be reused after fork")
@@ -410,7 +414,7 @@ class LocalStore:
             return encoded
         digest = hashlib.sha256(data).hexdigest()
         self._publish_blob(data, digest)
-        self._connection.execute("INSERT OR IGNORE INTO blobs(digest,size,created_at) VALUES(?,?,?)", (digest, len(data), time.time()))
+        self._connection.execute("INSERT OR IGNORE INTO blobs(digest,size,created_at) VALUES(?,?,?)", (digest, len(data), self._now()))
         size = self._connection.execute("SELECT size FROM blobs WHERE digest=?", (digest,)).fetchone()["size"]
         if size != len(data):
             raise IntegrityError("Recovery blob catalog size mismatch")
@@ -446,7 +450,7 @@ class LocalStore:
         encoded = _json(payload)
         return self._connection.execute(
             "INSERT INTO events(run_id,kind,payload,payload_digest,created_at) VALUES(?,?,?,?,?)",
-            (run_id, kind, self._encode(encoded), _digest(encoded), time.time()),
+            (run_id, kind, self._encode(encoded), _digest(encoded), self._now()),
         ).lastrowid
 
     def _run(self, run_id):
@@ -491,7 +495,7 @@ class LocalStore:
                 generation = context["generation"]
             if self._connection.execute("SELECT 1 FROM runs WHERE context_id=? AND status IN ('running','blocked','attention')", (context_id,)).fetchone():
                 raise ConflictError("Context already has an active durable run")
-            run_id, now = uuid.uuid4().hex, time.time()
+            run_id, now = uuid.uuid4().hex, self._now()
             self._connection.execute(
                 """INSERT INTO runs(run_id,context_id,input_id,input_payload,input_digest,generation,
                     phase,status,checkpoint,checkpoint_digest,created_at,updated_at) VALUES(?,?,?,?,?,?,'admitted','running',?,?,?,?)""",
@@ -605,7 +609,7 @@ class LocalStore:
     def _apply_document(self, context, edit, mutation_id, *, run_id=None, call_id=None):
         encoded = _json(edit["value"])
         revision = edit["expected_revision"] + 1
-        now = time.time()
+        now = self._now()
         self._connection.execute("""INSERT INTO documents(context_id,kind,schema_version,revision,value,digest,generation,updated_at)
             VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(context_id,kind) DO UPDATE SET schema_version=excluded.schema_version,
             revision=excluded.revision,value=excluded.value,digest=excluded.digest,generation=excluded.generation,updated_at=excluded.updated_at""",
@@ -664,7 +668,7 @@ class LocalStore:
                 self._connection.execute("""INSERT INTO document_conflicts(conflict_id,run_id,call_id,kind,schema_version,
                     expected_revision,current_revision,proposed,digest,status,reason,created_at) VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?)""",
                     (uuid.uuid4().hex, run["run_id"], call_id, edit["kind"], edit["schema_version"], edit["expected_revision"], current,
-                     self._encode(encoded), _digest(encoded), "cancelled" if cancelled else problem or "transaction_conflict", time.time()))
+                     self._encode(encoded), _digest(encoded), "cancelled" if cancelled else problem or "transaction_conflict", self._now()))
             return
         context = self._document_context(run["context_id"], run["generation"])
         for edit in edits:
@@ -745,7 +749,7 @@ class LocalStore:
 
     def _remember_request(self, operation, run_id, request_id, arguments, result):
         self._connection.execute("""INSERT INTO review_requests(request_id,operation,run_id,fingerprint,request,result,created_at)
-            VALUES(?,?,?,?,?,?,?)""", (request_id, operation, run_id, _digest(_json(arguments)), _json(arguments), _json(result), time.time()))
+            VALUES(?,?,?,?,?,?,?)""", (request_id, operation, run_id, _digest(_json(arguments)), _json(arguments), _json(result), self._now()))
         return result
 
     def get_review_request(self, run_id, request_id):
@@ -801,7 +805,7 @@ class LocalStore:
                     raise StaleRunError("Recovery run is not selected or its payload expired")
             else:
                 self._control_rows(list(dict.fromkeys([run["context_id"], *related])), "cancel")
-            self._connection.execute("INSERT INTO review_resolutions(run_id,call_id,decision,note,request_id,created_at) VALUES(?,?,?,?,?,?)", (run_id, call_id, decision, note, request_id, time.time()))
+            self._connection.execute("INSERT INTO review_resolutions(run_id,call_id,decision,note,request_id,created_at) VALUES(?,?,?,?,?,?)", (run_id, call_id, decision, note, request_id, self._now()))
             seq = self._event(run_id, "operator_resolution", {"decision": decision, "call_id": call_id, "request_id": request_id, "phase": phase})
             if decision == "resume":
                 self._review_phase(run, phase, seq)
@@ -816,7 +820,7 @@ class LocalStore:
         checkpoint["paused"] = False
         encoded = _json(checkpoint)
         self._connection.execute("UPDATE runs SET status='running',phase=?,checkpoint=?,checkpoint_digest=?,checkpoint_seq=?,updated_at=? WHERE run_id=?",
-                                 (phase, self._encode(encoded), _digest(encoded), sequence, time.time(), run["run_id"]))
+                                 (phase, self._encode(encoded), _digest(encoded), sequence, self._now(), run["run_id"]))
 
     def select_restore(self, run_ids, expected_epoch, versions, request_id):
         if isinstance(run_ids, (str, bytes)):
@@ -837,7 +841,7 @@ class LocalStore:
                 if run["status"] not in _ACTIVE or run["payloads_pruned"]:
                     raise StaleRunError("Only current active runs may be selected")
             for run_id in selected:
-                self._connection.execute("INSERT OR REPLACE INTO restore_selections(run_id,epoch,request_id,selected_at) VALUES(?,?,?,?)", (run_id, expected_epoch, request_id, time.time()))
+                self._connection.execute("INSERT OR REPLACE INTO restore_selections(run_id,epoch,request_id,selected_at) VALUES(?,?,?,?)", (run_id, expected_epoch, request_id, self._now()))
                 self._event(run_id, "restore_selected", {"epoch": expected_epoch, "request_id": request_id})
             result = {"epoch": expected_epoch, "run_ids": selected, "versions": {item: self.get_review(item)["version"] for item in selected}}
             return self._remember_request("restore_selection", None, request_id, arguments, result)
@@ -873,7 +877,7 @@ class LocalStore:
                     raise ConflictError("Document schema changed during review")
                 context = self._document_context(run["context_id"], run["generation"])
                 self._apply_document(context, edit, mutation_id, run_id=run_id, call_id=conflict["call_id"])
-            self._connection.execute("UPDATE document_conflicts SET status='resolved',decision=?,resolved_at=? WHERE conflict_id=?", (decision, time.time(), conflict_id))
+            self._connection.execute("UPDATE document_conflicts SET status='resolved',decision=?,resolved_at=? WHERE conflict_id=?", (decision, self._now(), conflict_id))
             self._event(run_id, "document_conflict_resolved", {"conflict_id": conflict_id, "decision": decision})
             result = {"run_id": run_id, "conflict_id": conflict_id, "decision": decision, "version": self.get_review(run_id)["version"],
                       "epoch": self.get_restore_state()["epoch"]}
@@ -925,8 +929,8 @@ class LocalStore:
             attempt = len(aliases) + 2
             alias = _identity(f"{logical_call_id}:attempt:{attempt}", "retry call id")
             epoch = self.get_restore_state()["epoch"]
-            self._connection.execute("INSERT INTO retry_grants(run_id,logical_call_id,call_id,attempt,epoch,state,request_id,created_at) VALUES(?,?,?,?,?,'pending',?,?)", (run_id, logical_call_id, alias, attempt, epoch, request_id, time.time()))
-            self._connection.execute("INSERT INTO review_resolutions(run_id,call_id,decision,note,request_id,created_at) VALUES(?,?,'new_attempt',?,?,?)", (run_id, logical_call_id, note, request_id, time.time()))
+            self._connection.execute("INSERT INTO retry_grants(run_id,logical_call_id,call_id,attempt,epoch,state,request_id,created_at) VALUES(?,?,?,?,?,'pending',?,?)", (run_id, logical_call_id, alias, attempt, epoch, request_id, self._now()))
+            self._connection.execute("INSERT INTO review_resolutions(run_id,call_id,decision,note,request_id,created_at) VALUES(?,?,'new_attempt',?,?,?)", (run_id, logical_call_id, note, request_id, self._now()))
             seq = self._event(run_id, "retry_granted", {"logical_call_id": logical_call_id, "call_id": alias, "attempt": attempt, "epoch": epoch, "phase": phase})
             self._review_phase(run, phase, seq)
             result = {**self.get_retry(run_id, logical_call_id), "version": self.get_review(run_id)["version"]}
@@ -947,7 +951,7 @@ class LocalStore:
                 raise ConflictError("Logical invocation is no longer unresolved")
             if self._call(run_id, grant["call_id"]) is not None:
                 raise ConflictError("Retry attempt already owns an intent")
-            now = time.time()
+            now = self._now()
             self._connection.execute("""INSERT INTO calls(run_id,call_id,kind,payload,fingerprint,replay,status,created_at,updated_at,logical_call_id,attempt)
                 VALUES(?,?,?,?,?,?,'intent',?,?,?,?)""", (run_id, grant["call_id"], original["kind"], self._encode(_json(original["payload"])),
                     original["fingerprint"], original["replay"], now, now, logical_call_id, grant["attempt"]))
@@ -1015,9 +1019,9 @@ class LocalStore:
             self._writable(run_id)
             seq = self._event(run_id, "transition", {"phase": phase, "status": status, "detail": payload})
             if encoded is None:
-                self._connection.execute("UPDATE runs SET phase=?,status=?,updated_at=? WHERE run_id=?", (phase, status, time.time(), run_id))
+                self._connection.execute("UPDATE runs SET phase=?,status=?,updated_at=? WHERE run_id=?", (phase, status, self._now(), run_id))
             else:
-                self._connection.execute("UPDATE runs SET phase=?,status=?,checkpoint=?,checkpoint_digest=?,checkpoint_seq=?,updated_at=? WHERE run_id=?", (phase, status, self._encode(encoded), _digest(encoded), seq, time.time(), run_id))
+                self._connection.execute("UPDATE runs SET phase=?,status=?,checkpoint=?,checkpoint_digest=?,checkpoint_seq=?,updated_at=? WHERE run_id=?", (phase, status, self._encode(encoded), _digest(encoded), seq, self._now(), run_id))
             return self._run(run_id)
 
     def _call(self, run_id, call_id):
@@ -1057,7 +1061,7 @@ class LocalStore:
                 if existing["fingerprint"] != fingerprint:
                     raise ConflictError("Call identity already has different content")
                 return existing
-            now = time.time()
+            now = self._now()
             self._connection.execute("INSERT INTO calls(run_id,call_id,kind,payload,fingerprint,replay,status,created_at,updated_at) VALUES(?,?,?,?,?,?,'intent',?,?)", (run_id, call_id, kind, self._encode(encoded), fingerprint, replay, now, now))
             self._event(run_id, "call_intent", {"call_id": call_id, "kind": kind, "replay": replay})
             return self._call(run_id, call_id)
@@ -1085,12 +1089,12 @@ class LocalStore:
                     raise ConflictError("Call document edits already have different content")
                 return call
             self._stage_documents(run, call_id, edits)
-            self._connection.execute("UPDATE calls SET status='completed',result=?,result_digest=?,document_edits_digest=?,updated_at=? WHERE run_id=? AND call_id=?", (self._encode(encoded), _digest(encoded), edits_digest, time.time(), run_id, call_id))
+            self._connection.execute("UPDATE calls SET status='completed',result=?,result_digest=?,document_edits_digest=?,updated_at=? WHERE run_id=? AND call_id=?", (self._encode(encoded), _digest(encoded), edits_digest, self._now(), run_id, call_id))
             seq = self._event(run_id, "call_result", {"call_id": call_id, "phase": phase, "checkpoint": projection is not None})
             if projection is not None:
-                self._connection.execute("UPDATE runs SET checkpoint=?,checkpoint_digest=?,checkpoint_seq=?,phase=?,updated_at=? WHERE run_id=?", (self._encode(projection), _digest(projection), seq, phase or run["phase"], time.time(), run_id))
+                self._connection.execute("UPDATE runs SET checkpoint=?,checkpoint_digest=?,checkpoint_seq=?,phase=?,updated_at=? WHERE run_id=?", (self._encode(projection), _digest(projection), seq, phase or run["phase"], self._now(), run_id))
             elif phase is not None:
-                self._connection.execute("UPDATE runs SET phase=?,updated_at=? WHERE run_id=?", (phase, time.time(), run_id))
+                self._connection.execute("UPDATE runs SET phase=?,updated_at=? WHERE run_id=?", (phase, self._now(), run_id))
             return self._call(run_id, call_id)
 
     def get_call(self, run_id, call_id):
@@ -1153,7 +1157,7 @@ class LocalStore:
                                         or not math.isfinite(max_age_days) or max_age_days < 0):
             raise ValueError("Retention age must be nonnegative days or None")
         protected = {_identity(run_id, "protected run id") for run_id in protected_run_ids}
-        cutoff = None if max_age_days is None else time.time() - max_age_days * 86400
+        cutoff = None if max_age_days is None else self._now() - max_age_days * 86400
         counts = {"runs_pruned": 0, "calls_pruned": 0, "events_pruned": 0}
         with self._transaction():
             eligible = self._connection.execute("""
@@ -1229,7 +1233,7 @@ class LocalStore:
             for run in runs:
                 if run["status"] in _ACTIVE:
                     self._event(run["run_id"], action)
-                    self._connection.execute("UPDATE runs SET status='cancelled',phase=?,updated_at=? WHERE run_id=?", (action, time.time(), run["run_id"]))
+                    self._connection.execute("UPDATE runs SET status='cancelled',phase=?,updated_at=? WHERE run_id=?", (action, self._now(), run["run_id"]))
                 if action == "delete":
                     self._connection.execute("UPDATE runs SET input_payload=NULL,input_digest=NULL,checkpoint=NULL,checkpoint_digest=NULL,payloads_pruned=1 WHERE run_id=?", (run["run_id"],))
                     self._connection.execute("UPDATE events SET payload=NULL,payload_digest=NULL,payloads_pruned=1 WHERE run_id=?", (run["run_id"],))

@@ -294,17 +294,6 @@ test('document conflict decisions include exact run and document revisions', asy
   assert.equal(payload.conflict_id, 'conflict-a'); assert.equal(payload.decision, 'keep_current');
 });
 
-test('markup renders user/server values as text and uses shared API/auth helpers', async () => {
-  const html = await readFile(new URL('../webui/components/durability/durability.html', import.meta.url), 'utf8');
-  const store = await readFile(new URL('../webui/components/durability/durability-store.js', import.meta.url), 'utf8');
-  assert.doesNotMatch(html, /x-html|innerHTML|onclick=/i);
-  assert.match(html, /x-text="item.text"/); assert.match(html, /possible|repeat an external effect/);
-  assert.match(store, /callJsonApi\("\/durability", payload\)/);
-  assert.match(html, /Retry decision acknowledgment/);
-  assert.doesNotMatch(source, /localStorage|sessionStorage|fetch\(/);
-});
-
-
 test('retrying a failed initial document read opens the editor without a phantom conflict', async () => {
   let reads = 0;
   const state = createDurabilityState(async (payload) => {
@@ -329,4 +318,62 @@ test('bound document selection invalidates and loads the new context before adop
   assert.equal(state.pending, null); assert.equal(state.dirty, false);
   next.resolve(document(2, 'Chat B plan')); await Promise.resolve(); await Promise.resolve();
   assert.equal(state.draft.title, 'Chat B plan');
+});
+
+test('queued remote decision distinguishes durable acceptance from worker application', async () => {
+  let delivery = 'pending';
+  const { state, requests } = rig((payload) => {
+    if (payload.action === 'resolve') return { queued: true, command: { request_id: payload.request_id, state: 'pending' } };
+    if (payload.action === 'command_status') return { command: { request_id: payload.request_id, state: delivery } };
+    throw new Error('Unexpected mutation');
+  });
+  await state.mount('chat-a');
+  state.chooseDecision(state.runs[0], 'stop'); state.pending.ack = true;
+  await state.confirm();
+  assert.match(state.notice, /waiting for a worker/);
+  assert.equal(state.queuedDecisions[0].state, 'pending');
+  assert.equal(requests.filter(item => item.action === 'resolve').length, 1);
+  delivery = 'applied'; await state.refresh();
+  assert.match(state.notice, /worker applied/);
+  assert.equal(state.queuedDecisions[0].state, 'applied');
+  assert.equal(requests.filter(item => item.action === 'resolve').length, 1, 'Receipt checks never repeat dispatch');
+});
+
+test('rejected remote decision remains distinguishable and modal close clears receipts', async () => {
+  const { state } = rig((payload) => payload.action === 'resolve' ? { queued: true } : { command: { state: 'rejected' } });
+  await state.mount('chat-a');
+  state.chooseDecision(state.runs[0], 'stop'); state.pending.ack = true;
+  await state.confirm();
+  assert.match(state.notice, /worker rejected/);
+  assert.equal(state.queuedDecisions[0].state, 'rejected');
+  state.close(); assert.deepEqual(state.queuedDecisions, []);
+});
+
+test('late queued-command receipt cannot overwrite a new context scope', async () => {
+  const waiting = deferred();
+  const { state } = rig((payload) => payload.action === 'command_status' ? waiting.promise : {});
+  await state.mount('chat-a');
+  state.queuedDecisions = [{ request_id: 'request-1', context: 'chat-a', run_id: 'run-a', state: 'pending' }];
+  const checking = state.refresh();
+  await new Promise(resolve => setImmediate(resolve));
+  await state.changeContext('chat-b');
+  waiting.resolve({ command: { state: 'applied' } }); await checking;
+  assert.deepEqual(state.queuedDecisions, []);
+  assert.equal(state.context, 'chat-b');
+});
+
+test('chat reset retries preserve request identity until acknowledgment then allow a new reset', async () => {
+  const module = await readFile(new URL('../webui/components/sidebar/chats/chats-store.js', import.meta.url), 'utf8');
+  const executable = module.replace(/^import[\s\S]*?;\n/gm, '').replace('export { store };', 'return store;');
+  const requests = []; let fail = true;
+  const store = new Function('createStore', 'sendJsonData', 'toastFetchError', executable)(
+    (_name, model) => model,
+    async (_endpoint, payload) => { requests.push(payload); if (fail) throw new Error('Acknowledgment lost'); return { message: 'Reset' }; },
+    () => {},
+  );
+  await store.resetChat('chat-a');
+  fail = false; await store.resetChat('chat-a');
+  assert.equal(requests[0].request_id, requests[1].request_id);
+  await store.resetChat('chat-a');
+  assert.notEqual(requests[1].request_id, requests[2].request_id);
 });

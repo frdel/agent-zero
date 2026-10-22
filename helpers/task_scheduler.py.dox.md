@@ -84,6 +84,7 @@
 ## Runtime Contracts
 
 - Durable scheduler cancellation fences the owned workflow before cancelling its handle and never terminates the shared AgentContext event loop. Legacy scheduler handles retain their explicit thread-termination option. When called inside an API event loop, the checked cancellation projection runs on one helper thread so planned occurrences are consumed without nesting asyncio loops.
+- PostgreSQL mode reads/writes the authoritative `scheduler:tasks` database projection with revision CAS; stale saves fail instead of replacing newer task edits. Host task files are ignored, and a session advisory role permits only one due-task poller at a time. Shared occurrences seed history from database admission order and reject local projects/attachments without an adapter.
 - Durable registration callbacks bind the concrete future and input identity; completion of an earlier occurrence cannot unregister a newer invocation that reuses the same DeferredTask object.
 
 - `SchedulerTaskList` keeps `usr/scheduler/tasks.json` as its default and prefers it when both formats exist. An existing `tasks.yaml` is supported when no JSON file exists; saves use the same selection and format. Loading never migrates, renames, or creates a second file.

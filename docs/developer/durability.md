@@ -1,10 +1,14 @@
-# Local recovery pilot
+# Durable execution and recovery
 
-Local durability is an opt-in first implementation of restart recovery. It uses
-Python's standard-library SQLite and adds no database service or package dependency.
-The default is `off`. Local mode requires one framework process per persistent data
-root on a local filesystem with working OS locks and fsync. Network filesystems
-and distributed workers are unsupported.
+Durability is opt-in; the default is `off`. The `local` backend uses SQLite and
+supports one framework process per local persistent data root. The `postgres`
+backend coordinates workers across processes and hosts through one PostgreSQL
+database, including recovery payloads and scheduler state. See
+[PostgreSQL workers](durability-postgres.md) for configuration, ownership,
+remote controls, backup, and portability requirements.
+
+The local backend requires working OS locks and fsync. Sharing a SQLite data root
+over a network filesystem does not provide distributed execution.
 
 ## Enable and inspect
 
@@ -32,7 +36,7 @@ action was not automatically retried. Open **More → Recovery & documents** to 
 
 ## Current coverage
 
-| Boundary | Local pilot behavior |
+| Boundary | Durable behavior |
 | --- | --- |
 | New direct chat input | Input identity, genesis checkpoint and runnable run commit atomically before task dispatch. Repeated message IDs reuse the recorded run; changed content conflicts. |
 | Model response | Normalized result and phase checkpoint commit together before completion hooks. Recorded results are reused without a replacement provider call. Unresolved requests hold. Framework retries are disabled for these calls. |
@@ -41,15 +45,14 @@ action was not automatically retried. Open **More → Recovery & documents** to 
 | Interrupted `never` body or postprocessing | Hold. A committed body is never reexecuted just to finish hooks/history. |
 | Interrupted pure response tool | Retry only when recorded/current policy, source identity and audited lifecycle match. Other safe declarations require an adapter/audit. |
 | Controls | Stop/cancel and reset fence the parent and currently owned descendants in one transaction. Delete also removes owned child snapshots. Interventions are durably accepted; interruption of an external call holds for resolution. |
-| Scheduler | Built-in ad hoc, cron and planned occurrences share durable admission. Occurrence/run tokens reconcile atomic JSON/YAML task projections and advance exactly the owning plan item once. Custom callbacks require an adapter. |
+| Scheduler | Built-in ad hoc, cron and planned occurrences share durable admission. Occurrence/run tokens reconcile atomic local JSON/YAML or shared PostgreSQL task projections and advance exactly the owning plan item once. Custom callbacks require an adapter. |
 | Subordinates and parallel children | Ordered manifests retain child genesis, identities and joins. Completed children are reused; unresolved effects hold. Background job handles and collected-history watermarks survive parent turns. Disposable direct-worker objects are evicted after completion while their outcomes remain in the ledger. |
-| Payload storage | Canonical JSON at least 64 KiB offloads into private digest-addressed files. Publication and fsync precede SQL references; reads verify size and digest. |
+| Payload storage | Canonical JSON at least 64 KiB uses verified digest-addressed storage: private files in local mode, transactional database bytes in PostgreSQL mode. Reads verify size and digest. |
 | Documents | The typed `todo` plan has schema 1, a 64 KiB limit and revision CAS. Tool drafts commit atomically with body results; concurrent app edits preserve the known body and create a separate conflict. |
 | Recovery decisions | Opaque review versions reject stale actions. Stable request IDs make lost-response retries idempotent. Explicit new attempts have a three-attempt total budget per logical call. |
 | UI | Recovery & documents provides recovery review, per-run restore selection and a typed plan editor through authenticated, CSRF-protected APIs. Existing `/webui` runtime-epoch resync and `Log` projection remain in use; recovery resets log generation. Stream previews are provisional. |
 
-Provider-hosted built-ins and PostgreSQL workers remain later slices. Arbitrary integration/session adapters are also required for those
-capabilities to resume. A recovered turn holds before starting a new unaudited stateful target: old shell,
+Provider-hosted built-ins and arbitrary integration/session recovery require explicit adapters. A recovered turn holds before starting a new unaudited stateful target: old shell,
 browser, SSH and connector session objects are not portable checkpoints.
 
 Arbitrary plugin checkpoint state and side effects in interrupted hooks require
@@ -67,7 +70,7 @@ Durability needs a few framework boundaries that a removable plugin cannot own s
 | `agent.py`: `AgentContext.communicate`, `kill_process`, `reset` | Admit input before starting a task, retain intervention identity, and fence stop/reset before stale workers can continue. A hook after dispatch would be too late to establish ownership. | Off mode with no ledger follows the original path. Existing held journals prevent legacy execution from bypassing a stop or unresolved run. |
 | `agent.py`: model loop and `call_chat_model_turn` | Reuse the existing streaming implementation through `_call_model_with_stream`; commit the final prepared request immediately before `unified_turn` and its normalized result immediately afterward. Named continuation phases replace restarting a whole monologue. | Legacy streaming, callbacks, native IDs, result processing and response-tool completion remain owned by their existing methods. The durable branch disables automatic provider retries and holds unsupported recovery hooks instead of repeating them. `hist_add_ai_response` still owns Responses-state advancement. |
 | `agent.py`, `helpers/tool_execution.py`, `helpers/parallel_tools.py` | One native/JSON/direct-parallel lifecycle commits body outcomes before intervention and postprocessing, then commits finalized history. Separate implementations could journal a result at different points or replay a body after a post-hook crash. | Tool construction, hook order, native output factories and each caller's return/`break_loop` behavior remain intact. `Tool.documents` is additive. |
-| `initialize.py`, `run_ui.py` | Open one ledger owner before chat restoration, then recover supported work from authoritative checkpoints after framework startup preparation begins. Independent scans or chat snapshots cannot safely elect a driver. | Startup remains best effort for embedding warmup. No extra service or dependency is installed. Unadapted connector/session targets remain held; starting MCP is not treated as evidence that their sessions can resume. |
+| `initialize.py`, `run_ui.py` | Open one ledger owner before chat restoration, then recover supported work from authoritative checkpoints after framework startup preparation begins. Independent scans or chat snapshots cannot safely elect a driver. | Startup remains best effort for embedding warmup. Local mode needs no database service; PostgreSQL mode uses the declared driver and an operator-managed database. Unadapted connector/session targets remain held; starting MCP is not treated as evidence that their sessions can resume. |
 | `helpers/defer.py`, `agent.py` intervention waits | Await child futures across event loops without reserving one executor thread per ancestor, and release/reacquire the bounded execution slot while waiting. | Existing result methods remain available. A timed-out/shielded join leaves child execution alive; explicit ownership controls cancel it. Read-only timeout receipts are settled, later waits have distinct identities, and collected workflows can expire through retention. |
 | `helpers/task_scheduler.py` and child tool adapters | A scheduler occurrence or child manifest must own admission and completion. Persist checked atomic task projections and original child order/join cursors; cancel one durable task without terminating the shared event loop. | Built-in callbacks have explicit adapters; custom callbacks hold. Scheduler receipts are private, legacy scheduler behavior remains available when durability is off, and old future callbacks cannot unregister a newer occurrence. |
 | `helpers/persist_chat.py`, `api/pause.py`, settings | Delete/fence journal data with chat data, include retained normalized provider-response IDs in existing cleanup, and prevent unpause from bypassing review. Three settings expose opt-in mode and retention. | Provider-deletion opt-out remains respected; failures are reported separately with a sanitized count. `chat.json` stays a compatibility/export projection. Default mode is `off`. |
@@ -109,10 +112,10 @@ collection receipts remain protected regardless of age/count. Retention never
 turns an old message or intervention retry into new work: payload-free IDs and
 fingerprints remain, and retries report expiry instead of executing again.
 
-Maintenance removes unreachable blobs, checkpoints WAL and reclaims private SQL
-pages after pruning. It does not compact unresolved work or impose a total disk
+Maintenance removes unreachable blobs. SQLite mode checkpoints WAL and reclaims private SQL
+pages after pruning; PostgreSQL MVCC/WAL/replica custody is deployment-owned. It does not compact unresolved work or impose a total disk
 quota. Monitor disk growth, especially long-lived background jobs and unresolved
-calls. Distributed leases and generic connector/effectful-tool retry adapters remain unimplemented.
+calls. Generic connector/effectful-tool retry adapters remain unimplemented. PostgreSQL workers use database session ownership rather than time-expiring replay permission.
 Disk-full never falls back to unjournaled effects; do not enable the feature by
 default before sustained workload/latency/storage acceptance.
 
@@ -125,7 +128,7 @@ such a version against the same data root.
 
 ## Backup and recovery
 
-Use the store backup API rather than copying a live main database without its WAL
+For local mode, use the store backup API rather than copying a live main database without its WAL
 or its referenced blobs. The resulting SQLite file embeds every referenced blob;
 restoring it into `usr/durability/state.sqlite3` hydrates verified private blob files
 on demand. A damaged embedded blob holds only its affected dependencies.
@@ -155,7 +158,7 @@ The tests use temporary data, fake providers and real process termination. They
 cover admission/outcome/finalization crash boundaries, ownership, reset fencing,
 deletion, native IDs, known-result reuse, portable backups, retention identities,
 scheduler occurrence reconciliation, child joins and conservative uncertainty holds.
-The coordinator limits active execution to two slots; parents release their slot
+Each worker limits active execution to two slots; parents release their slot
 while waiting for children or paused. Child waits do not occupy executor threads,
 and a timed-out join leaves its background work running. Paused ancestry blocks
 new child effects until unpaused; retention preserves the complete live ancestry.

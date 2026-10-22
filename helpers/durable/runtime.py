@@ -5,6 +5,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import functools
 import hashlib
+import os
 import threading
 import uuid
 from pathlib import Path
@@ -40,19 +41,39 @@ def initialize():
             return _service
         backend = settings.get_settings().get("durability_backend", "off")
         root = Path(files.get_abs_path("usr/durability"))
-        if backend == "off" and not (root / "state.sqlite3").exists():
+        dsn = os.environ.get("A0_DURABILITY_POSTGRES_DSN", "")
+        postgres = backend == "postgres" or (backend == "off" and bool(dsn))
+        if backend == "off" and not postgres and not (root / "state.sqlite3").exists():
             return None
         values = settings.get_settings()
+        if postgres and (root / "state.sqlite3").exists():
+            # Never silently abandon another backend's ownership evidence.
+            _service = RecoveryService(root, enabled=False)
+            _service.failed = True
+            from helpers.print_style import PrintStyle
+            PrintStyle.warning("Offline migration is required before switching local durability to PostgreSQL")
+            return _service
         _service = RecoveryService(root, enabled=backend != "off",
+                                   backend="postgres" if postgres else "local", dsn=dsn,
+                                   namespace=os.environ.get("A0_DURABILITY_POSTGRES_NAMESPACE", "agent_zero"),
                                    retain_terminal=values.get("durability_retention_runs", 100),
                                    max_age_days=values.get("durability_retention_days", 30))
-        if backend not in ("off", "local"):
+        if backend not in ("off", "local", "postgres"):
             _service.failed = True
         return _service
 
 
 class RecoveryService:
-    def __init__(self, root, *, enabled=True, retain_terminal=100, max_age_days=30):
+    distributed = False
+
+    def __new__(cls, root=None, *, backend="local", dsn=None, namespace="agent_zero", **kwargs):
+        if cls is RecoveryService and backend == "postgres":
+            from helpers.durable.cluster import ClusterRecoveryService
+            return object.__new__(ClusterRecoveryService)
+        return object.__new__(cls)
+
+    def __init__(self, root, *, enabled=True, retain_terminal=100, max_age_days=30,
+                 backend="local", dsn=None, namespace="agent_zero", **kwargs):
         self.enabled = enabled
         self.retain_terminal, self.max_age_days = retain_terminal, max_age_days
         self.lock = threading.RLock()
@@ -65,7 +86,11 @@ class RecoveryService:
         self.recovery_queue = []
         self.recovery_scanned = False
         try:
-            self.store = self.worker.submit(LocalStore, root).result()
+            if backend == "postgres":
+                from helpers.durable.postgres import PostgresStore
+                self.store = self.worker.submit(PostgresStore, dsn, namespace=namespace).result()
+            else:
+                self.store = self.worker.submit(LocalStore, root).result()
         except Exception:
             self.failed = True
 
@@ -282,6 +307,9 @@ class RecoveryService:
                 self.driving.discard(run["run_id"])
                 raise
 
+    async def prepare_input(self, context, run):
+        return run["input_payload"]
+
     async def run(self, context, run, started=None):
         if started is not None:
             started.set()
@@ -316,11 +344,12 @@ class RecoveryService:
             tool_child = bool(origin and origin.get("kind") == "child" and origin.get("mode") == "tool")
             if turn.recovered and not codec.function_resume_supported(run["checkpoint"], run["phase"]):
                 raise RecoveryHeld("function_hook_adapter_required")
-            if run["phase"] == "admitted":
+            if run["phase"] in ("admitted", "ui_input_ready"):
                 from agent import UserMessage, LoopData
+                prepared_input = await self.prepare_input(context, run) if not tool_child else run["input_payload"]
                 await turn.save("initializing")
                 if not tool_child:
-                    context.agent0.hist_add_user_message(UserMessage(**run["input_payload"]))
+                    context.agent0.hist_add_user_message(UserMessage(**prepared_input))
                 context.agent0.loop_data = LoopData(user_message=context.agent0.last_user_message)
                 if not tool_child:
                     from helpers import extension
@@ -515,6 +544,10 @@ class Turn:
         # Otherwise an older snapshot could overwrite an acknowledged intervention.
         with self.owner.lock:
             try:
+                if self.owner.distributed:
+                    self.owner.refresh_commands(self.agent.context, self.run_id)
+                    if self.agent.context.paused and status == "running":
+                        status = "blocked"
                 data = codec.checkpoint(self.agent, result=self.result, terminal=terminal)
             except Exception:
                 raise RecoveryHeld("unsupported_checkpoint_state")
@@ -808,7 +841,7 @@ def _audited_hooks(agent, point):
                for cls in extension._get_extension_classes(point, agent=agent))
 
 
-def control(context_id, action):
+def control(context_id, action, request_id=None):
     owner = service()
     if owner is not None:
         from agent import AgentContext
@@ -818,7 +851,12 @@ def control(context_id, action):
             for header in owner.sync("list_run_headers", context_id=context_id):
                 descendants.update(descendant_context_ids(owner, header["run_id"]))
             descendants.discard(context_id)
-            owner.sync("control_many", [context_id, *sorted(descendants)], action)
+            if getattr(owner, "distributed", False) and action == "reset":
+                if not request_id:
+                    raise ValueError("Shared reset requires a stable request ID")
+                owner.sync("control_request", context_id, action, request_id, context_ids=sorted(descendants))
+            else:
+                owner.sync("control_many", [context_id, *sorted(descendants)], action)
             for child_id in descendants:
                 child = AgentContext.get(child_id)
                 if child and child.task:
@@ -830,6 +868,8 @@ def control(context_id, action):
 def pause_context(context, paused):
     owner = service()
     if owner:
+        if getattr(owner, "distributed", False):
+            return owner.pause_remote(context.id, paused, "pause:" + uuid.uuid4().hex)
         with owner.lock:
             run = next(iter(owner.sync("list_run_headers", ACTIVE, context_id=context.id)), None)
             if run:

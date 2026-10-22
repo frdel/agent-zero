@@ -1,4 +1,4 @@
-"""Opt-in local recovery primitives; importing this package opens no storage."""
+"""Opt-in recovery primitives; importing this package opens no storage."""
 
 from .store import (
     ConflictError,

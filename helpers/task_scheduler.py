@@ -547,6 +547,12 @@ def _write_task_projection(path: str, content: str) -> None:
             os.unlink(temporary)
 
 
+def _shared_scheduler_owner():
+    from helpers.durable.runtime import service
+    owner = service()
+    return owner if owner is not None and getattr(owner, "distributed", False) else None
+
+
 class SchedulerTaskList(BaseModel):
     tasks: list[Annotated[Union[ScheduledTask, AdHocTask, PlannedTask], Field(discriminator="type")]] = Field(default_factory=list)
     # Singleton instance
@@ -556,6 +562,12 @@ class SchedulerTaskList(BaseModel):
 
     @classmethod
     def get(cls) -> "SchedulerTaskList":
+        owner = _shared_scheduler_owner()
+        if owner:
+            if cls.__instance is None:
+                cls.__instance = cls(tasks=[])
+            cls.__instance._reload_shared(owner)
+            return cls.__instance
         path = _task_file_path()
         if cls.__instance is None:
             if not exists(path):
@@ -577,8 +589,20 @@ class SchedulerTaskList(BaseModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._lock = threading.RLock()
+        self._shared_version = 0
+
+    def _reload_shared(self, owner):
+        with self._lock:
+            saved = owner.sync("get_projection", "scheduler:tasks")
+            parsed = type(self).model_validate(saved["value"] if saved else {"tasks": []})
+            self.tasks = parsed.tasks
+            self._shared_version = saved["version"] if saved else 0
+        return self
 
     async def reload(self) -> "SchedulerTaskList":
+        owner = _shared_scheduler_owner()
+        if owner:
+            return self._reload_shared(owner)
         path = _task_file_path()
         if exists(path):
             with self._lock:
@@ -595,6 +619,11 @@ class SchedulerTaskList(BaseModel):
 
     async def save(self) -> "SchedulerTaskList":
         with self._lock:
+            owner = _shared_scheduler_owner()
+            if owner:
+                saved = owner.sync("put_projection", "scheduler:tasks", self.model_dump(mode="json"), self._shared_version)
+                self._shared_version = saved["version"]
+                return self
             # Debug: check for AdHocTasks with null tokens before saving
             for task in self.tasks:
                 if isinstance(task, AdHocTask):
@@ -851,9 +880,16 @@ class TaskScheduler:
         return self._tasks.find_task_by_name(name)
 
     async def tick(self):
-        for task in await self._tasks.get_due_tasks():
-            from helpers.durable.scheduler import scheduled_occurrence
-            await self._run_task(task, occurrence_id=scheduled_occurrence(task))
+        owner = _shared_scheduler_owner()
+        if owner and (not owner.enabled or not owner.sync("try_role", "scheduler")):
+            return
+        try:
+            for task in await self._tasks.get_due_tasks():
+                from helpers.durable.scheduler import scheduled_occurrence
+                await self._run_task(task, occurrence_id=scheduled_occurrence(task))
+        finally:
+            if owner:
+                owner.sync("release_role", "scheduler")
 
     async def run_task_by_uuid(self, task_uuid: str, task_context: str | None = None):
         # First reload tasks to ensure we have the latest state

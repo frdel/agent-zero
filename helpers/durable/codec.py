@@ -19,10 +19,11 @@ LOOP_PARAM_FIELDS = ("_unusable_response_failures",)
 MODEL_OPTIONS = ("temperature", "max_tokens", "max_output_tokens", "a0_api_mode", "responses_state", "a0_retry_attempts")
 CAPABILITY_FIELDS = ("mode", "state", "history_prefix_hash", "builtin_tool_downgrades")
 HOOK_POINTS = (
+    "agent_init",
     "monologue_start", "monologue_end", "message_loop_start", "message_loop_end",
     "before_main_llm_call", "chat_model_call_before", "chat_model_call_after",
     "reasoning_stream_end", "response_stream_end", "message_loop_result",
-    "tool_execute_before", "tool_execute_after", "hist_add_before", "hist_add_tool_result",
+    "tool_execute_before", "tool_execute_after", "hist_add_before", "hist_add_tool_result", "user_message_ui",
 )
 
 
@@ -100,7 +101,8 @@ def environment(agent):
                      "helpers/durable/scheduler.py", "helpers/task_scheduler.py", "helpers/parallel_tools.py",
                      "tools/call_subordinate.py", "tools/parallel.py", "helpers/tool.py",
                      "helpers/extension.py", "helpers/tool_policy.py", "helpers/defer.py", "models.py",
-                     "helpers/durable/documents.py", "helpers/durable/review.py", "helpers/durable/retry.py")
+                     "helpers/durable/documents.py", "helpers/durable/review.py", "helpers/durable/retry.py",
+                     "helpers/durable/postgres.py", "helpers/durable/cluster.py")
     }
     # Include function-extension discovery at the boundaries used by the runner.
     for name in ("hist_add_ai_response", "hist_add_tool_result", "monologue", "prepare_prompt", "call_chat_model_turn"):
@@ -163,6 +165,7 @@ def checkpoint(agent, *, result=None, terminal=None):
         "terminal": terminal,
         "origin": getattr(agent.context, "_durable_origin", None),
         "workflow_state": getattr(agent.context, "_durable_workflow_state", {}),
+        "ui_input_pending": bool(getattr(agent.context, "_durable_ui_input_pending", False)),
     }
     value = masked(agent, value)
     if result is not None:

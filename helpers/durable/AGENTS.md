@@ -1,8 +1,8 @@
-# Local Durability DOX
+# Durability DOX
 
 ## Purpose
 
-- Own opt-in, private recovery storage and the services that resume supported local runs.
+- Own opt-in, private recovery storage and the services that resume supported runs on SQLite or shared PostgreSQL workers.
 
 ## Ownership
 
@@ -10,6 +10,7 @@
 - `codec.py` owns versioned, masked context/loop/result projections and implementation/configuration fingerprints. `runtime.py` owns opt-in admission, recovery dispatch and conservative holds. `replay.py` pins explicitly audited pure tool/hook implementations by source digest.
 - `scheduler.py` owns built-in occurrence admission and idempotent task/plan projections. `workflows.py` owns ordered child manifests, joins, collection watermarks and graph protection/controls.
 - `documents.py` owns typed declarations, pure migration/read semantics, masking and per-body drafts. `review.py` owns safe UI projections, versioned decisions and restore dependency review; `retry.py` owns complete plain-inference descriptors and narrow current retry eligibility.
+- `postgres.py` owns the shared database dialect/schema, transaction snapshots, database blobs/current chat checkpoints, pinned-session context claims/fences, command inbox/receipts, projection CAS and native-restore epochs. `cluster.py` owns periodic claim-before-restore dispatch, remote run handles, portability holds, journaled UI preparation and owner command application. `projection.py` renders committed shared snapshots without constructing executable contexts; the shared revision watermark invalidates host-local WebSocket views.
 - The store accepts bounded JSON values. Its callers own allowlisted recovery codecs and must never pass resolved credentials or arbitrary runtime objects.
 
 ## Local Contracts
@@ -20,10 +21,17 @@
 - `transition`, `start_call` and `finish_call` fence writes against the current context generation. Cancel prevents new work but retains late outcomes; reset and delete fence all older writes. Delete tombstones the context and scrubs payload rows, then checkpoints WAL and vacuums freed pages. Caller-managed backups require their own retention and deletion.
 - `finish_call(..., checkpoint=..., phase=...)` atomically commits an outcome with its history/continuation projection. Repeating the same completed outcome never reapplies its checkpoint or overwrites later projections. Cancelled runs accept only plain late body outcomes.
 - Schema 4 migrates earlier inline ledgers. JSON at least 64 KiB offloads into private `blobs/<sha256>.json`; file fsync and atomic publication precede SQL references. Retained input/checkpoint/event/result/document/conflict digests and call fingerprints must be present and valid when read; missing integrity fields fail closed. Corruption and write failure raise explicit errors; never fall back to unjournaled effects.
+- PostgreSQL mode uses one dedicated database namespace across hosts; all authoritative payload bytes live in PostgreSQL. Short mutations share a transaction advisory lock; providers/tools execute outside it. A verified current chat checkpoint commits atomically with admission/continuation and survives per-run payload retention; admission sequence prevents late older-run results from replacing a newer head. Reset admission checks its expected generation and clears old history. Shared reset/cancel receipts deduplicate client request IDs across newer generations.
+- Shared timestamps and retention cutoffs use the database clock; journal sequences determine admission order across clock-skewed hosts. Read methods use repeatable snapshots so concurrent GC cannot invalidate their blobs. Direct or session-pooled connections are required; never reconnect a failed session under old claims.
+- Every PostgreSQL execution mutation checks its pinned context claim, backend identity and monotonic fence. Session loss cannot prove an external effect did not occur. Successors reuse known outcomes or hold uncertainty, without time-expiry replay permission. Claims precede context reconstruction; source-audited local initializer/history hooks are checked before constructors run, and unknown constructor hooks hold before their effects. Execution capacity is bounded per worker.
+- Shared UI input hooks execute on the claimed worker through `input_ui` intent/result and `ui_input_ready` continuation. Known preparation reuses its result; unknown preparation never replays. UI interventions into a live shared turn require an explicit adapter and fail before admission.
+- Cross-host commands are epoch-bound, fingerprinted and idempotent. Queue acceptance is separate from owner application; pause/intervention changes and their acknowledgment commit together. Worker snapshot serialization must preserve applied controls. Shared scheduler projections use CAS and a session-elected poller; stale nodes cannot overwrite them from local files.
+- PostgreSQL native backups require an explicit offline `begin_restore_review()` before worker startup; it refuses live claims/roles, rotates the deployment epoch and invalidates copied selections/commands. SQL deletion does not promise erasure of WAL, replicas or independent backups.
 - Owner-only directories/files, regular files and symlink rejection are required. Local mode is one framework process per local persistent data root; network filesystem locking semantics are unsupported.
 - `backup(destination)` uses SQLite's consistent backup API and refuses overwrites. It contains private recovery data and must receive the same custody as the source.
 - Backup publication is atomic, embeds referenced blob bytes in one portable SQLite file, and stamps a permanent review marker in the copy. Restores verify/hydrate bytes on demand. Each backup rotates its deployment epoch and invalidates copied selections and retry grants. Old runs require explicit per-run selection; uncertain runs require separate resolution. New admissions in the restored deployment are selected atomically; the marker is never cleared globally. `list_run_headers()` inventories metadata without decoding checkpoint payloads, isolating corrupt contexts from healthy candidates.
 - Replay labels are metadata only. The runner must revalidate authorization, implementation identity and actual replay safety.
+- Backend switches never abandon an existing local ledger. PostgreSQL DSNs remain environment-only. Host-local projects/attachments and unknown resource/session state require portability adapters. API requests must not create or mutate stale remote context shadows; unsupported remote document/provider deletion operations hold explicitly.
 - `runtime.initialize()` is called once before legacy chat loading; `initialize_recovery()` dispatches after restoration. Settings changes require restart. Off mode still opens an existing ledger to prevent rollback from bypassing held work.
 - Model outcomes and finalized tool projections commit atomically with their phase checkpoint. Raw tool-body results commit before intervention/postprocessing. Never replay a body merely because postprocessing was interrupted.
 - Snapshots preserve only explicit JSON loop state and temporary log identities; arbitrary plugin objects require adapters. Unknown phases/hooks, custom scheduler callbacks, provider built-ins and new unaudited stateful targets after recovery are held.
@@ -52,7 +60,7 @@
 
 ## Verification
 
-- Run `pytest tests/test_durable_store.py tests/test_durable_integrity.py tests/test_durable_blobs.py tests/test_durable_documents.py tests/test_durable_review_store.py tests/test_durable_review.py tests/test_durable_response_deletion.py tests/test_durable_function_hooks.py tests/test_durable_retry.py tests/test_durable_runtime.py tests/test_durable_scheduler.py tests/test_durable_workflows.py tests/test_durable_process_recovery.py tests/test_durable_workflow_process.py -q` with the framework Python runtime. Tests use temporary storage and real subprocess termination; no live user state or provider is required.
+- Run `pytest tests/test_durable_store.py tests/test_durable_integrity.py tests/test_durable_blobs.py tests/test_durable_documents.py tests/test_durable_review_store.py tests/test_durable_review.py tests/test_durable_response_deletion.py tests/test_durable_function_hooks.py tests/test_durable_retry.py tests/test_durable_runtime.py tests/test_durable_scheduler.py tests/test_durable_workflows.py tests/test_durable_process_recovery.py tests/test_durable_workflow_process.py -q` with the framework Python runtime. PostgreSQL tests in `test_durable_postgres.py`, `test_durable_cluster.py`, `test_durable_cluster_api.py` and `test_durable_postgres_process.py` require an explicitly disposable `A0_TEST_DURABILITY_POSTGRES_DSN`; they never read the deployment DSN. Tests use temporary storage and real subprocess termination; no live user state or provider is required.
 
 ## Child DOX Index
 

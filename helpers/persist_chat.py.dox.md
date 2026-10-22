@@ -39,6 +39,9 @@
 
 ## Runtime Contracts
 
+- Shared PostgreSQL mode publishes masked `chat:<id>` projections with CAS only from the claimed live turn (or a new pre-admission genesis). New chats also publish a conflict-checked `genesis:<id>` recovery checkpoint, allowing their first Send on another host without constructing a requester-side context. Unowned shadows never save history; startup does not import host-local `chat.json` into shared custody. Shared chat existence reads the ledger/projection rather than a host-local file.
+- `ensure_removal_supported` runs before reset, scheduler cancellation or provider cleanup. Shared chat deletion currently raises `SharedDeletionHeld` and leaves records and live policy intact: remote provider credentials/opt-outs require a dedicated cleanup adapter. Browser and API-key removal routes report this hold as HTTP 409, without claiming deletion succeeded.
+
 - `remove_chat` first fences the chat and currently owned descendants through the local durability coordinator. While their payloads remain available, provider cleanup collects snapshot/history state IDs and top-level normalized completed model-result IDs, including results committed before history or `chat.json`. It then deletes the ledger and snapshot projections. Collection and provider calls run outside SQL transactions; the coordinator lock prevents new admission between fencing and scrubbing.
 - Provider cleanup honors deletion opt-outs from live agent/context state, compatibility snapshots and retained checkpoints, including when no chat file exists. Unreadable recovery data skips provider cleanup conservatively while allowing local deletion. It never searches raw model metadata or call arguments for response identities. `delete_stored_response_ids(ids)` retains its existing provider lookup contract; actual failures emit a fixed warning with only a count, without response IDs or provider error text.
 

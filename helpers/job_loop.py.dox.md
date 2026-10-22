@@ -21,7 +21,8 @@
 
 - Helper modules own reusable framework APIs and must preserve public callers unless all callers, tests, and docs are updated together.
 - Update this file whenever public functions, classes, persistence behavior, path/security assumptions, side effects, or cross-module contracts change.
-- Observed side-effect areas: scheduler state.
+- PostgreSQL workers elect one pinned `job-loop` session role before running integration pollers; disabled/failed workers do not poll. Scheduler execution has its own role/occurrence claims. This prevents simultaneous pollers in healthy sessions; plugin-specific delivery/idempotency and in-flight disconnect reconciliation still require adapters. Local/off mode retains existing extension dispatch.
+- Observed side-effect areas: scheduler state and integration polling.
 - Imported dependency areas include: `asyncio`, `datetime`, `helpers`, `helpers.print_style`, `helpers.task_scheduler`, `time`.
 
 ## Key Concepts

@@ -87,7 +87,12 @@ def descendant_context_ids(owner, parent_run_id):
     latest = {}
     for header in owner.sync("list_run_headers"):
         old = latest.get(header["context_id"])
-        if old is None or header["created_at"] > old["created_at"]:
+        if getattr(owner, "distributed", False):
+            from helpers.durable.cluster import latest_header
+            newer = old is None or latest_header(owner, [old, header])["run_id"] == header["run_id"]
+        else:
+            newer = old is None or header["created_at"] > old["created_at"]
+        if newer:
             latest[header["context_id"]] = header
     descendants, frontier, visited = [], {parent_run_id}, set()
     while frontier:
@@ -198,6 +203,24 @@ def _submit(turn, child):
     if run and run["status"] == "completed":
         from helpers.defer import DeferredTask
         return DeferredTask("DurableChildResult").start_task(owner._reported_result, run)
+    if getattr(owner, "distributed", False):
+        from helpers.durable.cluster import RunHandle
+        if run is None and not turn.recovered:
+            context = AgentContext.get(child["context_id"])
+            if context is not None:
+                return owner.submit_owned(context, UserMessage(child["message"], attachments=child["attachments"],
+                                                               id=child["input_id"]), child["origin"])
+        if run is None:
+            # Genesis already committed with the parent manifest is authority.
+            # Do not construct an executable shadow context on a joining host.
+            parent = owner.sync("get_run", child["origin"]["parent_run_id"])
+            if parent["status"] not in ("running", "blocked") or parent["context_id"] != child["origin"]["parent_context_id"]:
+                _held("parent_stopped_or_held")
+            run = owner.sync("admit", child["context_id"], child["input_id"],
+                             codec.message_payload(UserMessage(child["message"], attachments=child["attachments"],
+                                                                id=child["input_id"])), child["genesis"])
+        owner.dispatch_for_run(run["run_id"])
+        return RunHandle(owner, run["run_id"])
     context = AgentContext.get(child["context_id"])
     if run and run["run_id"] in owner.driving and context is not None and context.task:
         return context.task

@@ -12,13 +12,13 @@ export function createDurabilityState(api, uuid = () => crypto.randomUUID()) {
     mounted: false, loading: false, documentLoading: false, busy: false,
     available: false, enabled: false, restore: { required: false, epoch: null },
     runs: [], nextOffset: null, totalRuns: 0, context: "", error: "", notice: "", requiredIds: [], selected: [],
-    pending: null, decisionRetry: null, document: null, draft: null, draftRevision: 0, dirty: false,
+    pending: null, decisionRetry: null, queuedDecisions: [], document: null, draft: null, draftRevision: 0, dirty: false,
     draftStale: false, compared: false, documentError: "", filter: "all",
     _generation: 0, _documentGeneration: 0, _mutationGeneration: 0, _scope: 0, _chatSelection: "", _requests: {},
 
     async mount(context = "") {
       this.mounted = true; this._scope++;
-      this.decisionRetry = null;
+      this.decisionRetry = null; this.queuedDecisions = [];
       this.context = String(context || ""); this._chatSelection = this.context;
       await Promise.all([this.refresh(), this.loadDocument()]);
     },
@@ -34,7 +34,7 @@ export function createDurabilityState(api, uuid = () => crypto.randomUUID()) {
       this.error = ""; this.notice = ""; this.documentError = "";
       this.dirty = false; this.draftStale = false; this.compared = false;
       this.loading = false; this.documentLoading = false; this.busy = false;
-      this._requests = {};
+      this._requests = {}; this.queuedDecisions = [];
     },
     async refresh() {
       const generation = ++this._generation, scope = this._scope;
@@ -56,6 +56,7 @@ export function createDurabilityState(api, uuid = () => crypto.randomUUID()) {
         this.totalRuns = Number.isInteger(data.total) ? data.total : this.runs.length;
         const visible = new Set(this.runs.filter((run) => !run.restore_selected && ["running", "blocked", "attention"].includes(run.status)).map((run) => run.run_id));
         this.selected = this.selected.filter((id) => visible.has(id));
+        await this.refreshQueued(scope, generation);
       } catch (error) {
         if (this.mounted && generation === this._generation && scope === this._scope) this.error = this.errorText(error);
       } finally {
@@ -112,7 +113,7 @@ export function createDurabilityState(api, uuid = () => crypto.randomUUID()) {
       const next = String(context || "");
       if (this.context === next) return;
       this._documentGeneration++; this._scope++;
-      this.pending = null; this.decisionRetry = null; this.requiredIds = []; this._requests = {};
+      this.pending = null; this.decisionRetry = null; this.queuedDecisions = []; this.requiredIds = []; this._requests = {};
       this.context = next; this.document = null; this.draft = null;
       this.dirty = false; this.draftStale = false; this.compared = false;
       this.documentError = "";
@@ -259,17 +260,42 @@ export function createDurabilityState(api, uuid = () => crypto.randomUUID()) {
       // intentional: the server may have committed it before losing the reply.
       await this._sendDecision(copy(this.decisionRetry));
     },
+    async refreshQueued(scope = this._scope, generation = this._generation) {
+      if (!this.queuedDecisions.length) return;
+      const receipts = await Promise.all(this.queuedDecisions.map(async (item) => {
+        if (item.state !== "pending") return item;
+        const response = await api({ action: "command_status", context: item.context,
+          run_id: item.run_id, request_id: item.request_id });
+        const command = response.command || {};
+        if (!["pending", "applied", "rejected"].includes(command.state)) throw new Error("Worker receipt is unavailable. Refresh to check again.");
+        return { ...item, state: command.state };
+      }));
+      if (!this.mounted || scope !== this._scope || generation !== this._generation) return;
+      this.queuedDecisions = receipts;
+      const pending = receipts.filter((item) => item.state === "pending").length;
+      const rejected = receipts.filter((item) => item.state === "rejected").length;
+      this.notice = pending ? `${pending} decision(s) waiting for a worker. Refresh checks delivery.` :
+        (rejected ? "A worker rejected a queued decision. Refresh and review the current run before submitting a new decision." :
+          "The worker applied the queued decisions. Review the current run for its recovery state.");
+    },
     async _sendDecision(envelope) {
       const { payload, request_id, signature, scope, kind } = copy(envelope);
       const operation = ++this._mutationGeneration;
       this.busy = true; this.error = ""; this.requiredIds = [];
       let accepted = false;
       try {
-        await api({ ...payload, request_id }); accepted = true;
+        const response = await api({ ...payload, request_id }); accepted = true;
         if (this._requests[signature] === request_id) delete this._requests[signature];
         if (!this.mounted || scope !== this._scope) return;
         this.decisionRetry = null;
-        this.pending = null; this.notice = "Decision recorded. The server will recheck recovery requirements.";
+        this.pending = null;
+        if (response?.command?.state === "rejected") {
+          this.notice = "The worker rejected this decision. Review the current run before submitting a new decision.";
+        } else if (response?.queued) {
+          this.queuedDecisions = [...this.queuedDecisions.filter((item) => item.request_id !== request_id),
+            { request_id, context: payload.context, run_id: payload.run_id, state: "pending" }].slice(-20);
+          this.notice = "Decision queued for a worker. It has not been applied yet; Refresh checks its receipt.";
+        } else this.notice = "Decision recorded. The server will recheck recovery requirements.";
       } catch (error) {
         if (!this.mounted || scope !== this._scope) return;
         this.decisionRetry = copy(envelope);

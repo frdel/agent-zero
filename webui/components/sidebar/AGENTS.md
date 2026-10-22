@@ -29,6 +29,7 @@
 - Row overflow menus choose the roomier side of their trigger and cap their height to the available viewport so plugin actions remain reachable.
 - Built-in chat and task overflow menus follow the standard row actions; plugin controls remain direct row actions.
 - Row overflow buttons retain accessible labels without tooltips; Chats header controls retain their tooltips.
+- Chat resets retain a per-context request ID across failed acknowledgments; only a successful response retires it. Shared reset receipts must not fence a newer generation on retry.
 - `chats.saveChat(ctxid)` exports an explicit context without changing selection; omitted IDs retain current-chat behavior.
 - Cancelling the Load Chat file chooser resolves without calling `chat_load` or showing a success/error notification.
 - `sidebar-row-actions-menu` owns plugin-contributed row-menu actions; list-order plugins register stable sort and divider callbacks through the sidebar store instead of patching chat/task stores or injecting row DOM.

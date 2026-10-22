@@ -34,6 +34,17 @@ class ApiResetChat(ApiHandler):
                     mimetype="application/json"
                 )
 
+            from helpers.durable.runtime import service, control
+            owner = service()
+            if owner and getattr(owner, "distributed", False):
+                from helpers.durable.store import _identity
+                try:
+                    request_id = _identity(input.get("request_id"), "request id")
+                except ValueError:
+                    return Response(json.dumps({"error": "Shared reset requires a stable request ID. No records were reset."}), status=409, mimetype="application/json")
+                control(context_id, "reset", request_id=request_id)
+                return {"success": True, "message": "Shared chat reset recorded. Workers will discard the previous generation.", "context_id": context_id}
+
             # Check if context exists
             context = AgentContext.use(context_id)
             if not context:
@@ -62,6 +73,10 @@ class ApiResetChat(ApiHandler):
             }
 
         except Exception as e:
+            from helpers.durable.runtime import service
+            owner = service()
+            if owner and getattr(owner, "distributed", False):
+                return Response(json.dumps({"error": "Shared reset failed safely. Retry only with the same request ID."}), status=503, mimetype="application/json")
             PrintStyle.error(f"API reset chat error: {str(e)}")
             return Response(
                 json.dumps({"error": f"Internal server error: {str(e)}"}),

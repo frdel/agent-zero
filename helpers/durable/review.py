@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import hashlib
+from types import SimpleNamespace
 
 from helpers.durable import codec
 from helpers.durable.store import ConflictError, StaleRunError
 
 ACTIVE = ("running", "blocked", "attention")
-SAFE_PHASES = {"admitted", "iteration_ready", "model_result", "model_ready", "tools", "scheduler_finalizing"}
+SAFE_PHASES = {"admitted", "ui_input_ready", "iteration_ready", "model_result", "model_ready", "tools", "scheduler_finalizing"}
 PUBLIC_REASONS = {
     "tool_outcome_unknown": "The interrupted tool has no committed result. Verify its external outcome.",
     "model_retry_requires_fresh_operator_grant": "The previous model attempt needs another explicit review.",
@@ -16,13 +17,16 @@ PUBLIC_REASONS = {
     "restored_backup_requires_review": "Select this restored run before reviewing continuation.",
     "storage_failure": "Recovery storage needs attention.",
     "storage_unavailable": "Recovery storage is unavailable.",
+    "ui_input_outcome_unknown": "UI input preparation was interrupted. Its hooks were not repeated; stop and review before sending new work.",
+    "ui_model_not_configured": "The execution owner's chat model is not configured. Input preparation was recorded without calling a provider.",
 }
 
 
 class ReviewError(ValueError):
-    def __init__(self, message, *, required_ids=()):
+    def __init__(self, message, *, required_ids=(), status=400):
         super().__init__(message)
         self.required_ids = sorted(required_ids)
+        self.status = status
 
 
 def context_for(context_id):
@@ -31,6 +35,61 @@ def context_for(context_id):
     if context is None:
         raise ReviewError("This chat is unavailable. Restore its compatible context before continuing.")
     return context
+
+
+def distributed(owner):
+    return bool(owner and getattr(owner, "distributed", False))
+
+
+def projected_context(owner, context_id):
+    """Read masking scope/name without constructing or registering a live chat."""
+    headers = owner.sync("list_run_headers", context_id=context_id)
+    if not headers:
+        raise KeyError("Unknown shared chat")
+    latest = max(headers, key=lambda row: (row.get("admission_seq", 0), row.get("checkpoint_seq", 0), row["run_id"]))
+    run = owner.sync("get_run", latest["run_id"])
+    data = (run.get("checkpoint") or {}).get("context") or {}
+    if data.get("id") != context_id:
+        raise ReviewError("The committed chat projection needs recovery before this operation.")
+    context = SimpleNamespace(id=context_id, name=data.get("name"), data=data.get("data") or {})
+    context.get_data = lambda key, recursive=True: context.data.get(key)
+    context.agent0 = SimpleNamespace(context=context)
+    return context
+
+
+def read_shared_document(owner, context_id, kind):
+    from helpers.durable import documents
+    scoped = projected_context(owner, context_id)
+    declared = documents.definition(kind)
+    value, revision, migration = declared.decode(owner.sync("read_document", scoped.id, kind))
+    # Body/app writers already masked these values before their shared commit.
+    return {"kind": kind, "schema_version": declared.schema_version, "revision": revision,
+            "value": value, "migration_required": migration}
+
+
+def command_state(receipt):
+    result = receipt.get("result") if isinstance(receipt.get("result"), dict) else {}
+    invalidated = receipt.get("epoch_valid") is False or receipt.get("status") == "invalidated"
+    state = "rejected" if invalidated else "pending" if receipt.get("status") == "pending" else (
+        "applied" if result.get("accepted") is True else "rejected")
+    public = {"request_id": receipt["request_id"], "state": state}
+    if state == "rejected":
+        public["error"] = ("This request belongs to an earlier restore epoch. Review the restored run again." if invalidated else
+                           "The execution owner rejected this request. Refresh and review the current state.")
+    return public
+
+
+def command_receipt(receipt, context_id):
+    return {"queued": receipt.get("status") == "pending", "context_id": context_id,
+            "run_id": receipt["run_id"], "command": command_state(receipt)}
+
+
+def command_status(owner, context_id, run_id, request_id):
+    scoped_header(owner, context_id, run_id)
+    receipt = owner.sync("get_command", run_id, request_id)
+    if receipt is None:
+        raise KeyError("Unknown command in this chat")
+    return {"command": command_state(receipt)}
 
 
 def scoped_header(owner, context_id, run_id):
@@ -85,6 +144,11 @@ def resume_phase(owner, context, run):
     calls = owner.sync("calls", run["run_id"])
     by_id = {item["call_id"]: item for item in calls}
     for call in calls:
+        if call["kind"] == "input_ui":
+            prepared = call.get("result") or {}
+            if call["status"] != "completed" or prepared.get("model_not_configured") or (prepared.get("message") or {}).get("attachments"):
+                return None
+            continue
         if call["kind"] not in ("model", "tool") or call.get("logical_call_id"):
             continue
         retry = owner.sync("get_retry", run["run_id"], call["call_id"])
@@ -160,6 +224,9 @@ def status(owner, context_id=None, offset=0):
             review = owner.sync("get_review", header["run_id"])
             from agent import AgentContext
             context = AgentContext.get(header["context_id"])
+            remote = distributed(owner) and not owner.sync("owns", header["run_id"])
+            if remote:
+                context = None
             item = {key: review[key] for key in ("run_id", "context_id", "status", "phase", "version", "restore_selected")}
             item.update(name=str(context.name if context and context.name else header["context_id"])[:160],
                         can_resume=False, calls=[], document_conflicts=[], reason="Recorded work requires review.",
@@ -168,6 +235,12 @@ def status(owner, context_id=None, offset=0):
                                  "new_attempt": False})
             try:
                 run = owner.sync("get_run", header["run_id"])
+                if remote:
+                    saved = (run.get("checkpoint") or {}).get("context") or {}
+                    item["name"] = str(saved.get("name") or header["context_id"])[:160]
+                    ownership = owner.sync("ownership", run["run_id"])
+                    item["ownership"] = {key: ownership.get(key) for key in ("claimed", "worker_id")}
+                    item["remote"] = True
                 events = owner.sync("read_events", run["run_id"], max(0, run["checkpoint_seq"] - 1))
                 detail = next((event["payload"].get("detail") for event in reversed(events)
                                if event["kind"] == "transition" and event.get("payload") and event["payload"].get("detail")), {})
@@ -175,12 +248,30 @@ def status(owner, context_id=None, offset=0):
                 reason = detail.get("reason", "") if isinstance(detail, dict) else ""
                 item["reason"] = PUBLIC_REASONS.get(reason, item["reason"])
                 item["can_resume"] = bool(context and resume_phase(owner, context, run))
+                remote_idle = remote and (not ownership.get("claimed") or run["status"] == "attention")
+                if remote_idle and owner.enabled and run["status"] in ACTIVE and owner.sync("can_resume", run["run_id"]):
+                    calls = owner.sync("calls", run["run_id"])
+                    item["can_resume"] = checkpoint_phase(owner, run) in SAFE_PHASES and not any(
+                        call["kind"] in ("model", "tool", "input_ui") and call["status"] != "completed" for call in calls)
+                    item["reason"] = "The execution owner must verify the recorded continuation and current configuration."
                 item["actions"]["resume"] = item["can_resume"]
                 visible_calls = [call for call in owner.sync("calls", run["run_id"])
                                  if call["kind"] in ("model", "tool") and not call.get("logical_call_id")]
                 item["call_count"] = len(visible_calls)
                 for call in visible_calls[-20:]:
                     may_retry, why = retry_eligibility(owner, context, run, call) if context else (False, "Chat context unavailable.")
+                    if remote:
+                        payload = call.get("payload") or {}
+                        pin = payload.get("tool") or {}
+                        from helpers.durable.replay import AUDITED_TOOLS
+                        prepared = owner.sync("get_call", run["run_id"], call["call_id"] + ":args")
+                        candidate = (call["kind"] == "model" and payload.get("retry_eligible") is True) or (
+                            call["kind"] == "tool" and (pin.get("class", "").rsplit(".", 1)[-1], pin.get("source")) in AUDITED_TOOLS
+                            and prepared and prepared["status"] == "completed")
+                        grant = owner.sync("get_retry", run["run_id"], call["call_id"])
+                        may_retry = bool(remote_idle and candidate and call["status"] == "intent" and owner.enabled and run["status"] in ACTIVE
+                                         and owner.sync("can_resume", run["run_id"]) and not (grant and grant["epoch_valid"] and grant["state"] == "pending"))
+                        why = "The execution owner will recheck policy, configuration and attempt limits before applying this request."
                     payload = call.get("payload") or {}
                     grant = owner.sync("get_retry", run["run_id"], call["call_id"])
                     latest = (owner.sync("get_call", run["run_id"], grant["call_id"]) or call) if grant and grant["epoch_valid"] else call
@@ -200,7 +291,7 @@ def status(owner, context_id=None, offset=0):
                     item["document_conflicts"].append({"id": conflict["conflict_id"], "kind": conflict["kind"],
                         "status": conflict["status"], "expected_revision": conflict["expected_revision"],
                         "current_revision": stored["revision"] if stored else 0,
-                        "proposed_value": codec.masked(context.agent0, conflict["proposed"]) if context else None})
+                        "proposed_value": codec.masked(context.agent0, conflict["proposed"]) if context else (conflict["proposed"] if remote else None)})
             except BaseException as exc:
                 # RecoveryHeld derives from BaseException; do not swallow shutdowns.
                 from helpers.durable.runtime import RecoveryHeld
@@ -215,7 +306,8 @@ def status(owner, context_id=None, offset=0):
             result.append(codec.masked(context.agent0, item) if context else item)
         return {"available": True, "enabled": owner.enabled, "restore": owner.sync("get_restore_state"),
                 "runs": result, "documents": [], "total": len(rows),
-                "next_offset": offset + 50 if offset + 50 < len(rows) else None}
+                "next_offset": offset + 50 if offset + 50 < len(rows) else None,
+                "distributed": distributed(owner)}
 
 
 def _dirty(context_ids):
@@ -225,6 +317,8 @@ def _dirty(context_ids):
 
 
 def _dispatch(owner, context, run_id):
+    if distributed(owner):
+        return owner.dispatch_for_run(run_id)
     context._durable_restored = True
     return owner.dispatch(context, owner.sync("get_run", run_id))
 
@@ -238,10 +332,34 @@ def resolve(owner, context_id, run_id, version, decision, note, request_id, call
         # Stopping must remain possible even if a private checkpoint is corrupt.
         # Only continuation/retry needs to deserialize that checkpoint.
         run = scoped_header(owner, context_id, run_id)
+        if distributed(owner) and not owner.sync("owns", run_id) and decision != "stop":
+            if decision not in ("resume", "new_attempt", "confirmed_completed", "confirmed_not_completed"):
+                raise ReviewError("Unknown recovery decision")
+            if decision in ("confirmed_completed", "confirmed_not_completed") and not note.strip():
+                raise ReviewError("Record the evidence used to verify this outcome")
+            previous = owner.sync("get_command", run_id, request_id)
+            if not previous:
+                if not owner.sync("can_resume", run_id):
+                    raise ReviewError("Select this restored run before submitting execution-owner review. Stop remains available.", status=409)
+                run_data = owner.sync("get_run", run_id)
+                from helpers.durable.cluster import portable
+                if not portable(run_data.get("checkpoint"), run_data.get("input_payload")):
+                    raise ReviewError("This chat needs a host-resource adapter before execution-owner review. Stop remains available.", status=409)
+                if owner.sync("get_review", run_id)["version"] != version:
+                    raise ConflictError("Recovery review is stale")
+            projection = projected_context(owner, context_id)
+            payload = {"context_id": context_id, "version": version, "decision": decision,
+                       "note": codec.masked(projection.agent0, note), "request_id": request_id,
+                       "call_id": call_id}
+            receipt = owner.submit_command(run_id, "review", payload, request_id)
+            return command_receipt(receipt, context_id)
         if decision in ("resume", "new_attempt"):
             run = owner.sync("get_run", run_id)
         context = AgentContext.get(context_id)
-        note = codec.masked(context.agent0, note) if context else ""
+        if distributed(owner) and not owner.sync("owns", run_id):
+            context = None
+        note = codec.masked(context.agent0, note) if context else (
+            "Operator evidence recorded; context unavailable for text masking." if note else "")
         prior = owner.sync("get_review_request", run_id, request_id)
         if prior:
             args = prior["request"]
@@ -298,7 +416,7 @@ def resolve(owner, context_id, run_id, version, decision, note, request_id, call
                 descendants.update(descendant_context_ids(owner, header["run_id"]))
             descendants.discard(context_id)
             context = AgentContext.get(context_id)
-            masked_note = codec.masked(context.agent0, note) if context else "Operator evidence recorded; context unavailable for text masking."
+            masked_note = note
             result = owner.sync("record_resolution", run_id, version, decision, masked_note, request_id,
                                 call_id, context_ids=sorted(descendants))
             for identity in (context_id, *descendants):
@@ -363,6 +481,10 @@ def restore_select(owner, run_ids, versions, epoch, request_id):
         # running checkpoints can continue; attention rows need their own decision.
         for identity in run_ids:
             run = owner.sync("get_run", identity)
+            if distributed(owner):
+                if run["status"] == "running" and not run["checkpoint"].get("paused"):
+                    owner.dispatch_for_run(identity)
+                continue
             from agent import AgentContext
             context = AgentContext.get(run["context_id"])
             if context and run["status"] == "running" and not run["checkpoint"].get("paused") and resume_phase(owner, context, run):

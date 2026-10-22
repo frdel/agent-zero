@@ -16,6 +16,8 @@
 
 ## Runtime Contracts
 
+- Shared chat removal checks provider-cleanup support before scheduler cancellation, reset or local removal. Unsupported remote cleanup returns HTTP 409 and retains chat/ledger data and opt-out policy unchanged.
+
 - HTTP handlers must derive from `helpers.api.ApiHandler`; WebSocket handlers must derive from `helpers.ws.WsHandler`.
 - Update this file whenever request payloads, authentication or CSRF requirements, response shapes, route side effects, or WebSocket event contracts change.
 - `RemoveChat` is an `ApiHandler`.
