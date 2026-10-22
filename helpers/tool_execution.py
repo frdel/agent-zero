@@ -21,11 +21,16 @@ async def execute_tool(tool, tool_args, *, agent=None, tool_name=None,
                 return recorded
         if durable:
             durable.active_call_id = call_id
+            from helpers.durable.resources import local_value
+            tool_args = local_value(agent.context, tool_args)
+            tool.args = tool_args
         if durable and call_id in durable.resuming_args:
             # Before hooks already completed. Only audited policy/credential
             # preparation may run again; arbitrary tool methods do not replay.
             prepared = durable.resuming_args[call_id]
             tool_args = dict(prepared["payload"])
+            from helpers.durable.resources import local_value
+            tool_args = local_value(agent.context, tool_args)
             tool.args = tool_args
             log_id = prepared["result"].get("log_id")
             tool.log = next((item for item in agent.context.log.logs

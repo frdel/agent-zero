@@ -446,13 +446,20 @@ class MCPTool(Tool):
         error = ""
         additional: dict[str, Any] | None = None
         try:
-            response: CallToolResult = await MCPConfig.get_for_agent(self.agent).call_tool(
-                self.name, kwargs
-            )
+            turn = getattr(self.agent.context, "_durable_turn", None)
+            turn = turn if turn and turn.agent is self.agent else None
+            if turn and not hasattr(self, "_durable_session_manager"):
+                from helpers.durable import sessions
+                await sessions.prepare(self, kwargs)
+            config = MCPConfig.get_for_agent(self.agent)
+            response: CallToolResult = await config.call_tool(self.name, kwargs, durable_tool=self) if turn else await config.call_tool(self.name, kwargs)
             message, additional = self._format_tool_result(response)
             if response.isError:
                 error = message or "MCP tool returned an error without textual content."
         except Exception as e:
+            if getattr(self, "_durable_session_manager", None) is not None:
+                from helpers.durable.runtime import RecoveryHeld
+                raise RecoveryHeld("mcp_call_outcome_unknown") from None
             error = f"MCP Tool Exception: {str(e)}"
             message = f"ERROR: {str(e)}"
 
@@ -585,7 +592,7 @@ class MCPServerRemote(BaseModel):
             return self.__client.has_tool(tool_name)  # type: ignore
 
     async def call_tool(
-        self, tool_name: str, input_data: Dict[str, Any]
+        self, tool_name: str, input_data: Dict[str, Any], *, durable_tool=None
     ) -> CallToolResult:
         """Call a tool with the given input data"""
         client = self.__client
@@ -593,7 +600,12 @@ class MCPServerRemote(BaseModel):
             raise RuntimeError("MCP remote client is not initialized")
         if tool_name in self.disabled_tools:
             raise ValueError(f"Tool {tool_name} is disabled for server {self.name}.")
-        return await client.call_tool(tool_name, input_data)
+        return await client.call_tool(tool_name, input_data, **({"durable_tool": durable_tool} if durable_tool is not None else {}))
+
+    async def validate_durable_session(self, tool_name, durable_tool):
+        if self.disabled or tool_name in self.disabled_tools or self.__client is None:
+            raise ValueError("MCP server/tool is unavailable")
+        return await self.__client.validate_durable_session(durable_tool)
 
     def update(self, config: dict[str, Any]) -> "MCPServerRemote":
         with self.__lock:
@@ -686,7 +698,7 @@ class MCPServerLocal(BaseModel):
             return self.__client.has_tool(tool_name)  # type: ignore
 
     async def call_tool(
-        self, tool_name: str, input_data: Dict[str, Any]
+        self, tool_name: str, input_data: Dict[str, Any], *, durable_tool=None
     ) -> CallToolResult:
         """Call a tool with the given input data"""
         client = self.__client
@@ -694,7 +706,12 @@ class MCPServerLocal(BaseModel):
             raise RuntimeError("MCP local client is not initialized")
         if tool_name in self.disabled_tools:
             raise ValueError(f"Tool {tool_name} is disabled for server {self.name}.")
-        return await client.call_tool(tool_name, input_data)
+        return await client.call_tool(tool_name, input_data, **({"durable_tool": durable_tool} if durable_tool is not None else {}))
+
+    async def validate_durable_session(self, tool_name, durable_tool):
+        if self.disabled or tool_name in self.disabled_tools or self.__client is None:
+            raise ValueError("MCP server/tool is unavailable")
+        return await self.__client.validate_durable_session(durable_tool)
 
     def update(self, config: dict[str, Any]) -> "MCPServerLocal":
         with self.__lock:
@@ -1257,8 +1274,16 @@ class MCPConfig(BaseModel):
                 return None
         return MCPTool(agent=agent, name=tool_name, method=None, args={}, message="", loop_data=None)
 
+    async def validate_durable_session(self, tool):
+        server_name, tool_name = _split_qualified_tool_name(tool.name)
+        with self.__lock:
+            server = next((item for item in self.servers if item.name == server_name and item.has_tool(tool_name)), None)
+        if server is None:
+            raise ValueError("MCP server/tool is unavailable")
+        return await server.validate_durable_session(tool_name, tool)
+
     async def call_tool(
-        self, tool_name: str, input_data: Dict[str, Any]
+        self, tool_name: str, input_data: Dict[str, Any], *, durable_tool=None
     ) -> CallToolResult:
         """Call a tool with the given input data"""
         server_name_part, tool_name_part = _split_qualified_tool_name(tool_name)
@@ -1270,10 +1295,14 @@ class MCPConfig(BaseModel):
                     break
         if matched_server is None:
             raise ValueError(f"Tool {tool_name} not found")
-        return await matched_server.call_tool(tool_name_part, input_data)
+        return await matched_server.call_tool(tool_name_part, input_data, **({"durable_tool": durable_tool} if durable_tool is not None else {}))
 
 
 T = TypeVar("T")
+
+
+class _MCPRecoveryHold(Exception):
+    """Carry a hold through DeferredTask's Exception-only worker boundary."""
 
 
 class MCPClientBase(ABC):
@@ -1316,6 +1345,9 @@ class MCPClientBase(ABC):
                 worker.execute_inside(operation),
                 timeout=timeout_seconds,
             )
+        except _MCPRecoveryHold as exc:
+            from helpers.durable.runtime import RecoveryHeld
+            raise RecoveryHeld(str(exc)) from None
         except asyncio.TimeoutError as exc:
             timed_out = True
             message = (
@@ -1348,6 +1380,7 @@ class MCPClientBase(ABC):
         self,
         coro_func: Callable[[ClientSession], Awaitable[T]],
         read_timeout_seconds=60,
+        session_validator=None,
     ) -> T:
         """
         Manages the lifecycle of an MCP session for a single operation.
@@ -1371,11 +1404,13 @@ class MCPClientBase(ABC):
                     ),
                 )
             )
-            await session.initialize()
+            initialized = await session.initialize()
+            if session_validator is not None:
+                await session_validator(session, initialized)
 
             result = await coro_func(session)
             has_result = True
-        except Exception as e:
+        except BaseException as e:
             excs = getattr(e, "exceptions", None)  # Python 3.11+ ExceptionGroup
             if excs:
                 original_exception = excs[0]
@@ -1397,6 +1432,11 @@ class MCPClientBase(ABC):
                 f"session cleanup failed: {type(cleanup_exception).__name__}: {cleanup_exception}"
             )
         if original_exception is not None:
+            if not isinstance(original_exception, Exception):
+                from helpers.durable.runtime import RecoveryHeld
+                if isinstance(original_exception, RecoveryHeld):
+                    raise _MCPRecoveryHold(str(original_exception)) from None
+                raise original_exception
             PrintStyle(
                 background_color="#AA4455", font_color="white", padding=False
             ).print(
@@ -1470,8 +1510,31 @@ class MCPClientBase(ABC):
         with self.__lock:
             return [dict(tool) for tool in self.tools]
 
+    def _durable_validator(self, durable_tool):
+        async def validate_session(session, initialized):
+            from helpers.durable.sessions import validate_mcp
+            advertised = await session.list_tools()
+            await validate_mcp(
+                durable_tool, self.server,
+                initialized.model_dump(mode="json", by_alias=True, exclude_none=True),
+                [item.model_dump(mode="json", by_alias=True, exclude_none=True)
+                 for item in advertised.tools],
+            )
+
+        return validate_session
+
+    async def validate_durable_session(self, durable_tool):
+        async def probe(session):
+            return None
+        timeout = self.server.init_timeout or settings.get_settings().get("mcp_client_init_timeout", 10) or 10
+        return await self._run_isolated_operation(
+            "durable_validate", lambda: self._execute_with_session(
+                probe, read_timeout_seconds=timeout,
+                session_validator=self._durable_validator(durable_tool)),
+            timeout_seconds=self._operation_timeout_seconds(timeout))
+
     async def call_tool(
-        self, tool_name: str, input_data: Dict[str, Any]
+        self, tool_name: str, input_data: Dict[str, Any], *, durable_tool=None
     ) -> CallToolResult:
         # PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name}): Preparing for 'call_tool' operation for tool '{tool_name}'.")
         if not self.has_tool(tool_name):
@@ -1497,6 +1560,7 @@ class MCPClientBase(ABC):
             or 120
         )
 
+
         async def call_tool_op(current_session: ClientSession):
             # PrintStyle(font_color="cyan").print(f"MCPClientBase ({self.server.name}): Executing 'call_tool' for '{tool_name}' via MCP session...")
             response: CallToolResult = await current_session.call_tool(
@@ -1513,6 +1577,7 @@ class MCPClientBase(ABC):
                 lambda: self._execute_with_session(
                     call_tool_op,
                     read_timeout_seconds=tool_timeout,
+                    **({"session_validator": self._durable_validator(durable_tool)} if durable_tool is not None else {}),
                 ),
                 timeout_seconds=self._operation_timeout_seconds(tool_timeout),
             )

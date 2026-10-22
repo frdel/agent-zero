@@ -140,6 +140,10 @@ def test_ui_hooks_run_on_claimed_worker_and_unknown_preparation_never_replays(no
     users = [item for item in saved["checkpoint"]["context"]["log"]["logs"] if item["type"] == "user"]
     assert [item["content"] for item in users] == ["Prepared: Raw UI input"]
     assert observed == ["Raw UI input"] and len(nodes.rig.requests) == 1
+    for node in (nodes.first, nodes.second):
+        active_context = node.contexts.get(run["run_id"])
+        if active_context and active_context.task:
+            active_context.task.result_sync(timeout=10)
 
     # A committed preparation can move to another worker before initialization.
     known_message = UserMessage("Known preparation", id="ui-known")
@@ -154,6 +158,10 @@ def test_ui_hooks_run_on_claimed_worker_and_unknown_preparation_never_replays(no
         nodes.first.sync("release", known["run_id"])
     assert nodes.second.dispatch_for_run(known["run_id"]).result_sync(timeout=10) == "Done"
     assert observed == ["Raw UI input", "Known preparation"] and len(nodes.rig.requests) == 2
+    for node in (nodes.first, nodes.second):
+        active_context = node.contexts.get(known["run_id"])
+        if active_context and active_context.task:
+            active_context.task.result_sync(timeout=10)
 
     # An intent without a result may already have produced hook effects.
     latest = nodes.first.sync("get_run", known["run_id"])

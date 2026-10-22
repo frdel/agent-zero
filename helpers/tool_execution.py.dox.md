@@ -18,6 +18,7 @@
 - Commit a distinct finalization intent before postprocessing/intervention. A body held solely by document CAS conflicts may continue postprocessing after every conflict is explicitly resolved, provided finalization has not started. Its body and prehooks never repeat.
 - Effective-argument results atomically retain the pre-body log/checkpoint. Exact audited workflow wrappers resume from committed args and their recorded log identity without replaying tool prehooks; current audited policy/secret preparation still runs. Active call ownership spans join/collection finalization. Child waits yield execution slots and reacquire before post-body effects.
 - Native output factories run before tool `after_execution`, preserving provider call identities. Parallel callers retain their string-return behavior and log-object override.
+- Durable resource aliases are journaled canonically and localized to the claimed worker before tool preparation/execution. Audited execution/session adapters can reconcile known outcomes without repeating submitted effects. A known body and captured workspace commit together; failed capture still records the plain known body and holds. Unknown finalization hooks remain held.
 
 ## Verification
 

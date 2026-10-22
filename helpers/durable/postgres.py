@@ -29,6 +29,7 @@ from helpers.durable.store import (
     StaleRunError, _ACTIVE, _MAX_JSON, _BLOB_THRESHOLD, _BLOB_PREFIX,
     _identity, _json, _digest,
 )
+from helpers.durable.resource_store import ResourceStore
 
 
 class _Row(dict):
@@ -86,7 +87,7 @@ def _lock_key(namespace, kind, identity=""):
     return int.from_bytes(hashlib.sha256(encoded).digest()[:8], "big", signed=True)
 
 
-class PostgresStore(LocalStore):
+class PostgresStore(ResourceStore, LocalStore):
     distributed = True
 
     def __init__(self, dsn, *, namespace="agent_zero", worker_id=None):
@@ -172,7 +173,7 @@ class PostgresStore(LocalStore):
                 self._connection.execute("SELECT pg_advisory_xact_lock(?)", (self._writer_key,))
                 if self._ready:
                     row = self._connection.execute("SELECT value FROM backend_metadata WHERE key='protocol'").fetchone()
-                    if row is None or row["value"] != "1":
+                    if row is None or row["value"] != "2":
                         raise IntegrityError("Unsupported PostgreSQL recovery protocol")
                 yield
                 self._connection.execute("COMMIT")
@@ -231,8 +232,10 @@ class PostgresStore(LocalStore):
             self._connection.execute("CREATE TABLE IF NOT EXISTS backend_metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL)")
             row = self._connection.execute("SELECT value FROM backend_metadata WHERE key='protocol'").fetchone()
             if row is not None:
-                if row["value"] != "1":
+                if row["value"] not in ("1", "2"):
                     raise IntegrityError("Unsupported PostgreSQL recovery protocol")
+                self._initialize_resources()
+                self._connection.execute("UPDATE backend_metadata SET value='2' WHERE key='protocol'")
                 return
             statements = [
                 "CREATE TABLE contexts(context_id TEXT PRIMARY KEY,generation BIGINT NOT NULL,deleted SMALLINT NOT NULL DEFAULT 0)",
@@ -286,7 +289,8 @@ class PostgresStore(LocalStore):
             ]
             for statement in statements:
                 self._connection.execute(statement)
-            self._connection.execute("INSERT INTO backend_metadata(key,value) VALUES('protocol','1')")
+            self._initialize_resources()
+            self._connection.execute("INSERT INTO backend_metadata(key,value) VALUES('protocol','2')")
             self._connection.execute("INSERT INTO metadata(key,value) VALUES('deployment_epoch',?)", (uuid.uuid4().hex,))
 
     def _event(self, run_id, kind, payload=None):
@@ -440,6 +444,15 @@ class PostgresStore(LocalStore):
         context = self._document_context(row["context_id"])
         if context["generation"] != row["generation"]:
             return
+        checkpoint = self._read(row["checkpoint"], row["checkpoint_digest"], required=True)
+        self._verify_resources(row["context_id"], checkpoint.get("resources", {}))
+        if self.owns(run_id):
+            workspace = (checkpoint.get("resources") or {}).get("workspace")
+            if workspace:
+                previous = self.get_resource_manifest(row["context_id"], "workspace")
+                if previous is None or previous["value"] != workspace:
+                    self.publish_resource_manifest(row["context_id"], "workspace", workspace,
+                                                   previous["version"] if previous else 0, run_id)
         self._connection.execute("""INSERT INTO context_heads(context_id,run_id,generation,checkpoint,digest,checkpoint_seq,admission_seq)
             VALUES(?,?,?,?,?,?,?) ON CONFLICT(context_id) DO UPDATE SET run_id=excluded.run_id,generation=excluded.generation,
             checkpoint=excluded.checkpoint,digest=excluded.digest,checkpoint_seq=excluded.checkpoint_seq,admission_seq=excluded.admission_seq
@@ -454,6 +467,9 @@ class PostgresStore(LocalStore):
 
     def admit(self, context_id, input_id, input_payload, checkpoint, *, expected_generation=None):
         with self._transaction():
+            for uri in input_payload.get("attachments", []):
+                if isinstance(uri, str) and uri.startswith("a0-resource://"):
+                    self.get_resource(context_id, uri[len("a0-resource://"):])
             if expected_generation is not None:
                 existing = self._connection.execute("SELECT 1 FROM runs WHERE context_id=? AND input_id=?", (context_id, input_id)).fetchone()
                 if not existing and self.document_generation(context_id) != expected_generation:
@@ -623,7 +639,8 @@ class PostgresStore(LocalStore):
         reachable = super()._referenced_blobs()
         for row in self._connection.execute("SELECT checkpoint AS value FROM context_heads WHERE checkpoint LIKE '@blob:%'").fetchall():
             reachable.add(self._blob_digest(row["value"]))
-        for table, columns in (("projections", ("value",)), ("commands", ("payload", "result"))):
+        for table, columns in (("projections", ("value",)), ("commands", ("payload", "result")),
+                               ("resource_manifests", ("value",)), ("resource_jobs", ("result",))):
             for column in columns:
                 for row in self._connection.execute(f"SELECT {column} AS value FROM {table} WHERE {column} LIKE '@blob:%'").fetchall():
                     reachable.add(self._blob_digest(row["value"]))
@@ -632,6 +649,7 @@ class PostgresStore(LocalStore):
     def _control_rows(self, context_ids, action):
         if action == "delete":
             for context_id in context_ids:
+                self._delete_resources(context_id)
                 self._connection.execute("DELETE FROM context_heads WHERE context_id=?", (context_id,))
                 self._connection.execute("DELETE FROM commands WHERE run_id IN (SELECT run_id FROM runs WHERE context_id=?)", (context_id,))
                 self._connection.execute("DELETE FROM projections WHERE key IN (?,?)", ("chat:" + context_id, "genesis:" + context_id))
@@ -679,6 +697,7 @@ class PostgresStore(LocalStore):
             extra = self.garbage_collect()
             result["blobs_removed"] += extra["blobs_removed"]
             result["bytes_removed"] += extra["bytes_removed"]
+            result.update(self.collect_resources())
             return result
 
     def begin_restore_review(self):

@@ -132,10 +132,12 @@ def test_shared_endpoint_still_enforces_authentication_and_csrf(rig, shared, mon
     api_module.register_api_route(app, threading.RLock())
     client = app.test_client()
     assert client.post("/api/durability", json={"action": "status"}).status_code == 302
+    assert client.post("/api/durability_resource", json={"context": rig.context.id}).status_code == 302
     with client.session_transaction() as session:
         session["authentication"] = "synthetic-auth"
         session["csrf_token"] = "synthetic-csrf"
     assert client.post("/api/durability", json={"action": "status"}).status_code == 403
+    assert client.post("/api/durability_resource", json={"context": rig.context.id}).status_code == 403
     response = client.post("/api/durability", json={"action": "status"}, headers={"X-CSRF-Token": "synthetic-csrf"})
     assert response.status_code == 200 and response.json["distributed"] is True
 

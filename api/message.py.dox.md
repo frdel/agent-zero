@@ -18,7 +18,7 @@
 
 ## Runtime Contracts
 
-- Shared PostgreSQL chats route text and stable message IDs through `communicate_remote(..., ui=True)` before local context creation, UI extension hooks or logging. A first message with no chat ID derives a stable chat identity from its message ID, so a lost acknowledgement cannot create another chat. The claimed execution worker journals UI-hook intent/result and logs only prepared input. A known preparation is reused; an unknown hook outcome is held. UI interventions during an active turn require an explicit input-hook adapter and are rejected. Host-local attachment uploads are rejected before saving files; shared execution does not imply portable local files.
+- Shared PostgreSQL chats route text and stable message IDs through `communicate_remote(..., ui=True)` before local context creation, UI extension hooks or logging. A first message with no chat ID derives a stable chat identity from its message ID, so a lost acknowledgement cannot create another chat. The claimed execution worker journals UI-hook intent/result and logs only prepared input. A known preparation is reused; an unknown hook outcome is held. UI interventions during an active turn require an explicit input-hook adapter and are rejected. Multipart attachments enter encrypted context resources before admission; JSON `resources` references must already belong to that context. The owner materializes verified bytes before hooks/history. Local/off upload behavior stays unchanged.
 
 - HTTP handlers must derive from `helpers.api.ApiHandler`; WebSocket handlers must derive from `helpers.ws.WsHandler`.
 - Update this file whenever request payloads, authentication or CSRF requirements, response shapes, route side effects, or WebSocket event contracts change.

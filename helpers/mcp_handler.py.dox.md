@@ -103,6 +103,9 @@
 - MCP config locks must not be held across awaited server initialization or tool-call operations. Slow or wedged MCP servers must not block status reads, prompt construction, unrelated MCP servers, or later tool calls through the shared config lock.
 - MCP client session work runs inside disposable isolated `DeferredTask` workers with an outer timeout. Normal `AsyncExitStack` cleanup is also bounded; if cleanup or transport shutdown does not finish, the operation reports failure or warning while Agent Zero keeps control of the agent loop.
 - Server status marks initialized server objects with cached initialization errors as disconnected, even if the config object exists.
+- Durable calls pass the actual initialized connection through the session adapter before invoking a tool. Its encrypted descriptor binds the locally configured server fingerprint, InitializeResult identity/capabilities and current advertised tool schemas; recheck ownership after the handshake before dispatch. Credentials remain locally configured and are never exported in descriptors. Legacy callers do not receive the optional durable keyword arguments.
+- `validate_durable_session(tool)` reconnects and validates without calling the original tool. Trusted local `sessions.register_reconciler(server, tool, async_callable)` adapters may query a documented server status API and return an actual completed `CallToolResult` or `None`; their source identity is pinned in the descriptor. No reconciler is installed by default. Server annotations/read-only hints never authorize replay. Changed identity/schema/config, unknown effects, transport timeouts and lost outcomes hold.
+- A private exception sentinel carries recovery holds through the disposable worker boundary, then restores `RecoveryHeld` on the owning loop. Session cleanup still runs on validation failure; the tool wrapper must not turn an unknown durable outcome into a completed retryable error.
 - Observed side-effect areas: filesystem writes, network calls, WebSocket state, settings/state persistence, secret handling.
 - Imported dependency areas include: `abc`, `anyio.streams.memory`, `asyncio`, `contextlib`, `datetime`, `helpers`, `helpers.defer`, `helpers.log`, `helpers.print_style`, `helpers.tool`, `httpx`, `json`, `mcp`, `mcp.client.sse`, `mcp.client.stdio`, `mcp.client.streamable_http`, `mcp.shared.message`, `shlex`.
 
@@ -123,6 +126,7 @@
 - Run targeted tests for changed helper behavior; run security regressions for auth, filesystem, WebSocket, tunnel, upload, or secret-handling helpers.
 - Related tests observed by source search:
   - `tests/test_mcp_handler_multimodal.py`
+  - `tests/test_durable_sessions.py` (real local stdio MCP process; no external server, provider or credentials)
   - `tests/test_tool_policy.py`
 
 ## Child DOX Index

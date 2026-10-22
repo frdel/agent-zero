@@ -398,13 +398,18 @@ class RecoveryService:
             context.set_output_data("durability", {"status": "needs_attention", "run_id": run["run_id"]})
             context.log.log(type="warning", content=text)
             return text
-        except Exception:
+        except Exception as error:
             if turn is not None:
                 turn.holding = True
+            from helpers.durable.resources import ResourceHeld
+            from helpers.durable.workspaces import WorkspaceHeld
+            resource_hold = isinstance(error, (ResourceHeld, WorkspaceHeld))
             await self.io("transition", run["run_id"], "needs_attention", status="attention",
-                          payload={"reason": "execution_or_checkpoint_failed"})
+                          payload={"reason": str(error) if resource_hold else "execution_or_checkpoint_failed"})
             await self._scheduler_halted(context, run, "attention")
             context.set_output_data("durability", {"status": "needs_attention", "run_id": run["run_id"]})
+            if resource_hold:
+                return "Shared resource recovery needs attention: " + str(error)
             raise
         finally:
             if turn is not None and getattr(context, "_durable_turn", None) is turn:
@@ -707,13 +712,16 @@ class Turn:
             raise RecoveryHeld("workflow_adapter_required")
         call_id = f"tool:{self.agent.loop_data.iteration}:{self.tool_index}"
         self.tool_index += 1
+        from helpers.durable.resources import canonical_value, local_value
         payload = {"tool": codec.identity(tool), "name": tool.name, "method": tool.method,
-                   "args": codec.masked(self.agent, args)}
+                   "args": canonical_value(self.agent.context, codec.masked(self.agent, args))}
         existing = await self.owner.io("get_call", self.run_id, call_id)
         workflow = _audited_workflow(tool)
+        from helpers.durable.adapters import implementation
+        adapter = implementation(tool, args) if getattr(self.owner, "distributed", False) else None
         if self.recovered and existing is None:
             from helpers.durable.replay import AUDITED_TOOLS
-            if not workflow and (type(tool).__name__, codec.identity(tool)["source"]) not in AUDITED_TOOLS:
+            if not workflow and adapter is None and (type(tool).__name__, codec.identity(tool)["source"]) not in AUDITED_TOOLS:
                 raise RecoveryHeld("recovered_target_adapter_required")
         if existing:
             if existing["payload"] != payload:
@@ -747,8 +755,16 @@ class Turn:
                 result = finalized["result"]
                 if result.get("finalized"):
                     from helpers.tool import Response
-                    return call_id, Response(**result["response"])
+                    return call_id, Response(**local_value(self.agent.context, result["response"]))
             if existing["status"] == "completed":
+                if adapter and finalized is None and all(_audited_hooks(self.agent, point)
+                        for point in ("tool_execute_before", "tool_execute_after")):
+                    prepared = await self.owner.io("get_call", self.run_id, call_id + ":args")
+                    if prepared and prepared["status"] == "completed":
+                        from helpers.tool import Response
+                        self.resuming_args[call_id] = prepared
+                        self.resuming_bodies[call_id] = Response(**local_value(self.agent.context, existing["result"]["response"]))
+                        return call_id, None
                 conflicts = existing.get("document_conflicts") or []
                 if conflicts and all(item.get("status") == "resolved" for item in conflicts) and finalized is None:
                     from helpers.tool_policy import ensure_tool_allowed
@@ -763,6 +779,19 @@ class Turn:
                         self.resuming_bodies[call_id] = Response(**existing["result"]["response"])
                         return call_id, None
                 raise RecoveryHeld("tool_finalization_interrupted")
+            if adapter:
+                prepared = await self.owner.io("get_call", self.run_id, call_id + ":args")
+                if not prepared or prepared["status"] != "completed" or not _audited_hooks(self.agent, "tool_execute_before"):
+                    raise RecoveryHeld("adapter_preparation_interrupted")
+                reconcile = getattr(adapter, "reconcile_unknown", None)
+                response = await reconcile(tool, args, existing) if reconcile else None
+                if response is not None:
+                    await self.tool_body(call_id, response)
+                    self.resuming_bodies[call_id] = response
+                elif not adapter.can_resume(tool, args, existing):
+                    raise RecoveryHeld("adapter_effect_outcome_unknown")
+                self.resuming_args[call_id] = prepared
+                return call_id, None
             if workflow:
                 prepared = await self.owner.io("get_call", self.run_id, call_id + ":args")
                 if not prepared or prepared["status"] != "completed" or not _audited_hooks(self.agent, "tool_execute_before"):
@@ -783,7 +812,8 @@ class Turn:
 
     async def effective_tool_args(self, call_id, args):
         identifier = call_id + ":args"
-        data = codec.masked(self.agent, args)
+        from helpers.durable.resources import canonical_value
+        data = canonical_value(self.agent.context, codec.masked(self.agent, args))
         await self.owner.io("start_call", self.run_id, identifier, "arguments", data)
         tool = self.agent.loop_data.current_tool
         log = getattr(tool, "log", None)
@@ -798,13 +828,23 @@ class Turn:
         # Immutable body outcome. Finalization lives in a separate event/call.
         data = codec.masked(self.agent, {"message": response.message, "break_loop": response.break_loop,
                                          "additional": response.additional})
+        from helpers.durable.resources import canonical_value
+        data = canonical_value(self.agent.context, data)
         outcome = {"response": data, "finalized": False}
         session = self.document_sessions.get(call_id)
         edits = session.edits() if session else []
         try:
-            recorded = await self.owner.io("finish_call", self.run_id, call_id, outcome, document_edits=edits)
+            projection = codec.checkpoint(self.agent, result=self.result) if getattr(self.owner, "distributed", False) else None
+        except (Exception, RecoveryHeld):
+            # A completed effect remains known even when its changed workspace
+            # cannot be captured. A successor must reconcile files, never rerun it.
+            await self.owner.io("finish_call", self.run_id, call_id, outcome, document_edits=edits)
+            raise RecoveryHeld("resource_snapshot_requires_reconciliation") from None
+        continuation = {"checkpoint": projection, "phase": self.phase} if projection is not None else {}
+        try:
+            recorded = await self.owner.io("finish_call", self.run_id, call_id, outcome, document_edits=edits, **continuation)
         except RecoveryHeld:
-            if not edits:
+            if not edits and not continuation:
                 raise
             await self.owner.io("finish_call", self.run_id, call_id, outcome)
             raise
@@ -818,6 +858,8 @@ class Turn:
     async def tool_finalized(self, call_id, response):
         data = codec.masked(self.agent, {"message": response.message, "break_loop": response.break_loop,
                                          "additional": response.additional})
+        from helpers.durable.resources import canonical_value
+        data = canonical_value(self.agent.context, data)
         # Distinct immutable finalization record avoids overwriting body evidence.
         final_id = call_id + ":final"
         await self.owner.io("start_call", self.run_id, final_id, "finalization", {"body": call_id})

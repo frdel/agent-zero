@@ -93,6 +93,11 @@ class ApiHandler:
             from helpers.durable.runtime import service
             owner = service()
             if owner and getattr(owner, "distributed", False):
+                from helpers.durable.resources import ResourceHeld
+                from helpers.durable.workspaces import WorkspaceHeld
+                if isinstance(e, (ResourceHeld, WorkspaceHeld)):
+                    return Response(json.dumps({"error": str(e), "code": "shared_resource_held"}),
+                                    status=409, mimetype="application/json")
                 # Database/provider errors can embed DSNs or private call data.
                 # Shared-operation failures must not use the legacy traceback
                 # response or print unfiltered connection diagnostics.

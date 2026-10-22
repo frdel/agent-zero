@@ -27,7 +27,7 @@ second, stale architecture manual.
 | Build plugins | [Plugins](plugins.md) |
 | Build extensions | [Extensions](extensions.md) |
 | Configure MCP | [MCP Configuration](mcp-configuration.md) |
-| Enable durability and recovery | [Durability](durability.md), [PostgreSQL workers](durability-postgres.md) |
+| Enable durability and recovery | [Durability](durability.md), [PostgreSQL workers](durability-postgres.md), [Portable resources](durability-resources.md) |
 
 If you are changing core behavior, read the relevant DeepWiki page first, then
 inspect the source in this repository before editing.

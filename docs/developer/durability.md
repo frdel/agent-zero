@@ -6,6 +6,8 @@ backend coordinates workers across processes and hosts through one PostgreSQL
 database, including recovery payloads and scheduler state. See
 [PostgreSQL workers](durability-postgres.md) for configuration, ownership,
 remote controls, backup, and portability requirements.
+The [portable resource adapters](durability-resources.md) add encrypted attachments,
+isolated managed workspaces and explicit shell/SSH/browser/MCP recovery contracts.
 
 The local backend requires working OS locks and fsync. Sharing a SQLite data root
 over a network filesystem does not provide distributed execution.
@@ -52,8 +54,7 @@ action was not automatically retried. Open **More → Recovery & documents** to 
 | Recovery decisions | Opaque review versions reject stale actions. Stable request IDs make lost-response retries idempotent. Explicit new attempts have a three-attempt total budget per logical call. |
 | UI | Recovery & documents provides recovery review, per-run restore selection and a typed plan editor through authenticated, CSRF-protected APIs. Existing `/webui` runtime-epoch resync and `Log` projection remain in use; recovery resets log generation. Stream previews are provisional. |
 
-Provider-hosted built-ins and arbitrary integration/session recovery require explicit adapters. A recovered turn holds before starting a new unaudited stateful target: old shell,
-browser, SSH and connector session objects are not portable checkpoints.
+Provider-hosted built-ins and arbitrary integration/session recovery require explicit adapters. A recovered turn holds before starting a new unaudited stateful target. The PostgreSQL resource adapters restore declared files and session state; old live Python/process objects remain unsuitable as checkpoints.
 
 Arbitrary plugin checkpoint state and side effects in interrupted hooks require
 adapters. Recovery checks configuration and source fingerprints. An interrupted

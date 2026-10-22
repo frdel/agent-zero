@@ -130,17 +130,19 @@ def descendant_context_ids(owner, parent_run_id):
 
 async def _manifest(turn, specifications):
     owner, parent = turn.owner, turn.agent
+    from helpers.durable.resources import canonical_value, capture_context
+    descriptor = canonical_value(parent.context, codec.masked(parent, {"specifications": specifications}))
     identifier = _key(turn, "workflow")
     found = await owner.io("get_call", turn.run_id, identifier)
     if found:
         if found["status"] != "completed":
             _held("child_creation_interrupted")
-        if found["payload"] != codec.masked(parent, {"specifications": specifications}):
+        if found["payload"] != descriptor:
             _held("child_manifest_changed")
         return found["result"]["children"]
     # The intent covers constructors and project/profile hooks as well as genesis.
     await owner.io("start_call", turn.run_id, identifier, "workflow",
-                   codec.masked(parent, {"specifications": specifications}))
+                   descriptor)
     from agent import AgentContext, AgentContextType
     from helpers.parallel_tools import _clone_config, _copy_project
     from tools.call_subordinate import get_or_create_subordinate
@@ -176,6 +178,15 @@ async def _manifest(turn, specifications):
                   "tool_name": spec["name"], "tool_args": args, "slot": slot}
         origin = codec.masked(parent, origin)
         restore_context(context, origin)
+        if getattr(owner, "distributed", False):
+            from agent import UserMessage
+            pending = UserMessage(message, attachments=attachments, id=job_id)
+            capture_context(owner, context, pending)
+            attachments = pending.attachments
+            origin = canonical_value(parent.context, origin)
+            if "attachments" in origin["tool_args"]:
+                origin["tool_args"]["attachments"] = attachments
+            restore_context(context, origin)
         genesis = codec.checkpoint(context.agent0)
         genesis["origin"] = origin
         children.append({"job_id": job_id, "index": index, "context_id": context.id,

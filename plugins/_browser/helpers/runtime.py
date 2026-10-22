@@ -11,6 +11,7 @@ import re
 import shutil
 import signal
 import subprocess
+import sys
 import threading
 import time
 import uuid
@@ -649,9 +650,9 @@ async def run_browser_calls(calls: list[dict[str, Any]], dispatch: Any) -> list[
 
 
 class BrowserRuntime:
-    def __init__(self, context_id: str):
+    def __init__(self, context_id: str, *, durable: bool = False):
         self.context_id = str(context_id)
-        self._core = _BrowserRuntimeCore(self.context_id)
+        self._core = _BrowserRuntimeCore(self.context_id, durable=durable)
         self._worker = DeferredTask(thread_name=f"BrowserRuntime-{self.context_id}")
         self._closed = False
 
@@ -739,8 +740,12 @@ class _BrowserRuntimeCore:
     }
     _POPUP_WAIT_SECONDS = 2.0
 
-    def __init__(self, context_id: str):
+    def __init__(self, context_id: str, *, durable: bool = False):
         self.context_id = context_id
+        self.durable = durable
+        self._durable_storage_state = None
+        self._durable_browser = None
+        self._durable_started = False
         self.safe_context_id = _safe_context_id(context_id)
         self.request_context_id: contextvars.ContextVar[str] = contextvars.ContextVar(
             f"browser_context_{id(self)}",
@@ -793,6 +798,10 @@ class _BrowserRuntimeCore:
             self._last_interacted_browser_ids[context_id] = int(browser_id)
 
     def _load_restore_state(self) -> None:
+        if self.durable:
+            self._restore_state_exists, self._restore_entries = True, []
+            self._restore_state_loaded = True
+            return
         self._restore_state_exists, self._restore_entries = _load_browser_tabs()
         self._restore_state_loaded = True
         self._restored_context_ids.clear()
@@ -800,12 +809,16 @@ class _BrowserRuntimeCore:
         self._restoring_tabs = False
 
     def _tab_scope(self) -> str:
+        if self.durable:
+            return "context"
         return str(
             get_browser_config().get(TAB_SCOPE_KEY, DEFAULT_BROWSER_TAB_SCOPE)
             or DEFAULT_BROWSER_TAB_SCOPE
         )
 
     def _persist_browser_tabs(self) -> None:
+        if self.durable:
+            return
         if not self._restore_state_loaded or self._restoring_tabs:
             return
 
@@ -1061,6 +1074,8 @@ class _BrowserRuntimeCore:
         return Path(files.get_abs_path("tmp/browser/screenshots", self.safe_context_id))
 
     async def ensure_started(self) -> None:
+        if self.durable and self._durable_started and not self._context_is_alive():
+            raise RuntimeError("Durable browser session was lost; restore its recorded checkpoint")
         if self._context_is_alive():
             await self._restore_tabs_for_scope()
             return
@@ -1144,12 +1159,13 @@ class _BrowserRuntimeCore:
             raise RuntimeError(f"Browser setup failed: {problem}")
         from patchright.async_api import async_playwright
 
-        self.profile_dir.parent.mkdir(parents=True, exist_ok=True)
-        self._adopt_legacy_profile(self.current_context_id)
-        self.profile_dir.mkdir(parents=True, exist_ok=True)
+        if not self.durable:
+            self.profile_dir.parent.mkdir(parents=True, exist_ok=True)
+            self._adopt_legacy_profile(self.current_context_id)
+            self.profile_dir.mkdir(parents=True, exist_ok=True)
+            self._prepare_download_preferences()
+            self._release_orphaned_profile_singleton()
         self.downloads_dir.mkdir(parents=True, exist_ok=True)
-        self._prepare_download_preferences()
-        self._release_orphaned_profile_singleton()
         browser_config = get_browser_config()
         launch_config = build_browser_launch_config(browser_config)
         browser_binary = Path(preparation["binary"])
@@ -1189,9 +1205,19 @@ class _BrowserRuntimeCore:
         if launch_config["proxy"]:
             launch_kwargs["proxy"] = launch_config["proxy"]
         try:
-            self.context = await self.playwright.chromium.launch_persistent_context(
-                **launch_kwargs
-            )
+            if self.durable:
+                # Never import a shared sign-in profile into a durable chat.
+                launch_kwargs.pop("user_data_dir", None)
+                context_kwargs = {key: launch_kwargs.pop(key) for key in
+                                  ("accept_downloads", "viewport", "screen", "no_viewport")
+                                  if key in launch_kwargs}
+                self._durable_browser = await self.playwright.chromium.launch(**launch_kwargs)
+                self.context = await self._durable_browser.new_context(
+                    storage_state=self._durable_storage_state, **context_kwargs)
+            else:
+                self.context = await self.playwright.chromium.launch_persistent_context(
+                    **launch_kwargs
+                )
         except Exception:
             if self.playwright:
                 try:
@@ -1200,6 +1226,8 @@ class _BrowserRuntimeCore:
                     pass
                 self.playwright = None
             raise
+        if self.durable:
+            self._durable_started = True
         self.context.set_default_timeout(30000)
         self.context.set_default_navigation_timeout(30000)
         self.context.on("close", self._on_context_closed)
@@ -2775,8 +2803,58 @@ class _BrowserRuntimeCore:
             await page.keyboard.type(str(text))
         return True
 
+    async def durable_health(self):
+        return {"started": self._durable_started, "alive": self._context_is_alive()}
+
+    async def durable_snapshot(self) -> dict[str, Any]:
+        if not self.durable:
+            raise ValueError("Shared browser profiles cannot be exported")
+        await self.ensure_started()
+        tabs = []
+        from helpers.durable.sessions import safe_url
+        for browser_id in self._context_browser_ids():
+            page = self.pages[browser_id].page
+            # Unsupported URLs hold snapshot publication; they are never reopened.
+            url = safe_url(str(page.url))
+            session = await page.evaluate("() => Object.fromEntries(Object.entries(sessionStorage))") if url != "about:blank" else {}
+            tabs.append({"id": browser_id, "url": url, "session_storage": session,
+                         "active": browser_id == self.last_interacted_browser_id})
+        return {"schema": 1, "storage": await self.context.storage_state(), "tabs": tabs}
+
+    async def durable_restore(self, snapshot: dict[str, Any]) -> None:
+        if not self.durable or self.context is not None or snapshot.get("schema") != 1:
+            raise ValueError("Browser restore requires a fresh isolated runtime")
+        from helpers.durable.sessions import safe_url
+        tabs = snapshot.get("tabs", [])
+        for tab in tabs:
+            safe_url(tab["url"])
+        self._durable_storage_state = snapshot.get("storage")
+        await self.ensure_started()
+        # Every restored page has a fresh tab identity as well as fresh DOM refs.
+        # Navigation/popups cannot collide with any saved tab ID.
+        self.next_browser_id = max((int(tab["id"]) for tab in tabs), default=0) + 1
+        for tab in tabs:
+            page = await self.context.new_page()
+            # Origin-bound data is installed before document scripts execute.
+            from urllib.parse import urlsplit
+            url = safe_url(tab["url"])
+            origin = urlsplit(url)
+            origin = origin.scheme + "://" + origin.netloc
+            state = json.dumps(json.dumps({"origin": origin, "values": tab.get("session_storage", {})}))
+            cdp = await self.context.new_cdp_session(page)
+            script = await cdp.send("Page.addScriptToEvaluateOnNewDocument", {"source":
+                "(() => { const saved = JSON.parse(" + state + "); if(location.origin === saved.origin) { for(const [key,value] of Object.entries(saved.values)) sessionStorage.setItem(key,value); } })()"})
+            browser_page = await self._register_page(page, self.current_context_id)
+            try:
+                await self._goto(page, url, wait_until="domcontentloaded")
+            finally:
+                await cdp.send("Page.removeScriptToEvaluateOnNewDocument", {"identifier": script["identifier"]})
+                await cdp.detach()
+            if tab.get("active"):
+                self.last_interacted_browser_id = browser_page.id
+
     async def close(self, delete_profile: bool = False) -> None:
-        if delete_profile:
+        if delete_profile and not self.durable:
             with contextlib.suppress(Exception):
                 kvp.remove_persistent(BROWSER_TABS_KEY)
             self._restore_entries.clear()
@@ -2804,6 +2882,12 @@ class _BrowserRuntimeCore:
             except Exception as exc:
                 PrintStyle.warning(f"Browser context close failed: {exc}")
             self.context = None
+        if self._durable_browser:
+            try:
+                await self._durable_browser.close()
+            except Exception as exc:
+                PrintStyle.warning(f"Durable browser close failed: {exc}")
+            self._durable_browser = None
         if self.playwright:
             try:
                 await self.playwright.stop()
@@ -2811,7 +2895,7 @@ class _BrowserRuntimeCore:
                 PrintStyle.warning(f"Playwright stop failed: {exc}")
             self.playwright = None
         self._last_interacted_browser_ids.clear()
-        if delete_profile:
+        if delete_profile and not self.durable:
             shutil.rmtree(self.profile_dir, ignore_errors=True)
 
     def _on_context_closed(self) -> None:
@@ -3191,7 +3275,46 @@ class _BrowserRuntimeCore:
 
 _runtimes: dict[str, BrowserRuntimeSession] = {}
 _shared_runtime: BrowserRuntime | None = None
+_durable_runtimes: dict[str, BrowserRuntimeSession] = {}
 _runtime_lock = threading.RLock()
+
+
+async def get_durable_runtime(context_id: str):
+    with _runtime_lock:
+        session = _durable_runtimes.get(context_id)
+        fresh = session is None
+        if fresh:
+            session = BrowserRuntimeSession(context_id, BrowserRuntime(context_id, durable=True))
+            _durable_runtimes[context_id] = session
+            _runtimes[context_id] = session
+        return session, not getattr(session, "_durable_initialized", False)
+
+
+async def discard_durable_runtime(context_id: str, *, expected=None):
+    with _runtime_lock:
+        session = _durable_runtimes.get(context_id)
+        if expected is not None and session is not expected:
+            return
+        _durable_runtimes.pop(context_id, None)
+        if _runtimes.get(context_id) is session:
+            _runtimes.pop(context_id, None)
+    if session:
+        await session._runtime.close()
+
+
+def _durable_custody_required(context_id):
+    # Initialization loads this service before browser admission. Avoid importing
+    # the agent/recovery graph merely for a legacy viewer status request.
+    module = sys.modules.get("helpers.durable.runtime")
+    owner = module.service() if module else None
+    if owner is None:
+        return False
+    if getattr(owner, "enabled", False) or getattr(owner, "failed", False):
+        return True
+    try:
+        return bool(owner.sync("list_run_headers", context_id=context_id))
+    except Exception:
+        return True  # A missing ledger cannot authorize a shared-profile fallback.
 
 
 async def get_runtime(
@@ -3203,6 +3326,20 @@ async def get_runtime(
     context_id = str(context_id or "").strip()
     if not context_id:
         raise ValueError("context_id is required")
+    with _runtime_lock:
+        isolated = _durable_runtimes.get(context_id)
+    if isolated:
+        from helpers.durable.sessions import cached_browser_current
+        if await cached_browser_current(isolated):
+            return isolated
+        await discard_durable_runtime(context_id, expected=isolated)
+        if create:
+            raise RuntimeError("Durable browser must be prepared by its owning tool before the viewer opens")
+        return None
+    if _durable_custody_required(context_id):
+        if create:
+            raise RuntimeError("Durable browser must be prepared by its owning tool before the viewer opens")
+        return None
     with _runtime_lock:
         runtime = _runtimes.get(context_id)
         if runtime is None and _shared_runtime is not None:
@@ -3220,6 +3357,13 @@ async def get_runtime(
 async def close_runtime(context_id: str, *, delete_profile: bool = True) -> None:
     context_id = str(context_id or "").strip()
     if not context_id:
+        return
+    with _runtime_lock:
+        durable = _durable_runtimes.pop(context_id, None)
+    if durable:
+        with _runtime_lock:
+            _runtimes.pop(context_id, None)
+        await durable._runtime.close()
         return
     _forget_browser_context(context_id)
     with _runtime_lock:
@@ -3244,8 +3388,12 @@ async def close_all_runtimes(*, delete_profiles: bool = False) -> None:
     global _shared_runtime
     with _runtime_lock:
         _runtimes.clear()
+        durable = list(_durable_runtimes.values())
+        _durable_runtimes.clear()
         runtime = _shared_runtime
         _shared_runtime = None
+    for session in durable:
+        await session._runtime.close()
     if delete_profiles:
         with contextlib.suppress(Exception):
             kvp.remove_persistent(BROWSER_TABS_KEY)

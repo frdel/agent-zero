@@ -6,12 +6,11 @@ documents, recovery decisions, command receipts, scheduler projections, and larg
 JSON payloads share that authority. Workers do not need a shared SQLite volume or
 another host's `chat.json` to resume compatible portable work.
 
-This is an execution and recovery boundary. It does not turn a shell process,
-workspace, browser, SSH connection, MCP session, or arbitrary plugin object into
-portable state. Runs using local projects or attachments require a resource
-adapter. Source/configuration drift and unresolved external effects still hold
-for review. Plain inference and audited portable tools retain the existing
-recovery rules.
+Portable attachments, managed project snapshots and explicit shell/SSH/browser/MCP
+adapters use [encrypted shared resources](durability-resources.md). Each adapter
+declares what it can restore and reconcile; arbitrary process/plugin memory is
+not implicitly portable. Source/configuration drift and unresolved external
+effects still hold for review.
 
 ## Deployment
 
@@ -34,7 +33,7 @@ python run_ui.py
 Keep the password file private and use your platform's secret mount. The DSN is
 an environment-only configuration value, never a returned settings field. Saved
 `durability_backend` values take precedence over defaults; update an existing saved
-value and restart. The declared `psycopg[binary]` dependency also has a framework
+value and restart. Shared resource adapters additionally require the common private `A0_DURABILITY_RESOURCE_KEY`; see [resource custody](durability-resources.md). The declared `psycopg[binary]` dependency also has a framework
 startup migration for self-updated instances.
 
 The store requires server `fsync` and `full_page_writes`, and forces synchronous

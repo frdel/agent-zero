@@ -59,6 +59,8 @@
 
 ## Verification
 
+- Shared resource/workspace holds expose only their fixed payload-free capability reason with HTTP 409. Other shared failures retain the generic sanitized error; never return provider/connection exception diagnostics.
+
 - Run targeted tests for changed helper behavior; run security regressions for auth, filesystem, WebSocket, tunnel, upload, or secret-handling helpers.
 - Related tests observed by source search:
   - `tests/test_api_chat_lifetime.py`

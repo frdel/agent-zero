@@ -11,6 +11,7 @@ import copy
 import hashlib
 import threading
 import uuid
+from contextlib import nullcontext
 from types import SimpleNamespace
 
 from helpers.durable import codec
@@ -23,14 +24,16 @@ def portable(data, payload=None):
     if not data or data.get("requires_state_adapter"):
         return False
     context = data.get("context") or {}
-    if context.get("data", {}).get("project"):
+    if context.get("data", {}).get("project") and not data.get("resources", {}).get("workspace"):
         return False
     values = [payload or {}, data.get("intervention") or {}]
     values += [data.get("origin") or {}]
     def local_attachment(value):
         if isinstance(value, dict):
             if value.get("attachments"):
-                return True
+                from helpers.durable.resources import portable_attachments
+                if not portable_attachments(value["attachments"]):
+                    return True
             return any(local_attachment(item) for item in value.values())
         if isinstance(value, list):
             return any(local_attachment(item) for item in value)
@@ -174,6 +177,11 @@ class ClusterRecoveryService(RecoveryService):
                 run = self.sync("get_run", run_id)
                 if run["status"] not in ACTIVE:
                     if run["status"] == "cancelled" and context.task and context.task.is_alive():
+                        from helpers.defer import DeferredTask
+                        from helpers.durable.execution import cancel_sessions
+                        if not getattr(context, "_durable_cancel_requested", False):
+                            context._durable_cancel_requested = True
+                            DeferredTask("DurableCommandCancel").start_task(cancel_sessions, context, run_id)
                         context.task.kill()
                     if run_id not in self.driving:
                         self.sync("release", run_id)
@@ -209,12 +217,15 @@ class ClusterRecoveryService(RecoveryService):
                     elif run_id not in self.driving:
                         self.sync("release", run_id)
                         self.contexts.pop(run_id, None)
-                except (Exception, RecoveryHeld):
+                except (Exception, RecoveryHeld) as error:
+                    from helpers.durable.resources import ResourceHeld
+                    from helpers.durable.workspaces import WorkspaceHeld
+                    reason = str(error) if isinstance(error, (ResourceHeld, WorkspaceHeld)) else "distributed_restore_requires_reconciliation"
                     try:
                         current = self.sync("get_run", run_id)
                         if current["status"] in ("running", "blocked"):
                             self.sync("transition", run_id, "needs_attention", status="attention",
-                                      payload={"reason": "distributed_restore_requires_reconciliation"})
+                                      payload={"reason": reason})
                     except Exception:
                         pass
                     self.sync("release", run_id)
@@ -244,9 +255,23 @@ class ClusterRecoveryService(RecoveryService):
     def _restore_claimed(self, run):
         from helpers import persist_chat
         self.sync("assert_owner", run["run_id"])
-        if not self._construction_supported(run["checkpoint"]):
-            raise RecoveryHeld("constructor_hook_adapter_required")
-        context = persist_chat._deserialize_context(run["checkpoint"]["context"])
+        from helpers.durable import resources, workspaces
+        state = run["checkpoint"].get("resources") or {"version": 1}
+        workspace = state.get("workspace")
+        manager = resources.ResourceManager(self, run["context_id"], run["run_id"])
+        scope = workspaces.managed_project(manager, workspace) if workspace else nullcontext(None)
+        with scope as path:
+            if not self._construction_supported(run["checkpoint"]):
+                raise RecoveryHeld("constructor_hook_adapter_required")
+            projection = SimpleNamespace(_durable_resources=state, _durable_workspace_path=path,
+                                         _durable_workspace_origin=workspace)
+            resources.restore_attachment_paths(manager, projection)
+            context = persist_chat._deserialize_context(resources.local_value(projection, run["checkpoint"]["context"]))
+        resources.restore_state(context, state)
+        context._durable_workspace_path = path
+        context._durable_workspace_origin = workspace
+        context._durable_managed_workspace = bool(workspace)
+        context._durable_resource_paths = projection._durable_resource_paths
         context._durable_restored = True
         context._durable_origin = run["checkpoint"].get("origin")
         context._durable_workflow_state = run["checkpoint"].get("workflow_state", {})
@@ -262,6 +287,10 @@ class ClusterRecoveryService(RecoveryService):
                 return context.task
             if not self.sync("claim", run["run_id"]):
                 return RunHandle(self, run["run_id"])
+            if (run["checkpoint"].get("resources") or {}).get("workspace") and not getattr(context, "_durable_managed_workspace", False):
+                recovered = bool(getattr(context, "_durable_restored", False))
+                context = self._restore_claimed(run)
+                context._durable_restored = recovered
             # A fresh API context is usable only after its committed claim.
             self.contexts[run["run_id"]] = context
             return super().dispatch(context, run)
@@ -272,11 +301,13 @@ class ClusterRecoveryService(RecoveryService):
         self._ensure_poller()
         return RunHandle(self, run_id)
 
-    @staticmethod
-    def _log_input(context, payload):
+    def _log_input(self, context, payload):
         if payload and not any(item.type == "user" and item.id == payload.get("id") for item in context.log.logs):
+            from helpers.durable.resources import ResourceManager
+            manager = ResourceManager(self, context.id)
+            names = [manager.reference(uri)["name"] for uri in payload.get("attachments", [])]
             context.log.log(type="user", heading="", content=payload.get("message", ""),
-                            kvps={"attachments": []}, id=payload.get("id"))
+                            kvps={"attachments": names}, id=payload.get("id"))
 
     async def run(self, context, run, started=None):
         try:
@@ -291,7 +322,12 @@ class ClusterRecoveryService(RecoveryService):
             if not run["checkpoint"].get("ui_input_pending") and run["phase"] != "ui_input_ready":
                 self._log_input(context, run.get("input_payload") if run["phase"] == "admitted"
                                 else run["checkpoint"].get("intervention"))
-            return await super().run(context, run, started)
+            from helpers.durable.workspaces import project_override
+            workspace = getattr(context, "_durable_workspace_origin", None)
+            path = getattr(context, "_durable_workspace_path", None)
+            scope = project_override(workspace["project_name"], path, manifest=workspace) if workspace and path else nullcontext()
+            with scope:
+                return await super().run(context, run, started)
         finally:
             try:
                 self.sync("release", run["run_id"])
@@ -300,8 +336,10 @@ class ClusterRecoveryService(RecoveryService):
             self.contexts.pop(run["run_id"], None)
 
     async def prepare_input(self, context, run):
+        from helpers.durable.resources import ResourceManager, materialize_attachments, capture_attachments
+        manager = ResourceManager(self, context.id, run["run_id"])
         if not run["checkpoint"].get("ui_input_pending") and run["phase"] != "ui_input_ready":
-            return run["input_payload"]
+            return materialize_attachments(manager, run["input_payload"], context)
         self.sync("assert_owner", run["run_id"])
         recorded = self.sync("get_call", run["run_id"], "input_ui")
         if recorded:
@@ -312,15 +350,16 @@ class ClusterRecoveryService(RecoveryService):
             self.sync("start_call", run["run_id"], "input_ui", "input_ui", run["input_payload"])
             from helpers import extension
             raw = run["input_payload"]
-            data = {"message": raw["message"], "attachment_paths": list(raw.get("attachments") or [])}
+            materialized = materialize_attachments(manager, raw, context)
+            data = {"message": raw["message"], "attachment_paths": materialized["attachments"]}
             await extension.call_extensions_async("user_message_ui", agent=context.agent0, data=data)
             if not isinstance(data.get("message"), str) or not isinstance(data.get("attachment_paths"), list) or any(
                     not isinstance(path, str) for path in data["attachment_paths"]):
                 raise RecoveryHeld("ui_input_adapter_required")
             result = {"message": codec.masked(context.agent0, {**raw, "message": data["message"],
-                        "attachments": data["attachment_paths"]}), "model_not_configured": bool(data.get("model_not_configured"))}
+                        "attachments": capture_attachments(manager, data["attachment_paths"])}), "model_not_configured": bool(data.get("model_not_configured"))}
             context._durable_ui_input_pending = False
-            if not result["model_not_configured"] and not result["message"].get("attachments"):
+            if not result["model_not_configured"]:
                 self._log_input(context, result["message"])
             self.sync("finish_call", run["run_id"], "input_ui", result,
                       checkpoint=codec.checkpoint(context.agent0), phase="ui_input_ready")
@@ -329,9 +368,7 @@ class ClusterRecoveryService(RecoveryService):
                 turn.phase = "ui_input_ready"
         if result.get("model_not_configured"):
             raise RecoveryHeld("ui_model_not_configured")
-        if result["message"].get("attachments"):
-            raise RecoveryHeld("distributed_input_adapter_required")
-        return result["message"]
+        return materialize_attachments(manager, result["message"], context)
 
     def drain_recovery(self):
         # Polling claims the shared inventory; local queues are never authority.
@@ -377,6 +414,9 @@ class ClusterRecoveryService(RecoveryService):
 
     def communicate_remote(self, context_id, message, broadcast_level=1, *, ui=False):
         message.id = message.id or uuid.uuid4().hex
+        if message.attachments:
+            from helpers.durable.resources import ResourceManager, capture_attachments
+            message.attachments = capture_attachments(ResourceManager(self, context_id), list(message.attachments))
         headers = self.sync("list_run_headers", context_id=context_id)
         if not headers:
             genesis = self.sync("get_projection", "genesis:" + context_id)
@@ -421,6 +461,8 @@ class ClusterRecoveryService(RecoveryService):
 
     def admit_from_context(self, context, message, *, ui=False):
         message.id = message.id or uuid.uuid4().hex
+        from helpers.durable.resources import capture_context
+        capture_context(self, context, message)
         context._durable_ui_input_pending = bool(ui)
         data = codec.checkpoint(context.agent0)
         payload = codec.masked(context.agent0, codec.message_payload(message))
@@ -440,6 +482,8 @@ class ClusterRecoveryService(RecoveryService):
         with self.lock:
             if not self.enabled or self.failed:
                 raise RuntimeError("Distributed recovery is disabled or unavailable")
+            from helpers.durable.resources import capture_context
+            capture_context(self, context, message)
             message.id = message.id or uuid.uuid4().hex
             payload = codec.masked(context.agent0, codec.message_payload(message))
             origin = codec.masked(context.agent0, origin)

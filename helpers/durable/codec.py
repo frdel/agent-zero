@@ -35,6 +35,15 @@ def identity(obj):
     except TypeError:
         path = None
     if not path:
+        # Plugin tools are loaded with exec under their file stem without a
+        # sys.modules entry. Their defining function retains its real source.
+        method = cls.__dict__.get("execute")
+        code = getattr(method, "__code__", None)
+        if code and code.co_qualname == cls.__qualname__ + ".execute":
+            candidate = Path(code.co_filename)
+            if candidate.is_file() and candidate.suffix == ".py":
+                path = str(candidate)
+    if not path:
         raise ValueError("Recovery requires inspectable implementation source")
     return {"class": cls.__module__ + "." + cls.__qualname__,
             "source": hashlib.sha256(Path(path).read_bytes()).hexdigest()}
@@ -102,7 +111,13 @@ def environment(agent):
                      "tools/call_subordinate.py", "tools/parallel.py", "helpers/tool.py",
                      "helpers/extension.py", "helpers/tool_policy.py", "helpers/defer.py", "models.py",
                      "helpers/durable/documents.py", "helpers/durable/review.py", "helpers/durable/retry.py",
-                     "helpers/durable/postgres.py", "helpers/durable/cluster.py")
+                     "helpers/durable/postgres.py", "helpers/durable/cluster.py",
+                     "helpers/durable/resources.py", "helpers/durable/resource_store.py",
+                     "helpers/durable/adapters.py",
+                     "helpers/durable/workspaces.py", "helpers/durable/execution.py", "helpers/durable/sessions.py",
+                     "helpers/projects.py", "helpers/mcp_handler.py",
+                     "plugins/_browser/tools/browser.py", "plugins/_browser/helpers/runtime.py",
+                     "plugins/_code_execution/tools/code_execution_tool.py")
     }
     # Include function-extension discovery at the boundaries used by the runner.
     for name in ("hist_add_ai_response", "hist_add_tool_result", "monologue", "prepare_prompt", "call_chat_model_turn"):
@@ -114,6 +129,11 @@ def environment(agent):
 
 def checkpoint(agent, *, result=None, terminal=None):
     from helpers import persist_chat
+    from helpers.durable.resources import checkpoint_state
+    turn = getattr(agent.context, "_durable_turn", None)
+    if turn and getattr(turn.owner, "distributed", False):
+        from helpers.durable.resources import snapshot_context
+        snapshot_context(turn.owner, agent.context, turn.run_id)
     from helpers.log import LogItem
     loop = getattr(agent, "loop_data", None)
     temporary = {}
@@ -166,10 +186,13 @@ def checkpoint(agent, *, result=None, terminal=None):
         "origin": getattr(agent.context, "_durable_origin", None),
         "workflow_state": getattr(agent.context, "_durable_workflow_state", {}),
         "ui_input_pending": bool(getattr(agent.context, "_durable_ui_input_pending", False)),
+        "resources": checkpoint_state(agent.context),
     }
     value = masked(agent, value)
     if result is not None:
         value["result"] = result_payload(agent, result)
+    from helpers.durable.resources import canonical_value
+    value = canonical_value(agent.context, value)
     return value
 
 
@@ -199,6 +222,8 @@ def restore(context, data):
     agent = context.agent0
     if environment(agent) != data["environment"]:
         raise ValueError("Recovery configuration or implementation changed")
+    from helpers.durable.resources import local_value
+    data = local_value(context, data)
     agent.data.update(data["agent_state"])
     agent.loop_data = LoopData(**data["loop"])
     agent.last_user_message = next((message for message in agent.history.all_messages()
@@ -213,6 +238,8 @@ def restore(context, data):
     context.paused = data["paused"]
     context._durable_origin = data.get("origin")
     context._durable_workflow_state = data.get("workflow_state", {})
+    from helpers.durable.resources import restore_state
+    restore_state(context, data.get("resources"))
     if context._durable_origin and context._durable_origin.get("kind") == "child":
         from helpers.durable.workflows import restore_context
         restore_context(context, context._durable_origin)

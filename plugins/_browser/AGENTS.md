@@ -21,7 +21,7 @@
 - Default the visible WebUI Browser to the authenticated Xpra HTML5 viewer for its existing Patchright page. Keep live CDP screencast and lightweight snapshots as automatic fallbacks.
 - Do not block an available interactive viewer on a redundant Chromium screenshot; capture initial snapshots only for fallback transports.
 - Keep headful Chromium in a normal window with its own toolbar clipped above the private display; do not use browser fullscreen, which shows Chromium's exit warning.
-- Persist open-tab ownership and URLs through the shared KVP store; automatically restore the current chat when its Browser surface opens in per-chat mode and every saved chat in shared mode, then hide Chromium's redundant crash-restore advisory.
+- In legacy mode, persist open-tab ownership and URLs through the shared KVP store; automatically restore the current chat when its Browser surface opens in per-chat mode and every saved chat in shared mode, then hide Chromium's redundant crash-restore advisory.
 - When no Browser tab manifest exists yet, use Chromium's last session once to migrate open tabs into the owned manifest.
 - Throttle interactive resize updates throughout a drag and let the native-sized Chromium viewport follow the private display; do not defer all layout updates until resizing stops.
 - Reuse the private display's native dimensions when interactive-viewer requests omit a size. Page CSS viewport dimensions change with zoom and must not resize the display during navigation or tab switching.
@@ -29,7 +29,7 @@
 - Complete tab switching when the viewer subscription succeeds and reuses the interactive viewer URL; the shared iframe does not reload for each tab. New viewer URLs and fallback frames retain their load/render completion path.
 - Notify the active Xpra client of its new frame geometry before resizing the backing display; after an interactive canvas/modal handoff, reconcile once after Xpra's deferred resize so Chromium cannot retain the previous surface size.
 - Present the Xpra shadow window as the raw browser canvas: remove its HTML decoration and shadow pointer while preserving exact viewport geometry.
-- Keep one internal Chromium, Xvfb, and Xpra runtime per Agent Zero process with one unguessable gateway token.
+- Legacy mode keeps one internal Chromium, Xvfb, and Xpra runtime per Agent Zero process with one unguessable gateway token. Durable chats use separate nonpersistent browser contexts and private displays.
 - Apply the shared `virtual_desktop.XPRA_START_ENV` defaults when launching Xpra; preserve inherited timeout overrides. Disable local shared-memory transport for the WebSocket viewer.
 - Synchronous context cleanup shares the named BrowserCleanup event loop. Cancel only the cleanup task on completion/timeout; an individual context must not terminate the shared thread used by concurrent resets.
 - Bind Browser Xpra endpoints to loopback, route them through the authenticated virtual-desktop gateway, and keep file transfer, URL opening, printing, and audio disabled.
@@ -37,7 +37,7 @@
 - Push internal screencast frames from the runtime to the WebSocket consumer after subscription; keep `read/pop_screencast_frame` as fallback/tooling APIs, not the WebUI hot path.
 - Keep Browser viewer frame transport capability-negotiated: updated clients may request binary/slim screencast frames, while older clients must keep the base64/full-metadata fallback. Do not let the WebUI advertise binary frames unless its Socket.IO client reconstructs attachments as real `Blob`, `ArrayBuffer`, or typed-array values.
 - Keep WebUI Browser tabs scoped to the active chat context by default; aggregate tabs from other context handles only when the Browser settings tab scope is `shared`.
-- Share one persistent internal-Browser sign-in profile across chats while enforcing tab ownership through context-bound runtime handles; resetting or removing a chat closes only its tabs and never deletes the shared profile.
+- Legacy mode shares one persistent internal-Browser sign-in profile across chats while enforcing tab ownership through context-bound runtime handles; resetting or removing a chat closes only its tabs and never deletes the shared profile.
 - On first shared-profile use after an upgrade, adopt the first requesting chat's legacy Browser profile when one exists.
 - Empty viewer subscriptions and closing the last tab clear the address, page state, viewer, and switching flags. Context changes invalidate pending surface, subscription, and command results before awaiting session refresh; stale completions must not restore another chat or clear the current startup state. Structured subscription errors release switching state just like transport failures.
 - Show an accessible in-panel startup state while the on-demand shared Browser runtime is cold-starting; keep that one runtime warm until Browser configuration changes or Agent Zero shuts down.
@@ -75,6 +75,11 @@
 - Browser startup must install the shared virtual-desktop route hook itself; do not make Browser depend on the Desktop plugin being enabled.
 - Use shared `surface-workspace`, toolbar/control, and separator styles from `webui/css/surfaces.css`; match the lighter Files/Browser panel palette and preserve disabled, active, and keyboard focus states.
 
+- Durable browser tools use `helpers.durable.sessions` and encrypted `ResourceManager` bytes. Never adopt the legacy profile or read/write shared KVP tabs for these contexts. Capture cookies, localStorage, tab sessionStorage and HTTP(S) document URLs; resource manifests and checkpoint refs preserve custody across hosts. Restore only into a fresh isolated context before tools execute. Viewer requests cannot create or expose a shared-profile fallback for enabled/held durable chats; their owning tool must prepare the isolated session first.
+- Restoration reopens document URLs with GET; it does not replay POSTs, browser history, arbitrary JavaScript, DOM state, downloads, IndexedDB or service-worker state. Tab IDs and DOM refs expire. Inspect the restored tab list and request fresh content before ref actions. Browser process loss restores the encrypted checkpoint on the next prepared call; a mid-action loss holds the uncertain call.
+- Durable host browsers and custom unpacked extensions require explicit adapters and currently hold. Browser action errors or failed state capture hold the journaled call instead of reporting a retryable completed failure. User interaction through the viewer can change live state; the encrypted snapshot is a browser-session checkpoint, not a transaction in the external site.
+- Bind cached durable runtimes to the current run/ownership fence, restore epoch, generation, configuration and shared manifest version. Revalidate before actions and viewer lookup; discard stale or failed sessions without closing a newer replacement runtime.
+
 ## Work Guidance
 
 - Coordinate tool, helper, and panel changes so browser state shown in the UI matches tool behavior.
@@ -88,6 +93,7 @@
 - Smoke-test browser launch, navigation, DOM capture, and WebUI viewer after runtime changes.
 - For viewer render-path changes, verify direct iframe interaction reaches the same page controlled by Patchright, separate contexts use separate displays, and an unavailable Xpra runtime falls back to CDP screencast/snapshot rendering.
 - Run browser prompt/skill regression tests after changing browser prompt or Browser plugin skills.
+- Run `pytest tests/test_durable_sessions.py tests/test_browser_tool_output.py tests/test_browser_agent_regressions.py -q` with the framework runtime. Session tests use fake Chromium for isolation/capture semantics; they do not establish real-browser or external-site recovery acceptance.
 
 ## Child DOX Index
 

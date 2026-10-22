@@ -26,6 +26,7 @@
 - Windows cleanup uses the native process methods without looking up POSIX-only signals; the pywinpty adapter passes SIGTERM for forced termination. POSIX close retains process-group TERM-then-KILL escalation.
 - Local and SSH session wrappers must synchronously release their owned process or connection resources when discarded.
 - Explicitly target local versus SSH execution runtimes.
+- PostgreSQL durability routes the audited tool through `helpers/durable/execution.py`: detached noninteractive POSIX jobs or host-key-verified SSH receipts, encrypted known outputs, portable cwd/export state and claim-bound session manifests. Unknown submissions never relaunch; recorded Stop signalling is best-effort and distinct from worker loss. Interactive PTY/stdin/functions/aliases require their own adapter. Local/off legacy sessions retain their existing behavior.
 - The tool's `allow_running` flag is framework-set (for example by the `input` tool's terminal dispatch); it is not a model-facing arg and stays undocumented in prompts.
 - Do not hardcode secrets, SSH credentials, or local user paths.
 
