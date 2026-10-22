@@ -14,6 +14,38 @@ class BackupRestore(ApiHandler):
     def requires_loopback(cls) -> bool:
         return False
 
+
+    @staticmethod
+    def _reload_runtime_state() -> None:
+        """Reload env vars, provider configs, and plugin caches after restore."""
+        try:
+            from helpers import dotenv
+
+            dotenv.load_dotenv()  # re-read restored .env into os.environ
+        except Exception:
+            pass
+        try:
+            from helpers.providers import reload_providers
+
+            reload_providers()  # rebuild ProviderManager from base + plugin confs
+        except Exception:
+            pass
+        try:
+            from helpers import cache
+
+            cache.clear("*(plugins)*")
+            cache.clear("*(api)*")
+        except Exception:
+            pass
+        try:
+            from helpers import settings as _settings_mod
+
+            # get_settings() caches usr/settings.json in a module global; drop
+            # it so a restored settings file is re-read on the next access.
+            _settings_mod._settings = None
+        except Exception:
+            pass
+
     async def process(self, input: dict, request: Request) -> dict | Response:
         # Handle file upload
         if 'backup_file' not in request.files:
@@ -48,6 +80,14 @@ class BackupRestore(ApiHandler):
 
             # Load all chats from the chats folder
             load_tmp_chats()
+
+            # Reload runtime state that the restored files affect. Restored
+            # .env values (e.g. provider API keys) and restored plugin conf
+            # files (custom model providers) must become visible to the running
+            # instance without requiring a manual restart; otherwise restored
+            # model presets reference providers/keys that the runtime cannot
+            # resolve.
+            self._reload_runtime_state()
 
             return {
                 "success": True,

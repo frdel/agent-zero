@@ -29,7 +29,8 @@
 
 ## Key Concepts
 
-- Important called helpers/classes observed in the source: `request.form.get.lower`, `json.loads`, `BackupService`, `load_tmp_chats`, `backup_service.restore_backup`.
+- Important called helpers/classes observed in the source: `request.form.get.lower`, `json.loads`, `BackupService`, `load_tmp_chats`, `backup_service.restore_backup`, `BackupRestore._reload_runtime_state`.
+- After a successful restore, `_reload_runtime_state()` re-reads the restored `.env` into `os.environ` (`helpers.dotenv.load_dotenv`), rebuilds the provider manager from base + enabled-plugin confs (`helpers.providers.reload_providers`), and clears `*(plugins)*` / `*(api)*` cache areas. This makes restored provider API keys and custom plugin providers (e.g. `custom_providers` conf) visible to the running instance without a restart, so restored model presets resolve their providers.
 - Keep request/response, tool, or helper semantics documented here at the same time as source changes.
 
 ## Work Guidance
