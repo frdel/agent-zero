@@ -1,6 +1,5 @@
 import { createStore } from "/js/AlpineStore.js";
 import { store as chatsStore } from "/components/sidebar/chats/chats-store.js";
-import { store as memoryStore } from "/plugins/_memory/webui/memory-dashboard-store.js";
 import { store as projectsStore } from "/components/projects/projects-store.js";
 import { store as fileBrowserStore } from "/components/modals/file-browser/file-browser-store.js";
 import * as API from "/js/api.js";
@@ -255,9 +254,6 @@ const model = {
       case "new-chat":
         chatsStore.newChat();
         break;
-      case "scheduler":
-        window.openModal("modals/scheduler/scheduler-modal.html");
-        break;
       case "settings":
         window.openModal("settings/settings.html");
         break;
@@ -266,9 +262,6 @@ const model = {
         break;
       case "projects":
         projectsStore.openProjectsModal();
-        break;
-      case "memory":
-        memoryStore.openModal();
         break;
       case "files":
         fileBrowserStore.open();

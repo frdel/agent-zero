@@ -1,0 +1,7 @@
+/* BEH - behavior adjustment type (brain pink) */
+.process-group .BEH {
+  --step-accent: #f2aeb1;
+}
+.light-mode .process-group .BEH {
+  --step-accent: #6e0b22;
+}

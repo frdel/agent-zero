@@ -39,7 +39,6 @@ export const PROCESS_STEP_TYPES = new Set([
   "tool",
   "mcp",
   "subagent",
-  "progress",
   "info",
 ]);
 

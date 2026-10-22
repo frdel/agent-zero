@@ -1,0 +1,7 @@
+/* DSK - computer use remote type (lilac) */
+.process-group .DSK {
+  --step-accent: #b48cf0;
+}
+.light-mode .process-group .DSK {
+  --step-accent: #451765;
+}

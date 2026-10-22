@@ -8,6 +8,7 @@ from dataclasses import dataclass, field, replace
 from typing import Any, Literal, TYPE_CHECKING
 
 from helpers import extract_tools
+from helpers.tool import coerce_bool
 from helpers.defer import DeferredTask, THREAD_BACKGROUND
 from helpers.extension import call_extensions_async
 from helpers.print_style import PrintStyle
@@ -139,20 +140,6 @@ def normalize_job_ids(raw_job_ids: Any) -> list[str]:
     if isinstance(raw_job_ids, list):
         return [str(item) for item in raw_job_ids if str(item).strip()]
     raise ValueError("`job_ids` must be a string or an array of strings.")
-
-
-def coerce_bool(value: Any, default: bool) -> bool:
-    if value is None:
-        return default
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized in {"1", "true", "yes", "on"}:
-            return True
-        if normalized in {"0", "false", "no", "off"}:
-            return False
-    return bool(value)
 
 
 def coerce_timeout(value: Any) -> int:
@@ -696,7 +683,7 @@ def _log_parallel_child_started(agent: "Agent", job: ParallelJob) -> None:
     if job.kind == "subordinate":
         job.log_item = agent.context.log.log(
             type="subagent",
-            heading=f"icon://communication {agent.agent_name}: Calling Subordinate Agent",
+            heading="icon://communication Calling Subordinate Agent",
             content="",
             kvps=job.tool_args,
             id=job.log_id,
@@ -714,7 +701,7 @@ def _log_parallel_child_started(agent: "Agent", job: ParallelJob) -> None:
                 f"Failed to derive parallel child log for {job.tool_name}: {exc}"
             )
 
-    heading = f"icon://construction {agent.agent_name}: Using tool '{job.tool_name}'"
+    heading = f"icon://construction Using tool '{job.tool_name}'"
     job.log_item = agent.context.log.log(
         type="tool",
         heading=heading,

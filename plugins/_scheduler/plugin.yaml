@@ -1,0 +1,8 @@
+name: _scheduler
+title: Scheduler
+description: Scheduler agent tool and Tasks UI for managing scheduled, ad-hoc, and planned tasks.
+version: 1.0.0
+always_enabled: true
+settings_sections: []
+per_project_config: false
+per_agent_config: false

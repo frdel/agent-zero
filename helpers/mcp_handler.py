@@ -176,7 +176,7 @@ class MCPTool(Tool):
     def get_log_object(self) -> LogItem:
         return self.agent.context.log.log(
             type="mcp",
-            heading=f"icon://extension {self.agent.agent_name}: Using MCP tool '{self.name}'",
+            heading=f"icon://extension Using MCP tool '{self.name}'",
             content="",
             kvps={"tool_name": self.name, **self.args},
             id=str(uuid.uuid4()),

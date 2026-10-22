@@ -1,7 +1,7 @@
 import asyncio
 from helpers import dotenv, perplexity_search, duckduckgo_search
 from plugins._memory.helpers.memory import Memory
-from plugins._memory.tools.memory_load import DEFAULT_THRESHOLD as DEFAULT_MEMORY_THRESHOLD
+from plugins._memory.tools.memory import DEFAULT_THRESHOLD as DEFAULT_MEMORY_THRESHOLD
 
 from helpers.tool import Tool, Response
 from plugins._document_query.helpers.document_query import DocumentQueryHelper

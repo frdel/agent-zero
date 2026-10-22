@@ -85,8 +85,7 @@ def test_text_editor_log_object_falls_back_when_args_missing(text_editor_cls):
     tool = _make_tool(text_editor_cls)
     item = tool.get_log_object()
     assert item.type == "text_editor"
-    assert "A0" in item.heading
-    assert "text_editor" in item.heading
+    assert item.heading == "icon://construction Using tool 'text_editor'"
 
 
 def test_text_editor_log_object_id_is_uuid(text_editor_cls):

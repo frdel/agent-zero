@@ -163,8 +163,8 @@ def test_skill_documents_human_setup_loop_and_a0_exception():
 
     assert "setup is part of the workflow" in skill_text
     assert "code_execution_remote" in skill_text
-    assert "memory_load" in skill_text
-    assert "memory_save" in skill_text
+    assert "  - memory\n" in skill_text
+    assert "`memory` action=save" in skill_text
     assert "own local <agent>" in skill_text
     assert "Agent Zero Docker/container shell" in skill_text
     assert "For orchestrator, the user prefers Claude Code" in skill_text

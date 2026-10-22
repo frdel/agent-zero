@@ -8,6 +8,7 @@
 ## Ownership
 
 - Files in this directory are discovered by the route registration layer in `helpers/api.py` and WebSocket registration code.
+- Scheduler CRUD endpoints live in `plugins/_scheduler/api/` and resolve through the plugin API route format; `scheduler_tick.py` stays here with the scheduling engine.
 - `ws_*.py` files define WebSocket namespaces or handlers through `helpers.ws.WsHandler`.
 - Plugin-provided API handlers belong inside plugin `api/` folders and follow the same base contracts.
 

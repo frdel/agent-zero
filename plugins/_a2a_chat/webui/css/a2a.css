@@ -1,0 +1,7 @@
+/* A2A - agent-to-agent chat type (lilac) */
+.process-group .A2A {
+  --step-accent: #b48cf0;
+}
+.light-mode .process-group .A2A {
+  --step-accent: #451765;
+}

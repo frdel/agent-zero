@@ -11,6 +11,7 @@
 - `tool.py` owns the runtime implementation.
 - `tool.py.dox.md` owns durable notes about responsibilities, contracts, side effects, and verification for that implementation.
 - Classes:
+- `coerce_bool(value: Any, default: bool) -> bool` (module-level function shared by tools and plugins)
 - `Response` (no explicit base class)
 - `Tool` (no explicit base class)
   - `async execute(self, **kwargs) -> Response`
@@ -26,6 +27,7 @@
 - Helper modules own reusable framework APIs and must preserve public callers unless all callers, tests, and docs are updated together.
 - Update this file whenever public functions, classes, persistence behavior, path/security assumptions, side effects, or cross-module contracts change.
 - `Tool` defines `execute(...)`.
+- `Tool.get_log_object` renders the generic fallback `icon://construction Using tool <name>` headline without an agent-name prefix, using the `<name:method>` shape when a method is set.
 - Observed side-effect areas: settings/state persistence.
 - Imported dependency areas include: `abc`, `agent`, `dataclasses`, `helpers.extension`, `helpers.print_style`, `helpers.strings`, `typing`.
 

@@ -9,7 +9,7 @@
 - `left-sidebar.html` and `sidebar-store.js` own sidebar shell and shared state.
 - `top-section/` owns header and quick actions.
 - `chats/` owns chat list UI and state; `chat-tree.html` is the shared parent/subagent row for direct and parallel delegation.
-- `tasks/` owns task list UI and state; `task-row.html` is the shared scheduler row.
+- Plugin sections render through the `sidebar-extensions` extension point; core owns the `#extensions-section` container and its layout styles in `left-sidebar.html`, and the `_scheduler` plugin contributes the tasks list there.
 - `bottom/` owns lower sidebar controls and preferences panel.
 
 ## Local Contracts
@@ -21,7 +21,7 @@
 - Child indentation uses `--spacing-md` + `--spacing-xs` for the first two child levels, tapers at the third, and stops increasing after it, preserving room for titles and actions in narrow sidebars.
 - Chat tree expand/collapse controls use a parent-only leading slot, with right/down chevrons for collapsed/expanded state. Use spacing tokens for compact rows and the additional child indentation without consuming normal chat row text margin.
 - A selected chat with children auto-expands once during context hydration at every depth, including a selected subagent that delegates again, unless the user has already toggled it.
-- The Tasks list is reserved for scheduler-backed task contexts and must not be used for chat-bound parallel children.
+- The Tasks list is reserved for task contexts provided by plugins and must not be used for chat-bound parallel children.
 - Running parent and child chats share the chat-list working-bubble animation; keep it scoped away from task and connection-status indicators.
 - Chat and task lists reclaim the same part of the sidebar's left content inset so their project bubbles align, while their section headers retain the standard sidebar inset.
 - Chat-row action buttons consume layout width only while a pointer row is hovered or while that row is selected on a touch device.

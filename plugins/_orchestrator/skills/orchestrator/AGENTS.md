@@ -14,7 +14,7 @@
 
 ## Local Contracts
 
-- Front matter must allow `code_execution_tool`, `code_execution_remote`, `memory_load`, and `memory_save`.
+- Front matter must allow `code_execution_tool`, `code_execution_remote`, and `memory`.
 - The body must explicitly state that no `terminal_agent` tool exists.
 - The setup flow must ask or recall host-vs-container preference for each coding agent before running non-A0 adapters.
 - The host flow must use A0 CLI `code_execution_remote`; the container flow must check install, install only the requested CLI if missing, probe version/help, run a smoke prompt, handle auth/setup with the user, then retry before the real task.

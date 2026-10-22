@@ -17,6 +17,7 @@
 
 - `patch` supports line-number `edits`, context `patch_text`, and exact `old_text`/`new_text` replacement. Line edits remain supported and require fresh read state; they are not deprecated.
 - Text Editor `write`/`patch` read the canonical UI-intent arg `open_in_canvas`; legacy aliases `open_canvas` and `open_document` still work. Document only the canonical arg in model-facing prompts.
+- Fallback editor log rows without an action or path render `icon://construction Using tool 'text_editor'` without an agent-name prefix.
 - `tools/text_editor.py` logs `type="text_editor"` through a `get_log_object()` override so the WebUI `get_message_handler` hook routes messages to `_text_editor/extensions/webui/get_message_handler/_10_text_editor_handler.js` instead of the default `drawMessageTool` handler.
 - The remote editor reuses shipped patch and log helpers even when this plugin is disabled; activation still controls local tool discovery and custom WebUI rendering. Removing bundled helper files is not a supported independent-plugin configuration.
 - Preserve stale-read protection before patch operations.

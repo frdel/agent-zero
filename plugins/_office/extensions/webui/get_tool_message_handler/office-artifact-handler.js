@@ -22,6 +22,7 @@ function drawOfficeArtifactTool({
   const args = arguments[0];
   const title = cleanStepTitle(heading);
   const displayKvps = { ...kvps };
+  delete displayKvps._tool_name;
 
   return drawProcessStep({
     id,

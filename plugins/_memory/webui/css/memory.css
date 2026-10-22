@@ -1,0 +1,7 @@
+/* MEM - memory tool type (brain pink) */
+.process-group .MEM {
+  --step-accent: #f2aeb1;
+}
+.light-mode .process-group .MEM {
+  --step-accent: #6e0b22;
+}

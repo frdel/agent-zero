@@ -279,11 +279,15 @@ class DocumentQueryStore:
 class DocumentQueryHelper:
 
     def __init__(
-        self, agent: Agent, progress_callback: Callable[[str], None] | None = None
+        self,
+        agent: Agent,
+        progress_callback: Callable[[str], None] | None = None,
+        stream_callback: Callable[[str], None] | None = None,
     ):
         self.agent = agent
         self.store = DocumentQueryStore.get(agent)
         self.progress_callback = progress_callback or (lambda x: None)
+        self.stream_callback = stream_callback
         self.store_lock = asyncio.Lock()
         self.config = _load_config(agent)
 
@@ -389,12 +393,19 @@ class DocumentQueryHelper:
         questions_str = "\n".join([f" *  {question}" for question in questions])
         qa_system_message = self.agent.parse_prompt("fw.document_query.system_prompt.md")
         qa_user_message = f"# Document:\n{content}\n\n# Queries:\n{questions_str}"
+        stream_callback = getattr(self, "stream_callback", None)
+
+        async def stream_answer(chunk: str, total: str):
+            stream_callback(total)
+
+        stream_kwargs = {"response_callback": stream_answer} if stream_callback else {}
         ai_response, _reasoning = await self.agent.call_chat_model(
             messages=[
                 SystemMessage(content=qa_system_message),
                 HumanMessage(content=qa_user_message),
             ],
             explicit_caching=False,
+            **stream_kwargs,
         )
         return str(ai_response)
 

@@ -1,0 +1,150 @@
+<html>
+<head>
+  <script type="module">
+    import { store } from "/plugins/_scheduler/webui/sidebar/tasks-store.js";
+  </script>
+</head>
+<body>
+  <div class="tasks-list-root">
+    <template x-if="$store.tasks">
+      <div x-data class="tasks-list-inner">
+        <x-extension id="sidebar-tasks-list-start"></x-extension>
+        <h3 class="section-header section-header-collapsible" 
+            data-bs-toggle="collapse"
+            @click="$store.sidebar.toggleSection('tasks')"
+            x-effect="!$store.sidebar.isSectionOpen('tasks') ? $el.classList.add('collapsed') : $el.classList.remove('collapsed')">
+          Tasks
+          <svg class="arrow-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M8 4l8 8-8 8" />
+          </svg>
+        </h3>
+        <div class="collapse" id="tasks-collapse"
+             x-effect="(() => { const c = bootstrap.Collapse.getOrCreateInstance($el, { toggle: false }); $store.sidebar.isSectionOpen('tasks') ? c.show() : c.hide(); })()">
+          <div class="tasks-list-body">
+          <div class="tasks-list-container" x-data>
+            <x-extension id="sidebar-tasks-list-view" class="sidebar-list-view"></x-extension>
+            <template x-if="!$store.sidebar.hasListView('task')">
+              <div class="sidebar-default-list">
+                <ul class="config-list tasks-config-list no-scrollbar" x-show="$store.tasks.visibleTasks().length > 0">
+                  <template x-for="(task, taskIndex) in $store.tasks.visibleTasks()" :key="task.id">
+                    <li class="task-list-item"
+                      :class="{ 'sidebar-list-divider': $store.sidebar.hasRowDividerBefore('task', task, taskIndex, $store.tasks.visibleTasks()) }">
+                      <x-component path="/plugins/_scheduler/webui/sidebar/task-row.html"></x-component>
+                    </li>
+                  </template>
+                </ul>
+                <div class="empty-list-message" x-show="$store.tasks.visibleTasks().length === 0">
+                  <p><i>No tasks to list.</i></p>
+                </div>
+              </div>
+            </template>
+          </div>
+          </div>
+        </div>
+        <x-extension id="sidebar-tasks-list-end"></x-extension>
+      </div>
+    </template>
+  </div>
+
+  <style>
+    /* Root wrappers provide flex context when embedded */
+    .tasks-list-root,
+    .tasks-list-inner {
+      display: contents;
+    }
+    
+    /* tasks-list-body is the flex container inside the collapse wrapper */
+    .tasks-list-body {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .tasks-list-container .section-header {
+      position: sticky;
+      top: 0;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .tasks-list-container {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Scrollable tasks config list */
+    .tasks-config-list {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
+      scroll-behavior: smooth;
+      overscroll-behavior: contain; /* avoid scroll chaining */
+    }
+  
+    .task-title-line {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+
+    .project-color-ball {
+      width: 0.6em;
+      height: 0.6em;
+      border-radius: 50%;
+      display: inline-block;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    .task-name { display: block; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 3px 0; cursor: pointer; border-radius: 4px; transition: background-color 0.2s; font-size: var(--font-size-small); margin-bottom: 2px; }
+  
+    .task-info-line { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 2px; }
+    .task-actions { display: flex; gap: 0.375rem; margin-left: auto; }
+  
+    .task-container {
+      width: 100%;
+      display: flex;
+      align-items: stretch;
+      position: relative;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .task-container:hover { 
+      background-color: var(--color-background-hover);
+     }
+    
+
+    .task-container-vertical { display: flex; flex-direction: column; width: 100%; gap: 6px; }
+
+    /* Selected task accent */
+    .task-selected {
+      background-color: var(--color-background-hover);
+    }
+
+    .task-selected .task-name {
+      font-weight: bold;
+    }
+  
+    /* Scheduler badges (subset used in sidebar) */
+    .scheduler-status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; text-transform: capitalize; white-space: nowrap; }
+    .scheduler-status-badge-small { font-size: 10px; padding: 2px 6px; margin-right: 5px; min-width: 40px; text-align: center; }
+    .scheduler-status-idle { background-color: rgba(0, 100, 0, 0.2); color: #2a9d8f; border: 1px solid rgba(42, 157, 143, 0.3); }
+    .scheduler-status-running { background-color: rgba(0, 60, 120, 0.2); color: #4361ee; border: 1px solid rgba(67, 97, 238, 0.3); }
+    .scheduler-status-disabled { background-color: rgba(70, 70, 70, 0.2); color: #6c757d; border: 1px solid rgba(108, 117, 125, 0.3); }
+    .scheduler-status-error { background-color: rgba(120, 0, 0, 0.2); color: #e63946; border: 1px solid rgba(230, 57, 70, 0.3); }
+    .light-mode .scheduler-status-idle { background-color: rgba(42, 157, 143, 0.1); color: #1a6f65; }
+    .light-mode .scheduler-status-running { background-color: rgba(67, 97, 238, 0.1); color: #2540b3; }
+    .light-mode .scheduler-status-disabled { background-color: rgba(108, 117, 125, 0.1); color: #495057; }
+    .light-mode .scheduler-status-error { background-color: rgba(230, 57, 70, 0.1); color: #c5283d; }
+  
+    .empty-list-message { display: flex; justify-content: center; align-items: center; height: 100px; color: var(--color-secondary); text-align: center; opacity: 0.7; font-style: italic; }
+    .light-mode .empty-list-message { color: var(--color-secondary-light); }
+  </style>
+</body>
+</html>

@@ -1,4 +1,4 @@
-from helpers.tool import Tool, Response
+from helpers.tool import Tool, Response, coerce_bool
 from helpers import parallel_tools
 from helpers.strings import sanitize_string
 
@@ -55,7 +55,7 @@ class ParallelTool(Tool):
                 )
 
             wait_default = action not in {"start", "background", "collect"}
-            wait = parallel_tools.coerce_bool(args.get("wait"), wait_default)
+            wait = coerce_bool(args.get("wait"), wait_default)
             if action in {"await", "wait"}:
                 wait = True
 

@@ -37,25 +37,24 @@ BUNDLED_TOOL_PARAMETERS: dict[str, dict[str, Any]] = {
     "tools/response.py": {
         "text": {"type": "string", "minLength": 1},
     },
-    "tools/search_engine.py": {"query": {"type": "string"}},
+    "plugins/_search_engine/tools/search_engine.py": {"query": {"type": "string"}},
     "tools/vision_load.py": {
         "paths": {"type": "array", "items": {"type": "string"}},
         "query": {"type": "string"},
     },
-    "tools/wait.py": {
+    "plugins/_wait/tools/wait.py": {
         "seconds": {"type": "number"},
         "minutes": {"type": "number"},
         "hours": {"type": "number"},
         "days": {"type": "number"},
         "until": {"type": "string"},
     },
-    "tools/notify_user.py": {
+    "plugins/_notify_user/tools/notify_user.py": {
         "message": {"type": "string"},
         "title": {"type": "string"},
         "detail": {"type": "string"},
         "type": {"type": "string", "enum": ["info", "success", "warning", "error", "progress"]},
-        "priority": {"type": "integer", "enum": [10, 20]},
-        "timeout": {"type": "integer"},
+        "priority": {"type": "string", "enum": ["normal", "high"]},
     },
     "tools/call_subordinate.py": {
         "message": {"type": "string"},
@@ -93,23 +92,17 @@ BUNDLED_TOOL_PARAMETERS: dict[str, dict[str, Any]] = {
         "keyboard": {"type": "string"},
         "session": {"type": "integer"},
     },
-    "plugins/_memory/tools/memory_load.py": {
+    "plugins/_memory/tools/memory.py": {
+        "action": {"type": "string", "enum": ["load", "save", "delete", "forget"]},
         "query": {"type": "string"},
+        "text": {"type": "string"},
+        "ids": {"type": "string"},
+        "area": {"type": "string"},
         "threshold": {"type": "number"},
         "limit": {"type": "integer"},
         "filter": {"type": "string"},
     },
-    "plugins/_memory/tools/memory_save.py": {
-        "text": {"type": "string"},
-        "area": {"type": "string"},
-    },
-    "plugins/_memory/tools/memory_delete.py": {"ids": {"type": "string"}},
-    "plugins/_memory/tools/memory_forget.py": {
-        "query": {"type": "string"},
-        "threshold": {"type": "number"},
-        "filter": {"type": "string"},
-    },
-    "plugins/_memory/tools/behaviour_adjustment.py": {"adjustments": {"type": "string"}},
+    "plugins/_behavior_adjustment/tools/behavior_adjustment.py": {"adjustments": {"type": "string"}},
     "plugins/_goal/tools/goal.py": {
         "action": {"type": "string", "enum": ["get", "create", "update"]},
         "objective": {"type": "string"},

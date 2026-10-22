@@ -5,7 +5,7 @@ import re
 import shlex
 import time
 
-from helpers.tool import Tool, Response
+from helpers.tool import Tool, Response, coerce_bool
 from helpers import files, rfc_exchange, projects, runtime, secrets, settings
 from helpers.print_style import PrintStyle
 from helpers.strings import truncate_text as truncate_text_string
@@ -69,8 +69,8 @@ class CodeExecution(Tool):
 
         runtime_arg = self.args.get("runtime", "").lower().strip()
         session = int(self.args.get("session", 0))
-        self.allow_running = bool(self.args.get("allow_running", False))
-        reset = bool(self.args.get("reset", False) or runtime_arg == "reset")
+        self.allow_running = coerce_bool(self.args.get("allow_running", False), False)
+        reset = coerce_bool(self.args.get("reset", False), False) or runtime_arg == "reset"
 
         cfg = _get_config(self.agent)
 

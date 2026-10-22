@@ -9,6 +9,7 @@
 
 - `plugin.yaml` and `default_config.yaml` own metadata and browser settings defaults.
 - `tools/browser.py` owns the agent-facing browser tool.
+- The tool logs its message with an `icon://captive_portal` gerund headline naming the action and target URL, such as `Browser: Opening <url>`; `extensions/webui/get_tool_message_handler/` owns the `WWW` badge presentation.
 - `helpers/` owns the Patchright runtime, private interactive display, selectors, URL helpers, extension management, and connector runtime logic.
 - `api/` owns status, extension, and browser WebSocket handlers.
 - `assets/`, `prompts/`, `skills/`, `extensions/`, and `webui/` own browser scripts, prompts, skill guidance, hook contributions, and UI.

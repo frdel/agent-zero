@@ -34,7 +34,7 @@ class EmptyResponse(Extension):
             PrintStyle(font_color="orange", padding=True).print(warning)
             self.agent.context.log.log(
                 type="warning",
-                content=f"{self.agent.agent_name}: {self.agent.read_prompt('fw.msg_reasoning_only_response.md')}",
+                content=self.agent.read_prompt('fw.msg_reasoning_only_response.md'),
                 id=warning_message.id,
             )
             result_data["skip_default_processing"] = True
@@ -60,6 +60,6 @@ class EmptyResponse(Extension):
             raise HandledException(stop_message)
         self.agent.context.log.log(
             type="warning",
-            content=f"{self.agent.agent_name}: {warning}",
+            content=warning,
         )
         result_data["skip_default_processing"] = True

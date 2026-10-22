@@ -47,7 +47,7 @@ class TruncatedResponse(Extension):
         PrintStyle(font_color="orange", padding=True).print(notice)
         self.agent.context.log.log(
             type="warning",
-            content=f"{self.agent.agent_name}: {notice}",
+            content=notice,
             id=warning_message.id,
         )
         result_data["skip_default_processing"] = True

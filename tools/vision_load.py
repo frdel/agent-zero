@@ -1,3 +1,4 @@
+import uuid
 from mimetypes import guess_type
 
 from langchain_core.messages import HumanMessage
@@ -12,6 +13,7 @@ from helpers import (
     runtime,
 )
 from helpers.tool import Response, Tool
+from helpers.strings import truncate_text
 from plugins._model_config.helpers.model_config import (
     build_vision_model,
     get_chat_model_config,
@@ -23,6 +25,27 @@ TOKENS_ESTIMATE = 1500
 
 
 class VisionLoad(Tool):
+    def get_log_object(self):
+        return self.agent.context.log.log(
+            type="vision_load",
+            heading=self.get_heading(),
+            content="",
+            kvps=self.args,
+            id=str(uuid.uuid4()),
+        )
+
+    def get_heading(self):
+        paths = self.args.get("paths") or []
+        if isinstance(paths, str):
+            paths = [paths]
+        names = [files.basename(str(path)) for path in paths if str(path).strip()]
+        if not names:
+            return "icon://imagesmode Loading images"
+        text = f"Loading images: {truncate_text(names[0], 60)}"
+        if len(names) > 1:
+            text += f" + {len(names) - 1} more"
+        return f"icon://imagesmode {text}"
+
     async def execute(
         self,
         paths: list[str] | str = [],

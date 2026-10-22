@@ -1,0 +1,7 @@
+/* SCH - scheduler tool type (slate) */
+.process-group .SCH {
+  --step-accent: #94a3b8;
+}
+.light-mode .process-group .SCH {
+  --step-accent: #475569;
+}

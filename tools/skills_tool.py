@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import uuid
 from pathlib import Path
 from typing import List
 
 from helpers.tool import Tool, Response
+from helpers.strings import truncate_text
 from helpers import skills as skills_helper
 from helpers.print_style import PrintStyle
 
@@ -52,26 +54,34 @@ class SkillsTool(Tool):
         return skill_name.strip()
 
     def get_log_object(self):
-        import uuid
+        return self.agent.context.log.log(
+            type="skills_tool",
+            heading=self.get_heading(),
+            content="",
+            kvps=self.args,
+            id=str(uuid.uuid4()),
+        )
 
-        if self._current_action() == "load":
+    def get_heading(self):
+        action = self._current_action()
+        if action == "load":
             skill_name = self._normalize_skill_name(
                 str(self.args.get("skill_name") or "")
             )
-            heading = (
-                f"icon://construction Loading skill {skill_name}"
-                if skill_name
-                else "icon://construction Loading skill"
+            text = f"Loading skill: {truncate_text(skill_name, 60)}" if skill_name else "Loading skill"
+        elif action == "search":
+            query = str(self.args.get("query") or "").strip()
+            text = f"Searching skills: {truncate_text(query, 60)}" if query else "Searching skills"
+        elif action == "read_file":
+            skill_name = self._normalize_skill_name(
+                str(self.args.get("skill_name") or "")
             )
-            return self.agent.context.log.log(
-                type="tool",
-                heading=heading,
-                content="",
-                kvps={"_tool_name": self.name},
-                id=str(uuid.uuid4()),
-            )
-
-        return super().get_log_object()
+            file_path = str(self.args.get("file_path") or "").strip()
+            target = f"{skill_name}/{file_path}" if skill_name and file_path else file_path or skill_name
+            text = f"Reading skill: {truncate_text(target, 60)}" if target else "Reading skill"
+        else:
+            text = "Listing skills"
+        return f"icon://school {text}"
 
     async def before_execution(self, **kwargs):
         if self._current_action(**kwargs) != "load":

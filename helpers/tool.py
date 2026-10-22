@@ -14,6 +14,20 @@ class Response:
     break_loop: bool
     additional: dict[str, Any] | None = None
 
+def coerce_bool(value: Any, default: bool) -> bool:
+    """Coerce a tool argument to bool: booleans pass, common true/false strings map, unknown values fall back to truthiness."""
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+    return bool(value)
+
 class Tool:
 
     def __init__(self, agent: Agent, name: str, method: str | None, args: dict[str,str], message: str, loop_data: LoopData | None, **kwargs) -> None:
@@ -62,9 +76,9 @@ class Tool:
         import uuid
         pre_id = str(uuid.uuid4())
         if self.method:
-            heading = f"icon://construction {self.agent.agent_name}: Using tool '{self.name}:{self.method}'"
+            heading = f"icon://construction Using tool '{self.name}:{self.method}'"
         else:
-            heading = f"icon://construction {self.agent.agent_name}: Using tool '{self.name}'"
+            heading = f"icon://construction Using tool '{self.name}'"
         return self.agent.context.log.log(type="tool", heading=heading, content="", kvps=self.args, _tool_name=self.name, id=pre_id)
 
     def nice_key(self, key:str):

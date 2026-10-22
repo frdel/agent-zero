@@ -8,7 +8,7 @@ from helpers.defer import DeferredTask, THREAD_BACKGROUND
 
 # Direct import - this extension lives inside the memory plugin
 from plugins._memory.helpers.memory import Memory
-from plugins._memory.tools.memory_load import DEFAULT_THRESHOLD as DEFAULT_MEMORY_THRESHOLD
+from plugins._memory.tools.memory import DEFAULT_THRESHOLD as DEFAULT_MEMORY_THRESHOLD
 
 class MemorizeSolutions(Extension):
 

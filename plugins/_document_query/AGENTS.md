@@ -7,6 +7,8 @@
 ## Ownership
 
 - `tools/document_query.py` owns the agent-facing query tool.
+- The tool logs its message as type `document_query` with an `icon://manage_search Querying: <document>` headline when queries are supplied and `Reading: <document>` without them, naming the first file and appending `+ N more` for multiple documents; `extensions/webui/get_message_handler/` owns the `DOC` badge presentation and `extensions/webui/get_process_step_types/` registers the type.
+- Agent-facing error messages render from `prompts/fw.document_query.*.md`, and the Q&A answer streams into the tool log while the model writes it.
 - `helpers/` owns fetching, parser routing, indexing, and query orchestration.
 - `prompts/` owns document-query tool and optimization prompts.
 - `hooks.py`, `default_config.yaml`, `plugin.yaml`, `skills/`, `extensions/`, and `webui/` own dependency bootstrap, settings, metadata, skill guidance, hooks, and UI.

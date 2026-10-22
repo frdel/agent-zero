@@ -1,0 +1,7 @@
+/* AIM - goal tool type (green) */
+.process-group .AIM {
+  --step-accent: #22c55e;
+}
+.light-mode .process-group .AIM {
+  --step-accent: #15803d;
+}

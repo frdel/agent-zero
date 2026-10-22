@@ -8,7 +8,7 @@ from typing import Any
 
 from helpers import chat_media, history, media_artifacts
 from helpers.print_style import PrintStyle
-from helpers.tool import Response, Tool
+from helpers.tool import Response, Tool, coerce_bool
 from helpers.ws_manager import ConnectionNotFoundError, get_shared_ws_manager
 
 from plugins._a0_connector.helpers.ws_runtime import (
@@ -76,6 +76,40 @@ _SUPPORTED_ACTIONS = {
 
 
 class ComputerUseRemote(Tool):
+    def get_log_object(self):
+        return self.agent.context.log.log(
+            type="computer_use_remote",
+            heading=self.get_heading(),
+            content="",
+            kvps=self.args,
+            id=str(uuid.uuid4()),
+        )
+
+    _HEADING_VERBS = {
+        "start_session": "Starting session",
+        "status": "Checking status",
+        "capture": "Capturing screen",
+        "list_windows": "Listing windows",
+        "get_window_state": "Reading window state",
+        "element_action": "Acting on element",
+        "ax_snapshot": "Taking accessibility snapshot",
+        "ax_action": "Acting via accessibility",
+        "uia_snapshot": "Taking UIA snapshot",
+        "uia_action": "Acting via UIA",
+        "move": "Moving pointer",
+        "click": "Clicking",
+        "scroll": "Scrolling",
+        "key": "Pressing keys",
+        "type": "Typing",
+        "stop_session": "Ending session",
+    }
+
+    def get_heading(self):
+        action = str(self.args.get("action") or "").strip().lower()
+        verb = self._HEADING_VERBS.get(action, "Working on desktop")
+        text = f"Computer use: {verb}" if action else "Computer use"
+        return f"icon://desktop_windows {text}"
+
     async def execute(self, **kwargs: Any) -> Response:
         self._latest_capture_content: list[dict[str, Any]] | None = None
         self._latest_capture_preview = ""
@@ -309,7 +343,7 @@ class ComputerUseRemote(Tool):
             return _SETTLE_DELAY_AX_ACTION
         if action == "uia_action":
             return _SETTLE_DELAY_UIA_ACTION
-        if action == "type" and self._coerce_bool(self.args.get("submit")):
+        if action == "type" and coerce_bool(self.args.get("submit"), False):
             return _SETTLE_DELAY_SUBMIT
         if action == "type":
             return _SETTLE_DELAY_TYPE
@@ -364,7 +398,7 @@ class ComputerUseRemote(Tool):
             payload["text"] = self.args.get("text", "")
             if "window_id" in self.args:
                 payload["window_id"] = self.args.get("window_id")
-            if self._coerce_bool(self.args.get("submit")):
+            if coerce_bool(self.args.get("submit"), False):
                 payload["submit"] = True
         elif action == "list_windows":
             for key in ("include_hidden", "include_offscreen", "max_windows"):
@@ -438,7 +472,7 @@ class ComputerUseRemote(Tool):
                 payload["value"] = self.args.get("value")
             if "text" in self.args:
                 payload["text"] = self.args.get("text", "")
-            if self._coerce_bool(self.args.get("submit")):
+            if coerce_bool(self.args.get("submit"), False):
                 payload["submit"] = True
 
         return payload
@@ -1051,13 +1085,6 @@ class ComputerUseRemote(Tool):
             return int(value or 0)
         except (TypeError, ValueError) as exc:
             raise ValueError(f"{name} must be an integer") from exc
-
-    def _coerce_bool(self, value: object) -> bool:
-        if isinstance(value, bool):
-            return value
-        if isinstance(value, (int, float)):
-            return bool(value)
-        return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _sanitize_tool_text(value: str) -> str:

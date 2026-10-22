@@ -1,0 +1,7 @@
+/* NTF - notify user type (rose) */
+.process-group .NTF {
+  --step-accent: #fb7185;
+}
+.light-mode .process-group .NTF {
+  --step-accent: #e11d48;
+}

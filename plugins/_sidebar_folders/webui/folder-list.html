@@ -62,7 +62,7 @@
                     </template>
                     <template x-if="kind === 'task'">
                       <div class="sidebar-folder-host" x-data="{ get task() { return item; } }">
-                        <x-component path="sidebar/tasks/task-row.html"></x-component>
+                        <x-component path="/plugins/_scheduler/webui/sidebar/task-row.html"></x-component>
                       </div>
                     </template>
                   </li>

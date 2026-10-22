@@ -1,0 +1,7 @@
+/* DOC - document query type (blue) */
+.process-group .DOC {
+  --step-accent: #60a5fa;
+}
+.light-mode .process-group .DOC {
+  --step-accent: #3420e9;
+}

@@ -1,0 +1,7 @@
+/* HLD - wait hold type (slate) */
+.process-group .HLD {
+  --step-accent: #94a3b8;
+}
+.light-mode .process-group .HLD {
+  --step-accent: #475569;
+}

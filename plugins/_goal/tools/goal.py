@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import uuid
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -65,6 +66,25 @@ class GoalTool(Tool):
             message="Unknown goal action. Supported actions: get, create, update.",
             break_loop=False,
         )
+
+    def get_log_object(self):
+        return self.agent.context.log.log(
+            type="goal",
+            heading=self.get_heading(),
+            content="",
+            kvps=self.args,
+            id=str(uuid.uuid4()),
+        )
+
+    def get_heading(self):
+        action = str(self.args.get("action") or "get").strip().lower()
+        action = {"show": "get", "status": "get", "set": "create"}.get(action, action)
+        status = str(self.args.get("status") or "").strip().lower()
+        if action in {"complete", "blocked"} or status in {"complete", "blocked"}:
+            verb = "Completing goal" if (action == "complete" or status == "complete") else "Blocking goal"
+        else:
+            verb = {"get": "Checking goal", "create": "Setting goal"}.get(action, "Updating goal")
+        return f"icon://flag {verb}"
 
 
 def get_goal(context_id: str) -> dict[str, Any] | None:

@@ -1,0 +1,7 @@
+/* OFF - office artifact type (blue) */
+.process-group .OFF {
+  --step-accent: #60a5fa;
+}
+.light-mode .process-group .OFF {
+  --step-accent: #3420e9;
+}
