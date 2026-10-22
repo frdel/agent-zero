@@ -83,12 +83,11 @@ def test_remote_status_and_document_read_need_no_live_context(rig, shared, monke
     assert AgentContext.all() == []
 
 
-def test_remote_document_write_holds_without_using_stale_local_masking_context(rig, shared):
+def test_remote_document_write_requires_frozen_binding_without_using_stale_local_context(rig, shared):
     admitted(rig, "iteration_ready")
     response = call({"action": "document_update", "context": rig.context.id, "kind": "todo",
                      "value": {"title": "Private draft", "items": []}, "expected_revision": 0, "request_id": "write"})
-    assert response.status_code == 409
-    assert "draft was not saved" in response.get_data(as_text=True)
+    assert response.status_code == 400
     assert rig.owner.sync("read_document", rig.context.id, "todo") is None
 
 

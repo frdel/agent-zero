@@ -1,6 +1,8 @@
 """Explicit source-pinned replay audits; drift requires a new review."""
 
 AUDITED_HOOKS = {
+    ('BrowserModelCleanup', '55ad6654cf45adc77f741cfa7e47e0562fa5a3bcc6768f7527af95e00d0a2f6d'),
+    ('WaitingForInputMsg', '6c783e2e86031a26d33ed50204fbeb28004e1813618f9eb5851e98f2a69712d5'),
     ('MaskReasoningStreamEnd', '55eae68432367201f292a4bdd13527519d763f45b2247a20cb09901619d3c872'),
     ('MaskResponseStreamEnd', '5f7fa3c82c5d468fd680127251a50d3cc189153c55e1c10d038635619eab035d'),
     ('LogFromStream', '658d4be2120b4914872941d9e8c17141f9a7f852100d8a4114f34695a2adc9ed'),
@@ -31,4 +33,12 @@ AUDITED_INIT_HOOKS = {
 AUDITED_INITIAL_HISTORY_HOOKS = {
     ('MaskHistoryContent', 'eb613a29492b4e9fa9b238de709d3fcee747b7ab6dee78e7871b0371dafb3f41'),
     ('LogPlainResponses', '8e560915a78d34ae28f3d8ca6ef9e2f39cb2af6ad794174eb37626f000d46b2d'),
+}
+
+# These continuations are safe only with the shared detached broker enabled.
+BROKER_HOOKS = {
+    ('tool_execute_before', 'InfectionAwaitCheck', '512b014e0a35414b13099dc4054ce087be31a4a5a28a59c616de7468a8486dd8'),
+    ('monologue_end', 'MemorizeMemories', '23cb02117e10c8eb9660ae717db99263456ee5fca5ee1c83356298bafc60c027'),
+    ('monologue_end', 'MemorizeSolutions', 'b81bc8cef9fa1dae758ed2b48c54527846a42f104ffeb22e976e5fda86a81414'),
+    ('message_loop_end', 'OrganizeHistory', '5626c794a2cfae39119499fa7696f41fed4d2a765afb3b816eb1df02d92dc7c6'),
 }

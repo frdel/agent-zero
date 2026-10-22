@@ -147,6 +147,8 @@ class RecoveryService:
             active = next((run for run in headers if run["status"] in ACTIVE), None)
             if active:
                 active = self.sync("get_run", active["run_id"])
+                if active["phase"] in {"terminal_ready", "finalizing", "scheduler_finalizing"}:
+                    raise RuntimeError("The current response is finishing; send new input after it completes")
                 turn = current(context.agent0)
                 if not turn or active["run_id"] not in self.driving:
                     raise RuntimeError("Stop the held durable run before starting a new attempt")
@@ -311,6 +313,18 @@ class RecoveryService:
         return run["input_payload"]
 
     async def run(self, context, run, started=None):
+        from helpers import kvp
+        from helpers.durable import state_adapters
+        values = getattr(context, "_durable_kvp", None)
+        if values is None:
+            values = context._durable_kvp = {}
+        context._durable_recovery_owner = self
+        context._durable_recovery_run_id = run["run_id"]
+        guard = lambda: self.sync("assert_owner" if self.distributed else "_writable", run["run_id"])
+        with kvp.context_scope(context.id, values, state_adapters.handled_keys("kvp"), guard=guard):
+            return await self._run_owned(context, run, started)
+
+    async def _run_owned(self, context, run, started=None):
         if started is not None:
             started.set()
         turn = None
@@ -328,9 +342,10 @@ class RecoveryService:
             context._durable_origin = origin = run["checkpoint"].get("origin")
             if origin and origin.get("kind") == "child":
                 await self.wait_for_ancestors(run["run_id"], origin)
-            if run["phase"] != "admitted":
+            if run["phase"] != "admitted" or (getattr(context, "_durable_restored", False)
+                                              and run["checkpoint"].get("plugin_state", {}).get("entries")):
                 codec.restore(context, run["checkpoint"])
-            elif codec.environment(context.agent0) != run["checkpoint"]["environment"]:
+            elif not codec.compatible_environment(context.agent0, run["checkpoint"]["environment"]):
                 raise RecoveryHeld("admission_configuration_changed")
             elif getattr(context, "_durable_restored", False) and run["checkpoint"].get("requires_state_adapter"):
                 raise RecoveryHeld("plugin_state_adapter_required")
@@ -356,12 +371,18 @@ class RecoveryService:
                     await extension.call_extensions_async("monologue_start", context.agent0,
                                                           loop_data=context.agent0.loop_data)
                 await turn.save("tools" if tool_child else "iteration_ready")
-            elif run["phase"] not in ("iteration_ready", "model_ready", "model_result", "tools", "scheduler_finalizing", "model_retry"):
+            elif run["phase"] not in ("iteration_ready", "model_ready", "model_result", "tools", "scheduler_finalizing", "model_retry", "terminal_ready", "finalizing"):
                 # A provider result remains available even when lifecycle finalization
                 # needs an adapter. Never issue a replacement provider request here.
                 raise RecoveryHeld("interrupted_" + run["phase"])
             if run["phase"] == "scheduler_finalizing":
                 result = run["checkpoint"]["terminal"]
+            elif run["phase"] in ("terminal_ready", "finalizing"):
+                if run["checkpoint"].get("terminal") is None or not _audited_hooks(context.agent0, "monologue_end"):
+                    raise RecoveryHeld("terminal_hook_adapter_required")
+                result = await turn.finish_terminal(run["checkpoint"]["terminal"])
+                if result is None:
+                    result = await context.agent0.monologue()
             elif tool_child:
                 turn.tool_index = 0
                 result = await workflows.dispatch_tool(context, origin)
@@ -481,8 +502,14 @@ class RecoveryService:
                 data = run["checkpoint"]
                 if data["context"]["id"] != run["context_id"]:
                     raise ValueError("Checkpoint context identity mismatch")
+                from helpers.durable import state_adapters
+                state_adapters.validate(data.get("plugin_state", {"version": 1, "entries": []}))
                 # Rebuild after legacy load, never promote chat.json to authority.
                 context = persist_chat._deserialize_context(data["context"])
+                context._durable_recovery_owner = self
+                context._durable_recovery_run_id = run["run_id"]
+                context._durable_provider_descriptor = data.get("environment", {}).get("provider_cleanup")
+                context._durable_provider_cleanup_targets = dict(data.get("provider_cleanup_targets", {}))
                 context._durable_restored = True
                 context._durable_origin = data.get("origin")
                 context._durable_workflow_state = data.get("workflow_state", {})
@@ -564,6 +591,8 @@ class Turn:
         agent = self.agent
         while True:
             agent.context.streaming_agent = agent
+            if self.phase == "iteration_ready":
+                await self.consume_intervention()
             if self.phase == "model_retry":
                 await self.model_retry()
             if self.phase == "model_result":
@@ -602,20 +631,48 @@ class Turn:
             if self.phase != "tools":
                 raise RecoveryHeld("unsupported_continuation_phase")
             if self.result.builtin_items:
-                raise RecoveryHeld("provider_builtin_adapter_required")
+                from helpers.durable.hosted import validate
+                validate(self.result)
             self.tool_index = 0
             result = await agent.process_llm_result_tools(self.result)
-            await self.end_iteration(terminal=result)
+            if await self.end_iteration(terminal=result):
+                result = None
             if result:
-                await self.save("finalizing", terminal=result)
-                await extension.call_extensions_async("monologue_end", agent, loop_data=agent.loop_data)
-                return result
+                result = await self.finish_terminal(result)
+                if result is not None:
+                    return result
+
+    async def finish_terminal(self, result):
+        from helpers import extension
+        await self.save("finalizing", terminal=result)
+        await extension.call_extensions_async("monologue_end", self.agent, loop_data=self.agent.loop_data)
+        if await self.consume_intervention():
+            return None
+        return result
 
     async def end_iteration(self, terminal=None):
         from helpers import extension
         await self.save("iteration_finalizing", terminal=terminal)
         await extension.call_extensions_async("message_loop_end", self.agent, loop_data=self.agent.loop_data)
+        if await self.consume_intervention():
+            return True
         await self.save("terminal_ready" if terminal else "iteration_ready", terminal=terminal)
+        return False
+
+    async def consume_intervention(self):
+        """Commit queued input only after every started effect has settled."""
+        with self.owner.lock:
+            if self.owner.distributed:
+                self.owner.refresh_commands(self.agent.context, self.run_id)
+            message = self.agent.intervention
+            if message is None:
+                return False
+            self.agent.hist_add_user_message(message, intervention=True)
+            self.agent.intervention = None
+            self.agent.loop_data.user_message = self.agent.last_user_message
+            self.result = None
+            await self.save("iteration_ready")
+            return True
 
     def project_response(self):
         """Commit the final response projection even if preview chunks were lost."""
@@ -652,6 +709,9 @@ class Turn:
         payload = describe_model(self.agent, model, messages, kwargs,
                                  explicit_caching=explicit_caching, background=background,
                                  stream_response=stream_response, stream_reasoning=stream_reasoning)
+        from helpers.durable.maintenance import provider_descriptor
+        payload["provider_cleanup"] = provider_descriptor(self.agent, model=model)
+        self.agent.context._durable_provider_descriptor = payload["provider_cleanup"]
         call_id = f"model:{self.agent.loop_data.iteration}"
         await self.owner.io("start_call", self.run_id, call_id, "model", payload)
         await self.save("model_inflight")
@@ -668,6 +728,11 @@ class Turn:
         grant = await self.owner.io("get_retry", self.run_id, logical_id)
         if not grant or grant["state"] != "pending" or not grant["epoch_valid"]:
             raise RecoveryHeld("model_retry_requires_fresh_operator_grant")
+        model = self.agent.get_chat_model()
+        from helpers.durable.maintenance import provider_descriptor
+        pinned = (original.get("payload") or {}).get("provider_cleanup")
+        if pinned is not None and provider_descriptor(self.agent, model=model) != pinned:
+            raise RecoveryHeld("model_retry_provider_target_changed")
         await self.owner.wait_for_ancestors(self.run_id, getattr(self.agent.context, "_durable_origin", None))
         await self.agent.handle_intervention()
         attempt = await self.owner.io("begin_retry", self.run_id, logical_id)
@@ -677,7 +742,7 @@ class Turn:
         await self.save("model_inflight")
         async def discard_stream(*_args):
             return None
-        result = await self.agent.get_chat_model().unified_turn(
+        result = await model.unified_turn(
             messages=restore_messages(payload),
             response_callback=discard_stream if payload["stream_response"] else None,
             reasoning_callback=discard_stream if payload["stream_reasoning"] else None,
@@ -692,6 +757,15 @@ class Turn:
             self.result = result
             payload = codec.result_payload(self.agent, result)
             try:
+                call = self.owner.sync("get_call", self.run_id, call_id)
+                descriptor = (call.get("payload") or {}).get("provider_cleanup") if call else None
+                if descriptor and result.mode == "responses" and result.response_id:
+                    targets = dict(getattr(self.agent.context, "_durable_provider_cleanup_targets", {}))
+                    if result.response_id in targets and targets[result.response_id] != descriptor:
+                        raise ValueError("Provider response target changed")
+                    targets[result.response_id] = descriptor
+                    self.agent.context._durable_provider_cleanup_targets = targets
+                    self.agent.context._durable_provider_descriptor = descriptor
                 projection = codec.checkpoint(self.agent, result=result)
             except Exception:
                 await self.owner.io("finish_call", self.run_id, call_id, payload)
@@ -779,6 +853,16 @@ class Turn:
                         self.resuming_bodies[call_id] = Response(**existing["result"]["response"])
                         return call_id, None
                 raise RecoveryHeld("tool_finalization_interrupted")
+            hook_input = await self.owner.io("get_call", self.run_id, call_id + ":hook_input")
+            prepared = await self.owner.io("get_call", self.run_id, call_id + ":args")
+            if ((prepared is None or prepared["status"] != "completed") and hook_input
+                    and hook_input["status"] == "completed" and _audited_hooks(self.agent, "tool_execute_before")):
+                # before_execution already returned. Only the audited prehook
+                # continuation runs; a checker queries its detached phase jobs.
+                from helpers.durable.replay import AUDITED_TOOLS
+                if adapter or workflow or (type(tool).__name__, codec.identity(tool)["source"]) in AUDITED_TOOLS:
+                    self.resuming_args[call_id] = hook_input
+                    return call_id, None
             if adapter:
                 prepared = await self.owner.io("get_call", self.run_id, call_id + ":args")
                 if not prepared or prepared["status"] != "completed" or not _audited_hooks(self.agent, "tool_execute_before"):
@@ -810,8 +894,11 @@ class Turn:
         await self.save("tools")
         return call_id, None
 
-    async def effective_tool_args(self, call_id, args):
-        identifier = call_id + ":args"
+    async def tool_hook_input(self, call_id, args):
+        await self.effective_tool_args(call_id, args, hooks_pending=True)
+
+    async def effective_tool_args(self, call_id, args, *, hooks_pending=False):
+        identifier = call_id + (":hook_input" if hooks_pending else ":args")
         from helpers.durable.resources import canonical_value
         data = canonical_value(self.agent.context, codec.masked(self.agent, args))
         await self.owner.io("start_call", self.run_id, identifier, "arguments", data)
@@ -820,7 +907,7 @@ class Turn:
         with self.owner.lock:
             projection = codec.checkpoint(self.agent, result=self.result)
             await self.owner.io("finish_call", self.run_id, identifier,
-                                {"prepared": True, "log_id": getattr(log, "id", None),
+                                {"prepared": True, "hooks_pending": hooks_pending, "log_id": getattr(log, "id", None),
                                  "log_type": getattr(log, "type", None)},
                                 checkpoint=projection, phase="tools")
 
@@ -878,8 +965,12 @@ def _audited_workflow(tool):
 
 def _audited_hooks(agent, point):
     from helpers import extension
-    from helpers.durable.replay import AUDITED_HOOKS
-    return all((cls.__name__, codec.identity(cls)["source"]) in AUDITED_HOOKS
+    from helpers.durable.replay import AUDITED_HOOKS, BROKER_HOOKS
+    turn = current(agent)
+    owner = turn.owner if turn else getattr(agent.context, "_durable_recovery_owner", None)
+    shared = bool(owner and getattr(owner, "distributed", False))
+    return all((cls.__name__, codec.identity(cls)["source"]) in AUDITED_HOOKS or
+               shared and (point, cls.__name__, codec.identity(cls)["source"]) in BROKER_HOOKS
                for cls in extension._get_extension_classes(point, agent=agent))
 
 

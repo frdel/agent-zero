@@ -1,9 +1,9 @@
-"""Durable noninteractive code jobs; submitted commands are never relaunched.
+"""Durable execution policy and compatibility receipts.
 
 Local POSIX supervisors survive their framework worker and publish encrypted
-results using an append-only resource capability. SSH supervisors keep receipts
-on the configured, host-key-verified target. Only cwd/exported environment deltas
-are session state; interactive PTYs, shell functions and stdin are unsupported.
+results using an append-only resource capability. New sessions use the detached
+PTY broker in interactive.py; legacy batch receipts remain readable and are
+never converted into fresh command submissions.
 """
 from __future__ import annotations
 
@@ -39,20 +39,18 @@ def _digest(value):
     return hashlib.sha256(_encoded(value)).hexdigest()
 
 
-def supports(tool, args):
-    from plugins._code_execution.tools.code_execution_tool import CodeExecution
+def _core_class(tool, expected):
     cls = type(tool)
-    if (cls.__qualname__ != CodeExecution.__qualname__ or cls.__bases__ != CodeExecution.__bases__
-            or not isinstance(args, dict)):
+    if cls.__qualname__ != expected.__qualname__ or cls.__bases__ != expected.__bases__:
         return False
-    methods = {name for name, value in CodeExecution.__dict__.items() if callable(value)}
+    methods = {name for name, value in expected.__dict__.items() if callable(value)}
     if ({name for name, value in cls.__dict__.items() if callable(value)} != methods
             or any(name in tool.__dict__ for name in methods)):
         return False
     # Core tools are executed by helpers.modules under a short module name.
     # Python class identity differs; source plus code identity must not.
-    for name, expected in CodeExecution.__dict__.items():
-        expected_code = getattr(expected, "__code__", None)
+    for name, method in expected.__dict__.items():
+        expected_code = getattr(method, "__code__", None)
         if type(expected_code) is not types.CodeType:
             continue
         actual_code = getattr(cls.__dict__.get(name), "__code__", None)
@@ -61,7 +59,21 @@ def supports(tool, args):
                 or actual_code.co_code != expected_code.co_code or actual_code.co_consts != expected_code.co_consts):
             return False
     execute = getattr(cls.__dict__.get("execute"), "__code__", None)
-    if type(execute) is not types.CodeType or Path(execute.co_filename).resolve() != Path(__file__).resolve().parents[2] / "plugins/_code_execution/tools/code_execution_tool.py":
+    expected_execute = expected.__dict__["execute"].__code__
+    return type(execute) is types.CodeType and Path(execute.co_filename).resolve() == Path(expected_execute.co_filename).resolve()
+
+
+def supports(tool, args):
+    from plugins._code_execution.tools.code_execution_tool import CodeExecution
+    from plugins._code_execution.tools.input import Input
+    if not isinstance(args, dict):
+        return False
+    if _core_class(tool, Input):
+        return (not set(args) - {"keyboard", "session"}
+                and isinstance(args.get("keyboard", ""), str)
+                and len(args.get("keyboard", "").encode()) <= 1024 * 1024
+                and type(args.get("session", 0)) is int and 0 <= args.get("session", 0) <= 63)
+    if not _core_class(tool, CodeExecution):
         return False
     if set(args) - {"runtime", "code", "session", "reset"}:
         return False
@@ -98,6 +110,11 @@ def can_resume(tool, args, call):
     from helpers.durable.runtime import current
     turn = current(tool.agent)
     if not turn or not getattr(turn.owner, "distributed", False):
+        return False
+    from helpers.durable import interactive
+    if interactive.can_resume(tool, args, call):
+        return True
+    if "keyboard" in args:
         return False
     mode = str(args["runtime"]).strip().lower()
     if mode in {"output", "reset"}:
@@ -385,6 +402,14 @@ async def reconcile(tool, args):
         _held("execution_shared_resources_required")
     manager = _manager(turn)
     identifier = _job_id(turn)
+    from helpers.durable import interactive
+    # Old journal identities retain their original execution protocol. All
+    # newly configured sessions use the persistent interactive broker.
+    prior_batch = manager.get_manifest("execution-session-" + str(args.get("session", 0)))
+    if ("keyboard" in args or manager.get_manifest(interactive.manifest_kind(args.get("session", 0)))
+            or _get_config(tool.agent).get("durability_interactive", True)
+            and not prior_batch and not manager.get_manifest("execution-job-" + identifier)):
+        return await interactive.reconcile(tool, args)
     kind = "execution-job-" + identifier
     saved = manager.get_manifest(kind)
     job = saved["value"] if saved else None
@@ -528,7 +553,8 @@ async def cancel_sessions(context, run_id=None):
             or run["generation"] != generation):
         return []
     manager = ResourceManager(owner, context.id)
-    results, cfg = [], None
+    from helpers.durable import interactive
+    results, cfg = await interactive.cancel_sessions(context, owner, run_id), None
     for index in range(64):
         session = manager.get_manifest("execution-session-" + str(index))
         if not session or not session["value"].get("job_id"):

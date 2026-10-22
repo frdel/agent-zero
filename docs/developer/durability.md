@@ -46,7 +46,7 @@ action was not automatically retried. Open **More → Recovery & documents** to 
 | Completed native batch members | Retain native IDs and apply the saved projection once; resume at unfinished work. |
 | Interrupted `never` body or postprocessing | Hold. A committed body is never reexecuted just to finish hooks/history. |
 | Interrupted pure response tool | Retry only when recorded/current policy, source identity and audited lifecycle match. Other safe declarations require an adapter/audit. |
-| Controls | Stop/cancel and reset fence the parent and currently owned descendants in one transaction. Delete also removes owned child snapshots. Interventions are durably accepted; interruption of an external call holds for resolution. |
+| Controls | Stop/cancel and reset fence the parent and currently owned descendants in one transaction. Delete also removes owned child snapshots. Interventions are durably prepared and queued. The current effect settles before input is consumed at a committed iteration boundary; the next turn uses the saved input without repeating that effect. |
 | Scheduler | Built-in ad hoc, cron and planned occurrences share durable admission. Occurrence/run tokens reconcile atomic local JSON/YAML or shared PostgreSQL task projections and advance exactly the owning plan item once. Custom callbacks require an adapter. |
 | Subordinates and parallel children | Ordered manifests retain child genesis, identities and joins. Completed children are reused; unresolved effects hold. Background job handles and collected-history watermarks survive parent turns. Disposable direct-worker objects are evicted after completion while their outcomes remain in the ledger. |
 | Payload storage | Canonical JSON at least 64 KiB uses verified digest-addressed storage: private files in local mode, transactional database bytes in PostgreSQL mode. Reads verify size and digest. |
@@ -54,7 +54,7 @@ action was not automatically retried. Open **More → Recovery & documents** to 
 | Recovery decisions | Opaque review versions reject stale actions. Stable request IDs make lost-response retries idempotent. Explicit new attempts have a three-attempt total budget per logical call. |
 | UI | Recovery & documents provides recovery review, per-run restore selection and a typed plan editor through authenticated, CSRF-protected APIs. Existing `/webui` runtime-epoch resync and `Log` projection remain in use; recovery resets log generation. Stream previews are provisional. |
 
-Provider-hosted built-ins and arbitrary integration/session recovery require explicit adapters. A recovered turn holds before starting a new unaudited stateful target. The PostgreSQL resource adapters restore declared files and session state; old live Python/process objects remain unsuitable as checkpoints.
+Completed provider-hosted search/code/image/MCP items reuse their recorded results. Computer actions use the ordinary durable connector tool boundary; provider MCP approval requests retain the existing denial until explicit approval support exists. A recovered turn holds before starting a new unaudited stateful target. The PostgreSQL resource adapters restore declared files and session state; old live Python/process objects remain unsuitable as checkpoints.
 
 Arbitrary plugin checkpoint state and side effects in interrupted hooks require
 adapters. Recovery checks configuration and source fingerprints. An interrupted

@@ -10,13 +10,14 @@ import asyncio
 import copy
 import hashlib
 import threading
+import time
 import uuid
 from contextlib import nullcontext
 from types import SimpleNamespace
 
 from helpers.durable import codec
 from helpers.durable.runtime import ACTIVE, RecoveryHeld, RecoveryService
-from helpers.durable.store import DurableStoreError, OwnershipError
+from helpers.durable.store import DurableStoreError, IntegrityError, OwnershipError, StaleRunError
 
 
 def portable(data, payload=None):
@@ -108,6 +109,28 @@ class RunHandle:
         return None
 
 
+class InputHandle(RunHandle):
+    """An input's acknowledgment is distinct from the run it was queued behind."""
+    def __init__(self, owner, run_id, request_id):
+        super().__init__(owner, run_id)
+        self.request_id = request_id
+
+    async def result(self, timeout=None):
+        async def wait():
+            while True:
+                receipt = await self.owner.io("get_command", self.run_id, self.request_id)
+                if not receipt or not receipt["epoch_valid"] or receipt["status"] == "invalidated":
+                    return "This queued input was stopped or invalidated. Review the chat before sending it again."
+                if receipt["status"] == "applied":
+                    if not (receipt.get("result") or {}).get("accepted"):
+                        return "The queued input was not applied. Send it again after the current response finishes."
+                    return await super(InputHandle, self).result()
+                await asyncio.sleep(self.owner.scan_interval)
+        return await wait() if timeout is None else await asyncio.wait_for(wait(), timeout)
+
+    result_async = result
+
+
 class ClusterRecoveryService(RecoveryService):
     distributed = True
 
@@ -122,11 +145,15 @@ class ClusterRecoveryService(RecoveryService):
         self._closing = False
         self._scan_lock = threading.RLock()
         self._view_revision = None
+        self._maintenance_tasks = {}
+        self._maintenance_failures = {}
 
     def close(self):
         self._closing = True
         if self._poller:
             self._poller.kill()
+        for task in self._maintenance_tasks.values():
+            task.kill()
         for context in list(self.contexts.values()):
             if context.task and context.task.is_alive():
                 context.task.kill()
@@ -144,6 +171,74 @@ class ClusterRecoveryService(RecoveryService):
             if self._poller is None and not self._closing:
                 from helpers.defer import DeferredTask
                 self._poller = DeferredTask("DurableClusterScan").start_task(self._poll)
+
+    def wake_maintenance(self, run_id=None):
+        self._ensure_poller()
+
+    async def _maintain_context(self, run_id):
+        from helpers.durable import maintenance
+        from helpers.durable.resources import ResourceHeld
+        from helpers.durable.workspaces import WorkspaceHeld
+        def restore(run):
+            self.sync("assert_owner", run["run_id"])
+            return self.contexts.get(run["run_id"]) or self._restore_claimed(run)
+        try:
+            result = await maintenance.process(self, run_id, restore)
+            if result.get("deleted"):
+                from agent import AgentContext
+                from helpers import task_scheduler
+                scheduler = task_scheduler.TaskScheduler.get()
+                for context_id in result["context_ids"]:
+                    scheduler.cancel_tasks_by_context(context_id, terminate_thread=False)
+                    for header in self.sync("list_run_headers", context_id=context_id):
+                        context = self.contexts.pop(header["run_id"], None)
+                        if context is not None and AgentContext.get(context_id) is context:
+                            AgentContext.remove(context_id)
+                    for task in scheduler.get_tasks_by_context_id(context_id):
+                        await scheduler.remove_task_by_uuid(task.uuid)
+                from helpers.durable.review import _dirty
+                _dirty(result["context_ids"])
+        except (ValueError, RecoveryHeld, maintenance.MaintenanceHeld, ResourceHeld, WorkspaceHeld, IntegrityError):
+            self.sync("get_restore_state")  # A lost database session is worker-wide.
+            if self.sync("owns", run_id) or self.sync("claim_maintenance", run_id):
+                for command in self.sync("pending_commands", run_id):
+                    if command["kind"] in maintenance.KINDS:
+                        self.sync("ack_command", run_id, command["request_id"],
+                                  result={"accepted": False, "error": "maintenance_requires_reconciliation"})
+        except (OwnershipError, StaleRunError):
+            # A cancelled execution may release its context while cleanup is
+            # awaiting a target. The retained request moves to the next owner.
+            return
+        finally:
+            if run_id not in self.driving:
+                # process() releases newly acquired idle claims. Never remove
+                # a concurrently admitted replacement context from its registry.
+                self.contexts.pop(run_id, None)
+                self.sync("release", run_id)
+
+    def _drain_maintenance(self):
+        from helpers.durable import maintenance
+        from helpers.defer import DeferredTask
+        for run_id, task in list(self._maintenance_tasks.items()):
+            if task.is_ready():
+                try:
+                    task.result_sync(timeout=0)
+                except (Exception, RecoveryHeld):
+                    self.sync("get_restore_state")
+                    self._maintenance_failures[run_id] = time.monotonic()
+                    from helpers.print_style import PrintStyle
+                    PrintStyle.warning("A shared chat maintenance request needs reconciliation; other chats remain available.")
+                finally:
+                    self._maintenance_tasks.pop(run_id, None)
+        for header in self.sync("list_command_runs", maintenance.KINDS):
+            run_id = header["run_id"]
+            if run_id in self._maintenance_tasks:
+                continue
+            if time.monotonic() - self._maintenance_failures.get(run_id, float("-inf")) < 30:
+                continue
+            if len(self._maintenance_tasks) >= 2:
+                break
+            self._maintenance_tasks[run_id] = DeferredTask("DurableMaintenance").start_task(self._maintain_context, run_id)
 
     async def _poll(self):
         while not self._closing and not self.failed:
@@ -167,8 +262,15 @@ class ClusterRecoveryService(RecoveryService):
         with self._scan_lock:
             if self.failed or self._closing:
                 return
+            self._drain_maintenance()
+            if time.monotonic() - getattr(self, "_background_scan_at", float("-inf")) >= 1:
+                from helpers.durable.background import recover_pending
+                recover_pending(self)
+                self._background_scan_at = time.monotonic()
             # Refresh controls even when this node has no available worker slot.
             for run_id, context in list(self.contexts.items()):
+                if run_id in self._maintenance_tasks and run_id not in self.driving:
+                    continue  # Idle cleanup owns this claim until its target settles.
                 if not self.sync("owns", run_id):
                     if context.task and context.task.is_alive():
                         context.task.kill()
@@ -190,7 +292,7 @@ class ClusterRecoveryService(RecoveryService):
                 self.refresh_commands(context, run_id)
             for header in self.sync("list_run_headers", ACTIVE):
                 run_id = header["run_id"]
-                if run_id in self.driving:
+                if run_id in self.driving or run_id in self._maintenance_tasks:
                     continue
                 commands = self.sync("pending_commands", run_id)
                 if header["status"] != "running" and not commands:
@@ -235,6 +337,8 @@ class ClusterRecoveryService(RecoveryService):
         from helpers import extension
         from helpers.durable.replay import AUDITED_INIT_HOOKS, AUDITED_INITIAL_HISTORY_HOOKS
         saved = data.get("context") or {}
+        if data.get("construction_sources") is not None and data["construction_sources"] != codec.construction_sources():
+            return False
         proxy = SimpleNamespace(config=SimpleNamespace(profile=saved.get("agent_profile") or ""),
                                 context=SimpleNamespace(get_data=lambda key: saved.get("data", {}).get(key)))
         if any((cls.__name__, codec.identity(cls)["source"]) not in AUDITED_INIT_HOOKS
@@ -255,6 +359,8 @@ class ClusterRecoveryService(RecoveryService):
     def _restore_claimed(self, run):
         from helpers import persist_chat
         self.sync("assert_owner", run["run_id"])
+        from helpers.durable import state_adapters
+        state_adapters.validate(run["checkpoint"].get("plugin_state", {"version": 1, "entries": []}))
         from helpers.durable import resources, workspaces
         state = run["checkpoint"].get("resources") or {"version": 1}
         workspace = state.get("workspace")
@@ -272,6 +378,10 @@ class ClusterRecoveryService(RecoveryService):
         context._durable_workspace_origin = workspace
         context._durable_managed_workspace = bool(workspace)
         context._durable_resource_paths = projection._durable_resource_paths
+        context._durable_recovery_owner = self
+        context._durable_recovery_run_id = run["run_id"]
+        context._durable_provider_descriptor = run["checkpoint"].get("environment", {}).get("provider_cleanup")
+        context._durable_provider_cleanup_targets = dict(run["checkpoint"].get("provider_cleanup_targets", {}))
         context._durable_restored = True
         context._durable_origin = run["checkpoint"].get("origin")
         context._durable_workflow_state = run["checkpoint"].get("workflow_state", {})
@@ -279,6 +389,13 @@ class ClusterRecoveryService(RecoveryService):
         context.paused = run["status"] == "blocked" or bool(run["checkpoint"].get("paused"))
         context.set_output_data("durability", {"status": run["status"], "run_id": run["run_id"]})
         self.contexts[run["run_id"]] = context
+        if run["checkpoint"].get("construction_sources"):
+            # Audited local constructors may be repeated until this projection
+            # commits. They run only after winning the real context claim.
+            data = codec.checkpoint(context.agent0)
+            if data.get("requires_state_adapter"):
+                raise RecoveryHeld("constructor_state_adapter_required")
+            self.sync("transition", run["run_id"], "admitted", checkpoint=data, status=run["status"])
         return context
 
     def dispatch(self, context, run):
@@ -336,36 +453,17 @@ class ClusterRecoveryService(RecoveryService):
             self.contexts.pop(run["run_id"], None)
 
     async def prepare_input(self, context, run):
-        from helpers.durable.resources import ResourceManager, materialize_attachments, capture_attachments
+        from helpers.durable.resources import ResourceManager, materialize_attachments
         manager = ResourceManager(self, context.id, run["run_id"])
         if not run["checkpoint"].get("ui_input_pending") and run["phase"] != "ui_input_ready":
             return materialize_attachments(manager, run["input_payload"], context)
         self.sync("assert_owner", run["run_id"])
-        recorded = self.sync("get_call", run["run_id"], "input_ui")
-        if recorded:
-            if recorded["status"] != "completed" or not recorded.get("result"):
-                raise RecoveryHeld("ui_input_outcome_unknown")
-            result = recorded["result"]
-        else:
-            self.sync("start_call", run["run_id"], "input_ui", "input_ui", run["input_payload"])
-            from helpers import extension
-            raw = run["input_payload"]
-            materialized = materialize_attachments(manager, raw, context)
-            data = {"message": raw["message"], "attachment_paths": materialized["attachments"]}
-            await extension.call_extensions_async("user_message_ui", agent=context.agent0, data=data)
-            if not isinstance(data.get("message"), str) or not isinstance(data.get("attachment_paths"), list) or any(
-                    not isinstance(path, str) for path in data["attachment_paths"]):
-                raise RecoveryHeld("ui_input_adapter_required")
-            result = {"message": codec.masked(context.agent0, {**raw, "message": data["message"],
-                        "attachments": capture_attachments(manager, data["attachment_paths"])}), "model_not_configured": bool(data.get("model_not_configured"))}
-            context._durable_ui_input_pending = False
-            if not result["model_not_configured"]:
-                self._log_input(context, result["message"])
-            self.sync("finish_call", run["run_id"], "input_ui", result,
-                      checkpoint=codec.checkpoint(context.agent0), phase="ui_input_ready")
-            turn = getattr(context, "_durable_turn", None)
-            if turn:
-                turn.phase = "ui_input_ready"
+        from helpers.durable.inputs import prepare
+        result = await prepare(self, context, run["run_id"], run["input_payload"], "input_ui", initial=True)
+        context._durable_ui_input_pending = False
+        turn = getattr(context, "_durable_turn", None)
+        if turn:
+            turn.phase = "ui_input_ready"
         if result.get("model_not_configured"):
             raise RecoveryHeld("ui_model_not_configured")
         return materialize_attachments(manager, result["message"], context)
@@ -433,6 +531,12 @@ class ClusterRecoveryService(RecoveryService):
             run = self.sync("admit", context_id, message.id, payload, data, expected_generation=generation)
             return self.dispatch_for_run(run["run_id"])
         payload = self._mask_payload(context_id, codec.message_payload(message))
+        request_id = "input:" + hashlib.sha256(message.id.encode()).hexdigest()
+        for header in headers:
+            prior = self.sync("get_command", header["run_id"], request_id)
+            if prior:
+                self.submit_command(header["run_id"], "intervention", {"message": payload, "ui": bool(ui)}, request_id)
+                return InputHandle(self, header["run_id"], request_id)
         duplicate = next((row for row in headers if row["input_id"] == message.id), None)
         if duplicate:
             if not self.sync("matches_input", duplicate["run_id"], payload):
@@ -444,10 +548,8 @@ class ClusterRecoveryService(RecoveryService):
                 raise RuntimeError("Review the held durable run before sending new work")
             if broadcast_level != 1:
                 raise ValueError("Distributed intervention broadcast requires an adapter")
-            if ui:
-                raise ValueError("Shared UI intervention needs an input-hook adapter. Wait for this turn to finish before sending another UI message.")
-            self.submit_command(active["run_id"], "intervention", {"message": payload}, "input:" + hashlib.sha256(message.id.encode()).hexdigest())
-            return RunHandle(self, active["run_id"])
+            self.submit_command(active["run_id"], "intervention", {"message": payload, "ui": bool(ui)}, request_id)
+            return InputHandle(self, active["run_id"], request_id)
         if not self.enabled:
             raise RuntimeError("Distributed recovery is disabled")
         latest = latest_header(self, headers)
@@ -520,6 +622,8 @@ class ClusterRecoveryService(RecoveryService):
             for command in self.sync("pending_commands", run_id):
                 run = self.sync("get_run", run_id)
                 kind, payload = command["kind"], command["payload"]
+                if kind.startswith("maintenance_"):
+                    continue
                 request_id = command["request_id"]
                 if kind == "review":
                     try:
@@ -545,18 +649,36 @@ class ClusterRecoveryService(RecoveryService):
                               status="blocked" if paused else "running", result={"accepted": True})
                     context.paused = paused
                 elif kind == "intervention":
-                    message = payload.get("message")
-                    if not isinstance(message, dict) or message.get("attachments") or data.get("intervention") or context.agent0.intervention:
-                        self.sync("ack_command", run_id, request_id, result={"accepted": False, "error": "An intervention is pending or needs a portable attachment adapter."})
+                    if run["phase"] in {"terminal_ready", "finalizing", "scheduler_finalizing"}:
+                        self.sync("ack_command", run_id, request_id, result={"accepted": False,
+                            "error": "The current response is finishing; send new input after it completes."})
                         continue
+                    if payload.get("ui") and run["phase"] in ("admitted", "ui_input_ready", "initializing"):
+                        continue
+                    message = payload.get("message")
+                    if not isinstance(message, dict) or data.get("intervention") or context.agent0.intervention:
+                        self.sync("ack_command", run_id, request_id, result={"accepted": False, "error": "An intervention is already pending."})
+                        continue
+                    if payload.get("ui"):
+                        from helpers.durable.inputs import intervention
+                        prepared = intervention(self, context, run_id, command)
+                        if prepared is None:
+                            continue
+                        if prepared.get("model_not_configured"):
+                            self.sync("ack_command", run_id, request_id, result={"accepted": False, "error": "The chat model is not configured."})
+                            continue
+                        message = prepared["message"]
+                    from helpers.durable.resources import ResourceManager, materialize_attachments, checkpoint_state
+                    local_message = materialize_attachments(ResourceManager(self, context.id, run_id), message, context)
                     self._log_input(context, message)
                     from helpers.persist_chat import _serialize_log
                     data["context"]["log"] = codec.masked(context.agent0, _serialize_log(context.log))
                     data["intervention"] = message
+                    data["resources"] = checkpoint_state(context)
                     # Sending input never silently clears an independently queued pause.
                     self.sync("apply_command", run_id, request_id, checkpoint=data, phase=run["phase"],
                               status=run["status"], result={"accepted": True})
-                    context.agent0.intervention = UserMessage(**message)
+                    context.agent0.intervention = UserMessage(**local_message)
 
     async def wait_for_ancestors(self, run_id, origin):
         while True:

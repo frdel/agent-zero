@@ -23,6 +23,11 @@ class Durability(ApiHandler):
             owner = runtime.service()
             if action == "status":
                 return review.status(owner, _text(input, "context", required=False), input.get("offset", 0))
+            if action == "context_metadata":
+                if not owner or not review.distributed(owner):
+                    return {"shared": False}
+                from helpers.durable import maintenance
+                return {"shared": True, **maintenance.metadata(owner, _text(input, "context"))}
             if owner is None or owner.failed:
                 return self.error("Local durability storage is unavailable.", 503)
             request_id = _text(input, "request_id", required=action != "document_read")
@@ -37,13 +42,34 @@ class Durability(ApiHandler):
                                       input.get("decision"), input.get("note", ""), request_id,
                                       _text(input, "call_id", required=False))
             if review.distributed(owner):
+                from helpers.durable import maintenance
                 if action == "document_read":
-                    return {"document": review.read_shared_document(owner, context_id, _text(input, "kind"))}
-                from agent import AgentContext
-                candidate = AgentContext.get(context_id)
-                turn = getattr(candidate, "_durable_turn", None) if candidate else None
-                if not turn or not owner.sync("owns", turn.run_id):
-                    return self.error("Shared document edits require the execution owner's masking and policy context. Your draft was not saved.", 409)
+                    result = {"document": review.read_shared_document(owner, context_id, _text(input, "kind"))}
+                    result.update(maintenance.metadata(owner, context_id))
+                    return result
+                if action in ("document_update", "document_conflict"):
+                    run_id = _text(input, "run_id")
+                    generation = input.get("expected_generation")
+                    epoch, version = _text(input, "epoch"), _text(input, "version")
+                    if action == "document_update":
+                        kind = _text(input, "kind")
+                        documents.definition(kind).validate(input.get("value"))
+                        value = {"kind": kind, "value": input.get("value"),
+                                 "expected_revision": input.get("expected_revision")}
+                        command_kind = "maintenance_document"
+                    else:
+                        if input.get("decision") not in ("keep_current", "apply_proposed"):
+                            raise ValueError("Unknown document conflict decision")
+                        value = {"conflict_id": _text(input, "conflict_id"), "decision": input["decision"],
+                                 "expected_revision": input.get("expected_revision")}
+                        command_kind = "maintenance_conflict"
+                    if type(value["expected_revision"]) is not int or value["expected_revision"] < 0:
+                        raise ValueError("Invalid document revision")
+                    result = maintenance.enqueue(owner, context_id, run_id, command_kind, value, request_id,
+                                                 generation=generation, epoch=epoch, version=version)
+                    return Response(json.dumps(result), status=202 if result["queued"] else 200,
+                                    mimetype="application/json")
+                raise ValueError("Unknown durability action")
             context = review.context_for(context_id)
             if action == "document_read":
                 return {"document": documents.read(owner, context, _text(input, "kind"))}

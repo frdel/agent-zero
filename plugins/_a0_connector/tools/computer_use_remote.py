@@ -93,8 +93,11 @@ class ComputerUseRemote(Tool):
             )
 
         context_id = self.agent.context.id
+        turn = getattr(self.agent.context, "_durable_turn", None)
+        durable = bool(turn and turn.agent is self.agent)
+        self._durable_dispatch_index = 0
         sid = select_computer_use_target_sid(context_id)
-        if not sid:
+        if not sid and not durable:
             return Response(
                 message=(
                     "computer_use_remote: no connected CLI currently advertises enabled local "
@@ -103,8 +106,9 @@ class ComputerUseRemote(Tool):
                 break_loop=False,
             )
 
+        sid = sid or ""
         metadata = computer_use_metadata_for_sid(sid) or {}
-        if str(metadata.get("status", "") or "").strip().lower() == "rearm required":
+        if not durable and str(metadata.get("status", "") or "").strip().lower() == "rearm required":
             return Response(
                 message=self._format_error(
                     {
@@ -221,6 +225,13 @@ class ComputerUseRemote(Tool):
         self._prune_prior_capture_history()
 
     async def _dispatch_payload(self, *, sid: str, payload: dict[str, Any]) -> dict[str, Any]:
+        turn = getattr(self.agent.context, "_durable_turn", None)
+        if turn and turn.agent is self.agent:
+            from helpers.durable.computer import dispatch
+            return await dispatch(self, sid, payload, self._dispatch_payload_once)
+        return await self._dispatch_payload_once(sid=sid, payload=payload)
+
+    async def _dispatch_payload_once(self, *, sid: str, payload: dict[str, Any]) -> dict[str, Any]:
         op_id = str(payload.get("op_id") or "").strip()
         loop = asyncio.get_running_loop()
         future: asyncio.Future[dict[str, Any]] = loop.create_future()
@@ -932,6 +943,11 @@ class ComputerUseRemote(Tool):
                 message.tokens = message.calculate_tokens()
 
     def _resolve_capture_ref(self, data: dict[str, Any]) -> tuple[str, str]:
+        if data.get("_durable_capture_ref") and data.get("path"):
+            image = Path(data["path"])
+            if not image.is_file():
+                raise FileNotFoundError("Verified computer capture is unavailable")
+            return str(image), image.stem
         path_error: FileNotFoundError | None = None
         try:
             image_path, display_path = self._resolve_capture_path(data)

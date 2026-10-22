@@ -11,6 +11,7 @@ import inspect
 import json
 import os
 from pathlib import Path
+from types import SimpleNamespace
 import uuid
 from urllib.parse import urlparse
 
@@ -117,11 +118,9 @@ async def submit(engine, task, task_context=None, *, occurrence_id=None):
 
 async def _submit_shared(owner, engine, task, task_context, occurrence_id):
     """Admit from shared history; host-local chat files never seed an occurrence."""
-    from agent import AgentContext, UserMessage
+    from agent import UserMessage
     from helpers.durable import codec
     from helpers.durable.cluster import portable, RunHandle, latest_header, seed_context
-    if task.project_name or task.attachments:
-        _held("distributed_scheduler_resource_adapter_required")
     occurrence_id = occurrence_id or "manual:" + uuid.uuid4().hex
     input_id = "scheduler:" + hashlib.sha256((task.uuid + ":" + occurrence_id).encode()).hexdigest()
     headers = owner.sync("list_run_headers", context_id=task.context_id)
@@ -136,9 +135,10 @@ async def _submit_shared(owner, engine, task, task_context, occurrence_id):
         previous = owner.sync("get_run", latest["run_id"])
         data, generation = seed_context(owner, previous, task.context_id)
     else:
-        context = AgentContext(scheduler.initialize_agent(), id=task.context_id, name=task.name)
-        context.set_data("scheduler_task_uuid", task.uuid)
-        data = codec.checkpoint(context.agent0)
+        from helpers import settings
+        data = codec.context_seed(task.context_id, task.name,
+            profile=str(settings.get_settings().get("agent_profile") or ""),
+            data={"scheduler_task_uuid": task.uuid, **({"project": task.project_name} if task.project_name else {})})
         generation = owner.sync("document_generation", task.context_id)
     launch = task.plan.should_launch() if isinstance(task, scheduler.PlannedTask) else None
     origin = {"kind": "scheduler", "task_uuid": task.uuid, "context_id": task.context_id,
@@ -147,8 +147,24 @@ async def _submit_shared(owner, engine, task, task_context, occurrence_id):
     data.update(origin=origin, paused=False, terminal=None, intervention=None, result=None, ui_input_pending=False)
     data["context"]["data"]["scheduler_task_uuid"] = task.uuid
     prompt = f"## Context:\n{task_context}\n\n## Task:\n{task.prompt}" if task_context else f"## Task:\n{task.prompt}"
-    message = UserMessage(prompt, system_message=[task.system_prompt], id=input_id)
-    payload = owner._mask_payload(task.context_id, codec.message_payload(message))
+    message = UserMessage(prompt, system_message=[task.system_prompt],
+                          attachments=list(task.attachments), id=input_id)
+    # Capture immutable resource bytes on the submitting host. Restoration and
+    # execution occur only after the coordinator wins the context claim.
+    from helpers.durable import resources
+    context_data = data["context"]["data"]
+    state = dict(data.get("resources") or {"version": 1})
+    if task.project_name:
+        if context_data.get("project") != task.project_name:
+            state.pop("workspace", None)
+        context_data["project"] = task.project_name
+    projection = SimpleNamespace(id=task.context_id, _durable_resources=state,
+                                 get_data=lambda key: context_data.get(key))
+    resources.capture_context(owner, projection, message)
+    data["resources"] = resources.checkpoint_state(projection)
+    data = resources.canonical_value(projection, data)
+    payload = resources.canonical_value(projection,
+        owner._mask_payload(task.context_id, codec.message_payload(message)))
     if not portable(data, payload):
         _held("distributed_scheduler_resource_adapter_required")
     run = owner.sync("admit", task.context_id, input_id, payload, data, expected_generation=generation)

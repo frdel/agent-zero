@@ -47,7 +47,17 @@ def supports(tool, args):
 
 
 def can_resume(tool, args, call):
-    """Even a read-only hint is not authorization to replay an interrupted body."""
+    """Only a concrete broker receipt permits replay of local delivery plumbing."""
+    if _browser_tool(tool):
+        from plugins._browser.helpers.session_broker import has_receipt
+        if has_receipt(tool, call):
+            return True
+        from plugins._browser.helpers.durable_connector import has_receipt as host_receipt
+        return host_receipt(tool, call)
+    from helpers.mcp_handler import MCPTool
+    if type(tool) is MCPTool:
+        from helpers.durable.mcp_broker import has_receipt
+        return has_receipt(tool, call)
     return False
 
 
@@ -66,10 +76,23 @@ async def prepare(tool, args):
         from plugins._browser.helpers.config import RUNTIME_BACKEND_KEY, get_browser_config
         config = get_browser_config(agent=tool.agent)
         if config.get(RUNTIME_BACKEND_KEY, "container") != "container":
-            _held("durable_host_browser_adapter_required")
-        if config.get("extension_paths"):
-            _held("durable_browser_extension_adapter_required")
-        tool._durable_browser_runtime = await browser_runtime(tool, args)
+            from plugins._browser.helpers.durable_connector import DurableConnectorRuntime
+            tool._durable_browser_runtime = DurableConnectorRuntime(tool, manager)
+            return
+        turn = _turn(tool)
+        if getattr(turn.owner, "distributed", False):
+            from plugins._browser.helpers import profile_checkpoint
+            from plugins._browser.helpers.session_broker import BrokerRuntime
+            prior = await asyncio.to_thread(manager.get_manifest, "browser_session")
+            previous = prior["value"].get("identity") if prior else None
+            actual = await asyncio.to_thread(profile_checkpoint.identity, config, previous)
+            if previous and actual != previous:
+                _held("browser_session_identity_changed")
+            tool._durable_browser_runtime = BrokerRuntime(tool, manager, config, actual)
+        else:
+            if config.get("extension_paths"):
+                _held("durable_browser_extension_adapter_required")
+            tool._durable_browser_runtime = await browser_runtime(tool, args)
 
 
 def safe_url(value):
@@ -232,6 +255,15 @@ async def validate_mcp(tool, server, initialized, tools):
                   "tools": sorted(tools, key=lambda item: item["name"]),
                   "reconciler": reconciler_identity(server_name, name)}
     kind = "mcp_" + _digest(tool.name)[:24]
+    expected = getattr(tool, "_durable_expected_descriptor", None)
+    if expected is not None:
+        previous = json.loads(await asyncio.to_thread(manager.get_bytes, expected["value"]["descriptor"]))
+        # Reconciler code lives in the framework; the actor validates the pinned
+        # connection/schema and does not execute reconciliation callbacks.
+        descriptor["reconciler"] = previous.get("reconciler")
+        if descriptor != previous:
+            _held("mcp_session_identity_changed")
+        return
     old = await asyncio.to_thread(manager.get_manifest, kind)
     if old:
         previous = json.loads(await asyncio.to_thread(manager.get_bytes, old["value"]["descriptor"]))
@@ -328,3 +360,24 @@ async def reconcile_unknown(tool, args, call):
     from helpers.tool import Response
     message, additional = tool._format_tool_result(outcome)
     return Response(message=message, break_loop=False, additional=additional)
+
+
+def put_json(manager, kind, name, value):
+    """Bounded encrypted chunks for profile snapshots and large protocol results."""
+    body = json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    if len(body) > 128 * 1024 * 1024:
+        raise ValueError("Session protocol result exceeds its custody bound")
+    chunks = [manager.put_bytes(kind, name + "-" + str(index), body[offset:offset + 4 * 1024 * 1024], sensitive=True)
+              for index, offset in enumerate(range(0, len(body), 4 * 1024 * 1024))]
+    return {"schema": 1, "chunks": chunks, "size": len(body), "digest": hashlib.sha256(body).hexdigest()}
+
+
+def get_json(manager, descriptor):
+    if (descriptor.get("schema") != 1 or type(descriptor.get("size")) is not int
+            or not 0 <= descriptor["size"] <= 128 * 1024 * 1024
+            or type(descriptor.get("chunks")) is not list or len(descriptor["chunks"]) > 32):
+        raise ValueError("Invalid session protocol result")
+    body = b"".join(manager.get_bytes(ref) for ref in descriptor["chunks"])
+    if len(body) != descriptor["size"] or hashlib.sha256(body).hexdigest() != descriptor.get("digest"):
+        raise ValueError("Session protocol result changed")
+    return json.loads(body)

@@ -14,6 +14,27 @@ class OrganizeHistoryWait(Extension):
         if not self.agent:
             return
 
+        from helpers.durable import background, history
+        if background.enabled(self.agent):
+            task = self.agent.get_data(DATA_NAME_TASK)
+            if type(task) is background.TaskHandle:
+                self.agent.context.log.set_progress("Compressing history...")
+                await history.consume(self.agent, task)
+                self.agent.set_data(DATA_NAME_TASK, None)
+            passes = 0
+            while self.agent.history.is_over_limit() and passes < MAX_SYNC_COMPRESSION_PASSES:
+                task = history.enqueue(self.agent)
+                if task is None:
+                    break
+                self.agent.set_data(DATA_NAME_TASK, task)
+                compressed = await history.consume(self.agent, task)
+                self.agent.set_data(DATA_NAME_TASK, None)
+                if not compressed:
+                    self._log_compression_stalled(self.agent.history.get_tokens(), self.agent.history.get_tokens())
+                    break
+                passes += 1
+            return
+
         # sync action only required if the history is too large, otherwise leave it in background
         passes = 0
         while self.agent.history.is_over_limit():

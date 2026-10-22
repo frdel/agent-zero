@@ -25,13 +25,14 @@ class ResourceStore:
                 fingerprint TEXT NOT NULL,token_digest TEXT NOT NULL,status TEXT NOT NULL,result TEXT,result_digest TEXT)""",
         ):
             self._connection.execute(statement)
+        self._connection.execute("ALTER TABLE resource_jobs ADD COLUMN IF NOT EXISTS allow_completed SMALLINT NOT NULL DEFAULT 0")
 
     def _resource_authorize(self, context_id, run_id=None, job_id=None, job_token=None):
         _identity(context_id, "resource context")
         self._document_context(context_id)  # Includes tombstone checks, even before first admission.
         if job_id:
             row = self._resource_job(job_id, job_token)
-            if row["context_id"] != context_id or row["status"] != "submitted":
+            if row["context_id"] != context_id or row["status"] not in ("submitted", "running"):
                 raise OwnershipError("Resource job capability is unavailable")
         elif run_id:
             self.assert_owner(run_id)
@@ -126,21 +127,58 @@ class ResourceStore:
                 (context_id, kind, expected_version + 1, self._encode(encoded), _digest(encoded), self.document_generation(context_id)))
             return self.get_resource_manifest(context_id, kind)
 
-    def register_resource_job(self, run_id, job_id, fingerprint, token_digest):
+    def register_resource_job(self, run_id, job_id, fingerprint, token_digest, *, allow_completed=False):
         _identity(job_id, "job id")
-        if not all(isinstance(item, str) and _DIGEST.fullmatch(item) for item in (fingerprint, token_digest)):
+        if type(allow_completed) is not bool or not all(isinstance(item, str) and _DIGEST.fullmatch(item) for item in (fingerprint, token_digest)):
             raise ValueError("Invalid job fingerprint")
         with self._transaction():
             self.assert_owner(run_id)
             run = self._review_run(run_id)
             previous = self.get_resource_job(job_id)
             if previous:
-                if previous["run_id"] != run_id or previous["fingerprint"] != fingerprint:
+                if previous["run_id"] != run_id or previous["fingerprint"] != fingerprint or bool(previous["allow_completed"]) != allow_completed:
                     raise ConflictError("Job identity changed")
                 return previous
-            self._connection.execute("INSERT INTO resource_jobs VALUES(?,?,?,?,?,?,?,'submitted',NULL,NULL)",
-                (job_id, run["context_id"], run_id, run["generation"], self.get_restore_state()["epoch"], fingerprint, token_digest))
+            self._connection.execute("""INSERT INTO resource_jobs(job_id,context_id,run_id,generation,epoch,fingerprint,token_digest,status,result,result_digest,allow_completed)
+                VALUES(?,?,?,?,?,?,?,'submitted',NULL,NULL,?)""",
+                (job_id, run["context_id"], run_id, run["generation"], self.get_restore_state()["epoch"], fingerprint, token_digest, int(allow_completed)))
             return self.get_resource_job(job_id)
+
+    def list_resource_manifests(self, prefix, *, context_id=None, limit=100, after=None):
+        """Bounded authoritative outbox discovery; listing grants no execution."""
+        _identity(prefix, "manifest prefix")
+        if type(limit) is not int or not 1 <= limit <= 200:
+            raise ValueError("Invalid manifest page size")
+        if after is not None and (type(after) is not list or len(after) != 2 or any(not isinstance(item, str) for item in after)):
+            raise ValueError("Invalid manifest cursor")
+        if context_id is not None:
+            _identity(context_id, "context id")
+        with self._snapshot():
+            clauses, parameters = ["strpos(m.kind,?)=1", "x.deleted=0", "m.generation=x.generation"], [prefix]
+            if context_id is not None:
+                clauses.append("m.context_id=?"); parameters.append(context_id)
+            if after is not None:
+                clauses.append("(m.context_id,m.kind)>(?,?)"); parameters.extend(after)
+            parameters.append(limit)
+            rows = self._connection.execute("SELECT m.context_id,m.kind FROM resource_manifests m JOIN contexts x USING(context_id) WHERE "
+                + " AND ".join(clauses) + " ORDER BY m.context_id,m.kind LIMIT ?", tuple(parameters)).fetchall()
+            return [{"context_id": row["context_id"], "kind": row["kind"],
+                     **self.get_resource_manifest(row["context_id"], row["kind"])} for row in rows]
+
+    def publish_resource_outbox(self, context_id, kind, value, expected_version, run_id, jobs):
+        """Publish an outbox and all its bounded phase capabilities atomically."""
+        if type(jobs) is not list or not jobs or len(jobs) > 64:
+            raise ValueError("Invalid resource outbox jobs")
+        with self._transaction():
+            self.assert_owner(run_id)
+            if self._review_run(run_id)["context_id"] != context_id:
+                raise OwnershipError("Outbox context differs from its owner")
+            for job in jobs:
+                if type(job) is not dict or set(job) != {"id", "fingerprint", "token_digest", "allow_completed"}:
+                    raise ValueError("Invalid resource outbox phase")
+                self.register_resource_job(run_id, job["id"], job["fingerprint"], job["token_digest"],
+                                           allow_completed=job["allow_completed"])
+            return self.publish_resource_manifest(context_id, kind, value, expected_version, run_id)
 
     def get_resource_job(self, job_id):
         _identity(job_id, "job id")
@@ -151,7 +189,7 @@ class ResourceStore:
             self._document_context(row["context_id"])
             result = dict(row)
             result.pop("token_digest")
-            if row["status"] not in ("submitted", "completed") or (row["status"] == "submitted" and (row["result"] is not None or row["result_digest"] is not None)):
+            if row["status"] not in ("submitted", "running", "completed") or (row["status"] != "completed" and (row["result"] is not None or row["result_digest"] is not None)):
                 raise IntegrityError("Resource job status is invalid")
             result["result"] = self._read(row["result"], row["result_digest"], required=row["status"] == "completed")
             return result
@@ -175,9 +213,42 @@ class ResourceStore:
                 if row["result_digest"] != _digest(encoded):
                     raise ConflictError("Completed job result changed")
             else:
+                if row["status"] not in ("submitted", "running"):
+                    raise IntegrityError("Resource job status is invalid")
                 self._connection.execute("UPDATE resource_jobs SET status='completed',result=?,result_digest=? WHERE job_id=?",
                                          (self._encode(encoded), _digest(encoded), job_id))
             return self.get_resource_job(job_id)
+
+    def begin_resource_job(self, job_id, token, broker_role):
+        """Commit a broker send intent once, before touching its external session.
+
+        A replacement broker can observe a running job but cannot acquire a new
+        send grant. Only a recorded result resolves that delivery uncertainty.
+        """
+        _identity(broker_role, "broker role")
+        with self._transaction():
+            if broker_role not in self._roles or not self.try_role(broker_role):
+                raise OwnershipError("Resource broker session is unavailable")
+            row = self._resource_job(job_id, token)
+            if row["status"] not in ("submitted", "running", "completed"):
+                raise IntegrityError("Resource job status is invalid")
+            if row["status"] != "submitted":
+                self.get_resource_job(job_id)  # Validate retained outcome evidence.
+                return False
+            run = self.get_run(row["run_id"])
+            allowed = {"running", "completed"} if row["allow_completed"] else {"running"}
+            if run["status"] not in allowed or (run.get("checkpoint") or {}).get("paused"):
+                raise OwnershipError("Resource operation is paused or stopped")
+            self._connection.execute("UPDATE resource_jobs SET status='running' WHERE job_id=?", (job_id,))
+            return True
+
+    def assert_resource_job(self, job_id, token):
+        """Validate a running job's narrow private-filesystem capability."""
+        with self._snapshot():
+            row = self._resource_job(job_id, token)
+            if row["status"] != "running":
+                raise OwnershipError("Resource job is not running")
+            return {key: row[key] for key in ("job_id", "context_id", "run_id", "generation", "epoch")}
 
     def _delete_resources(self, context_id):
         for table in ("resource_jobs", "resource_manifests", "resource_objects"):
@@ -212,8 +283,7 @@ class ResourceStore:
                 ("runs", (("input_payload", "input_digest"), ("checkpoint", "checkpoint_digest"))),
                 ("context_heads", (("checkpoint", "digest"),)), ("events", (("payload", "payload_digest"),)),
                 ("documents", (("value", "digest"),)), ("document_conflicts", (("proposed", "digest"),)),
-                ("projections", (("value", "digest"),)), ("resource_manifests", (("value", "digest"),)),
-                ("resource_jobs", (("result", "result_digest"),)),
+                ("projections", (("value", "digest"),)),
             ):
                 for column, digest in columns:
                     for row in self._connection.execute(f"SELECT {column} AS value,{digest} AS digest FROM {table} WHERE {column} IS NOT NULL"):
@@ -226,6 +296,29 @@ class ResourceStore:
                 command = self._command(row)
                 visit(command["payload"])
                 visit(command["result"])
+            # Completed outboxes are no longer execution roots once their source
+            # run is pruned and no retained checkpoint still carries the handle.
+            # Pending/unknown phases keep their original private input and result.
+            retained = set(reachable)
+            for row in self._connection.execute("SELECT context_id,kind,value,digest FROM resource_manifests WHERE strpos(kind,'background-')=1").fetchall():
+                value = self._read(row["value"], row["digest"], required=True)
+                identifier, run_id, request = value.get("id"), value.get("run_id"), value.get("request") or {}
+                if not isinstance(identifier, str) or not _DIGEST.fullmatch(identifier) or identifier in retained or request.get("id") in retained:
+                    continue
+                run = self._connection.execute("SELECT context_id,status,payloads_pruned FROM runs WHERE run_id=?", (run_id,)).fetchone()
+                if not run or run["context_id"] != row["context_id"] or run["status"] != "completed" or not run["payloads_pruned"]:
+                    continue
+                final = self.get_resource_job(identifier + ":final:result")
+                if not final or final["status"] != "completed" or not isinstance((final["result"] or {}).get("value"), dict):
+                    continue
+                if self._connection.execute("SELECT 1 FROM resource_jobs WHERE context_id=? AND job_id LIKE ? AND status='running' LIMIT 1",
+                                             (row["context_id"], identifier + ":%" )).fetchone():
+                    continue
+                self._connection.execute("DELETE FROM resource_manifests WHERE context_id=? AND kind=?", (row["context_id"], row["kind"]))
+                self._connection.execute("DELETE FROM resource_jobs WHERE context_id=? AND run_id=? AND job_id LIKE ?",
+                                         (row["context_id"], run_id, identifier + ":%"))
+            for row in self._connection.execute("SELECT value,digest FROM resource_manifests"):
+                visit(self._read(row["value"], row["digest"], required=True))
             for row in self._connection.execute("SELECT job_id FROM resource_jobs"):
                 visit(self.get_resource_job(row["job_id"])["result"])
             count = 0

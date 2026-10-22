@@ -98,7 +98,7 @@ PostgreSQL schema, transaction, blob and ownership semantics remain explicit.
 
 ## Commands, children, and scheduler
 
-Remote input/control/review commands commit before acknowledgment. UI input preparation runs only on the claimed worker, with its own intent/result and source fingerprint; an uncertain preparation hook is held rather than repeated. UI interventions into a live remote turn require an input-preparation adapter and are rejected explicitly until one is available; plain programmatic interventions retain the durable inbox path. Stable request
+Remote input/control/review commands commit before acknowledgment. UI input preparation runs only on the claimed worker, with its own intent/result and source fingerprint; only exact audited built-in preparation may repeat an unknown preparation. UI interventions use the same owner preparation and portable attachment path. The current provider/tool outcome settles before input is consumed at a committed iteration boundary. New input during terminal finalization is rejected for a later send; a queued input's receipt never reports the previous run's answer as its own success. Stable request
 IDs deduplicate delivery; the owner applies commands under its snapshot lock and
 records a separate receipt. A queued decision is not an applied decision. The
 Recovery modal's explicit **Refresh** checks pending/applied/rejected receipts.
@@ -125,13 +125,50 @@ existing log items retain their cursor contract; a new run/reset changes the
 projection generation. Cross-host views show saved progress, not replicated
 provisional streaming tokens. Host-local notifications remain local.
 
-The API refuses operations that would mutate a stale remote `AgentContext`.
-Shared recovery status and registered documents can be read from committed masked
-state. Editing a document requires the owning masking/policy context; a remote
-edit is held rather than storing unmasked content. Remote chat/provider deletion
-also holds when the credential-capable owner and deletion opt-out cannot be
-verified. A successful local shadow reset must never be reported as deletion of a
-remote provider response.
+The API reads committed masked state on any host. Document edits, conflict decisions
+and removal requests enter an encrypted, generation/epoch/version-bound command
+inbox. A compatible claimed worker applies them without starting an agent message
+loop. Terminal and unsent chats use the same maintenance path; an unsent draft
+receives an inert maintenance anchor, never an inference request. The UI reports
+queued acceptance separately from an applied receipt and preserves unsaved edits.
+Terminal retention removes private command payloads while retaining sanitized
+acceptance/deletion receipts, so retrying an applied command remains applied.
+
+Provider deletion pins the actual model's provider/account/endpoint proof before
+request dispatch. Cleanup rechecks current matching credentials and the saved
+opt-out, then journals each idempotent DELETE. A successor can repeat that precise
+DELETE after a lost acknowledgment; a matching 404 means already absent. Changed
+account proof holds cleanup. Removal reports the count of unknown requests with
+no returned provider identifier; it cannot promise erasure of those unknown
+provider objects or independently managed WAL, replicas and backups.
+
+## Background work and shared memory
+
+Built-in recall, infection checking, automatic fragment/solution memorization and
+history summarization use detached outboxes. Frozen inputs, implementation/model
+identity, send grants and phase results live in shared custody. A worker can
+recover an unsent phase or query its known result without reconstructing the
+original deferred Python task. A running phase without target evidence remains
+uncertain; worker loss alone never authorizes another provider request.
+
+Memory documents and numeric vectors use an encrypted typed shared index with
+revision CAS and atomic mutation receipts. Another worker rebuilds FAISS locally
+without unpickling database data or re-embedding committed vectors. Knowledge
+imports retain source versions; an absent local file cannot delete shared
+knowledge. Explicit reload/reindex can update changed local sources. Historical
+mutation receipts may supply known outcomes after restore selection, but never
+authorize writes in the old epoch.
+
+History projection runs on the claimed loop. Deterministic large-message
+compression handles oversized recent inputs before detached summarization of
+older history, and committed summaries preserve input appended while they ran.
+Pending outboxes and their resource roots survive retention. Completed outboxes
+can expire only after their originating run and all retained task handles expire.
+
+When upgrading from protocol 1 or 2, stop all workers and detached jobs first.
+Protocol 3 refuses mixed active owners/jobs rather than changing their contract
+under an in-flight process. All workers must use the same new source before
+restarting.
 
 ## Backup and restore
 

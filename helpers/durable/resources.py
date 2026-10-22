@@ -307,6 +307,36 @@ def snapshot_context(owner, context, run_id):
     return state
 
 
+def adopt_workspace_result(manager, context, manifest):
+    """Import a broker's verified files before publishing a successor checkpoint."""
+    from helpers.durable import workspaces
+    from helpers import files
+    import uuid
+    manager.owner.sync("assert_owner", manager.run_id)
+    project = context.get_data("project")
+    if not project or manifest.get("project_name") != project:
+        raise ResourceHeld("workspace_result_project_changed")
+    previous = getattr(context, "_durable_resources", {}).get("workspace")
+    path = getattr(context, "_durable_workspace_path", None)
+    if path is not None and Path(path).exists():
+        current = workspaces.capture(manager, path)
+        if current["digest"] == manifest["digest"]:
+            context._durable_workspace_origin = manifest
+            context._durable_resources["workspace"] = manifest
+            return Path(path)
+        if previous is None or current["digest"] != previous["digest"]:
+            raise ResourceHeld("workspace_result_conflicts_with_local_edits")
+    root = Path(files.get_abs_path("tmp", "durable-workspaces", hashlib.sha256(context.id.encode()).hexdigest()))
+    destination = root / (manifest["digest"][:16] + "-" + uuid.uuid4().hex)
+    restored = workspaces.restore(manager, manifest, destination)
+    workspaces.rebind_project(project, restored, manifest=manifest)
+    context._durable_workspace_path = restored
+    context._durable_workspace_origin = manifest
+    context._durable_resources["workspace"] = manifest
+    context._durable_managed_workspace = True
+    return restored
+
+
 def checkpoint_state(context):
     return getattr(context, "_durable_resources", {"version": 1})
 

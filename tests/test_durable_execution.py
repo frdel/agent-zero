@@ -20,6 +20,7 @@ from helpers.durable import codec, execution, runtime
 from helpers.durable.resources import ResourceManager
 from helpers.durable.store import OwnershipError
 from plugins._code_execution.tools.code_execution_tool import CodeExecution
+from plugins._code_execution.tools.input import Input
 from test_durable_cluster import nodes, rig
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -34,7 +35,9 @@ def shell(nodes, monkeypatch, tmp_path):
     monkeypatch.setenv("A0_DURABILITY_EXECUTION_ROOT", str(tmp_path / "jobs"))
     work = tmp_path / "work"
     work.mkdir()
-    config = {"ssh_enabled": False, "code_exec_timeouts": {"max_exec_timeout": 5}, "ssh_pass": ""}
+    config = {"ssh_enabled": False, "durability_interactive": False,
+              "code_exec_timeouts": {"max_exec_timeout": 5},
+              "output_timeouts": {"max_exec_timeout": .1}, "ssh_pass": ""}
     monkeypatch.setattr("plugins._code_execution.tools.code_execution_tool._get_config", lambda agent: config)
     monkeypatch.setattr(CodeExecution, "ensure_cwd", AsyncMock(return_value=str(work)))
     context = nodes.rig.context
@@ -143,6 +146,169 @@ def _wait(path, process=None, seconds=15):
         time.sleep(.02)
 
 
+def _stop_pty_processes(root):
+    """Only terminate processes whose private test receipts identify them."""
+    import signal
+    for receipt in Path(root).glob("relay-*/broker.json"):
+        try:
+            os.kill(json.loads(receipt.read_bytes())["pid"], signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+    for receipt in Path(root).glob("pty-*/ready.json"):
+        value = json.loads(receipt.read_bytes())
+        for pid, group in ((value["pid"], False), (value["shell_pid"], True)):
+            try:
+                (os.killpg if group else os.kill)(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+
+
+@pytest.mark.asyncio
+async def test_live_pty_preserves_functions_aliases_and_stdin_across_framework_hosts(shell, monkeypatch):
+    from helpers.durable import workspaces, resources
+    nodes, turn, tool, cfg, work = shell
+    cfg["durability_interactive"] = True
+    root = Path(os.environ["A0_DURABILITY_EXECUTION_ROOT"])
+    (work / "baseline").write_text("owner source")
+    manager = ResourceManager(turn.owner, turn.agent.context.id, turn.run_id)
+    with workspaces.project_override("pty-project", work):
+        original = workspaces.capture(manager, work)
+    execution_root = work.parent / "execution-host-A"
+    workspaces.restore(manager, original, execution_root)
+    scope = workspaces.project_override("pty-project", execution_root, manifest=original)
+    scope.__enter__()
+    turn.agent.context.set_data("project", "pty-project")
+    turn.agent.context._durable_workspace_path = execution_root
+    turn.agent.context._durable_workspace_origin = original
+    turn.agent.context._durable_resources = {"version": 1, "workspace": original}
+    monkeypatch.setattr(CodeExecution, "ensure_cwd", AsyncMock(return_value=str(execution_root)))
+    async def execute(args):
+        return json.loads((await tool(args).execute(**args)).message)
+    try:
+        first = await execute({"runtime": "terminal", "code": "alias hello='printf hello'; speak() { printf function; }; value=saved; printf ready"})
+        assert first["status"] == "completed" and first["output"] == "ready"
+        nodes.first.sync("release", turn.run_id)
+        assert nodes.second.sync("claim", turn.run_id)
+        turn.owner = nodes.second
+        nodes.second.contexts[turn.run_id] = turn.agent.context
+        monkeypatch.setenv("A0_DURABILITY_EXECUTION_HOST_ID", "framework-host-B")
+        # A separate adapter edits B's imported tree. The next PTY command
+        # must stage those changes to A and preserve the settled shell state.
+        (turn.agent.context._durable_workspace_path / "from-B").write_text("worker-B")
+        resources.snapshot_context(turn.owner, turn.agent.context, turn.run_id)
+        turn.active_call_id = "tool:0:1"
+        second = await execute({"runtime": "terminal", "code": "cat from-B; hello; speak; printf \"$value\""})
+        assert second["output"] == "worker-Bhellofunctionsaved"
+        # A foreground read owns the actual terminal. Timeout must leave it
+        # alive, and the audited Input tool sends into that same shell.
+        cfg["code_exec_timeouts"]["max_exec_timeout"] = .1
+        turn.active_call_id = "tool:0:2"
+        running = await execute({"runtime": "terminal", "code": "printf once >> effects; read -r answer; printf 'got:%s' \"$answer\""})
+        assert running["status"] == "running"
+        turn.active_call_id = "tool:0:3"
+        cfg["code_exec_timeouts"]["max_exec_timeout"] = 5
+        args = {"keyboard": "synthetic answer", "session": 0}
+        value = Input(turn.agent, "input", None, args, "", turn.agent.loop_data)
+        value.log = None
+        assert execution.supports(value, args)
+        result = json.loads((await value.execute(**args)).message)
+        assert result["status"] == "completed" and result["output"] == "got:synthetic answer"
+        assert json.loads((await value.execute(**args)).message) == result
+        assert not (work / "effects").exists()
+        checkpoint = codec.checkpoint(turn.agent)
+        effect = next(row for row in checkpoint["resources"]["workspace"]["files"] if row["path"] == "effects")
+        assert manager.get_bytes(effect["ref"]) == b"once"
+        assert (turn.agent.context._durable_workspace_path / "effects").read_text() == "once"
+        turn.active_call_id = "tool:0:4"
+        output = await execute({"runtime": "output"})
+        assert output["output"] == "got:synthetic answer"
+        turn.active_call_id = "tool:0:5"
+        reset = await execute({"runtime": "reset"})
+        assert reset["status"] == "completed"
+        turn.active_call_id = "tool:0:6"
+        clean = await execute({"runtime": "terminal", "code": "printf '%s' \"${value-unset}\"; type hello 2>/dev/null || :"})
+        assert clean["output"] == "unset"
+        turn.active_call_id = "tool:0:7"
+        cfg["code_exec_timeouts"]["max_exec_timeout"] = .1
+        pending = await execute({"runtime": "terminal", "code": "while :; do sleep .05; done"})
+        assert pending["status"] == "running"
+        assert await execution.cancel_sessions(turn.agent.context, turn.run_id) == []
+        turn.owner.sync("control", turn.agent.context.id, "cancel")
+        assert await execution.cancel_sessions(turn.agent.context, turn.run_id) == [
+            {"job_id": pending["job_id"], "status": "cancellation_requested"}]
+        deadline = time.monotonic() + 10
+        while turn.owner.sync("get_resource_job", pending["job_id"])["status"] != "completed":
+            assert time.monotonic() < deadline
+            await asyncio.sleep(.05)
+        assert turn.owner.sync("get_resource_job", pending["job_id"])["result"]["cancelled"]
+    finally:
+        scope.__exit__(None, None, None)
+        _stop_pty_processes(root)
+
+
+@pytest.mark.asyncio
+async def test_pty_reconstructs_settled_shell_but_never_repeats_unknown_send(shell, monkeypatch):
+    import signal
+    nodes, turn, tool, cfg, work = shell
+    cfg["durability_interactive"] = True
+    root = Path(os.environ["A0_DURABILITY_EXECUTION_ROOT"])
+    new_root = root.parent / "host-B-jobs"
+    turn.agent.context._durable_workspace_origin = {"project_name": "pty-project"}
+    turn.agent.context._durable_workspace_path = work
+    try:
+        args = {"runtime": "terminal", "code": "alias hi='printf alias'; func() { printf function; }; value=state; printf settled"}
+        assert json.loads((await tool(args).execute(**args)).message)["output"] == "settled"
+        receipt_path, = root.glob("pty-*/ready.json")
+        old = json.loads(receipt_path.read_bytes())
+        os.kill(old["pid"], signal.SIGKILL)
+        os.killpg(old["shell_pid"], signal.SIGKILL)
+        turn.active_call_id = "tool:0:1"
+        next_args = {"runtime": "terminal", "code": "hi; func; printf \"$value\""}
+        result = json.loads((await tool(next_args).execute(**next_args)).message)
+        assert result["output"] == "aliasfunctionstate"
+        # Lose the relay and shell host at a known prompt, then restore the
+        # authenticated declarations into a different managed materialization.
+        current = json.loads(receipt_path.read_bytes())
+        broker_pid = json.loads(next(root.glob("relay-*/broker.json")).read_bytes())["pid"]
+        os.kill(broker_pid, signal.SIGKILL)
+        os.kill(current["pid"], signal.SIGKILL)
+        os.killpg(current["shell_pid"], signal.SIGKILL)
+        from helpers.durable.interactive import manifest_kind
+        manager = ResourceManager(turn.owner, turn.agent.context.id, turn.run_id)
+        role = "pty:" + manager.get_manifest(manifest_kind(0))["value"]["id"]
+        deadline = time.monotonic() + 5
+        while not turn.owner.sync("try_role", role):
+            assert time.monotonic() < deadline
+            await asyncio.sleep(.02)
+        turn.owner.sync("release_role", role)
+        moved = work.parent / "host-B-workspace"
+        moved.mkdir()
+        turn.agent.context._durable_workspace_path = moved
+        monkeypatch.setenv("A0_DURABILITY_EXECUTION_ROOT", str(new_root))
+        monkeypatch.setenv("A0_DURABILITY_EXECUTION_HOST_ID", "new-execution-host")
+        turn.active_call_id = "tool:0:2"
+        moved_args = {"runtime": "terminal", "code": "hi; func; printf \"$value\"; pwd"}
+        restored = json.loads((await tool(moved_args).execute(**moved_args)).message)
+        assert restored["output"] == f"aliasfunctionstate{moved}\n"
+        receipt_path, = new_root.glob("pty-*/ready.json")
+        turn.active_call_id = "tool:0:3"
+        cfg["code_exec_timeouts"]["max_exec_timeout"] = .1
+        unknown = {"runtime": "terminal", "code": "printf once >> effects; read -r answer; printf finished"}
+        assert json.loads((await tool(unknown).execute(**unknown)).message)["status"] == "running"
+        current = json.loads(receipt_path.read_bytes())
+        os.kill(current["pid"], signal.SIGKILL)
+        os.killpg(current["shell_pid"], signal.SIGKILL)
+        # A replacement daemon sees fsynced intent and refuses to resend. The
+        # original call reuses only a known preview, then later reads hold.
+        turn.active_call_id = "tool:0:4"
+        with pytest.raises(runtime.RecoveryHeld, match="pty_broker_or_delivery_outcome_unavailable"):
+            await tool({"runtime": "output"}).execute(runtime="output")
+        assert (moved / "effects").read_text() == "once"
+    finally:
+        _stop_pty_processes(root)
+        _stop_pty_processes(new_root)
+
+
 @pytest.mark.skipif(not DSN or os.name != "posix", reason="Requires disposable PostgreSQL and POSIX process groups")
 def test_supervisor_publishes_after_worker_sigkill_and_never_relaunches(tmp_path, monkeypatch):
     from cryptography.fernet import Fernet
@@ -203,8 +369,83 @@ def worker_main(root):
             time.sleep(1)
 
 
+def pty_worker_main(root):
+    from types import SimpleNamespace
+    from helpers.durable.postgres import PostgresStore
+    from helpers.durable import interactive
+    root = Path(root)
+    with PostgresStore(os.environ["A0_DURABILITY_POSTGRES_DSN"], namespace=os.environ["A0_DURABILITY_JOB_NAMESPACE"]) as store:
+        class Owner:
+            def __init__(self):
+                self.store = store
+            def sync(self, method, *args, **kwargs):
+                return getattr(store, method)(*args, **kwargs)
+        owner = Owner()
+        run = store.admit("pty-context", "input", {}, {"context": {"id": "pty-context"}})
+        assert store.claim(run["run_id"])
+        context = SimpleNamespace(id="pty-context")
+        turn = SimpleNamespace(owner=owner, run_id=run["run_id"], agent=SimpleNamespace(context=context))
+        manager = ResourceManager(owner, context.id, run["run_id"])
+        identifier = hashlib.sha256(store.namespace.encode()).hexdigest()
+        spec = {"id": identifier, "cwd": str(root), "host": execution._host_id(), "target": execution._target({"ssh_enabled": False})}
+        ref = manager.put_bytes("pty-session", identifier, execution._encoded(spec), sensitive=True)
+        session = manager.publish_manifest("execution-pty-0", {"version": 1, "id": identifier,
+            "kind": "execution-pty-0", "target": spec["target"], "spec": ref, "queue": [], "sequence": 0}, 0)
+        session = interactive._enqueue(turn, manager, session, "pty-command", "command", hashlib.sha256(b"command").hexdigest(),
+            "alias hi='printf hi'; fn() { printf fn; }; value=saved; printf once >> effect; read -r answer\nhi; fn; printf \"$value:$answer\"")
+        interactive._spawn(turn, manager, session, {"ssh_enabled": False})
+        execution._write(root / "run.json", execution._encoded({"run_id": run["run_id"]}))
+        while True:
+            time.sleep(1)
+
+
 if __name__ == "__main__":
-    worker_main(sys.argv[2])
+    (pty_worker_main if sys.argv[1] == "--pty-worker" else worker_main)(sys.argv[2])
+
+
+@pytest.mark.skipif(not DSN or os.name != "posix", reason="Requires disposable PostgreSQL and POSIX PTY")
+def test_shared_pty_continues_stdin_after_actual_framework_worker_sigkill(tmp_path, monkeypatch):
+    from cryptography.fernet import Fernet
+    from types import SimpleNamespace
+    from helpers.durable import interactive
+    from helpers.durable.postgres import PostgresStore
+    monkeypatch.setenv("A0_DURABILITY_RESOURCE_KEY", Fernet.generate_key().decode())
+    monkeypatch.setenv("A0_DURABILITY_POSTGRES_DSN", DSN)
+    monkeypatch.setenv("A0_DURABILITY_EXECUTION_ROOT", str(tmp_path / "jobs"))
+    namespace = "pty_" + uuid.uuid4().hex
+    environment = dict(os.environ, A0_DURABILITY_JOB_NAMESPACE=namespace)
+    worker = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--pty-worker", str(tmp_path)],
+        cwd=PROJECT, env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        _wait(tmp_path / "effect", worker)
+        worker.kill(); worker.communicate(timeout=5)
+        monkeypatch.setenv("A0_DURABILITY_EXECUTION_HOST_ID", "successor-framework-host")
+        with PostgresStore(DSN, namespace=namespace) as store:
+            run_id = json.loads((tmp_path / "run.json").read_bytes())["run_id"]
+            assert store.claim(run_id)
+            class Owner:
+                def sync(self, method, *args, **kwargs):
+                    return getattr(store, method)(*args, **kwargs)
+            owner = Owner()
+            manager = ResourceManager(owner, "pty-context", run_id)
+            turn = SimpleNamespace(owner=owner, run_id=run_id)
+            session = manager.get_manifest("execution-pty-0")
+            interactive._enqueue(turn, manager, session, "pty-input", "input", hashlib.sha256(b"input").hexdigest(), "answer")
+            deadline = time.monotonic() + 15
+            while store.get_resource_job("pty-input")["status"] != "completed":
+                assert time.monotonic() < deadline
+                time.sleep(.05)
+            for identity in ("pty-command", "pty-input"):
+                result = store.get_resource_job(identity)["result"]
+                assert manager.get_bytes(result["output"]) == b"hifnsaved:answer"
+            assert (tmp_path / "effect").read_text() == "once"
+            # Repeating admission with the same ID cannot inject input twice.
+            interactive._enqueue(turn, manager, manager.get_manifest("execution-pty-0"), "pty-input", "input", hashlib.sha256(b"input").hexdigest(), "answer")
+            assert (tmp_path / "effect").read_text() == "once"
+    finally:
+        if worker.poll() is None:
+            worker.kill(); worker.communicate(timeout=5)
+        _stop_pty_processes(tmp_path / "jobs")
 
 
 @pytest.fixture
@@ -235,6 +476,13 @@ def ssh_server(tmp_path):
             except OSError as exc:
                 return paramiko.SFTPServer.convert_errno(exc.errno)
         lstat = stat
+        def list_folder(self, path):
+            entries = []
+            for item in self.path(path).iterdir():
+                attr = paramiko.SFTPAttributes.from_stat(item.lstat())
+                attr.filename = item.name
+                entries.append(attr)
+            return entries
         def mkdir(self, path, attr):
             try:
                 self.path(path).mkdir(mode=attr.st_mode or 0o700)
@@ -243,6 +491,9 @@ def ssh_server(tmp_path):
                 return paramiko.SFTPServer.convert_errno(exc.errno)
         def chattr(self, path, attr):
             os.chmod(self.path(path), attr.st_mode)
+            return paramiko.SFTP_OK
+        def posix_rename(self, oldpath, newpath):
+            os.replace(self.path(oldpath), self.path(newpath))
             return paramiko.SFTP_OK
         def open(self, path, flags, attr):
             try:
@@ -278,7 +529,10 @@ def ssh_server(tmp_path):
             transport.add_server_key(key)
             transport.set_subsystem_handler("sftp", paramiko.SFTPServer, Files)
             transports.append(transport)
-            transport.start_server(server=Server())
+            try:
+                transport.start_server(server=Server())
+            except (EOFError, OSError, paramiko.SSHException):
+                transport.close()  # expected when a killed relay was handshaking
     thread = threading.Thread(target=accept, daemon=True)
     thread.start()
     known = tmp_path / "known_hosts"
@@ -309,6 +563,7 @@ async def test_ssh_reconnect_reads_existing_receipt_and_rejects_unknown_host_key
         with pytest.raises(RuntimeError, match="Synthetic worker lost"):
             await tool(args).execute(**args)
     assert (remote / "ssh-effect").read_text() == "once"
+
     nodes.first.sync("release", turn.run_id)
     assert nodes.second.sync("claim", turn.run_id)
     turn.owner = nodes.second
@@ -324,3 +579,112 @@ async def test_ssh_reconnect_reads_existing_receipt_and_rejects_unknown_host_key
         await tool({"runtime": "terminal", "code": "printf must-not-run >> ssh-effect"}).execute(
             runtime="terminal", code="printf must-not-run >> ssh-effect")
     assert (remote / "ssh-effect").read_text() == "once"
+
+
+@pytest.mark.asyncio
+async def test_ssh_pty_relay_survives_framework_relay_loss_without_forwarding_database_secrets(shell, ssh_server, monkeypatch):
+    import signal
+    from helpers.durable import workspaces
+    nodes, turn, tool, cfg, work = shell
+    remote, port, known = ssh_server
+    root = Path(os.environ["A0_DURABILITY_EXECUTION_ROOT"])
+    cfg.update(ssh_enabled=True, ssh_addr="127.0.0.1", ssh_port=port, ssh_user="synthetic",
+        ssh_pass="fixture-only", durability_ssh_known_hosts=str(known), durability_interactive=True,
+        code_exec_timeouts={"max_exec_timeout": 15})
+    monkeypatch.setattr(CodeExecution, "ensure_cwd", AsyncMock(return_value=str(remote)))
+    (work / "base").write_text("owner project")
+    manager = ResourceManager(turn.owner, turn.agent.context.id, turn.run_id)
+    with workspaces.project_override("ssh-project", work):
+        manifest = workspaces.capture(manager, work)
+    scope = workspaces.project_override("ssh-project", work, manifest=manifest)
+    scope.__enter__()
+    turn.agent.context.set_data("project", "ssh-project")
+    turn.agent.context._durable_workspace_path = work
+    turn.agent.context._durable_workspace_origin = manifest
+    turn.agent.context._durable_resources = {"version": 1, "workspace": manifest}
+    try:
+        attachment = manager.put_bytes("attachment", "synthetic-input", b" shared-input", sensitive=True)
+        args = {"runtime": "terminal", "code": "alias hi='printf remote'; function fn() { printf function; }; value=saved; printf settled; cat a0-resource://" + attachment["id"]}
+        first = json.loads((await tool(args).execute(**args)).message)
+        assert first["output"] == "settled shared-input"
+        pid = json.loads(next(root.glob("relay-*/broker.json")).read_bytes())["pid"]
+        os.kill(pid, signal.SIGKILL)
+        nodes.first.sync("release", turn.run_id)
+        assert nodes.second.sync("claim", turn.run_id)
+        turn.owner = nodes.second
+        nodes.second.contexts[turn.run_id] = turn.agent.context
+        turn.active_call_id = "tool:0:1"
+        second_args = {"runtime": "terminal", "code": "hi; fn; printf \"$value\"; printf once >> ssh-pty-effect; pwd; env | grep '^A0_DURABILITY_' || :"}
+        second = json.loads((await tool(second_args).execute(**second_args)).message)
+        assert second["status"] == "completed" and second["output"] == f"remotefunctionsaved{turn.agent.context._durable_workspace_path}\n"
+        assert (turn.agent.context._durable_workspace_path / "ssh-pty-effect").read_text() == "once"
+        assert not (work / "ssh-pty-effect").exists()
+        repeated = json.loads((await tool(second_args).execute(**second_args)).message)
+        assert repeated["output"] == f"remotefunctionsaved{turn.agent.context._durable_workspace_path}\n"
+        assert (turn.agent.context._durable_workspace_path / "ssh-pty-effect").read_text() == "once"
+        # Uploaded daemon/requests contain no database DSN, key, or append-only
+        # capability; SSH credentials remain on the framework relay too.
+        for path in (remote / ".a0-durable-pty").rglob("*.json"):
+            content = path.read_text()
+            assert DSN not in content and os.environ["A0_DURABILITY_RESOURCE_KEY"] not in content
+            assert "fixture-only" not in content and '"token"' not in content
+        # Loss of all target receipts cannot make a replacement's empty PTY
+        # look like successful completion of an earlier foreground operation.
+        import shutil
+        turn.active_call_id = "tool:0:2"
+        cfg["code_exec_timeouts"]["max_exec_timeout"] = .1
+        outside = remote / "unknown-effects"
+        uncertain = {"runtime": "terminal", "code": "printf once >> " + shlex.quote(str(outside)) + "; read -r answer"}
+        assert json.loads((await tool(uncertain).execute(**uncertain)).message)["status"] == "running"
+        daemon_receipt, = (remote / ".a0-durable-pty").glob("*/ready.json")
+        daemon = json.loads(daemon_receipt.read_bytes())
+        os.kill(daemon["pid"], signal.SIGKILL)
+        os.killpg(daemon["shell_pid"], signal.SIGKILL)
+        os.kill(json.loads(next(root.glob("relay-*/broker.json")).read_bytes())["pid"], signal.SIGKILL)
+        shutil.rmtree(daemon_receipt.parent)
+        turn.active_call_id = "tool:0:3"
+        with pytest.raises(runtime.RecoveryHeld, match="pty_broker_or_delivery_outcome_unavailable"):
+            await tool({"runtime": "output"}).execute(runtime="output")
+        assert outside.read_text() == "once"
+    finally:
+        scope.__exit__(None, None, None)
+        _stop_pty_processes(root)
+        for receipt in (remote / ".a0-durable-pty").glob("*/ready.json"):
+            value = json.loads(receipt.read_bytes())
+            for pid, group in ((value["pid"], False), (value["shell_pid"], True)):
+                try:
+                    (os.killpg if group else os.kill)(pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+
+
+@pytest.mark.parametrize("override", ["builtin_function", "set_alias", "prompt_array"])
+def test_pty_restore_rejects_framing_overrides_before_repeating_effects(tmp_path, override):
+    from plugins._code_execution.helpers.durable_pty import Shell
+    root = tmp_path / "pty"
+    root.mkdir(mode=0o700)
+    marker = root / "effects"
+    quoted = shlex.quote(str(marker))
+    if override == "builtin_function":
+        code = 'builtin() { if [[ "$1" == printf ]]; then command printf x >> ' + quoted + '; fi; command builtin "$@"; }\n'
+    elif override == "set_alias":
+        code = "alias set=" + shlex.quote("printf x >> " + quoted + "; builtin set") + "\n"
+    else:
+        code = "PROMPT_COMMAND=(__a0_capture " + shlex.quote("command printf x >> " + quoted) + ")\n"
+    script = root / "define.sh"
+    script.write_text(code)
+    shell = Shell(root, {"id": "framing-review", "cwd": str(root)})
+    try:
+        shell.ready = False
+        shell.send(("builtin source -- " + shlex.quote(str(script)) + "\n").encode())
+        shell.wait_ready(10)
+        state = shell.state
+        assert not state["portable"]
+    finally:
+        shell.close()
+    before = marker.read_bytes() if marker.exists() else b""
+    # Compatibility with old or tampered receipts must not trust the former
+    # portable flag. The actual saved declarations are checked before spawn.
+    with pytest.raises(ValueError, match="overrides framing"):
+        Shell(root, {"id": "framing-review", "cwd": str(root), "restore": dict(state, portable=True)})
+    assert (marker.read_bytes() if marker.exists() else b"") == before

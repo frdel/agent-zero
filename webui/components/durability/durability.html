@@ -152,7 +152,7 @@
               <p class="durability-muted" x-show="$store.durabilityStore.dirty && $store.durabilityStore.draftProblem" x-text="$store.durabilityStore.draftProblem"></p>
               <div class="durability-actions">
                 <button type="button" class="button confirm" @click="$store.durabilityStore.saveDocument()"
-                        :disabled="$store.durabilityStore.busy || !$store.durabilityStore.dirty || $store.durabilityStore.draftStale || !!$store.durabilityStore.draftProblem">Save plan</button>
+                        :disabled="$store.durabilityStore.busy || !!$store.durabilityStore.queuedDocument || !$store.durabilityStore.dirty || $store.durabilityStore.draftStale || !!$store.durabilityStore.draftProblem">Save plan</button>
                 <button type="button" class="button" @click="$confirmClick($event, () => $store.durabilityStore.useSavedDocument())"
                         :disabled="$store.durabilityStore.busy || !$store.durabilityStore.dirty">Discard draft</button>
               </div>

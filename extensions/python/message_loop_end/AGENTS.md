@@ -13,6 +13,7 @@
 - Preserve history consistency before saving chats.
 - Do not skip persistence for successful loops unless the hook contract explicitly permits it.
 - History compression that rewrites local history must clear the active Responses provider continuation while preserving stored response IDs for cleanup.
+- Shared durability uses an encrypted detached prefix-summary job instead of mutating live history in a background task. The prompt-before hook applies its known result to a matching prefix while retaining later input; original records remain under the summary for cleanup.
 
 ## Work Guidance
 

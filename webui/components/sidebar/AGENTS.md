@@ -42,6 +42,7 @@
 - Process-detail preference changes must use the message renderer's async expansion hooks and honor an explicit chat-history render target so staged pages are ready before an atomic swap.
 - The utility-message preference controls both individual utility steps and utility-only process-group chrome so hidden utility runs cannot leave empty headers in the transcript.
 - Chat deletion removes the sidebar row optimistically in the same render batch as fallback selection. Keep successful local deletion tombstones for the page session so out-of-order poll or push snapshots cannot reinsert rows; restore the row and clear its tombstone if the delete request fails.
+- Shared deletion freezes run/generation/epoch/review metadata and request identity across lost acknowledgments. Poll the command receipt, report success only after application, and restore the optimistic row while still queued. Unknown provider-object counts remain distinct from successful known-object cleanup.
 - Chat selection must synchronize the sidebar store even when the low-level context has already switched to the requested ID.
 - Context snapshots preserve the Alpine contexts-array and row identities while their order is stable, updating changed row metadata in place so streaming log counters do not reconcile the whole chat list. Additions, removals, reordering, and deletion tombstones must still replace the visible list; selection and parent-expansion synchronization must not publish unchanged state.
 

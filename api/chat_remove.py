@@ -7,6 +7,21 @@ from helpers.task_scheduler import TaskScheduler
 class RemoveChat(ApiHandler):
     async def process(self, input: Input, request: Request) -> Output:
         ctxid = input.get("context", "")
+        from helpers.durable import runtime
+        owner = runtime.service()
+        if owner and getattr(owner, "distributed", False):
+            import json
+            from helpers.durable.store import ConflictError, StaleRunError, DurableStoreError
+            try:
+                result = persist_chat.remove_chat(ctxid, request_id=input.get("request_id"), run_id=input.get("run_id"),
+                    expected_generation=input.get("expected_generation"), epoch=input.get("epoch"), version=input.get("version"))
+                return Response(json.dumps(result), status=202 if result["queued"] else 200, mimetype="application/json")
+            except (ConflictError, StaleRunError, persist_chat.SharedDeletionHeld):
+                return Response(json.dumps({"error": "Refresh this chat before requesting removal."}), status=409, mimetype="application/json")
+            except (ValueError, TypeError, KeyError):
+                return Response(json.dumps({"error": "Invalid shared removal request."}), status=400, mimetype="application/json")
+            except (DurableStoreError, RuntimeError):
+                return Response(json.dumps({"error": "Chat removal needs recovery storage attention."}), status=503, mimetype="application/json")
         try:
             persist_chat.ensure_removal_supported(ctxid)
         except persist_chat.SharedDeletionHeld as exc:

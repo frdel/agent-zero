@@ -45,7 +45,8 @@ globalThis.sessionStorage = {{
   setItem(key, value) {{ this.values.set(key, String(value)); }},
   removeItem(key) {{ this.values.delete(key); }},
 }};
-globalThis.__callJsonApi = async () => ({{}});
+globalThis.__callJsonApi = async (url, payload) => url === "/chat_remove"
+  ? globalThis.__sendJsonData(url, payload) : ({{}});
 globalThis.__toastFetchError = () => {{}};
 globalThis.__justToast = () => {{}};
 

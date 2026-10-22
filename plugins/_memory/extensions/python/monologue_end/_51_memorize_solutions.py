@@ -12,7 +12,7 @@ from plugins._memory.tools.memory_load import DEFAULT_THRESHOLD as DEFAULT_MEMOR
 
 class MemorizeSolutions(Extension):
 
-    def execute(self, loop_data: LoopData = LoopData(), **kwargs):
+    async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
         # try:
         if not self.agent:
             return
@@ -22,6 +22,11 @@ class MemorizeSolutions(Extension):
             return None
 
         if not set["memory_memorize_enabled"]:
+            return
+
+        from helpers.durable import background, memorization
+        if background.enabled(self.agent):
+            await memorization.enqueue(self.agent, loop_data, "solutions")
             return
  
         # show full util message

@@ -43,3 +43,6 @@ class RecallWait(Extension):
                 apply_recall_result(loop_data, {})
             self.agent.set_data(DATA_NAME_RESULT_MEMORIES, None)
             self.agent.set_data(DATA_NAME_RESULT_SCOPE_MEMORIES, None)
+            from helpers.durable.background import TaskHandle
+            if type(task) is TaskHandle:
+                self.agent.set_data(DATA_NAME_TASK_MEMORIES, None)

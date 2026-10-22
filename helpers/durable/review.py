@@ -8,7 +8,7 @@ from helpers.durable import codec
 from helpers.durable.store import ConflictError, StaleRunError
 
 ACTIVE = ("running", "blocked", "attention")
-SAFE_PHASES = {"admitted", "ui_input_ready", "iteration_ready", "model_result", "model_ready", "tools", "scheduler_finalizing"}
+SAFE_PHASES = {"admitted", "ui_input_ready", "iteration_ready", "model_result", "model_ready", "tools", "scheduler_finalizing", "terminal_ready", "finalizing"}
 PUBLIC_REASONS = {
     "tool_outcome_unknown": "The interrupted tool has no committed result. Verify its external outcome.",
     "model_retry_requires_fresh_operator_grant": "The previous model attempt needs another explicit review.",
@@ -45,7 +45,16 @@ def projected_context(owner, context_id):
     """Read masking scope/name without constructing or registering a live chat."""
     headers = owner.sync("list_run_headers", context_id=context_id)
     if not headers:
-        raise KeyError("Unknown shared chat")
+        saved = owner.sync("get_projection", "genesis:" + context_id)
+        if not saved:
+            raise KeyError("Unknown shared chat")
+        data = (saved["value"] or {}).get("context") or {}
+        if data.get("id") != context_id:
+            raise ReviewError("The committed chat projection needs recovery before this operation.")
+        context = SimpleNamespace(id=context_id, name=data.get("name"), data=data.get("data") or {})
+        context.get_data = lambda key, recursive=True: context.data.get(key)
+        context.agent0 = SimpleNamespace(context=context)
+        return context
     latest = max(headers, key=lambda row: (row.get("admission_seq", 0), row.get("checkpoint_seq", 0), row["run_id"]))
     run = owner.sync("get_run", latest["run_id"])
     data = (run.get("checkpoint") or {}).get("context") or {}
@@ -73,6 +82,9 @@ def command_state(receipt):
     state = "rejected" if invalidated else "pending" if receipt.get("status") == "pending" else (
         "applied" if result.get("accepted") is True else "rejected")
     public = {"request_id": receipt["request_id"], "state": state}
+    unresolved = result.get("unresolved_provider_calls")
+    if type(unresolved) is int and unresolved >= 0:
+        public["unresolved_provider_calls"] = unresolved
     if state == "rejected":
         public["error"] = ("This request belongs to an earlier restore epoch. Review the restored run again." if invalidated else
                            "The execution owner rejected this request. Refresh and review the current state.")
@@ -124,7 +136,7 @@ def compatible(context, run):
     return bool(data and not run.get("payloads_pruned") and data.get("version") == codec.VERSION
                 and not data.get("requires_state_adapter")
                 and data.get("context", {}).get("id") == context.id
-                and codec.environment(context.agent0) == data.get("environment"))
+                and codec.compatible_environment(context.agent0, data.get("environment", {})))
 
 
 def resume_phase(owner, context, run):
@@ -139,6 +151,8 @@ def resume_phase(owner, context, run):
     phase = checkpoint_phase(owner, run)
     if phase not in SAFE_PHASES:
         return None
+    if phase in {"terminal_ready", "finalizing"} and (run["checkpoint"].get("terminal") is None or not _audited_hooks(context.agent0, "monologue_end")):
+        return None
     if not codec.function_resume_supported(run["checkpoint"], phase):
         return None
     calls = owner.sync("calls", run["run_id"])
@@ -146,7 +160,8 @@ def resume_phase(owner, context, run):
     for call in calls:
         if call["kind"] == "input_ui":
             prepared = call.get("result") or {}
-            if call["status"] != "completed" or prepared.get("model_not_configured") or (prepared.get("message") or {}).get("attachments"):
+            from helpers.durable.resources import portable_attachments
+            if call["status"] != "completed" or prepared.get("model_not_configured") or not portable_attachments((prepared.get("message") or {}).get("attachments", [])):
                 return None
             continue
         if call["kind"] not in ("model", "tool") or call.get("logical_call_id"):
@@ -170,6 +185,11 @@ def resume_phase(owner, context, run):
         except Exception:
             return None
         conflicts = current.get("document_conflicts") or []
+        from helpers.durable.adapters import recorded_adapter
+        if (by_id.get(call["call_id"] + ":args", {}).get("status") == "completed"
+                and all(_audited_hooks(context.agent0, point) for point in ("tool_execute_before", "tool_execute_after"))
+                and recorded_adapter(owner, run, current)):
+            continue
         if current["status"] == "completed":
             if conflicts and all(item["status"] == "resolved" for item in conflicts) and by_id.get(call["call_id"] + ":args", {}).get("status") == "completed":
                 continue
@@ -228,7 +248,7 @@ def status(owner, context_id=None, offset=0):
             if remote:
                 context = None
             item = {key: review[key] for key in ("run_id", "context_id", "status", "phase", "version", "restore_selected")}
-            item.update(name=str(context.name if context and context.name else header["context_id"])[:160],
+            item.update(generation=header["generation"], name=str(context.name if context and context.name else header["context_id"])[:160],
                         can_resume=False, calls=[], document_conflicts=[], reason="Recorded work requires review.",
                         actions={"resume": False, "stop": header["status"] in ACTIVE,
                                  "confirm_completed": header["status"] in ACTIVE, "confirm_not_completed": header["status"] in ACTIVE,
@@ -251,8 +271,10 @@ def status(owner, context_id=None, offset=0):
                 remote_idle = remote and (not ownership.get("claimed") or run["status"] == "attention")
                 if remote_idle and owner.enabled and run["status"] in ACTIVE and owner.sync("can_resume", run["run_id"]):
                     calls = owner.sync("calls", run["run_id"])
+                    from helpers.durable.adapters import recorded_adapter
                     item["can_resume"] = checkpoint_phase(owner, run) in SAFE_PHASES and not any(
-                        call["kind"] in ("model", "tool", "input_ui") and call["status"] != "completed" for call in calls)
+                        call["kind"] in ("model", "tool", "input_ui") and call["status"] != "completed"
+                        and not (call["kind"] == "tool" and recorded_adapter(owner, run, call)) for call in calls)
                     item["reason"] = "The execution owner must verify the recorded continuation and current configuration."
                 item["actions"]["resume"] = item["can_resume"]
                 visible_calls = [call for call in owner.sync("calls", run["run_id"])

@@ -70,6 +70,12 @@ class RecallMemories(Extension):
 
         previous_task = self.agent.get_data(DATA_NAME_TASK)
         previous_loop = self.agent.get_data(DATA_NAME_LOOP)
+        from helpers.durable import background
+        if type(previous_task) is background.TaskHandle:
+            if self.agent.get_data(DATA_NAME_RESULT_SCOPE) == recall_scope:
+                return  # the wait hook consumes this immutable receipt once
+            self.agent.set_data(DATA_NAME_TASK, None)
+            previous_task = None
         if previous_task and not previous_task.done():
             if previous_loop is loop_data:
                 return
@@ -84,14 +90,18 @@ class RecallMemories(Extension):
             heading="Searching memories...",
         )
 
-        task = asyncio.create_task(
+        if background.enabled(self.agent):
+            task = await background.recall(self.agent, loop_data, recall_scope)
+            self.agent.set_data(DATA_NAME_RESULT_SCOPE, recall_scope)
+        else:
+            task = asyncio.create_task(
             self.search_and_cache(
                 loop_data=loop_data,
                 log_item=log_item,
                 recall_scope=recall_scope,
                 **kwargs,
             )
-        )
+            )
 
         # set to agent to be able to wait for it
         self.agent.set_data(DATA_NAME_TASK, task)

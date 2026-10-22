@@ -12,13 +12,13 @@ export function createDurabilityState(api, uuid = () => crypto.randomUUID()) {
     mounted: false, loading: false, documentLoading: false, busy: false,
     available: false, enabled: false, restore: { required: false, epoch: null },
     runs: [], nextOffset: null, totalRuns: 0, context: "", error: "", notice: "", requiredIds: [], selected: [],
-    pending: null, decisionRetry: null, queuedDecisions: [], document: null, draft: null, draftRevision: 0, dirty: false,
+    pending: null, decisionRetry: null, queuedDecisions: [], queuedDocument: null, documentBinding: null, document: null, draft: null, draftRevision: 0, dirty: false,
     draftStale: false, compared: false, documentError: "", filter: "all",
     _generation: 0, _documentGeneration: 0, _mutationGeneration: 0, _scope: 0, _chatSelection: "", _requests: {},
 
     async mount(context = "") {
       this.mounted = true; this._scope++;
-      this.decisionRetry = null; this.queuedDecisions = [];
+      this.decisionRetry = null; this.queuedDecisions = []; this.queuedDocument = null; this.documentBinding = null;
       this.context = String(context || ""); this._chatSelection = this.context;
       await Promise.all([this.refresh(), this.loadDocument()]);
     },
@@ -34,7 +34,7 @@ export function createDurabilityState(api, uuid = () => crypto.randomUUID()) {
       this.error = ""; this.notice = ""; this.documentError = "";
       this.dirty = false; this.draftStale = false; this.compared = false;
       this.loading = false; this.documentLoading = false; this.busy = false;
-      this._requests = {}; this.queuedDecisions = [];
+      this._requests = {}; this.queuedDecisions = []; this.queuedDocument = null; this.documentBinding = null;
     },
     async refresh() {
       const generation = ++this._generation, scope = this._scope;
@@ -113,7 +113,7 @@ export function createDurabilityState(api, uuid = () => crypto.randomUUID()) {
       const next = String(context || "");
       if (this.context === next) return;
       this._documentGeneration++; this._scope++;
-      this.pending = null; this.decisionRetry = null; this.queuedDecisions = []; this.requiredIds = []; this._requests = {};
+      this.pending = null; this.decisionRetry = null; this.queuedDecisions = []; this.queuedDocument = null; this.documentBinding = null; this.requiredIds = []; this._requests = {};
       this.context = next; this.document = null; this.draft = null;
       this.dirty = false; this.draftStale = false; this.compared = false;
       this.documentError = "";
@@ -132,6 +132,8 @@ export function createDurabilityState(api, uuid = () => crypto.randomUUID()) {
           throw new Error("This document version is not supported by this editor.");
         }
         this.document = copy(document); this.documentError = "";
+        this.documentBinding = response.run_id ? {run_id: response.run_id, expected_generation: response.generation,
+          epoch: response.epoch, version: response.version} : null;
         if (!this.draft || (!preserveDraft && !this.dirty)) this.useSavedDocument();
         else if (this.draftRevision !== document.revision) this.draftStale = true;
       } catch (error) {
@@ -176,21 +178,30 @@ export function createDurabilityState(api, uuid = () => crypto.randomUUID()) {
       return "";
     },
     async saveDocument() {
-      if (this.busy || !this.context || !this.draft || !this.dirty || this.draftStale || this.draftProblem) return;
+      if (this.busy || this.queuedDocument || !this.context || !this.draft || !this.dirty || this.draftStale || this.draftProblem) return;
       const context = this.context, generation = this._documentGeneration;
       const operation = ++this._mutationGeneration;
       const value = copy(this.draft), revision = this.draftRevision;
       this.busy = true; this.documentError = "";
       try {
-        await this.mutate({ action: "document_update", context, kind: "todo", expected_revision: revision, value });
+        const response = await this.mutate({ action: "document_update", context, kind: "todo", expected_revision: revision, value,
+          ...(this.documentBinding || {}) });
         if (!this.mounted || context !== this.context || generation !== this._documentGeneration) return;
+        if (response?.queued) {
+          this.queuedDocument = {context, run_id: response.run_id, request_id: response.command.request_id,
+            submitted: JSON.stringify(value)};
+          this.notice = "Plan edit queued. Refresh checks the worker receipt.";
+          return;
+        }
+        if (response?.command?.state === "rejected") throw new Error(response.command.error || "The worker rejected this plan edit.");
         this.dirty = false; this.notice = "Plan saved.";
         await this.loadDocument();
       } catch (error) {
         if (!this.mounted || context !== this.context || generation !== this._documentGeneration) return;
-        this.documentError = this.errorText(error);
+        const errorText = this.errorText(error);
         // Fetch the current revision, retaining the complete user's draft.
         await this.loadDocument(true);
+        if (this.mounted && context === this.context) this.documentError = errorText;
       } finally { if (this.mounted && operation === this._mutationGeneration) this.busy = false; }
     },
     toggleSelection(id, checked) {
@@ -216,6 +227,7 @@ export function createDurabilityState(api, uuid = () => crypto.randomUUID()) {
     chooseConflict(run, conflict, decision) {
       if (this.busy) return;
       this.pending = { kind: "conflict", context: run.context_id, run_id: run.run_id, version: run.version,
+        expected_generation: run.generation, epoch: this.restore.epoch,
         conflict_id: conflict.id, expected_revision: conflict.current_revision, decision, ack: false };
       this.error = "";
     },
@@ -246,6 +258,7 @@ export function createDurabilityState(api, uuid = () => crypto.randomUUID()) {
         versions: pending.versions, epoch: pending.epoch };
       else if (pending.kind === "conflict") payload = { action: "document_conflict", context: pending.context,
         run_id: pending.run_id, version: pending.version, conflict_id: pending.conflict_id,
+        ...(pending.expected_generation !== undefined ? {expected_generation: pending.expected_generation, epoch: pending.epoch} : {}),
         expected_revision: pending.expected_revision, decision: pending.decision };
       else payload = { action: "resolve", context: pending.context, run_id: pending.run_id,
         version: pending.version, decision: pending.decision, note: pending.note,
@@ -261,7 +274,8 @@ export function createDurabilityState(api, uuid = () => crypto.randomUUID()) {
       await this._sendDecision(copy(this.decisionRetry));
     },
     async refreshQueued(scope = this._scope, generation = this._generation) {
-      if (!this.queuedDecisions.length) return;
+      const edit = this.queuedDocument;
+      if (!this.queuedDecisions.length && !edit) return;
       const receipts = await Promise.all(this.queuedDecisions.map(async (item) => {
         if (item.state !== "pending") return item;
         const response = await api({ action: "command_status", context: item.context,
@@ -272,6 +286,28 @@ export function createDurabilityState(api, uuid = () => crypto.randomUUID()) {
       }));
       if (!this.mounted || scope !== this._scope || generation !== this._generation) return;
       this.queuedDecisions = receipts;
+      if (edit) {
+        const response = await api({action: "command_status", context: edit.context,
+          run_id: edit.run_id, request_id: edit.request_id});
+        if (!this.mounted || scope !== this._scope || generation !== this._generation || this.queuedDocument !== edit) return;
+        const command = response.command || {};
+        if (command.state === "pending") {
+          this.notice = "Plan edit is waiting for a worker. Refresh checks delivery.";
+          return;
+        }
+        if (!["applied", "rejected"].includes(command.state)) throw new Error("Plan edit receipt is unavailable. Refresh to check again.");
+        this.queuedDocument = null;
+        if (command.state === "applied") {
+          const changed = JSON.stringify(this.draft) !== edit.submitted;
+          if (!changed) this.dirty = false;
+          this.notice = "The worker saved the plan.";
+          await this.loadDocument(changed);
+        } else {
+          await this.loadDocument(true);
+          if (this.mounted && scope === this._scope) this.documentError = command.error || "The worker rejected the plan edit. Compare the saved version before saving again.";
+        }
+        return;
+      }
       const pending = receipts.filter((item) => item.state === "pending").length;
       const rejected = receipts.filter((item) => item.state === "rejected").length;
       this.notice = pending ? `${pending} decision(s) waiting for a worker. Refresh checks delivery.` :
@@ -303,10 +339,17 @@ export function createDurabilityState(api, uuid = () => crypto.randomUUID()) {
         this.error = this.errorText(error);
         this.requiredIds = Array.isArray(data.required_ids) ? data.required_ids :
           (Array.isArray(data.error?.required_ids) ? data.error.required_ids : []);
-      } finally { if (this.mounted && operation === this._mutationGeneration) this.busy = false; }
-      if (this.mounted && scope === this._scope) {
-        await this.refresh();
-        if (accepted && kind === "conflict") await this.loadDocument(this.dirty);
+      } finally {
+        // The next approval must use the refreshed review versions, including
+        // every loaded inventory page, before mutation controls reopen.
+        try {
+          if (this.mounted && scope === this._scope) {
+            await this.refresh();
+            if (accepted && kind === "conflict") await this.loadDocument(this.dirty);
+          }
+        } finally {
+          if (this.mounted && operation === this._mutationGeneration) this.busy = false;
+        }
       }
     },
   };

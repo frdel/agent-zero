@@ -60,12 +60,28 @@ CSRF protection; no public or path-based read endpoint is added.
 
 | Adapter | Recovery behavior | Explicit boundary |
 | --- | --- | --- |
-| Local shell/Python/Node | A detached POSIX supervisor publishes encrypted output and a known exit result under an append-only job capability. Other workers reuse the result. | Submitted jobs never relaunch. A lost execution host with no result holds. No PTY, stdin continuation, aliases, functions or arbitrary shell-memory migration. |
-| SSH | Reconnect to the same host-key-verified target and inspect the stable remote job receipt. | No command resubmission after uncertain dispatch. Target credentials remain worker configuration; database keys/credentials are never forwarded to the target. |
-| Browser | Restore encrypted cookies, origin storage and HTTP(S) tabs into a separate durable context; expire old tab IDs and DOM refs. | No shared sign-in profile adoption, unpacked extensions, arbitrary JavaScript/POST/history/IndexedDB/cache/download replay or host-browser connector migration. Unknown actions hold. |
-| MCP | Reinitialize a transport using local credentials and validate actual server identity, configuration and tool schema. | Read-only hints do not authorize replay. An explicitly registered, source-pinned query-only reconciler may retrieve a known outcome; otherwise an interrupted effect holds. |
+| Local shell/Python/Node | Detached PTY/batch actors retain one operation identity, actual output, exit status, and settled shell state. A successor attaches or queries the same operation. | A missing execution host cannot fabricate an unknown foreground result. Unserializable process memory remains on the anchored actor. |
+| SSH | Pinned host-key verification, detached remote PTY/receipt, reconnect and private managed-project staging/export. | No resubmission of an uncertain command. Database credentials, resource keys and job capabilities never enter the target shell. |
+| Browser | Detached browser actor with coherent encrypted Chromium profile checkpoints: cookies, origin/session storage, IndexedDB, cache/service workers, extension storage and downloads. Requester loss does not cancel an action; successors reuse its actual receipt. | DOM refs expire after profile reconstruction. Restore does not repeat POSTs or JavaScript. Agent profiles remain separate from personal profiles. Profiles are bounded to 128 MiB and total context custody to 256 MiB. |
+| Host browser | Companion journal pins the exact connector/browser instance, records intent before dispatch and exposes authoritative operation status. Agent profile export/import uses encrypted chunks. | Existing personal profiles stay on the selected host. A replaced browser instance cannot settle an old unknown action. Requires the matching companion durability protocol. |
+| Computer use | Companion desktop journal retains per-operation receipts, session/instance binding and actual screenshot bytes. A successor queries the original operation before sending anything. | Desktop permissions and re-arming remain host-owned; an unconfirmed action is never resent or reported completed. |
+| MCP | Detached transport actor validates server configuration/schema before dispatch and retains the actual CallToolResult. Successors reuse it after worker loss; unsent grants can reconstruct private transport setup using matching local credentials. | Resolved headers/env remain in the actor's encrypted local spool, outside shared requests. Running unknown effects never resubmit. |
+| Memory | Encrypted typed documents/vectors rebuild a fresh FAISS index on another worker. Revision CAS and immutable mutation receipts commit complete replacement/deletion patches atomically. | Embedding identity changes require an explicit reindex; stale writers cannot overwrite newer data. No pickle is stored in PostgreSQL. |
 
-Shell state retains cwd and exported-environment deltas privately. Managed path
+Host Browser and Computer use require the matching `a0-connector` companion
+durability implementation. Configure its private `A0_CONNECTOR_DURABILITY_KEY`
+and, optionally, `A0_CONNECTOR_DURABILITY_ROOT` through the companion environment;
+the companion key need not equal the framework resource key. The companion
+records encrypted requests before host delivery and advertises a stable instance
+identity. Losing a reply triggers a query for that exact operation, not a second
+action. Retain its journal and private agent profiles across companion restarts.
+Personal profiles and desktop permission/re-arm decisions remain host-owned.
+
+The detached container Browser actor exposes a same-host viewer relay. Tool
+actions and full private profile checkpoints recover across workers; moving an
+interactive live viewer across hosts requires deployment routing to that actor.
+
+Shell state retains cwd, exported environment, aliases, functions and settled shell variables privately. Interactive input is an operation with its own receipt. Managed path
 values rebind to the successor's workspace; unmanaged absolute paths cannot
 silently migrate. Normal tool/model output still passes masking. Stop may request
 cancellation of the matching recorded job; it cannot promise to retract effects
@@ -100,6 +116,9 @@ Run the resource, workspace, execution, session and PostgreSQL process suites
 against an explicitly disposable `A0_TEST_DURABILITY_POSTGRES_DSN`. Recovery tests
 remove the first worker's attachment files, kill actual workers, exercise a
 detached supervisor and a loopback SSH target, and query a real MCP stdio server.
-Browser tests use a simulated Chromium boundary. Physical multi-host,
-network-partition, real-browser and real-service acceptance remain deployment
-verification steps.
+Set `A0_TEST_DURABLE_CHROMIUM` to an installed Chromium executable for native
+profile tests, and `A0_TEST_CONNECTOR_SOURCE` to the matching companion source for
+the real manager/controller wire tests. These tests exercise actual browser
+storage, POSTs and process termination, plus the companion operation journal.
+Physical multi-host, network-partition, personal-browser and external-service
+acceptance remain deployment verification steps.

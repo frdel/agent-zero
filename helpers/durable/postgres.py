@@ -173,7 +173,7 @@ class PostgresStore(ResourceStore, LocalStore):
                 self._connection.execute("SELECT pg_advisory_xact_lock(?)", (self._writer_key,))
                 if self._ready:
                     row = self._connection.execute("SELECT value FROM backend_metadata WHERE key='protocol'").fetchone()
-                    if row is None or row["value"] != "2":
+                    if row is None or row["value"] != "3":
                         raise IntegrityError("Unsupported PostgreSQL recovery protocol")
                 yield
                 self._connection.execute("COMMIT")
@@ -232,10 +232,13 @@ class PostgresStore(ResourceStore, LocalStore):
             self._connection.execute("CREATE TABLE IF NOT EXISTS backend_metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL)")
             row = self._connection.execute("SELECT value FROM backend_metadata WHERE key='protocol'").fetchone()
             if row is not None:
-                if row["value"] not in ("1", "2"):
+                if row["value"] not in ("1", "2", "3"):
                     raise IntegrityError("Unsupported PostgreSQL recovery protocol")
+                if row["value"] != "3":
+                    self._quiescent_upgrade()
                 self._initialize_resources()
-                self._connection.execute("UPDATE backend_metadata SET value='2' WHERE key='protocol'")
+                self._initialize_maintenance()
+                self._connection.execute("UPDATE backend_metadata SET value='3' WHERE key='protocol'")
                 return
             statements = [
                 "CREATE TABLE contexts(context_id TEXT PRIMARY KEY,generation BIGINT NOT NULL,deleted SMALLINT NOT NULL DEFAULT 0)",
@@ -290,8 +293,29 @@ class PostgresStore(ResourceStore, LocalStore):
             for statement in statements:
                 self._connection.execute(statement)
             self._initialize_resources()
-            self._connection.execute("INSERT INTO backend_metadata(key,value) VALUES('protocol','2')")
+            self._initialize_maintenance()
+            self._connection.execute("INSERT INTO backend_metadata(key,value) VALUES('protocol','3')")
             self._connection.execute("INSERT INTO metadata(key,value) VALUES('deployment_epoch',?)", (uuid.uuid4().hex,))
+
+    def _quiescent_upgrade(self):
+        message = "Stop all recovery workers and settle submitted/running resource jobs before upgrading PostgreSQL durability"
+        for row in self._connection.execute("SELECT context_id,backend_pid FROM execution_claims WHERE worker_id IS NOT NULL"):
+            if self._held(_lock_key(self.namespace, "context", row["context_id"]), row["backend_pid"]):
+                raise OwnershipError(message)
+        for row in self._connection.execute("SELECT name,backend_pid FROM coordinator_roles"):
+            if self._held(_lock_key(self.namespace, "role", row["name"]), row["backend_pid"]):
+                raise OwnershipError(message)
+        if self._connection.execute("SELECT to_regclass('resource_jobs') AS present").fetchone()["present"] is not None:
+            if self._connection.execute("SELECT 1 FROM resource_jobs WHERE status IN ('submitted','running') LIMIT 1").fetchone():
+                raise OwnershipError(message)
+
+    def _initialize_maintenance(self):
+        self._connection.execute("""CREATE TABLE IF NOT EXISTS maintenance_contexts(
+            request_id TEXT NOT NULL,context_id TEXT NOT NULL,run_id TEXT NOT NULL,generation BIGINT NOT NULL,
+            PRIMARY KEY(request_id,context_id))""")
+        self._connection.execute("""CREATE TABLE IF NOT EXISTS maintenance_effects(
+            request_id TEXT NOT NULL,effect_id TEXT NOT NULL,fingerprint TEXT NOT NULL,status TEXT NOT NULL,
+            result TEXT,result_digest TEXT,PRIMARY KEY(request_id,effect_id))""")
 
     def _event(self, run_id, kind, payload=None):
         encoded = _json(payload)
@@ -348,13 +372,26 @@ class PostgresStore(ResourceStore, LocalStore):
             AND classid::bigint=? AND objid::bigint=? AND objsubid=1""", (pid, unsigned >> 32, unsigned & 0xffffffff)).fetchone() is not None
 
     def claim(self, run_id):
+        return self._claim(run_id)
+
+    def claim_maintenance(self, run_id):
+        """Take the same context lock for idle maintenance, without running a turn."""
+        return self._claim(run_id, maintenance=True)
+
+    def _claim(self, run_id, maintenance=False):
         _identity(run_id, "run id")
         with self._transaction():
             if run_id in self._claims:
                 self.assert_owner(run_id)
                 return True
             run = self._review_run(run_id)
-            if run["status"] not in _ACTIVE or not self.can_resume(run_id):
+            if maintenance:
+                latest = self._connection.execute("""SELECT r.run_id FROM runs r JOIN events e ON e.run_id=r.run_id
+                    AND e.kind='admitted' WHERE r.context_id=? AND r.generation=? ORDER BY e.seq DESC LIMIT 1""",
+                    (run["context_id"], run["generation"])).fetchone()
+                if not latest or latest["run_id"] != run_id:
+                    return False
+            elif run["status"] not in _ACTIVE or not self.can_resume(run_id):
                 return False
             # A context lock also prevents overlap between successive cancelled
             # and newly admitted runs while an old body is still unwinding.
@@ -465,8 +502,34 @@ class PostgresStore(ResourceStore, LocalStore):
             row = self._connection.execute("SELECT * FROM context_heads WHERE context_id=?", (context_id,)).fetchone()
             return None if row is None else {**dict(row), "checkpoint": self._read(row["checkpoint"], row["digest"], required=True)}
 
+    def ensure_maintenance_anchor(self, context_id):
+        """Promote a verified unsent draft to an inert head, without a runner."""
+        _identity(context_id, "context id")
+        with self._transaction():
+            rows = self.list_run_headers(context_id=context_id)
+            if rows:
+                return max(rows, key=lambda row: (row.get("admission_seq", 0), row["run_id"]))["run_id"]
+            saved = self.get_projection("genesis:" + context_id)
+            if not saved or (saved["value"].get("context") or {}).get("id") != context_id:
+                raise KeyError("Unknown shared chat")
+            checkpoint = saved["value"]
+            run = super().admit(context_id, "maintenance-seed", {}, checkpoint)
+            seq = self._event(run["run_id"], "maintenance_anchor", {"genesis_version": saved["version"]})
+            self._connection.execute("UPDATE runs SET status='completed',phase='completed',checkpoint_seq=?,updated_at=? WHERE run_id=?",
+                                     (seq, self._now(), run["run_id"]))
+            self._publish_head(run["run_id"])
+            self._connection.execute("DELETE FROM projections WHERE key=?", ("genesis:" + context_id,))
+            return run["run_id"]
+
     def admit(self, context_id, input_id, input_payload, checkpoint, *, expected_generation=None):
         with self._transaction():
+            existing = self._connection.execute("SELECT 1 FROM runs WHERE context_id=? AND input_id=?", (context_id, input_id)).fetchone()
+            if not existing and self._connection.execute("""SELECT 1 FROM commands c JOIN runs r USING(run_id)
+                    WHERE (r.context_id=? OR EXISTS(SELECT 1 FROM maintenance_contexts m
+                        WHERE m.request_id=c.request_id AND m.context_id=?))
+                    AND c.kind='maintenance_delete' AND c.status='pending' AND c.epoch=?""",
+                    (context_id, context_id, self.get_restore_state()["epoch"])).fetchone():
+                raise ConflictError("Chat removal is pending; new work is held")
             for uri in input_payload.get("attachments", []):
                 if isinstance(uri, str) and uri.startswith("a0-resource://"):
                     self.get_resource(context_id, uri[len("a0-resource://"):])
@@ -561,11 +624,44 @@ class PostgresStore(ResourceStore, LocalStore):
                 (key, expected_version + 1, self._encode(encoded), _digest(encoded)))
             return self.get_projection(key)
 
+    def commit_memory_patch(self, key, expected_revision, operation_key, fingerprint, value, receipt,
+                            *, run_id=None, job_id=None, job_token=None, control_role=None):
+        """Atomically replace an encrypted typed index and retain its operation receipt."""
+        if not key.startswith("memory:") or not operation_key.startswith("memory-op:"):
+            raise ValueError("Invalid memory custody key")
+        with self._transaction():
+            epoch = self.get_restore_state()["epoch"]
+            if value.get("epoch") != epoch or receipt.get("epoch") != epoch:
+                raise ConflictError("Shared memory request belongs to another restore epoch")
+            if run_id:
+                self.assert_owner(run_id)
+                run = self._review_run(run_id)
+                if run["status"] != "running":
+                    raise OwnershipError("Shared memory writer is paused or stopped")
+            elif job_id:
+                claim = self.assert_resource_job(job_id, job_token)
+                run = self.get_run(claim["run_id"])
+                if run["status"] not in {"running", "completed"} or (run.get("checkpoint") or {}).get("paused"):
+                    raise OwnershipError("Shared memory background writer is paused or stopped")
+            elif control_role not in self._roles or not self.try_role(control_role):
+                raise OwnershipError("Shared memory mutation requires its owner")
+            prior = self.get_projection(operation_key)
+            if prior:
+                if prior["value"]["fingerprint"] != fingerprint or prior["value"]["epoch"] != self.get_restore_state()["epoch"]:
+                    raise ConflictError("Memory operation identity changed")
+                return prior["value"]["receipt"]
+            self.put_projection(key, value, expected_revision)
+            self.put_projection(operation_key, {"epoch": self.get_restore_state()["epoch"],
+                "fingerprint": fingerprint, "receipt": receipt}, 0)
+            return receipt
+
     def _command(self, row):
         if row is None:
             raise KeyError("Unknown recovery command")
         if row["payloads_pruned"]:
-            return dict(row, payload=None, result=None, payloads_pruned=True, epoch_valid=row["epoch"] == self.get_restore_state()["epoch"])
+            return dict(row, payload=None,
+                        result=self._read(row["result"], row["result_digest"], required=True) if row["result"] is not None else None,
+                        payloads_pruned=True, epoch_valid=row["epoch"] == self.get_restore_state()["epoch"])
         if row["payload"] is None:
             raise IntegrityError("Recovery command payload is missing")
         payload = self._read(row["payload"])
@@ -591,7 +687,9 @@ class PostgresStore(ResourceStore, LocalStore):
                 if prior["epoch"] != self.get_restore_state()["epoch"]:
                     raise ConflictError("Recovery command belongs to another deployment epoch")
                 return self._command(prior)
-            self._review_run(run_id)
+            run = self._review_run(run_id)
+            if kind == "intervention" and (run["phase"] in {"terminal_ready", "finalizing", "scheduler_finalizing"} or run["status"] not in _ACTIVE):
+                raise ConflictError("The current response is finishing; send new input after it completes")
             self._connection.execute("""INSERT INTO commands(run_id,kind,payload,fingerprint,request_id,status,created_at,epoch)
                 VALUES(?,?,?,?,?,'pending',?,?)""", (run_id, kind, self._encode(encoded), fingerprint, request_id, self._now(), self.get_restore_state()["epoch"]))
             return self._command(self._connection.execute("SELECT * FROM commands WHERE request_id=?", (request_id,)).fetchone())
@@ -635,6 +733,150 @@ class PostgresStore(ResourceStore, LocalStore):
                 self.transition(run_id, phase, checkpoint=checkpoint, status=status)
             return self.ack_command(run_id, request_id, result=result)
 
+    def list_command_runs(self, kinds):
+        kinds = tuple(_identity(kind, "command kind") for kind in kinds)
+        if not kinds:
+            return []
+        placeholders = ",".join("?" for _ in kinds)
+        with self._snapshot():
+            return [dict(row) for row in self._connection.execute(f"""SELECT r.run_id,r.context_id,MIN(c.command_id) AS command_id
+                FROM commands c JOIN runs r USING(run_id) JOIN contexts x USING(context_id)
+                WHERE c.status='pending' AND c.epoch=? AND c.kind IN ({placeholders}) AND x.deleted=0
+                GROUP BY r.run_id,r.context_id ORDER BY MIN(c.command_id)""", (self.get_restore_state()["epoch"], *kinds))]
+
+    def enqueue_maintenance(self, run_id, kind, payload, request_id):
+        if kind not in ("maintenance_document", "maintenance_conflict", "maintenance_delete"):
+            raise ValueError("Unknown maintenance kind")
+        with self._transaction():
+            prior = self._connection.execute("SELECT 1 FROM commands WHERE request_id=?", (request_id,)).fetchone()
+            if not prior:
+                run = self._review_run(run_id)
+                self._document_context(run["context_id"], payload["generation"])
+                if payload["epoch"] != self.get_restore_state()["epoch"]:
+                    raise ConflictError("Maintenance belongs to another deployment epoch")
+                if self.get_review(run_id)["version"] != payload["version"]:
+                    raise ConflictError("Maintenance review changed")
+                self._verify_resources(run["context_id"], payload["ref"])
+            return self.enqueue_command(run_id, kind, payload, request_id)
+
+    def apply_document_command(self, run_id, request_id, *, kind=None, schema_version=None,
+                               value=None, expected_revision=None, conflict_id=None, decision=None):
+        with self._transaction():
+            self.assert_owner(run_id)
+            command = self.get_command(run_id, request_id)
+            if command is None:
+                raise KeyError("Unknown maintenance request")
+            if command["status"] != "pending":
+                return command
+            run = self._review_run(run_id)
+            payload = command["payload"]
+            self._document_context(run["context_id"], payload["generation"])
+            if not command["epoch_valid"]:
+                raise ConflictError("Maintenance belongs to another deployment epoch")
+            if conflict_id is not None:
+                self.resolve_document_conflict(run_id, conflict_id, decision, expected_revision,
+                                               payload["version"], request_id)
+            else:
+                self.write_document(run["context_id"], kind, schema_version, value, expected_revision,
+                                    request_id, expected_generation=payload["generation"])
+            return self.ack_command(run_id, request_id, result={"accepted": True})
+
+    def maintenance_effect(self, run_id, request_id, effect_id, fingerprint):
+        _identity(effect_id, "maintenance effect id")
+        with self._transaction():
+            self.assert_owner(run_id)
+            command = self.get_command(run_id, request_id)
+            if command is None or command["status"] != "pending" or not command["epoch_valid"]:
+                raise ConflictError("Maintenance is no longer pending")
+            row = self._connection.execute("SELECT * FROM maintenance_effects WHERE request_id=? AND effect_id=?", (request_id,effect_id)).fetchone()
+            if row is None:
+                self._connection.execute("INSERT INTO maintenance_effects(request_id,effect_id,fingerprint,status) VALUES(?,?,?,'intent')", (request_id,effect_id,fingerprint))
+                return {"status": "intent"}
+            if row["fingerprint"] != fingerprint:
+                raise ConflictError("Maintenance target changed")
+            return {"status": row["status"], "result": self._read(row["result"], row["result_digest"], required=row["status"] == "completed")}
+
+    def finish_maintenance_effect(self, run_id, request_id, effect_id, fingerprint):
+        with self._transaction():
+            self.maintenance_effect(run_id, request_id, effect_id, fingerprint)
+            result = _json({"deleted": True})
+            self._connection.execute("UPDATE maintenance_effects SET status='completed',result=?,result_digest=? WHERE request_id=? AND effect_id=?", (result,_digest(result),request_id,effect_id))
+
+    def deletion_contexts(self, request_id):
+        _identity(request_id, "deletion request id")
+        with self._snapshot():
+            return [dict(row) for row in self._connection.execute("SELECT * FROM maintenance_contexts WHERE request_id=? ORDER BY context_id", (request_id,))]
+
+    def begin_deletion(self, run_id, request_id):
+        """Freeze verified current descendant ownership and stop it atomically."""
+        from types import SimpleNamespace
+        from helpers.durable.workflows import descendant_context_ids
+        with self._transaction():
+            self.assert_owner(run_id)
+            command = self.get_command(run_id, request_id)
+            if command is None or command["kind"] != "maintenance_delete" or command["status"] != "pending" or not command["epoch_valid"]:
+                raise ConflictError("Deletion is no longer pending")
+            bindings = self._connection.execute("SELECT * FROM maintenance_contexts WHERE request_id=? ORDER BY context_id", (request_id,)).fetchall()
+            if bindings:
+                for item in bindings:
+                    self._document_context(item["context_id"], item["generation"])
+                return [dict(item) for item in bindings]
+            run = self._review_run(run_id)
+            proxy = SimpleNamespace(sync=lambda name, *args, **kwargs: getattr(self, name)(*args, **kwargs), distributed=True)
+            context_ids = {run["context_id"]}
+            for header in self.list_run_headers(context_id=run["context_id"]):
+                context_ids.update(descendant_context_ids(proxy, header["run_id"]))
+            bindings = []
+            for context_id in sorted(context_ids):
+                latest = self.list_run_headers(context_id=context_id)[-1]
+                context = self._document_context(context_id)
+                item = {"request_id": request_id, "context_id": context_id, "run_id": latest["run_id"], "generation": context["generation"]}
+                self._connection.execute("INSERT INTO maintenance_contexts VALUES(?,?,?,?)", tuple(item.values()))
+                bindings.append(item)
+            self._control_rows(sorted(context_ids), "cancel")
+            return bindings
+
+    def deletion_provider_snapshot(self, request_id):
+        """Version the complete frozen graph's cleanup evidence, including late outcomes."""
+        _identity(request_id, "deletion request id")
+        with self._snapshot():
+            rows = {}
+            for table, query in (
+                ("runs", "SELECT r.run_id,r.checkpoint_digest,r.payloads_pruned FROM runs r"),
+                ("calls", "SELECT r.run_id,c.call_id,c.status,c.result_digest,c.fingerprint,c.payloads_pruned FROM calls c JOIN runs r USING(run_id)"),
+                ("heads", "SELECT r.run_id,h.digest FROM context_heads h JOIN runs r ON h.run_id=r.run_id")):
+                query += " WHERE r.context_id IN (SELECT context_id FROM maintenance_contexts WHERE request_id=?)"
+                if table == "calls":
+                    query += " AND c.kind='model'"
+                records = self._connection.execute(query, (request_id,)).fetchall()
+                rows[table] = sorted((dict(row) for row in records), key=_json)
+            return _digest(_json(rows))
+
+    def complete_deletion(self, run_id, request_id, context_ids, *, unresolved_provider_calls=0,
+                          expected_provider_snapshot):
+        with self._transaction():
+            self.assert_owner(run_id)
+            command = self.get_command(run_id, request_id)
+            if command is None or command["kind"] != "maintenance_delete" or not command["epoch_valid"]:
+                raise ConflictError("Unknown or stale deletion request")
+            if command["status"] != "pending":
+                return command
+            bindings = self._connection.execute("SELECT * FROM maintenance_contexts WHERE request_id=?", (request_id,)).fetchall()
+            if set(context_ids) != {item["context_id"] for item in bindings}:
+                raise ConflictError("Deletion context selection changed")
+            for item in bindings:
+                self._document_context(item["context_id"], item["generation"])
+                context_id = item["context_id"]
+                claim = next((identity for identity, item in self._claims.items() if item["context_id"] == context_id), None)
+                if claim is None:
+                    raise OwnershipError("Chat deletion requires every descendant context lock")
+                self.assert_owner(claim)
+            if self.deletion_provider_snapshot(request_id) != expected_provider_snapshot:
+                return None  # A late known outcome must enter the next cleanup plan.
+            self.ack_command(run_id, request_id, result={"accepted": True, "deleted": True, "unresolved_provider_calls": unresolved_provider_calls})
+            self._control_rows(list(context_ids), "delete")
+            return self.get_command(run_id, request_id)
+
     def _referenced_blobs(self):
         reachable = super()._referenced_blobs()
         for row in self._connection.execute("SELECT checkpoint AS value FROM context_heads WHERE checkpoint LIKE '@blob:%'").fetchall():
@@ -647,11 +889,22 @@ class PostgresStore(ResourceStore, LocalStore):
         return reachable
 
     def _control_rows(self, context_ids, action):
+        if action == "reset":
+            for context_id in context_ids:
+                self._connection.execute("""UPDATE commands SET status='invalidated',payload=NULL,result=NULL,
+                    result_digest=NULL,payloads_pruned=1 WHERE status='pending' AND kind LIKE 'maintenance_%'
+                    AND (run_id IN (SELECT run_id FROM runs WHERE context_id=?) OR request_id IN
+                        (SELECT request_id FROM maintenance_contexts WHERE context_id=?))""", (context_id, context_id))
         if action == "delete":
             for context_id in context_ids:
                 self._delete_resources(context_id)
                 self._connection.execute("DELETE FROM context_heads WHERE context_id=?", (context_id,))
-                self._connection.execute("DELETE FROM commands WHERE run_id IN (SELECT run_id FROM runs WHERE context_id=?)", (context_id,))
+                safe_result = _json({"accepted": False, "error": "context_deleted"})
+                self._connection.execute("""UPDATE commands SET payload=NULL,payloads_pruned=1,
+                    status=CASE WHEN status='pending' THEN 'applied' ELSE status END,
+                    result=CASE WHEN status='pending' THEN ? ELSE result END,
+                    result_digest=CASE WHEN status='pending' THEN ? ELSE result_digest END
+                    WHERE run_id IN (SELECT run_id FROM runs WHERE context_id=?)""", (safe_result, _digest(safe_result), context_id))
                 self._connection.execute("DELETE FROM projections WHERE key IN (?,?)", ("chat:" + context_id, "genesis:" + context_id))
         return super()._control_rows(context_ids, action)
 
@@ -692,8 +945,21 @@ class PostgresStore(ResourceStore, LocalStore):
             pending = {row["run_id"] for row in self._connection.execute("SELECT DISTINCT run_id FROM commands WHERE status='pending' AND epoch=?", (self.get_restore_state()["epoch"],)).fetchall()}
             result = super().compact(retain_terminal=retain_terminal, max_age_days=max_age_days,
                 protected_run_ids=set(protected_run_ids) | pending)
-            self._connection.execute("""UPDATE commands SET payload=NULL,result=NULL,result_digest=NULL,payloads_pruned=1
-                WHERE status='applied' AND run_id IN (SELECT run_id FROM runs WHERE payloads_pruned=1)""")
+            for command in self._connection.execute("""SELECT run_id,request_id,result,result_digest FROM commands
+                    WHERE status='applied' AND payloads_pruned=0 AND run_id IN
+                    (SELECT run_id FROM runs WHERE payloads_pruned=1)""").fetchall():
+                outcome = self._read(command["result"], command["result_digest"], required=True)
+                # Keep the immutable acknowledgment, without retaining drafts,
+                # provider identifiers or other private result projections.
+                safe = {"accepted": outcome.get("accepted") is True}
+                if outcome.get("deleted") is True:
+                    safe["deleted"] = True
+                unresolved = outcome.get("unresolved_provider_calls")
+                if type(unresolved) is int and unresolved >= 0:
+                    safe["unresolved_provider_calls"] = unresolved
+                encoded = _json(safe)
+                self._connection.execute("""UPDATE commands SET payload=NULL,result=?,result_digest=?,payloads_pruned=1
+                    WHERE run_id=? AND request_id=?""", (encoded, _digest(encoded), command["run_id"], command["request_id"]))
             extra = self.garbage_collect()
             result["blobs_removed"] += extra["blobs_removed"]
             result["bytes_removed"] += extra["bytes_removed"]

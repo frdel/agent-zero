@@ -240,7 +240,7 @@ def _submit(turn, child):
             _held("child_genesis_state_adapter_required")
         context = persist_chat._deserialize_context((run or {}).get("checkpoint", child["genesis"])["context"])
         context._durable_restored = run is not None
-        if run is None and codec.environment(context.agent0) != child["genesis"]["environment"]:
+        if run is None and not codec.compatible_environment(context.agent0, child["genesis"]["environment"]):
             _held("child_genesis_configuration_changed")
     restore_context(context, child["origin"])
     if run is None:

@@ -215,13 +215,19 @@ def ensure_removal_supported(ctxid):
         raise SharedDeletionHeld("Shared chat removal requires execution-owner provider cleanup. No chat records were removed.")
 
 
-def remove_chat(ctxid):
+def remove_chat(ctxid, *, request_id=None, run_id=None, expected_generation=None, epoch=None, version=None):
     """Remove a chat or task context"""
     if not isinstance(ctxid, str) or not ctxid.strip():
         raise ValueError("remove_chat: context id must not be empty")
-    ensure_removal_supported(ctxid)
     from helpers.durable.runtime import control, service
     owner = service()
+    if owner and getattr(owner, "distributed", False):
+        if not request_id or not run_id or not epoch or not version:
+            raise SharedDeletionHeld("Shared removal requires a stable, reviewed maintenance request.")
+        from helpers.durable import maintenance
+        return maintenance.enqueue(owner, ctxid, run_id, "maintenance_delete", {}, request_id,
+                                   generation=expected_generation, epoch=epoch, version=version)
+    ensure_removal_supported(ctxid)
     # Fence execution before reading known outcomes, but retain private ledger
     # payloads until provider cleanup has collected their normalized IDs.
     with owner.lock if owner else nullcontext():

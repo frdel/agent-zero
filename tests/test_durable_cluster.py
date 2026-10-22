@@ -113,6 +113,51 @@ def test_remote_pause_and_input_are_acknowledged_without_snapshot_unpause(nodes)
     assert len(nodes.first.sync("pending_commands", run["run_id"])) == 0
 
 
+def test_ui_intervention_prepares_on_owner_and_reuses_attachment_receipt(nodes, monkeypatch):
+    from pathlib import Path
+    import hashlib
+    import time
+    from cryptography.fernet import Fernet
+    from helpers.extension import Extension
+    from helpers.durable.resources import ResourceManager, SCHEME
+    monkeypatch.setenv("A0_DURABILITY_RESOURCE_KEY", Fernet.generate_key().decode())
+    context = nodes.rig.context
+    run = admit(nodes)
+    assert nodes.first.sync("claim", run["run_id"])
+    context.agent0.loop_data = LoopData(iteration=0)
+    nodes.first.sync("transition", run["run_id"], "iteration_ready", codec.checkpoint(context.agent0))
+    prepared = []
+    class PrepareIntervention(Extension):
+        async def execute(self, data, **kwargs):
+            assert nodes.first.sync("owns", run["run_id"])
+            assert Path(data["attachment_paths"][0]).read_bytes() == b"portable input"
+            prepared.append(data["message"])
+            data["message"] = "Prepared: " + data["message"]
+    monkeypatch.setattr("helpers.extension._get_extension_classes", lambda point, **kwargs:
+                        [PrepareIntervention] if point == "user_message_ui" else [])
+    ref = ResourceManager(nodes.second, context.id).put_bytes("attachment", "input.txt", b"portable input")
+    message = UserMessage("Change direction", attachments=[SCHEME + ref["id"]], id="ui-change")
+    with nodes.first._scan_lock, nodes.second._scan_lock:
+        nodes.second.communicate_remote(context.id, message, ui=True)
+        request_id = "input:" + hashlib.sha256(message.id.encode()).hexdigest()
+        deadline = time.monotonic() + 10
+        while nodes.second.sync("get_command", run["run_id"], request_id)["status"] != "applied":
+            nodes.first.refresh_commands(context, run["run_id"])
+            assert time.monotonic() < deadline
+            time.sleep(.01)
+        receipt = nodes.second.sync("get_command", run["run_id"], request_id)
+        assert receipt["result"]["accepted"]
+        saved = nodes.second.sync("get_run", run["run_id"])
+        assert saved["checkpoint"]["intervention"]["message"] == "Prepared: Change direction"
+        assert saved["checkpoint"]["intervention"]["attachments"] == [SCHEME + ref["id"]]
+        assert Path(context.agent0.intervention.attachments[0]).read_bytes() == b"portable input"
+        nodes.first.refresh_commands(context, run["run_id"])
+        assert prepared == ["Change direction"]
+        nodes.first.sync("release", run["run_id"])
+        assert nodes.second.sync("claim", run["run_id"])
+        assert nodes.second.sync("get_command", run["run_id"], request_id) == receipt
+
+
 def test_ui_hooks_run_on_claimed_worker_and_unknown_preparation_never_replays(nodes, monkeypatch):
     from helpers import extension
     from helpers.extension import Extension
@@ -171,8 +216,8 @@ def test_ui_hooks_run_on_claimed_worker_and_unknown_preparation_never_replays(no
     with nodes.first._scan_lock, nodes.second._scan_lock:
         unknown = nodes.first.sync("admit", nodes.rig.context.id, unknown_message.id, codec.message_payload(unknown_message), data)
         current_id[0] = unknown["run_id"]
-        with pytest.raises(ValueError, match="input-hook adapter"):
-            nodes.second.communicate_remote(nodes.rig.context.id, UserMessage("Intervene", id="ui-intervention"), ui=True)
+        nodes.second.communicate_remote(nodes.rig.context.id, UserMessage("Intervene", id="ui-intervention"), ui=True)
+        assert len(nodes.second.sync("pending_commands", unknown["run_id"])) == 1
         assert nodes.first.sync("claim", unknown["run_id"])
         nodes.first.sync("start_call", unknown["run_id"], "input_ui", "input_ui", codec.message_payload(unknown_message))
         nodes.first.sync("release", unknown["run_id"])
@@ -318,3 +363,145 @@ def test_only_scheduler_role_polls_and_shared_plan_finishes_once(nodes, monkeypa
     asyncio.run(engine.reload())
     assert len(engine.get_task_by_uuid(task.uuid).plan.done) == 1
     assert len(nodes.rig.requests) == 2
+
+
+def test_idle_document_command_is_drained_by_real_coordinator_without_model(nodes, monkeypatch):
+    import time
+    from cryptography.fernet import Fernet
+    from helpers.durable import maintenance
+    from api.durability import Durability
+    import threading
+    import json
+    monkeypatch.setenv('A0_DURABILITY_RESOURCE_KEY', Fernet.generate_key().decode())
+    run = admit(nodes)
+    assert nodes.first.sync('claim', run['run_id'])
+    nodes.first.sync('transition', run['run_id'], 'completed', status='completed')
+    nodes.first.sync('release', run['run_id'])
+    info = maintenance.metadata(nodes.second, run['context_id'])
+    monkeypatch.setattr(runtime, '_service', nodes.second)
+    response = asyncio.run(Durability(None, threading.RLock()).process({
+        'action': 'document_update', 'context': run['context_id'], 'run_id': run['run_id'],
+        'kind': 'todo', 'value': {'title': 'Applied on owner', 'items': []}, 'expected_revision': 0,
+        'request_id': 'idle-plan', 'expected_generation': info['generation'], 'epoch': info['epoch'], 'version': info['version']}, None))
+    assert response.status_code == 202, response.get_data(as_text=True)
+    assert json.loads(response.data)['queued']
+    deadline = time.monotonic() + 10
+    while nodes.first.sync('get_command', run['run_id'], 'idle-plan')['status'] == 'pending':
+        assert time.monotonic() < deadline
+        time.sleep(.02)
+    receipt = nodes.first.sync('get_command', run['run_id'], 'idle-plan')
+    assert receipt['status'] == 'applied', receipt
+    assert nodes.first.sync('read_document', run['context_id'], 'todo')['value']['title'] == 'Applied on owner'
+    assert nodes.rig.requests == []
+
+
+def test_memory_write_recovers_atomic_result_when_worker_loses_body_ack(nodes, monkeypatch, tmp_path):
+    from cryptography.fernet import Fernet
+    from langchain_core.embeddings import Embeddings
+    from plugins._memory.helpers import memory as memory_module
+    from plugins._memory.tools.memory_save import MemorySave
+    from helpers.tool_execution import execute_tool
+    from helpers.durable.runtime import RecoveryHeld, Turn
+    monkeypatch.setenv('A0_DURABILITY_RESOURCE_KEY', Fernet.generate_key().decode())
+    class Embedder(Embeddings):
+        def embed_documents(self, texts):
+            embedded.extend(texts); return [[1., 0.] for _ in texts]
+        def embed_query(self, text):
+            return [1., 0.]
+    embedded = []
+    monkeypatch.setattr('models.get_embedding_model', lambda *args, **kwargs: Embedder())
+    monkeypatch.setattr(memory_module.Memory, '_get_embedding_config', lambda agent=None: SimpleNamespace(provider='synthetic', name='fixed', build_kwargs=lambda: {}))
+    monkeypatch.setattr(memory_module, 'get_agent_memory_subdir', lambda agent: 'synthetic-write')
+    monkeypatch.setattr(memory_module, 'abs_db_dir', lambda scope: str(tmp_path / 'unused-memory-files'))
+    monkeypatch.setattr(memory_module.Memory, 'index', {})
+    monkeypatch.setattr(memory_module, 'get_knowledge_subdirs_by_memory_subdir', lambda *args: [])
+    agent = nodes.rig.context.agent0
+    run = admit(nodes)
+    assert nodes.first.sync('claim', run['run_id'])
+    agent.loop_data = LoopData(iteration=0)
+    nodes.first.contexts[run['run_id']] = agent.context
+    nodes.first.sync('transition', run['run_id'], 'tools', checkpoint=codec.checkpoint(agent))
+    run = nodes.first.sync('get_run', run['run_id'])
+    agent.context._durable_turn = first = Turn(nodes.first, agent, run)
+    first.recovered = False
+    tool = MemorySave(agent, 'memory_save', None, {'text': 'one durable memory'}, '', agent.loop_data)
+    async def crash(*args):
+        raise RecoveryHeld('worker ended after memory commit')
+    monkeypatch.setattr(first, 'tool_body', crash)
+    with pytest.raises(RecoveryHeld):
+        asyncio.run(execute_tool(tool, tool.args))
+    assert embedded == ['one durable memory']
+    assert nodes.first.sync('get_call', run['run_id'], 'tool:0:0')['status'] == 'intent'
+    nodes.first.sync('release', run['run_id'])
+    assert nodes.second.sync('claim', run['run_id'])
+    saved = nodes.second.sync('get_run', run['run_id'])
+    restored = nodes.second._restore_claimed(saved)
+    restored._durable_turn = second = Turn(nodes.second, restored.agent0, saved)
+    codec.restore(restored, saved['checkpoint'])
+    monkeypatch.setattr(runtime, '_service', nodes.second)
+    recovered = MemorySave(restored.agent0, 'memory_save', None, {'text': 'one durable memory'}, '', restored.agent0.loop_data)
+    response = asyncio.run(execute_tool(recovered, recovered.args))
+    assert response.break_loop is False
+    assert embedded == ['one durable memory']
+    assert nodes.second.sync('get_call', run['run_id'], 'tool:0:0:final')['status'] == 'completed'
+
+
+def test_terminal_hook_cannot_acknowledge_input_that_will_never_be_consumed(nodes, monkeypatch):
+    import threading
+    from helpers.extension import Extension
+    entered, release = threading.Event(), threading.Event()
+    class Finishing(Extension):
+        async def execute(self, **kwargs):
+            entered.set()
+            await asyncio.to_thread(release.wait)
+    monkeypatch.setattr('helpers.extension._get_extension_classes', lambda point, **kwargs:
+                        [Finishing] if point == 'monologue_end' else [])
+    run = admit(nodes)
+    handle = nodes.first.dispatch_for_run(run['run_id'])
+    try:
+        assert entered.wait(5)
+        assert nodes.second.sync('get_run', run['run_id'])['phase'] == 'finalizing'
+        with pytest.raises(ConflictError, match='finishing'):
+            nodes.second.communicate_remote(run['context_id'], UserMessage('Next message', id='after-terminal'))
+        assert nodes.first.sync('pending_commands', run['run_id']) == []
+    finally:
+        release.set()
+    assert handle.result_sync(timeout=10) == 'Done'
+    next_handle = nodes.second.communicate_remote(run['context_id'], UserMessage('Next message', id='after-terminal'))
+    assert next_handle.result_sync(timeout=10) == 'Done'
+    assert nodes.second.communicate_remote(run['context_id'], UserMessage('Next message', id='after-terminal')).result_sync(timeout=10) == 'Done'
+    assert len(nodes.rig.requests) == 2
+
+
+def test_bad_maintenance_context_does_not_disable_healthy_chat_processing(nodes, monkeypatch):
+    import time
+    from cryptography.fernet import Fernet
+    from helpers.durable import maintenance
+    from helpers.durable.resources import ResourceHeld
+    monkeypatch.setenv('A0_DURABILITY_RESOURCE_KEY', Fernet.generate_key().decode())
+    context = nodes.rig.context
+    bad = admit(nodes)
+    nodes.first.sync('claim', bad['run_id'])
+    nodes.first.sync('transition', bad['run_id'], 'completed', status='completed')
+    nodes.first.sync('release', bad['run_id'])
+    restore = nodes.second._restore_claimed
+    def guarded(run):
+        if run['run_id'] == bad['run_id']:
+            raise ResourceHeld('synthetic missing private resource')
+        return restore(run)
+    monkeypatch.setattr(nodes.second, '_restore_claimed', guarded)
+    info = maintenance.metadata(nodes.second, context.id)
+    maintenance.enqueue(nodes.second, context.id, bad['run_id'], 'maintenance_document',
+        {'kind': 'todo', 'value': {'title': 'Held draft', 'items': []}, 'expected_revision': 0}, 'bad-draft',
+        generation=info['generation'], epoch=info['epoch'], version=info['version'])
+    deadline = time.monotonic() + 10
+    while nodes.first.sync('get_command', bad['run_id'], 'bad-draft')['status'] == 'pending':
+        assert time.monotonic() < deadline
+        time.sleep(.02)
+    assert not nodes.second.failed
+    assert nodes.first.sync('get_command', bad['run_id'], 'bad-draft')['result']['accepted'] is False
+    # Another chat can still claim, construct and execute after that rejection.
+    from agent import AgentContext
+    fresh = AgentContext(context.config, id='healthy-after-bad-maintenance')
+    monkeypatch.setattr(runtime, '_service', nodes.second)
+    assert fresh.communicate(UserMessage('Healthy input', id='healthy-input')).result_sync(timeout=10) == 'Done'

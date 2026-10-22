@@ -105,11 +105,28 @@ def test_detached_job_can_publish_only_known_immutable_outcome_without_workflow_
     token = uuid.uuid4().hex
     first.register_resource_job(run["run_id"], "job", "a" * 64, hashlib.sha256(token.encode()).hexdigest())
     first.release(run["run_id"])
+    with pytest.raises(OwnershipError):
+        second.begin_resource_job("job", token, "broker:fixture")
+    assert second.try_role("broker:fixture")
+    assert first.claim(run["run_id"])
+    first.transition(run["run_id"], "tools", {"paused": True}, status="blocked")
+    with pytest.raises(OwnershipError):
+        second.begin_resource_job("job", token, "broker:fixture")
+    first.transition(run["run_id"], "tools", {"paused": False}, status="running")
+    first.release(run["run_id"])
+    assert second.begin_resource_job("job", token, "broker:fixture")
+    assert second.get_resource_job("job")["status"] == "running"
+    assert not second.begin_resource_job("job", token, "broker:fixture")
+    assert not first.try_role("broker:fixture")
     worker = ResourceManager(Owner(second), "chat", job_id="job", job_token=token)
     ref = worker.put_bytes("output", "stdout", b"one known result")
     result = {"output": ref, "exit_code": 0}
     assert second.finish_resource_job("job", token, result)["result"] == result
     assert second.finish_resource_job("job", token, result)["status"] == "completed"
+    assert not second.begin_resource_job("job", token, "broker:fixture")
+    second.release_role("broker:fixture")
+    assert first.try_role("broker:fixture")
+    assert not first.begin_resource_job("job", token, "broker:fixture")
     with pytest.raises(ConflictError):
         second.finish_resource_job("job", token, {"exit_code": 1})
     with pytest.raises(OwnershipError):
@@ -170,3 +187,38 @@ def test_resource_path_translation_does_not_rebind_sibling_paths_or_invalid_refe
     assert restored['command'] == 'cat "/tmp/second-work/file" /tmp/work-other/file /tmp/upload.pdf-suffix'
     assert restored['attachment'] == '/tmp/second-upload.pdf'
     assert restored['bad_ref'] == source['bad_ref']
+
+
+def test_background_outbox_publication_and_retention_are_atomic(shared, monkeypatch):
+    first, second = shared
+    run = first.admit('outbox-context', 'input', {}, {})
+    assert first.claim(run['run_id'])
+    identifier = 'c' * 64
+    token = 'outbox-private-token'
+    manager = ResourceManager(Owner(first), 'outbox-context', run['run_id'])
+    request = manager.put_bytes('background-request', identifier, b'private frozen input', sensitive=True)
+    jobs = [{'id': identifier + ':final:result', 'fingerprint': 'a' * 64,
+             'token_digest': hashlib.sha256(token.encode()).hexdigest(), 'allow_completed': True}]
+    value = {'id': identifier, 'run_id': run['run_id'], 'request': request, 'roots': []}
+    publish = first.publish_resource_manifest
+    def crash(*args, **kwargs):
+        raise RuntimeError('cut before manifest publication')
+    monkeypatch.setattr(first, 'publish_resource_manifest', crash)
+    with pytest.raises(RuntimeError):
+        first.publish_resource_outbox('outbox-context', 'background-' + identifier, value, 0, run['run_id'], jobs)
+    assert second.get_resource_job(jobs[0]['id']) is None
+    monkeypatch.setattr(first, 'publish_resource_manifest', publish)
+    first.publish_resource_outbox('outbox-context', 'background-' + identifier, value, 0, run['run_id'], jobs)
+    first.transition(run['run_id'], 'completed', status='completed')
+    first.release(run['run_id'])
+    first.compact(retain_terminal=0)
+    assert second.collect_resources(0)['resources_removed'] == 0
+    assert second.list_resource_manifests('background-')[0]['value'] == value
+    assert second.try_role('outbox:fixture')
+    assert second.begin_resource_job(jobs[0]['id'], token, 'outbox:fixture')
+    actor = ResourceManager(Owner(second), 'outbox-context', job_id=jobs[0]['id'], job_token=token)
+    result = actor.put_bytes('background-result', identifier, b'known result', sensitive=True)
+    second.finish_resource_job(jobs[0]['id'], token, {'value': result})
+    assert second.collect_resources(0)['resources_removed'] == 2
+    assert second.list_resource_manifests('background-') == []
+    assert second.get_resource_job(jobs[0]['id']) is None

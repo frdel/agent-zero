@@ -18,6 +18,14 @@ class OrganizeHistory(Extension):
         if not self.agent:
             return
 
+        from helpers.durable import background, history
+        if background.enabled(self.agent):
+            task = self.agent.get_data(DATA_NAME_TASK)
+            if type(task) is background.TaskHandle:
+                return
+            self.agent.set_data(DATA_NAME_TASK, history.enqueue(self.agent))
+            return
+
         # is there a running task? if yes, skip this round, the wait extension will double check the context size
         task: DeferredTask|None = self.agent.get_data(DATA_NAME_TASK)
         if task and not task.is_ready():

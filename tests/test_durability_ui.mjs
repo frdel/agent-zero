@@ -377,3 +377,98 @@ test('chat reset retries preserve request identity until acknowledgment then all
   await store.resetChat('chat-a');
   assert.notEqual(requests[1].request_id, requests[2].request_id);
 });
+
+test('queued plan edits retain the draft until the worker receipt and preserve newer typing', async () => {
+  for (const editAfterQueue of [false, true]) {
+    let saved = document(), receipt = 'pending';
+    const requests = [];
+    const state = createDurabilityState(async payload => {
+      requests.push(structuredClone(payload));
+      if (payload.action === 'status') return status();
+      if (payload.action === 'document_read') return {document: saved, run_id: 'run-a', generation: 7, epoch: 'epoch-1', version: 'version-1'};
+      if (payload.action === 'document_update') return {queued: true, run_id: 'run-a', command: {state: 'pending', request_id: payload.request_id}};
+      return {command: {state: receipt}};
+    }, () => 'edit-1');
+    await state.mount('chat-a');
+    state.draft.title = 'Queued title'; state.dirty = true;
+    await state.saveDocument();
+    assert.equal(state.dirty, true);
+    assert.equal(state.document.revision, 1);
+    const update = requests.find(item => item.action === 'document_update');
+    assert.equal(update.expected_generation, 7); assert.equal(update.version, 'version-1');
+    await state.refresh();
+    assert.equal(state.queuedDocument.request_id, 'edit-1');
+    if (editAfterQueue) state.draft.title = 'More typing';
+    saved = document(2, 'Queued title'); receipt = 'applied';
+    await state.refresh();
+    assert.equal(state.queuedDocument, null);
+    assert.equal(state.draft.title, editAfterQueue ? 'More typing' : 'Queued title');
+    assert.equal(state.dirty, editAfterQueue);
+    assert.equal(state.draftStale, editAfterQueue);
+  }
+});
+
+test('rejected queued plan edits preserve the draft and visible worker error', async () => {
+  const {state} = rig(payload => payload.action === 'document_update' ?
+    {queued: true, run_id: 'run-a', command: {request_id: payload.request_id}} :
+    {command: {state: 'rejected', error: 'Revision changed'}});
+  await state.mount('chat-a'); state.draft.title = 'Keep my draft'; state.dirty = true;
+  await state.saveDocument(); await state.refresh();
+  assert.equal(state.draft.title, 'Keep my draft'); assert.equal(state.dirty, true);
+  assert.match(state.documentError, /Revision changed/);
+});
+
+test('shared chat removal retries the frozen request after a lost response and waits for application', async () => {
+  const module = await readFile(new URL('../webui/components/sidebar/chats/chats-store.js', import.meta.url), 'utf8');
+  const executable = module.replace(/^import[\s\S]*?;\n/gm, '').replace('export { store };', 'return store;');
+  const requests = [], notifications = [];
+  let lost = true, statusReads = 0;
+  const store = new Function('createStore', 'callJsonApi', 'getContext', 'justToast', 'toastFetchError', 'console', 'setTimeout', executable)(
+    (_name, model) => model,
+    async (endpoint, payload) => {
+      requests.push({endpoint, payload: structuredClone(payload)});
+      if (payload.action === 'context_metadata') return {shared: true, run_id: 'run-a', generation: 3, version: 'version-1', epoch: 'epoch-1'};
+      if (endpoint === '/chat_remove') {
+        if (lost) {lost = false; throw new Error('Lost acknowledgment');}
+        return {queued: true};
+      }
+      statusReads++;
+      if (statusReads === 1) {assert.equal(notifications.length, 0); return {command: {state: 'pending'}};}
+      return {command: {state: 'applied'}};
+    },
+    () => 'different-chat',
+    (...args) => notifications.push(args), () => {}, {error() {}}, resolve => resolve(),
+  );
+  store.contexts = [{id: 'chat-a'}]; store.selected = 'different-chat';
+  await store.killChat('chat-a');
+  assert.equal(store.contexts.length, 1); assert.equal(notifications.length, 0);
+  await store.killChat('chat-a');
+  const deletes = requests.filter(item => item.endpoint === '/chat_remove');
+  assert.deepEqual(deletes[0].payload, deletes[1].payload);
+  assert.equal(requests.filter(item => item.payload.action === 'context_metadata').length, 1);
+  assert.equal(store.contexts.length, 0); assert.equal(notifications[0][1], 'success');
+});
+
+
+test('an accepted restore keeps new decisions blocked until every refreshed page settles', async () => {
+  const lastPage = deferred(), refreshing = deferred();
+  let rows = inventory(57), restored = false;
+  const state = createDurabilityState(async payload => {
+    if (payload.action === 'document_read') return document();
+    if (payload.action === 'restore_select') { restored = true; rows = inventory(57, 2); return {}; }
+    if (restored && payload.offset === 50) { refreshing.resolve(); return lastPage.promise; }
+    return {...page(rows, payload.offset), restore: {required: true, epoch: 'epoch-1'}};
+  }, () => 'restore-request');
+  await state.mount('chat-0'); await state.loadMore();
+  state.toggleSelection('run-0', true); state.reviewRestore(); state.pending.ack = true;
+  const confirmation = state.confirm(); await refreshing.promise;
+  assert.equal(state.busy, true);
+  state.chooseDecision(state.runs[0], 'confirmed_completed', state.runs[0].calls[0]);
+  assert.equal(state.pending, null, 'No approval can capture a stale inventory version during refresh');
+  lastPage.resolve({...page(rows, 50), restore: {required: true, epoch: 'epoch-1'}});
+  await confirmation;
+  assert.equal(state.busy, false); assert.equal(state.loading, false);
+  state.chooseDecision(state.runs[0], 'confirmed_completed', state.runs[0].calls[0]);
+  state.pending.ack = true; state.pending.note = 'Verified current version';
+  assert.equal(state.pending.version, 2); assert.equal(state.confirmationAllowed, true);
+});

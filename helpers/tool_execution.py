@@ -41,10 +41,14 @@ async def execute_tool(tool, tool_args, *, agent=None, tool_name=None,
             await agent.handle_intervention()
             if call_id not in durable.resuming_bodies:
                 await extension_call("tool_execute_before", agent, tool_args=tool_args or {}, tool_name=tool_name)
+                if prepared["result"].get("hooks_pending"):
+                    await durable.effective_tool_args(call_id, tool_args)
         else:
             await agent.handle_intervention()
             await tool.before_execution(**tool_args)
             await agent.handle_intervention()
+            if durable:
+                await durable.tool_hook_input(call_id, tool_args)
             await extension_call(
                 "tool_execute_before", agent, tool_args=tool_args or {}, tool_name=tool_name
             )

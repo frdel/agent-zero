@@ -84,8 +84,16 @@ def admitted(rig, phase, result=None):
 
 @pytest.mark.parametrize("mode", ["chat_completions", "responses"])
 def test_committed_model_result_recovers_without_another_model_call(rig, mode):
+    rig.context.data["chat_naming_manual"] = True
+    rig.context.agent0.data["_plugin.error_retry.critical_exception_counter"] = 3
+    rig.context.agent0.data["_context_window_usage_cache"] = {"messages": ("a" * 64, 17)}
     result = LLMResult.from_chat(response=json.dumps({"tool_name": "response", "tool_args": {"text": "Recovered"}}))
     result.mode = mode
+    if mode == "responses":
+        from helpers.llm_result import ResponseItem
+        result.output_items.append(ResponseItem.from_any({
+            "type": "web_search_call", "id": "hosted_search_known", "status": "completed",
+            "action": {"type": "search", "query": "synthetic query"}}))
     run = admitted(rig, "model_result", result)
     rig.owner.recover()
     restored = AgentContext.get(rig.context.id)
@@ -95,6 +103,11 @@ def test_committed_model_result_recovers_without_another_model_call(rig, mode):
     assert len(messages) == 2 and messages[1].ai
     assert next(item for item in restored.log.logs if item.type == "response").content == "Recovered"
     assert rig.owner.sync("get_run", run["run_id"])["status"] == "completed"
+    assert restored.data["chat_naming_manual"] is True
+    assert restored.agent0.data["_plugin.error_retry.critical_exception_counter"] == 3
+    assert restored.agent0.data["_context_window_usage_cache"] == {"messages": ("a" * 64, 17)}
+    if mode == "responses":
+        assert len([item for item in restored.log.logs if item.id.endswith(":hosted:0")]) == 1
 
 
 @pytest.mark.parametrize("phase", ["model_inflight", "processing_model", "finalizing", "terminal_ready", "preparing"])
@@ -235,12 +248,14 @@ def test_intervention_is_durable_and_second_pending_message_is_rejected(rig, mon
     import threading
     started = threading.Event()
     release = threading.Event()
+    calls = []
 
     class WaitingModel:
         model_name = "synthetic"
         kwargs = {"a0_api_mode": "chat_completions", "api_key": "sentinel-secret"}
 
         async def unified_turn(self, **kwargs):
+            calls.append(kwargs)
             started.set()
             await asyncio.to_thread(release.wait)
             return LLMResult.from_chat(response='{"tool_name":"response","tool_args":{"text":"Done"}}')
@@ -257,10 +272,13 @@ def test_intervention_is_durable_and_second_pending_message_is_rejected(rig, mon
         assert run["checkpoint"]["intervention"]["id"] == "input-2"
     finally:
         release.set()
-    assert "not retried" in task.result_sync(timeout=10)
+    assert task.result_sync(timeout=10) == "Done"
     run, = rig.owner.sync("list_runs")
-    assert run["status"] == "attention"
+    assert run["status"] == "completed"
     assert run["checkpoint"]["last_user_message_id"] == "input-2"
+    assert run["checkpoint"]["intervention"] is None
+    assert len(calls) == 2
+    assert [msg.id for msg in rig.context.agent0.history.all_messages()].count("input-2") == 1
 
 
 def test_backup_is_held_on_restore(rig):
@@ -601,3 +619,26 @@ def test_admitted_restart_cannot_make_an_unaudited_target_fresh(rig, monkeypatch
     assert rig.owner.sync("get_run", run["run_id"])["status"] == ("attention" if restored else "completed")
     assert effects == ([] if restored else ["effect"])
     assert len(provider_calls) == (1 if restored else 2)
+
+
+@pytest.mark.parametrize('phase', ['terminal_ready', 'finalizing'])
+def test_known_terminal_projection_finishes_without_another_provider_request(rig, phase):
+    run = admitted(rig, 'tools')
+    projection = codec.checkpoint(rig.context.agent0, terminal='Known answer')
+    rig.owner.sync('transition', run['run_id'], phase, checkpoint=projection)
+    rig.owner.recover()
+    restored = AgentContext.get(rig.context.id)
+    assert restored.task.result_sync(timeout=10) == 'Known answer'
+    assert rig.requests == []
+    assert rig.owner.sync('get_run', run['run_id'])['status'] == 'completed'
+
+
+def test_context_provider_cleanup_opt_out_survives_checkpoint_and_reconstruction(rig):
+    rig.context.data['responses_delete_on_chat_delete'] = False
+    run = admitted(rig, 'iteration_ready')
+    assert run['checkpoint']['context']['data']['responses_delete_on_chat_delete'] is False
+    assert run['checkpoint']['requires_state_adapter'] is False
+    rig.owner.recover()
+    restored = AgentContext.get(rig.context.id)
+    assert restored.task.result_sync(timeout=10) == 'Done'
+    assert restored.data['responses_delete_on_chat_delete'] is False

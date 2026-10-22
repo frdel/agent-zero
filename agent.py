@@ -1134,6 +1134,11 @@ class Agent:
     @extension.extensible
     async def handle_intervention(self, progress: str = ""):
         await self.wait_if_paused()
+        from helpers.durable.runtime import current
+        if current(self):
+            # Durable turns consume queued input at the next committed iteration
+            # boundary. Interrupting a provider/tool here loses its real outcome.
+            return
         if (
             self.intervention
         ):  # if there is an intervention message, but not yet processed
@@ -1150,11 +1155,6 @@ class Agent:
                 self.hist_add_ai_response(progress, llm_result=LLMResult.non_llm())
             # append the intervention message
             self.hist_add_user_message(msg, intervention=True)
-            from helpers.durable.runtime import current, RecoveryHeld
-            durable = current(self)
-            if durable:
-                await durable.save("intervention_consumed")
-                raise RecoveryHeld("intervention_requires_resolution")
             raise InterventionException(msg)
 
     async def wait_if_paused(self):
@@ -1280,17 +1280,27 @@ class Agent:
         return None
 
     async def _log_response_builtin_items(self, llm_result: LLMResult) -> None:
-        for item in llm_result.builtin_items:
+        from helpers.durable.runtime import current
+        durable = current(self)
+        for index, item in enumerate(llm_result.builtin_items):
+            identifier = None
+            if durable:
+                from helpers.durable.hosted import log_id
+                identifier = log_id(durable, index)
+                if any(log.id == identifier for log in self.context.log.logs):
+                    continue
             if item.type == "computer_call":
                 await self._handle_responses_computer_call(item.data)
                 continue
             if item.type == "mcp_approval_request":
-                self._handle_responses_mcp_approval_request(item.data)
+                if not identifier or not any(message.id == identifier for message in self.history.all_messages()):
+                    self._handle_responses_mcp_approval_request(item.data, history_id=identifier or "")
                 continue
             self.context.log.log(
                 type="info",
                 heading=f"Responses tool item: {item.type}",
                 content=json.dumps(item.data, ensure_ascii=False, default=str),
+                id=identifier,
             )
 
     async def _handle_responses_computer_call(self, item: dict[str, Any]) -> None:
@@ -1349,7 +1359,7 @@ class Agent:
         )
         _ = result
 
-    def _handle_responses_mcp_approval_request(self, item: dict[str, Any]) -> None:
+    def _handle_responses_mcp_approval_request(self, item: dict[str, Any], *, history_id: str = "") -> None:
         request_id = str(
             item.get("approval_request_id") or item.get("id") or item.get("call_id") or ""
         )
@@ -1366,6 +1376,7 @@ class Agent:
             "mcp_approval_request",
             message,
             responses_item=output_item,
+            id=history_id,
         )
         self.context.log.log(
             type="warning",

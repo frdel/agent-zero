@@ -616,6 +616,7 @@ def _get_config(agent) -> dict:
         "ssh_user": str(cfg.get("ssh_user", "root")),
         "ssh_pass": str(cfg.get("ssh_pass", "")),
         "durability_ssh_known_hosts": str(cfg.get("durability_ssh_known_hosts", "")),
+        "durability_interactive": bool(cfg.get("durability_interactive", True)),
         "code_exec_timeouts": _parse_timeouts(cfg, "code_exec", (30, 15, 240, 5)),
         "output_timeouts": _parse_timeouts(cfg, "output", (120, 60, 600, 5)),
         "prompt_patterns": _parse_patterns(cfg.get("prompt_patterns", "")),

@@ -2,7 +2,7 @@
 
 ## Purpose and contract
 
-Shared PostgreSQL status/document reads use committed masked projections without constructing live contexts. Remote decisions queue exact, versioned requests for the execution owner; `command_status` requires the same context/run/request identity and returns only `pending`, `applied`, or fixed-safe `rejected` state. Earlier restore-epoch commands are rejected. Stop remains a direct versioned database control, including for unreadable or unselected checkpoints. Remote document edits hold with HTTP 409 unless the local process owns the live masking/policy context, preserving the user's draft.
+Shared PostgreSQL status/document reads use committed masked projections without constructing live contexts. Remote decisions queue exact, versioned requests for the execution owner; `command_status` requires the same context/run/request identity and returns only `pending`, `applied`, or fixed-safe `rejected` state. Earlier restore-epoch commands are rejected. Stop remains a direct versioned database control, including for unreadable or unselected checkpoints. Shared document edits encrypt their draft into context resources and queue owner maintenance. CAS/schema/masking validation and acknowledgment occur on the claimed worker, including for terminal idle chats. HTTP 202 means queued, not saved; poll `command_status` before reporting success.
 
 `POST /durability` uses the standard authenticated, origin-checked and CSRF-protected `ApiHandler` route. `status` returns active work first with `offset`, `next_offset` and `total`, at most 50 masked run summaries per page, each with at most 20 logical calls and the next two pending document proposals, opaque review versions, safe action flags and restore epoch. Resolving proposals exposes subsequent conflicts. It never creates a context or returns provider request envelopes, tool arguments or raw exceptions.
 
@@ -15,3 +15,5 @@ Shared PostgreSQL status/document reads use committed masked projections without
 ## Side effects and verification
 
 Mutations use short transactions through `helpers.durable.store`, then existing StateMonitor invalidation. Errors return bounded JSON (400 validation, 404 missing, 409 stale/conflicting, 503 storage). RecoveryHeld is explicitly handled. Verify with `tests/test_durable_review.py`, document/store suites and the isolated real browser harness; no real providers or user state are required.
+
+`context_metadata` is a read action requiring no mutation request ID. It returns `{shared:false}` locally or the shared current run/generation/epoch/review version. Shared document reads include this binding; updates/conflict requests carry it as `run_id`, `expected_generation`, `epoch`, `version`, with a stable `request_id`. Inbox payloads contain encrypted resource references, never plaintext drafts.

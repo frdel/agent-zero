@@ -105,6 +105,10 @@ class InfectionChecker:
         snapshot = self._build_log()
         if not snapshot.strip():
             return
+        from helpers.durable import background
+        if background.enabled(agent):
+            self._task = self._durable_analysis(agent, snapshot, "background")
+            return
         self._task = asyncio.create_task(self._run_check(agent, snapshot))
 
     # -- gate (called before every tool execution) ---------------------------
@@ -116,6 +120,10 @@ class InfectionChecker:
         except HandledException:
             raise
         except Exception as e:
+            from helpers.durable import background
+            if background.enabled(agent):
+                from helpers.durable.runtime import RecoveryHeld
+                raise RecoveryHeld("infection_check_requires_reconciliation") from None
             from helpers.print_style import PrintStyle
             PrintStyle(font_color="red", padding=True).print(
                 f"Infection check error (non-fatal): {e}"
@@ -147,8 +155,15 @@ class InfectionChecker:
 
         action, detail, cot = None, "", ""
 
+        from helpers.durable.background import TaskHandle
+        if type(self._task) is TaskHandle:
+            # The immutable request may still be running on its broker. An
+            # unknown verdict cannot be converted into a fresh safety request
+            # or a permissive return merely because its worker disappeared.
+            action, detail, cot = await self._task
+
         # Fast path: reuse result if background task already finished.
-        if self._task is not None and self._task.done():
+        if action is None and self._task is not None and self._task.done():
             try:
                 action, detail, cot = self._task.result()
                 _log.set_progress("Infection check: evaluating result...")
@@ -159,24 +174,38 @@ class InfectionChecker:
         if action is None:
             _log.set_progress("Infection check: analyzing with tool context...")
             if self._task is not None:
-                self._task.cancel()
-                try:
-                    await self._task
-                except (asyncio.CancelledError, Exception):
-                    pass
+                from helpers.durable.background import TaskHandle
+                if type(self._task) is not TaskHandle:
+                    self._task.cancel()
+                    try:
+                        await self._task
+                    except (asyncio.CancelledError, Exception):
+                        pass
                 self._task = None
 
             snapshot = self._build_log()
             if not snapshot.strip():
                 return
 
-            self._task = asyncio.create_task(self._run_check(agent, snapshot))
+            from helpers.durable import background
+            self._task = (self._durable_analysis(agent, snapshot, "gate") if background.enabled(agent)
+                          else asyncio.create_task(self._run_check(agent, snapshot)))
             try:
                 action, detail, cot = await self._task
             except asyncio.CancelledError:
+                if background.enabled(agent):
+                    from helpers.durable.runtime import RecoveryHeld
+                    raise RecoveryHeld("infection_check_interrupted") from None
                 return
             except Exception:
+                if background.enabled(agent):
+                    from helpers.durable.runtime import RecoveryHeld
+                    raise RecoveryHeld("infection_check_requires_reconciliation") from None
                 return
+
+        from helpers.durable.background import TaskHandle
+        if type(self._task) is TaskHandle and (not self._check_msgs or not isinstance(self._check_msgs[-1], AIMessage)):
+            self._check_msgs.append(AIMessage(content=cot))
 
         if action == "ok":
             _log.set_progress("Infection check: passed")
@@ -219,7 +248,7 @@ class InfectionChecker:
             return agent.get_chat_model()
         return agent.get_utility_model()
 
-    async def _run_check(self, agent: "Agent", log_text: str) -> tuple[str, str, str]:
+    def _prepare_check_messages(self, agent: "Agent", log_text: str):
         # Build context from recent history
         hist = agent.history.output()
         if self.history_size > 0:
@@ -244,6 +273,16 @@ class InfectionChecker:
             SystemMessage(content=self.prompt),
             HumanMessage(content=user_msg),
         ]
+        return self._check_msgs
+
+    def _durable_analysis(self, agent, log_text, phase):
+        from helpers.durable import background
+        values = self._prepare_check_messages(agent, log_text)
+        name = f"checker:{self.iteration}:{phase}:" + background.execution._digest(background.messages(values))
+        return background.inference(agent, name, self._get_model(agent), values, checker=True)
+
+    async def _run_check(self, agent: "Agent", log_text: str) -> tuple[str, str, str]:
+        self._prepare_check_messages(agent, log_text)
 
         model = self._get_model(agent)
         response, _ = await model.unified_call(
@@ -258,6 +297,18 @@ class InfectionChecker:
         self, agent: "Agent", clarify_text: str, log_item: "LogItem"
     ) -> tuple[str, str, str]:
         cot_parts: list[str] = []
+        from helpers.durable import background
+        durable = background.enabled(agent)
+        if durable:
+            state = getattr(self, "_durable_clarification", None)
+            if state is None:
+                state = {"initial": clarify_text, "base": background.messages(self._check_msgs),
+                         "history": background.messages(agent.history.output_langchain())}
+                self._durable_clarification = state
+            clarify_text = state["initial"]
+            roles = {"system": SystemMessage, "human": HumanMessage, "ai": AIMessage}
+            self._check_msgs = [roles[item["role"]](content=item["content"]) for item in state["base"]]
+            series = background.execution._digest(state)
 
         # Throttled log display — avoids per-token stream() and O(n²) masking.
         _buf = ""
@@ -283,17 +334,20 @@ class InfectionChecker:
             _flush()
 
             # Clone conversation and ask the agent to explain
-            chat_msgs = agent.history.output_langchain()
+            chat_msgs = ([roles[item["role"]](content=item["content"]) for item in state["history"]]
+                         if durable else agent.history.output_langchain())
             chat_msgs.append(HumanMessage(content=clarify_text))
 
             async def _agent_cb(chunk: str, full: str):
                 if chunk:
                     _append(chunk)
 
-            agent_resp, _ = await agent.get_chat_model().unified_call(
-                messages=chat_msgs,
-                response_callback=_agent_cb,
-            )
+            if durable:
+                agent_resp = await background.inference(agent, f"checker:{self.iteration}:clarify:{series}:{i}:agent",
+                    agent.get_chat_model(), chat_msgs)
+            else:
+                agent_resp, _ = await agent.get_chat_model().unified_call(
+                    messages=chat_msgs, response_callback=_agent_cb)
             cot_parts.append(f"Q: {clarify_text}\nA: {agent_resp}")
             _append("\n\nSafety model verdict:\n")
             _flush()
@@ -312,10 +366,12 @@ class InfectionChecker:
                 if chunk:
                     _append(chunk)
 
-            check_resp, _ = await self._get_model(agent).unified_call(
-                messages=list(self._check_msgs),
-                response_callback=_check_cb,
-            )
+            if durable:
+                check_resp = await background.inference(agent, f"checker:{self.iteration}:clarify:{series}:{i}:verdict",
+                    self._get_model(agent), list(self._check_msgs))
+            else:
+                check_resp, _ = await self._get_model(agent).unified_call(
+                    messages=list(self._check_msgs), response_callback=_check_cb)
             self._check_msgs.append(AIMessage(content=check_resp))
             cot_parts.append(f"Safety: {check_resp}")
             _flush()

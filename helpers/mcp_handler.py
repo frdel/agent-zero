@@ -452,7 +452,11 @@ class MCPTool(Tool):
                 from helpers.durable import sessions
                 await sessions.prepare(self, kwargs)
             config = MCPConfig.get_for_agent(self.agent)
-            response: CallToolResult = await config.call_tool(self.name, kwargs, durable_tool=self) if turn else await config.call_tool(self.name, kwargs)
+            if turn and getattr(turn.owner, "distributed", False):
+                from helpers.durable.mcp_broker import invoke
+                response = await invoke(self, config, kwargs)
+            else:
+                response = await config.call_tool(self.name, kwargs, durable_tool=self) if turn else await config.call_tool(self.name, kwargs)
             message, additional = self._format_tool_result(response)
             if response.isError:
                 error = message or "MCP tool returned an error without textual content."
@@ -1634,7 +1638,8 @@ class MCPClientLocal(MCPClientBase):
         server_params = StdioServerParameters(
             command=server.command,
             args=server.args,
-            env=server.env,
+            env={key: value for key, value in (server.env or {}).items()
+                 if not key.startswith("A0_DURABILITY_")},
             encoding=server.encoding,
             encoding_error_handler=server.encoding_error_handler,
         )

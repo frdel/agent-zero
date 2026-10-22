@@ -79,8 +79,16 @@ def _claim(manager, *, required=False):
     run_id = getattr(manager, "run_id", None)
     if run_id:
         manager.owner.sync("assert_owner", run_id)
+    elif getattr(manager, "job_id", None) and not required:
+        _job_claim(manager)
     elif required:
         _hold("workspace_execution_claim_required")
+
+
+def _job_claim(manager):
+    row = manager.owner.sync("assert_resource_job", manager.job_id, manager.job_token)
+    if row["context_id"] != manager.context_id:
+        _hold("workspace_job_context_changed")
 
 
 def _key():
@@ -348,8 +356,19 @@ def _validate(manifest):
 
 def restore(manager, manifest, destination):
     """Exclusively create an isolated directory; existing paths are never merged."""
+    return _restore(manager, manifest, destination, lambda: _claim(manager, required=True))
+
+
+def restore_for_job(manager, manifest, destination):
+    """Restore private files for a started broker job, without workflow authority."""
+    if getattr(manager, "run_id", None) or not getattr(manager, "job_id", None):
+        _hold("workspace_job_capability_required")
+    return _restore(manager, manifest, destination, lambda: _job_claim(manager))
+
+
+def _restore(manager, manifest, destination, guard):
     _key()
-    _claim(manager, required=True)
+    guard()
     _validate(manifest)
     destination = _root(destination, exists=False)
     if os.path.lexists(destination):
@@ -361,7 +380,7 @@ def restore(manager, manifest, destination):
             _hold("workspace_resource_integrity_failed")
         _check_content(_path(row["path"]), data)
         values.append((row, data))
-    _claim(manager, required=True)
+    guard()
     destination.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     _root(destination.parent)
     try:
@@ -381,14 +400,14 @@ def restore(manager, manifest, destination):
                 output.write(data)
                 output.flush()
                 os.fsync(output.fileno())
-        _claim(manager, required=True)
+        guard()
         for directory, _folders, _files in os.walk(destination, topdown=False):
             descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | getattr(os, "O_NOFOLLOW", 0))
             try:
                 os.fsync(descriptor)
             finally:
                 os.close(descriptor)
-        _claim(manager, required=True)
+        guard()
         return destination
     except BaseException as exc:
         if not destination.is_symlink() and destination.exists() and destination.stat().st_ino == created.st_ino:
@@ -414,6 +433,16 @@ def project_folder(project_name):
     """Return a scoped override or None for the ordinary projects helper."""
     current = _OVERRIDE.get()
     return str(current[1]) if current and current[0] == project_name else None
+
+
+def rebind_project(project_name, path, *, manifest):
+    """Adopt a broker checkpoint within the current owned project scope."""
+    current = _OVERRIDE.get()
+    if current is None or current[0] != project_name:
+        _hold("workspace_execution_scope_changed")
+    if manifest.get("project_name") != project_name:
+        _hold("workspace_execution_scope_changed")
+    _OVERRIDE.set((project_name, _root(path), manifest))
 
 
 @contextmanager

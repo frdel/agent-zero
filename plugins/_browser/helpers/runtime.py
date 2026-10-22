@@ -650,9 +650,9 @@ async def run_browser_calls(calls: list[dict[str, Any]], dispatch: Any) -> list[
 
 
 class BrowserRuntime:
-    def __init__(self, context_id: str, *, durable: bool = False):
+    def __init__(self, context_id: str, *, durable: bool = False, profile: bool = False):
         self.context_id = str(context_id)
-        self._core = _BrowserRuntimeCore(self.context_id, durable=durable)
+        self._core = _BrowserRuntimeCore(self.context_id, durable=durable, profile=profile)
         self._worker = DeferredTask(thread_name=f"BrowserRuntime-{self.context_id}")
         self._closed = False
 
@@ -740,9 +740,15 @@ class _BrowserRuntimeCore:
     }
     _POPUP_WAIT_SECONDS = 2.0
 
-    def __init__(self, context_id: str, *, durable: bool = False):
+    def __init__(self, context_id: str, *, durable: bool = False, profile: bool = False):
         self.context_id = context_id
         self.durable = durable
+        self.durable_profile = profile
+        self._durable_root = None
+        self._durable_config = None
+        self._durable_restoring = False
+        self._durable_downloads = set()
+        self._durable_completed_downloads = []
         self._durable_storage_state = None
         self._durable_browser = None
         self._durable_started = False
@@ -1063,10 +1069,21 @@ class _BrowserRuntimeCore:
 
     @property
     def profile_dir(self) -> Path:
+        if self.durable_profile:
+            return self.durable_root / "profile"
         return Path(files.get_abs_path("tmp/browser/sessions", self.safe_context_id))
 
     @property
+    def durable_root(self) -> Path:
+        if self._durable_root is None:
+            from plugins._browser.helpers.profile_checkpoint import private_root
+            self._durable_root = private_root()
+        return self._durable_root
+
+    @property
     def downloads_dir(self) -> Path:
+        if self.durable_profile:
+            return self.durable_root / "downloads"
         return Path(files.get_abs_path("usr/downloads/browser"))
 
     @property
@@ -1153,24 +1170,36 @@ class _BrowserRuntimeCore:
         from plugins._browser import hooks
 
         self._load_restore_state()
-        preparation = hooks.prepare_playwright_cache()
+        if self.durable_profile:
+            from plugins._browser.helpers.playwright import get_playwright_binary
+            existing_binary = get_playwright_binary()
+            preparation = {"binary": str(existing_binary) if existing_binary else ""}
+        else:
+            preparation = hooks.prepare_playwright_cache()
         if preparation.get("errors") or not preparation.get("binary"):
             problem = preparation.get("errors") or "missing binary"
             raise RuntimeError(f"Browser setup failed: {problem}")
         from patchright.async_api import async_playwright
 
-        if not self.durable:
+        self._closing = False
+        if not self.durable or self.durable_profile:
             self.profile_dir.parent.mkdir(parents=True, exist_ok=True)
-            self._adopt_legacy_profile(self.current_context_id)
+            if not self.durable:
+                self._adopt_legacy_profile(self.current_context_id)
             self.profile_dir.mkdir(parents=True, exist_ok=True)
             self._prepare_download_preferences()
             self._release_orphaned_profile_singleton()
         self.downloads_dir.mkdir(parents=True, exist_ok=True)
-        browser_config = get_browser_config()
+        browser_config = self._durable_config if self._durable_config is not None else get_browser_config()
+        if self.durable_profile:
+            from plugins._browser.helpers.profile_checkpoint import package_extensions
+            browser_config = dict(browser_config, extension_paths=package_extensions(self.durable_root, browser_config))
         launch_config = build_browser_launch_config(browser_config)
         browser_binary = Path(preparation["binary"])
         browser_display = self.interactive_view.ensure_display()
         launch_args = list(launch_config["args"])
+        if self.durable_profile:
+            launch_args.extend(["--password-store=basic", "--use-mock-keychain"])
         if not self._restore_state_exists:
             launch_args.append("--restore-last-session")
         if browser_display:
@@ -1182,15 +1211,23 @@ class _BrowserRuntimeCore:
             )
 
         self.playwright = await async_playwright().start()
+        if self.durable_profile:
+            (self.durable_root / "transfers").mkdir(mode=0o700, exist_ok=True)
         launch_kwargs: dict[str, Any] = {
             "user_data_dir": str(self.profile_dir),
             "headless": not bool(browser_display),
             "accept_downloads": True,
-            "downloads_path": str(self.downloads_dir),
+            "downloads_path": str(self.durable_root / "transfers" if self.durable_profile else self.downloads_dir),
             "args": launch_args,
         }
+        if self.durable_profile:
+            launch_kwargs["env"] = {key: value for key, value in os.environ.items()
+                                     if key in {"PATH", "HOME", "LANG", "LC_ALL", "LD_LIBRARY_PATH", "XAUTHORITY"}}
         if browser_display:
-            launch_kwargs["env"] = {**os.environ, "DISPLAY": browser_display}
+            if self.durable_profile:
+                launch_kwargs["env"]["DISPLAY"] = browser_display
+            else:
+                launch_kwargs["env"] = {**os.environ, "DISPLAY": browser_display}
             launch_kwargs["no_viewport"] = True
         else:
             launch_kwargs.update(
@@ -1205,7 +1242,7 @@ class _BrowserRuntimeCore:
         if launch_config["proxy"]:
             launch_kwargs["proxy"] = launch_config["proxy"]
         try:
-            if self.durable:
+            if self.durable and not self.durable_profile:
                 # Never import a shared sign-in profile into a durable chat.
                 launch_kwargs.pop("user_data_dir", None)
                 context_kwargs = {key: launch_kwargs.pop(key) for key in
@@ -1230,11 +1267,12 @@ class _BrowserRuntimeCore:
             self._durable_started = True
         self.context.set_default_timeout(30000)
         self.context.set_default_navigation_timeout(30000)
-        self.context.on("close", self._on_context_closed)
+        started_context = self.context
+        self.context.on("close", lambda: self._on_context_closed(started_context))
         self.context.on("page", self._on_new_page_sync)
 
         existing_pages = list(self.context.pages)
-        if existing_pages:
+        if existing_pages and not self.durable_profile:
             session = await self.context.new_cdp_session(existing_pages[0])
             try:
                 # Honor the folder and save-dialog preference from Chromium's settings.
@@ -1268,9 +1306,12 @@ class _BrowserRuntimeCore:
         path = self.profile_dir / "Default" / "Preferences"
         preferences = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
         downloads = preferences.setdefault("download", {})
-        if downloads.get("default_directory"):
+        if downloads.get("default_directory") and not self.durable_profile:
             return
         downloads["default_directory"] = str(self.downloads_dir)
+        if self.durable_profile:
+            preferences.setdefault("session", {})["restore_on_startup"] = 5
+            preferences["session"].pop("startup_urls", None)
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(".a0.tmp")
         temporary.write_text(json.dumps(preferences), encoding="utf-8")
@@ -2816,34 +2857,46 @@ class _BrowserRuntimeCore:
             page = self.pages[browser_id].page
             # Unsupported URLs hold snapshot publication; they are never reopened.
             url = safe_url(str(page.url))
-            session = await page.evaluate("() => Object.fromEntries(Object.entries(sessionStorage))") if url != "about:blank" else {}
+            session = await page.evaluate("() => Object.fromEntries(Object.entries(sessionStorage))", isolated_context=False) if url != "about:blank" else {}
             tabs.append({"id": browser_id, "url": url, "session_storage": session,
                          "active": browser_id == self.last_interacted_browser_id})
         return {"schema": 1, "storage": await self.context.storage_state(), "tabs": tabs}
 
-    async def durable_restore(self, snapshot: dict[str, Any]) -> None:
+    async def durable_restore(self, snapshot: dict[str, Any], *, preserve_ids: bool = False) -> None:
         if not self.durable or self.context is not None or snapshot.get("schema") != 1:
             raise ValueError("Browser restore requires a fresh isolated runtime")
         from helpers.durable.sessions import safe_url
         tabs = snapshot.get("tabs", [])
         for tab in tabs:
             safe_url(tab["url"])
-        self._durable_storage_state = snapshot.get("storage")
+        self._durable_storage_state = None if self.durable_profile else snapshot.get("storage")
         await self.ensure_started()
+        if self.durable_profile:
+            await self.context.add_cookies(snapshot.get("storage", {}).get("cookies", []))
         # Every restored page has a fresh tab identity as well as fresh DOM refs.
         # Navigation/popups cannot collide with any saved tab ID.
         self.next_browser_id = max((int(tab["id"]) for tab in tabs), default=0) + 1
+        self._durable_restoring = True
         for tab in tabs:
-            page = await self.context.new_page()
+            if preserve_ids:
+                self.next_browser_id = int(tab["id"])
+            page = self._bootstrap_page
+            self._bootstrap_page = None
+            if not page or page.is_closed():
+                page = await self.context.new_page()
             # Origin-bound data is installed before document scripts execute.
             from urllib.parse import urlsplit
             url = safe_url(tab["url"])
             origin = urlsplit(url)
             origin = origin.scheme + "://" + origin.netloc
-            state = json.dumps(json.dumps({"origin": origin, "values": tab.get("session_storage", {})}))
+            locals_for_origin = {} if snapshot.get("profile_backed") else next((
+                dict((item["name"], item["value"]) for item in stored.get("localStorage", []))
+                for stored in snapshot.get("storage", {}).get("origins", []) if stored["origin"] == origin), {})
+            state = json.dumps(json.dumps({"origin": origin, "values": tab.get("session_storage", {}), "local": locals_for_origin}))
             cdp = await self.context.new_cdp_session(page)
+            await cdp.send("Page.enable")
             script = await cdp.send("Page.addScriptToEvaluateOnNewDocument", {"source":
-                "(() => { const saved = JSON.parse(" + state + "); if(location.origin === saved.origin) { for(const [key,value] of Object.entries(saved.values)) sessionStorage.setItem(key,value); } })()"})
+                "(() => { const saved = JSON.parse(" + state + "); if(location.origin === saved.origin) { for(const [key,value] of Object.entries(saved.values)) sessionStorage.setItem(key,value); for(const [key,value] of Object.entries(saved.local)) localStorage.setItem(key,value); } })()"})
             browser_page = await self._register_page(page, self.current_context_id)
             try:
                 await self._goto(page, url, wait_until="domcontentloaded")
@@ -2852,6 +2905,38 @@ class _BrowserRuntimeCore:
                 await cdp.detach()
             if tab.get("active"):
                 self.last_interacted_browser_id = browser_page.id
+        self._durable_restoring = False
+        self.next_browser_id = max(self.pages, default=0) + 1
+
+    async def durable_profile_checkpoint(self):
+        if not self.durable_profile:
+            raise ValueError("A persistent private profile is required")
+        snapshot = await self.durable_snapshot()
+        snapshot["profile_backed"] = True
+        if self._durable_downloads:
+            await asyncio.wait_for(asyncio.gather(*self._durable_downloads), timeout=60)
+            self._durable_downloads.clear()
+        # Disable network before closing: unload/background workers cannot create
+        # another external request while SQLite/LevelDB is being flushed.
+        await self.context.set_offline(True)
+        for browser_page in list(self.pages.values()):
+            session = await self.context.new_cdp_session(browser_page.page)
+            try:
+                await session.send("ServiceWorker.enable")
+                await session.send("ServiceWorker.stopAllWorkers")
+                await session.send("Page.setWebLifecycleState", {"state": "frozen"})
+            finally:
+                await session.detach()
+        snapshot["storage"] = await self.context.storage_state()
+        await self.close()
+        from plugins._browser.helpers.profile_checkpoint import relocate_downloads
+        await asyncio.to_thread(relocate_downloads, self.durable_root, self._durable_completed_downloads)
+        self._durable_completed_downloads.clear()
+        self._durable_started = False
+        return {"snapshot": snapshot, "root": str(self.durable_root)}
+
+    async def durable_profile_resume(self, snapshot):
+        await self.durable_restore(snapshot, preserve_ids=True)
 
     async def close(self, delete_profile: bool = False) -> None:
         if delete_profile and not self.durable:
@@ -2882,6 +2967,7 @@ class _BrowserRuntimeCore:
             except Exception as exc:
                 PrintStyle.warning(f"Browser context close failed: {exc}")
             self.context = None
+        self._bootstrap_page = None
         if self._durable_browser:
             try:
                 await self._durable_browser.close()
@@ -2898,7 +2984,9 @@ class _BrowserRuntimeCore:
         if delete_profile and not self.durable:
             shutil.rmtree(self.profile_dir, ignore_errors=True)
 
-    def _on_context_closed(self) -> None:
+    def _on_context_closed(self, closed_context=None) -> None:
+        if closed_context is not None and closed_context is not self.context:
+            return
         if self._closing or self.context is None:
             return
         PrintStyle.warning("Browser context closed unexpectedly; will restart on next use.")
@@ -3031,6 +3119,22 @@ class _BrowserRuntimeCore:
                 return
 
         page.on("framenavigated", on_navigated)
+        if self.durable_profile:
+            def on_download(download):
+                async def save():
+                    from helpers.durable.resources import safe_name
+                    target = self.downloads_dir / safe_name(download.suggested_filename)
+                    if target.exists():
+                        target = target.with_name(target.stem + "-" + uuid.uuid4().hex[:12] + target.suffix)
+                    staging = self.downloads_dir / (".download-" + uuid.uuid4().hex)
+                    await download.save_as(str(staging))
+                    source = await download.path()
+                    os.replace(staging, target)
+                    self._durable_completed_downloads.append({"source": str(source), "name": target.name})
+                task = asyncio.create_task(save())
+                self._durable_downloads.add(task)
+                # Retain failures until checkpoint instead of silently losing them.
+            page.on("download", on_download)
         return browser_page
 
     async def _register_page(
@@ -3126,6 +3230,8 @@ class _BrowserRuntimeCore:
         self._persist_browser_tabs()
 
     def _on_new_page_sync(self, page: Any) -> None:
+        if self._durable_restoring:
+            return
         if self._closing or self.context is None:
             return
         try:

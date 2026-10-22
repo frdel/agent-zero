@@ -5,6 +5,10 @@ from plugins._code_execution.tools.code_execution_tool import CodeExecution
 class Input(Tool):
 
     async def execute(self, keyboard="", **kwargs):
+        from helpers.durable.runtime import current
+        if current(self.agent):
+            from helpers.durable.execution import reconcile
+            return await reconcile(self, dict(self.args, keyboard=keyboard))
         # normalize keyboard input
         keyboard = keyboard.rstrip()
         # keyboard += "\n" # no need to, code_exec does that

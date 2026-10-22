@@ -6,6 +6,14 @@ Provide persistent vector-based memory and knowledge retrieval for Agent Zero.
 
 This plugin stores memories and knowledge embeddings in a FAISS-backed vector database, exposes tools for saving and recalling memories, and provides APIs and UI support for browsing, importing, updating, and deleting memory entries.
 
+With PostgreSQL durability enabled, encrypted typed documents and vectors are the
+shared authority. Workers reconstruct FAISS without another embedding request.
+The first scope access imports an existing local index if present; joined workers
+reuse the shared index. Atomic revision checks prevent stale writers from
+overwriting newer memories, and a known write receipt can recover a lost response.
+Snapshots are bounded to 8 MiB and 10,000 documents. Persistent memory keeps its
+normal scope and deletion policy independently of chat removal.
+
 ## Main Behavior
 
 - **Persistent vector store**
