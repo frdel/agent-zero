@@ -86,6 +86,25 @@ def _patch_sample(target: Path, method: str) -> None:
         apply_exact_replace_file(str(target), "before", "after")
 
 
+@pytest.mark.parametrize(
+    "original",
+    ["alpha\nbeta", "alpha\nbeta\n"],
+    ids=["unterminated", "terminated"],
+)
+def test_line_patch_appends_after_last_line_without_merging(
+    tmp_path: Path, original: str
+) -> None:
+    target = tmp_path / "sample.txt"
+    target.write_text(original, encoding="utf-8")
+    edits, err = file_ops.validate_edits([{"from": 3, "content": "gamma\n"}])
+    assert err == ""
+
+    total = file_ops.apply_patch(str(target), edits)
+
+    assert target.read_text(encoding="utf-8") == "alpha\nbeta\ngamma\n"
+    assert total == 3
+
+
 def test_context_patch_chains_after_line_shift(tmp_path: Path) -> None:
     target = tmp_path / "sample.txt"
     target.write_text("alpha\nbeta\ngamma\n", encoding="utf-8")

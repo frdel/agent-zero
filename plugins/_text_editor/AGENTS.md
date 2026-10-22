@@ -21,6 +21,7 @@
 - The remote editor reuses shipped patch and log helpers even when this plugin is disabled; activation still controls local tool discovery and custom WebUI rendering. Removing bundled helper files is not a supported independent-plugin configuration.
 - Preserve stale-read protection before patch operations.
 - Validate patch structures before applying edits.
+- Line-edit inserts past the last line start on a new line, even when the file has no trailing newline.
 - All three local patch methods preserve the existing file's mode and, when running as root, its UID/GID before atomic replacement. Metadata failures leave the original file intact. New-file ownership follows the executing process; patching does not repair already-root-owned workspaces.
 - Read back changed regions after writes or patches where the tool contract requires confirmation.
 - Include the active agent context id in write/patch result metadata when available so canvas consumers can open the changed file in the correct chat context.
