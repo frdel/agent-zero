@@ -27,3 +27,11 @@ For streamed chat calls, the transport requests LiteLLM's terminal usage
 event and the plugin drains it after Agent Zero has accepted the response.
 Price remains hidden when LiteLLM does not report a cost or map the selected
 model.
+
+Each finished model call also shows its output speed, such as `48.2 tok/s`, on
+its generation step and in the popover. It counts the provider's output tokens
+after the first one over the streaming time, so time to first token is not
+included. When a model reasons without streaming it, as most hosted reasoning
+models do, only the answer tokens and their streaming time count. Calls that
+stream for less than one second and paused calls show no speed. Hiding the Context Window
+control in Interface settings hides the step labels too.

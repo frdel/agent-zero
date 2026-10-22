@@ -2,7 +2,7 @@
   import { store } from "/plugins/_context_window/webui/context-window-store.js";
 </script>
 
-<div x-data>
+<div x-data x-effect="$store.contextWindow?.applyOutputSpeedVisibility()">
   <template x-if="$store.contextWindow && $store.preferences.isUiControlVisible('contextWindowUsage')">
     <div class="context-window-anchor"
          x-create="$store.contextWindow.onMount($watch)"
@@ -73,6 +73,12 @@
               <div class="context-window-provider-row">
                 <span>Tokens In/Out</span>
                 <span class="context-window-value" x-text="$store.contextWindow.usage.provider.tokens"></span>
+              </div>
+            </template>
+            <template x-if="$store.contextWindow.usage.provider.speed">
+              <div class="context-window-provider-row">
+                <span>Output speed</span>
+                <span class="context-window-value" x-text="$store.contextWindow.usage.provider.speed"></span>
               </div>
             </template>
           </div>

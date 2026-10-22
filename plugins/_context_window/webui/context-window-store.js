@@ -46,11 +46,17 @@ function formatCost(value, currency = "USD") {
   return value > 0 && value < 0.001 ? `<${formatter.format(0.001)}` : formatter.format(value);
 }
 
+function formatOutputSpeed(value) {
+  if (value === null || value <= 0) return "";
+  return `${value >= 100 ? Math.round(value) : value.toFixed(1)} tok/s`;
+}
+
 function buildProviderUsage(value = {}, display = {}, priceCurrency = {}) {
   const input = optionalNumber(value, "input_tokens");
   const cached = optionalNumber(value, "cached_tokens");
   const output = optionalNumber(value, "output_tokens");
   const cost = optionalNumber(value, "cost");
+  const speed = formatOutputSpeed(optionalNumber(value, "output_tokens_per_second"));
 
   const tokenSummary = display.show_tokens === false || (input === null && output === null)
     ? ""
@@ -61,7 +67,7 @@ function buildProviderUsage(value = {}, display = {}, priceCurrency = {}) {
     : null;
   return {
     get hasData() {
-      return this.price.hasData || this.cache.hasData || Boolean(this.tokens);
+      return this.price.hasData || this.cache.hasData || Boolean(this.tokens) || Boolean(this.speed);
     },
     price: {
       hasData: cost !== null && display.show_price !== false,
@@ -76,6 +82,7 @@ function buildProviderUsage(value = {}, display = {}, priceCurrency = {}) {
       label: cachePercent === null ? "" : `${Math.round(cachePercent)}%`,
     },
     tokens: tokenSummary,
+    speed,
   };
 }
 
@@ -146,6 +153,14 @@ const model = {
   toggle() {
     this.open = !this.open;
     if (this.open) void this.refresh();
+  },
+
+  // Speed labels on process steps follow the Context Window visibility setting.
+  applyOutputSpeedVisibility() {
+    document.documentElement.classList.toggle(
+      "hide-output-speed",
+      !preferencesStore.isUiControlVisible("contextWindowUsage"),
+    );
   },
 
   async refresh(contextId = this.contextId) {

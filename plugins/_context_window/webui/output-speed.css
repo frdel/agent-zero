@@ -1,0 +1,13 @@
+.process-step-header .step-output-speed {
+  flex: none;
+  margin-left: var(--spacing-xs);
+  font-family: var(--font-family-code);
+  font-size: 0.65rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  opacity: 0.6;
+}
+
+.hide-output-speed .process-step-header .step-output-speed {
+  display: none;
+}

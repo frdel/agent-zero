@@ -1,6 +1,6 @@
 name: _context_window
 title: Context Window
-description: Shows token usage for the active chat context window.
+description: Shows token usage for the active chat context window and the output speed of each model call.
 version: 0.1.0
 settings_sections: []
 per_project_config: false
