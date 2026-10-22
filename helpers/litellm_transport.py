@@ -307,6 +307,11 @@ class LiteLLMTransport:
             try:
                 if self.policy.mode is TransportMode.CHAT_COMPLETIONS:
                     iterator = await acompletion(**self._chat_request(stream=True))
+                    if iterator is None:
+                        raise RuntimeError(
+                            "LiteLLM returned no response stream. Check whether the gateway "
+                            "rejected the request or the API key budget was exceeded."
+                        )
                     parser = ChatCompletionsStreamParser()
                     async for chunk in iterator:  # type: ignore[union-attr]
                         parsed = parser.parse(chunk)

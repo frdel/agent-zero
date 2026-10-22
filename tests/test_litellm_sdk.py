@@ -203,6 +203,22 @@ async def test_sdk_responses_fallback_over_http(provider):
     assert transport.last_result.mode == "chat_completions"
 
 
+@pytest.mark.asyncio
+async def test_sdk_budget_error_survives_chat_stream_over_http(provider):
+    provider.replies.append((400, {"error": {
+        "message": "Budget has been exceeded!", "type": "budget_exceeded", "code": "400",
+    }}))
+    transport = LiteLLMTransport(
+        model="openai/gpt-4o", messages=[{"role": "user", "content": "Hello"}],
+        kwargs={**provider.kwargs, "a0_api_mode": "chat_completions"},
+    )
+    with pytest.raises(Exception, match="Budget has been exceeded!") as error:
+        async for _ in transport.astream():
+            pass
+    assert error.value.status_code == 400
+    assert [path for _, path, _ in provider.requests] == ["/v1/chat/completions"]
+
+
 def test_sdk_embedding_batch_over_http(provider):
     provider.replies.append((200, {"object": "list", "model": "text-embedding-3-small",
         "data": [{"object": "embedding", "index": i, "embedding": vector}

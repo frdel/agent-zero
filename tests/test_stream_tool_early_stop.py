@@ -442,6 +442,22 @@ async def test_chat_completions_default_uses_acompletion(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_missing_chat_stream_reports_possible_budget_exhaustion(monkeypatch):
+    async def fake_acompletion(**kwargs):
+        assert kwargs["stream"] is True
+        return None
+
+    monkeypatch.setattr(litellm_transport, "acompletion", fake_acompletion)
+    transport = litellm_transport.LiteLLMTransport(
+        model="openai/test", messages=[{"role": "user", "content": "Hello"}], kwargs={},
+    )
+
+    with pytest.raises(RuntimeError, match="API key budget was exceeded"):
+        async for _ in transport.astream():
+            pass
+
+
+@pytest.mark.asyncio
 async def test_unified_turn_stops_chat_stream_after_text_tool_request(monkeypatch):
     message = (
         '{"thoughts":["test"],"actions":['
