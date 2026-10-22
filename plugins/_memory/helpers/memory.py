@@ -67,6 +67,10 @@ class Memory:
 
     @staticmethod
     async def get(agent: Agent):
+        from plugins._memory.helpers import durable_memory
+        shared = await durable_memory.get(agent)
+        if shared is not None:
+            return shared
         memory_subdir = get_agent_memory_subdir(agent)
         if Memory.index.get(memory_subdir) is None:
             log_item = agent.context.log.log(
@@ -99,6 +103,10 @@ class Memory:
         log_item: LogItem | None = None,
         preload_knowledge: bool = True,
     ):
+        from plugins._memory.helpers import durable_memory
+        shared = await durable_memory.get(scope=memory_subdir, preload_knowledge=preload_knowledge)
+        if shared is not None:
+            return shared
         if not Memory.index.get(memory_subdir):
             import initialize
 
@@ -124,6 +132,10 @@ class Memory:
 
     @staticmethod
     async def reload(agent: Agent):
+        from plugins._memory.helpers import durable_memory
+        shared = await durable_memory.get(agent, force_knowledge=True)
+        if shared is not None:
+            return shared
         memory_subdir = get_agent_memory_subdir(agent)
         if Memory.index.get(memory_subdir):
             del Memory.index[memory_subdir]
@@ -257,8 +269,11 @@ class Memory:
         self.memory_subdir = memory_subdir
 
     async def preload_knowledge(
-        self, log_item: LogItem | None, kn_dirs: list[str], memory_subdir: str
+        self, log_item: LogItem | None, kn_dirs: list[str], memory_subdir: str, *, force_knowledge=False
     ):
+        if getattr(self, "_durable_memory", None):
+            from plugins._memory.helpers.durable_memory import preload
+            return await preload(self, log_item, kn_dirs, force_knowledge=force_knowledge)
         if log_item:
             log_item.update(heading="Preloading knowledge...")
 
@@ -348,6 +363,8 @@ class Memory:
         filter: str = "",
         embedding: list[float] | None = None,
     ):
+        if getattr(self, "_durable_memory", None) and not self.db.index.ntotal:
+            return []
         comparator = Memory._get_comparator(filter) if filter else None
 
         if embedding is not None:
@@ -483,7 +500,13 @@ class Memory:
                 if not doc.metadata.get("area", ""):
                     doc.metadata["area"] = Memory.Area.MAIN.value
 
-            await self.db.aadd_documents(documents=docs, ids=ids)
+            if getattr(self, "_durable_memory", None) and not self.db.index.d:
+                vectors = await self.db.embedding_function.aembed_documents([doc.page_content for doc in docs])
+                self.db.index = faiss.IndexFlatIP(len(vectors[0]))
+                self.db.add_embeddings([(doc.page_content, vector) for doc, vector in zip(docs, vectors)],
+                                       metadatas=[doc.metadata for doc in docs], ids=ids)
+            else:
+                await self.db.aadd_documents(documents=docs, ids=ids)
             self._save_db()  # persist
         return ids
 
@@ -495,6 +518,9 @@ class Memory:
         return ins
 
     def _save_db(self):
+        if getattr(self, "_durable_memory", None):
+            from plugins._memory.helpers.durable_memory import save
+            return save(self)
         Memory._save_db_file(self.db, self.memory_subdir)
 
     def _generate_doc_id(self):
@@ -724,6 +750,11 @@ def get_existing_memory_subdirs() -> list[str]:
 
         # Get subdirectories from memory folder
         subdirs = files.get_subdirectories("usr/memory")
+        from helpers.durable.runtime import service
+        owner = service()
+        if owner and getattr(owner, "distributed", False):
+            from plugins._memory.helpers.durable_memory import scopes
+            subdirs = sorted(set(subdirs) | set(scopes(owner)))
 
         project_subdirs = files.get_subdirectories(get_projects_parent_folder())
         for project_subdir in project_subdirs:

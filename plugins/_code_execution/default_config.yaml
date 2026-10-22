@@ -10,6 +10,13 @@ ssh_user: root
 # ssh_pass: uses root_password from RFC exchange when empty
 ssh_pass: ""
 
+# Durable SSH jobs require a verified server key. Empty uses system known_hosts.
+durability_ssh_known_hosts: ""
+
+# Shared PostgreSQL sessions use a detached interactive PTY broker. Existing
+# batch receipts retain their original protocol; false selects new batch jobs.
+durability_interactive: true
+
 # Timeouts for python/nodejs/terminal runtimes (seconds)
 code_exec_first_output_timeout: 30
 code_exec_between_output_timeout: 15

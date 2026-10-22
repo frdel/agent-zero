@@ -14,6 +14,11 @@ class ParallelTool(Tool):
             text,
             **(response.additional or {}),
         )
+        from helpers.durable.runtime import current
+        if current(self.agent):
+            from helpers.durable.workflows import collect
+            await collect(self)
+            return
         await parallel_tools.collect_parallel_jobs(
             self.agent,
             getattr(self, "_collect_job_ids", []),
@@ -23,6 +28,13 @@ class ParallelTool(Tool):
     async def execute(self, **kwargs) -> Response:
         self._collect_job_ids = []
         args = {**self.args, **kwargs}
+        from helpers.durable.runtime import current
+        if current(self.agent):
+            from helpers.durable.workflows import execute_parallel
+            try:
+                return await execute_parallel(self, args)
+            except ValueError as exc:
+                return Response(message=f"Error: {exc}", break_loop=False)
         action = str(args.get("action") or "").strip().lower()
 
         try:

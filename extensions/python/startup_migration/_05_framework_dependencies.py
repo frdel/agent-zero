@@ -14,7 +14,7 @@ from helpers.print_style import PrintStyle
 _REQUIREMENTS_FILE = Path(files.get_abs_path("requirements.txt"))
 _PACKAGES = {
     "litellm", "openai", "python-dotenv", "aiohttp", "anyio", "urllib3",
-    "filelock", "fsspec", "multidict",
+    "filelock", "fsspec", "multidict", "psycopg",
 }
 
 
@@ -64,4 +64,11 @@ def _outdated(requirements: list[Requirement]) -> list[str]:
             installed = None
         if installed is None or installed not in requirement.specifier:
             outdated.append(str(requirement))
+        elif requirement.name == "psycopg" and "binary" in requirement.extras:
+            try:
+                binary = importlib.metadata.version("psycopg-binary")
+            except importlib.metadata.PackageNotFoundError:
+                binary = None
+            if binary is None or binary not in requirement.specifier:
+                outdated.append(str(requirement))
     return outdated

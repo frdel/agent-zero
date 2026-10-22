@@ -238,12 +238,16 @@ class AgentContext:
 
     @extension.extensible
     def kill_process(self):
+        from helpers.durable.runtime import control
+        control(self.id, "cancel")
         if self.task:
             self.task.kill()
 
     @extension.extensible
     def reset(self):
         self.kill_process()
+        from helpers.durable.runtime import control
+        control(self.id, "reset")
         self.log.reset()
         self.agent0 = Agent(0, self.config, self)
         self.streaming_agent = None
@@ -267,6 +271,12 @@ class AgentContext:
 
     @extension.extensible
     def communicate(self, msg: "UserMessage", broadcast_level: int = 1):
+        from helpers.durable.runtime import guard_context
+        owner = guard_context(self)
+        if owner:
+            task = owner.communicate(self, msg, broadcast_level)
+            if task is not None:
+                return task
         self.paused = False  # unpause if paused
 
         current_agent = self.get_agent()
@@ -394,6 +404,13 @@ class Agent:
 
     @extension.extensible
     async def monologue(self):
+        from helpers.durable.runtime import current, service
+        durable = current(self)
+        if durable:
+            return await durable.monologue()
+        owner = service()
+        if owner and owner.enabled:
+            raise RuntimeError("This workflow requires a local durability admission adapter")
         while True:
             try:
                 # loop data dictionary to pass to extensions
@@ -411,112 +428,8 @@ class Agent:
                     self.context.streaming_agent = self  # mark self as current streamer
                     self.loop_data.iteration += 1
                     self.loop_data.params_temporary = {}  # clear temporary params
-                    last_response_stream_full = ""
-                    last_response_stream_chars = 0
-                    last_response_stream_at = time.monotonic()
-                    response_stream_pending = False
-
-                    # call message_loop_start extensions
-                    await extension.call_extensions_async(
-                        "message_loop_start", self, loop_data=self.loop_data
-                    )
-                    await self.handle_intervention()
-
                     try:
-                        # prepare LLM chain (model, system, history)
-                        prompt = await self.prepare_prompt(loop_data=self.loop_data)
-
-                        # call before_main_llm_call extensions
-                        await extension.call_extensions_async(
-                            "before_main_llm_call", self, loop_data=self.loop_data
-                        )
-                        await self.handle_intervention()
-
-
-                        async def reasoning_callback(chunk: str, full: str):
-                            await self.handle_intervention()
-                            if chunk == full:
-                                printer.print("Reasoning: ")  # start of reasoning
-                            # Pass chunk and full data to extensions for processing
-                            stream_data = {"chunk": chunk, "full": full}
-                            await extension.call_extensions_async(
-                                "reasoning_stream_chunk",
-                                self,
-                                loop_data=self.loop_data,
-                                stream_data=stream_data,
-                            )
-                            # Stream masked chunk after extensions processed it
-                            if stream_data.get("chunk"):
-                                printer.stream(stream_data["chunk"])
-                            # Use the potentially modified full text for downstream processing
-                            await self.handle_reasoning_stream(stream_data["full"])
-
-                        async def stream_callback(chunk: str, full: str):
-                            nonlocal last_response_stream_full, last_response_stream_chars
-                            nonlocal last_response_stream_at, response_stream_pending
-                            await self.handle_intervention()
-                            # output the agent response stream
-                            if chunk == full:
-                                printer.print("Response: ")  # start of response
-                            # Pass chunk and full data to extensions for processing
-                            stream_data = {"chunk": chunk, "full": full}
-                            await extension.call_extensions_async(
-                                "response_stream_chunk",
-                                self,
-                                loop_data=self.loop_data,
-                                stream_data=stream_data,
-                            )
-                            tool_request = extract_tools.extract_tool_request(full)
-                            if tool_request is not None:
-                                try:
-                                    await self.validate_tool_request(tool_request)
-                                except Exception:
-                                    pass
-                                else:
-                                    await self.handle_response_stream(stream_data["full"])
-                                    response_stream_pending = False
-                                    return full.strip()
-
-                            # Stream masked chunk after extensions processed it
-                            if stream_data.get("chunk"):
-                                printer.stream(stream_data["chunk"])
-                            last_response_stream_full = stream_data["full"]
-                            response_stream_pending = True
-                            now = time.monotonic()
-                            if (
-                                len(full) - last_response_stream_chars
-                                >= _RESPONSE_STREAM_UPDATE_CHARS
-                                or now - last_response_stream_at
-                                >= _RESPONSE_STREAM_UPDATE_SECONDS
-                            ):
-                                await self.handle_response_stream(last_response_stream_full)
-                                last_response_stream_chars = len(full)
-                                last_response_stream_at = time.monotonic()
-                                response_stream_pending = False
-
-                        # call main LLM
-                        llm_result = await self.call_chat_model_turn(
-                            messages=prompt,
-                            response_callback=stream_callback,
-                            reasoning_callback=reasoning_callback,
-                        )
-                        agent_response = llm_result.response
-                        await self.handle_intervention(agent_response)
-
-                        if response_stream_pending:
-                            await self.handle_response_stream(last_response_stream_full)
-
-                        # Notify extensions to finalize their stream filters
-                        await extension.call_extensions_async(
-                            "reasoning_stream_end", self, loop_data=self.loop_data
-                        )
-                        await self.handle_intervention(agent_response)
-
-                        await extension.call_extensions_async(
-                            "response_stream_end", self, loop_data=self.loop_data
-                        )
-
-                        await self.handle_intervention(agent_response)
+                        llm_result = await self._call_model_with_stream()
 
                         result_data = {"llm_result": llm_result}
                         await extension.call_extensions_async(
@@ -562,6 +475,116 @@ class Agent:
                     await extension.call_extensions_async(
                         "monologue_end", self, loop_data=self.loop_data
                     )  # type: ignore
+
+    async def _call_model_with_stream(self):
+        printer = PrintStyle(italic=True, font_color="#b3ffd9", padding=False)
+        last_response_stream_full = ""
+        last_response_stream_chars = 0
+        last_response_stream_at = time.monotonic()
+        response_stream_pending = False
+
+        # call message_loop_start extensions
+        await extension.call_extensions_async(
+            "message_loop_start", self, loop_data=self.loop_data
+        )
+        await self.handle_intervention()
+
+        # prepare LLM chain (model, system, history)
+        prompt = await self.prepare_prompt(loop_data=self.loop_data)
+
+        # call before_main_llm_call extensions
+        await extension.call_extensions_async(
+            "before_main_llm_call", self, loop_data=self.loop_data
+        )
+        await self.handle_intervention()
+
+
+        async def reasoning_callback(chunk: str, full: str):
+            await self.handle_intervention()
+            if chunk == full:
+                printer.print("Reasoning: ")  # start of reasoning
+            # Pass chunk and full data to extensions for processing
+            stream_data = {"chunk": chunk, "full": full}
+            await extension.call_extensions_async(
+                "reasoning_stream_chunk",
+                self,
+                loop_data=self.loop_data,
+                stream_data=stream_data,
+            )
+            # Stream masked chunk after extensions processed it
+            if stream_data.get("chunk"):
+                printer.stream(stream_data["chunk"])
+            # Use the potentially modified full text for downstream processing
+            await self.handle_reasoning_stream(stream_data["full"])
+
+        async def stream_callback(chunk: str, full: str):
+            nonlocal last_response_stream_full, last_response_stream_chars
+            nonlocal last_response_stream_at, response_stream_pending
+            await self.handle_intervention()
+            # output the agent response stream
+            if chunk == full:
+                printer.print("Response: ")  # start of response
+            # Pass chunk and full data to extensions for processing
+            stream_data = {"chunk": chunk, "full": full}
+            await extension.call_extensions_async(
+                "response_stream_chunk",
+                self,
+                loop_data=self.loop_data,
+                stream_data=stream_data,
+            )
+            tool_request = extract_tools.extract_tool_request(full)
+            if tool_request is not None:
+                try:
+                    await self.validate_tool_request(tool_request)
+                except Exception:
+                    pass
+                else:
+                    await self.handle_response_stream(stream_data["full"])
+                    response_stream_pending = False
+                    return full.strip()
+
+            # Stream masked chunk after extensions processed it
+            if stream_data.get("chunk"):
+                printer.stream(stream_data["chunk"])
+            last_response_stream_full = stream_data["full"]
+            response_stream_pending = True
+            now = time.monotonic()
+            if (
+                len(full) - last_response_stream_chars
+                >= _RESPONSE_STREAM_UPDATE_CHARS
+                or now - last_response_stream_at
+                >= _RESPONSE_STREAM_UPDATE_SECONDS
+            ):
+                await self.handle_response_stream(last_response_stream_full)
+                last_response_stream_chars = len(full)
+                last_response_stream_at = time.monotonic()
+                response_stream_pending = False
+
+        # call main LLM
+        llm_result = await self.call_chat_model_turn(
+            messages=prompt,
+            response_callback=stream_callback,
+            reasoning_callback=reasoning_callback,
+        )
+        agent_response = llm_result.response
+        await self.handle_intervention(agent_response)
+
+        if response_stream_pending:
+            await self.handle_response_stream(last_response_stream_full)
+
+        # Notify extensions to finalize their stream filters
+        await extension.call_extensions_async(
+            "reasoning_stream_end", self, loop_data=self.loop_data
+        )
+        await self.handle_intervention(agent_response)
+
+        await extension.call_extensions_async(
+            "response_stream_end", self, loop_data=self.loop_data
+        )
+
+        await self.handle_intervention(agent_response)
+
+        return llm_result
 
     @extension.extensible
     async def prepare_prompt(self, loop_data: LoopData) -> list[BaseMessage]:
@@ -998,6 +1021,18 @@ class Agent:
             if call_data.get(key) is not None:
                 turn_kwargs[key] = call_data.get(key)
 
+        from helpers.durable.runtime import current
+        durable = current(self)
+        durable_call_id = None
+        if durable:
+            turn_kwargs["a0_retry_attempts"] = 0
+            durable_call_id = await durable.model_intent(
+                call_data["model"], call_data["messages"], turn_kwargs,
+                explicit_caching=call_data["explicit_caching"], background=call_data["background"],
+                stream_response=call_data["response_callback"] is not None,
+                stream_reasoning=call_data["reasoning_callback"] is not None,
+            )
+
         llm_result = await call_data["model"].unified_turn(
             messages=call_data["messages"],
             reasoning_callback=call_data["reasoning_callback"],
@@ -1008,6 +1043,9 @@ class Agent:
             explicit_caching=call_data["explicit_caching"],
             **turn_kwargs,
         )
+
+        if durable:
+            await durable.model_result(durable_call_id, llm_result)
 
         downgraded = llm_result.capability.get("builtin_tool_downgrades")
         if downgraded:
@@ -1096,6 +1134,11 @@ class Agent:
     @extension.extensible
     async def handle_intervention(self, progress: str = ""):
         await self.wait_if_paused()
+        from helpers.durable.runtime import current
+        if current(self):
+            # Durable turns consume queued input at the next committed iteration
+            # boundary. Interrupting a provider/tool here loses its real outcome.
+            return
         if (
             self.intervention
         ):  # if there is an intervention message, but not yet processed
@@ -1115,8 +1158,24 @@ class Agent:
             raise InterventionException(msg)
 
     async def wait_if_paused(self):
-        while self.context.paused:
-            await asyncio.sleep(0.1)
+        durable = None
+        if self.context.paused:
+            from helpers.durable.runtime import current
+            durable = current(self)
+            if durable:
+                with durable.owner.lock:
+                    durable.owner.executing.discard(durable.run_id)
+                    durable.owner.waiting.add(durable.run_id)
+                durable.owner.drain_recovery()
+        try:
+            while self.context.paused:
+                await asyncio.sleep(0.1)
+        finally:
+            if durable:
+                with durable.owner.lock:
+                    durable.owner.waiting.discard(durable.run_id)
+        if durable:
+            await durable.owner.acquire_slot(durable.run_id)
 
     async def process_llm_result_tools(self, llm_result: LLMResult):
         await self._log_response_builtin_items(llm_result)
@@ -1212,58 +1271,36 @@ class Agent:
             )
             return None
 
-        self.loop_data.current_tool = tool  # type: ignore
-        try:
-            await self.handle_intervention()
-
-            await tool.before_execution(**tool_args)
-            await self.handle_intervention()
-
-            await extension.call_extensions_async(
-                "tool_execute_before",
-                self,
-                tool_args=tool_args or {},
-                tool_name=tool_name,
-            )
-
-            response = await tool.execute(**tool_args)
-            await self.handle_intervention()
-
-            await extension.call_extensions_async(
-                "tool_execute_after",
-                self,
-                response=response,
-                tool_name=tool_name,
-            )
-
-            if responses_item_factory:
-                response.additional = {
-                    **(response.additional or {}),
-                    "_responses_output_item": responses_item_factory(response),
-                }
-
-            await tool.after_execution(response)
-            await self.handle_intervention()
-
-            if response.break_loop:
-                self._clear_responses_pending_state()
-                return response.message
-        finally:
-            self.loop_data.current_tool = None
+        from helpers.tool_execution import execute_tool
+        response = await execute_tool(tool, tool_args, agent=self, tool_name=tool_name,
+                                      responses_item_factory=responses_item_factory)
+        if response.break_loop:
+            self._clear_responses_pending_state()
+            return response.message
         return None
 
     async def _log_response_builtin_items(self, llm_result: LLMResult) -> None:
-        for item in llm_result.builtin_items:
+        from helpers.durable.runtime import current
+        durable = current(self)
+        for index, item in enumerate(llm_result.builtin_items):
+            identifier = None
+            if durable:
+                from helpers.durable.hosted import log_id
+                identifier = log_id(durable, index)
+                if any(log.id == identifier for log in self.context.log.logs):
+                    continue
             if item.type == "computer_call":
                 await self._handle_responses_computer_call(item.data)
                 continue
             if item.type == "mcp_approval_request":
-                self._handle_responses_mcp_approval_request(item.data)
+                if not identifier or not any(message.id == identifier for message in self.history.all_messages()):
+                    self._handle_responses_mcp_approval_request(item.data, history_id=identifier or "")
                 continue
             self.context.log.log(
                 type="info",
                 heading=f"Responses tool item: {item.type}",
                 content=json.dumps(item.data, ensure_ascii=False, default=str),
+                id=identifier,
             )
 
     async def _handle_responses_computer_call(self, item: dict[str, Any]) -> None:
@@ -1322,7 +1359,7 @@ class Agent:
         )
         _ = result
 
-    def _handle_responses_mcp_approval_request(self, item: dict[str, Any]) -> None:
+    def _handle_responses_mcp_approval_request(self, item: dict[str, Any], *, history_id: str = "") -> None:
         request_id = str(
             item.get("approval_request_id") or item.get("id") or item.get("call_id") or ""
         )
@@ -1339,6 +1376,7 @@ class Agent:
             "mcp_approval_request",
             message,
             responses_item=output_item,
+            id=history_id,
         )
         self.context.log.log(
             type="warning",
@@ -1490,40 +1528,10 @@ class Agent:
 
             if tool:
                 tool.args = tool_args
-                self.loop_data.current_tool = tool  # type: ignore
-                try:
-                    await self.handle_intervention()
-
-                    # Call tool hooks for compatibility
-                    await tool.before_execution(**tool_args)
-                    await self.handle_intervention()
-
-                    # Allow extensions to preprocess tool arguments
-                    await extension.call_extensions_async(
-                        "tool_execute_before",
-                        self,
-                        tool_args=tool_args or {},
-                        tool_name=tool_name,
-                    )
-
-                    response = await tool.execute(**tool_args)
-                    await self.handle_intervention()
-
-                    # Allow extensions to postprocess tool response
-                    await extension.call_extensions_async(
-                        "tool_execute_after",
-                        self,
-                        response=response,
-                        tool_name=tool_name,
-                    )
-
-                    await tool.after_execution(response)
-                    await self.handle_intervention()
-
-                    if response.break_loop:
-                        return response.message
-                finally:
-                    self.loop_data.current_tool = None
+                from helpers.tool_execution import execute_tool
+                response = await execute_tool(tool, tool_args, agent=self, tool_name=tool_name)
+                if response.break_loop:
+                    return response.message
             else:
                 error_detail = (
                     f"Tool '{raw_tool_name}' not found or could not be initialized."

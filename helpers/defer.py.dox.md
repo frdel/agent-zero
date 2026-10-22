@@ -21,6 +21,7 @@
   - `is_ready(self) -> bool`
   - `result_sync(self, timeout: Optional[float]=...) -> Any`
   - `async result(self, timeout: Optional[float]=...) -> Any`
+  - `async result_async(self, timeout: Optional[float]=...) -> Any`
   - `kill(self, terminate_thread: bool=...) -> None`
   - `kill_children(self) -> None`
   - `is_alive(self) -> bool`
@@ -33,6 +34,7 @@
 - Helper modules own reusable framework APIs and must preserve public callers unless all callers, tests, and docs are updated together.
 - `DeferredTask` retains its callable and arguments only while an invocation is active; completion and `kill()` clear those references after the running coroutine has taken its own snapshot.
 - `add_done_callback()` forwards to the current invocation's concurrent future and rejects calls before `start_task()`; callbacks observe `is_alive() == False` and must remain lightweight.
+- `result_async()` wraps the concurrent future without consuming an executor thread. Its shield keeps background work alive when a waiter times out or is cancelled; explicit `kill()` and owner controls cancel the invocation. Durable child joins use it to avoid executor exhaustion in deeply nested workflows.
 - Task results remain available after completion. `restart()` can restart an active invocation, but a completed invocation has no retained call recipe and must be started again explicitly.
 - Update this file whenever public functions, classes, persistence behavior, path/security assumptions, side effects, or cross-module contracts change.
 - Observed side-effect areas: scheduler state.

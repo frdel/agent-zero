@@ -23,6 +23,8 @@ const model = {
   loggedIn: false,
   expandedParents: {},
   deletedContextIds: {},
+  resetRequests: {},
+  removalRequests: {},
 
   // for convenience
   getSelectedChatId() {
@@ -202,11 +204,36 @@ const model = {
         await this.switchFromContext(id);
       }
 
-      // Delete the chat on the server
-      await sendJsonData("/chat_remove", { context: id });
-
-      // Show success notification
-      justToast("Chat deleted successfully", "success", 1000, "chat-removal");
+      let payload = this.removalRequests[id];
+      if (!payload) {
+        const scope = await callJsonApi("/durability", {action: "context_metadata", context: id});
+        payload = scope.shared ? {context: id, request_id: crypto.randomUUID(), run_id: scope.run_id,
+          expected_generation: scope.generation, epoch: scope.epoch, version: scope.version} : {context: id};
+        this.removalRequests[id] = payload;
+      }
+      let result = await callJsonApi("/chat_remove", payload);
+      for (let attempt = 0; result.queued && attempt < 20; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+        result = await callJsonApi("/durability", {action: "command_status", context: id,
+          run_id: payload.run_id, request_id: payload.request_id});
+        if (!["pending", "applied", "rejected"].includes(result.command?.state)) {
+          throw new Error("Chat removal receipt is unavailable. Retry to check the original request.");
+        }
+        result.queued = result.command?.state === "pending";
+      }
+      if (result.queued) {
+        const waiting = new Error("Chat removal is queued. It will finish when a compatible worker is available.");
+        waiting.removalPending = true;
+        throw waiting;
+      }
+      if (result.command?.state === "rejected") {
+        delete this.removalRequests[id];
+        throw new Error(result.command.error || "The worker rejected this removal. Refresh the chat before trying again.");
+      }
+      delete this.removalRequests[id];
+      const unresolved = result.command?.unresolved_provider_calls || 0;
+      justToast(unresolved ? `Chat removed; ${unresolved} provider request(s) had no returned identifier.` :
+        "Chat deleted successfully", unresolved ? "info" : "success", 2500, "chat-removal");
     } catch (e) {
       const deletedContextIds = { ...this.deletedContextIds };
       delete deletedContextIds[id];
@@ -220,8 +247,11 @@ const model = {
         );
       }
 
-      console.error("Error deleting chat:", e);
-      toastFetchError("Error deleting chat", e);
+      if (e.removalPending) justToast(e.message, "info", 4000, "chat-removal");
+      else {
+        console.error("Error deleting chat:", e);
+        toastFetchError("Error deleting chat", e);
+      }
     }
   },
 
@@ -249,9 +279,9 @@ const model = {
   async resetChat(ctxid = null) {
     try {
       const context = ctxid || this.selected || getContext();
-      await sendJsonData("/chat_reset", {
-        context
-      });
+      const requestId = this.resetRequests[context] || (this.resetRequests[context] = crypto.randomUUID());
+      await sendJsonData("/chat_reset", { context, request_id: requestId });
+      delete this.resetRequests[context];
 
       // Increment reset counter
       if (typeof globalThis.resetCounter === 'number') {

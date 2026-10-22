@@ -222,6 +222,11 @@ def _short_label(text: str, limit: int = 80) -> str:
 class Delegation(Tool):
 
     async def execute(self, message="", reset="", context_id="", **kwargs):
+        from helpers.durable.runtime import current
+        if current(self.agent):
+            from helpers.durable.workflows import execute_subordinate
+            return await execute_subordinate(self, {**kwargs, "message": message,
+                                                    "reset": reset, "context_id": context_id})
         attachments = kwargs.get("attachments")
         attachments = attachments if isinstance(attachments, list) else []
         subordinate = get_or_create_subordinate(

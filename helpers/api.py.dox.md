@@ -31,6 +31,9 @@
 
 ## Runtime Contracts
 
+- In shared PostgreSQL mode, `use_context` checks durable ownership before any local context lookup or creation. Existing shared chats require a currently owned live turn; remote mutation endpoints must route by explicit chat ID instead of manufacturing a local shadow. Read-only recovery/document endpoints use committed database projections without this context constructor.
+- Shared operation failures use fixed-safe JSON instead of the legacy traceback response, so database/provider exceptions cannot expose connection strings or private call values in HTTP output or error logs.
+
 - Helper modules own reusable framework APIs and must preserve public callers unless all callers, tests, and docs are updated together.
 - Update this file whenever public functions, classes, persistence behavior, path/security assumptions, side effects, or cross-module contracts change.
 - `ApiHandler` defines `process(...)`.
@@ -55,6 +58,8 @@
 - Prefer adding cohesive helper functions here only when behavior is reused across modules.
 
 ## Verification
+
+- Shared resource/workspace holds expose only their fixed payload-free capability reason with HTTP 409. Other shared failures retain the generic sanitized error; never return provider/connection exception diagnostics.
 
 - Run targeted tests for changed helper behavior; run security regressions for auth, filesystem, WebSocket, tunnel, upload, or secret-handling helpers.
 - Related tests observed by source search:

@@ -79,6 +79,10 @@ def get_projects_parent_folder():
 
 
 def get_project_folder(name: str):
+    from helpers.durable.workspaces import project_folder
+    managed = project_folder(name)
+    if managed is not None:
+        return managed
     return files.get_abs_path(get_projects_parent_folder(), name)
 
 

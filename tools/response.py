@@ -4,6 +4,8 @@ from helpers.tool import Tool, Response
 
 class ResponseTool(Tool):
 
+    replay = "safe"  # Pure response selection; no external effect.
+
     async def execute(self, **kwargs):
         for key in ("text", "message"):
             message = self.args.get(key)

@@ -16,6 +16,9 @@ class Response:
 
 class Tool:
 
+    # A safe body does not by itself certify custom lifecycle hooks for replay.
+    replay: str = "never"
+
     def __init__(self, agent: Agent, name: str, method: str | None, args: dict[str,str], message: str, loop_data: LoopData | None, **kwargs) -> None:
         self.agent = agent
         self.name = name
@@ -24,6 +27,14 @@ class Tool:
         self.loop_data = loop_data
         self.message = message
         self.progress: str = ""
+
+    @property
+    def documents(self):
+        from helpers.durable.runtime import current
+        turn = current(self.agent)
+        if turn is None or not turn.active_call_id:
+            raise RuntimeError("Transactional documents require an active durable tool body")
+        return turn.document_session(turn.active_call_id)
 
     @abstractmethod
     async def execute(self,**kwargs) -> Response:

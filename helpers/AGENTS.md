@@ -46,4 +46,6 @@
 
 ## Child DOX Index
 
-No child DOX files.
+| Child | Scope |
+| --- | --- |
+| [durable/AGENTS.md](durable/AGENTS.md) | SQLite/PostgreSQL recovery storage, session-fenced workers, durable commands, private codecs, shared payload/retention custody, scheduler/child adapters and replay audits. |

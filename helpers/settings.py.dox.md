@@ -56,6 +56,8 @@
 
 ## Runtime Contracts
 
+- `durability_backend` defaults to `off` and accepts opt-in `local` or shared `postgres` custody at framework startup. It uses the existing `A0_SET_DURABILITY_BACKEND` default-setting mechanism. PostgreSQL connection custody comes only from `A0_DURABILITY_POSTGRES_DSN` and `A0_DURABILITY_POSTGRES_NAMESPACE` (default `agent_zero`); connection strings are not UI settings and are never echoed by settings APIs. Changing the backend requires restart; unavailable storage holds durable work rather than silently switching it to legacy execution.
+
 - Settings reads use `models.get_api_key_raw()` to preserve complete key lists without advancing runtime rotation or persisting keys synthesized by runtime hooks. Masking, authentication reloads, and intentional clearing retain their existing behavior.
 - `ui_control_visibility` accepts dynamic `canvas:<surface-id>` entries as well as built-in controls, normalizes device values to booleans (default shown), and preserves choices for temporarily unavailable plugins.
 
@@ -120,3 +122,5 @@
 No child DOX files.
 
 `file_browser_max_extract_size_mb` (default100 MiB) and `file_browser_max_archive_entries` (default1000) are independently configurable positive integers without upper ceilings. They govern File Browser archive operations, not Backup & Restore.
+
+- Local durability retention defaults are `durability_retention_runs=100` and `durability_retention_days=30`, using existing `A0_SET_` resolution; saved values take precedence and apply after restart. Unresolved/workflow-protected records are exempt.

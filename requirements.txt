@@ -41,6 +41,7 @@ nest-asyncio==1.6.0
 crontab==1.0.1
 markdownify==1.1.0
 pydantic==2.11.7
+psycopg[binary]==3.3.6
 pymupdf==1.25.3
 pytesseract==0.3.13
 pdf2image==1.17.0

@@ -87,7 +87,14 @@ class Browser(Tool):
                     message="Browser evaluate failed: evaluate requires a non-empty 'script' string",
                     break_loop=False,
                 )
-            runtime = await get_runtime(self.agent.context.id, agent=self.agent)
+            turn = getattr(self.agent.context, "_durable_turn", None)
+            if turn and turn.agent is self.agent:
+                from helpers.durable import sessions
+                if not hasattr(self, "_durable_session_manager"):
+                    await sessions.prepare(self, {"action": action, "ref": ref, "calls": calls})
+                runtime = self._durable_browser_runtime
+            else:
+                runtime = await get_runtime(self.agent.context.id, agent=self.agent)
         except Exception as exc:
             return Response(message=f"Browser runtime unavailable: {exc}", break_loop=False)
 

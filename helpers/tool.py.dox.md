@@ -23,6 +23,9 @@
 
 ## Runtime Contracts
 
+- `Tool.documents` exposes an isolated per-invocation document session only during a durable call. Reads return value/revision; staged edits commit with the body result. It does not change constructors or persist arbitrary tool attributes.
+- `Tool.replay` defaults to `never`. A subclass may declare a pure body `safe`; automatic recovery also requires audited lifecycle hooks and matching recorded/current identities. This declaration alone never authorizes repeating an external effect.
+
 - Helper modules own reusable framework APIs and must preserve public callers unless all callers, tests, and docs are updated together.
 - Update this file whenever public functions, classes, persistence behavior, path/security assumptions, side effects, or cross-module contracts change.
 - `Tool` defines `execute(...)`.

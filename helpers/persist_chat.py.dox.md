@@ -23,7 +23,7 @@
 - `_convert_v080_chats()`
 - `load_json_chats(jsons: list[str])`: Load contexts from JSON strings
 - `export_json_chat(context: AgentContext)`: Export context as JSON string
-- `remove_chat(ctxid)`: Remove a chat or task context
+- `remove_chat(ctxid, *, request_id=None, run_id=None, expected_generation=None, epoch=None, version=None)`: Remove locally or queue reviewed shared maintenance
 - `remove_msg_files(ctxid)`: Remove all message files for a chat or task context
 - `mark_chat_saved(context: AgentContext) -> None`
 - `saved_chat_ids() -> set[str]`
@@ -38,6 +38,12 @@
 - Notable constants/configuration names: `CHATS_FOLDER`, `LOG_SIZE`, `CHAT_FILE_NAME`, `SAVED_CHAT_CONTEXT_DATA_KEY`.
 
 ## Runtime Contracts
+
+- Shared PostgreSQL mode publishes masked `chat:<id>` projections with CAS only from the claimed live turn (or a new pre-admission genesis). New chats also publish a conflict-checked `genesis:<id>` recovery checkpoint, allowing their first Send on another host without constructing a requester-side context. Unowned shadows never save history; startup does not import host-local `chat.json` into shared custody. Shared chat existence reads the ledger/projection rather than a host-local file.
+- Shared `remove_chat` routes explicitly bound stable requests into `helpers.durable.maintenance` and returns a queued/applied receipt. It never resets a requester shadow or touches shared provider state directly. Bare synchronous legacy callers still receive `SharedDeletionHeld` from `ensure_removal_supported` before any cancellation/deletion; they must use the reviewed queue rather than claim asynchronous completion.
+
+- Local `remove_chat` first fences the chat and currently owned descendants through the local durability coordinator. While their payloads remain available, provider cleanup collects snapshot/history state IDs and top-level normalized completed model-result IDs, including results committed before history or `chat.json`. It then deletes the ledger and snapshot projections. Collection and provider calls run outside SQL transactions; the coordinator lock prevents new admission between fencing and scrubbing.
+- Provider cleanup honors deletion opt-outs from live agent/context state, compatibility snapshots and retained checkpoints, including when no chat file exists. Unreadable recovery data skips provider cleanup conservatively while allowing local deletion. It never searches raw model metadata or call arguments for response identities. `delete_stored_response_ids(ids)` retains its existing provider lookup contract; actual failures emit a fixed warning with only a count, without response IDs or provider error text.
 
 - Helper modules own reusable framework APIs and must preserve public callers unless all callers, tests, and docs are updated together.
 - Update this file whenever public functions, classes, persistence behavior, path/security assumptions, side effects, or cross-module contracts change.
@@ -73,7 +79,10 @@
   - `tests/test_snapshot_parity.py`
   - `tests/test_subagent_profiles.py`
   - `tests/test_tool_action_contracts.py`
+  - `tests/test_durable_response_deletion.py`
 
 ## Child DOX Index
 
 No child DOX files.
+
+- Shared cleanup uses exact prepared-model provider/account descriptors and encrypted per-response plans; it honors verified opt-outs and keeps failed cleanup custody. Native protocol-3 command receipts survive shared payload deletion in sanitized form. See the maintenance DOX for claim/epoch/CAS, unknown provider-call counts and backup custody.

@@ -65,6 +65,7 @@
 
 ## Runtime Contracts
 
+- `get_project_folder` honors the execution-local `helpers.durable.workspaces.project_override` for a matching managed project. The ContextVar redirects durable workers to an isolated restored directory; ordinary requests and other projects retain the owner checkout path. Workspace capture, encrypted resource custody and claim-fenced restore belong to the durable adapter, not project settings.
 - Helper modules own reusable framework APIs and must preserve public callers unless all callers, tests, and docs are updated together.
 - `get_file_structure(...)` delegates rendering to `helpers.file_tree.file_tree`; the default `OUTPUT_MODE_STRING` keeps user-facing surfaces (project structure API) box-drawn, while the workdir EXTRAS extension passes `OUTPUT_MODE_INDENT` for the token-compact agent-facing tree.
 - Update this file whenever public functions, classes, persistence behavior, path/security assumptions, side effects, or cross-module contracts change.

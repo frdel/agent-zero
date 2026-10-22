@@ -50,8 +50,17 @@ def initialize_agent(override_settings: dict | None = None):
 def initialize_chats():
     from helpers import persist_chat
     async def initialize_chats_async():
+        from helpers.durable.runtime import initialize
+        initialize()
         persist_chat.load_tmp_chats()
     return defer.DeferredTask().start_task(initialize_chats_async)
+
+
+def initialize_recovery():
+    from helpers.durable.runtime import service
+    owner = service()
+    if owner:
+        owner.recover()
 
 @extension.extensible
 def initialize_mcp():

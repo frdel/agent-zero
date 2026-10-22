@@ -3,6 +3,7 @@ from datetime import datetime, timezone, timedelta
 import os
 import random
 import threading
+import tempfile
 from urllib.parse import urlparse
 import uuid
 from enum import Enum
@@ -20,7 +21,7 @@ from initialize import initialize_agent
 from helpers.persist_chat import save_tmp_chat
 from helpers.print_style import PrintStyle
 from helpers.defer import DeferredTask
-from helpers.files import get_abs_path, make_dirs, read_file, write_file
+from helpers.files import get_abs_path, make_dirs, read_file
 from helpers.localization import Localization
 from helpers import projects, guids, yaml
 import pytz
@@ -173,6 +174,12 @@ class BaseTask(BaseModel):
     updated_at: datetime = Field(default_factory=_now)
     last_run: datetime | None = None
     last_result: str | None = None
+    # Private execution receipts are persisted with the scheduler projection.
+    # They are intentionally omitted by serialize_task's public API projection.
+    durable_occurrence_id: str | None = None
+    durable_run_id: str | None = None
+    durable_finished_occurrence_id: str | None = None
+    durable_status: str | None = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -515,6 +522,37 @@ def _task_file_path() -> str:
     return yaml_path if not exists(json_path) and exists(yaml_path) else json_path
 
 
+def _write_task_projection(path: str, content: str) -> None:
+    """Publish one scheduler projection without exposing a truncated file."""
+    from pathlib import Path
+    if any(part.is_symlink() for part in (Path(path), *Path(path).parents)):
+        raise ValueError("Scheduler projection path must not contain a symlink")
+    directory = os.path.dirname(path)
+    os.makedirs(directory, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=".tasks-", dir=directory)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+        if os.name != "nt":
+            directory_fd = os.open(directory, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
+def _shared_scheduler_owner():
+    from helpers.durable.runtime import service
+    owner = service()
+    return owner if owner is not None and getattr(owner, "distributed", False) else None
+
+
 class SchedulerTaskList(BaseModel):
     tasks: list[Annotated[Union[ScheduledTask, AdHocTask, PlannedTask], Field(discriminator="type")]] = Field(default_factory=list)
     # Singleton instance
@@ -524,6 +562,12 @@ class SchedulerTaskList(BaseModel):
 
     @classmethod
     def get(cls) -> "SchedulerTaskList":
+        owner = _shared_scheduler_owner()
+        if owner:
+            if cls.__instance is None:
+                cls.__instance = cls(tasks=[])
+            cls.__instance._reload_shared(owner)
+            return cls.__instance
         path = _task_file_path()
         if cls.__instance is None:
             if not exists(path):
@@ -545,8 +589,20 @@ class SchedulerTaskList(BaseModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._lock = threading.RLock()
+        self._shared_version = 0
+
+    def _reload_shared(self, owner):
+        with self._lock:
+            saved = owner.sync("get_projection", "scheduler:tasks")
+            parsed = type(self).model_validate(saved["value"] if saved else {"tasks": []})
+            self.tasks = parsed.tasks
+            self._shared_version = saved["version"] if saved else 0
+        return self
 
     async def reload(self) -> "SchedulerTaskList":
+        owner = _shared_scheduler_owner()
+        if owner:
+            return self._reload_shared(owner)
         path = _task_file_path()
         if exists(path):
             with self._lock:
@@ -563,6 +619,11 @@ class SchedulerTaskList(BaseModel):
 
     async def save(self) -> "SchedulerTaskList":
         with self._lock:
+            owner = _shared_scheduler_owner()
+            if owner:
+                saved = owner.sync("put_projection", "scheduler:tasks", self.model_dump(mode="json"), self._shared_version)
+                self._shared_version = saved["version"]
+                return self
             # Debug: check for AdHocTasks with null tokens before saving
             for task in self.tasks:
                 if isinstance(task, AdHocTask):
@@ -589,7 +650,7 @@ class SchedulerTaskList(BaseModel):
                     "ERROR: Found null token in JSON output for an adhoc task"
                 )
 
-            write_file(path, yaml.from_json(json_data) if path.endswith(".yaml") else json_data)
+            _write_task_projection(path, yaml.from_json(json_data) if path.endswith(".yaml") else json_data)
 
             # Debug: Verify after saving
             if exists(path):
@@ -704,23 +765,76 @@ class TaskScheduler:
         with self._running_tasks_lock:
             self._running_deferred_tasks[task_uuid] = deferred_task
 
-    def _unregister_running_task(self, task_uuid: str) -> None:
+    def _unregister_running_task(self, task_uuid: str, expected_task: DeferredTask | None = None) -> None:
         with self._running_tasks_lock:
+            if expected_task is not None and self._running_deferred_tasks.get(task_uuid) is not expected_task:
+                return
             self._running_deferred_tasks.pop(task_uuid, None)
 
     def cancel_running_task(self, task_uuid: str, terminate_thread: bool = False) -> bool:
         with self._running_tasks_lock:
             deferred_task = self._running_deferred_tasks.get(task_uuid)
-        if not deferred_task:
-            return False
+        task_record = self.get_task_by_uuid(task_uuid)
+        durable_context_id = getattr(deferred_task, "_durable_scheduler_context_id", None) or (
+            task_record.context_id if task_record and task_record.durable_run_id else None)
+        durable_cancelled = False
+        durable_handle = bool(getattr(deferred_task, "_durable_scheduler_context_id", None))
+        if durable_context_id:
+            from helpers.durable.runtime import service
+            owner = service()
+            if owner:
+                with owner.lock:
+                    # A stale handle must not cancel a newer run sharing a chat.
+                    headers = owner.sync("list_run_headers", ("running", "blocked", "attention"), context_id=durable_context_id)
+                    input_id = getattr(deferred_task, "_durable_scheduler_input_id", None)
+                    expected_run_id = task_record.durable_run_id if task_record else None
+                    owned = next((row for row in headers if
+                                  (row["input_id"] == input_id if input_id else row["run_id"] == expected_run_id)), None)
+                    if owned is not None:
+                        from helpers.durable.runtime import control
+                        control(durable_context_id, "cancel")
+                        durable_cancelled = True
+                        from helpers.durable.scheduler import halted
+                        from helpers.durable.runtime import RecoveryHeld
+                        from types import SimpleNamespace
+                        context = AgentContext.get(durable_context_id) or SimpleNamespace(id=durable_context_id)
+                        run = owner.sync("get_run", owned["run_id"])
+                        def project_cancel():
+                            # API handlers already run in an asyncio loop. Keep
+                            # this synchronous control boundary checked without
+                            # nesting that loop or abandoning the plan receipt.
+                            asyncio.run(halted(owner, context, run, "cancelled"))
+                        try:
+                            try:
+                                asyncio.get_running_loop()
+                            except RuntimeError:
+                                project_cancel()
+                            else:
+                                from concurrent.futures import ThreadPoolExecutor
+                                with ThreadPoolExecutor(max_workers=1, thread_name_prefix="SchedulerCancel") as worker:
+                                    worker.submit(project_cancel).result()
+                        except (Exception, RecoveryHeld):
+                            # The cancellation is already authoritative. A drifted
+                            # scheduler projection cannot make it runnable again.
+                            pass
+        if deferred_task is None:
+            if durable_cancelled:
+                context = AgentContext.get(durable_context_id)
+                deferred_task = context.task if context else None
+            if deferred_task is None:
+                return durable_cancelled
         PrintStyle.info(f"Scheduler cancelling task {task_uuid}")
-        deferred_task.kill(terminate_thread=terminate_thread)
+        # Durable contexts share AgentContext's loop with unrelated chats and
+        # children. Only legacy scheduler-owned loops may be terminated here.
+        deferred_task.kill(terminate_thread=terminate_thread and not (durable_handle or durable_cancelled))
         return True
 
     def cancel_tasks_by_context(self, context_id: str, terminate_thread: bool = False) -> bool:
         cancelled_any = False
         with self._running_tasks_lock:
             running_tasks = list(self._running_deferred_tasks.keys())
+        running_tasks.extend(task.uuid for task in self.get_tasks_by_context_id(context_id)
+                             if task.durable_run_id and task.uuid not in running_tasks)
         for task_uuid in running_tasks:
             task = self.get_task_by_uuid(task_uuid)
             if task and task.context_id == context_id:
@@ -766,8 +880,16 @@ class TaskScheduler:
         return self._tasks.find_task_by_name(name)
 
     async def tick(self):
-        for task in await self._tasks.get_due_tasks():
-            await self._run_task(task)
+        owner = _shared_scheduler_owner()
+        if owner and (not owner.enabled or not owner.sync("try_role", "scheduler")):
+            return
+        try:
+            for task in await self._tasks.get_due_tasks():
+                from helpers.durable.scheduler import scheduled_occurrence
+                await self._run_task(task, occurrence_id=scheduled_occurrence(task))
+        finally:
+            if owner:
+                owner.sync("release_role", "scheduler")
 
     async def run_task_by_uuid(self, task_uuid: str, task_context: str | None = None):
         # First reload tasks to ensure we have the latest state
@@ -788,6 +910,13 @@ class TaskScheduler:
 
         # If the task is in error state, reset it to IDLE first
         if task.state == TaskState.ERROR:
+            from helpers.durable.runtime import service
+            owner = service()
+            if owner is not None:
+                # Admission may reject an existing uncertain occurrence. Preserve
+                # its ERROR projection until that ownership decision is made.
+                await self._run_task(task, task_context)
+                return
             PrintStyle.info(f"Resetting task '{task.name}' from ERROR to IDLE state before running")
             await self.update_task(task_uuid, state=TaskState.IDLE)
             # Force a reload to ensure we have the updated state
@@ -875,7 +1004,11 @@ class TaskScheduler:
             raise ValueError(f"Context ID mismatch for task {task.name}: context {context.id} != task {task.context_id}")
         save_tmp_chat(context)
 
-    async def _run_task(self, task: Union[ScheduledTask, AdHocTask, PlannedTask], task_context: str | None = None):
+    async def _run_task(self, task: Union[ScheduledTask, AdHocTask, PlannedTask], task_context: str | None = None,
+                        *, occurrence_id: str | None = None):
+        from helpers.durable.scheduler import submit
+        if await submit(self, task, task_context, occurrence_id=occurrence_id):
+            return
 
         async def _run_task_wrapper(task_uuid: str, task_context: str | None = None):
 

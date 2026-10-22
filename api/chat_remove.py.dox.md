@@ -16,6 +16,8 @@
 
 ## Runtime Contracts
 
+- Shared chat removal queues encrypted claimed maintenance before touching requester-side contexts or scheduler tasks. It requires stable `request_id`, `run_id`, `expected_generation`, `epoch`, and review `version`; HTTP 202 means queued. Poll the durable command receipt before claiming removal. Known provider cleanup and shared scrub occur on the owner; stale bindings return 409 and malformed requests return 400. Local removal retains its prior synchronous flow.
+
 - HTTP handlers must derive from `helpers.api.ApiHandler`; WebSocket handlers must derive from `helpers.ws.WsHandler`.
 - Update this file whenever request payloads, authentication or CSRF requirements, response shapes, route side effects, or WebSocket event contracts change.
 - `RemoveChat` is an `ApiHandler`.

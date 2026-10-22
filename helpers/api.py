@@ -90,12 +90,37 @@ class ApiHandler:
 
             # return exceptions with 500
         except Exception as e:
+            from helpers.durable.runtime import service
+            owner = service()
+            if owner and getattr(owner, "distributed", False):
+                from helpers.durable.resources import ResourceHeld
+                from helpers.durable.workspaces import WorkspaceHeld
+                if isinstance(e, (ResourceHeld, WorkspaceHeld)):
+                    return Response(json.dumps({"error": str(e), "code": "shared_resource_held"}),
+                                    status=409, mimetype="application/json")
+                # Database/provider errors can embed DSNs or private call data.
+                # Shared-operation failures must not use the legacy traceback
+                # response or print unfiltered connection diagnostics.
+                return Response(json.dumps({"error": "Shared recovery operation failed safely. Refresh before retrying."}),
+                                status=409 if isinstance(e, ValueError) else 503, mimetype="application/json")
             error = format_error(e)
             PrintStyle.error(f"API error: {error}")
             return Response(response=error, status=500, mimetype="text/plain")
 
     # get context to run agent zero in
     def use_context(self, ctxid: str, create_if_not_exists: bool = True):
+        from helpers.durable.runtime import service
+        owner = service()
+        if owner and getattr(owner, "distributed", False):
+            from agent import AgentContext
+            if not ctxid:
+                raise ValueError("Shared recovery requires an explicit chat identity.")
+            headers = owner.sync("list_run_headers", context_id=ctxid)
+            if headers or owner.sync("get_projection", "chat:" + ctxid):
+                context = AgentContext.get(ctxid)
+                turn = getattr(context, "_durable_turn", None) if context else None
+                if not turn or not owner.sync("owns", turn.run_id):
+                    raise ValueError("This chat belongs to shared recovery. Route the operation to its execution owner.")
         from helpers.context_utils import use_context as _use_context
         return _use_context(self.thread_lock, ctxid, create_if_not_exists)
 

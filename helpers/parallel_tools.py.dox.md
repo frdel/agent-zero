@@ -21,6 +21,8 @@
 
 ## Runtime Contracts
 
+- Direct dispatch uses `helpers.tool_execution.execute_tool` for the shared lifecycle, retaining its existing extension dispatcher, child log object and string response contract. With local durability enabled, the explicit workflow adapter owns child admission and join records, while this module retains normalization, output formatting and execution behavior.
+
 - Helper modules own reusable framework APIs and must preserve public callers unless all callers, tests, and docs are updated together.
 - Wrapped tool-call items must use the same shape as normal tool calls: a tool name plus arguments.
 - Normalization accepts full agent-reply-shaped objects when `tool_name` and `tool_args` are present; non-contract planning fields such as `thoughts` or `headline` are ignored.
@@ -50,7 +52,8 @@
 - `wait=True` starts jobs and awaits them before returning until all requested jobs finish or the wait timeout is reached; the timeout stops waiting but does not cancel running jobs.
 - `collect` returns already-finished job results without waiting; `await` waits for requested job IDs.
 - Canceled jobs should be marked terminal and should stop their background `DeferredTask` when cancellation is possible. Direct-worker finally owns context cleanup on its event loop; collection/cancellation must not race it with a second context reset.
-- `queue_parallel_parent_history(...)` accepts messages only from registered direct tool workers. `collect_parallel_jobs(...)` optionally promotes those messages while collecting terminal jobs; arbitrary worker history is never copied.
+- Durable direct workers obtain a transient worker handle for stateful tool cleanup; this object is never serialized or used to infer durable completion.
+- `queue_parallel_parent_history(...)` commits explicit queued history to the child journal in durable mode; prompt extras rebuild job handles from manifests. In legacy mode it accepts messages only from registered direct tool workers. `collect_parallel_jobs(...)` optionally promotes those messages while collecting terminal jobs; arbitrary worker history is never copied.
 
 ## Work Guidance
 

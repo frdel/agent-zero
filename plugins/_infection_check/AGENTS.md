@@ -14,6 +14,7 @@
 
 - Preserve configured `thoughts` and `complete` analysis modes.
 - Tool execution must wait for required safety verdicts.
+- Shared durability mode stores exact background inference references and frozen clarification rounds. A detached broker may finish after framework-worker death; a lost broker with an unknown verdict holds the tool gate. Do not cancel that observer and issue a fresh safety request or treat interruption as approval. Only known verdicts may advance clarification or mark a tool passed.
 - Do not log or expose chain-of-thought or sensitive prompt content beyond intended warning flows.
 
 ## Work Guidance

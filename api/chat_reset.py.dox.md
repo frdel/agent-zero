@@ -16,6 +16,8 @@
 
 ## Runtime Contracts
 
+- Shared mode requires a stable `request_id` (HTTP 409 with no effects when absent) and fences the context/descendant generation through the database coordinator's atomic control receipt before any local context lookup. Repeating an accepted request cannot reset newer work. It does not reset or save a requester-side shadow or remove another host's message files.
+
 - HTTP handlers must derive from `helpers.api.ApiHandler`; WebSocket handlers must derive from `helpers.ws.WsHandler`.
 - Update this file whenever request payloads, authentication or CSRF requirements, response shapes, route side effects, or WebSocket event contracts change.
 - `Reset` is an `ApiHandler`.

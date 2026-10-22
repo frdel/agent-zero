@@ -8,6 +8,7 @@
 
 - `left-sidebar.html` and `sidebar-store.js` own sidebar shell and shared state.
 - `top-section/` owns header and quick actions.
+- The header More menu opens Recovery & documents through the shared modal loader; its state and API actions belong to `../durability/`.
 - `chats/` owns chat list UI and state; `chat-tree.html` is the shared parent/subagent row for direct and parallel delegation.
 - `tasks/` owns task list UI and state; `task-row.html` is the shared scheduler row.
 - `bottom/` owns lower sidebar controls and preferences panel.
@@ -28,6 +29,7 @@
 - Row overflow menus choose the roomier side of their trigger and cap their height to the available viewport so plugin actions remain reachable.
 - Built-in chat and task overflow menus follow the standard row actions; plugin controls remain direct row actions.
 - Row overflow buttons retain accessible labels without tooltips; Chats header controls retain their tooltips.
+- Chat resets retain a per-context request ID across failed acknowledgments; only a successful response retires it. Shared reset receipts must not fence a newer generation on retry.
 - `chats.saveChat(ctxid)` exports an explicit context without changing selection; omitted IDs retain current-chat behavior.
 - Cancelling the Load Chat file chooser resolves without calling `chat_load` or showing a success/error notification.
 - `sidebar-row-actions-menu` owns plugin-contributed row-menu actions; list-order plugins register stable sort and divider callbacks through the sidebar store instead of patching chat/task stores or injecting row DOM.
@@ -40,6 +42,7 @@
 - Process-detail preference changes must use the message renderer's async expansion hooks and honor an explicit chat-history render target so staged pages are ready before an atomic swap.
 - The utility-message preference controls both individual utility steps and utility-only process-group chrome so hidden utility runs cannot leave empty headers in the transcript.
 - Chat deletion removes the sidebar row optimistically in the same render batch as fallback selection. Keep successful local deletion tombstones for the page session so out-of-order poll or push snapshots cannot reinsert rows; restore the row and clear its tombstone if the delete request fails.
+- Shared deletion freezes run/generation/epoch/review metadata and request identity across lost acknowledgments. Poll the command receipt, report success only after application, and restore the optimistic row while still queued. Unknown provider-object counts remain distinct from successful known-object cleanup.
 - Chat selection must synchronize the sidebar store even when the low-level context has already switched to the requested ID.
 - Context snapshots preserve the Alpine contexts-array and row identities while their order is stable, updating changed row metadata in place so streaming log counters do not reconcile the whole chat list. Additions, removals, reordering, and deletion tombstones must still replace the visible list; selection and parent-expansion synchronization must not publish unchanged state.
 

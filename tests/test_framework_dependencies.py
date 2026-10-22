@@ -11,6 +11,7 @@ from extensions.python.startup_migration import _05_framework_dependencies as mi
 def installed(monkeypatch):
     requirements = migration._requirements()
     versions = {req.name: next(iter(req.specifier)).version for req in requirements}
+    versions["psycopg-binary"] = versions["psycopg"]
 
     def version(name):
         if name not in versions:
@@ -26,7 +27,7 @@ def installed(monkeypatch):
 
 @pytest.mark.parametrize("package,old_version", [
     ("litellm", "1.88.1"), ("openai", "2.41.1"),
-    ("aiohttp", "3.14.0"), ("filelock", None),
+    ("aiohttp", "3.14.0"), ("filelock", None), ("psycopg", None), ("psycopg-binary", None),
 ])
 def test_self_update_installs_requirements_and_restarts_once(monkeypatch, installed, package, old_version):
     target = installed.copy()
@@ -53,6 +54,7 @@ def test_self_update_installs_requirements_and_restarts_once(monkeypatch, instal
         "litellm==1.104.0", "openai==2.54.0", "python-dotenv==1.2.2",
         "aiohttp>=3.14.3", "anyio>=4.14.2", "urllib3>=2.8.0",
         "filelock>=3.20.3", "fsspec>=2026.6.0", "multidict>=6.9.1",
+        "psycopg[binary]==3.3.6",
     }
     assert kwargs == {"timeout": 60}
 

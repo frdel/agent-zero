@@ -122,6 +122,7 @@ class ComputerUseMetadata:
     artifact_root: str
     backend_id: str
     backend_family: str
+    durable_instance_id: str
     features: tuple[str, ...]
     contract_version: int
     capabilities: dict[str, Any]
@@ -143,6 +144,7 @@ class HostBrowserMetadata:
     browser_label: str
     available_browsers: tuple[dict[str, Any], ...]
     content_helper_sha256: str
+    durable_instance_id: str
     features: tuple[str, ...]
     support_reason: str
     updated_at: float
@@ -860,6 +862,7 @@ def store_sid_computer_use_metadata(sid: str, payload: dict[str, Any]) -> Comput
         artifact_root=str(payload.get("artifact_root", "") or "").strip(),
         backend_id=str(payload.get("backend_id", "") or "").strip(),
         backend_family=str(payload.get("backend_family", "") or "").strip(),
+        durable_instance_id=_durable_browser_instance(payload.get("durable_instance_id")),
         features=features,
         contract_version=contract_version,
         capabilities=capabilities,
@@ -891,12 +894,17 @@ def computer_use_metadata_for_sid(sid: str) -> dict[str, Any] | None:
         "artifact_root": metadata.artifact_root,
         "backend_id": metadata.backend_id,
         "backend_family": metadata.backend_family,
+        "durable_instance_id": metadata.durable_instance_id,
         "features": list(metadata.features),
         "contract_version": metadata.contract_version,
         "capabilities": copy.deepcopy(metadata.capabilities),
         "support_reason": metadata.support_reason,
         "updated_at": metadata.updated_at,
     }
+
+
+def _durable_browser_instance(value):
+    return value if isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value) else ""
 
 
 def store_sid_host_browser_metadata(sid: str, payload: dict[str, Any]) -> HostBrowserMetadata:
@@ -919,6 +927,7 @@ def store_sid_host_browser_metadata(sid: str, payload: dict[str, Any]) -> HostBr
         browser_label=str(payload.get("browser_label", "") or "").strip(),
         available_browsers=_normalize_available_host_browsers(payload.get("available_browsers")),
         content_helper_sha256=str(payload.get("content_helper_sha256", "") or "").strip().lower(),
+        durable_instance_id=_durable_browser_instance(payload.get("durable_instance_id")),
         features=features,
         support_reason=support_reason,
         updated_at=time.time(),
@@ -996,6 +1005,7 @@ def host_browser_metadata_for_sid(sid: str) -> dict[str, Any] | None:
         "browser_label": metadata.browser_label,
         "available_browsers": copy.deepcopy(list(metadata.available_browsers)),
         "content_helper_sha256": metadata.content_helper_sha256,
+        "durable_instance_id": metadata.durable_instance_id,
         "features": list(metadata.features),
         "support_reason": metadata.support_reason,
         "updated_at": metadata.updated_at,
@@ -1065,6 +1075,7 @@ def all_host_browser_metadata() -> list[dict[str, Any]]:
                 "browser_label": metadata.browser_label,
                 "available_browsers": copy.deepcopy(list(metadata.available_browsers)),
                 "content_helper_sha256": metadata.content_helper_sha256,
+                "durable_instance_id": metadata.durable_instance_id,
                 "features": list(metadata.features),
                 "support_reason": metadata.support_reason,
                 "updated_at": metadata.updated_at,

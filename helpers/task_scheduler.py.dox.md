@@ -83,9 +83,16 @@
 
 ## Runtime Contracts
 
+- Durable scheduler cancellation fences the owned workflow before cancelling its handle and never terminates the shared AgentContext event loop. Legacy scheduler handles retain their explicit thread-termination option. When called inside an API event loop, the checked cancellation projection runs on one helper thread so planned occurrences are consumed without nesting asyncio loops.
+- PostgreSQL mode reads/writes the authoritative `scheduler:tasks` database projection with revision CAS; stale saves fail instead of replacing newer task edits. Host task files are ignored, and a session advisory role permits only one due-task poller at a time. Shared occurrences seed history from database admission order and reject local projects/attachments without an adapter.
+- Durable registration callbacks bind the concrete future and input identity; completion of an earlier occurrence cannot unregister a newer invocation that reuses the same DeferredTask object.
+
 - `SchedulerTaskList` keeps `usr/scheduler/tasks.json` as its default and prefers it when both formats exist. An existing `tasks.yaml` is supported when no JSON file exists; saves use the same selection and format. Loading never migrates, renames, or creates a second file.
-- JSON retains its existing Pydantic parser and `helpers.files` persistence path. Optional YAML uses `helpers.yaml` with the same task models. Invalid data raises before replacing the in-memory task list; YAML comments and formatting are regenerated on save.
+- JSON retains its existing Pydantic parser and path selection. Optional YAML uses `helpers.yaml` with the same task models. Saves use an owner-only same-directory temporary file, file fsync, atomic replacement, and directory fsync on POSIX. Reject symlinks in the projection path; failed publication retains the previous file. Invalid data raises before replacing the in-memory task list; YAML comments and formatting are regenerated on save.
 - Scheduler runs persist their owning task UUID in chat context data as `scheduler_task_uuid`. The `Agent.monologue/end` extension uses this association to atomically change an errored task to idle and persist its recovered result after a successful main-agent chat continuation. Legacy dedicated chats use their context ID as the task UUID; shared chats need the explicit association to avoid updating unrelated tasks. Failed continuations, subordinate results, and tasks no longer in error are ignored. Normal scheduler runs retain their existing callbacks and plan progression.
+- With local durability enabled, `helpers.durable.scheduler` admits the input and stable occurrence before any RUNNING/plan mutation or model call. Due cron/planned windows use stable launch identities; explicit manual runs use fresh occurrence IDs. The coordinator's context gate rejects competing/held runs. An off backend with an existing active durable owner cannot enter the legacy path.
+- The local scheduler adapter supports exact built-in task classes and pinned callback implementations. It projects the built-in success/error/finish semantics with persisted private `durable_*` occurrence/run/status receipts instead of rerunning callbacks. Planned launch progression and the receipt publish together; journal reconciliation may repeat the projection without progressing a second launch. Custom callbacks require an explicit adapter. Ordinary public task serialization omits these private receipts.
+- Durable scheduler cancellation records the owning input's context cancellation before killing its task. Stale handles cannot cancel a newer input sharing the same context; stale done callbacks cannot unregister a newer task handle. Removed, reassigned, or disabled scheduler records retain the user's decision when an old durable run finishes.
 - Helper modules own reusable framework APIs and must preserve public callers unless all callers, tests, and docs are updated together.
 - Update this file whenever public functions, classes, persistence behavior, path/security assumptions, side effects, or cross-module contracts change.
 - Observed side-effect areas: filesystem reads, filesystem writes, filesystem deletion, network calls, settings/state persistence, secret handling, scheduler state.
@@ -108,6 +115,7 @@
 - Related tests observed by source search:
   - `tests/test_task_scheduler_timezone.py`
   - `tests/test_task_scheduler_recovery.py`
+  - `tests/test_durable_scheduler.py` (admission, restart between projection and receipt, plan ownership, controls, custom callback holds, JSON/YAML atomic publication)
   - `tests/test_scheduler_editor.py`
   - `tests/test_timezone_regressions.py`
   - `tests/test_tool_action_contracts.py`

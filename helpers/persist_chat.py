@@ -3,6 +3,7 @@ import os
 import tempfile
 import uuid
 from collections import OrderedDict
+from contextlib import nullcontext
 from datetime import datetime
 from typing import Any
 
@@ -53,6 +54,28 @@ def save_tmp_chat(context: AgentContext):
     if context.type == AgentContextType.BACKGROUND:
         return
 
+    from helpers.durable.runtime import service
+    owner = service()
+    if owner and getattr(owner, "distributed", False):
+        headers = owner.sync("list_run_headers", context_id=context.id)
+        turn = getattr(context, "_durable_turn", None)
+        if headers and (not turn or not owner.sync("owns", turn.run_id)):
+            return  # A requester-side shadow cannot publish history or policy.
+        from helpers.durable import codec
+        value = codec.masked(context.agent0, _serialize_context(context))
+        key = "chat:" + context.id
+        previous = owner.sync("get_projection", key)
+        if previous and not headers and previous["value"] != value:
+            raise ValueError("Shared chat genesis already exists with different content")
+        owner.sync("put_projection", key, value, previous["version"] if previous else 0)
+        if not headers:
+            genesis = codec.checkpoint(context.agent0)
+            genesis_key = "genesis:" + context.id
+            prior_genesis = owner.sync("get_projection", genesis_key)
+            if prior_genesis and prior_genesis["value"] != genesis:
+                raise ValueError("Shared chat genesis already exists with different content")
+            owner.sync("put_projection", genesis_key, genesis, prior_genesis["version"] if prior_genesis else 0)
+
     path = _get_chat_file_path(context.id)
     data = _serialize_context(context)
     js = _safe_json_serialize(data, ensure_ascii=False)
@@ -71,6 +94,12 @@ def save_tmp_chats():
 
 def load_tmp_chats():
     """Load all contexts from the chats folder"""
+    from helpers.durable.runtime import service
+    owner = service()
+    if owner and getattr(owner, "distributed", False):
+        # Workers reconstruct only after a database claim. Host-local chat.json
+        # is neither a migration source nor an execution authority in this mode.
+        return []
     _convert_v080_chats()
     folders = files.list_files(CHATS_FOLDER, "*")
     json_files = []
@@ -99,6 +128,10 @@ def _get_chat_file_path(ctxid: str):
 
 def chat_file_exists(ctxid: str) -> bool:
     """True if this context has a persisted chat.json on disk."""
+    from helpers.durable.runtime import service
+    owner = service()
+    if owner and getattr(owner, "distributed", False):
+        return bool(owner.sync("get_projection", "chat:" + ctxid) or owner.sync("list_run_headers", context_id=ctxid))
     return files.exists(_get_chat_file_path(ctxid))
 
 
@@ -129,6 +162,10 @@ def mark_chat_saved(context: AgentContext) -> None:
 
 
 def saved_chat_ids() -> set[str]:
+    from helpers.durable.runtime import service
+    owner = service()
+    if owner and getattr(owner, "distributed", False):
+        return {row["context_id"] for row in owner.sync("list_run_headers")}
     return {
         files.basename(files.dirname(path))
         for path in files.find_existing_paths_by_pattern(
@@ -165,11 +202,43 @@ def export_json_chat(context: AgentContext):
     return js
 
 
-def remove_chat(ctxid):
+class SharedDeletionHeld(RuntimeError):
+    """Shared payloads remain available until provider cleanup has an owner."""
+
+
+def ensure_removal_supported(ctxid):
+    from helpers.durable.runtime import service
+    owner = service()
+    if owner and getattr(owner, "distributed", False) and (
+            owner.sync("list_run_headers", context_id=ctxid) or owner.sync("get_projection", "chat:" + ctxid)
+            or owner.sync("get_projection", "genesis:" + ctxid)):
+        raise SharedDeletionHeld("Shared chat removal requires execution-owner provider cleanup. No chat records were removed.")
+
+
+def remove_chat(ctxid, *, request_id=None, run_id=None, expected_generation=None, epoch=None, version=None):
     """Remove a chat or task context"""
     if not isinstance(ctxid, str) or not ctxid.strip():
         raise ValueError("remove_chat: context id must not be empty")
-    _delete_provider_responses_for_chat(ctxid)
+    from helpers.durable.runtime import control, service
+    owner = service()
+    if owner and getattr(owner, "distributed", False):
+        if not request_id or not run_id or not epoch or not version:
+            raise SharedDeletionHeld("Shared removal requires a stable, reviewed maintenance request.")
+        from helpers.durable import maintenance
+        return maintenance.enqueue(owner, ctxid, run_id, "maintenance_delete", {}, request_id,
+                                   generation=expected_generation, epoch=epoch, version=version)
+    ensure_removal_supported(ctxid)
+    # Fence execution before reading known outcomes, but retain private ledger
+    # payloads until provider cleanup has collected their normalized IDs.
+    with owner.lock if owner else nullcontext():
+        descendants = control(ctxid, "cancel") if owner else []
+        _delete_provider_responses_for_chat(ctxid)
+        for child_id in descendants:
+            _delete_provider_responses_for_chat(child_id)
+        control(ctxid, "delete")
+    for child_id in descendants:
+        AgentContext.remove(child_id)
+        files.delete_dir(get_chat_folder_path(child_id))
     path = get_chat_folder_path(ctxid)
     files.delete_dir(path)
 
@@ -394,16 +463,62 @@ def _safe_json_serialize(obj, **kwargs):
 
 
 def _delete_provider_responses_for_chat(ctxid: str) -> None:
+    projections = []
     try:
-        data = json.loads(files.read_file(_get_chat_file_path(ctxid)))
+        projections.append(json.loads(files.read_file(_get_chat_file_path(ctxid))))
     except Exception:
+        pass
+    # Live state can carry an opt-out newer than either saved projection.
+    context = AgentContext.get(ctxid)
+    if context and context.data.get("responses_delete_on_chat_delete") is False:
         return
-    if _responses_delete_disabled(data):
+    agent = context.agent0 if context else None
+    while agent:
+        if agent.data.get("responses_delete_on_chat_delete") is False:
+            return
+        agent = agent.data.get(Agent.DATA_NAME_SUBORDINATE)
+
+    from helpers.durable.runtime import service
+    owner = service()
+    normalized_results = []
+    if owner:
+        try:
+            for header in owner.sync("list_run_headers", context_id=ctxid):
+                if header["payloads_pruned"]:
+                    continue
+                run = owner.sync("get_run", header["run_id"])
+                checkpoint = run["checkpoint"]
+                if not isinstance(checkpoint, dict):
+                    continue
+                projections.append(checkpoint.get("context") or {})
+                normalized_results.append(checkpoint.get("result"))
+                normalized_results.extend(call["result"] for call in owner.sync("calls", header["run_id"])
+                                          if call["kind"] == "model" and call["status"] == "completed"
+                                          and not call["payloads_pruned"])
+        except Exception:
+            # Unverified recovery state may contain an opt-out. Local deletion
+            # still proceeds, without issuing provider calls under that doubt.
+            print("Warning: provider response cleanup skipped because recovery data could not be verified.")
+            return
+    if any(_responses_delete_disabled(data) for data in projections):
         return
-    response_ids = _collect_response_ids(data)
+    response_ids = list(dict.fromkeys(response_id for data in projections for response_id in _collect_response_ids(data)))
+    for result in normalized_results:
+        # Only the normalized LLMResult identity is authoritative here. Never
+        # search arbitrary provider raw metadata or reinterpret call arguments.
+        if isinstance(result, dict) and result.get("mode") == "responses":
+            response_id = result.get("response_id")
+            if isinstance(response_id, str) and response_id.strip() and response_id not in response_ids:
+                response_ids.append(response_id)
     if not response_ids:
         return
-    delete_stored_response_ids(response_ids)
+    try:
+        failures = delete_stored_response_ids(response_ids)
+        count = len(failures or [])
+    except Exception:
+        count = len(response_ids)
+    if count:
+        print(f"Warning: provider response cleanup failed for {count} stored responses.")
 
 
 def _responses_delete_disabled(data: dict[str, Any]) -> bool:

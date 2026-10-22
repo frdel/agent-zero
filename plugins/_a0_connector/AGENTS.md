@@ -29,6 +29,7 @@
   enable `allow_running`. There is no `runtime=input` or `code` input alias.
 - Computer Use prompts keep `element_index` top-level and semantic `target` syntax in backend skills. macOS `app-scoped-semantic-targeting` enables explicit app/window scope; older clients use the indexed window workflow. Native `get_window_state.mode` only labels output and stays out of model-facing guidance.
 - `computer_use_remote` starts a missing chat session inside the first requested action only after the host returns `COMPUTER_USE_SESSION_REQUIRED` before dispatch. Start once on the same socket/context and resume with the returned session ID and a fresh operation ID. Never auto-replace an explicit session binding, retry permission/ambiguous failures, or start from `status`/`stop_session`; keep existing host enablement, trust, and platform approval checks. Attach the requested action's capture, not an extra startup capture.
+- Opt-in durable Computer Use uses `helpers/durable/computer.py` and negotiated `computer_use_durable_v1` with a pinned companion instance. Commit the exact encrypted request before delivery and query the host journal after acknowledgement loss. Only authoritative same-instance absence permits original dispatch; running/unknown intents never resend. Reuse exact completed responses/capture bytes through shared encrypted resources, never a stale host filesystem path. Desktop state is not transplanted across hosts. Current host trust/rearm/platform permissions still gate every new action; completed receipts remain read-only evidence. Automatic predispatch session startup remains separately journaled and cannot arm or replace an explicit desktop session.
 - Host Computer Use skills begin with `list_windows` or `capture`. Linux X11/XWayland viewer guidance lives in `skills/host-computer-use-linux/references/x11-viewers.md` and requires independently enabled host code execution for shell techniques. Permission denials remain stop conditions; the internal Docker/Xpra desktop and standalone X11 backend selection are unchanged.
 - Agent-scoped skill discovery includes this plugin's `skills/` root only when a routed connected socket has connector capability metadata. WebUI-only sockets do not qualify; disabled capabilities still count as a connected CLI. Filter roots on each discovery without mutating cached paths or persisting visibility settings. `setup-a0-cli` lives in root `skills/` and stays discoverable while disconnected.
 - Never re-add a connector prompt that the effective project/profile tool policy
@@ -119,3 +120,10 @@ Host Files forwards Core transfer/text limits without an independent HTTP cap. O
 - The host provider implements the same streaming `read(relative, destination, limit)` / `write(relative, source, expected)` contract as the five community providers. HTTP file bodies stay in private temporary files and shared bounded copies; no whole-file bytes return from provider reads.
 
 - Incoming host HTTP transfers pass the upload stream to `file_transfers.write_stream_atomic`, retaining integrity receipts and the operation limit.
+
+- Durable browser and Computer Use metadata retain only a validated 64-hex
+  `durable_instance_id`. Journal-capable companions advertise
+  `durable_session_v1` / `computer_use_durable_v1`; older clients retain legacy
+  behavior outside durable turns. Durable dispatch queries original operation
+  status on the same instance before delivery and retains real capture bytes in
+  encrypted context custody. It never bypasses desktop approval or re-arming.
