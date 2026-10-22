@@ -53,6 +53,12 @@ SCREENCAST_MAX_HEIGHT = 4096
 VIEWPORT_SIZE_TOLERANCE = 4
 EVALUATE_RECOVERY_TIMEOUT_SECONDS = 5.0
 EVALUATE_TERMINATION_GRACE_SECONDS = 0.25
+WORKER_LIVENESS_POLL_SECONDS = 1.0
+WORKER_CANCEL_START_TIMEOUT_SECONDS = 15.0
+WORKER_STOPPED_ERROR = (
+    "Browser worker stopped before {method!r} finished; retry the call, and if it fails "
+    "again, restart Agent Zero or change Browser proxy, keyboard or extension settings."
+)
 CLIPBOARD_BRIDGE_SCRIPT = r"""
 (payload) => {
   const action = String(payload?.action || "").trim().toLowerCase();
@@ -648,6 +654,10 @@ async def run_browser_calls(calls: list[dict[str, Any]], dispatch: Any) -> list[
     return results
 
 
+class BrowserWorkerStoppedError(RuntimeError):
+    """The Browser worker thread exited; work sent to its loop never runs or finishes."""
+
+
 class BrowserRuntime:
     def __init__(self, context_id: str):
         self.context_id = str(context_id)
@@ -668,10 +678,25 @@ class BrowserRuntime:
         if self._closed and method != "close":
             raise RuntimeError("Browser runtime is closed.")
 
+        event_loop_thread = self._worker.event_loop_thread
+        # terminate() clears the thread and the next dispatch restarts it. A thread that
+        # exited on its own leaves a stopped loop that never runs or finishes queued work.
+        # A restart assigns the thread before starting it, under the same lock.
+        with event_loop_thread._lock:
+            thread = event_loop_thread.thread
+            stopped = thread is not None and not thread.is_alive()
+        if stopped:
+            raise BrowserWorkerStoppedError(WORKER_STOPPED_ERROR.format(method=method))
+
         running_task = None
+        cancel_requested = False
+        cleanup_started = False
 
         async def runner():
             nonlocal running_task
+            if cancel_requested:
+                # The caller stopped waiting while this call was queued behind a blocked loop.
+                raise asyncio.CancelledError
             running_task = asyncio.current_task()
             token = self._core.request_context_id.set(str(context_id or self.context_id))
             try:
@@ -680,26 +705,58 @@ class BrowserRuntime:
             finally:
                 self._core.request_context_id.reset(token)
 
-        future = self._worker.event_loop_thread.run_coroutine(runner())
+        future = event_loop_thread.run_coroutine(runner())
+        worker_thread = event_loop_thread.thread
+
+        def worker_alive() -> bool:
+            return worker_thread is not None and worker_thread.is_alive()
+
         result = asyncio.wrap_future(future)
         try:
-            return await asyncio.shield(result)
+            # Like shield(), wait() leaves the worker call running when this caller is
+            # cancelled. Legitimate calls may block the worker for minutes (first-run
+            # setup), so only a stopped worker thread ends the wait early.
+            while not result.done():
+                await asyncio.wait({result}, timeout=WORKER_LIVENESS_POLL_SECONDS)
+                # Check liveness first: a dead thread runs no more callbacks, so a
+                # future still pending after that will never complete.
+                if not worker_alive() and not future.done():
+                    raise BrowserWorkerStoppedError(WORKER_STOPPED_ERROR.format(method=method))
         except asyncio.CancelledError:
+            cancel_requested = True
+            if not worker_alive():
+                raise
+
             async def cancel_and_wait():
+                nonlocal cleanup_started
+                cleanup_started = True
                 if running_task is not None:
                     running_task.cancel()
                     await asyncio.gather(running_task, return_exceptions=True)
 
-            cleanup = asyncio.wrap_future(
-                self._worker.event_loop_thread.run_coroutine(cancel_and_wait())
-            )
-            while not cleanup.done():
+            cleanup = asyncio.wrap_future(event_loop_thread.run_coroutine(cancel_and_wait()))
+            deadline = time.monotonic() + WORKER_CANCEL_START_TIMEOUT_SECONDS
+            # Await a started cleanup in full. Stop waiting only when the worker thread
+            # stopped or its blocked loop has not started the cancellation in time.
+            while not cleanup.done() and worker_alive() and (
+                cleanup_started or time.monotonic() < deadline
+            ):
                 try:
-                    await asyncio.shield(cleanup)
+                    await asyncio.wait({cleanup}, timeout=WORKER_LIVENESS_POLL_SECONDS)
                 except asyncio.CancelledError:
                     pass
-            await asyncio.gather(result, return_exceptions=True)
+            if cleanup.done():
+                await asyncio.gather(result, return_exceptions=True)
+            elif worker_alive():
+                PrintStyle.warning(
+                    f"Browser {method!r} cancellation was not confirmed; the worker loop "
+                    f"did not respond within {WORKER_CANCEL_START_TIMEOUT_SECONDS:g} seconds."
+                )
             raise
+        if result.cancelled():
+            # This caller was not cancelled; the worker cancelled the call, e.g. on close.
+            raise RuntimeError(f"Browser worker cancelled {method!r} before it finished.")
+        return result.result()
 
     async def close(self, delete_profile: bool = False) -> None:
         if self._closed:
@@ -3225,10 +3282,14 @@ async def close_runtime(context_id: str, *, delete_profile: bool = True) -> None
     with _runtime_lock:
         runtime = _runtimes.pop(context_id, None)
         shared_runtime = _shared_runtime
-    if runtime:
-        await runtime.call("close_context")
-    elif shared_runtime:
-        await shared_runtime.call_for(context_id, "close_context")
+    try:
+        if runtime:
+            await runtime.call("close_context")
+        elif shared_runtime:
+            await shared_runtime.call_for(context_id, "close_context")
+    except BrowserWorkerStoppedError as exc:
+        # A stopped worker cannot reach the context's tabs; do not block chat reset/removal.
+        PrintStyle.warning(f"Browser cleanup skipped for context {context_id}: {exc}")
 
 
 def close_runtime_sync(context_id: str, *, delete_profile: bool = True) -> None:

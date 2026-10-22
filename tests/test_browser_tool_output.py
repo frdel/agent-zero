@@ -1,6 +1,7 @@
 import asyncio
 import json
 import subprocess
+import threading
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
@@ -386,6 +387,237 @@ async def test_browser_worker_propagates_cancellation_and_waits_for_cleanup(monk
         assert await runtime.call("state") == 0
     finally:
         runtime._worker.kill(terminate_thread=True)
+
+
+def _stop_worker_thread(runtime):
+    # A worker thread that exits on its own leaves its loop stopped but not closed.
+    worker = runtime._worker.event_loop_thread
+    worker.loop.call_soon_threadsafe(worker.loop.stop)
+    worker.thread.join(2)
+    assert not worker.thread.is_alive()
+
+
+async def _dispose_worker(runtime, *tasks):
+    # Rerun a stopped loop so stranded work drains and no caller outlives the test.
+    worker = runtime._worker.event_loop_thread
+    if worker.thread is not None and not worker.thread.is_alive():
+        worker.thread = threading.Thread(target=worker.loop.run_forever, daemon=True)
+        worker.thread.start()
+    tasks = [task for task in tasks if task is not None]
+    for task in tasks:
+        task.cancel()
+    if tasks:
+        await asyncio.wait(tasks, timeout=5)
+    runtime._worker.kill(terminate_thread=True)
+
+
+def _hanging_navigate(monkeypatch, runtime, cleanup_seconds=0.0):
+    loop = asyncio.get_running_loop()
+    started = loop.create_future()
+    cleaned = []
+
+    async def navigate():
+        loop.call_soon_threadsafe(started.set_result, None)
+        try:
+            await asyncio.sleep(60)
+        finally:
+            await asyncio.sleep(cleanup_seconds)
+            cleaned.append(True)
+
+    monkeypatch.setattr(runtime._core, "navigate", navigate)
+    return started, cleaned
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("case", ["before_call", "during_call", "cancelled"])
+async def test_browser_call_ends_when_worker_thread_stops(monkeypatch, case):
+    # before_call must fail before dispatch, not through the liveness poll.
+    poll = 60 if case == "before_call" else 0.05
+    monkeypatch.setattr(runtime_module, "WORKER_LIVENESS_POLL_SECONDS", poll, raising=False)
+    runtime = BrowserRuntime(f"stopped-worker-test-{case}")
+    started, _ = _hanging_navigate(monkeypatch, runtime)
+    call = None
+    try:
+        if case != "before_call":
+            call = asyncio.create_task(runtime.call("navigate"))
+            await asyncio.wait_for(started, 2)
+        _stop_worker_thread(runtime)
+        if case == "before_call":
+            call = asyncio.create_task(runtime.call("navigate"))
+        elif case == "cancelled":
+            call.cancel()
+        done, _ = await asyncio.wait({call}, timeout=2)
+        assert done, "a call on a stopped Browser worker never returned"
+        if case == "cancelled":
+            assert call.cancelled()
+        else:
+            with pytest.raises(RuntimeError, match="Browser worker stopped before 'navigate' finished"):
+                call.result()
+        assert started.done() == (case != "before_call")
+    finally:
+        await _dispose_worker(runtime, call)
+
+
+@pytest.mark.asyncio
+async def test_browser_call_cancelled_by_runtime_close_is_an_error(monkeypatch):
+    runtime = BrowserRuntime("closed-during-call-test")
+    started, _ = _hanging_navigate(monkeypatch, runtime)
+    monkeypatch.setattr(runtime._core, "close", AsyncMock())
+    call = asyncio.create_task(runtime.call("navigate"))
+    try:
+        await asyncio.wait_for(started, 2)
+        # Settings saves, extension installs and shutdown close the runtime mid-call.
+        await asyncio.wait_for(runtime.close(), 5)
+        done, _ = await asyncio.wait({call}, timeout=2)
+        assert done, "a call interrupted by a runtime close never returned"
+        assert not call.cancelled()
+        with pytest.raises(RuntimeError, match="Browser worker cancelled 'navigate'"):
+            call.result()
+    finally:
+        await _dispose_worker(runtime, call)
+
+
+@pytest.mark.asyncio
+async def test_cancelling_a_call_behind_a_blocked_worker_is_bounded_and_never_runs_it(monkeypatch):
+    monkeypatch.setattr(runtime_module, "WORKER_LIVENESS_POLL_SECONDS", 0.05, raising=False)
+    monkeypatch.setattr(runtime_module, "WORKER_CANCEL_START_TIMEOUT_SECONDS", 0.2, raising=False)
+    warnings = []
+    monkeypatch.setattr(runtime_module.PrintStyle, "warning", warnings.append)
+    runtime = BrowserRuntime("blocked-worker-test")
+    clicked = []
+
+    async def click():
+        clicked.append(True)
+
+    async def state():
+        return "state"
+
+    monkeypatch.setattr(runtime._core, "click", click)
+    monkeypatch.setattr(runtime._core, "state", state)
+    blocked, release = threading.Event(), threading.Event()
+
+    def block():
+        blocked.set()
+        release.wait(10)
+
+    # A synchronous step, such as first-run setup, blocks the live worker loop.
+    runtime._worker.event_loop_thread.loop.call_soon_threadsafe(block)
+    assert blocked.wait(2)
+    call = asyncio.create_task(runtime.call("click"))
+    try:
+        await asyncio.sleep(0.05)
+        call.cancel()
+        done, _ = await asyncio.wait({call}, timeout=2)
+        assert done and call.cancelled()
+        assert len(warnings) == 1 and "'click' cancellation was not confirmed" in warnings[0]
+        release.set()
+        assert await asyncio.wait_for(runtime.call("state"), 2) == "state"
+        assert clicked == []
+    finally:
+        release.set()
+        await _dispose_worker(runtime, call)
+
+
+@pytest.mark.asyncio
+async def test_started_worker_cleanup_is_awaited_past_the_response_bound(monkeypatch):
+    monkeypatch.setattr(runtime_module, "WORKER_LIVENESS_POLL_SECONDS", 0.05, raising=False)
+    monkeypatch.setattr(runtime_module, "WORKER_CANCEL_START_TIMEOUT_SECONDS", 0.1, raising=False)
+    runtime = BrowserRuntime("slow-cleanup-test")
+    started, cleaned = _hanging_navigate(monkeypatch, runtime, cleanup_seconds=0.5)
+    call = asyncio.create_task(runtime.call("navigate"))
+    try:
+        await asyncio.wait_for(started, 2)
+        call.cancel()
+        await asyncio.sleep(0.2)
+        call.cancel()
+        done, _ = await asyncio.wait({call}, timeout=3)
+        assert done and call.cancelled()
+        assert cleaned == [True]
+    finally:
+        await _dispose_worker(runtime, call)
+
+
+@pytest.mark.asyncio
+async def test_cancelled_call_ends_when_worker_thread_stops_during_cleanup(monkeypatch):
+    monkeypatch.setattr(runtime_module, "WORKER_LIVENESS_POLL_SECONDS", 0.05, raising=False)
+    runtime = BrowserRuntime("stopped-during-cleanup-test")
+    loop = asyncio.get_running_loop()
+    started, cleaning = loop.create_future(), loop.create_future()
+
+    async def navigate():
+        loop.call_soon_threadsafe(started.set_result, None)
+        try:
+            await asyncio.sleep(60)
+        finally:
+            loop.call_soon_threadsafe(cleaning.set_result, None)
+            await asyncio.sleep(60)
+
+    monkeypatch.setattr(runtime._core, "navigate", navigate)
+    call = asyncio.create_task(runtime.call("navigate"))
+    try:
+        await asyncio.wait_for(started, 2)
+        call.cancel()
+        await asyncio.wait_for(cleaning, 2)
+        _stop_worker_thread(runtime)
+        done, _ = await asyncio.wait({call}, timeout=2)
+        assert done, "a cancelled call stayed wedged after the worker stopped during cleanup"
+        assert call.cancelled()
+    finally:
+        await _dispose_worker(runtime, call)
+
+
+@pytest.mark.asyncio
+async def test_uncancelled_call_waits_out_a_blocked_worker_loop(monkeypatch):
+    monkeypatch.setattr(runtime_module, "WORKER_LIVENESS_POLL_SECONDS", 0.05, raising=False)
+    monkeypatch.setattr(runtime_module, "WORKER_CANCEL_START_TIMEOUT_SECONDS", 0.1, raising=False)
+    warnings = []
+    monkeypatch.setattr(runtime_module.PrintStyle, "warning", warnings.append)
+    runtime = BrowserRuntime("slow-setup-test")
+
+    async def state():
+        return "state"
+
+    monkeypatch.setattr(runtime._core, "state", state)
+    blocked = threading.Event()
+
+    def block():
+        blocked.set()
+        threading.Event().wait(0.5)
+
+    # First-run setup blocks the live worker loop past every poll and cancel bound.
+    runtime._worker.event_loop_thread.loop.call_soon_threadsafe(block)
+    assert blocked.wait(2)
+    try:
+        assert await asyncio.wait_for(runtime.call("state"), 3) == "state"
+        assert warnings == []
+    finally:
+        await _dispose_worker(runtime)
+
+
+@pytest.mark.asyncio
+async def test_browser_cleanup_and_restart_work_after_worker_thread_stops(monkeypatch):
+    warnings = []
+    monkeypatch.setattr(runtime_module.PrintStyle, "warning", warnings.append)
+    monkeypatch.setattr(runtime_module, "_runtimes", {})
+    monkeypatch.setattr(runtime_module, "_shared_runtime", None)
+    monkeypatch.setattr(runtime_module, "_forget_browser_context", lambda context_id: None)
+    for method in ("state", "close_context", "close"):
+        monkeypatch.setattr(_BrowserRuntimeCore, method, AsyncMock(return_value=method))
+    await runtime_module.get_runtime("stopped-worker-chat")
+    stopped = runtime_module._shared_runtime
+    try:
+        _stop_worker_thread(stopped)
+        # Chat reset/removal, then a settings save that restarts the Browser.
+        await asyncio.wait_for(asyncio.to_thread(runtime_module.close_runtime_sync, "stopped-worker-chat"), 5)
+        await asyncio.wait_for(asyncio.to_thread(runtime_module.close_all_runtimes_sync), 5)
+        assert len(warnings) == 2 and all("Browser worker stopped" in warning for warning in warnings)
+        session = await runtime_module.get_runtime("stopped-worker-chat")
+        assert runtime_module._shared_runtime is not stopped
+        assert await asyncio.wait_for(session.call("state"), 2) == "state"
+    finally:
+        await _dispose_worker(stopped)
+        if runtime_module._shared_runtime is not None:
+            runtime_module._shared_runtime._worker.kill(terminate_thread=True)
 
 
 def test_webui_beautifier_formats_objects_and_arrays() -> None:
