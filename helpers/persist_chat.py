@@ -141,7 +141,7 @@ def _convert_v080_chats():
     json_files = files.list_files(CHATS_FOLDER, "*.json")
     for file in json_files:
         path = files.get_abs_path(CHATS_FOLDER, file)
-        name = file.rstrip(".json")
+        name = file.removesuffix(".json")
         new = _get_chat_file_path(name)
         files.move_file(path, new)
 
