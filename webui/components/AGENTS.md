@@ -65,6 +65,7 @@ Direct child DOX files:
 | [canvas/AGENTS.md](canvas/AGENTS.md) | Right-canvas component surface and store. |
 | [chat/AGENTS.md](chat/AGENTS.md) | Chat composer, attachments, queue, navigation, and top-section components. |
 | [dropdown/AGENTS.md](dropdown/AGENTS.md) | Shared dropdown component. |
+| [durability/AGENTS.md](durability/AGENTS.md) | Recovery decisions, explicit restore selection and typed chat plans. |
 | [messages/AGENTS.md](messages/AGENTS.md) | Message rendering helpers, action buttons, process groups, and resize behavior. |
 | [modals/AGENTS.md](modals/AGENTS.md) | Modal component workflows loaded through the shared modal stack. |
 | [notifications/AGENTS.md](notifications/AGENTS.md) | Toasts, notification modal, icons, and notification store. |

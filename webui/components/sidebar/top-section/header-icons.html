@@ -103,6 +103,11 @@
           <span>Tasks</span>
         </button>
 
+        <button class="dropdown-item" @click="openModal('components/durability/durability.html'); $store.sidebar.menuClose()">
+          <x-icon name="restore"></x-icon>
+          <span>Recovery &amp; documents</span>
+        </button>
+
         <button class="dropdown-item" @click="openModal('settings/settings.html'); $store.sidebar.menuClose()">
           <x-icon name="settings"></x-icon>
           <span>Settings</span>

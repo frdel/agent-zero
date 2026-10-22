@@ -8,6 +8,7 @@
 
 - `left-sidebar.html` and `sidebar-store.js` own sidebar shell and shared state.
 - `top-section/` owns header and quick actions.
+- The header More menu opens Recovery & documents through the shared modal loader; its state and API actions belong to `../durability/`.
 - `chats/` owns chat list UI and state; `chat-tree.html` is the shared parent/subagent row for direct and parallel delegation.
 - `tasks/` owns task list UI and state; `task-row.html` is the shared scheduler row.
 - `bottom/` owns lower sidebar controls and preferences panel.

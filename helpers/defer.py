@@ -166,6 +166,19 @@ class DeferredTask:
 
         return await loop.run_in_executor(None, _get_result)
 
+    async def result_async(self, timeout: Optional[float] = None) -> Any:
+        """Await across event-loop threads without occupying an executor worker.
+
+        Cancelling/timing out a waiter leaves the owned invocation running;
+        explicit kill/ancestor controls remain responsible for cancellation.
+        """
+        if self._future is None:
+            raise RuntimeError("Task hasn't been started")
+        awaited = asyncio.shield(asyncio.wrap_future(self._future))
+        if timeout is None:
+            return await awaited
+        return await asyncio.wait_for(awaited, timeout)
+
     def kill(self, terminate_thread: bool = False) -> None:
         """Kill the task and optionally terminate its thread."""
         self.kill_children()

@@ -10,7 +10,8 @@ class Pause(ApiHandler):
             # context instance - get or create
             context = self.use_context(ctxid)
 
-            context.paused = paused
+            from helpers.durable.runtime import pause_context
+            pause_context(context, paused)
 
             return {
                 "message": "Agent paused." if paused else "Agent unpaused.",

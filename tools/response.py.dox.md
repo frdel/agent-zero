@@ -18,6 +18,8 @@
 
 ## Runtime Contracts
 
+- The response body's pure argument selection declares `replay = "safe"`. Recovery still checks source-pinned tool and lifecycle audits. It does not reissue a model request to recover an interrupted response invocation.
+
 - Tool modules must define `helpers.tool.Tool` subclasses and return `helpers.tool.Response` from `execute(...)`.
 - Update this file whenever tool arguments, output shape, `break_loop` behavior, intervention handling, prompt instructions, or side effects change.
 - `ResponseTool` is a `Tool`.

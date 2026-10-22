@@ -46,4 +46,6 @@
 
 ## Child DOX Index
 
-No child DOX files.
+| Child | Scope |
+| --- | --- |
+| [durable/AGENTS.md](durable/AGENTS.md) | Opt-in local recovery storage, private codecs, blob/retention custody, phase-aware runner, scheduler/child adapters and replay audits. |

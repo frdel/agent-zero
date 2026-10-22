@@ -16,6 +16,8 @@
 
 ## Runtime Contracts
 
+- With a durable run, pause/unpause commits the checkpoint control state before reporting success. Unpausing a restored supported run goes through the sole dispatcher; it never creates a second driver. Off-mode behavior is unchanged.
+
 - HTTP handlers must derive from `helpers.api.ApiHandler`; WebSocket handlers must derive from `helpers.ws.WsHandler`.
 - Update this file whenever request payloads, authentication or CSRF requirements, response shapes, route side effects, or WebSocket event contracts change.
 - `Pause` is an `ApiHandler`.
@@ -35,6 +37,7 @@
 
 ## Verification
 
+- Unpause uses the current run's restore selection; an attention hold must be resolved through Recovery & documents. Pausing an attention row cannot replace its checkpoint watermark or bypass review.
 - Run endpoint-specific or API/WebSocket tests for changed behavior; smoke-test browser callers when no focused test exists.
 - Related tests observed by source search:
   - `tests/test_multi_tab_isolation.py`

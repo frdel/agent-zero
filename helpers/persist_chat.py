@@ -3,6 +3,7 @@ import os
 import tempfile
 import uuid
 from collections import OrderedDict
+from contextlib import nullcontext
 from datetime import datetime
 from typing import Any
 
@@ -169,7 +170,19 @@ def remove_chat(ctxid):
     """Remove a chat or task context"""
     if not isinstance(ctxid, str) or not ctxid.strip():
         raise ValueError("remove_chat: context id must not be empty")
-    _delete_provider_responses_for_chat(ctxid)
+    from helpers.durable.runtime import control, service
+    owner = service()
+    # Fence execution before reading known outcomes, but retain private ledger
+    # payloads until provider cleanup has collected their normalized IDs.
+    with owner.lock if owner else nullcontext():
+        descendants = control(ctxid, "cancel") if owner else []
+        _delete_provider_responses_for_chat(ctxid)
+        for child_id in descendants:
+            _delete_provider_responses_for_chat(child_id)
+        control(ctxid, "delete")
+    for child_id in descendants:
+        AgentContext.remove(child_id)
+        files.delete_dir(get_chat_folder_path(child_id))
     path = get_chat_folder_path(ctxid)
     files.delete_dir(path)
 
@@ -394,16 +407,62 @@ def _safe_json_serialize(obj, **kwargs):
 
 
 def _delete_provider_responses_for_chat(ctxid: str) -> None:
+    projections = []
     try:
-        data = json.loads(files.read_file(_get_chat_file_path(ctxid)))
+        projections.append(json.loads(files.read_file(_get_chat_file_path(ctxid))))
     except Exception:
+        pass
+    # Live state can carry an opt-out newer than either saved projection.
+    context = AgentContext.get(ctxid)
+    if context and context.data.get("responses_delete_on_chat_delete") is False:
         return
-    if _responses_delete_disabled(data):
+    agent = context.agent0 if context else None
+    while agent:
+        if agent.data.get("responses_delete_on_chat_delete") is False:
+            return
+        agent = agent.data.get(Agent.DATA_NAME_SUBORDINATE)
+
+    from helpers.durable.runtime import service
+    owner = service()
+    normalized_results = []
+    if owner:
+        try:
+            for header in owner.sync("list_run_headers", context_id=ctxid):
+                if header["payloads_pruned"]:
+                    continue
+                run = owner.sync("get_run", header["run_id"])
+                checkpoint = run["checkpoint"]
+                if not isinstance(checkpoint, dict):
+                    continue
+                projections.append(checkpoint.get("context") or {})
+                normalized_results.append(checkpoint.get("result"))
+                normalized_results.extend(call["result"] for call in owner.sync("calls", header["run_id"])
+                                          if call["kind"] == "model" and call["status"] == "completed"
+                                          and not call["payloads_pruned"])
+        except Exception:
+            # Unverified recovery state may contain an opt-out. Local deletion
+            # still proceeds, without issuing provider calls under that doubt.
+            print("Warning: provider response cleanup skipped because recovery data could not be verified.")
+            return
+    if any(_responses_delete_disabled(data) for data in projections):
         return
-    response_ids = _collect_response_ids(data)
+    response_ids = list(dict.fromkeys(response_id for data in projections for response_id in _collect_response_ids(data)))
+    for result in normalized_results:
+        # Only the normalized LLMResult identity is authoritative here. Never
+        # search arbitrary provider raw metadata or reinterpret call arguments.
+        if isinstance(result, dict) and result.get("mode") == "responses":
+            response_id = result.get("response_id")
+            if isinstance(response_id, str) and response_id.strip() and response_id not in response_ids:
+                response_ids.append(response_id)
     if not response_ids:
         return
-    delete_stored_response_ids(response_ids)
+    try:
+        failures = delete_stored_response_ids(response_ids)
+        count = len(failures or [])
+    except Exception:
+        count = len(response_ids)
+    if count:
+        print(f"Warning: provider response cleanup failed for {count} stored responses.")
 
 
 def _responses_delete_disabled(data: dict[str, Any]) -> bool:

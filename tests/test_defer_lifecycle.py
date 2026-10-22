@@ -202,3 +202,48 @@ def test_active_task_can_restart_from_its_snapshot():
         assert task.args == ("argument",)
     finally:
         task.kill(terminate_thread=True)
+
+
+def test_nonblocking_result_handles_deep_nesting_without_executor_workers():
+    from concurrent.futures import ThreadPoolExecutor
+    tasks = []
+    loop_name = "nonblocking-join-" + uuid.uuid4().hex
+    async def nested(depth):
+        if depth == 0:
+            return "Done"
+        child = DeferredTask(loop_name).start_task(nested, depth - 1)
+        tasks.append(child)
+        return await child.result_async(timeout=3)
+    task = DeferredTask(loop_name)
+    tasks.append(task)
+    # An executor with just one thread would deadlock on the second nesting
+    # level if a result waiter consumed a worker.
+    pool = ThreadPoolExecutor(max_workers=1)
+    task.event_loop_thread.loop.call_soon_threadsafe(task.event_loop_thread.loop.set_default_executor, pool)
+    try:
+        task.start_task(nested, 40)
+        assert task.result_sync(timeout=5) == "Done"
+    finally:
+        task.kill(terminate_thread=True)
+        pool.shutdown(wait=True)
+
+
+def test_nonblocking_result_timeout_does_not_cancel_owned_task():
+    task = make_task()
+    release = threading.Event()
+    async def child():
+        while not release.is_set():
+            await asyncio.sleep(.01)
+        return "Done"
+    async def exercise():
+        with pytest.raises(TimeoutError):
+            await task.result_async(timeout=.01)
+        assert task.is_alive()
+        release.set()
+        assert await task.result_async(timeout=2) == "Done"
+    try:
+        task.start_task(child)
+        asyncio.run(exercise())
+    finally:
+        release.set()
+        task.kill(terminate_thread=True)

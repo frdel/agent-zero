@@ -56,6 +56,9 @@ def get_default_value(name: str, value: T) -> T:
 
 class Settings(TypedDict):
     version: str
+    durability_backend: str
+    durability_retention_runs: int
+    durability_retention_days: int
 
     agent_profile: str
     agent_knowledge_subdir: str
@@ -587,6 +590,9 @@ def get_default_settings() -> Settings:
     gitignore = files.read_file(files.get_abs_path("conf/workdir.gitignore"))
     return Settings(
         version=_get_version(),
+        durability_backend=get_default_value("durability_backend", "off"),
+        durability_retention_runs=get_default_value("durability_retention_runs", 100),
+        durability_retention_days=get_default_value("durability_retention_days", 30),
         api_keys={},
         auth_login="",
         auth_password="",

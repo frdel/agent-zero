@@ -90,6 +90,7 @@ def init_a0():
                 PrintStyle().error(f"Error waiting for preload: {e}")
 
         initialize.initialize_mcp()
+        initialize.initialize_recovery()
         initialize.initialize_job_loop()
 
     # Let end hooks run during warmup before waiting and starting MCP/jobs.

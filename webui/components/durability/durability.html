@@ -1,0 +1,229 @@
+<html>
+<head>
+  <title>Recovery &amp; documents</title>
+  <script type="module">
+    import { store } from "/components/durability/durability-store.js";
+    import { store as chatsStore } from "/components/sidebar/chats/chats-store.js";
+  </script>
+</head>
+<body>
+  <div x-data x-create="$store.durabilityStore.mount($store.chats.selected)"
+       x-destroy="$store.durabilityStore.close()"
+       x-effect="$store.durabilityStore.followSelectedContext($store.chats.selected)">
+    <template x-if="$store.durabilityStore">
+      <div class="durability-panel" x-data="{ tab: 'recovery' }">
+        <div class="durability-intro">
+          <div><h2>Continue with confidence</h2><p>Review recorded work and keep a revisioned plan for each chat.</p></div>
+          <button type="button" class="button" @click="$store.durabilityStore.refresh()"
+                  :disabled="$store.durabilityStore.loading || $store.durabilityStore.busy" aria-label="Refresh recovery status">
+            <x-icon name="refresh"></x-icon><span>Refresh</span>
+          </button>
+        </div>
+        <div class="durability-message" role="status" aria-live="polite" x-show="$store.durabilityStore.notice" x-text="$store.durabilityStore.notice"></div>
+        <div class="durability-error" role="alert" x-show="$store.durabilityStore.error" x-text="$store.durabilityStore.error"></div>
+        <div class="durability-warning" x-show="$store.durabilityStore.requiredIds.length">
+          <p>Related runs also require an explicit selection. Review these IDs before trying again:</p>
+          <ul><template x-for="id in $store.durabilityStore.requiredIds" :key="id"><li x-text="id"></li></template></ul>
+          <p>No related runs have been selected automatically. Load more recorded runs to locate them, then review and select them explicitly.</p>
+        </div>
+        <div class="durability-warning" x-show="!$store.durabilityStore.enabled && $store.durabilityStore.available">
+          Recovery is disabled. Recorded work remains held; review decisions are subject to server checks.
+        </div>
+        <div class="durability-empty" x-show="!$store.durabilityStore.available && !$store.durabilityStore.loading">
+          <x-icon name="inventory_2"></x-icon><p>Local recovery storage is not enabled for this instance.</p>
+        </div>
+        <div class="durability-tabs" role="tablist" aria-label="Recovery and documents">
+          <button type="button" role="tab" id="durability-recovery-tab" x-ref="recoveryTab" aria-controls="durability-recovery-panel" :aria-selected="tab === 'recovery'" :tabindex="tab === 'recovery' ? 0 : -1" :class="{active: tab === 'recovery'}" @click="tab = 'recovery'" @keydown.arrow-right.prevent="tab = 'plan'; $refs.planTab.focus()" @keydown.arrow-left.prevent="tab = 'plan'; $refs.planTab.focus()">Recovery</button>
+          <button type="button" role="tab" id="durability-plan-tab" x-ref="planTab" aria-controls="durability-plan-panel" :aria-selected="tab === 'plan'" :tabindex="tab === 'plan' ? 0 : -1" :class="{active: tab === 'plan'}" @click="tab = 'plan'" @keydown.arrow-right.prevent="tab = 'recovery'; $refs.recoveryTab.focus()" @keydown.arrow-left.prevent="tab = 'recovery'; $refs.recoveryTab.focus()">Chat plan</button>
+        </div>
+        <section id="durability-recovery-panel" role="tabpanel" aria-labelledby="durability-recovery-tab" x-show="tab === 'recovery'" aria-label="Recorded runs">
+          <div class="durability-warning" x-show="$store.durabilityStore.restore.required">
+            <strong>Restored backup requires review</strong>
+            <p>Select the recorded runs you intend to recover. Selection does not bypass uncertain effects, changed code, or access policy.</p>
+            <button type="button" class="button" @click="$store.durabilityStore.reviewRestore()"
+                    :disabled="$store.durabilityStore.busy || !$store.durabilityStore.selected.length">Review selected runs</button>
+          </div>
+          <div class="durability-toolbar">
+            <span x-text="$store.durabilityStore.loading ? 'Loading recorded work…' : $store.durabilityStore.runs.length + ' of ' + $store.durabilityStore.totalRuns + ' recorded runs'"></span>
+            <label>Show <select x-model="$store.durabilityStore.filter" :disabled="$store.durabilityStore.busy">
+              <option value="all">All runs</option><option value="attention">Needs attention</option><option value="context">Selected chat</option>
+            </select></label>
+          </div>
+          <p class="durability-muted" x-show="!$store.durabilityStore.visibleRuns.length && !$store.durabilityStore.loading">No matching runs.</p>
+          <div class="durability-runs">
+            <template x-for="run in $store.durabilityStore.visibleRuns" :key="run.run_id">
+              <article class="durability-card">
+                <div class="durability-run-heading">
+                  <label class="durability-select" x-show="$store.durabilityStore.restore.required">
+                    <input type="checkbox" :checked="$store.durabilityStore.selected.includes(run.run_id)"
+                           :disabled="$store.durabilityStore.busy || run.restore_selected || !['running', 'blocked', 'attention'].includes(run.status) || ($store.durabilityStore.selected.length >= 1000 && !$store.durabilityStore.selected.includes(run.run_id))"
+                           @change="$store.durabilityStore.toggleSelection(run.run_id, $event.target.checked)"
+                           :aria-label="'Select restored run ' + (run.name || run.context_id)">
+                  </label>
+                  <div class="durability-grow"><h3 x-text="run.name || run.context_id"></h3>
+                    <div class="durability-muted durability-id" x-text="run.run_id"></div>
+                  </div>
+                  <span class="durability-badge" x-text="run.status.replaceAll('_', ' ')"></span>
+                </div>
+                <p class="durability-muted"><span x-text="run.phase.replaceAll('_', ' ')"></span><span x-show="run.restore_selected"> · Selected for restore</span></p>
+                <p x-show="run.reason" x-text="run.reason"></p>
+                <p class="durability-muted" x-show="run.call_count > (run.calls || []).length">Showing the latest 20 model and tool calls.</p>
+                <p class="durability-muted" x-show="run.conflict_count > (run.document_conflicts || []).length">Showing the next two document conflicts. Resolve these to review the remaining proposals.</p>
+                <div class="durability-actions">
+                  <button type="button" class="button" x-show="run.actions?.resume" :disabled="$store.durabilityStore.busy"
+                          @click="$store.durabilityStore.chooseDecision(run, 'resume')"><x-icon name="play_arrow"></x-icon>Resume</button>
+                  <button type="button" class="button" x-show="run.actions?.stop" :disabled="$store.durabilityStore.busy"
+                          @click="$store.durabilityStore.chooseDecision(run, 'stop')"><x-icon name="stop"></x-icon>Stop</button>
+                </div>
+                <template x-for="call in (run.calls || [])" :key="call.call_id">
+                  <div class="durability-call">
+                    <div class="durability-toolbar"><strong x-text="call.name || call.kind"></strong><span class="durability-muted" x-text="call.status"></span></div>
+                    <p class="durability-muted" x-text="call.has_result ? 'A recorded result is available.' : 'No committed result is available.'"></p>
+                    <div class="durability-actions">
+                      <button type="button" class="button" x-show="run.actions?.confirm_completed && !call.has_result" :disabled="$store.durabilityStore.busy"
+                              @click="$store.durabilityStore.chooseDecision(run, 'confirmed_completed', call)">Confirm completed</button>
+                      <button type="button" class="button" x-show="run.actions?.confirm_not_completed && !call.has_result" :disabled="$store.durabilityStore.busy"
+                              @click="$store.durabilityStore.chooseDecision(run, 'confirmed_not_completed', call)">Confirm not completed</button>
+                      <button type="button" class="button" x-show="run.actions?.new_attempt && call.may_retry" :disabled="$store.durabilityStore.busy"
+                              @click="$store.durabilityStore.chooseDecision(run, 'new_attempt', call)">New attempt</button>
+                    </div>
+                    <p class="durability-muted" x-show="call.retry_reason" x-text="call.retry_reason"></p>
+                  </div>
+                </template>
+                <template x-for="conflict in (run.document_conflicts || [])" :key="conflict.id">
+                  <div class="durability-warning" x-show="conflict.status === 'pending' || conflict.status === 'open'">
+                    <strong>Document revision conflict</strong>
+                    <p>The tool proposed a change against revision <span x-text="conflict.expected_revision"></span>; the saved document is revision <span x-text="conflict.current_revision"></span>.</p>
+                    <template x-if="conflict.kind === 'todo' && Array.isArray(conflict.proposed_value?.items)">
+                      <div><h4 x-text="conflict.proposed_value.title || 'Proposed plan'"></h4>
+                        <ul class="durability-proposed"><template x-for="item in conflict.proposed_value.items" :key="item.id"><li><span x-text="item.done ? '✓ ' : '○ '"></span><span x-text="item.text"></span></li></template></ul>
+                      </div>
+                    </template>
+                    <div class="durability-actions">
+                      <button type="button" class="button" :disabled="$store.durabilityStore.busy"
+                              @click="$store.durabilityStore.chooseConflict(run, conflict, 'keep_current')">Keep saved version</button>
+                      <button type="button" class="button" :disabled="$store.durabilityStore.busy || conflict.kind !== 'todo'"
+                              @click="$store.durabilityStore.chooseConflict(run, conflict, 'apply_proposed')">Apply proposed version</button>
+                    </div>
+                    <p class="durability-muted">This reconciles the document only. It does not repeat the tool body.</p>
+                  </div>
+                </template>
+              </article>
+            </template>
+          </div>
+          <button type="button" class="button" x-show="$store.durabilityStore.nextOffset !== null"
+                  :disabled="$store.durabilityStore.loading || $store.durabilityStore.busy"
+                  @click="$store.durabilityStore.loadMore()">Load more recorded runs</button>
+        </section>
+        <section id="durability-plan-panel" role="tabpanel" aria-labelledby="durability-plan-tab" x-show="tab === 'plan'" aria-label="Typed chat plan">
+          <div class="durability-toolbar"><label class="durability-grow">Chat
+            <select x-model="$store.durabilityStore.documentSelection"
+                    x-effect="const selected = $store.durabilityStore.context; const options = $store.durabilityStore.contexts.map(item => item.id).join('|'); $nextTick(() => { if ($store.durabilityStore.context === selected) $el.value = selected; })"
+                    :disabled="$store.durabilityStore.busy">
+              <option value="">Choose a chat</option>
+              <template x-for="context in $store.durabilityStore.contexts" :key="context.id"><option :value="context.id" x-text="context.name"></option></template>
+            </select></label>
+            <button type="button" class="button" @click="$store.durabilityStore.loadDocument(true)"
+                    :disabled="$store.durabilityStore.documentLoading || $store.durabilityStore.busy || !$store.durabilityStore.context">Check saved version</button>
+          </div>
+          <p class="durability-muted">This shared plan uses revision checks. Agent changes and your edits cannot silently overwrite one another.</p>
+          <p class="durability-error" role="alert" x-show="$store.durabilityStore.documentError" x-text="$store.durabilityStore.documentError"></p>
+          <p role="status" x-show="$store.durabilityStore.documentLoading">Loading plan…</p>
+          <template x-if="$store.durabilityStore.draft">
+            <div class="durability-editor">
+              <label>Plan title<input type="text" maxlength="160" x-model="$store.durabilityStore.draft.title" @input="$store.durabilityStore.markDirty()" :disabled="$store.durabilityStore.busy"></label>
+              <div class="durability-toolbar durability-muted"><span x-text="'Based on revision ' + $store.durabilityStore.draftRevision"></span><span x-show="$store.durabilityStore.dirty">Unsaved changes</span></div>
+              <template x-for="(item, index) in $store.durabilityStore.draft.items" :key="item.id">
+                <div class="durability-todo">
+                  <input type="checkbox" x-model="item.done" @change="$store.durabilityStore.markDirty()" :disabled="$store.durabilityStore.busy" :aria-label="'Complete plan item ' + (index + 1)">
+                  <textarea rows="2" maxlength="2000" x-model="item.text" @input="$store.durabilityStore.markDirty()" :disabled="$store.durabilityStore.busy" :aria-label="'Plan item ' + (index + 1)"></textarea>
+                  <button type="button" class="button durability-icon" @click="$store.durabilityStore.removeItem(item.id)" :disabled="$store.durabilityStore.busy" :aria-label="'Remove plan item ' + (index + 1)"><x-icon name="close"></x-icon></button>
+                </div>
+              </template>
+              <button type="button" class="button" @click="$store.durabilityStore.addItem()" :disabled="$store.durabilityStore.busy || $store.durabilityStore.draft.items.length >= 100"><x-icon name="add"></x-icon>Add item</button>
+              <div class="durability-warning" x-show="$store.durabilityStore.draftStale">
+                <strong>The saved version changed. Your draft is preserved.</strong>
+                <p>Compare the saved plan below with your draft above and merge the changes you need before saving.</p>
+                <h4 x-text="$store.durabilityStore.document?.value.title"></h4>
+                <ul class="durability-proposed"><template x-for="item in ($store.durabilityStore.document?.value.items || [])" :key="item.id"><li><span x-text="item.done ? '✓ ' : '○ '"></span><span x-text="item.text"></span></li></template></ul>
+                <label class="durability-check"><input type="checkbox" x-model="$store.durabilityStore.compared" :disabled="$store.durabilityStore.busy">I compared and merged the saved version into my draft.</label>
+                <button type="button" class="button" @click="$store.durabilityStore.acceptComparedDraft()" :disabled="!$store.durabilityStore.compared || $store.durabilityStore.busy">Use the current revision for my merged draft</button>
+              </div>
+              <p class="durability-muted" x-show="$store.durabilityStore.dirty && $store.durabilityStore.draftProblem" x-text="$store.durabilityStore.draftProblem"></p>
+              <div class="durability-actions">
+                <button type="button" class="button confirm" @click="$store.durabilityStore.saveDocument()"
+                        :disabled="$store.durabilityStore.busy || !$store.durabilityStore.dirty || $store.durabilityStore.draftStale || !!$store.durabilityStore.draftProblem">Save plan</button>
+                <button type="button" class="button" @click="$confirmClick($event, () => $store.durabilityStore.useSavedDocument())"
+                        :disabled="$store.durabilityStore.busy || !$store.durabilityStore.dirty">Discard draft</button>
+              </div>
+            </div>
+          </template>
+        </section>
+        <section x-show="$store.durabilityStore.decisionRetry" class="durability-warning" aria-label="Decision acknowledgment">
+          <p>The last decision may already be recorded. Retry its acknowledgment using the exact request you approved; the server will reject stale requests it did not accept.</p>
+          <button type="button" class="button" @click="$store.durabilityStore.retryDecision()" :disabled="$store.durabilityStore.busy">Retry decision acknowledgment</button>
+        </section>
+        <template x-if="$store.durabilityStore.pending">
+          <section class="durability-confirm" role="region" aria-label="Review recovery decision" tabindex="-1" x-create="$nextTick(() => $el.focus())">
+            <h3 x-text="$store.durabilityStore.confirmationTitle"></h3>
+            <p class="durability-id" x-show="$store.durabilityStore.pending.run_id" x-text="$store.durabilityStore.pending.run_id"></p>
+            <template x-if="$store.durabilityStore.pending.kind === 'restore'"><ul><template x-for="id in $store.durabilityStore.pending.run_ids" :key="id"><li class="durability-id" x-text="id"></li></template></ul></template>
+            <p x-show="$store.durabilityStore.pending.kind === 'restore'">Only these selected runs will be considered. Uncertain actions and changed environments stay held.</p>
+            <p x-show="['confirmed_completed', 'confirmed_not_completed'].includes($store.durabilityStore.pending.decision)">This records your evidence and stops the run. It does not invent a tool result or run completion hooks.</p>
+            <p class="durability-warning" x-show="$store.durabilityStore.pending.decision === 'new_attempt'">A new attempt can repeat an external effect or provider charge. Verify the previous action before authorizing it.</p>
+            <p x-show="$store.durabilityStore.pending.decision === 'resume'">The server will resume only a supported recorded continuation and recheck its recovery requirements.</p>
+            <p x-show="$store.durabilityStore.pending.decision === 'stop'">Stop this run and its currently owned descendants. Effects already sent to external services may still complete.</p>
+            <p x-show="$store.durabilityStore.pending.kind === 'conflict'">Record this revision decision without repeating the tool body.</p>
+            <label x-show="$store.durabilityStore.pending.kind === 'resolve'">Evidence or note
+              <textarea rows="3" maxlength="2000" x-model="$store.durabilityStore.pending.note" :disabled="$store.durabilityStore.busy" placeholder="Describe what you verified; avoid credentials."></textarea>
+            </label>
+            <p class="durability-error" role="alert" x-show="$store.durabilityStore.pendingStale" x-text="$store.durabilityStore.decisionRetry ? 'This run changed after submission. Retry the decision acknowledgment to check the original request.' : 'This run changed. Cancel, refresh its details, and choose the action again.'"></p>
+            <label class="durability-check"><input type="checkbox" x-model="$store.durabilityStore.pending.ack" :disabled="$store.durabilityStore.busy">I reviewed this decision and its consequences.</label>
+            <div class="durability-actions">
+              <button type="button" class="button confirm" @click="$store.durabilityStore.confirm()" :disabled="!$store.durabilityStore.confirmationAllowed">Confirm decision</button>
+              <button type="button" class="button" @click="$store.durabilityStore.pending = null" :disabled="$store.durabilityStore.busy">Cancel</button>
+            </div>
+          </section>
+        </template>
+      </div>
+    </template>
+  </div>
+  <style>
+    .durability-panel { color: var(--color-text); font-family: var(--font-family-main); max-width: 960px; margin: 0 auto; line-height: 1.5; }
+    .durability-panel h2 { margin: 0 0 .25rem; font-size: 1.25rem; font-weight: 500; }
+    .durability-panel h3, .durability-panel h4 { margin: 0; font-weight: 500; }
+    .durability-panel p { margin: .5rem 0; }
+    .durability-intro, .durability-toolbar, .durability-run-heading, .durability-actions { display: flex; align-items: center; gap: var(--spacing-sm); flex-wrap: wrap; }
+    .durability-intro { justify-content: space-between; margin-bottom: var(--spacing-md); }
+    .durability-toolbar { justify-content: space-between; margin: var(--spacing-sm) 0; }
+    .durability-grow { flex: 1; min-width: 0; }
+    .durability-muted { color: var(--color-text-muted); font-size: .875rem; }
+    .durability-id { font-size: .75rem; overflow-wrap: anywhere; }
+    .durability-tabs { display: flex; gap: .5rem; border-bottom: 1px solid var(--color-border); margin: 1rem 0; }
+    .durability-tabs button { background: transparent; color: var(--color-text-muted); border: 0; border-bottom: 2px solid transparent; padding: .65rem .9rem; font: inherit; cursor: pointer; }
+    .durability-tabs button.active { color: var(--color-text); border-bottom-color: var(--color-text); }
+    .durability-runs { display: grid; gap: var(--spacing-md); }
+    .durability-card { border: 1px solid var(--color-border); background: var(--color-panel); padding: var(--spacing-md); border-radius: 10px; min-width: 0; overflow-wrap: anywhere; }
+    .durability-badge { font-size: .75rem; padding: .2rem .5rem; border: 1px solid var(--color-border); border-radius: 999px; }
+    .durability-call { padding-top: var(--spacing-sm); margin-top: var(--spacing-md); border-top: 1px solid var(--color-border); }
+    .durability-warning, .durability-confirm { padding: var(--spacing-md); border: 1px solid var(--color-border); border-radius: 8px; margin: var(--spacing-md) 0; background: var(--color-background); }
+    .durability-warning > strong, .durability-error { color: var(--color-warning-text); }
+    .durability-confirm { border-width: 2px; }
+    .durability-message { color: var(--color-text-muted); margin-bottom: .5rem; }
+    .durability-panel .button { display: inline-flex; align-items: center; justify-content: center; gap: .35rem; white-space: normal; min-height: 38px; }
+    .durability-panel button:disabled { opacity: .45; cursor: default; }
+    .durability-panel button:focus-visible, .durability-panel input:focus-visible, .durability-panel select:focus-visible, .durability-panel textarea:focus-visible { outline: 2px solid var(--color-text-muted); outline-offset: 2px; }
+    .durability-panel label { display: block; font-size: .875rem; }
+    .durability-panel input[type=text], .durability-panel select, .durability-panel textarea { display: block; width: 100%; box-sizing: border-box; margin-top: .3rem; padding: .65rem; color: var(--color-text); background: var(--color-input); border: 1px solid var(--color-border); border-radius: 6px; font: inherit; }
+    .durability-panel textarea { resize: vertical; }
+    .durability-panel .durability-check { display: flex; gap: .65rem; align-items: flex-start; margin: 1rem 0; }
+    .durability-check input, .durability-todo input { flex: 0 0 auto; margin-top: .35rem; }
+    .durability-todo { display: grid; grid-template-columns: 20px minmax(0, 1fr) 38px; gap: .5rem; align-items: start; margin: .65rem 0; }
+    .durability-icon { padding: .5rem; }
+    .durability-proposed { padding-left: 1.25rem; max-height: 240px; overflow: auto; white-space: pre-wrap; }
+    .durability-editor { border: 1px solid var(--color-border); padding: var(--spacing-md); border-radius: 10px; }
+    .durability-empty { text-align: center; padding: var(--spacing-md); }
+    @media (max-width: 600px) { .durability-intro { align-items: flex-start; } .durability-toolbar > label { width: 100%; } .durability-card, .durability-editor, .durability-confirm { padding: .75rem; } .durability-actions .button { flex: 1 1 auto; } }
+  </style>
+</body>
+</html>

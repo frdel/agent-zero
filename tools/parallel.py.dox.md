@@ -32,6 +32,7 @@
 - Recursive use of `parallel` from inside a direct background tool worker is blocked before execution; numbered subordinate child chats can use normal child-chat tools, including `parallel`, to create their next-level descendants.
 - Wrapped `call_subordinate` uses the same lifecycle as a top-level call. `job_id` identifies one parallel invocation, while its returned `context_id` identifies the reusable child agent for later `reset=false` calls.
 - The wrapper tool does not create its own visible process-step log; each wrapped child call owns the visible log row, and the wrapper result is recorded only in model history.
+- With local durability enabled, `helpers/durable/workflows.py` owns ordered child manifests, stable job IDs, retained handles across parent turns, cancellation and joins. Completed children are reused; uncertain child effects are held. Collection and explicitly queued parent history commit with the parent checkpoint after the wrapper result enters history. Runtime `ParallelJob` objects remain projections only.
 - Terminal direct jobs are collected after the wrapper result enters model history. Any explicitly queued parent-history messages are appended next, preserving result-before-content ordering for native multimodal tools.
 
 ## Key Concepts

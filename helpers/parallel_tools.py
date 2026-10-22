@@ -184,6 +184,17 @@ def is_parallel_worker(agent: "Agent | None") -> bool:
 
 
 def get_parallel_worker_job(agent: "Agent") -> ParallelJob | None:
+    origin = getattr(agent.context, "_durable_origin", None) or {}
+    if origin.get("kind") == "child" and origin.get("mode") == "tool":
+        # Stateful tool cleanup still needs a worker handle; this projection is
+        # never the authority for completion or recovery.
+        job = getattr(agent.context, "_durable_parallel_job", None)
+        if job is None:
+            job = ParallelJob(id=origin["job_id"], parent_context_id=origin["parent_context_id"],
+                              index=origin["index"], tool_name=origin["tool_name"],
+                              tool_args=origin["tool_args"], kind="tool", worker_context_id=agent.context.id)
+            agent.context._durable_parallel_job = job
+        return job
     if not is_parallel_worker(agent):
         return None
     context = agent.context
@@ -199,6 +210,9 @@ def queue_parallel_parent_history(
     content: Any,
     tokens: int = 0,
 ) -> bool:
+    from helpers.durable.workflows import queue_parent_history
+    if queue_parent_history(agent, content=content, tokens=tokens):
+        return True
     job = get_parallel_worker_job(agent)
     if not job:
         return False
@@ -378,6 +392,10 @@ async def collect_parallel_jobs(
 
 
 async def build_parallel_jobs_extras(agent: "Agent") -> str:
+    from helpers.durable.runtime import current
+    if current(agent):
+        from helpers.durable.workflows import extras
+        return await extras(agent)
     await refresh_parallel_jobs(agent)
     jobs = [
         job
@@ -567,32 +585,14 @@ async def execute_tool_call(
         original_get_log_object = tool.get_log_object
         tool.get_log_object = lambda: log_item
 
-    agent.loop_data.current_tool = tool
     try:
-        await agent.handle_intervention()
-        await tool.before_execution(**tool_args)
-        await agent.handle_intervention()
-        await call_extensions_async(
-            "tool_execute_before",
-            agent,
-            tool_args=tool_args or {},
-            tool_name=tool_name,
-        )
-        response = await tool.execute(**tool_args)
-        await agent.handle_intervention()
-        await call_extensions_async(
-            "tool_execute_after",
-            agent,
-            response=response,
-            tool_name=tool_name,
-        )
-        await tool.after_execution(response)
-        await agent.handle_intervention()
+        from helpers.tool_execution import execute_tool
+        response = await execute_tool(tool, tool_args, agent=agent, tool_name=tool_name,
+                                      extension_call=call_extensions_async)
         return response.message
     finally:
         if original_get_log_object is not None:
             tool.get_log_object = original_get_log_object
-        agent.loop_data.current_tool = None
 
 
 def _resolve_parallel_tool(

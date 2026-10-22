@@ -39,6 +39,9 @@
 
 ## Runtime Contracts
 
+- `remove_chat` first fences the chat and currently owned descendants through the local durability coordinator. While their payloads remain available, provider cleanup collects snapshot/history state IDs and top-level normalized completed model-result IDs, including results committed before history or `chat.json`. It then deletes the ledger and snapshot projections. Collection and provider calls run outside SQL transactions; the coordinator lock prevents new admission between fencing and scrubbing.
+- Provider cleanup honors deletion opt-outs from live agent/context state, compatibility snapshots and retained checkpoints, including when no chat file exists. Unreadable recovery data skips provider cleanup conservatively while allowing local deletion. It never searches raw model metadata or call arguments for response identities. `delete_stored_response_ids(ids)` retains its existing provider lookup contract; actual failures emit a fixed warning with only a count, without response IDs or provider error text.
+
 - Helper modules own reusable framework APIs and must preserve public callers unless all callers, tests, and docs are updated together.
 - Update this file whenever public functions, classes, persistence behavior, path/security assumptions, side effects, or cross-module contracts change.
 - Observed side-effect areas: filesystem reads, filesystem writes, filesystem deletion, settings/state persistence, scheduler state.
@@ -73,6 +76,7 @@
   - `tests/test_snapshot_parity.py`
   - `tests/test_subagent_profiles.py`
   - `tests/test_tool_action_contracts.py`
+  - `tests/test_durable_response_deletion.py`
 
 ## Child DOX Index
 

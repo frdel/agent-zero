@@ -28,7 +28,7 @@
 - `Delegation` defines `execute(...)`.
 - Observed side-effect areas: filesystem writes, settings/state persistence.
 - `profile`/`agent_profile` values are validated against available profile keys before use; unknown profiles raise `RepairableException` so the agent can retry with a real profile.
-- Direct and parallel calls use the same creation, continuation, message, history, and persistence functions in this module.
+- Direct and parallel calls use the same creation and continuation validation. With local durability enabled, the child-workflow adapter commits creation intent and genesis before child admission, joins the recorded child result, and holds uncertain child effects; it never relaunches a completed child. Legacy execution retains the existing history/persistence helper.
 - Direct delegation runs that helper through the separate child's `AgentContext.run_task`, so running status, intervention, Stop, and completion notifications use the normal context lifecycle. Cancelling the caller cancels its direct child; stopping only the child raises a recoverable error to the caller. Parallel jobs retain their own task ownership, and legacy same-context children remain inline.
 - A non-empty `name` updates both the child context name and sidebar label on creation or continuation. Omission preserves an existing name; legacy same-context children must not rename the parent chat.
 - Every fresh child is `Agent(parent.number + 1, ...)` in its own persisted child-chat context, so sibling A1 agents can each create their own A2 descendants without sharing streaming state.
