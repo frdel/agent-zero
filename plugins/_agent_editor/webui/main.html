@@ -285,7 +285,7 @@
                       <h4 x-text="group.label"></h4>
                       <template x-for="prompt in $store.agentEditor.filteredPromptFiles(group.id)" :key="prompt.filename">
                         <button type="button" :class="{ active: $store.agentEditor.selectedPrompt === prompt.filename }" @click="$store.agentEditor.selectPrompt(prompt.filename)">
-                          <span class="prompt-file-name" x-text="prompt.filename"></span><span class="prompt-file-state" x-text="$store.agentEditor.promptDisplayState(prompt)"></span>
+                          <span class="prompt-file-name" x-text="$store.agentEditor.promptTitle(prompt)"></span><span class="prompt-file-state" x-text="$store.agentEditor.promptDisplayState(prompt)"></span>
                         </button>
                       </template>
                     </section>
@@ -296,8 +296,8 @@
               <div class="prompt-editor" role="region" aria-label="Selected prompt file" tabindex="0" x-show="$store.agentEditor.selectedPromptDraft">
                 <div class="prompt-editor-header">
                   <div class="prompt-file-heading">
-                    <strong x-text="$store.agentEditor.selectedPrompt"></strong>
-                    <div class="prompt-customization-path"><code x-text="$store.agentEditor.promptCustomizationPath()"></code><button type="button" class="button" title="Copy customization path" aria-label="Copy customization path" @click="$store.agentEditor.copyPromptPath()"><x-icon name="content_copy"></x-icon></button></div>
+                    <strong x-text="$store.agentEditor.promptTitle($store.agentEditor.selectedPromptDraft)"></strong>
+                    <span class="prompt-file-state" x-text="$store.agentEditor.promptDisplayState($store.agentEditor.selectedPromptDraft)"></span>
                   </div>
                   <div class="prompt-actions">
                     <button type="button" class="btn btn-action-header cancel" x-show="$store.agentEditor.promptEditPending($store.agentEditor.selectedPromptDraft)" title="Discard current edit" aria-label="Discard current edit" @click="$store.agentEditor.discardPromptEdit($store.agentEditor.selectedPrompt)"><x-icon name="close"></x-icon></button>
@@ -305,8 +305,9 @@
                     <button type="button" class="button" x-show="$store.agentEditor.selectedPromptDraft.has_override || $store.agentEditor.promptDirty($store.agentEditor.selectedPromptDraft)" @click="$store.agentEditor.resetPrompt($store.agentEditor.selectedPrompt)">Reset to default</button>
                   </div>
                 </div>
-                <div class="agent-editor-note" x-show="$store.agentEditor.selectedPromptDraft.dynamic_processor">This file is generated dynamically at runtime. Python processors are read-only and are not executed by the editor.</div>
+                <div class="prompt-customization-path"><span>Saves to</span><code x-text="$store.agentEditor.promptCustomizationPath()"></code><button type="button" class="button" title="Copy path" aria-label="Copy path" @click="$store.agentEditor.copyPromptPath()"><x-icon name="content_copy"></x-icon></button></div>
                 <div id="agent-editor-prompt-ace" class="prompt-ace" :aria-invalid="$store.agentEditor.selectedPrompt === 'agent.system.main.specifics.md' && $store.agentEditor.fieldIssue('instructions') ? 'true' : null" :aria-describedby="$store.agentEditor.selectedPrompt === 'agent.system.main.specifics.md' && $store.agentEditor.fieldIssue('instructions') ? 'agent-editor-prompt-error' : null"></div>
+                <p class="prompt-template-help" x-show="$store.agentEditor.selectedPromptDraft.dynamic_processor">Variables like <code x-text="$store.agentEditor.promptVariableExample"></code> are filled in when the agent runs.</p>
                 <div class="agent-editor-note" role="alert" x-show="$store.agentEditor.aceUnavailable">Prompt editor is unavailable. Reload Agent Zero and try again.</div>
                 <span id="agent-editor-prompt-error" class="field-error" role="alert" x-show="$store.agentEditor.selectedPrompt === 'agent.system.main.specifics.md' && $store.agentEditor.fieldIssue('instructions')" x-text="$store.agentEditor.fieldIssue('instructions')?.message"></span>
               </div>
@@ -488,12 +489,16 @@
   .prompt-editor { display:flex; flex-direction:column; gap:.55rem; min-width:0; min-height:0; max-width:100%; overflow:hidden; }
   .prompt-editor-header { display:flex; justify-content:space-between; gap:.7rem; align-items:flex-start; }
   .prompt-editor-header > div:first-child { min-width:0; overflow-wrap:anywhere; }
-  .prompt-file-heading { display:flex; flex-direction:column; gap:.25rem; }
+  .prompt-file-heading { display:flex; flex-wrap:wrap; align-items:baseline; gap:.2rem .6rem; }
+  .prompt-template-help { margin:0; color:var(--color-text-secondary); font-size:.75rem; }
   .prompt-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.35rem; min-width:0; }
   .prompt-actions .button { max-width:100%; white-space:normal; overflow-wrap:anywhere; }
-  .prompt-customization-path { display:flex; align-items:center; gap:.4rem; min-width:0; }
-  .prompt-customization-path code { min-width:0; color:var(--color-text-secondary); font-size:.72rem; overflow-wrap:anywhere; }
-  .prompt-customization-path .button { width:2.125rem; height:2.125rem; flex:0 0 auto; padding:0; }
+  .prompt-customization-path { display:flex; align-items:center; gap:.5rem; min-width:0; color:var(--color-text-secondary); font-size:.72rem; }
+  .prompt-customization-path > span { flex:0 0 auto; }
+  .prompt-customization-path code { min-width:0; overflow-wrap:anywhere; }
+  .prompt-customization-path .button { width:1.5rem; height:1.5rem; min-height:1.5rem; flex:0 0 auto; padding:0; border:0; background:transparent; color:inherit; }
+  .prompt-customization-path .button:hover { background:var(--color-input); color:var(--color-text); }
+  .prompt-customization-path x-icon { font-size:1rem; }
   .prompt-ace { flex:1; min-height:0; border:1px solid var(--color-border); border-radius:8px; overflow:hidden; font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace; }
   .profile-maintenance summary { display:flex; align-items:center; min-height:1.5rem; cursor:pointer; }
   .policy-filters { display:grid; grid-template-columns:minmax(12rem,1fr) minmax(8rem,auto); gap:.6rem; }

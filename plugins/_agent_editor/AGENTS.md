@@ -48,9 +48,13 @@
   Removing or deleting in project scope never mutates those inherited layers;
   only agents created in the selected scope are deletable.
 - Bundled `agents/` files are read-only.
-- Advanced prompt text is edited with a full-height bundled ACE editor in
-  Markdown mode. The selected file's customization path sits below its name;
-  per-file close/check actions discard or accept the current edit checkpoint,
+- Advanced prompt text is edited directly with a full-height bundled ACE editor
+  in Markdown mode. Main instruction sections use readable titles and the
+  current customization status. A compact Saves to row shows the destination
+  once with a copy action; variable hints sit below the editor and omit Python
+  implementation details. Preserve authored placeholders on save and never run
+  processors in the editor.
+  Per-file close/check actions discard or accept the current edit checkpoint,
   while the editor's global save remains the only persistence boundary.
 - New profiles require a display name and non-empty agent instructions in both
   Easy and Advanced; existing Advanced prompt edits retain per-file semantics.

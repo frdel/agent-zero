@@ -625,6 +625,11 @@ const model = {
     return this.draft?.prompts?.[this.selectedPrompt] || null;
   },
 
+  get promptVariableExample() {
+    const placeholders = this.selectedPromptDraft?.value.match(/{{[a-zA-Z_]\w*}}/g) || [];
+    return placeholders.find(value => value !== "{{endif}}") || "{{name}}";
+  },
+
   sectionDirty(section) {
     if (!this.draft || !this.initialDraft) return false;
     if (String(section) === "1") {
@@ -888,6 +893,12 @@ const model = {
     return this.projectName ? "Inherited" : "Default";
   },
 
+  promptTitle(prompt) {
+    return /^agent\.system\.main\.(specifics|role|environment|communication|solving|tips)\.md$/.test(prompt?.filename || "")
+      ? prompt.group_label || prompt.filename
+      : prompt?.filename || "";
+  },
+
   selectPrompt(filename) {
     if (!this.draft?.prompts?.[filename]) return;
     this.selectedPrompt = filename;
@@ -897,7 +908,7 @@ const model = {
   filteredPromptFiles(group = "") {
     const query = this.promptFileSearch.trim().toLowerCase();
     return Object.values(this.draft?.prompts || {}).filter((prompt) =>
-      (!group || prompt.group === group) && (!query || [prompt.filename, prompt.state, prompt.source]
+      (!group || prompt.group === group) && (!query || [prompt.filename, prompt.group_label, prompt.state, prompt.source]
         .join(" ").toLowerCase().includes(query)),
     );
   },
@@ -977,9 +988,13 @@ const model = {
     return `${root}/${this.draft.profileId}/prompts/${this.selectedPrompt}`;
   },
 
-  copyPromptPath() {
-    navigator.clipboard?.writeText(this.promptCustomizationPath());
-    globalThis.justToast?.("Path copied", "success", 1200, "agent-editor-copy");
+  async copyPromptPath() {
+    try {
+      await navigator.clipboard.writeText(this.promptCustomizationPath());
+      globalThis.justToast?.("Path copied", "success", 1200, "agent-editor-copy");
+    } catch {
+      globalThis.justToast?.("Could not copy path. Select and copy it manually.", "error", 3000, "agent-editor-copy");
+    }
   },
 
   customizePolicy(kind) {

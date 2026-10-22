@@ -255,6 +255,37 @@ def test_builtin_prompt_override_never_touches_bundled_profile(user_root: Path) 
     assert not (user_root / "researcher" / "prompts" / editor.SPECIFICS_FILE).exists()
 
 
+@pytest.mark.parametrize("project", [False, True])
+def test_customized_tips_preserve_template_and_runtime_values(
+    user_root: Path,
+    project_scope: tuple[editor._EditorContext, Path],
+    monkeypatch: pytest.MonkeyPatch,
+    project: bool,
+) -> None:
+    from helpers import settings
+
+    project_context, project_root = project_scope
+    context = project_context if project else None
+    filename = "agent.system.main.tips.md"
+    destination = (project_root if project else user_root) / "researcher" / "prompts"
+    roots = [str(destination), editor.files.get_abs_path("prompts")]
+    monkeypatch.setattr(editor.subagents, "get_paths", lambda *_args, **_kwargs: roots)
+    content = "# My tips\nSave artifacts in {{workdir_path}}.\nKeep output concise.\n"
+    plan = editor.build_change_plan(
+        {"profile_id": "researcher", "prompts": {"set": {filename: content}}},
+        context,
+    )
+    assert list(plan.changes) == [destination / filename]
+    editor.apply_change_plan(plan)
+    assert (destination / filename).read_text(encoding="utf-8") == content
+
+    for workdir in ("/example/first", "/example/second"):
+        monkeypatch.setattr(settings, "get_settings_for_prompt", lambda: {"workdir_path": workdir})
+        rendered = editor.files.read_prompt_file(filename, _directories=roots)
+        assert rendered == content.replace("{{workdir_path}}", workdir)
+    assert (destination / filename).read_text(encoding="utf-8") == content
+
+
 def test_unrelated_empty_user_directory_survives_save(user_root: Path) -> None:
     manual = user_root / "researcher" / "tools" / "reserved-for-manual-use"
     manual.mkdir(parents=True)

@@ -195,7 +195,17 @@ def test_agent_editor_surface_has_normative_entry_points_and_accessible_controls
     assert 'class="prompt-editor" role="region" aria-label="Selected prompt file" tabindex="0"' in modal
     assert "Preview combined prompt" not in modal
     assert 'class="prompt-customization-path"' in modal
-    assert '<strong x-text="$store.agentEditor.selectedPrompt"></strong>\n                    <div class="prompt-customization-path">' in modal
+    assert '<strong x-text="$store.agentEditor.promptTitle($store.agentEditor.selectedPromptDraft)"></strong>' in modal
+    assert 'x-text="$store.agentEditor.promptTitle(prompt)"' in modal
+    assert "prompt-details" not in modal
+    assert "Python processors" not in modal
+    assert 'x-text="$store.agentEditor.promptDisplayState($store.agentEditor.selectedPromptDraft)"' in modal
+    assert '<span>Saves to</span>' in modal
+    assert 'title="Copy path" aria-label="Copy path"' in modal
+    assert "This file is generated dynamically" not in modal
+    assert '<p class="prompt-template-help"' in modal
+    assert 'x-text="$store.agentEditor.promptVariableExample"' in modal
+    assert modal.index('id="agent-editor-prompt-ace"') < modal.index('<p class="prompt-template-help"')
     assert "source-chain" not in modal and "promptSourceChain" not in store
     assert "$store.agentEditor.promptCustomizationPath()" in modal
     assert 'class="review-identity"' in modal
@@ -499,7 +509,25 @@ store.projectName = "";
 if (store.promptCustomizationPath() !== "usr/agents/researcher/prompts/agent.system.main.specifics.md") throw new Error("Global prompt customization path mismatch");
 store.projectName = "demo";
 if (store.promptCustomizationPath() !== "usr/projects/demo/.a0proj/agents/researcher/prompts/agent.system.main.specifics.md") throw new Error("project prompt customization path mismatch");
+const copiedPaths = [];
+Object.defineProperty(globalThis, "navigator", { configurable: true, value: { clipboard: { writeText: async value => copiedPaths.push(value) } } });
+await store.copyPromptPath();
+if (copiedPaths[0] !== store.promptCustomizationPath() || toasts.at(-1)?.[1] !== "success") throw new Error("copy path failed");
+navigator.clipboard.writeText = async () => { throw new Error("Clipboard denied"); };
+await store.copyPromptPath();
+if (toasts.at(-1)?.[1] !== "error") throw new Error("clipboard failure reported success");
+navigator.clipboard = undefined;
+await store.copyPromptPath();
+if (toasts.at(-1)?.[1] !== "error") throw new Error("missing clipboard reported success");
 store.projectName = "";
+const originalInstructions = store.instructions.value;
+store.instructions.value = '{{ include "base.md" }}\n{{if available}}\n{{endif}}\nSave in {{workdir_path}}.';
+if (store.promptVariableExample !== "{{workdir_path}}") throw new Error("variable hint showed a template directive");
+store.instructions.value = "Profiles: {{agent_profiles}}";
+if (store.promptVariableExample !== "{{agent_profiles}}") throw new Error("variable hint did not follow the selected template");
+store.instructions.value = "Plain instructions";
+if (store.promptVariableExample !== "{{name}}") throw new Error("variable hint fallback missing");
+store.instructions.value = originalInstructions;
 store.state.model_preset.effective = "Current";
 store.state.model_presets = [{ name: "Codex" }];
 store.draft.modelPreset = "Codex";
@@ -750,6 +778,15 @@ loadHandler = null;
 store.projectName = "";
 store.intent = { ...store.intent, projectName: "" };
 const communication = store.draft.prompts["agent.system.main.communication.md"];
+if (store.promptTitle(communication) !== "Communication") throw new Error("friendly prompt title missing");
+if (store.promptTitle({ filename: "agent.system.main.tips.md", group_label: "Tips" }) !== "Tips") throw new Error("Tips title missing");
+if (store.promptTitle({ filename: "agent.system.main.communication.native.md", group_label: "Communication" }) !== "agent.system.main.communication.native.md") throw new Error("distinct prompt variants lost their filenames");
+if (store.promptTitle(null) !== "") throw new Error("empty prompt title mismatch");
+store.promptFileSearch = "Agent instructions";
+if (store.filteredPromptFiles()[0]?.filename !== "agent.system.main.specifics.md") throw new Error("friendly prompt title search failed");
+store.promptFileSearch = "agent.system.main.communication.md";
+if (store.filteredPromptFiles()[0] !== communication) throw new Error("filename search failed");
+store.promptFileSearch = "";
 communication.value = communication.initialValue;
 communication.reset = false;
 store.acceptPromptEdit(communication.filename);

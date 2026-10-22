@@ -14,6 +14,12 @@ Skills default switch. Easy places each chooser below its default switch;
 Advanced gives Tools, MCPs, and Skills separate searchable sections and adds
 retained unavailable entries plus ACE-based prompt editing.
 
+Main prompt sections such as Tips open ready to edit under readable titles,
+with their customization status beside the title. A compact Saves to row shows
+the destination and copy action; variable hints appear below the editor.
+Save preserves Markdown and its template placeholders exactly; the runtime
+continues to supply dynamic values when the agent runs.
+
 Global agents and customizations live under `usr/agents/<profile-id>` and apply
 across projects. Project-scoped agents and customizations live under
 `usr/projects/<project>/.a0proj/agents/<profile-id>`, inherit the Global layer,
