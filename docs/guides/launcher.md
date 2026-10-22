@@ -61,6 +61,70 @@ Use the Instance card to:
 Launcher keeps local Instances and remote Instances separate, so deleting a
 container is not the same as deleting a saved remote URL or a workspace backup.
 
+## Workspace Storage
+
+When creating a local Instance, choose where its **`/a0/usr`** data will live.
+This directory holds settings, chats, memory, projects, and custom plugins.
+Launcher creates the Docker mount; inside Agent Zero the path stays `/a0/usr`
+regardless of the host location you choose.
+
+### Choose Storage For A New Instance
+
+Open **Installs -> Run**, expand **Advanced**, and find **Workspace storage**:
+
+| Option | What Launcher does | Example host location |
+| --- | --- | --- |
+| **Create folder named after Instance** | Creates a separate folder under your configured host folder and bind-mounts its `usr` subfolder at `/a0/usr`. | With the default root and Instance name `research`: `~/agent-zero/research/usr` |
+| **Choose custom folder** | Bind-mounts the exact folder entered in **Folder** at `/a0/usr`, creating it if needed. It does not append `usr`. | `/home/user/agent-zero-data` |
+| **Named Docker volume** | Uses Docker-managed storage at `/a0/usr`. Enter a **Volume name**, or leave it blank for a generated name. | A Docker volume rather than a browsable host folder |
+
+If an automatically generated folder name already exists, Launcher chooses a
+free name with a numeric suffix. Use **Choose custom folder** to select an
+existing data folder deliberately. If your old data is in
+`/home/user/old-instance/usr`, select that **`usr` folder**, not its parent.
+
+On the first-instance setup screen, **Persistent workspace (recommended)**
+creates the separate host folder. That screen also offers **Named Docker
+volume** and **No persistent workspace**. The last choice stores data only in
+the container: stopping it keeps the data, but deleting or replacing it can
+lose the data.
+
+### Set Defaults And Find Your Files
+
+Open **Settings -> Workspace** to set defaults for new local Instances:
+
+- **Host folder** is the parent directory when **Folder mapping** is
+  **Separate folder per Instance**.
+- **Use this folder directly** maps that exact folder at `/a0/usr` for flows
+  that use the saved defaults. The **Run** dialog has its own storage choice;
+  choose **Choose custom folder** there to make an exact mapping for that
+  Instance.
+- **Named Docker volume** uses the configured **Volume prefix** for generated
+  names.
+
+Changing defaults does not move existing Instance data. For an Instance with
+a host folder, open its menu on **Instances** and choose **Open storage folder**
+to see the actual mounted directory.
+
+For example, with `~/agent-zero/research/usr` mounted, a file you place at
+`~/agent-zero/research/usr/reports/notes.txt` is available to Agent Zero as
+`/a0/usr/reports/notes.txt`. Edits and deletions affect the same file on both
+sides. Use a separate workspace for each running Instance; sharing one writable
+data folder can mix settings and chats.
+
+When deleting an Instance, **Keep folder** or **Keep volume** removes the
+container while preserving its data. **Delete folder** or **Delete volume**
+also removes the associated user data. Keep a backup before choosing deletion.
+For an Instance without persistent storage, use **Persist a0/usr data** in its
+menu and verify the replacement before removing the old container.
+
+The **Host access -> Folder for files and commands** control belongs to the
+host connector. It selects where host file operations and commands start;
+commands can reach other host folders. **Workspace storage** controls the
+Docker mount. For additional work-folder mounts, read
+[Use Local Folders With Agent Zero](local-folders.md#share-a-separate-work-folder).
+Saved remote Instances keep their storage on the remote machine.
+
 ## Updating With Launcher
 
 For same-major Agent Zero updates, the Web UI **Self Update** is still the

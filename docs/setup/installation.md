@@ -339,22 +339,23 @@ docker pull agent0ai/agent-zero
 
 #### 2.2. (Optional) Map Folders for Persistence
 
-Choose or create a folder on your computer where Agent Zero will save its data. 
+Create a dedicated folder on the Docker host, such as
+`/home/user/agent-zero-data`, and map it to **`/a0/usr`** inside the container.
+Docker calls this a **bind mount**. It keeps settings, chats, memory, projects,
+and custom plugins in that host folder even after you delete the container.
 
-Setting up persistence is needed only if you want your data and files to remain available even after you delete the container.
-
-You can pick any location you find convenient:
-
-- **Windows:** `C:\agent-zero-data`
-- **macOS/Linux:** `/home/user/agent-zero-data`
-
-You can map just the `/a0/usr` directory (recommended) or individual subfolders of `/a0` to a local directory.
+The two paths show the same files: `/home/user/agent-zero-data/reports` on the
+host is `/a0/usr/reports` to Agent Zero. Edits and deletions affect both sides.
+Without persistent storage, stopping the container keeps data, but deleting
+the container loses it. A named Docker volume is another persistence option,
+as used by the quick-start command above.
 
 > [!CAUTION]
 > Do **not** map the entire `/a0` directory: it contains the application code and can break upgrades.
 
-> [!TIP]
-> Choose a location that's easy to access and backup. All your Agent Zero data will be directly accessible in this directory.
+See [Use Local Folders With Agent Zero](../guides/local-folders.md) for Docker
+CLI, Docker Desktop, Compose, read-only access, and adding a separate work
+folder. In Launcher, use [Workspace storage](../guides/launcher.md#workspace-storage).
 
 #### 2.3. Run the Container
 
@@ -364,10 +365,23 @@ You can map just the `/a0/usr` directory (recommended) or individual subfolders 
 - Click the `Run` button next to the `agent0ai/agent-zero` image
 - Open the "Optional settings" menu
 - **Ensure at least one host port is mapped to container port `80`** (set host port to `0` for automatic assignment)
+- To use the folder from step 2.2, add it under **Volumes**: **Host path** = your local data folder, **Container path** = `/a0/usr`
 - Click the `Run` button
 
 ![docker port mapping](../res/setup/2-docker-image-run.png)
 ![docker volume mapping](../res/setup/2-docker-image-run-3.png)
+
+**Using Terminal:**
+
+```bash
+mkdir -p /home/user/agent-zero-data
+docker run -d -p 127.0.0.1:50080:80 \
+  --mount type=bind,source=/home/user/agent-zero-data,target=/a0/usr \
+  agent0ai/agent-zero
+```
+
+Replace the host path with your own. This example opens at
+`http://localhost:50080`; choose another host port if it is already in use.
 
 The container will start and show in the "Containers" tab:
 
@@ -387,15 +401,10 @@ Open `http://localhost:<PORT>` in your browser. The Web UI will open - Agent Zer
 > You can also access the Web UI by clicking the port link directly under the container ID in Docker Desktop.
 
 > [!NOTE]
-> After starting the container, you'll find all Agent Zero files in your chosen directory. You can access and edit these files directly on your machine, and the changes will be immediately reflected in the running container.
-
-**Running A0 using Terminal?**
-
-```bash
-docker run -p 0:80 -v /path/to/your/work_dir:/a0/usr agent0ai/agent-zero
-```
-
-- Replace `0` with a fixed port if you prefer (e.g., `50080:80`)
+> If you mapped `/a0/usr`, the chosen host folder contains Agent Zero user
+> data. Application code remains inside the container. Local file edits are
+> visible through the mount; settings changes may still require a reload or
+> restart.
 
 ---
 

@@ -8,6 +8,7 @@
 ## Ownership
 
 - `README.md`, `quickstart.md`, `guides/`, and `setup/` cover user-facing setup and workflows.
+- `guides/local-folders.md` owns Docker bind-mount examples and persistence guidance; `guides/launcher.md#workspace-storage` owns Launcher storage choices and folder mappings.
 - `developer/` covers compact developer references and source handoffs.
 - `plans/` covers implementation plans, migration notes, and staged technical roadmaps.
 - `res/` contains documentation images and other documentation assets.

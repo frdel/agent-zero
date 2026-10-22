@@ -23,7 +23,8 @@ docs focus on practical setup, screenshots, and user workflows.
 ## User Guides
 
 - **[Usage Guide](guides/usage.md):** Practical tour of Agent Zero's main workflows.
-- **[Agent Zero Launcher](guides/launcher.md):** Fresh-machine Launcher walkthrough, Docker setup gate, Installs, Instances, and docs screenshot capture with Playwright/Electron.
+- **[Agent Zero Launcher](guides/launcher.md):** Fresh-machine setup, Installs, Instances, and workspace folder or Docker volume choices.
+- **[Use Local Folders With Agent Zero](guides/local-folders.md):** Bind mounts, persistent user data, separate work folders, Docker CLI/Desktop/Compose examples, and Launcher storage links.
 - **[First-Run Onboarding](guides/onboarding.md):** Set up OpenRouter, our proxy API or another provider with the guided wizard.
 - **[Browser Guide](guides/browser.md):** Use the built-in Browser, live Canvas surface, annotations, screenshots, host browser mode, and extensions.
 - **[Desktop Guide](guides/desktop.md):** Use the built-in Linux desktop, GUI apps, and LibreOffice Writer/Calc/Impress Cowork.
@@ -117,6 +118,8 @@ docs focus on practical setup, screenshots, and user workflows.
     - [Memory Management](guides/usage.md#memory-management)
     - [Backup And Restore](guides/usage.md#backup-and-restore)
   - [Agent Zero Launcher](guides/launcher.md)
+    - [Workspace Storage](guides/launcher.md#workspace-storage)
+  - [Use Local Folders With Agent Zero](guides/local-folders.md)
   - [Browser Guide](guides/browser.md)
   - [Desktop Guide](guides/desktop.md)
   - [A0 CLI Connector](guides/a0-cli-connector.md)

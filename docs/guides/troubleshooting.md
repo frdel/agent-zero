@@ -3,7 +3,7 @@ This page addresses frequently asked questions (FAQ) and provides troubleshootin
 
 ## Frequently Asked Questions
 **1. How do I ask Agent Zero to work directly on my files or dirs?**
-- Place the files/dirs in `/a0/usr`. Agent Zero will be able to perform tasks on them.
+- Share a host folder with a Docker bind mount, or place files in the host folder already mapped to `/a0/usr`. Give Agent Zero the container path. See [Use Local Folders With Agent Zero](local-folders.md), including [Launcher workspace storage](launcher.md#workspace-storage).
 
 **2. When I input something in the chat, nothing happens. What's wrong?**
 - Check if you have set up API keys in the Settings page. If not, the application cannot call LLM providers.
