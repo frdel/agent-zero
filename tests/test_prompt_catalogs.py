@@ -75,3 +75,24 @@ def test_default_skill_descriptions_fit_preview_and_remain_searchable(monkeypatc
         ("framework development", "a0-development"),
     ]:
         assert name in [skill.name for skill in skills.search_skills(query, limit=3)], query
+
+
+def test_response_prompt_specifies_working_file_link_format():
+    # Subagent profiles inherit the core default response prompt; the agent0
+    # profile overrides it. Both must teach the same working link formats.
+    prompt_paths = [
+        ROOT / "prompts" / "agent.system.tool.response.md",
+        ROOT / "agents" / "agent0" / "prompts" / "agent.system.tool.response.md",
+    ]
+    for prompt_path in prompt_paths:
+        prompt = prompt_path.read_text(encoding="utf-8")
+
+        # The chat renderer only auto-links bare absolute paths in plain text
+        # and rewrites file:// URLs to the download API. Markdown links with
+        # raw container paths (e.g. [label](/a0/...)) become root-relative
+        # hrefs the WebUI has no route for and 404. The response prompt must
+        # teach the only two working formats so agents stop emitting broken
+        # links.
+        assert "a bare absolute path in plain text" in prompt, prompt_path
+        assert "[label](file:///absolute/path.ext)" in prompt, prompt_path
+        assert "never link local files as [label](/a0/..." in prompt, prompt_path
