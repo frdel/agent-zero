@@ -32,6 +32,8 @@ class LogPlainResponses(Extension):
         params = getattr(getattr(self.agent, "loop_data", None), "params_temporary", None)
         if not isinstance(params, dict) or "log_item_response" in params:
             return
+        if params.get("leaked_tool_call") in {"rejected", "truncated"}:
+            return
 
         log_item = params.get("log_item_generating")
         if log_item is None:

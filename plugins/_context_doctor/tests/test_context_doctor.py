@@ -357,3 +357,12 @@ def test_extension_handles_raw_text_fallback_with_warning_and_skip(monkeypatch):
     assert logs[0]["id"] == "warning"
     assert log_item.data["kvps"]["reasoning"] == "thinking"
     assert log_item.data["content"] == "Hello there…"
+
+
+def test_extension_respects_already_handled_turn():
+    result = {
+        "llm_result": SimpleNamespace(response="<function=response>"),
+        "skip_default_processing": True,
+    }
+    ContextDoctor(SimpleNamespace()).execute(result)
+    assert result["llm_result"].response == "<function=response>"

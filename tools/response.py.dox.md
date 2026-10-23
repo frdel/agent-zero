@@ -26,6 +26,7 @@
   argument, preferring `text` and falling back to `message` when `text` is blank.
   Invalid arguments raise `RepairableException` so the agent can surface a correction
   warning and retry rather than crash.
+- `after_execution` finishes the existing streamed response bubble. If successful dispatch had no streamed bubble (including recovered calls with Context Doctor disabled), it creates one through the normal masked log API using the generating message ID and validated response text. It adds no history and never duplicates an existing response bubble.
 - Imported dependency areas include: `helpers.errors`, `helpers.tool`.
 
 ## Key Concepts
@@ -43,6 +44,9 @@
 
 - Run targeted tool and prompt-contract tests for changed behavior; smoke-test agent execution when no focused test exists.
 - Related tests observed by source search:
+  - `tests/test_response_tool_validation.py`
+  - `tests/test_plain_response_logging.py`
+  - `tests/test_leaked_tool_call_integration.py`
   - `tests/chunk_parser_test.py`
   - `tests/rate_limiter_test.py`
   - `tests/test_browser_agent_regressions.py`

@@ -13,6 +13,7 @@
 - Top-level functions:
 - `json_parse_dirty(json: str) -> dict[str, Any] | None`
 - `extract_tool_request(content: str) -> dict[str, Any] | None`
+- `extract_leaked_tool_request(response: str) -> tuple[str, dict[str, Any] | None]`
 - `is_misformatted_tool_request(content: str) -> bool`
 - `normalize_tool_request(tool_request: Any) -> tuple[str, dict]`
 - `extract_json_root_string(content: str) -> str | None`
@@ -33,6 +34,9 @@
 - `is_misformatted_tool_request` identifies a tool request wrapped in a JSON code fence, concatenated complete roots containing tool intent, or a complete Agent Zero envelope that starts with `thoughts` and whose dirty parser has absorbed `headline`, `tool_name`, and `tool_args` into that list. It routes that output to the existing repair prompt without executing it.
 - Streaming tool snapshots use `extract_tool_request`; the permissive root helpers remain available for repair and legacy callers, not tool execution.
 - Root extraction ignores objects nested inside an open parent object, so streamed wrapper tools such as `parallel` cannot stop early on the first nested `tool_calls` item.
+- `extract_leaked_tool_request` classifies completed output as `clean`, `quoted`, `call`, `truncated`, or `rejected`; it never changes streaming/canonical acceptance. A `call` contains an intact candidate, not execution authorization. The result hook maps aliases, normalizes actions, and requires the currently offered tool name before dispatch.
+- Completed recovery accepts one standalone `<tool_call>` JSON object/single-item array, `<function=...><parameter=...>` envelope (optionally wrapped), or `name` with `arguments`/`parameters`. It strictly decodes JSON and encoded arguments, rejecting duplicate keys, nonfinite numbers, conflicting fields, incomplete input, multiple calls, and surrounding prose. XML parameter text is preserved; only intact whitespace-free JSON tokens are coerced.
+- Code fences and inline examples produce `quoted`, never a recovered call. Parse complete outer envelopes before masking code so argument content remains intact. The classifier has no logging, network, persistence, or tool-discovery side effects.
 - Imported dependency areas include: `dirty_json`, `helpers.modules`, `re`, `regex`, `typing`.
 
 ## Key Concepts
@@ -52,6 +56,8 @@
 - Related tests observed by source search:
   - `tests/test_stream_tool_early_stop.py`
   - `tests/test_tool_request_normalization.py`
+  - `tests/test_leaked_tool_calls.py`
+  - `tests/test_leaked_tool_call_integration.py`
 
 ## Child DOX Index
 
