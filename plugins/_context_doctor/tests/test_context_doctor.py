@@ -23,13 +23,15 @@ def test_repairs_and_minifies_tool_call():
     )
 
 
-def test_leaves_multiple_calls_for_core_rejection():
+def test_chooses_most_complete_tool_call():
     response = (
         '{"tool_name":"first","tool_args":{}} '
         '{"thoughts":["x"],"headline":"Second","tool_name":"second","tool_args":{"x":1}}'
     )
 
-    assert transform_response(response, suppress_xml=True) == response
+    assert transform_response(response, suppress_xml=True) == (
+        '{"thoughts":["x"],"headline":"Second","tool_name":"second","tool_args":{"x":1}}'
+    )
 
 
 def test_wraps_raw_text_in_thoughts():
@@ -357,28 +359,6 @@ def test_extension_handles_raw_text_fallback_with_warning_and_skip(monkeypatch):
     assert log_item.data["content"] == "Hello there…"
 
 
-def test_does_not_repair_or_suppress_rejected_leaked_calls():
-    for response in (
-        '<tool_call>{"name":"response","arguments":{"text":"ok"}}</tool_call>',
-        "<function=response><parameter=text>cut off",
-        '{"tool_name":"response","tool_args":{"text":"cut off',
-    ):
-        assert transform_response(response, suppress_xml=True) == response
-        assert transform_response(response, suppress_xml=False) == response
-
-
-def test_does_not_promote_fenced_examples_to_calls():
-    import json
-
-    for response in (
-        'Example:\n```json\n{"tool_name":"response","tool_args":{"text":"ok"}}\n```',
-        '~~~xml\n<tool_call>{"name":"response","arguments":{"text":"ok"}}</tool_call>\n~~~',
-    ):
-        assert json.loads(transform_response(response, suppress_xml=True)) == {
-            "thoughts": [response]
-        }
-
-
 def test_extension_respects_already_handled_turn():
     result = {
         "llm_result": SimpleNamespace(response="<function=response>"),
@@ -386,9 +366,3 @@ def test_extension_respects_already_handled_turn():
     }
     ContextDoctor(SimpleNamespace()).execute(result)
     assert result["llm_result"].response == "<function=response>"
-
-
-def test_quoted_examples_never_become_usable_calls():
-    response = 'Example:\n```json\n{"tool_name":"response","tool_args":{"text":"example"}}\n```'
-    transformed = transform_response(response, suppress_xml=True)
-    assert not looks_like_tool_call(response, transformed)

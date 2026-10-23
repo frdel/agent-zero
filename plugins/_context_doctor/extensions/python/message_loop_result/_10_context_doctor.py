@@ -35,12 +35,22 @@ class ContextDoctor(Extension):
 
         # Repair response before default processing
         config = get_plugin_config("_context_doctor", agent=self.agent) or {}
-        transformed = transform_response(
-            response,
-            suppress_xml=config.get("suppress_xml", True),
-            split_thoughts=config.get("split_thoughts", True),
-        )
-        is_tool_call = looks_like_tool_call(response, transformed)
+        params = getattr(getattr(self.agent, "loop_data", None), "params_temporary", {})
+        recovery = params.get("leaked_tool_call")
+        if recovery == "quoted":
+            transformed = json.dumps(
+                {"thoughts": [response]}, ensure_ascii=False, separators=(",", ":")
+            )
+            is_tool_call = False
+        elif recovery == "call":
+            transformed, is_tool_call = response, True
+        else:
+            transformed = transform_response(
+                response,
+                suppress_xml=config.get("suppress_xml", True),
+                split_thoughts=config.get("split_thoughts", True),
+            )
+            is_tool_call = looks_like_tool_call(response, transformed)
         if (
             getattr(llm_result, "mode", None) == "responses"
             and not is_tool_call

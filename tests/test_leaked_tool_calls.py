@@ -2,11 +2,7 @@ import json
 
 import pytest
 
-from helpers.leaked_tool_calls import salvage_leaked_tool_call
-
-
-def salvage(text, offered=("x", "response"), **kwargs):
-    return salvage_leaked_tool_call(text, offered, **kwargs)
+from helpers.extract_tools import extract_leaked_tool_request, extract_tool_request
 
 
 @pytest.mark.parametrize(
@@ -22,28 +18,18 @@ def salvage(text, offered=("x", "response"), **kwargs):
     ],
 )
 def test_recovers_one_complete_call(text):
-    result = salvage(text)
-    assert result.status == "salvaged"
-    assert result.request == {"tool_name": "x", "tool_args": {"a": 1}}
+    assert extract_tool_request(text) is None
+    status, request = extract_leaked_tool_request(text)
+    assert status == "call"
+    assert request == {"tool_name": "x", "tool_args": {"a": 1}}
 
 
-@pytest.mark.parametrize("offered", [None, (), ("other",)])
-def test_requires_an_explicit_matching_tool_surface(offered):
-    result = salvage('{"name":"x","arguments":{}}', offered)
-    assert result.status == "leaked_unsalvageable"
-    assert result.request is None
-
-
-def test_maps_provider_names_and_preserves_action_normalization():
-    result = salvage(
-        '{"name":"native_x:read","arguments":{"path":"notes"}}',
-        ("server.x",),
-        tool_name_map={"native_x": "server.x"},
+def test_keeps_provider_names_for_authorization_at_the_result_hook():
+    status, request = extract_leaked_tool_request(
+        '{"name":"native_x:read","arguments":{"path":"notes"}}'
     )
-    assert result.request == {
-        "tool_name": "server.x",
-        "tool_args": {"path": "notes", "action": "read"},
-    }
+    assert status == "call"
+    assert request == {"tool_name": "native_x:read", "tool_args": {"path": "notes"}}
 
 
 @pytest.mark.parametrize(
@@ -61,9 +47,9 @@ def test_maps_provider_names_and_preserves_action_normalization():
     ],
 )
 def test_truncated_calls_never_produce_a_request(text):
-    result = salvage(text)
-    assert result.status == "truncated"
-    assert result.request is None
+    status, request = extract_leaked_tool_request(text)
+    assert status == "truncated"
+    assert request is None
 
 
 @pytest.mark.parametrize(
@@ -88,9 +74,9 @@ def test_truncated_calls_never_produce_a_request(text):
     ],
 )
 def test_rejects_malformed_ambiguous_and_unsupported_calls(text):
-    result = salvage(text)
-    assert result.status == "leaked_unsalvageable"
-    assert result.request is None
+    status, request = extract_leaked_tool_request(text)
+    assert status == "rejected"
+    assert request is None
 
 
 @pytest.mark.parametrize(
@@ -104,9 +90,11 @@ def test_rejects_malformed_ambiguous_and_unsupported_calls(text):
     ],
 )
 def test_does_not_execute_a_call_amid_prose_or_other_calls(wrap):
-    result = salvage(wrap('<tool_call>{"name":"x","arguments":{}}</tool_call>'))
-    assert result.status == "leaked_unsalvageable"
-    assert result.request is None
+    status, request = extract_leaked_tool_request(
+        wrap('<tool_call>{"name":"x","arguments":{}}</tool_call>')
+    )
+    assert status == "rejected"
+    assert request is None
 
 
 @pytest.mark.parametrize(
@@ -120,30 +108,31 @@ def test_does_not_execute_a_call_amid_prose_or_other_calls(wrap):
         lambda call: f"```xml\n{call}",
     ],
 )
-def test_quoted_tool_examples_are_clean(wrap):
-    result = salvage(wrap('<tool_call>{"name":"x","arguments":{}}</tool_call>'))
-    assert result.status == "clean"
-    assert result.detail == "quoted_tool_syntax"
-    assert result.request is None
+def test_quoted_tool_examples_are_not_calls(wrap):
+    status, request = extract_leaked_tool_request(
+        wrap('<tool_call>{"name":"x","arguments":{}}</tool_call>')
+    )
+    assert status == "quoted"
+    assert request is None
 
 
 def test_preserves_json_string_payload_including_fences_and_markup():
     text = 'Example: ```json\n{"name":"x","arguments":{}}\n``` </tool_call> { \\"'
-    result = salvage(
+    status, request = extract_leaked_tool_request(
         "<tool_call>"
         + json.dumps({"name": "response", "arguments": {"text": text}})
         + "</tool_call>"
     )
-    assert result.request["tool_args"]["text"] == text
+    assert request["tool_args"]["text"] == text
 
 
 def test_xml_parameters_preserve_whitespace_and_coerce_only_intact_tokens():
-    result = salvage(
+    status, request = extract_leaked_tool_request(
         '<function=x><parameter=data>{"a":1}</parameter>'
         "<parameter=text>  hello world\n</parameter><parameter=enabled>true</parameter>"
         "<parameter=content>```python\nprint(1)\n```</parameter></function>"
     )
-    assert result.request["tool_args"] == {
+    assert request["tool_args"] == {
         "data": {"a": 1},
         "text": "  hello world\n",
         "enabled": True,
@@ -162,13 +151,15 @@ def test_xml_parameters_preserve_whitespace_and_coerce_only_intact_tokens():
     ],
 )
 def test_clean_and_canonical_responses_keep_existing_behavior(text):
-    assert salvage(text).status == "clean"
+    assert extract_leaked_tool_request(text)[0] == "clean"
 
 
 def test_multiple_native_calls_are_rejected_as_a_whole():
-    result = salvage('[{"name":"x","arguments":{}},{"name":"response","arguments":{}}]')
-    assert result.status == "leaked_unsalvageable"
-    assert result.request is None
+    status, request = extract_leaked_tool_request(
+        '[{"name":"x","arguments":{}},{"name":"response","arguments":{}}]'
+    )
+    assert status == "rejected"
+    assert request is None
 
 
 @pytest.mark.parametrize(
@@ -179,4 +170,4 @@ def test_multiple_native_calls_are_rejected_as_a_whole():
     ],
 )
 def test_multiple_dirty_canonical_calls_cannot_reach_plugin_repair(text):
-    assert salvage(text).status == "leaked_unsalvageable"
+    assert extract_leaked_tool_request(text)[0] == "rejected"

@@ -99,6 +99,18 @@ def test_responses_tool_json_keeps_generating_log_as_agent_step():
     assert "log_item_response" not in agent.loop_data.params_temporary
 
 
+@pytest.mark.parametrize("status", ["rejected", "truncated"])
+def test_rejected_leaked_call_is_not_displayed_as_a_final_response(status):
+    agent, item = _agent_with_generating_log()
+    agent.loop_data.params_temporary["leaked_tool_call"] = status
+    LogPlainResponses(agent).execute(data={
+        "args": (agent, '<tool_call>{"name":"response","arguments":{"text":"half'),
+        "kwargs": {"llm_result": SimpleNamespace(mode="responses")},
+    })
+    assert item.type == "agent"
+    assert "log_item_response" not in agent.loop_data.params_temporary
+
+
 def test_responses_plain_json_completion_finishes_generating_log_as_response():
     agent, item = _agent_with_generating_log()
     data = {

@@ -6,16 +6,8 @@ import json
 from typing import Any
 
 from helpers.extension import Extension
-from helpers.leaked_tool_calls import salvage_leaked_tool_call
-from helpers.responses_tools import build_responses_function_tools
-
-
-def _validated_name_map(value: Any) -> dict[str, str] | None:
-    if isinstance(value, dict) and all(
-        isinstance(key, str) and isinstance(name, str) for key, name in value.items()
-    ):
-        return value
-    return None
+from helpers.extract_tools import extract_leaked_tool_request, normalize_tool_request
+from helpers.responses_tools import build_responses_function_tools, original_tool_name
 
 
 class LeakedToolCall(Extension):
@@ -35,43 +27,43 @@ class LeakedToolCall(Extension):
         if not isinstance(response, str) or not response:
             return
 
-        is_chat = getattr(llm_result, "mode", None) == "chat_completions"
-        name_map = (
-            None
-            if is_chat
-            else _validated_name_map(self.agent.get_data("responses_tool_name_map"))
-        )
-        result = salvage_leaked_tool_call(
-            response,
-            offered_tools=name_map.values() if name_map is not None else None,
-            tool_name_map=name_map,
-        )
-        if is_chat and result.detail == "tool_surface_unavailable":
-            # Chat turns deliberately build no native schemas. Resolve their
-            # policy-filtered prompt/MCP surface only for a complete candidate,
-            # using the existing builder instead of a second tool registry.
+        status, request = extract_leaked_tool_request(response)
+        if request is not None:
             try:
-                _, current_names = build_responses_function_tools(self.agent)
-                name_map = _validated_name_map(current_names)
+                if getattr(llm_result, "mode", None) == "chat_completions":
+                    _, name_map = build_responses_function_tools(self.agent)
+                else:
+                    name_map = self.agent.get_data("responses_tool_name_map")
+                if not isinstance(name_map, dict) or not all(
+                    isinstance(key, str) and isinstance(name, str)
+                    for key, name in name_map.items()
+                ):
+                    raise ValueError("Tool surface unavailable")
+                request["tool_name"] = original_tool_name(request["tool_name"], name_map)
+                name, args = normalize_tool_request(request)
+                name = original_tool_name(name, name_map)
+                if name not in name_map.values():
+                    raise ValueError("Tool not offered")
+                request = {"tool_name": name, "tool_args": args}
             except Exception:
-                name_map = None
-            result = salvage_leaked_tool_call(
-                response,
-                offered_tools=name_map.values() if name_map is not None else None,
-                tool_name_map=name_map,
-            )
-        if result.status == "clean":
+                status, request = "rejected", None
+        if status == "clean":
             return
-
         params = self.agent.loop_data.params_temporary
-        params["leaked_tool_call"] = {"status": result.status, "detail": result.detail}
-        if result.request is not None:
+        if request is not None:
             llm_result.response = json.dumps(
-                result.request, ensure_ascii=False, separators=(",", ":")
+                request, ensure_ascii=False, separators=(",", ":")
             )
+            params["leaked_tool_call"] = "call"
             self.agent.context.log.log(
                 type="info", content="Recovered a complete leaked tool call."
             )
+            return
+        # Provider-reported truncation retains its existing warning and retry owner.
+        if getattr(llm_result, "truncated", False):
+            return
+        params["leaked_tool_call"] = status
+        if status == "quoted":
             return
 
         # History insertion owns Responses state advancement. Keep the warning
@@ -83,7 +75,7 @@ class LeakedToolCall(Extension):
         )
         prompt = (
             "fw.msg_truncated_tool_call.md"
-            if result.status == "truncated"
+            if status == "truncated"
             else "fw.msg_leaked_tool_call.md"
         )
         warning = self.agent.read_prompt(prompt)

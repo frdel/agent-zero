@@ -15,8 +15,7 @@
 
 ## Local Contracts
 
-- Core leaked-call recovery runs first. Return on `skip_default_processing`; preserve rejected/truncated envelopes for core handling. Quoted tool examples bypass JSON repair and are never marked usable by `looks_like_tool_call`. Never select one call from multiple recognized envelopes.
-
+- Core leaked-call recovery runs first. Return on `skip_default_processing`; read its `params_temporary["leaked_tool_call"]` decision instead of classifying again. Recovered calls pass through as canonical JSON; quoted examples use the existing raw-text fallback without JSON repair. Rejected/truncated and multiple envelopes never reach this plugin's repair helpers.
 - Leave canonical `LLMResult.function_calls` and their accompanying text untouched in either transport. The agent dispatches those calls through the normal tool-policy gate; text repair must not suppress them or reinterpret a textual follow-up as another call.
 - Repaired and fallback JSON is always minified.
 - Leave results already handled by an earlier `message_loop_result` extension (`skip_default_processing`) untouched, such as output-limit truncation retries.

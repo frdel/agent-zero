@@ -1,9 +1,11 @@
+import json
 from types import SimpleNamespace
 
 import pytest
 
 from agent import Agent, LoopData
 from extensions.python.message_loop_result._05_leaked_tool_call import LeakedToolCall
+from extensions.python.message_loop_result._05_truncated_response import TruncatedResponse
 from extensions.python.message_loop_result._20_empty_response import EmptyResponse
 from extensions.python.message_loop_result._30_repeat_response import RepeatResponse
 from extensions.python._functions.agent.Agent.hist_add_warning.end import (
@@ -14,7 +16,8 @@ from extensions.python.message_loop_result import _05_leaked_tool_call as recove
 from helpers.errors import HandledException
 from helpers.files import read_prompt_file
 from helpers.llm_result import LLMResult, ResponseItem
-from helpers.tool import Response
+from helpers.log import Log
+from tools.response import ResponseTool
 from plugins._context_doctor.extensions.python.message_loop_result._10_context_doctor import (
     ContextDoctor,
 )
@@ -83,6 +86,7 @@ def isolated_config(monkeypatch):
 def run_hooks(agent, result, doctor=True):
     data = {"llm_result": result}
     LeakedToolCall(agent).execute(data)
+    TruncatedResponse(agent).execute(data)
     if doctor:
         ContextDoctor(agent).execute(data)
     EmptyResponse(agent).execute(data)
@@ -96,19 +100,6 @@ def run_hooks(agent, result, doctor=True):
 async def test_recovered_response_executes_through_normal_dispatch(
     monkeypatch, mode, doctor
 ):
-    executed = []
-
-    class ResponseTool:
-        async def before_execution(self, **kwargs):
-            pass
-
-        async def execute(self, **kwargs):
-            executed.append(kwargs)
-            return Response(message=kwargs["text"], break_loop=True)
-
-        async def after_execution(self, response):
-            pass
-
     async def no_op(*args, **kwargs):
         pass
 
@@ -126,8 +117,12 @@ async def test_recovered_response_executes_through_normal_dispatch(
     }
     agent.loop_data = LoopData()
     agent.agent_name = "A0"
-    agent.context = SimpleNamespace(log=SimpleNamespace(log=lambda **kwargs: None))
-    agent.get_tool = lambda **kwargs: ResponseTool()
+    log = Log()
+    agent.context = SimpleNamespace(log=log)
+    agent.loop_data.params_temporary["log_item_generating"] = log.log(
+        type="agent", id="generation"
+    )
+    agent.get_tool = lambda **kwargs: ResponseTool(agent=agent, **kwargs)
     agent.handle_intervention = no_op
     result = LLMResult(
         response='<tool_call>{"name":"response","arguments":{"text":"done"}}</tool_call>',
@@ -136,8 +131,111 @@ async def test_recovered_response_executes_through_normal_dispatch(
 
     assert not run_hooks(agent, result, doctor).get("skip_default_processing")
     assert await Agent.process_llm_result_tools(agent, result) == "done"
-    assert executed == [{"text": "done"}]
+    responses = [item for item in log.logs if item.type == "response"]
+    assert len(responses) == 1
+    assert responses[0].content == "done"
+    assert responses[0].id == "generation"
+    assert responses[0].kvps["finished"] is True
     assert agent.loop_data.current_tool is None
+
+
+@pytest.mark.parametrize(
+    "mode, first_text",
+    [
+        ("chat_completions", '{"name":"response","arguments":{"text":"unfinished'),
+        ("responses", '{"name":"response","arguments":{"text":"unfinished'),
+        ("chat_completions", "READY"),
+    ],
+)
+@pytest.mark.parametrize("doctor", [True, False])
+@pytest.mark.asyncio
+async def test_message_loop_retries_then_displays_recovered_response(
+    monkeypatch, mode, first_text, doctor
+):
+    from helpers import history
+    from extensions.python.response_stream._20_live_response import LiveResponse
+    from extensions.python._functions.agent.Agent.hist_add_ai_response.end._10_log_plain_responses import (
+        LogPlainResponses,
+    )
+
+    agent = object.__new__(Agent)
+    agent.agent_name = "A0"
+    agent.data = {"responses_tool_name_map": {"response": "response"}}
+    agent.last_user_message = None
+    agent.history = history.History(agent)
+    agent.hist_add_message = agent.history.add_message
+    agent.parse_prompt = lambda name, **kwargs: kwargs["message"]
+    agent.read_prompt = lambda name, **kwargs: read_prompt_file(
+        name, ["plugins/_context_doctor/prompts", "prompts"], **kwargs
+    )
+    log = Log()
+    agent.context = SimpleNamespace(log=log, streaming_agent=None, task=None)
+    agent.get_tool = lambda **kwargs: ResponseTool(agent=agent, **kwargs)
+    calls = []
+    complete = '<tool_call>{"name":"response","arguments":{"text":"done"}}</tool_call>'
+
+    async def no_op(*args, **kwargs):
+        return []
+
+    async def fail(location, exception):
+        raise exception
+
+    async def call_model(*, response_callback, **kwargs):
+        assert len(calls) < 2, "The recovered response did not finish the loop"
+        text = (first_text, complete)[len(calls)]
+        calls.append(text)
+        middle = len(text) // 2
+        assert await response_callback(text[:middle], text[:middle]) is None
+        assert await response_callback(text[middle:], text) is None
+        return LLMResult(
+            response=text, mode=mode, response_id=f"turn-{len(calls)}",
+            provider_model_key="test/model",
+        )
+
+    async def call_extensions(point, target=None, **kwargs):
+        if point == "before_main_llm_call":
+            agent.loop_data.params_temporary["log_item_generating"] = log.log(
+                type="agent", id=f"turn-{len(calls) + 1}"
+            )
+        elif point == "response_stream":
+            await LiveResponse(agent).execute(**kwargs)
+        elif point == "message_loop_result":
+            data = kwargs["result_data"]
+            data.update(run_hooks(agent, data["llm_result"], doctor))
+
+    def call_sync(point, target=None, **kwargs):
+        if point == "_functions/agent/Agent/hist_add_ai_response/end":
+            LogPlainResponses(agent).execute(**kwargs)
+        elif point == "_functions/agent/Agent/hist_add_warning/end":
+            response_loop.StopUnusableResponseLoop(agent).execute(**kwargs)
+
+    monkeypatch.setattr(extension, "call_extensions_async", call_extensions)
+    monkeypatch.setattr(extension, "call_extensions_sync", call_sync)
+    monkeypatch.setattr(
+        mcp_handler.MCPConfig, "get_instance",
+        lambda: SimpleNamespace(get_tool=lambda *args: None),
+    )
+    agent.prepare_prompt = no_op
+    agent.handle_intervention = no_op
+    agent.handle_exception = fail
+    agent.call_chat_model_turn = call_model
+
+    assert await Agent.monologue.__wrapped__(agent) == "done"
+    assert calls == [first_text, complete]
+    responses = [item for item in log.logs if item.type == "response"]
+    assert len(responses) == 1
+    assert responses[0].id == "turn-2"
+    assert responses[0].content == "done"
+    assert responses[0].kvps["finished"] is True
+    ai_messages = [message for message in agent.history.all_messages() if message.ai]
+    assert len(ai_messages) == 2
+    if first_text == "READY" and doctor:
+        assert json.loads(ai_messages[0].content) == {"thoughts": ["READY"]}
+    else:
+        assert ai_messages[0].content == first_text
+    assert json.loads(ai_messages[1].content)["tool_args"] == {"text": "done"}
+    if mode == "responses":
+        assert agent.get_data(Agent.DATA_NAME_RESPONSES_STATE)["response_id"] == "turn-2"
 
 
 @pytest.mark.parametrize("doctor", [True, False])
@@ -184,10 +282,8 @@ def test_diagnostics_do_not_include_argument_contents():
     result = LLMResult(
         response='<tool_call>{"name":"x","arguments":{"secret":"fixture-secret"}}</tool_call>'
     )
-    run_hooks(agent, result)
-    assert "fixture-secret" not in str(
-        agent.loop_data.params_temporary["leaked_tool_call"]
-    )
+    data = run_hooks(agent, result)
+    assert "fixture-secret" not in str(agent.loop_data.params_temporary.get("leaked_tool_call"))
     assert "fixture-secret" not in str(agent.logs)
 
 
@@ -328,10 +424,7 @@ def test_surface_discovery_failure_retries_without_disclosing_exception(monkeypa
     data = {"llm_result": result}
     LeakedToolCall(agent).execute(data)
     assert data["skip_default_processing"] is True
-    assert (
-        agent.loop_data.params_temporary["leaked_tool_call"]["detail"]
-        == "tool_surface_unavailable"
-    )
+    assert agent.loop_data.params_temporary["leaked_tool_call"] == "rejected"
     assert "fixture-sensitive" not in str(agent.logs + agent.warnings)
 
 
@@ -383,8 +476,95 @@ async def test_recovered_call_still_obeys_execution_time_tool_policy(monkeypatch
     agent.get_tool = lambda **kwargs: BlockedTool()
     agent.handle_intervention = no_op
     result = LLMResult(response="<function=x></function>", mode=mode)
-    LeakedToolCall(agent).execute({"llm_result": result})
-    assert agent.loop_data.params_temporary["leaked_tool_call"]["status"] == "salvaged"
+    data = {"llm_result": result}
+    LeakedToolCall(agent).execute(data)
+    assert agent.loop_data.params_temporary["leaked_tool_call"] == "call"
     with pytest.raises(RepairableException, match='Tool "x" is blocked'):
         await Agent.process_llm_result_tools(agent, result)
     assert agent.loop_data.current_tool is None
+
+
+@pytest.mark.parametrize("mode", ["chat_completions", "responses"])
+def test_recovery_maps_aliases_before_and_after_action_normalization(monkeypatch, mode):
+    names = {"native_x": "server.x"}
+    monkeypatch.setattr(recovery, "build_responses_function_tools", lambda agent: ([], names))
+    agent = FakeAgent(name_map=names)
+    result = LLMResult(response='{"name":"native_x:read","arguments":{"path":"notes"}}', mode=mode)
+    assert not run_hooks(agent, result).get("skip_default_processing")
+    assert json.loads(result.response) == {
+        "tool_name": "server.x", "tool_args": {"path": "notes", "action": "read"}
+    }
+
+
+@pytest.mark.parametrize("text", [
+    '<tool_call>{"name":"response","arguments":{"text":"done"}}</tool_call>',
+    'Example: ```json\n{"tool_name":"response","tool_args":{"text":"done"}}\n```',
+    '{"name":"response","arguments":{"text":"half',
+    '{"tool_name":"response","tool_args":{}} {"tool_name":"response","tool_args":{}}',
+])
+def test_recovery_classifies_once_and_doctor_does_not_repair_again(monkeypatch, text):
+    from plugins._context_doctor.extensions.python.message_loop_result import (
+        _10_context_doctor as doctor,
+    )
+
+    classify = recovery.extract_leaked_tool_request
+    calls = []
+
+    def counted(response):
+        calls.append(response)
+        return classify(response)
+
+    def unexpected_repair(*args, **kwargs):
+        pytest.fail("Context Doctor reinterpreted an already classified turn")
+
+    monkeypatch.setattr(recovery, "extract_leaked_tool_request", counted)
+    monkeypatch.setattr(doctor, "transform_response", unexpected_repair)
+    monkeypatch.setattr(doctor, "looks_like_tool_call", unexpected_repair)
+    run_hooks(FakeAgent(), LLMResult.from_chat(response=text))
+    assert calls == [text]
+
+
+@pytest.mark.parametrize("mode", ["chat_completions", "responses"])
+@pytest.mark.parametrize("doctor", [True, False])
+def test_provider_truncation_retains_existing_warning_owner(mode, doctor):
+    agent = FakeAgent()
+    result = LLMResult(
+        response='<function=response><parameter=text>cut off', mode=mode,
+        finish_reason="length",
+    )
+    data = run_hooks(agent, result, doctor)
+    assert data["skip_default_processing"] is True
+    assert agent.warnings == [agent.read_prompt("fw.msg_output_limit.md")]
+    assert "leaked_tool_call" not in agent.loop_data.params_temporary
+    assert agent.loop_data.params_persistent[response_loop.STATE_KEY]["count"] == 1
+
+
+def test_complete_recovered_call_survives_provider_output_limit():
+    agent = FakeAgent()
+    result = LLMResult(
+        response='<tool_call>{"name":"response","arguments":{"text":"done"}}</tool_call>',
+        finish_reason="length",
+    )
+    assert not run_hooks(agent, result).get("skip_default_processing")
+    assert json.loads(result.response)["tool_args"] == {"text": "done"}
+    assert agent.warnings == []
+
+
+@pytest.mark.parametrize("name_map", [None, {}, [], {"x": None}, {1: "x"}])
+def test_missing_or_invalid_offered_map_cannot_authorize_recovery(name_map):
+    agent = FakeAgent()
+    agent.name_map = name_map
+    data = run_hooks(agent, LLMResult(response='{"name":"x","arguments":{}}'))
+    assert data["skip_default_processing"] is True
+    assert agent.loop_data.params_temporary["leaked_tool_call"] == "rejected"
+
+
+@pytest.mark.parametrize("mode", ["chat_completions", "responses"])
+def test_existing_tool_is_not_recovered_unless_offered(monkeypatch, mode):
+    names = {"x": "x"}
+    monkeypatch.setattr(recovery, "build_responses_function_tools", lambda agent: ([], names))
+    agent = FakeAgent(name_map=names)
+    result = LLMResult(response='{"name":"response","arguments":{"text":"done"}}', mode=mode)
+    data = run_hooks(agent, result)
+    assert data["skip_default_processing"] is True
+    assert agent.loop_data.params_temporary["leaked_tool_call"] == "rejected"

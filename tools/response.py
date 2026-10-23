@@ -14,13 +14,19 @@ class ResponseTool(Tool):
         )
 
     async def before_execution(self, **kwargs):
-        # self.log = self.agent.context.log.log(type="response", heading=f"{self.agent.agent_name}: Responding", content=self.args.get("text", ""))
-        # don't log here anymore, we have the live_response extension now
+        # Streaming normally owns the response bubble; only successful calls need a fallback.
         pass
 
     async def after_execution(self, response, **kwargs):
-        # do not add anything to the history or output
-
-        if self.loop_data and "log_item_response" in self.loop_data.params_temporary:
-            log = self.loop_data.params_temporary["log_item_response"]
-            log.update(finished=True) # mark the message as finished
+        if not self.loop_data:
+            return
+        params = self.loop_data.params_temporary
+        if "log_item_response" not in params:
+            generating = params.get("log_item_generating")
+            params["log_item_response"] = self.agent.context.log.log(
+                type="response",
+                heading=f"icon://chat {self.agent.agent_name}: Responding",
+                content=response.message,
+                id=generating.id if generating else "",
+            )
+        params["log_item_response"].update(finished=True)
